@@ -23,9 +23,11 @@ object DaemonClient {
     private const val PID_FILE = "cognotik_server.pid"
     private const val SOCKET_PORT_OFFSET = 1
     private const val SESSION_DIR_BASE = ".cognotik"
+    private const val LOGS_DIR = "logs"
 
     @JvmStatic
     fun main(args: Array<String>) {
+        ensureLogDirectory()
         if (args.isNotEmpty() && args[0].equals("--stop", ignoreCase = true)) {
             stopServer()
             exitProcess(0)
@@ -72,6 +74,17 @@ object DaemonClient {
         }
         return baseDir
     }
+    private fun ensureLogDirectory() {
+        try {
+            val logDir = File(getHome(), LOGS_DIR)
+            if (!logDir.exists()) {
+                logDir.mkdirs()
+            }
+        } catch (e: Exception) {
+            println("Warning: Could not create log directory: ${e.message}")
+        }
+    }
+
 
     private fun stopServer() {
         val host = DEFAULT_HOST

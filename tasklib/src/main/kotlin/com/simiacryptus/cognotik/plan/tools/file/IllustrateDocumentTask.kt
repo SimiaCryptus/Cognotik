@@ -9,11 +9,9 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
@@ -299,17 +297,13 @@ class IllustrateDocumentTask(
             val imagePath = documentFolder.resolve(imageFileName)
 
             ImageIO.write(generatedImage, imageFormat, imagePath.toFile())
-            log.info("Saved image: $imageFileName")
-
-            // Save preview using themed directory
-            val previewFileName = "$dataDir/$imageFileName"
-            val previewFile = task.resolveUserFile(previewFileName)
-            if (previewFile != null) {
+            val imageLink = task.resolveUserFile("$dataDir/$imageFileName")?.let{ previewFile->
               previewFile.parentFile?.mkdirs()
               ImageIO.write(generatedImage, imageFormat, previewFile)
-            }
-            val previewLink = task.linkTo(previewFileName)
-            generationTask.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 400px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" /></a>""")
+              log.info("Saved image: $imageFileName")
+              task.linkTo(imageFileName)
+            } ?: throw RuntimeException("Failed to resolve path for generated image: $imageFileName")
+            generationTask.add("""<a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 400px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" /></a>""")
             generationTask.add("✅ Saved as `$imageFileName`".renderMarkdown())
 
             generatedImages.add(Triple(imageFileName, imagePath.toString(), suggestion))
@@ -555,60 +549,7 @@ class IllustrateDocumentTask(
       }
       val subTask = task.newTask().apply { add("Generating patches...") }
       subTask.ui.pool.submit {
-        try {
-          val chatAgent = ChatAgent(
-            name = "DocumentImageIntegrator", prompt = patchPrompt, model = chatChatter, temperature = 0.3
-          )
-          val response = chatAgent.answer(listOf(patchPrompt))
-          log.debug("Patch generation response: $response")
-          if (orchestrationConfig.autoFix) {
-            subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-              DiffInstrumentor(
-                orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
-                SessionRenderer(subTask),
-              ).instrument(
-                root = root,
-                response = it,
-                handle = { newCodeMap: Map<Path, String> ->
-                  newCodeMap.forEach { (path, _) ->
-                    log.info("Applied patch to: $path")
-                  }
-                  patchResult = "Patches applied successfully"
-                },
-                shouldAutoApply = { _: Path -> true },
-                defaultFile = documentFile,
-                resolver = ::resolveToRelativePath,
-              ) + "\n\n## Auto-applied image insertion patches"
-            })
-            semaphore.release()
-          } else {
-            subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-              DiffInstrumentor(
-                orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
-                SessionRenderer(subTask),
-              ).instrument(
-                root = root,
-                response = it,
-                handle = { newCodeMap: Map<Path, String> ->
-                  newCodeMap.forEach { (path, _) ->
-                    log.info("Applied patch to: $path")
-                  }
-                  patchResult = "Patches applied successfully"
-                },
-                defaultFile = documentFile,
-                resolver = ::resolveToRelativePath,
-              ) + acceptButtonFooter(subTask.ui) {
-                subTask.complete()
-                semaphore.release()
-              }
-            })
-          }
-        } catch (e: Exception) {
-          // Triple Log: UI, SLF4J, Transcript
-          log.error("Failed to generate or apply patches", e)
-          subTask.error(e)
-          semaphore.release()
-        }
+        patchResult = integrateImagesWithRetry(patchResult, patchPrompt, chatChatter, subTask, documentFile, semaphore)
       }
       // Wait for completion
       if (!semaphore.tryAcquire(5, java.util.concurrent.TimeUnit.MINUTES)) {
@@ -620,6 +561,91 @@ class IllustrateDocumentTask(
       log.error("Error in patch generation process", e)
       return null
     }
+  }
+
+  private fun integrateImagesWithRetry(
+      patchResult: String?,
+      patchPrompt: String,
+      chatChatter: ChatInterface,
+      subTask: SessionTask,
+      documentFile: String,
+      semaphore: Semaphore
+  ): String? {
+    var patchResult1 = patchResult
+    try {
+      try {
+        patchResult1 = integrateImages(patchPrompt, chatChatter, subTask, patchResult1, documentFile, semaphore)
+      } catch (e: Exception) {
+        log.error("Failed to generate or apply patches", e)
+        // Retry
+        patchResult1 = integrateImages(patchPrompt, chatChatter, subTask, patchResult1, documentFile, semaphore)
+      }
+    } catch (e: Exception) {
+      // Triple Log: UI, SLF4J, Transcript
+      log.error("Failed to generate or apply patches", e)
+      subTask.error(e)
+      semaphore.release()
+    }
+    return patchResult1
+  }
+
+  private fun integrateImages(
+      patchPrompt: String,
+      chatChatter: ChatInterface,
+      subTask: SessionTask,
+      patchResult: String?,
+      documentFile: String,
+      semaphore: Semaphore
+  ): String? {
+    var patchResult1 = patchResult
+    val chatAgent = ChatAgent(
+      name = "DocumentImageIntegrator", prompt = patchPrompt, model = chatChatter, temperature = 0.3
+    )
+    val response = chatAgent.answer(listOf(patchPrompt))
+    log.debug("Patch generation response: $response")
+    if (orchestrationConfig.autoFix) {
+      subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
+        DiffInstrumentor(
+          orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+          SessionRenderer(subTask),
+        ).instrument(
+          root = root,
+          response = it,
+          handle = { newCodeMap: Map<Path, String> ->
+            newCodeMap.forEach { (path, _) ->
+              log.info("Applied patch to: $path")
+            }
+            patchResult1 = "Patches applied successfully"
+          },
+          shouldAutoApply = { _: Path -> true },
+          defaultFile = documentFile,
+          resolver = ::resolveToRelativePath,
+        ) + "\n\n## Auto-applied image insertion patches"
+      })
+      semaphore.release()
+    } else {
+      subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
+        DiffInstrumentor(
+          orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+          SessionRenderer(subTask),
+        ).instrument(
+          root = root,
+          response = it,
+          handle = { newCodeMap: Map<Path, String> ->
+            newCodeMap.forEach { (path, _) ->
+              log.info("Applied patch to: $path")
+            }
+            patchResult1 = "Patches applied successfully"
+          },
+          defaultFile = documentFile,
+          resolver = ::resolveToRelativePath,
+        ) + acceptButtonFooter(subTask.ui) {
+          subTask.complete()
+          semaphore.release()
+        }
+      })
+    }
+    return patchResult1
   }
 
   companion object {

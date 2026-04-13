@@ -126,7 +126,7 @@ object PlanUtil {
   fun getAllDependencies(
     subPlanTask: TaskExecutionConfig,
     subTasks: Map<String, TaskExecutionConfig>,
-    visited: MutableSet<String>
+    visited: MutableSet<String> = mutableSetOf()
   ): List<String> {
     val dependencies = subPlanTask.task_dependencies?.toMutableList() ?: mutableListOf()
     subPlanTask.task_dependencies?.forEach { dep ->

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOG_DIR" value="${user.home}/.cognotik/logs"/>
+
     <!-- Console Appender (stdout) -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.out</target>
@@ -23,10 +25,10 @@
 
     <!-- Time-based Rolling File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>cognotik.log</file>
+        <file>${LOG_DIR}/cognotik.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover, keep 30 days -->
-            <fileNamePattern>cognotik.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/cognotik.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
@@ -36,10 +38,10 @@
     </appender>
     <!-- Chat Traffic Log File Appender -->
     <appender name="CHAT_TRAFFIC_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>chat_traffic.log</file>
+        <file>${LOG_DIR}/chat_traffic.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover, keep 30 days -->
-            <fileNamePattern>chat_traffic.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/chat_traffic.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>

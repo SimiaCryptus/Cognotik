@@ -135,7 +135,7 @@ abstract class PatchApp(
     }
   }
 
-  lateinit var updateStatus: (String) -> Unit
+  var updateStatus: (String) -> Unit = {}
 
   abstract fun output(
     task: SessionTask,
@@ -616,6 +616,7 @@ fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = Se
       return outputResult
     }
     // Phase 2: Parse errors
+    val updateStatus = updateStatus ?: {}
     updateStatus("Parsing errors (Iteration $iteration)...")
     val fixTask = task.ui.newTask(false)
     task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Fix Details</div>")

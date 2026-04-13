@@ -12,6 +12,15 @@
     <header class="app-header">
         <h1>🧙 System Wizard</h1>
         <p class="subtitle">Describe your goal — the wizard writes and runs a shell script for you</p>
+            <!-- Platform Toggle -->
+            <div class="platform-toggle" id="platform-toggle">
+                <button class="platform-btn active" data-platform="sh" title="Linux / macOS">
+                    <span class="platform-icon">🐧</span> Shell
+                </button>
+                <button class="platform-btn" data-platform="cmd" title="Windows (PowerShell)">
+                    <span class="platform-icon">🪟</span> Windows
+                </button>
+            </div>
         <div class="header-meta">
             <span class="session-id-display" id="session-id-display" title="Session ID"></span>
         </div>
@@ -156,7 +165,7 @@
                         <span class="step-badge pending" id="badge-codegen">pending</span>
                     </div>
                     <p class="step-desc">
-                        The AI reads your goal and writes a shell script (<code>code/script.sh</code>) to accomplish it.
+                        The AI reads your goal and writes a script (<code id="script-filename-display">code/script.sh</code>) to accomplish it.
                         Or, you can <strong>paste/edit your own script</strong> below and skip generation.
                     </p>
                     <!-- Mode toggle -->
@@ -171,8 +180,8 @@
                     <!-- Generate mode controls -->
                     <div class="script-mode-panel active" id="panel-generate">
                     <div class="button-row">
-                        <button class="btn btn-primary btn-run"
-                                data-op="ops/code_op.md"
+                        <button class="btn btn-primary btn-run" id="btn-generate"
+                                data-op="ops/code_sh.md"
                                 data-output="code/script.sh"
                                 data-badge="badge-codegen"
                                 data-viewer="viewer-codegen">
@@ -189,7 +198,7 @@
                     <div class="script-mode-panel" id="panel-manual">
                         <p class="hint">Paste or write your shell script below. Click <strong>Save Script</strong> to save it and proceed to Run &amp; Fix.</p>
                         <textarea id="script-editor" rows="16"
-                            placeholder="#!/bin/bash&#10;&#10;# Paste or write your shell script here…&#10;&#10;echo &quot;Hello, World!&quot;"
+                            placeholder="#!/bin/bash&#10;&#10;# Paste or write your script here…&#10;&#10;echo &quot;Hello, World!&quot;"
                             aria-label="Shell script editor"
                             spellcheck="false"
                             class="script-editor-textarea"></textarea>
@@ -217,12 +226,12 @@
                         <span class="step-badge pending" id="badge-run">pending</span>
                     </div>
                     <p class="step-desc">
-                        Executes the generated script and automatically fixes any errors until it succeeds.
+                        Executes the script and automatically fixes any errors until it succeeds.
                         Results are logged to <code>code/fix_log.md</code>.
                     </p>
                     <div class="button-row">
-                        <button class="btn btn-primary btn-run"
-                                data-op="ops/run_op.md"
+                        <button class="btn btn-primary btn-run" id="btn-run-fix"
+                                data-op="ops/run_sh.md"
                                 data-output="code/fix_log.md"
                                 data-badge="badge-run"
                                 data-viewer="viewer-run">
@@ -233,7 +242,7 @@
                                 data-viewer="viewer-run">
                             <span class="btn-icon">📋</span> View Log
                         </button>
-                        <button class="btn btn-secondary btn-view"
+                        <button class="btn btn-secondary btn-view" id="btn-view-final-script"
                                 data-file="code/script.sh"
                                 data-viewer="viewer-run-script">
                             <span class="btn-icon">📜</span> Final Script

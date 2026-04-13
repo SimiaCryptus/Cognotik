@@ -45,15 +45,29 @@ curl -u `decrypt_aws $MVN_CENTRAL_KEY` \
   'https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=com.cognotik' | jq
 }
 ```
+or
+```bash
+list_repos_keys() {
+  list_repos | jq -r '.repositories[] | .key'
+}
+```
 
 To clean up failed staging repositories, you can use the following shell function that takes in the guid of the staging repository:
 
 ```bash
 close_staging_repo() {
-    local repo_guid="$1"
+    local repo_key="$1"
     curl -u `decrypt_aws $MVN_CENTRAL_KEY` -X DELETE \
-        "https://ossrh-staging-api.central.sonatype.com/manual/drop/repository/HyHqQM/any/com.cognotik--${repo_guid}" \
+        "https://ossrh-staging-api.central.sonatype.com/manual/drop/repository/${repo_key}" \
         -H 'Content-Type: application/json' -d '{"data": {"description": "Close failed staging repo from CI build"}}'
+}
+```
+or
+```bash
+close_all_repos() {
+  for repo_key in $(list_repos_keys); do
+    close_staging_repo "$repo_key"
+  done
 }
 ```
 
@@ -67,9 +81,9 @@ Then use the `list_repos` function to find the guid of the staging repository th
 
 ```bash
 promote_staging_repo() {
-  local repo_guid="$1"
+  local repo_key="$1"
   curl -u `decrypt_aws $MVN_CENTRAL_KEY` -X POST \
-    "https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/HyHqQM/any/com.cognotik--${repo_guid}" \
+    "https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/${repo_key}" \
     -H 'Content-Type: application/json' -d '{"data": {"description": "Promote from CI build"}}'
 }
 ```
