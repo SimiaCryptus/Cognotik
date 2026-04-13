@@ -182,33 +182,53 @@ function getFFmpegArgs(outputPath) {
                 'ffmpeg.exe -f dshow -list_devices true -i dummy 2>&1 || echo ""',
                 { encoding: 'utf-8', shell: true }
             );
-            const loopbackMatch = devices.match(/"((?:Stereo Mix|CABLE Output|Loopback|What U Hear)[^"]*)"/i);
+             const loopbackMatch = devices.match(/"((?:Stereo Mix|CABLE Output|Loopback|What U Hear|Internal AUX|Virtual Audio)[^"]*)"/i);
             if (loopbackMatch) audioDevice = loopbackMatch[1];
             if (!audioDevice) {
+                 // Modern ffmpeg (8.x+) uses per-line "(audio)" / "(video)" markers
+                 // instead of section headers like "DirectShow audio devices".
                 const lines = devices.split('\n');
-                let inAudioSection = false;
                 for (const line of lines) {
-                    if (line.includes('DirectShow audio devices')) inAudioSection = true;
-                    else if (line.includes('DirectShow video devices')) inAudioSection = false;
-                    if (inAudioSection) {
-                        const nameMatch = line.match(/"([^"]+)"/);
-                        if (nameMatch && !line.includes('Alternative name')) {
-                            audioDevice = nameMatch[1];
-                            break;
-                        }
+                     if (line.includes('Alternative name')) continue;
+                     // Match lines like: [in#0 @ ...] "Device Name" (audio)
+                     const audioLineMatch = line.match(/"([^"]+)"\s*\(audio\)/i);
+                     if (audioLineMatch) {
+                         audioDevice = audioLineMatch[1];
+                         break;
+                     }
+                 }
+                 // Fallback: try legacy section-header format
+                 if (!audioDevice) {
+                     let inAudioSection = false;
+                     for (const line of lines) {
+                         if (line.includes('DirectShow audio devices')) inAudioSection = true;
+                         else if (line.includes('DirectShow video devices')) inAudioSection = false;
+                         if (inAudioSection) {
+                             const nameMatch = line.match(/"([^"]+)"/);
+                             if (nameMatch && !line.includes('Alternative name')) {
+                                 audioDevice = nameMatch[1];
+                                 break;
+                             }
+                         }
                     }
                 }
             }
-        } catch {}
+         } catch (e) {
+             console.warn(`⚠️  Failed to enumerate dshow devices: ${e.message}`);
+         }
         if (!audioDevice) {
-            console.warn('⚠️  No audio capture device found (WSL/Windows). Recording video only.');
-            return [
-                '-y',
-                '-f', 'gdigrab', '-framerate', '30', '-i', 'desktop',
-                '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
-                '-an',
-                winOutputPath
-            ];
+             console.warn(
+                 '⚠️  No audio capture device found (WSL/Windows). ' +
+                 'Enable "Stereo Mix" in Windows Sound settings, or install virtual audio cable (e.g. VB-CABLE). ' +
+                 'Recording will proceed WITHOUT audio.'
+            );
+             return [
+                 '-y',
+                 '-f', 'gdigrab', '-framerate', '30', '-i', 'desktop',
+                 '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
+                 '-an',
+                 winOutputPath
+             ];
         }
         console.log(`   Audio device: "${audioDevice}"`);
 
@@ -253,34 +273,51 @@ function getFFmpegArgs(outputPath) {
                 'ffmpeg -f dshow -list_devices true -i dummy 2>&1 || echo ""',
                 { encoding: 'utf-8', shell: true }
             );
-            const loopbackMatch = devices.match(/"((?:Stereo Mix|CABLE Output|Loopback|What U Hear)[^"]*)"/i);
+             const loopbackMatch = devices.match(/"((?:Stereo Mix|CABLE Output|Loopback|What U Hear|Internal AUX|Virtual Audio)[^"]*)"/i);
             if (loopbackMatch) audioDevice = loopbackMatch[1];
             if (!audioDevice) {
-                // Try to find any audio device
+                 // Modern ffmpeg (8.x+) uses per-line "(audio)" / "(video)" markers
                 const lines = devices.split('\n');
-                let inAudioSection = false;
                 for (const line of lines) {
-                    if (line.includes('DirectShow audio devices')) inAudioSection = true;
-                    else if (line.includes('DirectShow video devices')) inAudioSection = false;
-                    if (inAudioSection) {
-                        const nameMatch = line.match(/"([^"]+)"/);
-                        if (nameMatch && !line.includes('Alternative name')) {
-                            audioDevice = nameMatch[1];
-                            break;
-                        }
+                     if (line.includes('Alternative name')) continue;
+                     const audioLineMatch = line.match(/"([^"]+)"\s*\(audio\)/i);
+                     if (audioLineMatch) {
+                         audioDevice = audioLineMatch[1];
+                         break;
+                     }
+                 }
+                 // Fallback: try legacy section-header format
+                 if (!audioDevice) {
+                     let inAudioSection = false;
+                     for (const line of lines) {
+                         if (line.includes('DirectShow audio devices')) inAudioSection = true;
+                         else if (line.includes('DirectShow video devices')) inAudioSection = false;
+                         if (inAudioSection) {
+                             const nameMatch = line.match(/"([^"]+)"/);
+                             if (nameMatch && !line.includes('Alternative name')) {
+                                 audioDevice = nameMatch[1];
+                                 break;
+                             }
+                         }
                     }
                 }
             }
-        } catch {}
+         } catch (e) {
+             console.warn(`⚠️  Failed to enumerate dshow devices: ${e.message}`);
+         }
         if (!audioDevice) {
-            console.warn('⚠️  No audio capture device found on Windows. Recording video only.');
-            return [
-                '-y',
-                '-f', 'gdigrab', '-framerate', '30', '-i', 'desktop',
-                '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
-                '-an',
-                outputPath
-            ];
+             console.warn(
+                 '⚠️  No audio capture device found on Windows. ' +
+                 'Enable "Stereo Mix" in Windows Sound settings, or install virtual audio cable (e.g. VB-CABLE). ' +
+                 'Recording will proceed WITHOUT audio.'
+            );
+             return [
+                 '-y',
+                 '-f', 'gdigrab', '-framerate', '30', '-i', 'desktop',
+                 '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
+                 '-an',
+                 outputPath
+             ];
         }
         console.log(`   Audio device: "${audioDevice}"`);
 
