@@ -87,25 +87,52 @@ for video_path in "${VIDEO_FILES[@]}"; do
   # =========================================================================
   echo "  [PASS 1] Measuring loudness..."
 
-  loudnorm_stats=$(ffmpeg -hide_banner -nostdin -i "$video_path" \
+   pass1_output=$(ffmpeg -hide_banner -nostdin -i "$video_path" \
     -af "loudnorm=I=${TARGET_I}:TP=${TARGET_TP}:LRA=${TARGET_LRA}:print_format=json" \
-    -f null /dev/null 2>&1 | tail -n 12)
+     -f null /dev/null 2>&1)
+
+   # Extract the JSON block reliably (between the last { and })
+   loudnorm_stats=$(echo "$pass1_output" | sed -n '/^{$/,/^}$/p' | tail -n 14)
+
+   if [[ -z "$loudnorm_stats" ]]; then
+     # Fallback: try matching with leading whitespace
+     loudnorm_stats=$(echo "$pass1_output" | sed -n '/^\s*{/,/^\s*}/p' | tail -n 14)
+   fi
 
   # Parse the JSON stats from loudnorm output
-  measured_I=$(echo "$loudnorm_stats" | grep '"input_i"' | sed 's/.*: "//;s/".*//')
-  measured_TP=$(echo "$loudnorm_stats" | grep '"input_tp"' | sed 's/.*: "//;s/".*//')
-  measured_LRA=$(echo "$loudnorm_stats" | grep '"input_lra"' | sed 's/.*: "//;s/".*//')
-  measured_thresh=$(echo "$loudnorm_stats" | grep '"input_thresh"' | sed 's/.*: "//;s/".*//')
-  target_offset=$(echo "$loudnorm_stats" | grep '"target_offset"' | sed 's/.*: "//;s/".*//')
+   measured_I=$(echo "$loudnorm_stats" | grep '"input_i"' | sed 's/.*: *"//;s/" *,*.*//')
+   measured_TP=$(echo "$loudnorm_stats" | grep '"input_tp"' | sed 's/.*: *"//;s/" *,*.*//')
+   measured_LRA=$(echo "$loudnorm_stats" | grep '"input_lra"' | sed 's/.*: *"//;s/" *,*.*//')
+   measured_thresh=$(echo "$loudnorm_stats" | grep '"input_thresh"' | sed 's/.*: *"//;s/" *,*.*//')
+   target_offset=$(echo "$loudnorm_stats" | grep '"target_offset"' | sed 's/.*: *"//;s/" *,*.*//')
 
-  if [[ -z "$measured_I" || "$measured_I" == "" ]]; then
-    echo "  [ERROR] Could not measure loudness for ${video_file}. Skipping."
+   if [[ -z "$measured_I" || -z "$measured_TP" || -z "$measured_LRA" || -z "$measured_thresh" || -z "$target_offset" ]]; then
+     echo "  [ERROR] Could not measure loudness for ${video_file}. Parsed values:"
+     echo "    measured_I='${measured_I}' measured_TP='${measured_TP}' measured_LRA='${measured_LRA}'"
+     echo "    measured_thresh='${measured_thresh}' target_offset='${target_offset}'"
     echo ""
     ((FAIL_COUNT++)) || true
     continue
   fi
 
-  echo "  [STATS] Input: ${measured_I} LUFS, TP: ${measured_TP} dBTP, LRA: ${measured_LRA} LU"
+   echo "  [STATS] Input: ${measured_I} LUFS, TP: ${measured_TP} dBTP, LRA: ${measured_LRA} LU, Thresh: ${measured_thresh}, Offset: ${target_offset}"
+
+   # Validate that parsed values look like numbers (prevent garbled filter params)
+   is_valid=$(python3 -c "
+vals = ['${measured_I}', '${measured_TP}', '${measured_LRA}', '${measured_thresh}', '${target_offset}']
+try:
+     [float(v) for v in vals]
+     print('yes')
+except:
+     print('no')
+" 2>/dev/null || echo "no")
+
+   if [[ "$is_valid" != "yes" ]]; then
+     echo "  [ERROR] Parsed loudness values are not valid numbers. Skipping ${video_file}."
+     echo ""
+     ((FAIL_COUNT++)) || true
+     continue
+   fi
 
   # Check if already within acceptable range (within 0.5 LUFS of target)
   already_normalized=$(python3 -c "

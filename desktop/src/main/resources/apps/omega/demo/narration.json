@@ -1,0 +1,186 @@
+{
+  "INTRO": {
+    "text": "Welcome to Omega, the AI-powered DocOps Application Generator. In this demo, we'll walk through the complete workflow — from describing an app idea in plain language to generating a fully functional DocOps application with pipeline operations and a complete user interface.",
+    "audio": null
+  },
+  "HUB_OVERVIEW": {
+    "text": "This is the Cognotik App Hub, where all available applications are listed. Let's launch Omega and start building an app.",
+    "audio": null
+  },
+  "LOGIN_PROMPT": {
+    "text": "First, let's log in to the platform.",
+    "audio": null
+  },
+  "LOGIN_SUCCESS": {
+    "text": "Logged in successfully. Now we can see all available applications in the hub.",
+    "audio": null
+  },
+  "APP_OPENED": {
+    "text": "Omega is now open. You can see the main interface with tabs for each stage of the app generation workflow.",
+    "audio": null
+  },
+  "IDEA_TAB": {
+    "text": "Let's start on the Idea tab. Here we describe the application we want to build. The more specific we are about inputs, processing steps, and outputs, the better the result.",
+    "audio": null
+  },
+  "IDEA_TYPING": {
+    "text": "We'll describe a research assistant app that takes a topic and produces a literature review, key findings summary, and a structured outline for further investigation.",
+    "audio": null
+  },
+  "IDEA_SAVED": {
+    "text": "The idea has been saved. Now let's configure the AI models before we start generating.",
+    "audio": null
+  },
+  "MODELS_TAB": {
+    "text": "On the Models tab, we can select which AI models to use for generation. The smart model handles complex reasoning, the fast model handles simpler tasks, and the image model handles visual content.",
+    "audio": null
+  },
+  "MODELS_CONFIGURED": {
+    "text": "Models are configured. Let's save these settings and move on to the generation pipeline.",
+    "audio": null
+  },
+  "GENERATE_TAB": {
+    "text": "The Generate tab is where the magic happens. We have a five-step pipeline: generate requirements, review them, refine them, generate pipeline operations, and finally generate the user interface.",
+    "audio": null
+  },
+  "REQUIREMENTS_STARTED": {
+    "text": "Starting Step 1 — generating the requirements document. Omega will analyze our idea and produce a structured specification covering inputs, pipeline steps, outputs, and UI requirements.",
+    "audio": null
+  },
+  "REQUIREMENTS_DONE": {
+    "text": "The requirements document has been generated. It contains a detailed specification of the app we described. Let's move on to the review step.",
+    "audio": null
+  },
+  "REVIEW_STARTED": {
+    "text": "Step 2 — reviewing the requirements. Omega performs a rigorous multi-perspective review, evaluating the requirements from end-user, pipeline architect, UI/UX, product scope, and quality engineering viewpoints.",
+    "audio": null
+  },
+  "REVIEW_DONE": {
+    "text": "The review is complete. It identified areas for improvement across multiple perspectives. Now let's refine the requirements based on this feedback.",
+    "audio": null
+  },
+  "REFINE_STARTED": {
+    "text": "Step 3 — refining the requirements. Omega incorporates the review findings, addressing issues from highest to lowest severity to produce an improved specification.",
+    "audio": null
+  },
+  "REFINE_DONE": {
+    "text": "Requirements have been refined. The specification is now more robust and complete. Let's generate the pipeline operations.",
+    "audio": null
+  },
+  "PIPELINE_STARTED": {
+    "text": "Step 4 — generating pipeline operations. Omega will create all the op files, JSON configs, starter templates, and documentation for the generated app's processing pipeline.",
+    "audio": null
+  },
+  "PIPELINE_DONE": {
+    "text": "Pipeline operations have been generated. Multiple op files have been created, each defining a step in the app's AI processing workflow. Now for the final step — the UI.",
+    "audio": null
+  },
+  "UI_STARTED": {
+    "text": "Step 5 — generating the user interface. Omega builds a complete single-page HTML, CSS, and JavaScript application with input editors, pipeline controls, and result viewers, all tailored to the generated pipeline.",
+    "audio": null
+  },
+  "UI_DONE": {
+    "text": "The UI has been generated! We now have a complete, working DocOps application. Let's take a look at the results.",
+    "audio": null
+  },
+  "RUN_ALL_INTRO": {
+    "text": "Alternatively, you can use the Run Entire Generation Pipeline button to execute all five steps automatically in sequence. Let's do that now.",
+    "audio": null
+  },
+  "RUN_ALL_STARTED": {
+    "text": "The batch generation pipeline is running. Each step will execute sequentially — requirements, review, refine, pipeline ops, and UI.",
+    "audio": null
+  },
+  "RUN_ALL_DONE": {
+    "text": "The entire generation pipeline has completed successfully. All five steps are done.",
+    "audio": null
+  },
+  "RESULTS_TAB": {
+    "text": "Let's browse the results. The Results tab lets us inspect everything that was generated — the README, requirements, review analysis, pipeline ops, UI source, and all files.",
+    "audio": null
+  },
+  "RESULTS_README": {
+    "text": "Here's the generated README, which documents how to use the new application.",
+    "audio": null
+  },
+  "RESULTS_REQUIREMENTS": {
+    "text": "The requirements document shows the structured specification that guided the generation process.",
+    "audio": null
+  },
+  "RESULTS_REVIEW": {
+    "text": "The review analysis shows the multi-perspective evaluation of the requirements.",
+    "audio": null
+  },
+  "RESULTS_OPS": {
+    "text": "Here are the generated pipeline operation files. Each one defines a step in the app's AI processing workflow.",
+    "audio": null
+  },
+  "RESULTS_UI": {
+    "text": "And here's the generated UI source code — a complete single-page application.",
+    "audio": null
+  },
+  "RESULTS_FILES": {
+    "text": "The All Files view shows the complete file tree of the generated application.",
+    "audio": null
+  },
+  "ITERATE_TAB": {
+    "text": "If we want to refine the generated app, we can use the Iterate tab. Here we can provide feedback to update the pipeline or the UI independently.",
+    "audio": null
+  },
+  "ITERATE_PIPELINE_NOTES": {
+    "text": "In the Pipeline Update Notes, we can describe changes like adding new steps, modifying prompts, or fixing issues in the pipeline operations.",
+    "audio": null
+  },
+  "ITERATE_UI_NOTES": {
+    "text": "In the UI Update Notes, we can describe changes to the interface — new tabs, layout adjustments, bug fixes, or new features.",
+    "audio": null
+  },
+  "ITERATE_SKIPPED": {
+    "text": "We'll skip running the iteration updates for now, but this is where you'd refine the app through multiple rounds of feedback.",
+    "audio": null
+  },
+  "GIT_TAB": {
+    "text": "The Git tab provides version control for the generated application. We can initialize a repository, commit snapshots, manage branches, and download the project as a ZIP archive.",
+    "audio": null
+  },
+  "GIT_INIT": {
+    "text": "Let's initialize a Git repository to start tracking changes.",
+    "audio": null
+  },
+  "GIT_COMMIT": {
+    "text": "Now let's commit the initial version of our generated application.",
+    "audio": null
+  },
+  "GIT_COMMITTED": {
+    "text": "The initial commit has been created. We can now track all future changes and create branches for experimentation.",
+    "audio": null
+  },
+  "GIT_SKIPPED": {
+    "text": "We'll skip the Git operations for now, but version control is available for tracking changes across iterations.",
+    "audio": null
+  },
+  "USAGE_TAB": {
+    "text": "Finally, the Usage tab shows token consumption and estimated costs for all AI operations in this session.",
+    "audio": null
+  },
+  "USAGE_OVERVIEW": {
+    "text": "Here we can see the total prompt tokens, completion tokens, and estimated cost broken down by model.",
+    "audio": null
+  },
+  "USAGE_SKIPPED": {
+    "text": "We'll skip the usage details for now.",
+    "audio": null
+  },
+  "OPEN_APP": {
+    "text": "Let's open the generated application in a new tab to see it in action.",
+    "audio": null
+  },
+  "OPEN_APP_DONE": {
+    "text": "Here's our generated application, fully functional and ready to use. It was built entirely from our plain-language description.",
+    "audio": null
+  },
+  "OUTRO": {
+    "text": "And that's the complete Omega workflow! From a plain-language idea to a fully functional DocOps application — with requirements analysis, multi-perspective review, pipeline generation, and UI creation, all powered by AI. You can iterate on the results as many times as needed, track changes with Git, and export your app when it's ready. Thank you for watching!",
+    "audio": null
+  }
+}

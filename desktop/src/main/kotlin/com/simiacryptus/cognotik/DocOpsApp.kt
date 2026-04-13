@@ -253,6 +253,7 @@ class DocOpsApp(
        }
      }
    }
+
    private fun copyFileWithLineEndingNormalization(source: File, targetFile: File) {
      if (isTextFile(targetFile.name)) {
        val content = source.readText(Charsets.UTF_8)

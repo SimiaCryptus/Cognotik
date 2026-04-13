@@ -1,0 +1,158 @@
+{
+  "INTRO": {
+    "text": "Welcome to the System Wizard demo. This tool lets you describe a goal in plain language, then generates and iteratively fixes a shell script to accomplish it. Let's walk through the full workflow.",
+    "audio": null
+  },
+  "HUB_OVERVIEW": {
+    "text": "This is the Cognotik App Hub. Let's launch the System Wizard application.",
+    "audio": null
+  },
+  "LOGIN_PROMPT": {
+    "text": "We need to log in first to access the applications.",
+    "audio": null
+  },
+  "LOGIN_SUCCESS": {
+    "text": "Logged in successfully. Now we can see all available applications in the hub.",
+    "audio": null
+  },
+  "APP_OPENED": {
+    "text": "The System Wizard is now open. We can see the Goal tab where we describe what we want to accomplish.",
+    "audio": null
+  },
+  "GOAL_TAB": {
+    "text": "Let's start by defining our goal. We'll describe what we want the shell script to do in plain language.",
+    "audio": null
+  },
+  "GOAL_TIPS": {
+    "text": "Notice the tips section below. Being specific about file paths, outputs, and constraints helps the AI generate a better script.",
+    "audio": null
+  },
+  "GOAL_TYPING": {
+    "text": "We'll type a goal that asks the wizard to gather system information and write a summary report.",
+    "audio": null
+  },
+  "GOAL_SAVED": {
+    "text": "The goal has been saved. Now let's move to the Pipeline tab to generate and run our script.",
+    "audio": null
+  },
+  "PIPELINE_TAB": {
+    "text": "Here's the Pipeline tab. It shows a visual diagram of the three stages: Goal, Generate, and Run and Fix. Each stage updates its status as we progress.",
+    "audio": null
+  },
+  "PIPELINE_OVERVIEW": {
+    "text": "The pipeline has two main steps. First, the AI generates a shell script from our goal. Then it runs the script and automatically fixes any errors.",
+    "audio": null
+  },
+  "SETTINGS_TAB": {
+    "text": "Before running the pipeline, let's configure the AI models in the Settings tab.",
+    "audio": null
+  },
+  "SETTINGS_MODELS": {
+    "text": "We need to select both a Smart Model for script generation and a Fast Model for parsing and quick tasks. Both are required.",
+    "audio": null
+  },
+  "SETTINGS_SAVED": {
+    "text": "Model settings have been saved. Now let's go back to the Pipeline and run it.",
+    "audio": null
+  },
+  "SETTINGS_SKIPPED": {
+    "text": "We'll skip the settings configuration for now and use the previously saved model selections.",
+    "audio": null
+  },
+  "CODEGEN_INTRO": {
+    "text": "Step one is script generation. The AI reads our goal and writes a shell script to accomplish it. Let's click Generate.",
+    "audio": null
+  },
+  "CODEGEN_STARTED": {
+    "text": "The AI is now generating the shell script. We can monitor the session in real time via the provided link.",
+    "audio": null
+  },
+  "CODEGEN_DONE": {
+    "text": "The script has been generated successfully. Let's review what the AI wrote.",
+    "audio": null
+  },
+  "CODEGEN_SKIPPED": {
+    "text": "We'll skip individual script generation and use the full pipeline run instead.",
+    "audio": null
+  },
+  "MANUAL_MODE_INTRO": {
+    "text": "Alternatively, you can switch to Paste and Edit mode to write or paste your own script instead of using AI generation.",
+    "audio": null
+  },
+  "MANUAL_MODE_SKIPPED": {
+    "text": "We'll skip the manual editing mode for this demo and let the AI generate the script.",
+    "audio": null
+  },
+  "RUN_FIX_INTRO": {
+    "text": "Step two is Run and Auto-Fix. The script is executed, and if any errors occur, the AI automatically fixes them in a loop until it succeeds.",
+    "audio": null
+  },
+  "RUN_FIX_STARTED": {
+    "text": "The script is now running. If it encounters any errors, the auto-fix system will attempt to repair and re-run it.",
+    "audio": null
+  },
+  "RUN_FIX_DONE": {
+    "text": "Execution is complete. The script ran successfully. Let's check the results.",
+    "audio": null
+  },
+  "RUN_FIX_SKIPPED": {
+    "text": "We'll skip the individual run step and use the full pipeline instead.",
+    "audio": null
+  },
+  "FULL_PIPELINE_INTRO": {
+    "text": "Instead of running each step individually, we can use the Run Entire Pipeline button. This saves the goal, generates the script, and runs it with auto-fix — all in one click.",
+    "audio": null
+  },
+  "FULL_PIPELINE_STARTED": {
+    "text": "The full pipeline is now running. The batch log below shows progress for each stage.",
+    "audio": null
+  },
+  "FULL_PIPELINE_DONE": {
+    "text": "The entire pipeline has completed successfully. All stages show a green checkmark.",
+    "audio": null
+  },
+  "FULL_PIPELINE_SKIPPED": {
+    "text": "We'll skip the full pipeline run since we already ran the steps individually.",
+    "audio": null
+  },
+  "PLATFORM_TOGGLE": {
+    "text": "Notice the platform toggle at the top. You can switch between Shell for Linux and macOS, or Windows for PowerShell scripts.",
+    "audio": null
+  },
+  "RESULTS_TAB": {
+    "text": "Let's switch to the Results tab to review everything that was generated.",
+    "audio": null
+  },
+  "RESULTS_SCRIPT": {
+    "text": "Here's the generated shell script. We can copy it to the clipboard or download it directly.",
+    "audio": null
+  },
+  "RESULTS_LOG": {
+    "text": "The Execution Log tab shows the full run and fix log, rendered as formatted Markdown. This includes any auto-fix attempts that were made.",
+    "audio": null
+  },
+  "RESULTS_GOAL": {
+    "text": "And here's our original goal for reference, exactly as we typed it.",
+    "audio": null
+  },
+  "USAGE_TAB": {
+    "text": "The Usage tab tracks API token usage and estimated costs for this session. It shows prompt tokens, completion tokens, and a per-model breakdown.",
+    "audio": null
+  },
+  "USAGE_SKIPPED": {
+    "text": "We'll skip the usage details for this demo.",
+    "audio": null
+  },
+  "EXAMPLE_PROMPTS": {
+    "text": "The Goal tab also includes example prompts. Let's try one to see how it works.",
+    "audio": null
+  },
+  "EXAMPLE_PROMPTS_SKIPPED": {
+    "text": "We'll skip the example prompts and write our own goal instead.",
+    "audio": null
+  },
+  "OUTRO": {
+    "text": "And that's the complete workflow of the System Wizard! You describe a goal, the AI writes a script, and it runs and fixes itself automatically. Thank you for watching!",
+    "audio": null
+  }
+}

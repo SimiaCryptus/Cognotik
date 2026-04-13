@@ -1,0 +1,26 @@
+{
+  "INTRO": {
+    "text": "Welcome to the example app demo. This tool does cool stuff. Let's walk through the full workflow.",
+    "audio": null
+  },
+  "HUB_OVERVIEW": {
+    "text": "This is the Cognotik App Hub. Let's launch the app.",
+    "audio": null
+  },
+  "LOGIN_PROMPT": {
+    "text": "Let's log in first.",
+    "audio": null
+  },
+  "LOGIN_SUCCESS": {
+    "text": "Logged in successfully. Here's the App Hub.",
+    "audio": null
+  },
+  "APP_OPENED": {
+    "text": "The app is open.",
+    "audio": null
+  },
+  "OUTRO": {
+    "text": "And that's the complete workflow of the app! Thank you for watching!",
+    "audio": null
+  }
+}

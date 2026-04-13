@@ -1,0 +1,6 @@
+credentials.json
+node_modules
+*-lock.json
+*.log
+demo-results
+demo-videos

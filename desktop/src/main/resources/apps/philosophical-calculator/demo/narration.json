@@ -1,0 +1,186 @@
+{
+  "INTRO": {
+    "text": "Welcome to the Philosophical Calculator demo. This tool transforms raw notes into polished, multi-perspective articles with AI-generated illustrations. Let's walk through the full workflow.",
+    "audio": null
+  },
+  "HUB_OVERVIEW": {
+    "text": "This is the Cognotik App Hub. Let's launch the Philosophical Calculator.",
+    "audio": null
+  },
+  "LOGIN_PROMPT": {
+    "text": "Let's log in first.",
+    "audio": null
+  },
+  "LOGIN_SUCCESS": {
+    "text": "Logged in successfully. Here's the App Hub.",
+    "audio": null
+  },
+  "APP_OPENED": {
+    "text": "The Philosophical Calculator is open. We start on the Input tab where we'll paste our raw notes.",
+    "audio": null
+  },
+  "PASTE_NOTES": {
+    "text": "Let's paste in some notes about the paradox of automation and human purpose. These are rough observations, quotes, and ideas — the raw material for our article.",
+    "audio": null
+  },
+  "SAVE_NOTES": {
+    "text": "Now let's save these notes.",
+    "audio": null
+  },
+  "ADD_INSTRUCTIONS": {
+    "text": "Next, we'll add some structural instructions to guide the article generation — tone, structure, audience, and length.",
+    "audio": null
+  },
+  "NOTES_SAVED": {
+    "text": "Notes and instructions are saved. Now let's configure our AI models.",
+    "audio": null
+  },
+  "MODELS_TAB": {
+    "text": "On the Models tab we select which AI models to use. We'll pick a smart model for complex reasoning and a fast model for lighter tasks.",
+    "audio": null
+  },
+  "MODELS_SAVED": {
+    "text": "Models configured. Now let's move to the Pipeline tab to start generating our article.",
+    "audio": null
+  },
+  "PIPELINE_OVERVIEW": {
+    "text": "The pipeline has four stages. First, we summarize the raw notes into organized themes. Then we draft the article. Later we'll run analytical lenses and synthesize everything back. Let's start with Summarize.",
+    "audio": null
+  },
+  "SUMMARIZE_STARTED": {
+    "text": "The AI is now distilling our notes into a thematic summary. Let's watch the progress.",
+    "audio": null
+  },
+  "SUMMARIZE_DONE": {
+    "text": "Excellent! The summary organizes our scattered notes into coherent themes — the identity crisis of automation, historical parallels, philosophical frameworks, and policy considerations. Now let's draft the full article.",
+    "audio": null
+  },
+  "SUMMARIZE_SKIPPED": {
+    "text": "Skipping the Summarize step as configured.",
+    "audio": null
+  },
+  "DRAFT_STARTED": {
+    "text": "The AI is now writing a full article based on our summary, notes, and structural instructions. This is the heavy lifting — generating a coherent two-thousand-word essay.",
+    "audio": null
+  },
+  "DRAFT_DONE": {
+    "text": "We have a complete first draft! It follows our requested structure — opening hook, historical context, psychological dimension, two futures, and a path forward. Now comes the powerful part: multi-perspective analysis.",
+    "audio": null
+  },
+  "DRAFT_SKIPPED": {
+    "text": "Skipping the Draft Article step as configured.",
+    "audio": null
+  },
+  "LENSES_OVERVIEW": {
+    "text": "The Lenses tab lets us analyze our article through different philosophical and analytical frameworks. We'll run several lenses: Dialectical analysis for thesis-antithesis-synthesis, Perspectives for multi-stakeholder views, Socratic dialogue to stress-test our arguments, and Brainstorm for creative extensions.",
+    "audio": null
+  },
+  "LENSES_SKIPPED": {
+    "text": "Skipping all lens analyses as configured.",
+    "audio": null
+  },
+  "DIALECTICAL_INTRO": {
+    "text": "First, the Dialectical lens. This will identify contradictions in our argument and synthesize them into higher-level insights.",
+    "audio": null
+  },
+  "DIALECTICAL_DONE": {
+    "text": "The dialectical analysis reveals key tensions — like the contradiction between wanting leisure and needing purpose. Let's run the Perspectives lens next.",
+    "audio": null
+  },
+  "DIALECTICAL_RESULTS": {
+    "text": "Here in the Results tab we can review the full dialectical analysis output.",
+    "audio": null
+  },
+  "PERSPECTIVES_STARTED": {
+    "text": "The Perspectives lens analyzes our article from multiple stakeholder viewpoints — workers, employers, policymakers, technologists, and philosophers.",
+    "audio": null
+  },
+  "PERSPECTIVES_DONE": {
+    "text": "Fascinating — each stakeholder sees the automation question differently. A factory worker worries about displacement, while a tech founder sees liberation. These tensions will enrich our article.",
+    "audio": null
+  },
+  "PERSPECTIVES_RESULTS": {
+    "text": "The Results tab shows the full multi-stakeholder perspectives analysis.",
+    "audio": null
+  },
+  "SOCRATIC_STARTED": {
+    "text": "Now the Socratic dialogue — this will stress-test our arguments by exposing hidden assumptions through rigorous questioning.",
+    "audio": null
+  },
+  "SOCRATIC_DONE": {
+    "text": "The Socratic dialogue challenges our core assumptions — do we really know that work provides meaning, or is that just cultural conditioning? These are exactly the kinds of questions that make an article stronger.",
+    "audio": null
+  },
+  "SOCRATIC_RESULTS": {
+    "text": "Here's the Socratic dialogue in the Results tab — a rigorous philosophical examination of our core claims.",
+    "audio": null
+  },
+  "BRAINSTORM_STARTED": {
+    "text": "Finally, the Brainstorm lens generates divergent ideas and creative extensions we might not have considered.",
+    "audio": null
+  },
+  "BRAINSTORM_DONE": {
+    "text": "Great — the brainstorm surfaced ideas like gamified civic contribution, AI-human creative partnerships, and new metrics for societal value. Now let's weave all these insights back into our article.",
+    "audio": null
+  },
+  "BRAINSTORM_RESULTS": {
+    "text": "The brainstorm output in the Results tab shows creative extensions and divergent ideas we can incorporate.",
+    "audio": null
+  },
+  "UPDATE_INTRO": {
+    "text": "Back on the Pipeline tab, we'll run the Update Article step. This synthesizes all the analytical lens outputs — dialectical tensions, stakeholder perspectives, Socratic challenges, and brainstorm ideas — back into the main article, enriching it without losing the original voice.",
+    "audio": null
+  },
+  "UPDATE_STARTED": {
+    "text": "The AI is now weaving insights from four different analytical lenses into a cohesive, enhanced article.",
+    "audio": null
+  },
+  "UPDATE_DONE": {
+    "text": "The article is now significantly richer — it incorporates dialectical tensions, addresses multiple stakeholder concerns, and includes creative ideas from the brainstorm. The original structure and voice are preserved. Now let's add illustrations.",
+    "audio": null
+  },
+  "UPDATE_SKIPPED": {
+    "text": "Skipping the Update Article step as configured.",
+    "audio": null
+  },
+  "ILLUSTRATE_INTRO": {
+    "text": "The final pipeline step adds AI-generated illustrations inline throughout the article to visually explain complex concepts.",
+    "audio": null
+  },
+  "ILLUSTRATE_STARTED": {
+    "text": "The AI is analyzing the article to identify key concepts that benefit from visual explanation, then generating illustrations for each.",
+    "audio": null
+  },
+  "ILLUSTRATE_DONE": {
+    "text": "Beautiful! The article now has inline illustrations that bring the concepts to life — visual metaphors for the automation paradox, historical parallels, and possible futures.",
+    "audio": null
+  },
+  "ILLUSTRATE_SKIPPED": {
+    "text": "Skipping the Illustrate step as configured.",
+    "audio": null
+  },
+  "RESULTS_OVERVIEW": {
+    "text": "The Results tab gives us a unified view of everything we've generated. Let's browse through the outputs.",
+    "audio": null
+  },
+  "RESULTS_ARTICLE": {
+    "text": "Here's our finished article — a richly argued, multi-perspective essay with inline illustrations, built from rough notes in just a few minutes.",
+    "audio": null
+  },
+  "USAGE_TAB": {
+    "text": "The Usage tab tracks token consumption and estimated costs for all AI operations in this session.",
+    "audio": null
+  },
+  "USAGE_DETAILS": {
+    "text": "We can see the total prompt and completion tokens used, broken down by model. This helps us understand the cost of each analytical lens and optimize our workflow.",
+    "audio": null
+  },
+  "DOWNLOAD_INTRO": {
+    "text": "Finally, let's go back to the Results tab to download our finished article.",
+    "audio": null
+  },
+  "OUTRO": {
+    "text": "And that's the complete workflow of the Philosophical Calculator! We started with rough notes about automation and human purpose. We summarized them, drafted a structured essay, analyzed it through four philosophical lenses — dialectical, perspectives, Socratic, and brainstorm — then synthesized those insights back into the article and added AI-generated illustrations. The result is a richly argued, visually enhanced essay that explores the topic from multiple angles. Thank you for watching!",
+    "audio": null
+  }
+}

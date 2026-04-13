@@ -1,0 +1,14 @@
+{
+  "name": "app-demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+     "demo": "npx playwright test demo.js",
+     "demo:headed": "npx playwright test demo.js --headed",
+     "demo:clean": "rm -rf demo-videos demo-results",
+     "demo:check-deps": "ffmpeg -version && echo '✅ ffmpeg is available' || echo '❌ ffmpeg not found — install it for video+audio recording'"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}
