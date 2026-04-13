@@ -42,9 +42,75 @@ const NARRATION = JSON.parse(fs.readFileSync(NARRATION_PATH, 'utf-8'));
 setNarrationPath(NARRATION_PATH);
 
 // ---------------------------------------------------------------------------
-// Story idea for the demo
+// Mad Libs-style random story idea generator
 // ---------------------------------------------------------------------------
-const DEMO_IDEA = `A lone astronaut discovers an ancient alien library on Europa. Each book she opens reveals a chapter of Earth's forgotten history — but reading them slowly rewrites her own memories. As she pieces together the truth, she realizes the library isn't just storing knowledge… it's harvesting it.`;
+function pickRandom(arr) {
+     return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateMadLibIdea() {
+     const protagonists = [
+         'A lone astronaut', 'A retired detective', 'A teenage street musician',
+         'A deep-sea diver', 'An exiled princess', 'A rogue archaeologist',
+         'A sentient robot janitor', 'A blind cartographer', 'A time-displaced samurai',
+         'A disgraced chef', 'An orphaned witch', 'A cynical librarian',
+         'A shape-shifting spy', 'A ghost-hunting veterinarian', 'A rebel clockmaker'
+     ];
+     const actions = [
+         'discovers', 'accidentally activates', 'is drawn into',
+         'stumbles upon', 'inherits', 'is cursed by',
+         'receives a mysterious map leading to', 'dreams every night about',
+         'is the only one who can see', 'is blackmailed into stealing'
+     ];
+     const objects = [
+         'an ancient alien library', 'a sentient crystal that speaks in riddles',
+         'a portal hidden inside a painting', 'a clockwork dragon buried under a city',
+         'a radio that broadcasts from the future', 'a garden where memories grow as flowers',
+         'a mirror that shows alternate lives', 'a book that rewrites itself each midnight',
+         'a train that travels between dimensions', 'a music box that controls the weather'
+     ];
+     const locations = [
+         'on Europa', 'beneath the streets of Tokyo', 'in a crumbling space station',
+         'deep in the Amazon rainforest', 'inside a volcano on Iceland',
+         'at the bottom of the Mariana Trench', 'in a floating city above the clouds',
+         'on a desert planet with twin suns', 'in a Victorian London that never was',
+         'aboard a ghost ship in the Arctic'
+     ];
+     const complications = [
+         'but using it slowly erases their own memories',
+         'but each use ages them by a year',
+         'but a shadowy organization is hunting them for it',
+         'but it attracts dangerous creatures from another realm',
+         'but it only works when they tell the truth',
+         'but a rival from their past wants it too',
+         'but it is slowly merging their world with another',
+         'but every answer it gives demands a painful sacrifice',
+         'but time loops reset their progress each week',
+         'but the object has a will of its own and a hidden agenda'
+     ];
+     const stakes = [
+         'If they fail, reality itself will unravel.',
+         'The fate of an entire civilization hangs in the balance.',
+         'They must succeed before the next eclipse — or lose everything.',
+         'What they learn will force them to question who they really are.',
+         'The truth they uncover could either save the world or destroy it.',
+         'They realize they are not the hero of this story — they are the key.',
+         'As the pieces come together, they discover the real enemy is time itself.',
+         'In the end, they must choose between saving themselves and saving everyone else.'
+     ];
+
+     const protagonist = pickRandom(protagonists);
+     const action = pickRandom(actions);
+     const object = pickRandom(objects);
+     const location = pickRandom(locations);
+     const complication = pickRandom(complications);
+     const stake = pickRandom(stakes);
+
+     return `${protagonist} ${action} ${object} ${location}. ${protagonist.replace(/^A /i, 'The ')} is fascinated — ${complication}. ${stake}`;
+}
+
+const DEMO_IDEA = generateMadLibIdea();
+console.log(`🎲 Generated Mad Lib idea: ${DEMO_IDEA}`);
 
 // ---------------------------------------------------------------------------
 // Model configuration
