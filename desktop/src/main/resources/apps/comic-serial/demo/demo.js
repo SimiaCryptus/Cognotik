@@ -1,706 +1,453 @@
 // =============================================================================
-// Comic Serial Generator — Automated Demo (Playwright)
+// Automated Demo — Comic Serial Generator (Playwright)
 // =============================================================================
-// This script launches the app hub, opens the Comic Serial app, and walks
-// through the full workflow: writing an idea, generating comics, browsing
-// the series, checking usage, and configuring models.
-//
 // Usage:
 //   npx playwright test demo.js
-//   — or —
-//   node demo.js  (if you wire up the launcher below)
 // =============================================================================
 
 const { test } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 const {
-     startRecording,
-     narrate,
-     highlight,
-     openSessionLinkAndWaitForCompletion,
+    startRecording,
+    highlight,
+    say,
+    handleLogin,
+    setNarrationPath,
+    diagnosticSnapshot
 } = require('./util');
 
-
 // ---------------------------------------------------------------------------
-// Configuration
+// Environment configuration — UPDATE THESE FOR YOUR SETUP
 // ---------------------------------------------------------------------------
 const HUB_URL = 'http://localhost:12891/';
 const CREDENTIALS_PATH = path.join(__dirname, 'credentials.json');
-const SLOW_MO = 80;           // ms between actions — makes the demo watchable
-const TYPING_DELAY = 35;      // ms per keystroke for a natural typing feel
-const SHORT_PAUSE = 1500;     // pause so the viewer can read
+const NARRATION_PATH = path.join(__dirname, 'narration.json');
+const SPLASH_PATH = path.join(__dirname, 'splash.html');
+const VIDEO_DIR = './demo-videos';
+const APP_ID = 'app-comic-serial';
+
+// ---------------------------------------------------------------------------
+// Timing constants (milliseconds) — adjust for pacing
+// ---------------------------------------------------------------------------
+const TYPING_DELAY = 35;
+const SHORT_PAUSE = 1500;
 const MEDIUM_PAUSE = 3000;
 const LONG_PAUSE = 5000;
-const VERY_LONG_PAUSE = 15000; // waiting for AI generation
-const VIDEO_DIR = './demo-videos'; // directory where recorded videos are saved
-
 
 // ---------------------------------------------------------------------------
-// Demo story idea
+// Load narration data
 // ---------------------------------------------------------------------------
-const DEMO_IDEA = `A lone astronaut named Kira discovers an ancient alien library buried beneath the ice of Europa. Each crystalline book she opens projects a holographic chapter of Earth's forgotten history — civilizations that rose and fell before humanity's recorded past.
+const NARRATION = JSON.parse(fs.readFileSync(NARRATION_PATH, 'utf-8'));
+setNarrationPath(NARRATION_PATH);
 
-But there's a cost: every chapter she reads slowly overwrites one of her own memories. She begins forgetting her childhood, her training, even the faces of the crew waiting in orbit above.
+// ---------------------------------------------------------------------------
+// Story idea for the demo
+// ---------------------------------------------------------------------------
+const DEMO_IDEA = `A lone astronaut discovers an ancient alien library on Europa. Each book she opens reveals a chapter of Earth's forgotten history — but reading them slowly rewrites her own memories. As she pieces together the truth, she realizes the library isn't just storing knowledge… it's harvesting it.`;
 
-As she pushes deeper into the library, she realizes the books are not just records — they are warnings. Something is coming back to Earth, and the library was left here so that someone, someday, would know how to stop it.
-
-The question is: will Kira remember enough of herself to deliver the warning?`;
 // ---------------------------------------------------------------------------
 // Model configuration
 // ---------------------------------------------------------------------------
-const SMART_MODEL = 'gemini-3-flash-preview';
-const FAST_MODEL = 'gemini-3-flash-preview';
-const IMAGE_MODEL = 'gemini-3.1-flash-image-preview';
+const SMART_MODEL = 'gemini-3-flash-preview (Gemini)';
+const FAST_MODEL = 'gemini-3-flash-preview (Gemini)';
+const IMAGE_MODEL = 'gemini-3.1-flash-image-preview (Gemini)';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Click a navigation tab by its data-section attribute */
+async function clickTab(page, sectionId) {
+    await page.click(`.nav-link[data-section="${sectionId}"]`);
+    await page.waitForTimeout(SHORT_PAUSE);
+}
+
+/** Wait for a badge to show "done" */
+async function waitForBadgeDone(page, badgeId, label, timeout = 600000) {
+    console.log(`⏳ Waiting for ${label} badge (#${badgeId}) to show "done"...`);
+    await page.waitForSelector(`#${badgeId}.done`, { timeout });
+    console.log(`✅ ${label} badge is done.`);
+    await page.waitForTimeout(SHORT_PAUSE);
+}
+
+/** Wait for batch log to indicate completion */
+async function waitForBatchCompletion(page, timeout = 600000) {
+    console.log('⏳ Waiting for batch generation to complete...');
+    await page.waitForFunction(
+        () => {
+            const log = document.getElementById('batch-log');
+            if (!log) return false;
+            const text = log.textContent || '';
+            return text.includes('complete') || text.includes('Complete') || text.includes('Done') || text.includes('done');
+        },
+        { timeout }
+    );
+    console.log('✅ Batch generation complete.');
+    await page.waitForTimeout(SHORT_PAUSE);
+}
+
+/** Scroll an element into view and highlight it */
+async function scrollAndHighlight(page, selector) {
+    await page.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, selector);
+    await page.waitForTimeout(500);
+    await highlight(page, selector);
+}
 
 // =============================================================================
 // Main demo flow
 // =============================================================================
-test('Comic Serial Generator — Automated Demo', async ({ browser }) => {
-     // Increase the test timeout to 30 minutes for long AI generation waits
-     test.setTimeout(1800000);
-      // Generate a timestamped filename for the recording
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-      const videoOutputPath = path.resolve(VIDEO_DIR, `comic-serial-demo_${timestamp}.mp4`);
+test('Comic Serial Generator Demo', async ({ browser }) => {
+    test.setTimeout(1800000); // 30 minutes for AI generation waits
 
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+    const videoOutputPath = path.resolve(VIDEO_DIR, `comic_serial_demo_${timestamp}.mp4`);
+    const context = await browser.newContext({ viewport: null });
+    const page = await context.newPage();
+    let recorder = null;
 
-     const context = await browser.newContext({
-          viewport: null,  // use the full browser window (works with --start-maximized)
-     });
+    try {
+        recorder = startRecording(videoOutputPath);
+        await page.waitForTimeout(2000);
+        if (!recorder.isRunning()) {
+            console.warn('⚠️  ffmpeg failed to start. Continuing without video recording.');
+            recorder = null;
+        }
 
-     const page = await context.newPage();
-      // Start ffmpeg screen + audio recording
-      let recorder = null;
-
-     try {
-         recorder = startRecording(videoOutputPath);
-         // Give ffmpeg a moment to start capturing before we begin
-         await page.waitForTimeout(2000);
-         // Verify ffmpeg is running
-         if (!recorder.isRunning()) {
-             console.warn('⚠️  ffmpeg failed to start. Demo will continue without video recording.');
-             console.warn('   Install ffmpeg and ensure system audio loopback is available.');
-             recorder = null;
-         }
-
-        // Prime the Web Speech API so voices are loaded before first narration
-        await page.goto('about:blank');
+        // Prime Web Speech API voices
+        await page.goto(`file://${SPLASH_PATH}`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(1500);
         await page.evaluate(() => {
             return new Promise((resolve) => {
                 if (!window.speechSynthesis) { resolve(); return; }
                 const voices = window.speechSynthesis.getVoices();
                 if (voices.length > 0) { resolve(); return; }
                 window.speechSynthesis.addEventListener('voiceschanged', () => resolve(), { once: true });
-                // Safety timeout in case voiceschanged never fires
                 setTimeout(resolve, 3000);
             });
         });
 
-        // -----------------------------------------------------------------
-        // Step 0 — Open the App Hub
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'Welcome to the Comic Serial Generator demo! Let\'s start by opening the App Hub.',
-            SHORT_PAUSE);
-
+        // =================================================================
+        // Step 0 — Intro & Open the App Hub
+        // =================================================================
+        await say(page, NARRATION['INTRO'], SHORT_PAUSE);
+        await page.waitForTimeout(MEDIUM_PAUSE);
         await page.goto(HUB_URL, { waitUntil: 'networkidle' });
-        // -----------------------------------------------------------------
-        // Step 0.5 — Handle Login Page
-        // -----------------------------------------------------------------
-        const loginForm = page.locator('.login-container');
-        if (await loginForm.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await narrate(page,
-                'We\'ve been presented with a login page. Let\'s enter our credentials to proceed.',
-                SHORT_PAUSE);
-            // Load credentials from external JSON file
-            let credentials;
-            try {
-                const credentialsRaw = fs.readFileSync(CREDENTIALS_PATH, 'utf-8');
-                credentials = JSON.parse(credentialsRaw);
-            } catch (e) {
-                throw new Error(
-                    `Failed to load credentials from ${CREDENTIALS_PATH}. ` +
-                    `Please create this file with {"username": "...", "password": "..."}\n` +
-                    e.message
-                );
-            }
-            // Fill in username
-            await highlight(page, '#username');
-            const usernameInput = page.locator('#username');
-            await usernameInput.click();
-            await usernameInput.type(credentials.username, { delay: TYPING_DELAY });
-            // Fill in password
-            await highlight(page, '#password');
-            const passwordInput = page.locator('#password');
-            await passwordInput.click();
-            await passwordInput.type(credentials.password, { delay: TYPING_DELAY });
-            await narrate(page,
-                'Credentials entered. Let\'s log in!',
-                SHORT_PAUSE);
-            // Click the login button
-            await highlight(page, 'button[type="submit"]');
-            await page.click('button[type="submit"]');
-            // Wait for navigation after login
-            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => {});
-            await page.waitForTimeout(SHORT_PAUSE);
-            // Check if login was successful (no longer on login page)
-            const stillOnLogin = await page.locator('.login-container').isVisible().catch(() => false);
-            if (stillOnLogin) {
-                const errorEl = page.locator('.error');
-                if (await errorEl.isVisible().catch(() => false)) {
-                    const errorText = await errorEl.textContent();
-                    throw new Error(`Login failed: ${errorText}`);
-                }
-                throw new Error('Login failed: still on login page after submission.');
-            }
-            await narrate(page,
-                'Successfully logged in! Now we can see the App Hub.',
-                SHORT_PAUSE);
-        }
+        await diagnosticSnapshot(page, '00_hub_loaded');
 
-        await narrate(page,
-            'This is the Cognotik App Hub. We can see several apps available. Let\'s launch the Comic Serial Generator.',
-            MEDIUM_PAUSE);
+        // Handle Login if needed
+        await handleLogin(page, CREDENTIALS_PATH, NARRATION, {
+            typingDelay: TYPING_DELAY,
+            pauseAfter: SHORT_PAUSE
+        });
+        await diagnosticSnapshot(page, '00_after_login');
 
-        // -----------------------------------------------------------------
-        // Step 1 — Launch the Comic Serial app
-        // -----------------------------------------------------------------
-        await highlight(page, '#app-comic-serial');
-        await page.click('#app-comic-serial');
 
-        // Wait for the Comic Serial app to load
-        await page.waitForSelector('.app-header', { timeout: 30000 });
-        await narrate(page,
-            'The Comic Serial Generator is now open. It has five tabs: Idea, Pipeline, Series, Usage, and Models.',
-            MEDIUM_PAUSE);
+        await say(page, NARRATION['HUB_OVERVIEW'], MEDIUM_PAUSE);
 
-        // -----------------------------------------------------------------
-         // Step 2 — Configure Models first
-         // -----------------------------------------------------------------
-         await narrate(page,
-             'Before we start creating comics, let\'s configure the AI models. We\'ll go to the Models tab.',
-             SHORT_PAUSE);
+        // =================================================================
+        // Step 1 — Launch the Comic Serial Generator
+        // =================================================================
+        await highlight(page, `#${APP_ID}`);
+        await page.click(`#${APP_ID}`);
+        await page.waitForTimeout(MEDIUM_PAUSE);
+        await diagnosticSnapshot(page, '01_app_opened');
 
-         await highlight(page, '[data-section="section-settings"]');
-         await page.click('[data-section="section-settings"]');
-         await page.waitForSelector('#section-settings.active', { timeout: 5000 });
 
-         await narrate(page,
-             'The Models tab lets us choose three AI models: Smart, Fast, and Image. Let\'s set them up for our demo.',
-             MEDIUM_PAUSE);
+        await say(page, NARRATION['APP_OPENED'], MEDIUM_PAUSE);
 
-         // Wait for model dropdowns to be populated
-         await page.waitForFunction(() => {
-             const sel = document.querySelector('#comic-smart-model');
-             return sel && sel.options.length > 1;
-         }, { timeout: 15000 }).catch(() => {
-             console.log('  (Model dropdowns may not have loaded yet)');
-         });
+        // =================================================================
+        // Step 2 — Configure Model Settings
+        // =================================================================
+        await clickTab(page, 'section-settings');
+        await say(page, NARRATION['CONFIGURE_MODELS'], SHORT_PAUSE);
 
-         // Select Smart Model
-         await highlight(page, '#comic-smart-model');
-         const smartSelect = page.locator('#comic-smart-model');
-         try {
-             await smartSelect.selectOption({ value: SMART_MODEL });
-         } catch {
-             // If exact value not found, try to find a matching option
-             await page.evaluate((model) => {
-                 const sel = document.querySelector('#comic-smart-model');
-                 if (!sel) return;
-                 for (let i = 0; i < sel.options.length; i++) {
-                     if (sel.options[i].value.includes(model) || sel.options[i].text.includes(model)) {
-                         sel.selectedIndex = i;
-                         sel.dispatchEvent(new Event('change'));
-                         break;
-                     }
-                 }
-             }, SMART_MODEL);
-         }
-         await narrate(page,
-             `Smart Model set to ${SMART_MODEL} — this handles creative writing and story generation.`,
-             SHORT_PAUSE);
+        // Wait for model dropdowns to be populated
+        await page.waitForFunction(
+            () => {
+                const sel = document.getElementById('comic-smart-model');
+                return sel && sel.options.length > 1;
+            },
+            { timeout: 30000 }
+        );
+        await page.waitForTimeout(SHORT_PAUSE);
 
-         // Select Fast Model
-         await highlight(page, '#comic-fast-model');
-         const fastSelect = page.locator('#comic-fast-model');
-         try {
-             await fastSelect.selectOption({ value: FAST_MODEL });
-         } catch {
-             await page.evaluate((model) => {
-                 const sel = document.querySelector('#comic-fast-model');
-                 if (!sel) return;
-                 for (let i = 0; i < sel.options.length; i++) {
-                     if (sel.options[i].value.includes(model) || sel.options[i].text.includes(model)) {
-                         sel.selectedIndex = i;
-                         sel.dispatchEvent(new Event('change'));
-                         break;
-                     }
-                 }
-             }, FAST_MODEL);
-         }
-         await narrate(page,
-             `Fast Model set to ${FAST_MODEL} — this handles parsing and formatting tasks.`,
-             SHORT_PAUSE);
+        // Select Smart Model
+        await scrollAndHighlight(page, '#comic-smart-model');
+        await page.selectOption('#comic-smart-model', { label: SMART_MODEL });
+        await page.waitForTimeout(500);
 
-         // Select Image Model
-         await highlight(page, '#comic-image-model');
-         const imageSelect = page.locator('#comic-image-model');
-         try {
-             await imageSelect.selectOption({ value: IMAGE_MODEL });
-         } catch {
-             await page.evaluate((model) => {
-                 const sel = document.querySelector('#comic-image-model');
-                 if (!sel) return;
-                 for (let i = 0; i < sel.options.length; i++) {
-                     if (sel.options[i].value.includes(model) || sel.options[i].text.includes(model)) {
-                         sel.selectedIndex = i;
-                         sel.dispatchEvent(new Event('change'));
-                         break;
-                     }
-                 }
-             }, IMAGE_MODEL);
-         }
-         await narrate(page,
-             `Image Model set to ${IMAGE_MODEL} — this generates the comic panel artwork.`,
-             SHORT_PAUSE);
+        // Select Fast Model
+        await scrollAndHighlight(page, '#comic-fast-model');
+        await page.selectOption('#comic-fast-model', { label: FAST_MODEL });
+        await page.waitForTimeout(500);
 
-         // Save model settings
-         await highlight(page, '#save-model-settings');
-         await page.click('#save-model-settings');
-         await page.waitForTimeout(1000);
+        // Select Image Model
+        await scrollAndHighlight(page, '#comic-image-model');
+        await page.selectOption('#comic-image-model', { label: IMAGE_MODEL });
+        await page.waitForTimeout(500);
 
-         await narrate(page,
-             'Model settings saved! Now let\'s check the configuration summary below.',
-             SHORT_PAUSE);
+        // Save model settings
+        await scrollAndHighlight(page, '#save-model-settings');
+        await page.click('#save-model-settings');
+        await page.waitForTimeout(MEDIUM_PAUSE);
+        await diagnosticSnapshot(page, '02_models_configured');
 
-         // Scroll to show model summary
-         await page.evaluate(() => {
-             const el = document.querySelector('#model-summary');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-         });
-         await page.waitForTimeout(MEDIUM_PAUSE);
 
-         await narrate(page,
-             'All three models are configured and active. Now let\'s write our story idea!',
-             SHORT_PAUSE);
+        await say(page, NARRATION['MODELS_SAVED'], SHORT_PAUSE);
 
-         // -----------------------------------------------------------------
-         // Step 3 — Write the story idea
-        // -----------------------------------------------------------------
-         await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-         await page.waitForTimeout(800);
-         await highlight(page, '[data-section="section-input"]');
-         await page.click('[data-section="section-input"]');
-         await page.waitForSelector('#section-input.active', { timeout: 5000 });
+        // =================================================================
+        // Step 3 — Enter the Story Idea
+        // =================================================================
+        await say(page, NARRATION['IDEA_TAB'], SHORT_PAUSE);
 
-        await narrate(page,
-            'We start on the Idea tab. This is where we enter the story concept that will drive our entire comic series.',
-            SHORT_PAUSE);
-
-        // Clear any existing content and type our idea
-        const ideaEditor = page.locator('#idea-editor');
+        // Should already be on the Idea tab (it's the default active tab)
+        await clickTab(page, 'section-input');
         await highlight(page, '#idea-editor');
-        await ideaEditor.click();
-        await ideaEditor.fill('');
-        await ideaEditor.type(DEMO_IDEA, { delay: TYPING_DELAY });
+        await page.waitForTimeout(SHORT_PAUSE);
 
-        await narrate(page,
-            'We\'ve written a sci-fi concept about an astronaut who discovers an alien library on Europa. Each book she reads erases one of her own memories. Great premise for a serial!',
-            MEDIUM_PAUSE);
+        // Type the story idea
+        await page.click('#idea-editor');
+        await page.fill('#idea-editor', ''); // Clear any existing content
+        await page.type('#idea-editor', DEMO_IDEA, { delay: TYPING_DELAY });
+        await page.waitForTimeout(SHORT_PAUSE);
+        await diagnosticSnapshot(page, '03_idea_typed');
+
+
+        await say(page, NARRATION['IDEA_TYPED'], SHORT_PAUSE);
 
         // Save the idea
         await highlight(page, '#save-idea');
         await page.click('#save-idea');
-        await narrate(page,
-            'Idea saved. Now let\'s move to the Pipeline tab to start generating comics.',
-            SHORT_PAUSE);
+        await page.waitForTimeout(MEDIUM_PAUSE);
+        await diagnosticSnapshot(page, '03_idea_saved');
 
-        // -----------------------------------------------------------------
-         // Step 4 — Navigate to Pipeline
-        // -----------------------------------------------------------------
-        await highlight(page, '[data-section="section-pipeline"]');
-        await page.click('[data-section="section-pipeline"]');
-        await page.waitForSelector('#section-pipeline.active', { timeout: 5000 });
 
-        await narrate(page,
-            'The Pipeline tab shows the generation workflow. At the top is a visual diagram: Idea → Comic #1 → Comic #2 → and so on → HTML Book.',
-            MEDIUM_PAUSE);
+        await say(page, NARRATION['IDEA_SAVED'], SHORT_PAUSE);
 
-        // Scroll to show the pipeline diagram
+        // =================================================================
+        // Step 4 — Pipeline: Generate First Comic
+        // =================================================================
+        await clickTab(page, 'section-pipeline');
+        await say(page, NARRATION['PIPELINE_TAB'], MEDIUM_PAUSE);
+        await diagnosticSnapshot(page, '04_pipeline_tab');
+
+
+        // Scroll to and highlight the pipeline diagram
+        await scrollAndHighlight(page, '#pipeline-diagram');
+        await page.waitForTimeout(MEDIUM_PAUSE);
+
+        // Generate Comic #1
+        await say(page, NARRATION['GENERATE_COMIC_1'], SHORT_PAUSE);
+        const generateComic1Btn = page.locator('.btn-run[data-output="comic_1.md"]');
+        await scrollAndHighlight(page, '.btn-run[data-output="comic_1.md"]');
+        await generateComic1Btn.click();
+        await page.waitForTimeout(MEDIUM_PAUSE);
+
+        // Open the session link in a new tab to watch progress
+        try {
+            const sessionLink = page.locator('a[href*="session"]').first();
+            if (await sessionLink.isVisible({ timeout: 5000 })) {
+                const href = await sessionLink.getAttribute('href');
+                const sessionPage = await context.newPage();
+                await sessionPage.goto(href, { waitUntil: 'networkidle' });
+                await sessionPage.waitForTimeout(MEDIUM_PAUSE);
+
+                // Wait for the badge on the original page to turn done
+                await waitForBadgeDone(page, 'badge-comic-1', 'Comic #1');
+
+                // Close the session tab
+                await sessionPage.waitForTimeout(SHORT_PAUSE);
+                await sessionPage.close();
+            } else {
+                await waitForBadgeDone(page, 'badge-comic-1', 'Comic #1');
+            }
+        } catch (e) {
+            console.log('No session link found, waiting for badge directly...');
+            await waitForBadgeDone(page, 'badge-comic-1', 'Comic #1');
+        }
+        await diagnosticSnapshot(page, '04_comic_1_done');
+
+
+        await say(page, NARRATION['COMIC_1_DONE'], SHORT_PAUSE);
+
+        // View Comic #1
+        const viewComic1Btn = page.locator('.btn-view[data-file="comic_1.md"]');
+        await scrollAndHighlight(page, '.btn-view[data-file="comic_1.md"]');
+        await viewComic1Btn.click();
+        await page.waitForTimeout(MEDIUM_PAUSE);
+
+        await say(page, NARRATION['VIEW_COMIC_1'], LONG_PAUSE);
+        await diagnosticSnapshot(page, '04_comic_1_viewed');
+
+
+        // Scroll through the viewer to show content
         await page.evaluate(() => {
-             var el = document.querySelector('#pipeline-diagram');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const viewer = document.getElementById('viewer-comic-1');
+            if (viewer) viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
-        await page.waitForTimeout(SHORT_PAUSE);
+        await page.waitForTimeout(MEDIUM_PAUSE);
 
-        // -----------------------------------------------------------------
-         // Step 5 — Generate the first comic
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'Step 1 is to generate the first comic episode. This establishes characters, setting, art style, and the narrative arc. Let\'s kick it off!',
-            SHORT_PAUSE);
+        // =================================================================
+        // Step 5 — Pipeline: Compile HTML Book
+        // =================================================================
+        await say(page, NARRATION['HTMLBOOK_INTRO'], SHORT_PAUSE);
 
-        await page.evaluate(() => {
-             var el = document.querySelector('.btn-run[data-output="comic_1.md"]');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-        await page.waitForTimeout(800);
+        await scrollAndHighlight(page, '#generate-htmlbook');
+        await page.click('#generate-htmlbook');
+        await page.waitForTimeout(MEDIUM_PAUSE);
 
-        await highlight(page, '.btn-run[data-output="comic_1.md"]');
-        await page.click('.btn-run[data-output="comic_1.md"]');
+        // Wait for HTML book badge
+        try {
+            const sessionLink = page.locator('a[href*="session"]').first();
+            if (await sessionLink.isVisible({ timeout: 5000 })) {
+                const href = await sessionLink.getAttribute('href');
+                const sessionPage = await context.newPage();
+                await sessionPage.goto(href, { waitUntil: 'networkidle' });
+                await sessionPage.waitForTimeout(MEDIUM_PAUSE);
 
-        await narrate(page,
-            'The AI is now generating Comic #1. This involves writing the script, creating panel descriptions, and generating artwork. This may take a minute or two...',
-            SHORT_PAUSE);
+                // Wait for the badge on the original page to turn done
+                await waitForBadgeDone(page, 'badge-htmlbook', 'HTML Book');
 
-         // Open the session monitor link in a new tab and wait for completion
-         await openSessionLinkAndWaitForCompletion(page, page, 'Comic #1', 180000);
+                // Close the session tab
+                await sessionPage.waitForTimeout(SHORT_PAUSE);
+                await sessionPage.close();
+            } else {
+                await waitForBadgeDone(page, 'badge-htmlbook', 'HTML Book');
+            }
+        } catch (e) {
+            console.log('No session link found for HTML book, waiting for badge...');
+            await waitForBadgeDone(page, 'badge-htmlbook', 'HTML Book');
+        }
+        await diagnosticSnapshot(page, '05_htmlbook_done');
 
-         // Check if generation completed
-         const comic1Done = await page.evaluate(() => {
-             const badge = document.querySelector('#badge-comic-1');
-             return badge && (badge.textContent.trim() === 'done' || badge.classList.contains('done'));
-         });
 
-         if (comic1Done) {
-             await narrate(page,
-                 'Comic #1 has been generated! Let\'s take a look at it.',
-                 SHORT_PAUSE);
-         } else {
-             // Wait a bit more for the badge to update
-             try {
-                 await page.waitForFunction(() => {
-                     const badge = document.querySelector('#badge-comic-1');
-                     return badge && (badge.textContent.trim() === 'done' || badge.classList.contains('done'));
-                 }, { timeout: 30000 });
-                 await narrate(page,
-                     'Comic #1 has been generated! Let\'s take a look at it.',
-                     SHORT_PAUSE);
-             } catch {
-                 await narrate(page,
-                     'The generation is still running. In a live demo this would complete in 1-2 minutes. Let\'s continue exploring the interface while we wait.',
-                     SHORT_PAUSE);
-             }
-         }
+        await say(page, NARRATION['HTMLBOOK_DONE'], MEDIUM_PAUSE);
+        // Open the HTML book in a new tab and scroll through it
+        await scrollAndHighlight(page, '#open-htmlbook-tab');
+        // Start listening for a new page event BEFORE clicking
+        const newPagePromise = context.waitForEvent('page', { timeout: 10000 }).catch(() => null);
+        await page.click('#open-htmlbook-tab');
+        await page.waitForTimeout(MEDIUM_PAUSE);
 
-        // Try to view the first comic
-        const viewBtn1 = page.locator('.btn-view[data-file="comic_1.md"]');
-        if (await viewBtn1.isVisible()) {
-            await highlight(page, '.btn-view[data-file="comic_1.md"]');
-            await viewBtn1.click();
-            await page.waitForTimeout(MEDIUM_PAUSE);
+        // The click may or may not open a new tab — handle both cases
+        let bookPage = await newPagePromise;
+        let bookPageOpenedByUs = false;
 
-            await narrate(page,
-                'Here\'s the rendered first episode. You can see the comic panels with artwork and captions, establishing Kira\'s discovery of the alien library.',
-                LONG_PAUSE);
-
-            // Scroll through the viewer content
-            await page.evaluate(() => {
-                const viewer = document.querySelector('#viewer-comic-1');
-                if (viewer && viewer.scrollHeight > viewer.clientHeight) {
-                    viewer.scrollTo({ top: viewer.scrollHeight / 2, behavior: 'smooth' });
+        if (!bookPage) {
+            // No new tab was opened (popup blocked or same-window navigation).
+            // Open the comicbook URL manually in a new page.
+            console.log('ℹ️  No new tab detected — opening comicbook URL directly.');
+            const comicbookUrl = await page.evaluate(() => {
+                // Try to find the iframe src for the comicbook
+                const iframe = document.querySelector('#viewer-htmlbook iframe.comic-iframe');
+                if (iframe && iframe.src) {
+                    // Strip any cache-busting query param and return the base URL
+                    return iframe.src.split('?')[0];
                 }
+                // Fallback: construct from the current page URL
+                const base = window.location.href.replace(/\/[^/]*$/, '/');
+                return base + 'comicbook.html';
             });
-            await page.waitForTimeout(MEDIUM_PAUSE);
+            bookPage = await context.newPage();
+            bookPageOpenedByUs = true;
+            await bookPage.goto(comicbookUrl, { waitUntil: 'networkidle' });
         }
 
-        // -----------------------------------------------------------------
-         // Step 6 — Generate a sequel episode
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'Now let\'s generate a sequel. Each new episode builds on the previous one while staying true to the original idea.',
-            SHORT_PAUSE);
-
-        await page.evaluate(() => {
-             var el = document.querySelector('#generate-sequel');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await bookPage.waitForLoadState('networkidle');
+        await bookPage.waitForTimeout(MEDIUM_PAUSE);
+        // Scroll through the HTML book slowly
+        await say(page, NARRATION['HTMLBOOK_SCROLL'] || 'Let\'s scroll through the finished comic book.', SHORT_PAUSE);
+        await bookPage.evaluate(async () => {
+            const scrollStep = 400;
+            const delay = 800;
+            const maxScroll = document.body.scrollHeight;
+            for (let y = 0; y < maxScroll; y += scrollStep) {
+                window.scrollTo({ top: y, behavior: 'smooth' });
+                await new Promise(r => setTimeout(r, delay));
+            }
         });
-        await page.waitForTimeout(800);
-
-        // Refresh the episode count first
-        const refreshCountBtn = page.locator('#refresh-count');
-        if (await refreshCountBtn.isVisible()) {
-            await refreshCountBtn.click();
-            await page.waitForTimeout(SHORT_PAUSE);
-        }
-
-        await narrate(page,
-            'The episode counter shows how many episodes exist and what the next one will be numbered. Let\'s generate the next episode!',
-            SHORT_PAUSE);
-
-        await highlight(page, '#generate-sequel');
-        await page.click('#generate-sequel');
-
-        await narrate(page,
-            'Sequel generation is underway. The AI reads the previous episode and the original idea to maintain continuity.',
-            SHORT_PAUSE);
-
-         // Open the session monitor link in a new tab and wait for completion
-         await openSessionLinkAndWaitForCompletion(page, page, 'the sequel episode', 180000);
-
-         // Check if sequel completed
-         const sequelDone = await page.evaluate(() => {
-             const badge = document.querySelector('#badge-sequel');
-             return badge && (badge.textContent.trim() === 'done' || badge.classList.contains('done'));
-         });
-
-         if (sequelDone) {
-             await narrate(page,
-                 'The sequel has been generated successfully!',
-                 SHORT_PAUSE);
-         } else {
-             try {
-                 await page.waitForFunction(() => {
-                     const badge = document.querySelector('#badge-sequel');
-                     return badge && (badge.textContent.trim() === 'done' || badge.classList.contains('done'));
-                 }, { timeout: 30000 });
-                 await narrate(page,
-                     'The sequel has been generated successfully!',
-                     SHORT_PAUSE);
-             } catch {
-                 await narrate(page,
-                     'Sequel generation is still in progress. Let\'s continue the tour.',
-                     SHORT_PAUSE);
-             }
-        }
-
-        // -----------------------------------------------------------------
-         // Step 7 — Show batch generation
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'For creating a longer series, we can use Batch Generation. This lets us generate multiple episodes in one go.',
-            SHORT_PAUSE);
-
-        await page.evaluate(() => {
-             var el = document.querySelector('#batch-count');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-        await page.waitForTimeout(800);
-
-        await highlight(page, '#batch-count');
-        const batchInput = page.locator('#batch-count');
-        await batchInput.fill('3');
-
-        await narrate(page,
-            'We\'ve set the batch count to 3. Clicking "Generate Series" would create 3 more episodes sequentially. We\'ll skip running it for now to save time.',
-            MEDIUM_PAUSE);
-
-        await highlight(page, '#run-batch');
-        // Not clicking — just showing it
+        await bookPage.waitForTimeout(LONG_PAUSE);
+        await diagnosticSnapshot(bookPage, '05_htmlbook_scrolled');
+        // Close the book tab and return to the main page
+        await bookPage.close();
         await page.waitForTimeout(SHORT_PAUSE);
 
-        // -----------------------------------------------------------------
-         // Step 8 — Show HTML Book compilation
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'Once we have several episodes, we can compile them into a single HTML comicbook. Let\'s scroll down to that option.',
-            SHORT_PAUSE);
 
-        await page.evaluate(() => {
-             var el = document.querySelector('#generate-htmlbook');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-        await page.waitForTimeout(800);
-
-        await highlight(page, '#generate-htmlbook');
-        await narrate(page,
-            'The "Generate HTML Book" button compiles all episodes into a polished, self-contained HTML page with inline images and styled panels. You can also open it in a new tab for full-screen reading.',
-            MEDIUM_PAUSE);
-
-        // -----------------------------------------------------------------
-         // Step 9 — Navigate to Series tab
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'Let\'s check out the Series tab to browse our generated episodes.',
-            SHORT_PAUSE);
-
-        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-        await page.waitForTimeout(800);
-
-        await highlight(page, '[data-section="section-series"]');
-        await page.click('[data-section="section-series"]');
-        await page.waitForSelector('#section-series.active', { timeout: 5000 });
+        // =================================================================
+        // Step 6 — Series Tab
+        // =================================================================
+        await clickTab(page, 'section-series');
+        await say(page, NARRATION['SERIES_TAB'], SHORT_PAUSE);
 
         // Refresh the series list
-        const refreshSeriesBtn = page.locator('#refresh-series');
-        if (await refreshSeriesBtn.isVisible()) {
-            await refreshSeriesBtn.click();
-            await page.waitForTimeout(MEDIUM_PAUSE);
-        }
-
-        await narrate(page,
-            'The Series tab shows all generated episodes in an expandable accordion view. Each episode can be expanded to read its full content. You can also generate new episodes or compile the book directly from here.',
-            LONG_PAUSE);
-
-        // Try to expand the first episode if it exists
-        const firstEpisode = page.locator('.series-container .card').first();
-        if (await firstEpisode.isVisible()) {
-            await firstEpisode.click();
-            await page.waitForTimeout(MEDIUM_PAUSE);
-            await narrate(page,
-                'Here\'s the first episode expanded. We can read through the comic panels and see how the story unfolds.',
-                MEDIUM_PAUSE);
-        }
-
-        // -----------------------------------------------------------------
-         // Step 10 — Navigate to Usage tab
-        // -----------------------------------------------------------------
-        await narrate(page,
-            'Now let\'s check the Usage tab to see how much the generation cost.',
-            SHORT_PAUSE);
-
-        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-        await page.waitForTimeout(800);
-
-        await highlight(page, '[data-section="section-usage"]');
-        await page.click('[data-section="section-usage"]');
-        await page.waitForSelector('#section-usage.active', { timeout: 5000 });
-
-        // Refresh usage data
-        await highlight(page, '#refresh-usage');
-        await page.click('#refresh-usage');
+        await page.click('#refresh-series');
         await page.waitForTimeout(MEDIUM_PAUSE);
+        await diagnosticSnapshot(page, '06_series_tab');
 
-        await narrate(page,
-            'The Usage tab tracks token consumption and estimated costs. We can see summary cards for prompt tokens, completion tokens, total tokens, and estimated cost.',
-            MEDIUM_PAUSE);
 
-        // Scroll to show the usage summary
+        await say(page, NARRATION['SERIES_OVERVIEW'], MEDIUM_PAUSE);
+
+        // Expand the first episode card if there are accordion items
+        const firstEpisodeCard = page.locator('#series-container .card').first();
+        if (await firstEpisodeCard.isVisible({ timeout: 3000 })) {
+            await firstEpisodeCard.click();
+            await page.waitForTimeout(MEDIUM_PAUSE);
+        }
+
+        // Scroll through the series container
         await page.evaluate(() => {
-             var el = document.querySelector('#usage-summary');
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const container = document.getElementById('series-container');
+            if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
         await page.waitForTimeout(MEDIUM_PAUSE);
 
-        await narrate(page,
-            'Below the summary, there\'s a breakdown by model showing exactly which AI models were used and how many tokens each consumed.',
-            SHORT_PAUSE);
+        // =================================================================
+        // Step 7 — Usage Tab
+        // =================================================================
+        await clickTab(page, 'section-usage');
+        await say(page, NARRATION['USAGE_TAB'], SHORT_PAUSE);
 
-        // Show JSON view toggle
-        await highlight(page, '#toggle-usage-format');
-        await page.click('#toggle-usage-format');
-        await page.waitForTimeout(SHORT_PAUSE);
+        await page.click('#refresh-usage');
+        await page.waitForTimeout(MEDIUM_PAUSE);
+        await diagnosticSnapshot(page, '07_usage_tab');
 
-        await narrate(page,
-            'We can also toggle to a raw JSON view for detailed inspection of the usage data.',
-            SHORT_PAUSE);
 
-        // Toggle back
-        await page.click('#toggle-usage-format');
-        await page.waitForTimeout(SHORT_PAUSE);
+        // Highlight usage summary
+        await scrollAndHighlight(page, '.usage-summary');
+        await page.waitForTimeout(MEDIUM_PAUSE);
 
-        // -----------------------------------------------------------------
-         // Step 11 — Navigate to Models/Settings tab (revisit)
-        // -----------------------------------------------------------------
-        await narrate(page,
-             'Finally, let\'s revisit the Models tab to confirm our configuration.',
-            SHORT_PAUSE);
+        // =================================================================
+        // Step 8 — Settings Tab (review)
+        // =================================================================
+        await clickTab(page, 'section-settings');
+        await say(page, NARRATION['SETTINGS_TAB'], SHORT_PAUSE);
+        await diagnosticSnapshot(page, '08_settings_review');
 
-        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-        await page.waitForTimeout(800);
 
-        await highlight(page, '[data-section="section-settings"]');
-        await page.click('[data-section="section-settings"]');
-        await page.waitForSelector('#section-settings.active', { timeout: 5000 });
+        await scrollAndHighlight(page, '.model-settings-grid');
+        await page.waitForTimeout(MEDIUM_PAUSE);
 
-        await narrate(page,
-             'The Models tab shows our configured models. We set these up at the beginning: Smart and Fast models use ' + SMART_MODEL + ', and the Image model uses ' + IMAGE_MODEL + '.',
-            MEDIUM_PAUSE);
+        await say(page, NARRATION['SETTINGS_OVERVIEW'], MEDIUM_PAUSE);
 
-        // Highlight each model selector
-        await highlight(page, '#comic-smart-model');
-        await narrate(page,
-            'The Smart Model handles the heavy creative lifting — writing dialogue, developing plot, and maintaining character consistency across episodes.',
-            SHORT_PAUSE);
-
-        await highlight(page, '#comic-fast-model');
-        await narrate(page,
-            'The Fast Model is used for lighter tasks like parsing markdown and formatting output.',
-            SHORT_PAUSE);
-
-        await highlight(page, '#comic-image-model');
-        await narrate(page,
-            'The Image Model generates the actual comic panel artwork. Different models produce different art styles.',
-            SHORT_PAUSE);
-
-        await narrate(page,
-            'You can save your model preferences or reset to defaults at any time.',
-            SHORT_PAUSE);
-
-        await highlight(page, '#save-model-settings');
-        await page.waitForTimeout(SHORT_PAUSE);
-
-        // -----------------------------------------------------------------
-         // Step 12 — Return to Idea tab for wrap-up
-        // -----------------------------------------------------------------
-        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-        await page.waitForTimeout(800);
-
-        await highlight(page, '[data-section="section-input"]');
-        await page.click('[data-section="section-input"]');
-        await page.waitForSelector('#section-input.active', { timeout: 5000 });
-
-        await narrate(page,
-            'And that\'s the Comic Serial Generator! To recap what we covered:',
-            SHORT_PAUSE);
-
-        await narrate(page,
-            'One — Write your story idea in the Idea tab.',
-            SHORT_PAUSE);
-
-        await narrate(page,
-            'Two — Use the Pipeline tab to generate individual episodes, sequels, or batch-generate an entire series.',
-            SHORT_PAUSE);
-
-        await narrate(page,
-            'Three — Browse your episodes in the Series tab and compile them into an HTML comicbook.',
-            SHORT_PAUSE);
-
-        await narrate(page,
-            'Four — Monitor costs in the Usage tab and configure AI models in the Models tab.',
-            SHORT_PAUSE);
-
-        await narrate(page,
-            'Thanks for watching! The Comic Serial Generator makes it easy to turn any idea into a rich, ongoing comic series — one episode at a time. Happy creating!',
-            LONG_PAUSE);
+        // =================================================================
+        // Outro
+        // =================================================================
+        await say(page, NARRATION['OUTRO'], LONG_PAUSE);
+        await diagnosticSnapshot(page, '09_outro');
+        await page.waitForTimeout(LONG_PAUSE);
+        console.log('\n✅ Demo complete.');
 
     } catch (error) {
-        console.error('\n❌ Demo encountered an error:', error.message);
-        console.error(error.stack);
+        console.error('❌ Demo failed with error:', error);
+        throw error;
     } finally {
-        // Keep the browser open for a moment so the viewer can see the final state
-
-
-         try {
-             await page.waitForTimeout(LONG_PAUSE);
-         } catch {
-             // Page may already be closed if the test timed out — ignore
-         }
-
-          // Stop the ffmpeg recording before closing the browser
-          if (recorder) {
-              try {
-                  await recorder.stop();
-              } catch (e) {
-                  console.error('⚠️  Error stopping recorder:', e.message);
-              }
-          }
-
-         // Close the context to finalize the video recording
-         try {
-             await context.close();
-         } catch {
-             // Context may already be closed
-         }
-
-          if (recorder && fs.existsSync(videoOutputPath)) {
-              const stats = fs.statSync(videoOutputPath);
-              const sizeMB = (stats.size / (1024 * 1024)).toFixed(1);
-              console.log(`\n🎬 Demo video with audio saved to: ${videoOutputPath} (${sizeMB} MB)`);
-          } else if (recorder) {
-              console.log(`\n⚠️  Video file was not created. Check ffmpeg output above for errors.`);
-         }
-
-         console.log('\n✅ Demo complete.');
+        if (recorder && recorder.isRunning()) {
+            await recorder.stop();
+        }
+        await context.close();
     }
 });
