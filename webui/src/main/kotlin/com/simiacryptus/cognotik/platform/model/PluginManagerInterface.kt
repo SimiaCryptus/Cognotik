@@ -4,6 +4,28 @@ import com.simiacryptus.cognotik.CognotikPlugin
 import java.io.File
 
 interface PluginManagerInterface {
+   /**
+    * Publish an event to all subscribers of the given topic.
+    *
+    * @param topic the event topic/channel name
+    * @param data the event payload
+    */
+   fun publish(topic: String, data: Any?)
+   /**
+    * Subscribe to events on a given topic.
+    *
+    * @param topic the event topic/channel name
+    * @param handler callback invoked with the event payload when an event is published
+    * @return a subscription ID that can be used to unsubscribe
+    */
+   fun subscribe(topic: String, handler: (Any?) -> Unit): String
+   /**
+    * Unsubscribe a previously registered event handler.
+    *
+    * @param subscriptionId the subscription ID returned by [subscribe]
+    */
+   fun unsubscribe(subscriptionId: String)
+
 
   fun subscribeToChanges(subscriber: () -> Unit)
   fun triggerChangeNotification()

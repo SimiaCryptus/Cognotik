@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.simiacryptus.cognotik.plugins.AuthorizationChain
 import com.simiacryptus.cognotik.plugins.CallbackResult
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -31,6 +32,9 @@ class PluginManagerServlet(
    * Key is a chain name/ID, value is the chain.
    */
   private val authorizationChains = ConcurrentHashMap<String, AuthorizationChain>()
+   /** Subscription IDs for event router cleanup */
+   private val eventSubscriptionIds = mutableListOf<String>()
+
 
   init {
     pluginDirectory.mkdirs()
@@ -38,7 +42,39 @@ class PluginManagerServlet(
     // Ensure temp directory for multipart uploads exists
     File(System.getProperty("java.io.tmpdir")).mkdirs()
     log.debug("Temp directory for multipart uploads: {}", System.getProperty("java.io.tmpdir"))
+     // Subscribe to auth chain registration events from plugins via the event router
+     subscribeToPluginEvents()
   }
+   /**
+    * Subscribe to well-known plugin events so plugins can register auth chains
+    * without depending on this servlet.
+    */
+   private fun subscribeToPluginEvents() {
+     val pm = ApplicationServices.pluginManager
+     eventSubscriptionIds += pm.subscribe(PluginEvents.REGISTER_AUTH_CHAIN) { data ->
+       if (data is PluginEvents.AuthChainRegistration) {
+         val chain = data.chain
+         if (chain is AuthorizationChain) {
+           registerAuthorizationChain(data.name, chain)
+         } else {
+           log.warn(
+             "Received auth chain registration for '{}' but payload is not an AuthorizationChain: {}",
+             data.name, chain?.javaClass?.name
+           )
+         }
+       } else {
+         log.warn("Received unexpected payload on {}: {}", PluginEvents.REGISTER_AUTH_CHAIN, data)
+       }
+     }
+     eventSubscriptionIds += pm.subscribe(PluginEvents.UNREGISTER_AUTH_CHAIN) { data ->
+       if (data is String) {
+         unregisterAuthorizationChain(data)
+       } else {
+         log.warn("Received unexpected payload on {}: {}", PluginEvents.UNREGISTER_AUTH_CHAIN, data)
+       }
+     }
+     log.info("Subscribed to plugin event router for auth chain management")
+   }
 
 
   /**
@@ -59,6 +95,15 @@ class PluginManagerServlet(
     authorizationChains.remove(name)
     log.info("Unregistered authorization chain: {}", name)
   }
+   override fun destroy() {
+     // Clean up event subscriptions when servlet is destroyed
+     val pm = ApplicationServices.pluginManager
+     eventSubscriptionIds.forEach { pm.unsubscribe(it) }
+     eventSubscriptionIds.clear()
+     log.info("PluginManagerServlet destroyed, event subscriptions cleaned up")
+     super.destroy()
+   }
+
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     log.info(

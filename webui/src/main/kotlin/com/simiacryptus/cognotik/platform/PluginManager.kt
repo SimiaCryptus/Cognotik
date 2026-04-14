@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URLClassLoader
 import java.util.ServiceLoader
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -30,7 +31,7 @@ class PluginManager(
       */
      private data class PluginEntry(
          val jarPath: String,
-         val entryPointClass: String? = null
+val entryPointClass: String? = null
      )
      private val manifestFile = File(root, "plugins-manifest.json")
      private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
@@ -41,6 +42,10 @@ class PluginManager(
       /** Map from JAR file path to the persisted plugin entry metadata */
       private val loadedPluginEntries = ConcurrentHashMap<String, PluginEntry>()
      private val changeSubscribers = mutableListOf<() -> Unit>()
+     /** Event router: topic -> (subscriptionId -> handler) */
+     private val eventSubscribers = ConcurrentHashMap<String, ConcurrentHashMap<String, (Any?) -> Unit>>()
+     /** Reverse index: subscriptionId -> topic, for unsubscribe */
+     private val subscriptionIndex = ConcurrentHashMap<String, String>()
 
 
     init {
@@ -48,6 +53,38 @@ class PluginManager(
          root.mkdirs()
          restorePlugins()
     }
+     override fun publish(topic: String, data: Any?) {
+         log.debug("Publishing event on topic '{}': {}", topic, data)
+         val handlers = eventSubscribers[topic]
+         if (handlers == null || handlers.isEmpty()) {
+             log.debug("No subscribers for topic '{}'", topic)
+             return
+         }
+         for ((subId, handler) in handlers) {
+             try {
+                 handler(data)
+             } catch (e: Exception) {
+                 log.error("Error in event handler {} for topic '{}'", subId, topic, e)
+             }
+         }
+     }
+     override fun subscribe(topic: String, handler: (Any?) -> Unit): String {
+         val subscriptionId = UUID.randomUUID().toString()
+         eventSubscribers.computeIfAbsent(topic) { ConcurrentHashMap() }[subscriptionId] = handler
+         subscriptionIndex[subscriptionId] = topic
+         log.debug("Subscribed to topic '{}' with subscription ID: {}", topic, subscriptionId)
+         return subscriptionId
+     }
+     override fun unsubscribe(subscriptionId: String) {
+         val topic = subscriptionIndex.remove(subscriptionId)
+         if (topic != null) {
+             eventSubscribers[topic]?.remove(subscriptionId)
+             log.debug("Unsubscribed {} from topic '{}'", subscriptionId, topic)
+         } else {
+             log.debug("Subscription ID not found for unsubscribe: {}", subscriptionId)
+         }
+     }
+
 
      /**
       * Persist the current set of loaded plugin JARs to the manifest file.
