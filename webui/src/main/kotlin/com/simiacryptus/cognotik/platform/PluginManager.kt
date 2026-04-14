@@ -141,44 +141,53 @@ class PluginManager(
         val canonicalPath = jarFile.canonicalPath
         require(jarFile.exists()) { "Plugin JAR does not exist: $canonicalPath" }
         require(jarFile.name.endsWith(".jar")) { "File is not a JAR: $canonicalPath" }
-        check(!loadedJars.containsKey(canonicalPath)) { "Plugin JAR already loaded: $canonicalPath" }
+         synchronized(this) {
+             check(!loadedJars.containsKey(canonicalPath)) { "Plugin JAR already loaded: $canonicalPath" }
 
-        log.info("Loading plugin JAR: {}", canonicalPath)
+             log.info("Loading plugin JAR: {}", canonicalPath)
 
-        val classLoader = URLClassLoader(
-            "Plugin: "+jarFile.name,
-            arrayOf(jarFile.canonicalFile.toPath().toUri().toURL()),
-            this.javaClass.classLoader
-        )
-        loadedJars[canonicalPath] = classLoader
+             val classLoader = URLClassLoader(
+                 "Plugin: " + jarFile.name,
+                 arrayOf(jarFile.canonicalFile.toPath().toUri().toURL()),
+                 this.javaClass.classLoader
+             )
+             loadedJars[canonicalPath] = classLoader
 
-        val plugins = mutableListOf<CognotikPlugin>()
-        try {
-            val serviceLoader = ServiceLoader.load(CognotikPlugin::class.java, classLoader)
-            for (plugin in serviceLoader) {
-                try {
-                    log.info("Initializing plugin: {} from {}", plugin.pluginName, canonicalPath)
-                    plugin.init()
-                    plugins.add(plugin)
-                    log.info("Successfully initialized plugin: {}", plugin.pluginName)
-                } catch (e: Exception) {
-                    log.error("Failed to initialize plugin: {} from {}", plugin.pluginName, canonicalPath, e)
+             val plugins = mutableListOf<CognotikPlugin>()
+             try {
+                 val serviceLoader = ServiceLoader.load(CognotikPlugin::class.java, classLoader)
+                 for (plugin in serviceLoader) {
+                     try {
+                         log.info("Initializing plugin: {} from {}", plugin.pluginName, canonicalPath)
+                         plugin.init()
+                         plugins.add(plugin)
+                         log.info("Successfully initialized plugin: {}", plugin.pluginName)
+                     } catch (e: Exception) {
+                         log.error("Failed to initialize plugin: {} from {}", plugin.pluginName, canonicalPath, e)
+                     }
                 }
+             } catch (e: Throwable) {
+                 log.error("Failed to discover plugins via ServiceLoader in JAR: {}", canonicalPath, e)
             }
-        } catch (e: Throwable) {
-            log.error("Failed to discover plugins via ServiceLoader in JAR: {}", canonicalPath, e)
-        }
 
-        if (plugins.isEmpty()) {
-            log.warn("No CognotikPlugin implementations found in JAR: {}", canonicalPath)
-        } else {
-            loadedPlugins[canonicalPath] = plugins
-             loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath)
-             saveManifest()
-            triggerChange()
-        }
+             if (plugins.isEmpty()) {
+                 log.warn("No CognotikPlugin implementations found in JAR: {}", canonicalPath)
+                 // Clean up classloader if no plugins were found
+                 loadedJars.remove(canonicalPath)
+                 try {
+                     classLoader.close()
+                 } catch (e: Exception) {
+                     log.warn("Error closing classloader for empty JAR: {}", canonicalPath, e)
+                 }
+             } else {
+                 loadedPlugins[canonicalPath] = plugins
+                 loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath)
+                 saveManifest()
+                 triggerChange()
+             }
 
-        return plugins
+             return plugins
+         }
     }
 
     /**
@@ -195,11 +204,14 @@ class PluginManager(
 
         log.info("Loading plugin JAR: {} with entry point: {}", canonicalPath, entryPointClass)
 
-        val classLoader = loadedJars.getOrPut(canonicalPath) {
-            URLClassLoader(
-                arrayOf(jarFile.canonicalFile.toPath().toUri().toURL()),
-                this.javaClass.classLoader
-            )
+         val classLoader = synchronized(this) {
+             loadedJars.getOrPut(canonicalPath) {
+                 URLClassLoader(
+                     "Plugin: " + jarFile.name,
+                     arrayOf(jarFile.canonicalFile.toPath().toUri().toURL()),
+                     this.javaClass.classLoader
+                 )
+             }
         }
 
         val clazz = classLoader.loadClass(entryPointClass)
@@ -211,11 +223,13 @@ class PluginManager(
         log.info("Initializing plugin: {} from {}", plugin.pluginName, canonicalPath)
         plugin.init()
 
-        val existing = loadedPlugins.getOrDefault(canonicalPath, emptyList())
-        loadedPlugins[canonicalPath] = existing + plugin
-         loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath, entryPointClass)
-         saveManifest()
-        triggerChange()
+         synchronized(this) {
+             val existing = loadedPlugins.getOrDefault(canonicalPath, emptyList())
+             loadedPlugins[canonicalPath] = existing + plugin
+             loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath, entryPointClass)
+             saveManifest()
+             triggerChange()
+         }
 
         log.info("Successfully initialized plugin: {}", plugin.pluginName)
         return plugin

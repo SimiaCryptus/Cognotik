@@ -40,6 +40,7 @@ class PluginManagerServlet(
     log.debug("Temp directory for multipart uploads: {}", System.getProperty("java.io.tmpdir"))
   }
 
+
   /**
    * Register an authorization chain that can be triggered via the web UI.
    *
@@ -201,7 +202,7 @@ class PluginManagerServlet(
     } catch (e: Exception) {
       log.error("Failed to parse request action", e)
       response.status = HttpServletResponse.SC_BAD_REQUEST
-      response.writer.write("""{"error":"Failed to parse request: ${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"Failed to parse request: ${jsonEscape(e.message)}"}""")
       return
     }
     log.info("Processing POST action: '{}' from user: {}", action, user)
@@ -408,7 +409,7 @@ class PluginManagerServlet(
     // Collect all parameters into a map
     val parameters = mutableMapOf<String, String>()
     request.parameterMap.forEach { (key, values) ->
-      if (values.isNotEmpty()) parameters[key] = values[0]
+      if (values.isNotEmpty() && key !in INTERNAL_PARAMS) parameters[key] = values[0]
     }
     val result = session.chain.handleWebCallback(sessionId, parameters)
     if (result == null) {
@@ -534,11 +535,11 @@ class PluginManagerServlet(
     } catch (e: IllegalStateException) {
       log.warn("Plugin already loaded: {}", jarPath)
       response.status = HttpServletResponse.SC_CONFLICT
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     } catch (e: Exception) {
       log.error("Failed to load plugin JAR: {}", jarPath, e)
       response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     }
   }
 
@@ -576,7 +577,7 @@ class PluginManagerServlet(
     } catch (e: Exception) {
       log.error("Failed to unload plugin JAR: {}", jarPath, e)
       response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     }
   }
 
@@ -588,7 +589,7 @@ class PluginManagerServlet(
       log.error("Failed to get uploaded file part", e)
       response.contentType = "application/json"
       response.status = HttpServletResponse.SC_BAD_REQUEST
-      response.writer.write("""{"error":"Failed to read uploaded file: ${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"Failed to read uploaded file: ${jsonEscape(e.message)}"}""")
       return
     }
 
@@ -663,7 +664,7 @@ class PluginManagerServlet(
     } catch (e: Exception) {
       log.error("Failed to save or load uploaded plugin JAR: {}", submittedFileName, e)
       response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     }
   }
 
@@ -709,7 +710,7 @@ class PluginManagerServlet(
     } catch (e: Exception) {
       log.error("Failed to load plugins from directory: {}", directory, e)
       response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     }
   }
   private fun handleDelete(request: HttpServletRequest, response: HttpServletResponse) {
@@ -743,11 +744,11 @@ class PluginManagerServlet(
     } catch (e: IllegalArgumentException) {
       log.warn("Plugin JAR not found for delete: {}", jarPath)
       response.status = HttpServletResponse.SC_NOT_FOUND
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     } catch (e: Exception) {
       log.error("Failed to delete plugin JAR: {}", jarPath, e)
       response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+      response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     }
   }
 
@@ -1091,7 +1092,6 @@ class PluginManagerServlet(
                 // Initial load
                 refreshLoaded();
                  refreshAuthChains();
-                 refreshAuthChains();
             </script>
         </body>
         </html>
@@ -1099,5 +1099,21 @@ class PluginManagerServlet(
 
   companion object {
     private val log = LoggerFactory.getLogger(PluginManagerServlet::class.java)
+
+    /** Internal parameter names that should not be forwarded to authorization step callbacks */
+    private val INTERNAL_PARAMS = setOf("action", "sessionId", "chain")
+
+    /**
+     * Safely encode a string for JSON value context.
+     */
+    private fun jsonEscape(value: String?): String {
+      if (value == null) return ""
+      return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    }
   }
 }
