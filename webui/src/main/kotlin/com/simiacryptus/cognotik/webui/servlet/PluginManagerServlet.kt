@@ -3,9 +3,8 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.PluginEvents
-import com.simiacryptus.cognotik.plugins.AuthorizationChain
-import com.simiacryptus.cognotik.plugins.CallbackResult
-import com.simiacryptus.cognotik.plugins.PendingAuthorization
+import com.simiacryptus.cognotik.auth.AuthorizationChain
+import com.simiacryptus.cognotik.auth.PendingAuthorization
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.annotation.MultipartConfig

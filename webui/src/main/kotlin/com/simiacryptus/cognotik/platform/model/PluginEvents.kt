@@ -21,7 +21,7 @@ object PluginEvents {
      * Data class for authorization chain registration events.
      *
      * @param name unique name for the authorization chain
-     * @param chain the authorization chain instance (expected to be [com.simiacryptus.cognotik.plugins.AuthorizationChain])
+     * @param chain the authorization chain instance (expected to be [com.simiacryptus.cognotik.auth.AuthorizationChain])
      */
     data class AuthChainRegistration(
         val name: String,
