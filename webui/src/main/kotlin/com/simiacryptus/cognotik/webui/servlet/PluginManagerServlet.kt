@@ -15,6 +15,8 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /*
@@ -37,6 +39,11 @@ class PluginManagerServlet(
   /** Subscription IDs for event router cleanup */
   private val eventSubscriptionIds = mutableListOf<String>()
 
+  /**
+   * Maps handler IDs (used in callback URLs) to their corresponding session IDs.
+   * This allows the callback endpoint to resolve which session a callback belongs to.
+   */
+  private val handlerToSessionMap = ConcurrentHashMap<String, ConcurrentHashMap<String, (AuthorizationChain.AuthorizationSession)->String>>()
 
   init {
     pluginDirectory.mkdirs()
@@ -62,7 +69,8 @@ class PluginManagerServlet(
         } else {
           log.warn(
             "Received auth chain registration for '{}' but payload is not an AuthorizationChain: {}",
-            data.name, chain?.javaClass?.name
+            data.name,
+            chain?.javaClass?.name
           )
         }
       } else {
@@ -104,6 +112,7 @@ class PluginManagerServlet(
     val pm = ApplicationServices.pluginManager
     eventSubscriptionIds.forEach { pm.unsubscribe(it) }
     eventSubscriptionIds.clear()
+    handlerToSessionMap.clear()
     log.info("PluginManagerServlet destroyed, event subscriptions cleaned up")
     super.destroy()
   }
@@ -119,9 +128,7 @@ class PluginManagerServlet(
     val user = authenticate(request, response) ?: return
     log.debug("Authenticated user: {}", user)
     if (!ApplicationServices.authorizationManager.isAuthorized(
-        PluginManagerServlet::class.java,
-        user,
-        OperationType.Admin
+        PluginManagerServlet::class.java, user, OperationType.Admin
       )
     ) {
       log.warn("Unauthorized access attempt by user: {} from IP: {}", user, request.remoteAddr)
@@ -144,10 +151,7 @@ class PluginManagerServlet(
           val isLoaded = ApplicationServices.pluginManager.isLoaded(f)
           log.trace("JAR file: {} (size: {} bytes, loaded: {})", f.name, f.length(), isLoaded)
           mapOf(
-            "name" to f.name,
-            "path" to f.canonicalPath,
-            "size" to f.length(),
-            "loaded" to isLoaded
+            "name" to f.name, "path" to f.canonicalPath, "size" to f.length(), "loaded" to isLoaded
           )
         }
         response.writer.write(JsonUtil.toJson(available))
@@ -184,14 +188,11 @@ class PluginManagerServlet(
         val pluginData = loadedPlugins.map { (jarPath, plugins) ->
           log.trace("Loaded JAR: {} with {} plugins", jarPath, plugins.size)
           mapOf(
-            "jar" to jarPath,
-            "plugins" to plugins.map { plugin ->
+            "jar" to jarPath, "plugins" to plugins.map { plugin ->
               mapOf(
-                "name" to plugin.pluginName,
-                "class" to plugin.javaClass.name
+                "name" to plugin.pluginName, "class" to plugin.javaClass.name
               )
-            }
-          )
+            })
         }
         response.writer.write(JsonUtil.toJson(pluginData))
         log.info("Successfully returned list of {} loaded plugin JARs", loadedPlugins.size)
@@ -216,9 +217,7 @@ class PluginManagerServlet(
     val user = authenticate(request, response) ?: return
     log.debug("Authenticated user for POST: {}", user)
     if (!ApplicationServices.authorizationManager.isAuthorized(
-        PluginManagerServlet::class.java,
-        user,
-        OperationType.Admin
+        PluginManagerServlet::class.java, user, OperationType.Admin
       )
     ) {
       log.warn("Unauthorized POST access attempt by user: {} from IP: {}", user, request.remoteAddr)
@@ -284,8 +283,7 @@ class PluginManagerServlet(
     val chains = authorizationChains.keys.map { name ->
       val hasPending = PendingAuthorization.getAll().values.any {
         it.pluginName == name || it.pluginName.contains(
-          name,
-          ignoreCase = true
+          name, ignoreCase = true
         )
       }
       mapOf("name" to name, "hasPendingAuth" to hasPending)
@@ -299,9 +297,7 @@ class PluginManagerServlet(
     response.status = HttpServletResponse.SC_OK
     val pending = PendingAuthorization.getAll().map { (id, auth) ->
       mapOf(
-        "id" to id,
-        "pluginName" to auth.pluginName,
-        "status" to auth.status.name
+        "id" to id, "pluginName" to auth.pluginName, "status" to auth.status.name
       )
     }
     response.writer.write(JsonUtil.toJson(pending))
@@ -333,9 +329,7 @@ class PluginManagerServlet(
       response.writer.write(
         JsonUtil.toJson(
           mapOf(
-            "success" to true,
-            "status" to "completed",
-            "message" to "Authorization completed (no interactive steps)"
+            "success" to true, "status" to "completed", "message" to "Authorization completed (no interactive steps)"
           )
         )
       )
@@ -379,9 +373,7 @@ class PluginManagerServlet(
       response.writer.write(
         JsonUtil.toJson(
           mapOf(
-            "success" to true,
-            "status" to "completed",
-            "message" to "No authorization steps required"
+            "success" to true, "status" to "completed", "message" to "No authorization steps required"
           )
         )
       )
@@ -479,6 +471,8 @@ class PluginManagerServlet(
         )
       )
       AuthorizationChain.removeSession(sessionId)
+      // Clean up any remaining handler mappings for this session
+      handlerToSessionMap.remove(sessionId)
       return
     }
     val step = session.currentStep
@@ -497,8 +491,12 @@ class PluginManagerServlet(
       )
       return
     }
-    val callbackUrl = "/pluginManager"
-    val stepHtml = step.renderHtml(callbackUrl, sessionId)
+    val stepHtml = step.renderHtml(sessionId) { handler ->
+      val handlerId = UUID.randomUUID().toString()
+      handlerToSessionMap.computeIfAbsent(sessionId) { ConcurrentHashMap() }[handlerId] = handler
+      log.debug("Registered callback handler {} for session {}", handlerId, sessionId)
+      "/pluginManager?action=authCallback&sessionId=$sessionId&handlerId=$handlerId"
+    }
     val progressHtml = """
        <div style="margin-bottom:1em;color:#666;font-size:0.9em;">
          Step ${session.currentStepIndex + 1} of ${session.totalSteps}
@@ -546,53 +544,35 @@ class PluginManagerServlet(
 
   private fun handleAuthCallback(request: HttpServletRequest, response: HttpServletResponse) {
     val sessionId = request.getParameter("sessionId")
-    log.info("handleAuthCallback called - sessionId: {}", sessionId)
-    if (sessionId.isNullOrBlank()) {
+    val handlerId = request.getParameter("handlerId")
+    if (handlerId.isNullOrBlank()) {
+      log.warn("handleAuthCallback: Missing 'handlerId' parameter")
       response.status = HttpServletResponse.SC_BAD_REQUEST
       response.contentType = "application/json"
-      response.writer.write("""{"error":"Missing 'sessionId' parameter"}""")
+      response.writer.write("""{"error":"Missing 'handlerId' parameter. Callbacks must use a registered handler."}""")
       return
     }
-    val session = AuthorizationChain.getSession(sessionId)
-    if (session == null) {
+    if (sessionId == null) {
+      log.warn("handleAuthCallback: No session found for handlerId {}", handlerId)
       response.status = HttpServletResponse.SC_NOT_FOUND
       response.contentType = "application/json"
-      response.writer.write("""{"error":"Session not found or expired: $sessionId"}""")
+      response.writer.write("""{"error":"Unknown or expired callback handler: $handlerId"}""")
       return
     }
+    log.info("handleAuthCallback called - handlerId: {}, resolved sessionId: {}", handlerId, sessionId)
+    val session: AuthorizationChain.AuthorizationSession = AuthorizationChain.getSession(sessionId)!!
+    // Clean up the handler mapping now that it's been used
+    handlerToSessionMap.remove(handlerId)
+    log.debug("Removed callback handler mapping for handlerId {}", handlerId)
     // Collect all parameters into a map
     val parameters = mutableMapOf<String, String>()
     request.parameterMap.forEach { (key, values) ->
-      if (values.isNotEmpty() && key !in INTERNAL_PARAMS) parameters[key] = values[0]
+      if (values.isNotEmpty() && key !in INTERNAL_PARAMS && key != "handlerId") parameters[key] = values[0]
     }
-    val result = session.chain.handleWebCallback(sessionId, parameters)
-    if (result == null) {
-      response.status = HttpServletResponse.SC_NOT_FOUND
-      response.contentType = "application/json"
-      response.writer.write("""{"error":"Session not found"}""")
-      return
-    }
-    when (result) {
-      is CallbackResult.Success -> {
-        // Redirect to the next step or completion page
-        response.sendRedirect("/pluginManager?action=authStep&sessionId=$sessionId")
-      }
-
-      is CallbackResult.Failure -> {
-        // Show failure and redirect to step page which will show completion status
-        response.sendRedirect("/pluginManager?action=authStep&sessionId=$sessionId")
-      }
-
-      is CallbackResult.Redirect -> {
-        response.sendRedirect(result.url)
-      }
-
-      is CallbackResult.RenderHtml -> {
-        response.contentType = "text/html"
-        response.status = HttpServletResponse.SC_OK
-        response.writer.write(renderAuthPageWrapper(result.html))
-      }
-    }
+    val resp = handlerToSessionMap[sessionId]?.get(handlerId)?.let { it(session) }
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
+    response.writer.write(renderAuthPageWrapper(""))
   }
 
   private fun renderAuthPageWrapper(bodyContent: String): String = """
@@ -678,14 +658,11 @@ class PluginManagerServlet(
       response.status = HttpServletResponse.SC_OK
       response.writer.write(
         JsonUtil.toJson(
-          mapOf(
-            "success" to true,
-            "jar" to jarFile.canonicalPath,
-            "pluginsLoaded" to plugins.size,
-            "plugins" to plugins.map { it.pluginName }
-          )
-        )
-      )
+        mapOf(
+        "success" to true,
+        "jar" to jarFile.canonicalPath,
+        "pluginsLoaded" to plugins.size,
+        "plugins" to plugins.map { it.pluginName })))
     } catch (e: IllegalStateException) {
       log.warn("Plugin already loaded: {}", jarPath)
       response.status = HttpServletResponse.SC_CONFLICT
@@ -723,8 +700,7 @@ class PluginManagerServlet(
       response.writer.write(
         JsonUtil.toJson(
           mapOf(
-            "success" to true,
-            "jar" to jarFile.canonicalPath
+            "success" to true, "jar" to jarFile.canonicalPath
           )
         )
       )
@@ -757,10 +733,7 @@ class PluginManagerServlet(
 
     val submittedFileName = part.submittedFileName ?: "plugin.jar"
     log.debug(
-      "Uploaded file name: {}, size: {} bytes, content type: {}",
-      submittedFileName,
-      part.size,
-      part.contentType
+      "Uploaded file name: {}, size: {} bytes, content type: {}", submittedFileName, part.size, part.contentType
     )
     if (!submittedFileName.endsWith(".jar")) {
       log.warn("handleUpload: Uploaded file is not a JAR: {}", submittedFileName)
@@ -775,7 +748,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       part.inputStream.use { input ->
-        Files.copy(input, destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        Files.copy(input, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
       }
       log.info("Plugin JAR uploaded successfully: {} ({} bytes)", destFile.canonicalPath, destFile.length())
       val autoLoad = request.getParameter("autoLoad")?.equals("true", ignoreCase = true) ?: false
@@ -792,25 +765,19 @@ class PluginManagerServlet(
         response.writer.write(
           JsonUtil.toJson(
             mapOf(
-              "success" to true,
-              "file" to destFile.name,
-              "path" to destFile.canonicalPath,
-              "autoLoaded" to true,
-              "pluginsLoaded" to plugins.size,
-              "plugins" to plugins.map { it.pluginName }
-            )
-          )
-        )
+          "success" to true,
+          "file" to destFile.name,
+          "path" to destFile.canonicalPath,
+          "autoLoaded" to true,
+          "pluginsLoaded" to plugins.size,
+          "plugins" to plugins.map { it.pluginName })))
       } else {
         log.info("Plugin JAR uploaded without auto-load: {}", destFile.canonicalPath)
         response.status = HttpServletResponse.SC_OK
         response.writer.write(
           JsonUtil.toJson(
             mapOf(
-              "success" to true,
-              "file" to destFile.name,
-              "path" to destFile.canonicalPath,
-              "autoLoaded" to false
+              "success" to true, "file" to destFile.name, "path" to destFile.canonicalPath, "autoLoaded" to false
             )
           )
         )
@@ -844,10 +811,7 @@ class PluginManagerServlet(
           plugins.size,
           plugins.map { it.pluginName })
         mapOf(
-          "jar" to file.canonicalPath,
-          "pluginsLoaded" to plugins.size,
-          "plugins" to plugins.map { it.pluginName }
-        )
+          "jar" to file.canonicalPath, "pluginsLoaded" to plugins.size, "plugins" to plugins.map { it.pluginName })
       }
       response.status = HttpServletResponse.SC_OK
       response.writer.write(
@@ -891,8 +855,7 @@ class PluginManagerServlet(
       response.writer.write(
         JsonUtil.toJson(
           mapOf(
-            "success" to true,
-            "jar" to jarFile.canonicalPath
+            "success" to true, "jar" to jarFile.canonicalPath
           )
         )
       )
@@ -1326,11 +1289,7 @@ class PluginManagerServlet(
      */
     private fun jsonEscape(value: String?): String {
       if (value == null) return ""
-      return value
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
+      return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
         .replace("\t", "\\t")
     }
   }
