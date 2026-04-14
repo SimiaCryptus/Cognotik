@@ -138,6 +138,7 @@
              <button class="tab-button" data-plugin-tab="available-jars">Available JARs</button>
              <button class="tab-button" data-plugin-tab="upload-plugin">Upload Plugin</button>
              <button class="tab-button" data-plugin-tab="load-by-path">Load by Path</button>
+         <button class="tab-button" data-plugin-tab="auth-chains">Authorization</button>
          </div>
          <!-- Loaded Plugins Tab -->
          <div class="tab-content active" id="loaded-plugins-tab">
@@ -192,6 +193,22 @@
              </div>
              <div class="button-group" style="justify-content:flex-end;">
                  <button class="button" id="load-plugin-by-path-btn">Load Plugin</button>
+             </div>
+         </div>
+         <!-- Authorization Chains Tab -->
+         <div class="tab-content" id="auth-chains-tab">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                 <p style="margin:0; color:#666;">Manage plugin authorization flows (e.g., OAuth, API key setup).</p>
+                 <button class="button secondary" id="refresh-auth-chains">↻ Refresh</button>
+             </div>
+             <div id="auth-chains-content"><em>Loading…</em></div>
+             <div id="auth-status-panel" style="display:none; margin-top:16px; padding:14px; border:1px solid #ddd; border-radius:6px; background:#f8f9fa;">
+                 <h4 style="margin-top:0;">Authorization Progress</h4>
+                 <div id="auth-progress-bar" style="background:#e9ecef; border-radius:4px; height:8px; margin-bottom:8px;">
+                     <div id="auth-progress-fill" style="background:#007bff; border-radius:4px; height:8px; width:0%; transition:width 0.3s;"></div>
+                 </div>
+                 <p id="auth-status-text" style="margin:0; color:#666; font-size:0.9em;"></p>
+                 <div id="auth-action-area" style="margin-top:12px;"></div>
              </div>
          </div>
      </div>

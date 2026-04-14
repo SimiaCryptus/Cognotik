@@ -2,6 +2,8 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.plugins.AuthorizationChain
+import com.simiacryptus.cognotik.plugins.CallbackResult
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.annotation.MultipartConfig
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.ConcurrentHashMap
 
 /*
 *  /pluginManager
@@ -23,12 +26,37 @@ class PluginManagerServlet(
 ) : HttpServlet() {
   private val pluginDirectory: File = File("./plugins")
 
+  /**
+   * Registry of named authorization chains that plugins can register.
+   * Key is a chain name/ID, value is the chain.
+   */
+  private val authorizationChains = ConcurrentHashMap<String, AuthorizationChain>()
+
   init {
     pluginDirectory.mkdirs()
     log.info("PluginManagerServlet initialized with plugin directory: {}", pluginDirectory.canonicalPath)
     // Ensure temp directory for multipart uploads exists
     File(System.getProperty("java.io.tmpdir")).mkdirs()
     log.debug("Temp directory for multipart uploads: {}", System.getProperty("java.io.tmpdir"))
+  }
+
+  /**
+   * Register an authorization chain that can be triggered via the web UI.
+   *
+   * @param name A unique name for this chain
+   * @param chain The authorization chain
+   */
+  fun registerAuthorizationChain(name: String, chain: AuthorizationChain) {
+    authorizationChains[name] = chain
+    log.info("Registered authorization chain: {}", name)
+  }
+
+  /**
+   * Remove a registered authorization chain.
+   */
+  fun unregisterAuthorizationChain(name: String) {
+    authorizationChains.remove(name)
+    log.info("Unregistered authorization chain: {}", name)
   }
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -97,6 +125,23 @@ class PluginManagerServlet(
         response.writer.write(JsonUtil.toJson(available))
         log.info("Successfully scanned directory, found {} JAR files", jarFiles.size)
       }
+      action == "authStatus" -> {
+        handleAuthStatus(request, response)
+      }
+
+      action == "authStep" -> {
+        handleAuthStepGet(request, response)
+      }
+
+      action == "authChains" -> {
+        handleListAuthChains(response)
+      }
+
+      action == "authCallback" -> {
+        // Support GET-based callbacks (e.g., OAuth redirects)
+        handleAuthCallback(request, response)
+      }
+
 
       else -> {
         log.info("Serving Plugin Manager HTML page")
@@ -167,6 +212,8 @@ class PluginManagerServlet(
       "upload" -> handleUpload(request, response)
       "loadDirectory" -> handleLoadDirectory(request, response)
       "delete" -> handleDelete(request, response)
+      "startAuth" -> handleStartAuth(request, response)
+      "authCallback" -> handleAuthCallback(request, response)
       else -> {
         log.warn("Unknown POST action received: '{}'", action)
         response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -174,6 +221,267 @@ class PluginManagerServlet(
       }
     }
   }
+
+  private fun handleListAuthChains(response: HttpServletResponse) {
+    log.info("Listing registered authorization chains")
+    response.contentType = "application/json"
+    response.status = HttpServletResponse.SC_OK
+    val chains = authorizationChains.keys.map { name ->
+      mapOf("name" to name)
+    }
+    response.writer.write(JsonUtil.toJson(chains))
+  }
+
+  private fun handleStartAuth(request: HttpServletRequest, response: HttpServletResponse) {
+    val chainName = request.getParameter("chain")
+    log.info("handleStartAuth called - chain: {}", chainName)
+    if (chainName.isNullOrBlank()) {
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("""{"error":"Missing 'chain' parameter"}""")
+      return
+    }
+    val chain = authorizationChains[chainName]
+    if (chain == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.writer.write("""{"error":"Authorization chain not found: $chainName"}""")
+      return
+    }
+    val session = chain.startWebFlow()
+    if (session == null) {
+      response.status = HttpServletResponse.SC_OK
+      response.writer.write(
+        JsonUtil.toJson(
+          mapOf(
+            "success" to true,
+            "status" to "completed",
+            "message" to "No authorization steps required"
+          )
+        )
+      )
+      return
+    }
+    response.contentType = "application/json"
+    response.status = HttpServletResponse.SC_OK
+    if (session.isComplete) {
+      response.writer.write(
+        JsonUtil.toJson(
+          mapOf(
+            "success" to (session.status == AuthorizationChain.SessionStatus.COMPLETED),
+            "sessionId" to session.sessionId,
+            "status" to session.status.name,
+            "failureReason" to session.failureReason
+          )
+        )
+      )
+    } else {
+      response.writer.write(
+        JsonUtil.toJson(
+          mapOf(
+            "success" to true,
+            "sessionId" to session.sessionId,
+            "status" to "IN_PROGRESS",
+            "currentStep" to (session.currentStepIndex + 1),
+            "totalSteps" to session.totalSteps
+          )
+        )
+      )
+    }
+  }
+
+  private fun handleAuthStepGet(request: HttpServletRequest, response: HttpServletResponse) {
+    val sessionId = request.getParameter("sessionId")
+    log.info("handleAuthStepGet called - sessionId: {}", sessionId)
+    if (sessionId.isNullOrBlank()) {
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Missing 'sessionId' parameter"}""")
+      return
+    }
+    val session = AuthorizationChain.getSession(sessionId)
+    if (session == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Session not found: $sessionId"}""")
+      return
+    }
+    if (session.isComplete) {
+      response.contentType = "text/html"
+      response.status = HttpServletResponse.SC_OK
+      val statusClass = if (session.status == AuthorizationChain.SessionStatus.COMPLETED) "msg-success" else "msg-error"
+      val statusMsg = if (session.status == AuthorizationChain.SessionStatus.COMPLETED) {
+        "✅ Authorization completed successfully!"
+      } else {
+        "❌ Authorization failed: ${session.failureReason ?: "Unknown reason"}"
+      }
+      response.writer.write(
+        renderAuthPageWrapper(
+          """
+         <div class="$statusClass" style="padding:1em;border-radius:4px;margin:1em 0;">
+           <h3>$statusMsg</h3>
+           <p><a href="/pluginManager">Return to Plugin Manager</a></p>
+         </div>
+       """.trimIndent()
+        )
+      )
+      AuthorizationChain.removeSession(sessionId)
+      return
+    }
+    val step = session.currentStep
+    if (step == null) {
+      response.contentType = "text/html"
+      response.status = HttpServletResponse.SC_OK
+      response.writer.write(
+        renderAuthPageWrapper(
+          """
+         <div class="msg-success" style="padding:1em;border-radius:4px;margin:1em 0;">
+           <h3>✅ All authorization steps completed!</h3>
+           <p><a href="/pluginManager">Return to Plugin Manager</a></p>
+         </div>
+       """.trimIndent()
+        )
+      )
+      return
+    }
+    val callbackUrl = "/pluginManager"
+    val stepHtml = step.renderHtml(callbackUrl, sessionId)
+    val progressHtml = """
+       <div style="margin-bottom:1em;color:#666;font-size:0.9em;">
+         Step ${session.currentStepIndex + 1} of ${session.totalSteps}
+         <div style="background:#e9ecef;border-radius:4px;height:8px;margin-top:0.3em;">
+           <div style="background:#007bff;border-radius:4px;height:8px;width:${((session.currentStepIndex + 1) * 100) / session.totalSteps}%;"></div>
+         </div>
+       </div>
+     """.trimIndent()
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
+    response.writer.write(renderAuthPageWrapper(progressHtml + stepHtml))
+  }
+
+  private fun handleAuthStatus(request: HttpServletRequest, response: HttpServletResponse) {
+    val sessionId = request.getParameter("sessionId")
+    log.info("handleAuthStatus called - sessionId: {}", sessionId)
+    if (sessionId.isNullOrBlank()) {
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Missing 'sessionId' parameter"}""")
+      return
+    }
+    val session = AuthorizationChain.getSession(sessionId)
+    if (session == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Session not found or expired: $sessionId"}""")
+      return
+    }
+    response.contentType = "application/json"
+    response.status = HttpServletResponse.SC_OK
+    response.writer.write(
+      JsonUtil.toJson(
+        mapOf(
+          "sessionId" to session.sessionId,
+          "status" to session.status.name,
+          "currentStep" to (session.currentStepIndex + 1),
+          "totalSteps" to session.totalSteps,
+          "isComplete" to session.isComplete,
+          "failureReason" to session.failureReason
+        )
+      )
+    )
+  }
+
+  private fun handleAuthCallback(request: HttpServletRequest, response: HttpServletResponse) {
+    val sessionId = request.getParameter("sessionId")
+    log.info("handleAuthCallback called - sessionId: {}", sessionId)
+    if (sessionId.isNullOrBlank()) {
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Missing 'sessionId' parameter"}""")
+      return
+    }
+    val session = AuthorizationChain.getSession(sessionId)
+    if (session == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Session not found or expired: $sessionId"}""")
+      return
+    }
+    // Collect all parameters into a map
+    val parameters = mutableMapOf<String, String>()
+    request.parameterMap.forEach { (key, values) ->
+      if (values.isNotEmpty()) parameters[key] = values[0]
+    }
+    val result = session.chain.handleWebCallback(sessionId, parameters)
+    if (result == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Session not found"}""")
+      return
+    }
+    when (result) {
+      is CallbackResult.Success -> {
+        // Redirect to the next step or completion page
+        response.sendRedirect("/pluginManager?action=authStep&sessionId=$sessionId")
+      }
+
+      is CallbackResult.Failure -> {
+        // Show failure and redirect to step page which will show completion status
+        response.sendRedirect("/pluginManager?action=authStep&sessionId=$sessionId")
+      }
+
+      is CallbackResult.Redirect -> {
+        response.sendRedirect(result.url)
+      }
+
+      is CallbackResult.RenderHtml -> {
+        response.contentType = "text/html"
+        response.status = HttpServletResponse.SC_OK
+        response.writer.write(renderAuthPageWrapper(result.html))
+      }
+    }
+  }
+
+  private fun renderAuthPageWrapper(bodyContent: String): String = """
+     <!DOCTYPE html>
+     <html lang="en">
+     <head>
+         <meta charset="UTF-8"/>
+         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+         <title>Plugin Authorization</title>
+         <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+         <style>
+             body { font-family: Arial, sans-serif; margin: 2em; background: #f5f5f5; color: #333; }
+             h1 { color: #444; }
+             h3 { color: #555; }
+             .card { background: #fff; border-radius: 6px; padding: 1.5em; margin-bottom: 1.5em;
+                     box-shadow: 0 1px 4px rgba(0,0,0,0.1); max-width: 700px; margin-left: auto; margin-right: auto; }
+             .btn-primary { padding: 0.4em 1em; border: none; border-radius: 4px; cursor: pointer;
+                 font-size: 0.9em; background: #007bff; color: #fff; }
+             .btn-primary:hover { background: #0056b3; }
+             .btn-danger { padding: 0.4em 1em; border: none; border-radius: 4px; cursor: pointer;
+                 font-size: 0.9em; background: #dc3545; color: #fff; }
+             .btn-danger:hover { background: #a71d2a; }
+             .btn-success { padding: 0.4em 1em; border: none; border-radius: 4px; cursor: pointer;
+                 font-size: 0.9em; background: #28a745; color: #fff; }
+             .btn-success:hover { background: #1e7e34; }
+             .btn-secondary { padding: 0.4em 1em; border: none; border-radius: 4px; cursor: pointer;
+                 font-size: 0.9em; background: #6c757d; color: #fff; }
+             .btn-secondary:hover { background: #545b62; }
+             .msg-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+             .msg-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+             .msg-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+             a { color: #007bff; }
+             a:hover { color: #0056b3; }
+         </style>
+     </head>
+     <body>
+         <div class="card">
+             <h1>🔐 Plugin Authorization</h1>
+             $bodyContent
+         </div>
+     </body>
+     </html>
+   """.trimIndent()
+
 
   private fun handleLoad(request: HttpServletRequest, response: HttpServletResponse) {
     val jarPath = request.getParameter("jar")
@@ -494,6 +802,14 @@ class PluginManagerServlet(
             <h1>🔌 Plugin Manager</h1>
 
             <div id="message"></div>
+             <!-- Authorization Chains -->
+             <div class="card">
+                 <h2>Authorization Chains
+                     <button class="btn-secondary" style="float:right;font-size:0.8em" onclick="refreshAuthChains()">↻ Refresh</button>
+                 </h2>
+                 <div id="authChains"><em>Loading…</em></div>
+             </div>
+
 
             <!-- Loaded Plugins -->
             <div class="card">
@@ -724,9 +1040,58 @@ class PluginManagerServlet(
                         .replace(/>/g, '&gt;')
                         .replace(/"/g, '&quot;');
                 }
+                 function refreshAuthChains() {
+                     fetch('/pluginManager?action=authChains', { headers: { 'Accept': 'application/json' } })
+                         .then(r => r.json())
+                         .then(data => {
+                             const container = document.getElementById('authChains');
+                             if (!data || data.length === 0) {
+                                 container.innerHTML = '<em>No authorization chains registered.</em>';
+                                 return;
+                             }
+                             let html = '<table><thead><tr><th>Chain Name</th><th>Actions</th></tr></thead><tbody>';
+                             data.forEach(entry => {
+                                 html += '<tr>'
+                                     + '<td><code>' + escHtml(entry.name) + '</code></td>'
+                                     + '<td><button class="btn-primary" onclick="startAuthChain(' + JSON.stringify(entry.name) + ')">Start Authorization</button></td>'
+                                     + '</tr>';
+                             });
+                             html += '</tbody></table>';
+                             container.innerHTML = html;
+                         })
+                         .catch(e => {
+                             document.getElementById('authChains').innerHTML = '<em>Error loading authorization chains.</em>';
+                             showMessage('Error fetching authorization chains: ' + e, 'error');
+                         });
+                 }
+                 function startAuthChain(chainName) {
+                     fetch('/pluginManager', {
+                         method: 'POST',
+                         body: new URLSearchParams({ action: 'startAuth', chain: chainName })
+                     })
+                         .then(r => r.json())
+                         .then(data => {
+                             if (data.success && data.sessionId && data.status === 'IN_PROGRESS') {
+                                 // Redirect to the interactive authorization step page
+                                 window.location.href = '/pluginManager?action=authStep&sessionId=' + encodeURIComponent(data.sessionId);
+                             } else if (data.success && data.status === 'completed') {
+                                 showMessage('Authorization completed: ' + (data.message || 'No steps required'), 'success');
+                             } else if (data.success && data.status === 'COMPLETED') {
+                                 showMessage('Authorization completed successfully!', 'success');
+                             } else if (data.status === 'FAILED') {
+                                 showMessage('Authorization failed: ' + (data.failureReason || 'Unknown reason'), 'error');
+                             } else {
+                                 showMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+                             }
+                         })
+                         .catch(e => showMessage('Request failed: ' + e, 'error'));
+                 }
+
 
                 // Initial load
                 refreshLoaded();
+                 refreshAuthChains();
+                 refreshAuthChains();
             </script>
         </body>
         </html>
