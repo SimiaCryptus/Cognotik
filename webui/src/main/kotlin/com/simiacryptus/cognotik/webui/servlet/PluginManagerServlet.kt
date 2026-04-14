@@ -537,7 +537,13 @@ class PluginManagerServlet(
       return
     }
     log.info("handleAuthCallback called - handlerId: {}, resolved sessionId: {}", handlerId, sessionId)
-    val session: AuthorizationChain.AuthorizationSession = AuthorizationChain.getSession(sessionId)!!
+    val session: AuthorizationChain.AuthorizationSession = AuthorizationChain.getSession(sessionId) ?: run {
+      log.warn("handleAuthCallback: No session found for sessionId {} (handlerId {})", sessionId, handlerId)
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Session not found or expired for handler: $handlerId"}""")
+      return
+    }
     // Clean up the handler mapping now that it's been used
     handlerToSessionMap.remove(handlerId)
     log.debug("Removed callback handler mapping for handlerId {}", handlerId)
