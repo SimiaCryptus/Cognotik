@@ -33,8 +33,9 @@ class PluginManagerServlet(
    * Key is a chain name/ID, value is the chain.
    */
   private val authorizationChains = ConcurrentHashMap<String, AuthorizationChain>()
-   /** Subscription IDs for event router cleanup */
-   private val eventSubscriptionIds = mutableListOf<String>()
+
+  /** Subscription IDs for event router cleanup */
+  private val eventSubscriptionIds = mutableListOf<String>()
 
 
   init {
@@ -43,39 +44,40 @@ class PluginManagerServlet(
     // Ensure temp directory for multipart uploads exists
     File(System.getProperty("java.io.tmpdir")).mkdirs()
     log.debug("Temp directory for multipart uploads: {}", System.getProperty("java.io.tmpdir"))
-     // Subscribe to auth chain registration events from plugins via the event router
-     subscribeToPluginEvents()
+    // Subscribe to auth chain registration events from plugins via the event router
+    subscribeToPluginEvents()
   }
-   /**
-    * Subscribe to well-known plugin events so plugins can register auth chains
-    * without depending on this servlet.
-    */
-   private fun subscribeToPluginEvents() {
-     val pm = ApplicationServices.pluginManager
-     eventSubscriptionIds += pm.subscribe(PluginEvents.REGISTER_AUTH_CHAIN) { data ->
-       if (data is PluginEvents.AuthChainRegistration) {
-         val chain = data.chain
-         if (chain is AuthorizationChain) {
-           registerAuthorizationChain(data.name, chain)
-         } else {
-           log.warn(
-             "Received auth chain registration for '{}' but payload is not an AuthorizationChain: {}",
-             data.name, chain?.javaClass?.name
-           )
-         }
-       } else {
-         log.warn("Received unexpected payload on {}: {}", PluginEvents.REGISTER_AUTH_CHAIN, data)
-       }
-     }
-     eventSubscriptionIds += pm.subscribe(PluginEvents.UNREGISTER_AUTH_CHAIN) { data ->
-       if (data is String) {
-         unregisterAuthorizationChain(data)
-       } else {
-         log.warn("Received unexpected payload on {}: {}", PluginEvents.UNREGISTER_AUTH_CHAIN, data)
-       }
-     }
-     log.info("Subscribed to plugin event router for auth chain management")
-   }
+
+  /**
+   * Subscribe to well-known plugin events so plugins can register auth chains
+   * without depending on this servlet.
+   */
+  private fun subscribeToPluginEvents() {
+    val pm = ApplicationServices.pluginManager
+    eventSubscriptionIds += pm.subscribe(PluginEvents.REGISTER_AUTH_CHAIN) { data ->
+      if (data is PluginEvents.AuthChainRegistration) {
+        val chain = data.chain
+        if (chain is AuthorizationChain) {
+          registerAuthorizationChain(data.name, chain)
+        } else {
+          log.warn(
+            "Received auth chain registration for '{}' but payload is not an AuthorizationChain: {}",
+            data.name, chain?.javaClass?.name
+          )
+        }
+      } else {
+        log.warn("Received unexpected payload on {}: {}", PluginEvents.REGISTER_AUTH_CHAIN, data)
+      }
+    }
+    eventSubscriptionIds += pm.subscribe(PluginEvents.UNREGISTER_AUTH_CHAIN) { data ->
+      if (data is String) {
+        unregisterAuthorizationChain(data)
+      } else {
+        log.warn("Received unexpected payload on {}: {}", PluginEvents.UNREGISTER_AUTH_CHAIN, data)
+      }
+    }
+    log.info("Subscribed to plugin event router for auth chain management")
+  }
 
 
   /**
@@ -96,14 +98,15 @@ class PluginManagerServlet(
     authorizationChains.remove(name)
     log.info("Unregistered authorization chain: {}", name)
   }
-   override fun destroy() {
-     // Clean up event subscriptions when servlet is destroyed
-     val pm = ApplicationServices.pluginManager
-     eventSubscriptionIds.forEach { pm.unsubscribe(it) }
-     eventSubscriptionIds.clear()
-     log.info("PluginManagerServlet destroyed, event subscriptions cleaned up")
-     super.destroy()
-   }
+
+  override fun destroy() {
+    // Clean up event subscriptions when servlet is destroyed
+    val pm = ApplicationServices.pluginManager
+    eventSubscriptionIds.forEach { pm.unsubscribe(it) }
+    eventSubscriptionIds.clear()
+    log.info("PluginManagerServlet destroyed, event subscriptions cleaned up")
+    super.destroy()
+  }
 
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -131,6 +134,47 @@ class PluginManagerServlet(
     log.debug("GET action: {}, Accept header: {}", action, acceptHeader)
 
     when {
+      action == "scan" -> {
+        log.info("Scanning plugin directory: {}", pluginDirectory.canonicalPath)
+        response.contentType = "application/json"
+        response.status = HttpServletResponse.SC_OK
+        val jarFiles = pluginDirectory.listFiles { f -> f.name.endsWith(".jar") } ?: emptyArray()
+        log.debug("Found {} JAR files in plugin directory", jarFiles.size)
+        val available = jarFiles.map { f ->
+          val isLoaded = ApplicationServices.pluginManager.isLoaded(f)
+          log.trace("JAR file: {} (size: {} bytes, loaded: {})", f.name, f.length(), isLoaded)
+          mapOf(
+            "name" to f.name,
+            "path" to f.canonicalPath,
+            "size" to f.length(),
+            "loaded" to isLoaded
+          )
+        }
+        response.writer.write(JsonUtil.toJson(available))
+        log.info("Successfully scanned directory, found {} JAR files", jarFiles.size)
+      }
+
+      action == "authStatus" -> {
+        handleAuthStatus(request, response)
+      }
+
+      action == "authStep" -> {
+        handleAuthStepGet(request, response)
+      }
+
+      action == "authChains" -> {
+        handleListAuthChains(response)
+      }
+
+      action == "authCallback" -> {
+        // Support GET-based callbacks (e.g., OAuth redirects)
+        handleAuthCallback(request, response)
+      }
+
+      action == "pendingAuths" -> {
+        handleListPendingAuths(response)
+      }
+
       action == "list" || acceptHeader.contains("application/json") -> {
         log.info("Listing loaded plugins")
         response.contentType = "application/json"
@@ -152,46 +196,6 @@ class PluginManagerServlet(
         response.writer.write(JsonUtil.toJson(pluginData))
         log.info("Successfully returned list of {} loaded plugin JARs", loadedPlugins.size)
       }
-
-      action == "scan" -> {
-        log.info("Scanning plugin directory: {}", pluginDirectory.canonicalPath)
-        response.contentType = "application/json"
-        response.status = HttpServletResponse.SC_OK
-        val jarFiles = pluginDirectory.listFiles { f -> f.name.endsWith(".jar") } ?: emptyArray()
-        log.debug("Found {} JAR files in plugin directory", jarFiles.size)
-        val available = jarFiles.map { f ->
-          val isLoaded = ApplicationServices.pluginManager.isLoaded(f)
-          log.trace("JAR file: {} (size: {} bytes, loaded: {})", f.name, f.length(), isLoaded)
-          mapOf(
-            "name" to f.name,
-            "path" to f.canonicalPath,
-            "size" to f.length(),
-            "loaded" to isLoaded
-          )
-        }
-        response.writer.write(JsonUtil.toJson(available))
-        log.info("Successfully scanned directory, found {} JAR files", jarFiles.size)
-      }
-      action == "authStatus" -> {
-        handleAuthStatus(request, response)
-      }
-
-      action == "authStep" -> {
-        handleAuthStepGet(request, response)
-      }
-
-      action == "authChains" -> {
-        handleListAuthChains(response)
-      }
-
-      action == "authCallback" -> {
-        // Support GET-based callbacks (e.g., OAuth redirects)
-        handleAuthCallback(request, response)
-      }
-     action == "pendingAuths" -> {
-       handleListPendingAuths(response)
-     }
-
 
       else -> {
         log.info("Serving Plugin Manager HTML page")
@@ -264,7 +268,7 @@ class PluginManagerServlet(
       "delete" -> handleDelete(request, response)
       "startAuth" -> handleStartAuth(request, response)
       "authCallback" -> handleAuthCallback(request, response)
-     "executePendingAuth" -> handleExecutePendingAuth(request, response)
+      "executePendingAuth" -> handleExecutePendingAuth(request, response)
       else -> {
         log.warn("Unknown POST action received: '{}'", action)
         response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -278,77 +282,82 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     response.status = HttpServletResponse.SC_OK
     val chains = authorizationChains.keys.map { name ->
-       val hasPending = PendingAuthorization.getAll().values.any { it.pluginName == name || it.pluginName.contains(name, ignoreCase = true) }
-       mapOf("name" to name, "hasPendingAuth" to hasPending)
+      val hasPending = PendingAuthorization.getAll().values.any {
+        it.pluginName == name || it.pluginName.contains(
+          name,
+          ignoreCase = true
+        )
+      }
+      mapOf("name" to name, "hasPendingAuth" to hasPending)
     }
     response.writer.write(JsonUtil.toJson(chains))
   }
 
-   private fun handleListPendingAuths(response: HttpServletResponse) {
-     log.info("Listing pending authorizations")
-     response.contentType = "application/json"
-     response.status = HttpServletResponse.SC_OK
-     val pending = PendingAuthorization.getAll().map { (id, auth) ->
-       mapOf(
-         "id" to id,
-         "pluginName" to auth.pluginName,
-         "status" to auth.status.name
-       )
-     }
-     response.writer.write(JsonUtil.toJson(pending))
-   }
+  private fun handleListPendingAuths(response: HttpServletResponse) {
+    log.info("Listing pending authorizations")
+    response.contentType = "application/json"
+    response.status = HttpServletResponse.SC_OK
+    val pending = PendingAuthorization.getAll().map { (id, auth) ->
+      mapOf(
+        "id" to id,
+        "pluginName" to auth.pluginName,
+        "status" to auth.status.name
+      )
+    }
+    response.writer.write(JsonUtil.toJson(pending))
+  }
 
-   private fun handleExecutePendingAuth(request: HttpServletRequest, response: HttpServletResponse) {
-     val authId = request.getParameter("id")
-     log.info("handleExecutePendingAuth called - id: {}", authId)
-     if (authId.isNullOrBlank()) {
-       response.status = HttpServletResponse.SC_BAD_REQUEST
-       response.contentType = "application/json"
-       response.writer.write("""{"error":"Missing 'id' parameter"}""")
-       return
-     }
-     val pending = PendingAuthorization.get(authId)
-     if (pending == null) {
-       response.status = HttpServletResponse.SC_NOT_FOUND
-       response.contentType = "application/json"
-       response.writer.write("""{"error":"Pending authorization not found: $authId"}""")
-       return
-     }
-     // Start a web flow for this pending authorization's chain
-     val session = pending.chain.startWebFlow()
-     if (session == null) {
-       // No interactive steps needed - execute directly
-       PendingAuthorization.execute(authId)
-       response.contentType = "application/json"
-       response.status = HttpServletResponse.SC_OK
-       response.writer.write(
-         JsonUtil.toJson(
-           mapOf(
-             "success" to true,
-             "status" to "completed",
-             "message" to "Authorization completed (no interactive steps)"
-           )
-         )
-       )
-       return
-     }
-     // Store the pending auth ID in the session metadata so we can trigger it on completion
-     session.metadata["pendingAuthId"] = authId
-     pending.status = PendingAuthorization.Status.IN_PROGRESS
-     response.contentType = "application/json"
-     response.status = HttpServletResponse.SC_OK
-     response.writer.write(
-       JsonUtil.toJson(
-         mapOf(
-           "success" to true,
-           "sessionId" to session.sessionId,
-           "status" to "IN_PROGRESS",
-           "currentStep" to (session.currentStepIndex + 1),
-           "totalSteps" to session.totalSteps
-         )
-       )
-     )
-   }
+  private fun handleExecutePendingAuth(request: HttpServletRequest, response: HttpServletResponse) {
+    val authId = request.getParameter("id")
+    log.info("handleExecutePendingAuth called - id: {}", authId)
+    if (authId.isNullOrBlank()) {
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Missing 'id' parameter"}""")
+      return
+    }
+    val pending = PendingAuthorization.get(authId)
+    if (pending == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.contentType = "application/json"
+      response.writer.write("""{"error":"Pending authorization not found: $authId"}""")
+      return
+    }
+    // Start a web flow for this pending authorization's chain
+    val session = pending.chain.startWebFlow()
+    if (session == null) {
+      // No interactive steps needed - execute directly
+      PendingAuthorization.execute(authId)
+      response.contentType = "application/json"
+      response.status = HttpServletResponse.SC_OK
+      response.writer.write(
+        JsonUtil.toJson(
+          mapOf(
+            "success" to true,
+            "status" to "completed",
+            "message" to "Authorization completed (no interactive steps)"
+          )
+        )
+      )
+      return
+    }
+    // Store the pending auth ID in the session metadata so we can trigger it on completion
+    session.metadata["pendingAuthId"] = authId
+    pending.status = PendingAuthorization.Status.IN_PROGRESS
+    response.contentType = "application/json"
+    response.status = HttpServletResponse.SC_OK
+    response.writer.write(
+      JsonUtil.toJson(
+        mapOf(
+          "success" to true,
+          "sessionId" to session.sessionId,
+          "status" to "IN_PROGRESS",
+          "currentStep" to (session.currentStepIndex + 1),
+          "totalSteps" to session.totalSteps
+        )
+      )
+    )
+  }
 
   private fun handleStartAuth(request: HttpServletRequest, response: HttpServletResponse) {
     val chainName = request.getParameter("chain")
@@ -427,36 +436,36 @@ class PluginManagerServlet(
       response.status = HttpServletResponse.SC_OK
       val statusClass = if (session.status == AuthorizationChain.SessionStatus.COMPLETED) "msg-success" else "msg-error"
       val statusMsg = if (session.status == AuthorizationChain.SessionStatus.COMPLETED) {
-       // If this session is linked to a pending authorization, execute it
-       val pendingAuthId = session.metadata["pendingAuthId"] as? String
-       if (pendingAuthId != null) {
-         val pending = PendingAuthorization.get(pendingAuthId)
-         if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
-           log.info("Web auth flow completed successfully, triggering pending authorization: {}", pendingAuthId)
-           pending.status = PendingAuthorization.Status.COMPLETED
-           try {
-             pending.onSuccess()
-           } catch (e: Exception) {
-             log.error("Error in pending authorization onSuccess callback: {}", e.message, e)
-           }
-         }
-       }
+        // If this session is linked to a pending authorization, execute it
+        val pendingAuthId = session.metadata["pendingAuthId"] as? String
+        if (pendingAuthId != null) {
+          val pending = PendingAuthorization.get(pendingAuthId)
+          if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
+            log.info("Web auth flow completed successfully, triggering pending authorization: {}", pendingAuthId)
+            pending.status = PendingAuthorization.Status.COMPLETED
+            try {
+              pending.onSuccess()
+            } catch (e: Exception) {
+              log.error("Error in pending authorization onSuccess callback: {}", e.message, e)
+            }
+          }
+        }
         "✅ Authorization completed successfully!"
       } else {
-       // If this session is linked to a pending authorization, mark it as failed
-       val pendingAuthId = session.metadata["pendingAuthId"] as? String
-       if (pendingAuthId != null) {
-         val pending = PendingAuthorization.get(pendingAuthId)
-         if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
-           log.info("Web auth flow failed, marking pending authorization as failed: {}", pendingAuthId)
-           pending.status = PendingAuthorization.Status.FAILED
-           try {
-             pending.onFailure(session.failureReason ?: "Authorization failed")
-           } catch (e: Exception) {
-             log.error("Error in pending authorization onFailure callback: {}", e.message, e)
-           }
-         }
-       }
+        // If this session is linked to a pending authorization, mark it as failed
+        val pendingAuthId = session.metadata["pendingAuthId"] as? String
+        if (pendingAuthId != null) {
+          val pending = PendingAuthorization.get(pendingAuthId)
+          if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
+            log.info("Web auth flow failed, marking pending authorization as failed: {}", pendingAuthId)
+            pending.status = PendingAuthorization.Status.FAILED
+            try {
+              pending.onFailure(session.failureReason ?: "Authorization failed")
+            } catch (e: Exception) {
+              log.error("Error in pending authorization onFailure callback: {}", e.message, e)
+            }
+          }
+        }
         "❌ Authorization failed: ${session.failureReason ?: "Unknown reason"}"
       }
       response.writer.write(
@@ -858,6 +867,7 @@ class PluginManagerServlet(
       response.writer.write("""{"error":"${jsonEscape(e.message)}"}""")
     }
   }
+
   private fun handleDelete(request: HttpServletRequest, response: HttpServletResponse) {
     val jarPath = request.getParameter("jar")
     log.info("handleDelete called - jarPath: {}", jarPath)
