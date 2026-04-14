@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.Operation
 import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.simiacryptus.cognotik.plugins.AuthorizationChain
 import com.simiacryptus.cognotik.plugins.CallbackResult
+import com.simiacryptus.cognotik.plugins.PendingAuthorization
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.annotation.MultipartConfig
@@ -187,6 +188,9 @@ class PluginManagerServlet(
         // Support GET-based callbacks (e.g., OAuth redirects)
         handleAuthCallback(request, response)
       }
+     action == "pendingAuths" -> {
+       handleListPendingAuths(response)
+     }
 
 
       else -> {
@@ -260,6 +264,7 @@ class PluginManagerServlet(
       "delete" -> handleDelete(request, response)
       "startAuth" -> handleStartAuth(request, response)
       "authCallback" -> handleAuthCallback(request, response)
+     "executePendingAuth" -> handleExecutePendingAuth(request, response)
       else -> {
         log.warn("Unknown POST action received: '{}'", action)
         response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -273,10 +278,77 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     response.status = HttpServletResponse.SC_OK
     val chains = authorizationChains.keys.map { name ->
-      mapOf("name" to name)
+       val hasPending = PendingAuthorization.getAll().values.any { it.pluginName == name || it.pluginName.contains(name, ignoreCase = true) }
+       mapOf("name" to name, "hasPendingAuth" to hasPending)
     }
     response.writer.write(JsonUtil.toJson(chains))
   }
+
+   private fun handleListPendingAuths(response: HttpServletResponse) {
+     log.info("Listing pending authorizations")
+     response.contentType = "application/json"
+     response.status = HttpServletResponse.SC_OK
+     val pending = PendingAuthorization.getAll().map { (id, auth) ->
+       mapOf(
+         "id" to id,
+         "pluginName" to auth.pluginName,
+         "status" to auth.status.name
+       )
+     }
+     response.writer.write(JsonUtil.toJson(pending))
+   }
+
+   private fun handleExecutePendingAuth(request: HttpServletRequest, response: HttpServletResponse) {
+     val authId = request.getParameter("id")
+     log.info("handleExecutePendingAuth called - id: {}", authId)
+     if (authId.isNullOrBlank()) {
+       response.status = HttpServletResponse.SC_BAD_REQUEST
+       response.contentType = "application/json"
+       response.writer.write("""{"error":"Missing 'id' parameter"}""")
+       return
+     }
+     val pending = PendingAuthorization.get(authId)
+     if (pending == null) {
+       response.status = HttpServletResponse.SC_NOT_FOUND
+       response.contentType = "application/json"
+       response.writer.write("""{"error":"Pending authorization not found: $authId"}""")
+       return
+     }
+     // Start a web flow for this pending authorization's chain
+     val session = pending.chain.startWebFlow()
+     if (session == null) {
+       // No interactive steps needed - execute directly
+       PendingAuthorization.execute(authId)
+       response.contentType = "application/json"
+       response.status = HttpServletResponse.SC_OK
+       response.writer.write(
+         JsonUtil.toJson(
+           mapOf(
+             "success" to true,
+             "status" to "completed",
+             "message" to "Authorization completed (no interactive steps)"
+           )
+         )
+       )
+       return
+     }
+     // Store the pending auth ID in the session metadata so we can trigger it on completion
+     session.metadata["pendingAuthId"] = authId
+     pending.status = PendingAuthorization.Status.IN_PROGRESS
+     response.contentType = "application/json"
+     response.status = HttpServletResponse.SC_OK
+     response.writer.write(
+       JsonUtil.toJson(
+         mapOf(
+           "success" to true,
+           "sessionId" to session.sessionId,
+           "status" to "IN_PROGRESS",
+           "currentStep" to (session.currentStepIndex + 1),
+           "totalSteps" to session.totalSteps
+         )
+       )
+     )
+   }
 
   private fun handleStartAuth(request: HttpServletRequest, response: HttpServletResponse) {
     val chainName = request.getParameter("chain")
@@ -355,8 +427,36 @@ class PluginManagerServlet(
       response.status = HttpServletResponse.SC_OK
       val statusClass = if (session.status == AuthorizationChain.SessionStatus.COMPLETED) "msg-success" else "msg-error"
       val statusMsg = if (session.status == AuthorizationChain.SessionStatus.COMPLETED) {
+       // If this session is linked to a pending authorization, execute it
+       val pendingAuthId = session.metadata["pendingAuthId"] as? String
+       if (pendingAuthId != null) {
+         val pending = PendingAuthorization.get(pendingAuthId)
+         if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
+           log.info("Web auth flow completed successfully, triggering pending authorization: {}", pendingAuthId)
+           pending.status = PendingAuthorization.Status.COMPLETED
+           try {
+             pending.onSuccess()
+           } catch (e: Exception) {
+             log.error("Error in pending authorization onSuccess callback: {}", e.message, e)
+           }
+         }
+       }
         "✅ Authorization completed successfully!"
       } else {
+       // If this session is linked to a pending authorization, mark it as failed
+       val pendingAuthId = session.metadata["pendingAuthId"] as? String
+       if (pendingAuthId != null) {
+         val pending = PendingAuthorization.get(pendingAuthId)
+         if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
+           log.info("Web auth flow failed, marking pending authorization as failed: {}", pendingAuthId)
+           pending.status = PendingAuthorization.Status.FAILED
+           try {
+             pending.onFailure(session.failureReason ?: "Authorization failed")
+           } catch (e: Exception) {
+             log.error("Error in pending authorization onFailure callback: {}", e.message, e)
+           }
+         }
+       }
         "❌ Authorization failed: ${session.failureReason ?: "Unknown reason"}"
       }
       response.writer.write(
@@ -855,6 +955,13 @@ class PluginManagerServlet(
                  </h2>
                  <div id="authChains"><em>Loading…</em></div>
              </div>
+            <!-- Pending Authorizations -->
+            <div class="card">
+                <h2>Pending Plugin Authorizations
+                    <button class="btn-secondary" style="float:right;font-size:0.8em" onclick="refreshPendingAuths()">↻ Refresh</button>
+                </h2>
+                <div id="pendingAuths"><em>Loading…</em></div>
+            </div>
 
 
             <!-- Loaded Plugins -->
@@ -1132,11 +1239,67 @@ class PluginManagerServlet(
                          })
                          .catch(e => showMessage('Request failed: ' + e, 'error'));
                  }
+                function refreshPendingAuths() {
+                    fetch('/pluginManager?action=pendingAuths', { headers: { 'Accept': 'application/json' } })
+                        .then(r => r.json())
+                        .then(data => {
+                            const container = document.getElementById('pendingAuths');
+                            if (!data || data.length === 0) {
+                                container.innerHTML = '<em>No pending authorizations.</em>';
+                                return;
+                            }
+                            let html = '<table><thead><tr><th>Plugin</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+                            data.forEach(entry => {
+                                const badge = entry.status === 'PENDING'
+                                    ? '<span class="badge badge-unloaded">Pending</span>'
+                                    : entry.status === 'IN_PROGRESS'
+                                    ? '<span class="badge" style="background:#fff3cd;color:#856404;">In Progress</span>'
+                                    : entry.status === 'COMPLETED'
+                                    ? '<span class="badge badge-loaded">Completed</span>'
+                                    : '<span class="badge badge-unloaded">Failed</span>';
+                                const actionBtn = entry.status === 'PENDING'
+                                    ? '<button class="btn-primary" onclick="executePendingAuth(\'' + escHtml(entry.id) + '\')">Authorize</button>'
+                                    : '';
+                                html += '<tr>'
+                                    + '<td>' + escHtml(entry.pluginName) + '</td>'
+                                    + '<td>' + badge + '</td>'
+                                    + '<td>' + actionBtn + '</td>'
+                                    + '</tr>';
+                            });
+                            html += '</tbody></table>';
+                            container.innerHTML = html;
+                        })
+                        .catch(e => {
+                            document.getElementById('pendingAuths').innerHTML = '<em>Error loading pending authorizations.</em>';
+                            showMessage('Error fetching pending authorizations: ' + e, 'error');
+                        });
+                }
+                function executePendingAuth(authId) {
+                    fetch('/pluginManager', {
+                        method: 'POST',
+                        body: new URLSearchParams({ action: 'executePendingAuth', id: authId })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success && data.sessionId && data.status === 'IN_PROGRESS') {
+                                window.location.href = '/pluginManager?action=authStep&sessionId=' + encodeURIComponent(data.sessionId);
+                            } else if (data.success && data.status === 'completed') {
+                                showMessage('Authorization completed: ' + (data.message || 'No steps required'), 'success');
+                                refreshPendingAuths();
+                                refreshAuthChains();
+                                refreshLoaded();
+                            } else {
+                                showMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+                            }
+                        })
+                        .catch(e => showMessage('Request failed: ' + e, 'error'));
+                }
 
 
                 // Initial load
                 refreshLoaded();
                  refreshAuthChains();
+                 refreshPendingAuths();
             </script>
         </body>
         </html>
