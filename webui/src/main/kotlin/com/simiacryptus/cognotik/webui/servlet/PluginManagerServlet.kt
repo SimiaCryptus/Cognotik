@@ -66,11 +66,7 @@ class PluginManagerServlet(
         if (chain is AuthorizationChain) {
           registerAuthorizationChain(data.name, chain)
         } else {
-          log.warn(
-            "Received auth chain registration for '{}' but payload is not an AuthorizationChain: {}",
-            data.name,
-            chain?.javaClass?.name
-          )
+          log.warn("Received auth chain registration for '{}' but payload is not an AuthorizationChain: {}", data.name, chain.javaClass.name)
         }
       } else {
         log.warn("Received unexpected payload on {}: {}", PluginEvents.REGISTER_AUTH_CHAIN, data)
@@ -172,10 +168,6 @@ class PluginManagerServlet(
       action == "authCallback" -> {
         // Support GET-based callbacks (e.g., OAuth redirects)
         handleAuthCallback(request, response)
-      }
-
-      action == "pendingAuths" -> {
-        handleListPendingAuths(response)
       }
 
       action == "list" || acceptHeader.contains("application/json") -> {
@@ -281,25 +273,11 @@ class PluginManagerServlet(
     response.status = HttpServletResponse.SC_OK
     val chains = authorizationChains.keys.map { name ->
       val hasPending = PendingAuthorization.getAll().values.any {
-        it.pluginName == name || it.pluginName.contains(
-          name, ignoreCase = true
-        )
+        it.pluginName == name || it.pluginName.contains(name, ignoreCase = true)
       }
       mapOf("name" to name, "hasPendingAuth" to hasPending)
     }
     response.writer.write(JsonUtil.toJson(chains))
-  }
-
-  private fun handleListPendingAuths(response: HttpServletResponse) {
-    log.info("Listing pending authorizations")
-    response.contentType = "application/json"
-    response.status = HttpServletResponse.SC_OK
-    val pending = PendingAuthorization.getAll().map { (id, auth) ->
-      mapOf(
-        "id" to id, "pluginName" to auth.pluginName, "status" to auth.status.name
-      )
-    }
-    response.writer.write(JsonUtil.toJson(pending))
   }
 
   private fun handleExecutePendingAuth(request: HttpServletRequest, response: HttpServletResponse) {
@@ -568,10 +546,11 @@ class PluginManagerServlet(
     request.parameterMap.forEach { (key, values) ->
       if (values.isNotEmpty() && key !in INTERNAL_PARAMS && key != "handlerId") parameters[key] = values[0]
     }
-    val resp = handlerToSessionMap[sessionId]?.get(handlerId)?.let { it(session) }
+    val fn = handlerToSessionMap[sessionId]?.get(handlerId)
+    val result = fn?.let { it(session) }
     response.contentType = "text/html"
     response.status = HttpServletResponse.SC_OK
-    response.writer.write(renderAuthPageWrapper(""))
+    response.writer.write(renderAuthPageWrapper(result ?: "OK"))
   }
 
   private fun renderAuthPageWrapper(bodyContent: String): String = """
@@ -927,14 +906,6 @@ class PluginManagerServlet(
                  </h2>
                  <div id="authChains"><em>Loading…</em></div>
              </div>
-            <!-- Pending Authorizations -->
-            <div class="card">
-                <h2>Pending Plugin Authorizations
-                    <button class="btn-secondary" style="float:right;font-size:0.8em" onclick="refreshPendingAuths()">↻ Refresh</button>
-                </h2>
-                <div id="pendingAuths"><em>Loading…</em></div>
-            </div>
-
 
             <!-- Loaded Plugins -->
             <div class="card">
@@ -1211,41 +1182,7 @@ class PluginManagerServlet(
                          })
                          .catch(e => showMessage('Request failed: ' + e, 'error'));
                  }
-                function refreshPendingAuths() {
-                    fetch('/pluginManager?action=pendingAuths', { headers: { 'Accept': 'application/json' } })
-                        .then(r => r.json())
-                        .then(data => {
-                            const container = document.getElementById('pendingAuths');
-                            if (!data || data.length === 0) {
-                                container.innerHTML = '<em>No pending authorizations.</em>';
-                                return;
-                            }
-                            let html = '<table><thead><tr><th>Plugin</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-                            data.forEach(entry => {
-                                const badge = entry.status === 'PENDING'
-                                    ? '<span class="badge badge-unloaded">Pending</span>'
-                                    : entry.status === 'IN_PROGRESS'
-                                    ? '<span class="badge" style="background:#fff3cd;color:#856404;">In Progress</span>'
-                                    : entry.status === 'COMPLETED'
-                                    ? '<span class="badge badge-loaded">Completed</span>'
-                                    : '<span class="badge badge-unloaded">Failed</span>';
-                                const actionBtn = entry.status === 'PENDING'
-                                    ? '<button class="btn-primary" onclick="executePendingAuth(\'' + escHtml(entry.id) + '\')">Authorize</button>'
-                                    : '';
-                                html += '<tr>'
-                                    + '<td>' + escHtml(entry.pluginName) + '</td>'
-                                    + '<td>' + badge + '</td>'
-                                    + '<td>' + actionBtn + '</td>'
-                                    + '</tr>';
-                            });
-                            html += '</tbody></table>';
-                            container.innerHTML = html;
-                        })
-                        .catch(e => {
-                            document.getElementById('pendingAuths').innerHTML = '<em>Error loading pending authorizations.</em>';
-                            showMessage('Error fetching pending authorizations: ' + e, 'error');
-                        });
-                }
+                
                 function executePendingAuth(authId) {
                     fetch('/pluginManager', {
                         method: 'POST',
@@ -1257,7 +1194,6 @@ class PluginManagerServlet(
                                 window.location.href = '/pluginManager?action=authStep&sessionId=' + encodeURIComponent(data.sessionId);
                             } else if (data.success && data.status === 'completed') {
                                 showMessage('Authorization completed: ' + (data.message || 'No steps required'), 'success');
-                                refreshPendingAuths();
                                 refreshAuthChains();
                                 refreshLoaded();
                             } else {
@@ -1266,12 +1202,10 @@ class PluginManagerServlet(
                         })
                         .catch(e => showMessage('Request failed: ' + e, 'error'));
                 }
-
-
+                
                 // Initial load
                 refreshLoaded();
                  refreshAuthChains();
-                 refreshPendingAuths();
             </script>
         </body>
         </html>
