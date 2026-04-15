@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | MultiPerspectiveAnalysisTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Titles -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Section A: Header */
+        .task-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            margin: 0 0 0.75rem 0;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 900px;
+            margin-bottom: 1rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Section B: Reality Check */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.3);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          color: var(--text-tertiary);
+            font-size: 1.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            overflow-x: auto;
+            color: #d1d5db;
+            background: transparent;
+        }
+
+        /* Mock UI Styles */
+        .mock-tabs {
+            display: flex;
+            background: #0d1117;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .mock-tab {
+            padding: 0.5rem 0.8rem;
+            font-size: 0.7rem;
+            border-right: 1px solid var(--border-subtle);
+          color: var(--text-tertiary);
+        }
+        .mock-tab.active {
+            background: var(--bg-panel);
+            color: var(--accent-primary);
+            border-bottom: 2px solid var(--accent-primary);
+        }
+        .mock-content {
+            padding: 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* Section C: Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .tab-pane.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+            padding: 0.15rem 0.3rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; font-weight: bold; margin-left: 4px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 0.5rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="page-container">
+
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Social > MultiPerspectiveAnalysisTask</div>
+        <h1>MultiPerspectiveAnalysisTask</h1>
+        <p class="pitch">
+            Analyze complex topics from multiple independent viewpoints and synthesize findings into a unified,
+            high-confidence conclusion using parallel agent execution.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Multi-Agent Synthesis</span>
+            <span class="badge">GPT-4o Recommended</span>
+        </div>
+    </section>
+
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check-grid">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> MultiPerspectiveAnalysisConfig.json</div>
+            <pre><code>{
+  "analysis_subject": "Migrating to Microservices",
+  "perspectives": [
+    "Technical Debt",
+    "Operational Complexity",
+    "Developer Velocity"
+  ],
+  "input_files": ["src/**/*.kt"],
+  "synthesize": true,
+  "consensus_threshold": 0.8
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The UI -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI (TabbedDisplay)</div>
+            <div class="mock-tabs">
+                <div class="mock-tab">Overview</div>
+                <div class="mock-tab">Technical Debt</div>
+                <div class="mock-tab active">Synthesis</div>
+            </div>
+            <div class="mock-content">
+                <h3 style="margin-top:0; color: var(--accent-primary); font-size: 1rem;">Unified Conclusion</h3>
+                <p style="margin-bottom: 0.5rem;">The analysis shows a <strong>0.85 consensus</strong> that migration is
+                    viable if operational tooling is prioritized.</p>
+                <ul style="padding-left: 1.2rem; color: var(--text-dim); font-size: 0.75rem; margin: 0;">
+                    <li>Agreement: High risk in deployment overhead.</li>
+                    <li>Conflict: Developer velocity may dip initially.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual analysis artifacts generated by this task in the test workspace.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>analysis_subject</code><span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>The topic or problem to analyze from multiple viewpoints.</td>
+                </tr>
+                <tr>
+                    <td><code>perspectives</code><span class="req">*</span></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>List of viewpoints (e.g., technical, business, ethical, user).</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Glob patterns (e.g. <code>**/*.kt</code>) for source context.</td>
+                </tr>
+                <tr>
+                    <td><code>synthesize</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>If true, generates a unified conclusion. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>consensus_threshold</code></td>
+                    <td><code>Double</code></td>
+                    <td>Minimum agreement level (0.0-1.0). Default: <code>0.7</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Additional files for context (supports glob patterns).</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Lifecycle</h3>
+            <ol style="color: var(--text-main); max-width: 850px; line-height: 1.8;">
+                <li><strong>Initialization:</strong> Validates that the subject and perspectives are provided and the
+                    threshold is within bounds (0.0-1.0).
+                </li>
+                <li><strong>Context Gathering:</strong> Resolves glob patterns in <code>input_files</code> and <code>related_files</code>
+                    to provide the LLM with relevant source code or documentation.
+                </li>
+                <li><strong>Parallel Analysis:</strong> Spawns independent <code>ChatAgent</code> instances for each
+                    perspective. This prevents "groupthink" or cross-contamination of ideas between viewpoints.
+                </li>
+                <li><strong>Synthesis:</strong> A specialized synthesis agent reviews all perspective results to
+                    identify common themes, conflicts, and overall consensus.
+                </li>
+                <li><strong>UI Rendering:</strong> Results are streamed into a <code>TabbedDisplay</code>, allowing
+                    users to toggle between individual analyses and the final synthesis.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Execution (Scenario B)</h3>
+            <p class="pitch" style="font-size: var(--text-sm);">Invoke this task directly using the
+                <code>UnifiedHarness</code> in headless mode:</p>
+            <pre style="background: #0d1117; border-radius: 6px; border: 1px solid var(--border-subtle);"><code>import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask.Companion.MultiPerspectiveAnalysis
+import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysisTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+
+// 1. Define Runtime Input
+val executionConfig = MultiPerspectiveAnalysisTaskExecutionConfigData(
+    analysis_subject = "Migrating to Microservices",
+    perspectives = listOf("Technical Debt", "Operational Complexity"),
+    input_files = listOf("src/**/*.kt"),
+    synthesize = true,
+    consensus_threshold = 0.8
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = MultiPerspectiveAnalysis,
+    typeConfig = TaskTypeConfig(), // Use default static config
+    executionConfig = executionConfig,
+    workspace = File("./my-project"),
+    autoFix = true
+)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Kotlin Task Instantiation</h3>
+            <pre style="background: #0d1117; border-radius: 6px; border: 1px solid var(--border-subtle);"><code>val task = MultiPerspectiveAnalysisTask(
+    orchestrationConfig = config,
+    planTask = MultiPerspectiveAnalysisTaskExecutionConfigData(
+        analysis_subject = "Adopting Rust for performance modules",
+        perspectives = listOf("Security", "Performance", "Hiring"),
+        synthesize = true,
+        consensus_threshold = 0.8
+    )
+)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p class="pitch" style="font-size: 0.9rem;">The following instructions are injected into the orchestrator to
+                guide the LLM:</p>
+            <pre style="background: #0d1117; border-radius: 6px; border: 1px solid var(--border-subtle); white-space: pre-wrap;"><code>MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthesis
+** Specify the subject to analyze in analysis_subject
+** Provide a list of perspectives to consider (e.g., technical, business, ethical, user experience)
+** Optionally, list input files (supports glob patterns) to provide context for the analysis
+** Set synthesize=true to generate a unified conclusion from all perspectives
+** Configure consensus_threshold (0.0-1.0) to determine minimum agreement level
+** Additional context files can be specified via input_files
+** Each perspective will be analyzed independently, then synthesized
+** Useful for:
+   - Architectural decision making
+   - Code review from multiple angles
+   - Strategic planning
+   - Risk assessment
+   - Feature evaluation</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/MultiPerspectiveAnalysis/');
+    });
+</script>
+
+</body>
+</html>

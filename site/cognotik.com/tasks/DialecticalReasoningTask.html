@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | DialecticalReasoningTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+      .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styling */
+        .mock-ui-tabs {
+            display: flex;
+            background: #0d1117;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 0.5rem;
+        }
+        .mock-tab {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            border-bottom: 2px solid transparent;
+        }
+        .mock-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .mock-content {
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > DialecticalReasoningTask</div>
+        <h1>DialecticalReasoningTask</h1>
+        <p class="task-pitch">
+            Resolve contradictions and architectural tensions through iterative thesis-antithesis-synthesis.
+            Moves beyond binary choices to find higher-level conceptual integration.
+        </p>
+        <div class="task-badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️ ExecutionConfig.json</span>
+                <span>JSON</span>
+            </div>
+            <pre><code>{
+  "thesis": "Strict microservices for scale",
+  "antithesis": "Monolithic simplicity",
+  "context": "E-commerce Platform Migration",
+  "synthesis_levels": 3,
+"preserve_strengths": true,
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ Session UI (TabbedDisplay)</span>
+                <span>Rendered</span>
+            </div>
+            <div class="mock-ui-tabs">
+                <div class="mock-tab">Overview</div>
+                <div class="mock-tab">Thesis</div>
+                <div class="mock-tab">Antithesis</div>
+                <div class="mock-tab active">Synthesis L3</div>
+            </div>
+            <div class="mock-content">
+                <h4 style="color: var(--accent-primary);">Synthesis Level 3: Macro-Service Mesh</h4>
+                <p style="font-size: 0.8rem; color: var(--text-dim);">
+                    The final synthesis transcends the scale/simplicity trade-off by proposing a
+                    "Cell-Based Architecture" where logical monoliths are deployed as isolated
+                    scaling units...
+                </p>
+                <ul style="font-size: 0.8rem; padding-left: 1.2rem;">
+                    <li>Preserves: Local development speed</li>
+                    <li>Preserves: Independent deployment</li>
+                    <li>Resolves: Distributed transaction overhead</li>
+                </ul>
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; font-size: 0.7rem; color: #4ade80;">
+                    ✔ Final Integration Complete (14.2s)
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore generated dialectical reports and analysis artifacts in the task workspace.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: var(--bg-panel);"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>thesis</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The primary position or claim to be analyzed. Max 5000 chars.</td>
+                </tr>
+                <tr>
+                    <td><code>antithesis</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The opposing position or contradiction. Max 5000 chars.</td>
+                </tr>
+                <tr>
+                    <td><code>context</code></td>
+                    <td>String</td>
+                    <td>Domain or background info to ground the analysis.</td>
+                </tr>
+                <tr>
+                    <td><code>synthesis_levels</code></td>
+                    <td>Int</td>
+                    <td>Iterations of synthesis (1-5). Default: <code>3</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>preserve_strengths</code></td>
+                    <td>Boolean</td>
+                    <td>If true, ensures synthesis keeps valid points from both sides.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for source files to include as primary context.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for background context.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Lifecycle</h3>
+            <ol style="color: var(--text-main); max-width: 800px;">
+                <li><strong>Initialization:</strong> Validates that thesis and antithesis are distinct and within length
+                    limits.
+                </li>
+                <li><strong>Thesis/Antithesis Analysis:</strong> Independent agents analyze the core claims, strengths,
+                    and blind spots of each position.
+                </li>
+                <li><strong>Contradiction Mapping:</strong> Identifies the root causes of the tension and areas of
+                    hidden overlap.
+                </li>
+                <strong>Iterative Synthesis:</strong>
+                <ul>
+                    <li>Level 1: Finds a perspective that integrates both insights.</li>
+                    <li>Level 2+: Treats the previous synthesis as a new thesis to find even deeper abstractions.</li>
+                </ul>
+                </li>
+                <li><strong>Final Integration:</strong> Produces a comprehensive report with practical implications and
+                    actionable recommendations.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Execution</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Invoke this task programmatically using the <code>UnifiedHarness</code> in serverless mode.
+            </p>
+            <div class="panel">
+                <pre><code>import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
+import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask.Companion.DialecticalReasoning
+
+// Define the Job Configuration
+val config = DialecticalReasoningTask.DialecticalReasoningTaskExecutionConfigData(
+    thesis = "Strict microservices for scale",
+    antithesis = "Monolithic simplicity",
+    context = "E-commerce Platform Migration",
+    synthesis_levels = 3,
+    preserve_strengths = true,
+    input_files = listOf("src/main/kotlin/architecture/*.kt")
+)
+
+// Run via Harness
+harness.runTask(
+    taskType = DialecticalReasoning,
+    typeConfig = TaskTypeConfig(name = "ArchReview"),
+    executionConfig = config,
+    workspace = File("./project-root"),
+    autoFix = true
+)</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">CLI / CI Integration</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">Example GitHub Action step for automated
+                reasoning:</p>
+            <div class="panel" style="background: #000;">
+                <pre style="color: #c9d1d9;">- name: Run Dialectical Analysis
+  run: |
+    java -jar cognotik-cli.jar \
+      --task DialecticalReasoning \
+      --thesis "Implement custom auth" \
+      --antithesis "Use Auth0 provider" \
+      --workspace .
+  env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM
+                orchestrator:</p>
+            <div class="panel" style="background: #000;">
+                  <pre><code>DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesis
+  ** Specify thesis and antithesis statements representing opposing positions
+  ** Provide context to ground the dialectical analysis
+  ** Configure synthesis_levels (1-5) to iterate toward higher understanding
+  ** Set preserve_strengths=true to maintain valuable aspects of both sides
+ ** Related files can provide additional context
+  ** Explores contradictions and tensions between positions
+  ** Generates synthesis that transcends opposition
+  ** Iterates to progressively higher levels of understanding
+** Produces structured dialectical analysis with final synthesis</code></pre>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/DialecticalReasoning/');
+</script>
+
+</body>
+</html>

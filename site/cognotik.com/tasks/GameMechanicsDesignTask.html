@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | GameMechanicsDesignTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Titles -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Section A: Header */
+        .task-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+          color: var(--text-tertiary);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.75rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 850px;
+            margin-bottom: 1.25rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Section B: Reality Check */
+        .reality-check {
+            margin-bottom: 3rem;
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1.2fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 420px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .ui-tab-strip {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+            padding-bottom: 6px;
+        }
+
+        .ui-tab {
+            font-size: 0.7rem;
+          color: var(--text-tertiary);
+            padding: 2px 8px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            background: #0d1117;
+        }
+
+        .ui-tab.active {
+            background: var(--accent-primary);
+            color: #000;
+            border-color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        /* Section C: Tabs */
+        .task-details {
+            margin-top: 2rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+          font-size: 0.95rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
+            vertical-align: top;
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+        code { font-family: var(--font-mono); background: #21262d; padding: 2px 4px; border-radius: 3px; font-size: 0.85em; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="page-container">
+
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Games > GameMechanicsDesignTask</div>
+        <h1>GameMechanicsDesignTask</h1>
+        <p class="pitch">
+            Generate comprehensive game mechanics with balance analysis, progression systems, and economy design. Proves
+            viability through simulated playtesting predictions.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Category: Games</span>
+        </div>
+    </section>
+
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check">
+        <div class="reality-check-grid">
+            <!-- Input: The Config -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">⚙️</span> ExecutionConfig.json
+                </div>
+                <pre><code class="language-json">{
+  "game_concept": "Tower defense with resource management",
+  "target_audience": "hardcore",
+  "core_loop_duration": "20 minutes",
+  "num_mechanics": 6,
+  "balance_focus": "strategy",
+  "include_progression_system": true,
+  "include_economy_system": true,
+  "playtesting_scenarios": 3
+}</code></pre>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- Output: The UI -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">👁️</span> SessionTask UI
+                </div>
+                <div class="mock-ui-content">
+                    <div class="ui-tab-strip">
+                        <div class="ui-tab">Overview</div>
+                        <div class="ui-tab">Core Mechanics</div>
+                        <div class="ui-tab active">Balance Analysis</div>
+                        <div class="ui-tab">Playtesting</div>
+                    </div>
+                    <h4 style="margin-top: 0; color: #fff;">Balance Metrics</h4>
+                    <div class="metric-row">
+                        <span>Win Rate Variance</span>
+                        <span style="color: #4ade80;">0.12 (Good)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Strategy Diversity</span>
+                        <span style="color: #4ade80;">0.85 (Excellent)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Skill Expression</span>
+                        <span>78/100</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Luck Factor</span>
+                        <span>15/100</span>
+                    </div>
+                    <h4 style="margin-bottom: 5px; margin-top: 15px; color: #fff;">Dominant Strategies</h4>
+                    <ul style="margin-top: 0; font-size: 0.8rem; color: var(--text-secondary); padding-left: var(--space-6);">
+                        <li>Early-game resource hoarding (Mitigated by Sink Mechanics)</li>
+                        <li>High-density tower clusters (Countered by Splash Damage)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE (Live Workspace Browser) -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #fff; font-family: 'Cinzel', serif;">Test Workspace
+            Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual design artifacts, balance reports, and simulation logs generated by this task.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 350px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </div>
+
+        <!-- TAB 1: Documentation -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3 style="color: #fff;">Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>game_concept</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>-</td>
+                    <td>High-level game concept (e.g., 'Tower defense with resource management').</td>
+                </tr>
+                <tr>
+                    <td><code>target_audience</code></td>
+                    <td>String</td>
+                    <td>"casual"</td>
+                    <td>'casual', 'hardcore', 'family', 'competitive'.</td>
+                </tr>
+                <tr>
+                    <td><code>core_loop_duration</code></td>
+                    <td>String</td>
+                    <td>"15 minutes"</td>
+                    <td>Target duration for the core gameplay loop.</td>
+                </tr>
+                <tr>
+                    <td><code>num_mechanics</code></td>
+                    <td>Int</td>
+                    <td>5</td>
+                    <td>Number of core mechanics to design (3-8 recommended).</td>
+                </tr>
+                <tr>
+                    <td><code>include_progression_system</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Whether to design levels, XP curves, and unlocks.</td>
+                </tr>
+                <tr>
+                    <td><code>include_economy_system</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Whether to include detailed resource flow and sink design.</td>
+                </tr>
+                <tr>
+                    <td><code>include_difficulty_scaling</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Whether to include difficulty scaling analysis.</td>
+                </tr>
+                <tr>
+                    <td><code>balance_focus</code></td>
+                    <td>String</td>
+                    <td>"mixed"</td>
+                    <td>'skill', 'luck', 'strategy', 'mixed'.</td>
+                </tr>
+                <tr>
+                    <td><code>playtesting_scenarios</code></td>
+                    <td>Int</td>
+                    <td>3</td>
+                    <td>Number of simulated playtesting scenarios to run (1-10).</td>
+                </tr>
+                <tr>
+                    <td><code>generate_tuning_guide</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Whether to generate specific difficulty and reward parameters.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>[]</td>
+                    <td>Optional glob patterns for context files (docs, references).</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="color: #fff;">Token Usage</h3>
+            <p>Estimated consumption: <strong>Medium-High</strong>. This task involves multiple LLM passes for
+                generation, interaction analysis, and simulation.</p>
+        </div>
+
+        <!-- TAB 2: Config & Process -->
+        <div class="tab-pane" id="tab-process">
+            <h3 style="color: #fff;">Task Process Lifecycle</h3>
+            <ol style="padding-left: 1.5rem; color: var(--text-main);">
+                <li><strong>Context Gathering:</strong> Reads input files and prior task results to align with existing
+                    lore or technical constraints.
+                </li>
+                <li><strong>Mechanic Generation:</strong> Designs core loops, player actions, and system responses based
+                    on the concept and audience.
+                </li>
+                <li><strong>Interaction Analysis:</strong> Maps synergies and conflicts between mechanics to identify
+                    balance risks.
+                </li>
+                <li><strong>Progression Design:</strong> (Optional) Constructs XP curves, level unlocks, and difficulty
+                    multipliers.
+                </li>
+                <li><strong>Economy Design:</strong> (Optional) Defines resource types, generation rates, and sink
+                    mechanisms.
+                </li>
+                <li><strong>Balance Evaluation:</strong> Calculates skill/luck ratios and identifies dominant
+                    strategies.
+                </li>
+                <li><strong>Playtesting Simulation:</strong> Predicts engagement curves and frustration triggers for
+                    different player personas.
+                </li>
+                <li><strong>Tuning Generation:</strong> (Optional) Produces actionable difficulty and reward
+                    multipliers.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB 3: Integration -->
+        <div class="tab-pane" id="tab-integration">
+            <h3 style="color: #fff;">Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run this task as part of a CI/CD pipeline or automated game
+                design tool.
+            </p>
+            <pre><code class="language-kotlin">// 1. Initialize the Harness
+val harness = UnifiedHarness(serverless = true, openBrowser = false)
+
+// 2. Configure the Task
+val executionConfig = GameMechanicsDesignTaskExecutionConfigData(
+    game_concept = "Cyberpunk stealth-action with hacking",
+    target_audience = "hardcore",
+    balance_focus = "skill",
+    playtesting_scenarios = 5
+)
+
+// 3. Run the Task
+harness.runTask(
+    taskType = GameMechanicsDesignTask.GameMechanicsDesign,
+    executionConfig = executionConfig,
+    workspace = File("./game-design-output"),
+    autoFix = true
+)</code></pre>
+
+            <h3 style="color: #fff; margin-top: 2rem;">Test Case Example</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">
+                Example of a unit test verifying game balance via the agent.
+            </p>
+            <pre><code class="language-kotlin">@Test
+fun testGameBalance() {
+    val result = harness.runTask(
+        taskType = GameMechanicsDesignTask.GameMechanicsDesign,
+        executionConfig = GameMechanicsDesignTaskExecutionConfigData(
+            game_concept = "Simple Match-3",
+            balance_focus = "luck"
+        )
+    )
+    assertTrue(result.contains("Luck Factor"))
+    assertTrue(result.contains("Win Rate Variance"))
+}</code></pre>
+
+            <h3 style="color: #fff; margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM
+                context:</p>
+            <pre><code class="language-text">GameMechanicsDesign - Generate comprehensive game mechanics with balance analysis
+  ** Specify the game concept (e.g., "Tower defense with resource management")
+  ** Define target audience (casual, hardcore, family, competitive)
+  ** Set core gameplay loop duration
+  ** Configure number of mechanics to design (3-8)
+  ** Choose balance focus (skill, luck, strategy, mixed)
+  ** The task will:
+     - Generate core gameplay mechanics
+     - Analyze mechanic interactions
+     - Design progression systems
+     - Create economy systems
+     - Evaluate balance and fairness
+     - Simulate playtesting scenarios
+     - Provide tuning parameters</code></pre>
+        </div>
+    </section>
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/GameMechanicsDesign/');
+</script>
+
+
+</body>
+</html>

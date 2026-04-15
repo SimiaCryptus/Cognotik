@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | ConstraintSatisfactionTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikFooter.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;       /* Very dark grey, almost black */
+            --bg-panel: #161b22;     /* Slightly lighter for cards */
+            --bg-header: #090c10;    /* Darkest for headers */
+            --border-subtle: #30363d; /* Borders for definition */
+            --accent-primary: #58a6ff; /* VS Code Blue */
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+            letter-spacing: -1px;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+          font-weight: 500;
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+          background: var(--bg-elevated);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+          font-size: 0.875rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+          font-weight: 500;
+            transition: all 0.2s;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            background: var(--bg-app);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--border-subtle);
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #e6edf3;
+        }
+
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER -->
+    <header class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > ConstraintSatisfactionTask</div>
+        <h1>ConstraintSatisfactionTask</h1>
+        <p class="pitch">
+            Solves complex problems with multiple competing constraints using systematic search strategies, providing
+            detailed reasoning and trade-off analysis.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Side-Effect Safe</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK SECTION -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">⚙️ TaskConfig.json</div>
+            <pre><code class="language-json">{
+  "problem_description": "Allocate 5 microservices across 3 regions.",
+  "input_files": ["infrastructure/regions.yaml"],
+  "hard_constraints": [
+    "Region A must have at least 2 services",
+    "Total latency < 100ms"
+  ],
+  "soft_constraints": {
+    "Cost Optimization": 0.8,
+    "High Availability": 0.6
+  },
+  "search_strategy": "backtracking",
+  "max_iterations": 50,
+  "related_files": ["docs/architecture.md"]
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">👁️ User UI (Final Solution)</div>
+            <div class="mock-ui-content">
+                <div style="border-left: 4px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0;">Solution Overview</h3>
+                    <p>Optimal allocation found using backtracking. Region A hosts Service 1 & 2. Region B hosts Service
+                        3 & 4. Region C hosts Service 5.</p>
+                </div>
+                <div style="background: #0d1117; padding: 0.75rem; border-radius: 4px;">
+                    <div style="color: #4ade80; font-weight: bold; margin-bottom: 0.5rem;">✔ Hard Constraints
+                        Satisfied
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">
+                        - Region A Count: 2 (Target ≥ 2)<br>
+                        - Latency: 84ms (Target < 100ms)
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <strong>Soft Constraint Scores:</strong>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Cost Optimization: 0.92 / 1.0<br>
+                        High Availability: 0.75 / 1.0
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem; font-size: 0.9rem;">
+            Explore actual artifacts generated by this task in the test workspace.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>problem_description</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The problem requiring constraint satisfaction. Be specific about the goals and constraints.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>The specific files (or file patterns, e.g. <code>**/*.kt</code>) to be used as input for the
+                        task.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>hard_constraints</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Constraints that must be satisfied (cannot be violated).</td>
+                </tr>
+                <tr>
+                    <td><code>soft_constraints</code></td>
+                    <td>Map&lt;String, Double&gt;</td>
+                    <td>Constraints to optimize with weights (0.0–1.0).</td>
+                </tr>
+                <tr>
+                    <td><code>search_strategy</code></td>
+                    <td>String</td>
+                    <td>'backtracking' (systematic), 'forward' (greedy), or 'local' (hill-climbing). Default: <code>backtracking</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>max_iterations</code></td>
+                    <td>Int</td>
+                    <td>Maximum search iterations before returning best solution. Default: <code>100</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for context.</td>
+                </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: var(--space-8); color: var(--text-secondary); font-size: 0.875rem;">
+                <p><strong>Token Usage:</strong> Medium. Consumption scales with the number of constraints and the size
+                    of input files provided for context.</p>
+            </div>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                <div>
+                    <h4>1. Initialization & Validation</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        The task validates that <code>problem_description</code> is present,
+                        <code>search_strategy</code> is valid, and all <code>soft_constraints</code> weights are between
+                        0.0 and 1.0.
+                    </p>
+                </div>
+                <div>
+                    <h4>2. Context Gathering</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        Collects results from prior tasks and reads content from specified <code>input_files</code> and
+                        <code>related_files</code> to build a comprehensive problem context.
+                    </p>
+                </div>
+                <div>
+                    <h4>3. Execution</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        Uses a <code>ChatAgent</code> with a specialized CSP prompt to identify decision variables,
+                        formulate the CSP, and apply the chosen search strategy (Backtracking, Forward, or Local).
+                    </p>
+                </div>
+                <div>
+                    <h4>4. Finalization</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        Generates a detailed solution transcript (Markdown/HTML/PDF) and presents the final solution in
+                        a tabbed UI for user review.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h4>Embedded Usage (Scenario B)</h4>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">Invoke this task directly using the <code>UnifiedHarness</code>
+                in a headless environment.</p>
+            <pre class="code-block"><code>val harness = UnifiedHarness(serverless = true, ...)
+harness.start()
+
+val executionConfig = ConstraintSatisfactionTaskExecutionConfigData(
+    problem_description = "Optimize resource allocation for high-traffic API",
+    hard_constraints = listOf("Latency < 50ms", "Redundancy > 2"),
+    soft_constraints = mapOf("Cost" to 0.9, "Ease of Maintenance" to 0.4),
+    search_strategy = "backtracking"
+)
+
+harness.runTask(
+    taskType = ConstraintSatisfactionTask.ConstraintSatisfaction,
+    typeConfig = TaskTypeConfig(),
+    executionConfig = executionConfig,
+    workspace = File("./project-dir"),
+    autoFix = true
+)</code></pre>
+
+            <h4 style="margin-top: 2rem;">Kotlin Boilerplate (Orchestration)</h4>
+            <pre class="code-block"><code>val task = ConstraintSatisfactionTask(
+    orchestrationConfig = config,
+    planTask = ConstraintSatisfactionTaskExecutionConfigData(
+        problem_description = "Optimize resource allocation",
+        hard_constraints = listOf("Budget < 1000"),
+        search_strategy = "backtracking"
+    )
+)</code></pre>
+
+            <h4 style="margin-top: 2rem;">Prompt Segment</h4>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following text is injected into the LLM
+                context:</p>
+            <pre class="code-block"><code>### ConstraintSatisfaction
+Solves complex problems with multiple competing constraints using various search strategies.
+- **Use when**: You need to balance hard requirements with weighted soft preferences (e.g., architecture, scheduling).
+- **Inputs**: Problem description, hard/soft constraints, and optional file context.
+- **Strategies**: 
+    - `backtracking`: Systematic search for guaranteed satisfaction.
+    - `forward`: Greedy approach for speed.
+    - `local`: Hill-climbing for optimization in large search spaces.</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      if (event) event.target.classList.add('active');
+  }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/ConstraintSatisfaction/');
+</script>
+
+</body>
+</html>

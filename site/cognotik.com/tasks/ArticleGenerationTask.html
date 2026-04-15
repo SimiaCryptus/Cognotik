@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | Article Generation Task</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .pitch {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .article-preview {
+            background: #fff;
+            color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Docs Table */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+        .showcase-section {
+            margin-bottom: 3rem;
+        }
+
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="ArticleGenerationTask"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Writing > ArticleGenerationTask</div>
+        <h1>ArticleGenerationTask</h1>
+        <p class="pitch">
+            A multi-phase journalistic engine that performs deep investigation, creates structured outlines, and writes
+            publication-ready articles with automated revision passes.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ArticleGenerationConfig.json</div>
+            <pre><code>{
+  "story_topic": "The impact of AI on local journalism",
+  "article_format": "feature",
+  "target_word_count": 1200,
+  "writing_style": "narrative",
+  "include_quotes": true,
+  "generate_social_snippets": true,
+  "revision_passes": 2
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI: Article Draft</div>
+            <div class="mock-ui-content">
+                <div class="article-preview">
+                    <h2 style="margin-top:0; font-family: serif;">The Silicon Scribe: Can AI Save the Local
+                        Newsroom?</h2>
+                    <h4 style="color: #666; margin-bottom: 1rem;">How small-town papers are leveraging LLMs to stay
+                        afloat in a digital-first world.</h4>
+                    <p><strong>By Cognotik Investigative Unit</strong></p>
+                    <p style="font-size: 0.8rem; color: #888;">OAKLAND, CA — October 24, 2023</p>
+                    <hr>
+                    <p>In the dusty corner of the <em>Gazette's</em> main office, the rhythmic clicking of keyboards has
+                        been replaced by a quiet hum of servers...</p>
+                    <p>"It's not about replacement," says Sarah Jenkins, editor-in-chief. "It's about
+                        amplification."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem;">
+            Explore actual artifacts generated by the ArticleGenerationTask, including transcripts, outlines, and final
+            drafts.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 350px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>story_topic</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The core subject or event to write about.</td>
+                </tr>
+                <tr>
+                    <td><code>article_format</code></td>
+                    <td>String</td>
+                    <td>Options: <code>news</code>, <code>feature</code>, <code>investigative</code>,
+                        <code>opinion</code>, <code>profile</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>target_word_count</code></td>
+                    <td>Int</td>
+                    <td>Desired length (Default: 1000).</td>
+                </tr>
+                <tr>
+                    <td><code>writing_style</code></td>
+                    <td>String</td>
+                    <td>e.g., <code>AP style</code>, <code>narrative</code>, <code>analytical</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>target_publication</code></td>
+                    <td>String</td>
+                    <td>Target audience (e.g., <code>general news</code>, <code>tech blog</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for source documents (e.g., <code>docs/*.md</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>journalism_elements</code></td>
+                    <td>Map</td>
+                    <td>Specific 5W1H elements (Who, What, When, Where, Why, How).</td>
+                </tr>
+                <tr>
+                    <td><code>include_quotes</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include direct source quotes (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>include_data</code></td>
+                    <td>Boolean</td>
+                    <td>Include statistics and data points (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>include_expert_analysis</code></td>
+                    <td>Boolean</td>
+                    <td>Include interpretive analysis (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>include_context</code></td>
+                    <td>Boolean</td>
+                    <td>Include background and historical context (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>Int</td>
+                    <td>Number of automated editing cycles (Default: 1).</td>
+                </tr>
+                <tr>
+                    <td><code>generate_social_snippets</code></td>
+                    <td>Boolean</td>
+                    <td>Creates Twitter, FB, and LinkedIn posts.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Lifecycle</h3>
+            <ol style="padding-left: 1.2rem; color: var(--text-main);">
+                <li style="margin-bottom: 1rem;">
+                    <strong>Phase 1: Journalism Investigation</strong><br>
+                    <span style="color: var(--text-dim)">Inherits from <code>JournalismReasoningTask</code>. Analyzes input files, identifies biases, finds gaps, and assesses newsworthiness.</span>
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong>Phase 2: Article Structure</strong><br>
+                    <span style="color: var(--text-dim)">Generates a detailed outline including headline, subheadline, lede, and section-by-section purpose mapping.</span>
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong>Phase 3: Article Writing & Revision</strong><br>
+                    <span style="color: var(--text-dim)">Drafts the full content. If <code>revision_passes > 0</code>, a senior editor agent refines clarity, flow, and transitions.</span>
+                </li>
+                <li>
+                    <strong>Phase 4: Social Media Generation</strong><br>
+                    <span style="color: var(--text-dim)">Optional generation of platform-specific snippets (Twitter, LinkedIn, Facebook).</span>
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                Invoke this task directly using the <code>UnifiedHarness</code> for automated content pipelines.
+            </p>
+            <div class="panel" style="margin-bottom: 1.5rem;">
+                <pre><code>import com.simiacryptus.cognotik.plan.tools.writing.ArticleGenerationTask.Companion.ArticleGeneration
+import com.simiacryptus.cognotik.plan.tools.writing.ArticleGenerationTask.ArticleGenerationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+
+// 1. Define the Job
+val executionConfig = ArticleGenerationTaskExecutionConfigData(
+    story_topic = "The impact of AI on local journalism",
+    article_format = "feature",
+    target_word_count = 1200,
+    revision_passes = 2,
+    generate_social_snippets = true
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = ArticleGeneration,
+    typeConfig = TaskTypeConfig(), // Static settings
+    executionConfig = executionConfig,
+    workspace = File("./output/articles"),
+    autoFix = true
+)</code></pre>
+            </div>
+
+            <h3>Test Case Example</h3>
+            <div class="panel" style="margin-bottom: 1.5rem;">
+                <div class="panel-header">Scenario: Renewable Energy Investigation</div>
+                <pre><code>// Minimal config for a quick investigative piece
+val testConfig = ArticleGenerationTaskExecutionConfigData(
+        story_topic = "The future of renewable energy",
+        article_format = "investigative"
+)</code></pre>
+            </div>
+
+            <h3>Prompt Segment</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">The following logic is injected into the LLM
+                context:</p>
+            <div class="panel">
+                <pre><code>ArticleGeneration - Generate complete journalistic articles from investigation and analysis
+  ** Extends JournalismReasoning with full article writing
+  ** Specify the story topic to write about
+  ** Define journalism elements: who, what, when, where, why, how
+  ** Set target word count and article format (news, feature, investigative, etc.)
+  ** Configure writing style and target publication
+  ** Enable quotes, data, expert analysis, and context
+  ** Performs investigation, creates structure, then writes article
+  ** Optional revision passes for quality improvement
+  ** Can generate headlines and social media snippets
+  ** Produces publication-ready articles with proper journalistic structure</code></pre>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/ArticleGeneration/');
+</script>
+
+</body>
+</html>

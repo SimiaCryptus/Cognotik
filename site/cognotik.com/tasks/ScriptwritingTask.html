@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | ScriptwritingTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+
+    <!-- jQuery & FileTree Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr; /* Code -> Arrow -> UI */
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .panel pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-browser {
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs" style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 1rem;">
+            Home > Tasks > Writing > ScriptwritingTask
+        </div>
+        <h1>ScriptwritingTask</h1>
+        <p class="pitch">
+            Generate production-ready scripts for videos, podcasts, and presentations with dialogue, timing, and
+            production notes.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Multi-Phase Execution</span>
+            <span class="badge">Smart Model Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK (The "Anti-Vaporware" Section) -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">⚙️ ScriptwritingTaskExecutionConfigData</div>
+            <pre><code class="language-json">{
+  "topic": "The Future of AI in Coding",
+  "script_type": "video",
+  "target_duration_minutes": 3,
+  "tone": "engaging",
+  "pacing": "dynamic",
+  "revision_passes": 1
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header">👁️ Session UI: Complete Script</div>
+            <div class="mock-browser">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
+                    <div style="font-weight: bold; color: var(--accent-primary);">[00:00]</div>
+                    <div style="font-style: italic; color: var(--text-dim); margin: 0.25rem 0;">*Camera pans across a
+                        modern workspace with multiple monitors showing code.*
+                    </div>
+                    <div>"Software engineering is at a crossroads. It's not just about the tools we use, but how we
+                        think about the very act of creation."
+                    </div>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem; color: #4ade80;">B-Roll: Close-up of AI-generated
+                        code snippets.
+                    </div>
+                </div>
+                <div style="border-left: 3px solid var(--border-subtle); padding-left: 1rem; opacity: 0.6;">
+                    <div style="font-weight: bold;">[00:15]</div>
+                    <div>"Enter the era of the AI-augmented developer..."</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual artifacts generated by the ScriptwritingTask in the test environment.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: var(--space-4);"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>topic</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The topic or subject of the script.</td>
+                </tr>
+                <tr>
+                    <td><code>script_type</code></td>
+                    <td>String</td>
+                    <td>Type of script (video, podcast, presentation). Default: "video".</td>
+                </tr>
+                <tr>
+                    <td><code>target_duration_minutes</code></td>
+                    <td>Int</td>
+                    <td>Target duration (1-180). Default: 5.</td>
+                </tr>
+                <tr>
+                    <td><code>tone</code></td>
+                    <td>String</td>
+                    <td>The tone (professional, engaging, etc.). Default: "professional".</td>
+                </tr>
+                <tr>
+                    <td><code>pacing</code></td>
+                    <td>String</td>
+                    <td>slow, moderate, fast, dynamic. Default: "moderate".</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>1</td>
+                    <td>Number of refinement passes (0-5).</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for files to use as research context.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-primary);">Lifecycle Phases</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+                        <li><strong>Phase 1: Research & Outline</strong> - Analyzes topic and context to create a
+                            structured outline with sections and timing.
+                        </li>
+                        <li><strong>Phase 2: Segment Writing</strong> - Generates detailed dialogue, visual directions,
+                            and B-roll suggestions for each section.
+                        </li>
+                        <li><strong>Phase 3: Revision</strong> - Refines the full script for flow, rhythm, and tone
+                            consistency.
+                        </li>
+                        <li><strong>Phase 4: Final Assembly</strong> - Compiles the complete script with production
+                            notes and statistics.
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-primary);">Output Components</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+                        <li><strong>Complete Script:</strong> Full formatted text with timing markers.</li>
+                        <li><strong>Production Notes:</strong> B-roll requirements, graphics overlays, and speaker
+                            guidance.
+                        </li>
+                        <li><strong>Statistics:</strong> Duration accuracy, word count, and WPM analysis.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display: none;">
+            <h3>Embedded Execution Example</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">
+                Invoke this task programmatically using the <code>UnifiedHarness</code>.
+            </p>
+            <pre style="background: #000; padding: 1rem; border-radius: 6px; font-size: 0.85rem;"><code
+                    class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.writing.ScriptwritingTask
+import com.simiacryptus.cognotik.plan.tools.writing.ScriptwritingTask.Companion.Scriptwriting
+// 1. Define the Job
+val config = ScriptwritingTask.ScriptwritingTaskExecutionConfigData(
+    topic = "Introduction to Cognotik",
+    script_type = "video",
+    target_duration_minutes = 2,
+    tone = "inspiring",
+    include_directions = true,
+    suggest_b_roll = true
+)
+// 2. Run via Harness
+harness.runTask(
+    taskType = Scriptwriting,
+    typeConfig = TaskTypeConfig(), // Default static settings
+    executionConfig = config,
+    workspace = File("./output"),
+    autoFix = true
+)</code></pre>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/Scriptwriting/');
+</script>
+
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | ScriptwritingTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pitch {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .panel pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-browser {
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+    <header class="task-header">
+        <div class="breadcrumbs" style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 1rem;">
+            Home > Tasks > Writing > ScriptwritingTask
+        </div>
+        <h1>ScriptwritingTask</h1>
+        <p class="pitch">
+            Generate production-ready scripts for videos, podcasts, and presentations with dialogue, timing, and
+            production notes.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Multi-Phase Execution</span>
+            <span class="badge">Smart Model Preferred</span>
+        </div>
+    </header>
+
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">⚙️ ScriptwritingTaskExecutionConfigData</div>
+            <pre><code class="language-json">{
+  "topic": "The Future of AI in Coding",
+  "script_type": "video",
+  "target_duration_minutes": 3,
+  "tone": "engaging",
+  "pacing": "dynamic",
+  "revision_passes": 1
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header">👁️ Session UI: Complete Script</div>
+            <div class="mock-browser">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <div style="font-weight: bold; color: var(--accent-primary);">[00:00]</div>
+                    <div style="font-style: italic; color: var(--text-dim); margin: 0.25rem 0;">*Camera pans across a
+                        modern workspace with multiple monitors showing code.*
+                    </div>
+                    <div>"Software engineering is at a crossroads. It's not just about the tools we use, but how we
+                        think about the very act of creation."
+                    </div>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem; color: #4ade80;">B-Roll: Close-up of AI-generated
+                        code snippets.
+                    </div>
+                </div>
+                <div style="border-left: 3px solid var(--border-subtle); padding-left: 1rem; opacity: 0.6;">
+                    <div style="font-weight: bold;">[00:15]</div>
+                    <div>"Enter the era of the AI-augmented developer..."</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </nav>
+
+        <div class="tab-pane" id="tab-docs">
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>topic</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The topic or subject of the script.</td>
+                </tr>
+                <tr>
+                    <td><code>script_type</code></td>
+                    <td>String</td>
+                    <td>Type of script (video, podcast, presentation). Default: "video".</td>
+                </tr>
+                <tr>
+                    <td><code>target_duration_minutes</code></td>
+                    <td>Int</td>
+                    <td>Target duration (1-180). Default: 5.</td>
+                </tr>
+                <tr>
+                    <td><code>tone</code></td>
+                    <td>String</td>
+                    <td>The tone (professional, engaging, etc.). Default: "professional".</td>
+                </tr>
+                <tr>
+                    <td><code>pacing</code></td>
+                    <td>String</td>
+                    <td>slow, moderate, fast, dynamic. Default: "moderate".</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>Int</td>
+                    <td>Number of refinement passes (0-5). Default: 1.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-primary);">Lifecycle Phases</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+                        <li><strong>Phase 1: Research & Outline</strong> - Analyzes topic and context to create a
+                            structured outline with sections and timing.
+                        </li>
+                        <li><strong>Phase 2: Segment Writing</strong> - Generates detailed dialogue, visual directions,
+                            and B-roll suggestions for each section.
+                        </li>
+                        <li><strong>Phase 3: Revision</strong> - Refines the full script for flow, rhythm, and tone
+                            consistency.
+                        </li>
+                        <li><strong>Phase 4: Final Assembly</strong> - Compiles the complete script with production
+                            notes and statistics.
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-primary);">Output Components</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+                        <li><strong>Complete Script:</strong> Full formatted text with timing markers.</li>
+                        <li><strong>Production Notes:</strong> B-roll requirements, graphics overlays, and speaker
+                            guidance.
+                        </li>
+                        <li><strong>Statistics:</strong> Duration accuracy, word count, and WPM analysis.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <pre style="background: #000; padding: 1rem; border-radius: 6px; font-size: 0.85rem;"><code
+                    class="language-kotlin">// Add to OrchestrationConfig
+tasks.add(ScriptwritingTask.ScriptwritingTaskExecutionConfigData(
+    topic = "Introduction to Cognotik",
+    script_type = "video",
+    target_duration_minutes = 2,
+    tone = "inspiring",
+    include_directions = true,
+    suggest_b_roll = true
+))</code></pre>
+        </div>
+    </section>
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

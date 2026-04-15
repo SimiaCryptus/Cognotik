@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
@@ -17,7 +18,6 @@ class DiffInstrumentor(
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(DiffInstrumentor::class.java)
   }
-
 
   fun instrument(
     root: Path,
@@ -42,10 +42,10 @@ class DiffInstrumentor(
     val result = StringBuilder()
     for (segment in segments) {
       when (segment) {
-       is ResponseSegment.Markdown -> result.append(segment.removeCodeFences().trimEnd()).append("\n\n")
+        is ResponseSegment.Markdown -> result.append(segment.removeCodeFences().trimEnd()).append("\n\n")
         is ResponseSegment.NewFileBlock -> {
-         val rawFilename = segment.filename ?: ""
-         val filename = prefilterFilename(rawFilename) ?: rawFilename
+          val rawFilename = segment.filename ?: ""
+          val filename = prefilterFilename(rawFilename) ?: rawFilename
           log.debug(
             "Processing new file block: filename={}, language={}, code length={}",
             filename,
@@ -54,19 +54,29 @@ class DiffInstrumentor(
           )
           if (filename.isBlank()) {
             log.warn("Blank filename after prefiltering for new file block, rendering as code block")
-           result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
-           result.append(renderer.renderWarning("The new file block could not be associated with a valid filename. Please ensure the filename is included and has an extension.")).append("\n\n")
+            result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
+            result.append(renderer.renderWarning("The new file block could not be associated with a valid filename. Please ensure the filename is included and has an extension."))
+              .append("\n\n")
             continue
           }
           val resolved = resolveNewFilePath(root, filename, resolver)
           if (resolved == null) {
-           result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
-           result.append(renderer.renderWarning("The new file block's filename '${filename}' could not be resolved to a valid path. Please ensure the filename is correct and has an extension.")).append("\n\n")
+            result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
+            result.append(renderer.renderWarning("The new file block's filename '${filename}' could not be resolved to a valid path. Please ensure the filename is correct and has an extension."))
+              .append("\n\n")
             continue
           }
           val filepath = fs.resolve(root, resolved)
           log.debug("Resolved new file path: {}", filepath)
-         result.append(renderNewFile(filepath, segment.removeCodeFences(), segment.language, handle, shouldAutoApply).trimEnd()).append("\n\n")
+          result.append(
+            renderNewFile(
+              filepath,
+              segment.removeCodeFences(),
+              segment.language,
+              handle,
+              shouldAutoApply
+            ).trimEnd()
+          ).append("\n\n")
         }
 
         is ResponseSegment.DiffBlock -> {
@@ -79,49 +89,53 @@ class DiffInstrumentor(
                 "Blank or extensionless filename '{}' with no default file, rendering as diff code block",
                 segment.filename
               )
-           result.append("```diff\n${segment.removeCodeFences()}\n```").append("\n\n")
-           result.append(renderer.renderWarning("The diff block could not be associated with a valid filename. Please ensure the filename is included and has an extension, or provide a default file.")).append("\n\n")
+              result.append("```diff\n${segment.removeCodeFences()}\n```").append("\n\n")
+              result.append(renderer.renderWarning("The diff block could not be associated with a valid filename. Please ensure the filename is included and has an extension, or provide a default file."))
+                .append("\n\n")
               continue
             }
           }
           val resolved = resolveWithBestEffort(root, filename, resolver)
           if (resolved == null) {
-             // Treat as "create file" by applying the diff to blank content
-             log.info("File '{}' not found, treating diff as new file creation", filename)
-             val diffContent = segment.removeCodeFences()
+            // Treat as "create file" by applying the diff to blank content
+            log.info("File '{}' not found, treating diff as new file creation", filename)
+            val diffContent = segment.removeCodeFences()
             val stdDiffContent = "```diff\n${diffContent}\n```"
-             val applyResult = try {
-               processor.apply("", stdDiffContent, filename)
-             } catch (e: Throwable) {
-               log.warn("Failed to apply diff to blank content for new file '{}': {}", filename, e.message, e)
-               result.appendLine(renderer.renderWarning("Error applying diff to create new file '${filename}': ${e.message}. Rendering diff as code block."))
-               null
-             }
+            val applyResult = try {
+              processor.apply("", stdDiffContent, filename)
+            } catch (e: Throwable) {
+              log.warn("Failed to apply diff to blank content for new file '{}': {}", filename, e.message, e)
+              result.appendLine(renderer.renderWarning("Error applying diff to create new file '${filename}': ${e.message}. Rendering diff as code block."))
+              null
+            }
             if (applyResult != null && applyResult.isValid && applyResult.newCode.isNotBlank()) {
-               // Resolve the path for the new file
-               val newFileResolved = resolveNewFilePath(root, filename, resolver)
-               if (newFileResolved != null) {
-                 val filepath = fs.resolve(root, newFileResolved)
-                 log.debug("Creating new file from diff: {}", filepath)
-                 val lang = filepath.name.substringAfterLast('.', "")
-                result.append(renderNewFile(filepath, applyResult.newCode, lang, handle, shouldAutoApply).trimEnd()).append("\n\n")
-               } else {
-                 log.warn("Could not resolve new file path for '{}', rendering as diff code block", filename)
+              // Resolve the path for the new file
+              val newFileResolved = resolveNewFilePath(root, filename, resolver)
+              if (newFileResolved != null) {
+                val filepath = fs.resolve(root, newFileResolved)
+                log.debug("Creating new file from diff: {}", filepath)
+                val lang = filepath.name.substringAfterLast('.', "")
+                result.append(renderNewFile(filepath, applyResult.newCode, lang, handle, shouldAutoApply).trimEnd())
+                  .append("\n\n")
+              } else {
+                log.warn("Could not resolve new file path for '{}', rendering as diff code block", filename)
                 result.append(stdDiffContent).append("\n\n")
-                result.append(renderer.renderWarning("The diff appears to be for creating a new file '${filename}', but the filename could not be resolved to a valid path. The content of the diff is included above for reference.")).append("\n\n")
-               }
-             } else {
-               log.warn(
-                 "Could not apply diff to blank content for '{}' (isValid={}, errors={}), rendering as diff code block",
-                 filename,
-                 applyResult?.isValid,
-                 applyResult?.errors?.joinToString("; ") { it.message }
-               )
+                result.append(renderer.renderWarning("The diff appears to be for creating a new file '${filename}', but the filename could not be resolved to a valid path. The content of the diff is included above for reference."))
+                  .append("\n\n")
+              }
+            } else {
+              log.warn(
+                "Could not apply diff to blank content for '{}' (isValid={}, errors={}), rendering as diff code block",
+                filename,
+                applyResult?.isValid,
+                applyResult?.errors?.joinToString("; ") { it.message }
+              )
               result.append(stdDiffContent).append("\n\n")
               // Add a note to the output about the failure to apply the diff, which may help the user understand why the file wasn't created
-              result.append(renderer.renderWarning("The diff could not be applied to create the file '${filename}'. This may be because the diff format is invalid or not compatible with creating a new file. The content of the diff is included above for reference.")).append("\n\n")
+              result.append(renderer.renderWarning("The diff could not be applied to create the file '${filename}'. This may be because the diff format is invalid or not compatible with creating a new file. The content of the diff is included above for reference."))
+                .append("\n\n")
             }
-             continue
+            continue
           }
           val filepath = fs.resolve(root, resolved)
           val relativize = try {
@@ -130,7 +144,15 @@ class DiffInstrumentor(
             log.warn("Could not relativize path {} against root {}: {}", filepath, root, e.message)
             filepath
           }
-         result.append(renderDiffBlock(filepath, relativize, segment.removeCodeFences(), handle, shouldAutoApply).trimEnd()).append("\n\n")
+          result.append(
+            renderDiffBlock(
+              filepath,
+              relativize,
+              segment.removeCodeFences(),
+              handle,
+              shouldAutoApply
+            ).trimEnd()
+          ).append("\n\n")
         }
       }
     }
@@ -149,6 +171,15 @@ class DiffInstrumentor(
     filename: String,
     resolver: (Path, String) -> String?
   ): String? {
+    val updirCount = filename.split("/").takeWhile { it == ".." }.size
+    val trimmedFilename = filename.split("/").dropWhile { it == ".." }.joinToString("/")
+    val currentDirRelPath = root.toFile().absolutePath.split(File.separator).takeLast(updirCount).joinToString("/") + File.separator
+    if (trimmedFilename.startsWith(currentDirRelPath)) {
+      val stripped = trimmedFilename.removePrefix(currentDirRelPath)
+      log.debug("Stripping leading '../{}' from filename '{}' to resolve new file path: '{}'", currentDirRelPath, filename, stripped)
+      return resolveNewFilePath(root, stripped, resolver)
+    }
+
     // First, check for overlap between filename components and root's trailing components.
     // This must happen before direct resolution to avoid duplicating path components
     // e.g., filename="generated_app/ops/file.md", root ends with "generated_app/ops"

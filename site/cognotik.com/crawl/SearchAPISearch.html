@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | SearchAPISearch</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+        }
+
+        .search-result-item {
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem 0;
+        }
+
+        .search-result-item:last-child { border-bottom: none; }
+
+        .res-title { color: var(--accent-primary); font-weight: 600; font-size: 0.95rem; text-decoration: none; }
+        .res-link { color: #4ade80; font-size: 0.75rem; display: block; margin-bottom: 0.25rem; }
+        .res-snippet { color: var(--text-dim); font-size: 0.85rem; }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Search > SearchAPISearch</div>
+        <h1>SearchAPISearch</h1>
+        <p class="pitch">
+            A high-performance seed method for CrawlerAgentTask that leverages SearchAPI.io to discover target URLs
+            across multiple search engines (Google, Bing, DuckDuckGo, etc.).
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">API: SearchAPI.io</span>
+            <span class="badge">Type: SeedMethodFactory</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️</span> Execution Config
+            </div>
+            <pre><code class="language-json">
+{
+  "engine": "google",
+  "mainResultField": "organic_results",
+  "search_query": "cognotik ai orchestration documentation"
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The Result -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️</span> Seed Results
+            </div>
+            <div class="mock-ui-content">
+                <div class="search-result-item">
+                    <span class="res-link">https://docs.cognotik.com/orchestration</span>
+                    <div class="res-title">Orchestration Guide | Cognotik Docs</div>
+                    <div class="res-snippet">Learn how to configure SearchAPISearch and other seed methods...</div>
+                </div>
+                <div class="search-result-item">
+                    <span class="res-link">https://github.com/simiacryptus/cognotik</span>
+                    <div class="res-title">GitHub - simiacryptus/cognotik: AI-Native Task Platform</div>
+                    <div class="res-snippet">The core implementation of SearchAPISearch.kt and the crawler...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>engine</code></td>
+                    <td><code>String</code></td>
+                    <td>The search engine to use (e.g., <code>google</code>, <code>bing</code>, <code>baidu</code>).
+                        Defined at factory instantiation.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>mainResultField</code></td>
+                    <td><code>String</code></td>
+                    <td>The JSON key in the SearchAPI response containing the result list (e.g.,
+                        <code>organic_results</code>).
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>search_query</code> <span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>The actual search term. Provided at runtime via <code>CrawlerTaskExecutionConfigData</code>.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Requirements</h3>
+            <ul>
+                <li><strong>API Key:</strong> A valid SearchAPI.io key must be configured in User Settings under <code>APIProvider.SearchAPI</code>.
+                </li>
+                <li><strong>Network:</strong> Outbound HTTPS access to <code>www.searchapi.io</code>.</li>
+            </ul>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3>Execution Lifecycle</h3>
+            <ol>
+                <li><strong>Validation:</strong> Checks if <code>search_query</code> is present and non-blank.</li>
+                <li><strong>Authentication:</strong> Retrieves and decrypts the SearchAPI key from the user's encrypted
+                    settings.
+                </li>
+                <li><strong>Request:</strong> Constructs a GET request to the SearchAPI.io v1 endpoint with URL-encoded
+                    parameters.
+                </li>
+                <li><strong>Parsing:</strong> Extracts results from the specified <code>mainResultField</code>.</li>
+                <li><strong>Mapping:</strong> Converts raw JSON objects into <code>SeedItem</code> objects, extracting
+                    <code>link</code> and <code>title</code> while preserving metadata.
+                </li>
+                <li><strong>Filtering:</strong> Limits output to the top 20 results to optimize crawler focus.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">
+// Registering the search method in your orchestration
+val searchMethod = SearchAPISearch(
+    engine = "google",
+    mainResultField = "organic_results"
+)
+
+// The CrawlerAgentTask will use this to generate initial URLs
+val task = CrawlerAgentTask(
+    seedMethods = listOf(searchMethod),
+    // ... other config
+)
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

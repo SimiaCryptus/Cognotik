@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | RobotsTxtParser</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Bento Grid / Reality Check */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+          border-bottom: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+          color: var(--text-tertiary);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1.5rem;
+        }
+
+        .status-card {
+            background: #0d1117;
+            border: 1px solid var(--border-subtle);
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-primary);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="robots-txt-parser"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. PAGE HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tools / Online / RobotsTxtParser</div>
+        <h1>RobotsTxtParser</h1>
+        <p class="pitch">
+            High-performance, thread-safe robots.txt compliance engine. Handles wildcard matching, crawl-delay
+            directives, and sitemap discovery with built-in caching.
+        </p>
+        <div class="badges">
+            <span class="badge badge-success">Side-Effect: Safe</span>
+            <span class="badge badge-warning">Network: Required</span>
+            <span class="badge">Thread-Safe</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input: Kotlin Usage -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> Implementation</div>
+            <pre><code class="language-kotlin">
+val parser = RobotsTxtParser()
+
+// Check if crawling is allowed
+val canCrawl = parser.isAllowed(
+    url = "https://example.com/admin/logs",
+    userAgent = "CognotikBot"
+)
+
+// Respect site-specific delays
+val delay = parser.getCrawlDelay("https://example.com")
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: Logic Result -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Parser Logic Output</div>
+            <div class="mock-ui-content">
+                <div class="status-card">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <span style="color: var(--text-dim);">Target URL</span>
+                        <span style="font-family: var(--font-mono);">/admin/logs</span>
+                    </div>
+                    <div style="color: #f85149; font-weight: bold; margin-bottom: 0.5rem;">✖ Access Disallowed</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.8rem; background: #000; padding: 0.5rem; border-radius: 4px;">
+                        <span style="color: #8b949e;"># robots.txt match found</span><br>
+                        <span style="color: #ff7b72;">User-agent: *</span><br>
+                        <span style="color: #ff7b72;">Disallow: /admin/</span> <span style="color: #58a6ff;">&lt;-- Matched</span>
+                    </div>
+                    <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim);">
+                        Cache Status: <span style="color: #3fb950;">HIT (TTL 10m)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Logic</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Core Methods</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Parameters</th>
+                    <th>Returns</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>isAllowed</code></td>
+                    <td><code>url: String</code>, <code>userAgent: String</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Checks if the given URL is accessible based on Allow/Disallow rules.</td>
+                </tr>
+                <tr>
+                    <td><code>getCrawlDelay</code></td>
+                    <td><code>url: String</code></td>
+                    <td><code>Long?</code></td>
+                    <td>Returns the crawl delay in milliseconds if specified for the domain.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Data Structure: <code>RobotsTxt</code></h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>disallowedPaths</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Patterns that the bot is forbidden from visiting.</td>
+                </tr>
+                <tr>
+                    <td><code>allowedPaths</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Patterns that take precedence over disallow rules.</td>
+                </tr>
+                <tr>
+                    <td><code>crawlDelay</code></td>
+                    <td><code>Long?</code></td>
+                    <td>Parsed delay in milliseconds.</td>
+                </tr>
+                <tr>
+                    <td><code>sitemaps</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Discovered XML sitemap URLs.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Execution Lifecycle</h3>
+            <ol style="color: var(--text-main); padding-left: 1.2rem;">
+                <li><strong>Normalization:</strong> Extracts the base URL (scheme, host, port) from the target URI.</li>
+                <li><strong>Cache Lookup:</strong> Checks <code>ConcurrentHashMap</code> for existing
+                    <code>RobotsTxt</code> object.
+                </li>
+                <li><strong>Fetch (on Miss):</strong> Executes a GET request to <code>/robots.txt</code> with User-Agent
+                    <code>CognotikBot/1.0</code>.
+                </li>
+                <li><strong>Parsing:</strong>
+                    <ul style="margin-top: 0.5rem; color: var(--text-dim);">
+                        <li>Filters directives by User-Agent (matches <code>*</code> or <code>cognotik</code>).</li>
+                        <li>Converts robots.txt patterns (<code>*</code>, <code>$</code>) into standard Regex.</li>
+                        <li>Extracts <code>Crawl-delay</code> and <code>Sitemap</code> links.</li>
+                    </ul>
+                </li>
+                <li><strong>Matching:</strong> Evaluates <code>Allow</code> rules first (precedence), then <code>Disallow</code>.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Boilerplate</h3>
+            <pre><code class="language-kotlin">
+import com.simiacryptus.cognotik.plan.tools.online.RobotsTxtParser
+
+class WebScraper(private val parser: RobotsTxtParser = RobotsTxtParser()) {
+    fun scrape(url: String) {
+        if (parser.isAllowed(url)) {
+            val delay = parser.getCrawlDelay(url) ?: 0L
+            Thread.sleep(delay)
+            // Proceed with fetch...
+        }
+    }
+}
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | FiniteStateMachineTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+          color: var(--accent-warning);
+        }
+
+        /* Reality Check Grid */
+        .reality-check {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+          background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            flex-grow: 1;
+            font-size: 0.9rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .docs-table tr:hover {
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.9rem;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; font-weight: bold; }
+        
+        .mermaid {
+            background: #0d1117;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        .showcase-section {
+            margin-top: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 900px) {
+            .reality-check { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="page-container">
+
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > FiniteStateMachineTask</div>
+        <h1>FiniteStateMachineTask</h1>
+        <p class="task-pitch">
+            Model concepts using finite state machine analysis to identify states, map transitions, and validate system
+            logic.
+        </p>
+        <div class="task-badges">
+            <span class="badge badge-primary">Category: Reasoning</span>
+            <span class="badge badge-primary">Model: GPT-4 Preferred</span>
+            <span class="badge badge-warning">Output: Mermaid + Markdown</span>
+        </div>
+    </section>
+
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
+            <pre><code class="language-json">{
+  "concept_to_model": "User Authentication",
+  "domain_context": "Web Security",
+  "identify_edge_cases": true,
+  "validate_properties": true,
+  "input_files": ["src/auth/*.kt"],
+  "generate_test_scenarios": true
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The Diagram -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Generated State Diagram</div>
+            <div class="mock-ui-content">
+                <div class="mermaid">
+                    stateDiagram-v2
+                    [*] --> Unauthenticated
+                    Unauthenticated --> Authenticating : login_attempt
+                    Authenticating --> Authenticated : success
+                    Authenticating --> Locked : max_retries_exceeded
+                    Authenticated --> [*] : logout
+                    Locked --> Unauthenticated : reset_timeout
+                    Authenticated --> Authenticating : session_expired
+                </div>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: #4ade80; font-family: var(--font-mono);">
+                    ✔ 5 States Identified<br>
+                    ✔ 6 Transitions Mapped<br>
+                    ✔ Properties Validated (Deterministic)
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE (Live Workspace) -->
+    <section class="showcase-section">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem;">
+            Explore actual artifacts generated by this task, including the full Markdown analysis and Mermaid source
+            files.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- TAB 1: Documentation -->
+            <div class="tab-pane active" id="tab-docs">
+                <h3 style="font-family: 'Cinzel', serif;">Configuration Parameters</h3>
+                <table class="docs-table">
+                    <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><code>concept_to_model</code><span class="req">*</span></td>
+                        <td><code>String</code></td>
+                        <td>The concept, system, or process to model as a finite state machine.</td>
+                    </tr>
+                    <tr>
+                        <td><code>domain_context</code></td>
+                        <td><code>String</code></td>
+                        <td>Domain or context for the FSM (e.g., 'authentication system').</td>
+                    </tr>
+                    <tr>
+                        <td><code>initial_states</code></td>
+                        <td><code>List&lt;String&gt;</code></td>
+                        <td>Initial state(s) to consider for the state discovery.</td>
+                    </tr>
+                    <tr>
+                        <td><code>known_events</code></td>
+                        <td><code>List&lt;String&gt;</code></td>
+                        <td>Known events or triggers that cause state transitions.</td>
+                    </tr>
+                    <tr>
+                        <td><code>identify_edge_cases</code></td>
+                        <td><code>Boolean</code></td>
+                        <td>Whether to identify edge cases and error states. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>validate_properties</code></td>
+                        <td><code>Boolean</code></td>
+                        <td>Whether to validate state machine properties (determinism, completeness, reachability).
+                            Default: <code>true</code>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>generate_test_scenarios</code></td>
+                        <td><code>Boolean</code></td>
+                        <td>Whether to generate test scenarios for state transitions. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>input_files</code></td>
+                        <td><code>List&lt;String&gt;</code></td>
+                        <td>Glob patterns for source code to be used as input for the task.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 2: Config & Process -->
+            <div class="tab-pane" id="tab-process">
+                <h3 style="font-family: 'Cinzel', serif;">Task Process Lifecycle</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1.5rem;">
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">1. State
+                            Identification:</strong>
+                        Analyzes the concept and reference files to define states, invariants, and entry/exit
+                        conditions.
+                    </li>
+                    <li style="margin-bottom: 1.5rem;">
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">2. Transition
+                            Mapping:</strong>
+                        Identifies events, guard conditions, and actions that move the system between states.
+                    </li>
+                    <li style="margin-bottom: 1.5rem;">
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">3. Diagram
+                            Generation:</strong>
+                        Produces a <code>stateDiagram-v2</code> Mermaid block for visual documentation.
+                    </li>
+                    <li style="margin-bottom: 1.5rem;">
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">4. Edge Case
+                            Analysis:</strong>
+                        (Optional) Detects invalid transitions, missing paths, and race conditions.
+                    </li>
+                    <li style="margin-bottom: 1.5rem;">
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">5. Formal
+                            Validation:</strong>
+                        (Optional) Evaluates the FSM for determinism, completeness, reachability, and liveness.
+                    </li>
+                    <li style="margin-bottom: 1.5rem;">
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">6. Test Scenario
+                            Generation:</strong>
+                        (Optional) Creates "Happy Path" and "Error Path" sequences for QA validation.
+                    </li>
+                </ul>
+            </div>
+
+            <!-- TAB 3: Integration -->
+            <div class="tab-pane" id="tab-integration">
+                <h3 style="font-family: 'Cinzel', serif;">Direct Orchestration</h3>
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">Use this when adding the task
+                    to a custom agentic workflow.</p>
+                <div class="panel">
+                    <div class="panel-header">Kotlin</div>
+                    <pre><code class="language-kotlin">val task = FiniteStateMachineTask(
+    orchestrationConfig = config,
+    planTask = FiniteStateMachineTaskExecutionConfigData(
+        concept_to_model = "Payment Gateway",
+        domain_context = "E-commerce",
+        input_files = listOf("src/payments/**/*.kt"),
+        validate_properties = true
+    )
+)</code></pre>
+                </div>
+                <h3 style="margin-top: 2rem; font-family: 'Cinzel', serif;">Embedded Execution (Headless)</h3>
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">Invoke as a standalone tool
+                    using the <code>UnifiedHarness</code> for CI/CD or CLI tools.</p>
+                <div class="panel">
+                    <div class="panel-header">Embedded Example</div>
+                    <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.reasoning.FiniteStateMachineTask.Companion.FiniteStateMachine
+import com.simiacryptus.cognotik.plan.tools.reasoning.FiniteStateMachineTask.FiniteStateMachineTaskExecutionConfigData
+harness.runTask(
+    taskType = FiniteStateMachine,
+    typeConfig = TaskTypeConfig(name = "FsmAnalyzer"),
+    executionConfig = FiniteStateMachineTaskExecutionConfigData(
+        concept_to_model = "Order Lifecycle",
+        domain_context = "Logistics",
+        generate_test_scenarios = true
+    ),
+    workspace = File("./project-dir"),
+    autoFix = true
+)</code></pre>
+                </div>
+
+
+                <h3 style="margin-top: 2rem; font-family: 'Cinzel', serif;">Prompt Segment</h3>
+                <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM
+                    context:</p>
+                <div class="panel">
+                    <pre><code>FiniteStateMachine - Model concepts using finite state machine analysis
+  ** Specify the concept, system, or process to model
+  ** Optionally provide initial states and known events
+  ** Identify all possible states and transitions
+  ** Detect edge cases and error states
+  ** Validate FSM properties (determinism, completeness, reachability)
+  ** Generate test scenarios for state transitions
+  ** Produces state diagram and transition table
+  ** Useful for:
+     - System design and validation
+     - Understanding complex workflows
+     - Identifying missing requirements
+     - Test case generation
+     - Protocol analysis</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    $(document).ready(() => {
+        initFileTree('#file-tree-demo', 'webui/workspaces/FiniteStateMachine/');
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | FileAppendTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikFooter.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+      .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+      /* Header Section */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #090c10;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styling */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .ui-tab-header {
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .ui-tab {
+            padding: 0.25rem 0.5rem;
+            border-bottom: 2px solid var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .append-preview {
+            background: #0d1117;
+            border: 1px solid #444c56;
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        .accept-btn {
+            margin-top: 1rem;
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .req { color: #f85149; }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(110, 118, 129, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > File Operations</div>
+        <h1>FileAppendTask</h1>
+        <p class="pitch">
+            Append content to the end of existing files with AI assistance. Ideal for updating logs, adding exports, or
+            extending configuration files without risking existing code integrity.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: File</span>
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK SECTION -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code class="language-json">{
+    "task_type": "FileAppend",
+    "file": "CHANGELOG.md",
+    "append_content": "## [1.0.1] - Fixed login bug",
+    "related_files": ["src/auth/Login.kt"]
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI (Proposed Append)</div>
+            <div class="mock-ui-content">
+                <div class="ui-tab-header">
+                    <div class="ui-tab">Proposed Append</div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-dim);">Proposed Append to <code>app.properties</code></p>
+                <div class="append-preview">
+                    <span style="color: var(--text-tertiary);"># Added by FileAppendTask</span><br>
+                    db.timeout=30000
+                </div>
+                <button class="accept-btn">Accept Append</button>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the output and state of the <code>FileAppendTask</code> test workspace.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>file</code> <span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>The relative path to the file to append content to.</td>
+                </tr>
+                <tr>
+                    <td><code>append_content</code></td>
+                    <td><code>String</code></td>
+                    <td>The specific content to append or a natural language description of what to add.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Additional files provided to the AI to ensure the appended content matches project style and
+                        context.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="panel" style="margin-top: 2rem; padding: 1rem;">
+                <h4 style="margin-top: 0;">💡 Technical Note</h4>
+                <p style="font-size: 0.9rem; color: var(--text-dim);">
+                    Unlike <code>FileModificationTask</code>, the target file is <strong>not</strong> provided to the
+                    AI. Only the <code>related_files</code> are used as context. This makes it highly efficient for
+                    large files where you only need to add to the end.
+                </p>
+            </div>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3>Task Lifecycle</h3>
+            <ul style="padding-left: 1.2rem;">
+                <li><strong>Initialization:</strong> Validates that the <code>file</code> path is provided and the
+                    workspace is accessible.
+                </li>
+                <li><strong>Context Loading:</strong> Reads the content of all <code>related_files</code> to build the
+                    LLM prompt.
+                </li>
+                <li><strong>Generation:</strong> The AI generates the exact text to be appended based on the <code>append_content</code>
+                    goal.
+                </li>
+                <li><strong>Review:</strong> If <code>autoFix</code> is disabled, the task pauses and presents a
+                    "Proposed Append" tab to the user.
+                </li>
+                <li><strong>Execution:</strong> Upon approval (or auto-fix), the content is appended to the end of the
+                    file using standard I/O.
+                </li>
+            </ul>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3>Prompt Segment</h3>
+            <pre><code class="language-text">FileAppend - Append content to the end of an existing file
+  * Specify the relative file path and the content or goal of the addition.
+  * The target file is NOT provided to the AI; only related context files are.
+  * Useful for adding log entries, updating lists, or adding new exports/imports at the end of a file</code></pre>
+
+            <h3 style="margin-top: 2rem;">Embedded Invocation (Kotlin)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">Example of invoking the task using the <code>UnifiedHarness</code>
+                in a serverless environment.</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.FileAppendTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileAppendTask.Companion.FileAppend
+
+val config = FileAppendTaskExecutionConfigData(
+    file = "CHANGELOG.md",
+    append_content = "## [1.0.1] - Fixed login bug",
+    related_files = listOf("src/auth/Login.kt") 
+)
+
+harness.runTask(
+    taskType = FileAppend, 
+    typeConfig = TaskTypeConfig(), // Use default settings
+    executionConfig = config, 
+    workspace = projectDir,
+    autoFix = true
+)</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/FileAppend/');
+</script>
+
+</body>
+</html>

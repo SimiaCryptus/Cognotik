@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>SingleFixTask - Cognotik</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
+          rel="stylesheet">
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --bg-hover: #1c2128;
+            --border-subtle: #30363d;
+            --border-strong: #444c56;
+            --accent-primary: #58a6ff;
+            --accent-success: #3fb950;
+            --accent-warning: #d29922;
+            --accent-danger: #f85149;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --text-dimmer: #6e7681;
+            --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+        }
+
+        a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Header */
+        .task-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: var(--bg-panel);
+        }
+
+        .breadcrumbs {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        .breadcrumbs a {
+            color: var(--accent-primary);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .task-title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            font-family: 'Cinzel', serif;
+            letter-spacing: -0.02em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-category {
+            background-color: rgba(88, 166, 255, 0.15);
+            color: var(--accent-primary);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+        }
+
+        .badge-model {
+            background-color: rgba(63, 185, 80, 0.15);
+            color: var(--accent-success);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+        }
+
+        .header-pitch {
+            color: var(--text-dim);
+            font-size: 1rem;
+            margin-top: 0.75rem;
+            max-width: 800px;
+        }
+
+        /* Reality Check Section */
+        .reality-check {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .reality-check-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        @media (max-width: 1024px) {
+            .reality-check-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .flow-arrow {
+                display: none;
+            }
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 1rem;
+            background-color: var(--bg-hover);
+            border-bottom: 1px solid var(--border-subtle);
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .panel-header .icon {
+            font-size: 1.2rem;
+        }
+
+        .code-panel {
+            min-height: 300px;
+        }
+
+        .code-panel pre {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            margin: 0;
+            background-color: var(--bg-app);
+        }
+
+        .code-panel code {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        .ui-panel {
+            min-height: 300px;
+            padding: 1rem;
+            background-color: var(--bg-app);
+        }
+
+        .mock-browser {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .mock-browser h3 {
+            color: var(--accent-success);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .mock-browser p {
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+        }
+
+        .mock-browser code {
+            background-color: var(--bg-app);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+        }
+
+        .diff-view {
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 0.75rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            overflow-x: auto;
+            margin-top: 0.75rem;
+        }
+
+        .diff-line-add {
+            color: var(--accent-success);
+        }
+
+        .diff-line-remove {
+            color: var(--accent-danger);
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--text-dim);
+            user-select: none;
+        }
+
+        /* Tabs Section */
+        .task-details {
+            padding: 2rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-family: var(--font-sans);
+        }
+
+        .tabs-nav button:hover {
+            color: var(--text-main);
+            background-color: var(--bg-panel);
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Configuration Table */
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .config-table thead {
+            background-color: var(--bg-panel);
+            border-bottom: 2px solid var(--border-subtle);
+        }
+
+        .config-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .config-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.9rem;
+        }
+
+        .config-table tbody tr:hover {
+            background-color: var(--bg-panel);
+        }
+
+        .field-name {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .field-type {
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .field-description {
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .required-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background-color: rgba(248, 81, 73, 0.15);
+            color: var(--accent-danger);
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        pre code {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: var(--text-dim);
+        }
+
+        /* Process Steps */
+        .process-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .process-step {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background-color: var(--bg-panel);
+            border: 2px solid var(--accent-primary);
+            border-radius: 50%;
+            color: var(--accent-primary);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .step-content p {
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .text-muted {
+            color: var(--text-dim);
+        }
+
+        .mt-2 {
+            margin-top: 1rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 1rem;
+        }
+
+        /* Syntax Highlighting */
+        .hljs {
+            background-color: transparent;
+            color: var(--text-main);
+        }
+
+        .hljs-attr {
+            color: var(--accent-primary);
+        }
+
+        .hljs-string {
+            color: var(--accent-success);
+        }
+
+        .hljs-number {
+            color: #79c0ff;
+        }
+
+        .hljs-literal {
+            color: #79c0ff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header Section -->
+    <section class="task-header">
+        <div class="breadcrumbs">
+            <a href="/">Home</a> &gt; <a href="/#tasks">Tasks</a> &gt; <a href="/#execution">Execution</a> &gt;
+            SingleFixTask
+        </div>
+        <div class="header-top">
+            <h1 class="task-title">SingleFixTask</h1>
+            <span class="badge badge-category">Execution</span>
+            <span class="badge badge-model">GPT-4 Preferred</span>
+        </div>
+        <p class="header-pitch">
+            Analyzes a provided log file for errors and attempts to fix them in the codebase without executing commands.
+            Performs one-pass analysis and fix generation.
+        </p>
+    </section>
+
+    <!-- Reality Check Section -->
+    <section class="reality-check">
+        <h2 class="reality-check-title">Input vs. Output</h2>
+        <div class="reality-check-grid">
+            <!-- Input: Configuration -->
+            <div class="panel code-panel">
+                <div class="panel-header">
+                    <span class="icon">⚙️</span> TaskConfig.json
+                </div>
+                <pre><code class="language-json">{
+  "task_type": "SingleFix",
+  "logFile": "build/logs/compilation_errors.log",
+  "task_description": "Fix compilation errors",
+  "task_dependencies": ["CompileTask"],
+  "state": "pending"
+}</code></pre>
+            </div>
+
+            <!-- Arrow Connector -->
+            <div class="flow-arrow">→</div>
+
+            <!-- Output: User UI -->
+            <div class="panel ui-panel">
+                <div class="panel-header">
+                    <span class="icon">👁️</span> User UI
+                </div>
+                <div class="mock-browser">
+                    <h3>✓ Analysis Complete</h3>
+                    <p>Analyzed log file: <code>build/logs/compilation_errors.log</code></p>
+                    <p>Found <strong>3 errors</strong> and generated fixes.</p>
+                    <div class="diff-view">
+                        <div class="diff-line-remove">- Missing import: java.util.List</div>
+                        <div class="diff-line-add">+ Added import statement</div>
+                        <div style="margin-top: 0.5rem; color: var(--text-dimmer);">...</div>
+                        <div class="diff-line-remove">- Type mismatch in method signature</div>
+                        <div class="diff-line-add">+ Corrected parameter types</div>
+                    </div>
+                    <p style="margin-top: 0.75rem; color: var(--text-dimmer); font-size: 0.85rem;">
+                        Transcript: <a href="#">SingleFixTask_full_report_20240115143022.md</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tabbed Details Section -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="tab-button active" data-tab="documentation">Documentation</button>
+            <button class="tab-button" data-tab="config-process">Config & Process</button>
+            <button class="tab-button" data-tab="integration">Integration</button>
+        </div>
+
+        <!-- Tab 1: Documentation -->
+        <div class="tab-content active" id="documentation">
+            <h3 class="section-header">Configuration Parameters</h3>
+            <table class="config-table">
+                <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <span class="field-name">logFile</span>
+                        <span class="required-badge">Required</span>
+                    </td>
+                    <td><span class="field-type">String</span></td>
+                    <td><code>—</code></td>
+                    <td class="field-description">The path to the log file containing errors to analyze and fix.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">task_description</span></td>
+                    <td><span class="field-type">String</span></td>
+                    <td><code>null</code></td>
+                    <td class="field-description">Optional description of the task for context and logging.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">task_dependencies</span></td>
+                    <td><span class="field-type">List&lt;String&gt;</span></td>
+                    <td><code>[]</code></td>
+                    <td class="field-description">List of task names that must complete before this task executes.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">state</span></td>
+                    <td><span class="field-type">TaskState</span></td>
+                    <td><code>pending</code></td>
+                    <td class="field-description">Current execution state of the task (pending, running, completed,
+                        failed).
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 class="section-header">Task Characteristics</h3>
+            <ul>
+                <li><strong>Side-Effect Safe:</strong> Does not execute commands or modify files directly during
+                    analysis.
+                </li>
+                <li><strong>Single Pass:</strong> Analyzes the log file once and generates fixes in a single pass.</li>
+                <li><strong>Model Requirement:</strong> GPT-4 or equivalent for accurate error analysis and fix
+                    generation.
+                </li>
+                <li><strong>Token Usage:</strong> Medium (depends on log file size, typically 2K-10K tokens).</li>
+                <li><strong>Dependencies:</strong> Typically follows compilation or build tasks that generate error
+                    logs.
+                </li>
+            </ul>
+
+            <h3 class="section-header">Output</h3>
+            <p class="text-muted">
+                The task generates a markdown transcript file containing:
+            </p>
+            <ul>
+                <li>Analysis of errors found in the log file</li>
+                <li>Proposed fixes with code diffs</li>
+                <li>File paths and line numbers affected</li>
+                <li>Execution summary and any errors encountered</li>
+            </ul>
+        </div>
+
+        <!-- Tab 2: Configuration & Process -->
+        <div class="tab-content" id="config-process">
+            <h3 class="section-header">Type Configuration</h3>
+            <p class="text-muted">Static settings defined when the task is registered:</p>
+            <pre><code class="language-kotlin">class SingleFixTaskTypeConfig(
+    name: String? = "SingleFix",
+    model: ApiChatModel? = null
+) : TaskTypeConfig(name, name, model)</code></pre>
+            <ul>
+                <li><strong>name:</strong> Task identifier (default: "SingleFix")</li>
+                <li><strong>model:</strong> LLM model instance for error analysis (default: orchestration config model)
+                </li>
+            </ul>
+
+            <h3 class="section-header">Runtime Configuration</h3>
+            <p class="text-muted">Dynamic parameters provided at execution time:</p>
+            <pre><code class="language-kotlin">class SingleFixTaskExecutionConfigData(
+    @Description("The path to the log file containing errors")
+    var logFile: String? = null,
+    task_description: String? = null,
+    task_dependencies: List&lt;String&gt;? = null,
+    state: TaskState? = null
+) : TaskExecutionConfig(...)</code></pre>
+
+            <h3 class="section-header">Task Process Lifecycle</h3>
+            <div class="process-steps">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Initialization</h4>
+                        <p>Validates the log file path and ensures the file exists. Loads project context and
+                            initializes the LLM model.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Log Analysis</h4>
+                        <p>Reads the log file and parses error messages. Identifies affected files and error types
+                            (syntax, type mismatch, missing imports, etc.).</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Fix Generation</h4>
+                        <p>Uses the LLM to generate patch-based fixes for each error. Validates fixes against the
+                            codebase structure.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Transcript Generation</h4>
+                        <p>Creates a detailed markdown transcript with analysis results, proposed fixes, and execution
+                            summary.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>Completion</h4>
+                        <p>Returns success status and provides link to the generated transcript for user review.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="section-header">Error Handling</h3>
+            <ul>
+                <li><strong>Missing Log File:</strong> Throws IllegalArgumentException with descriptive message.</li>
+                <li><strong>Invalid Configuration:</strong> Validation fails if logFile is null or blank.</li>
+                <li><strong>Execution Errors:</strong> Caught and logged; stack trace included in transcript if autoFix
+                    is enabled.
+                </li>
+                <li><strong>Recovery:</strong> Task completes with error status; user can review transcript and retry
+                    with corrected configuration.
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab 3: Integration -->
+        <div class="tab-content" id="integration">
+            <h3 class="section-header">Adding to OrchestrationConfig</h3>
+            <p class="text-muted">Copy-pasteable Kotlin code to register this task:</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.run.SingleFixTask
+
+// In your OrchestrationConfig setup:
+val singleFixTask = SingleFixTask(
+    orchestrationConfig = this,
+    planTask = SingleFixTask.SingleFixTaskExecutionConfigData(
+        logFile = "build/logs/compilation_errors.log",
+        task_description = "Fix compilation errors from build",
+        task_dependencies = listOf("CompileTask")
+    )
+)
+
+// Register in task orchestrator
+taskOrchestrator.registerTask(
+    SingleFixTask.SingleFix,
+    SingleFixTask.SingleFixTaskTypeConfig(
+        name = "SingleFix",
+        model = orchestrationConfig.instance(ApiChatModel.GPT4)
+    )
+)</code></pre>
+
+            <h3 class="section-header">Prompt Segment</h3>
+            <p class="text-muted">The text injected into the LLM prompt:</p>
+            <pre><code class="language-text">Analyze the log file '{logFile}' and fix any errors found.</code></pre>
+            <p class="text-muted mt-2">
+                This prompt is combined with the project context (file tree, code snippets) and the log file contents to
+                guide the LLM in generating appropriate fixes.
+            </p>
+
+            <h3 class="section-header">Typical Workflow</h3>
+            <ol>
+                <li>A build or compilation task generates an error log file</li>
+                <li>SingleFixTask is triggered with the log file path</li>
+                <li>Task analyzes errors and generates fixes using the LLM</li>
+                <li>Fixes are presented in a transcript for user review</li>
+                <li>User can apply fixes manually or integrate with automated patching</li>
+            </ol>
+
+            <h3 class="section-header">Configuration Example</h3>
+            <pre><code class="language-json">{
+  "tasks": [
+    {
+      "type": "CompileTask",
+      "config": {
+        "command": "gradle build"
+      }
+    },
+    {
+      "type": "SingleFixTask",
+      "config": {
+        "logFile": "build/logs/compilation_errors.log",
+        "task_dependencies": ["CompileTask"],
+        "task_description": "Analyze and fix compilation errors"
+      }
+    }
+  ]
+}</code></pre>
+        </div>
+    </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+    // Initialize syntax highlighting
+    document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+    });
+
+    // Tab switching functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Add active class to clicked button and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            // Re-highlight code in the newly visible tab
+            document.getElementById(tabName).querySelectorAll('pre code').forEach(block => {
+                hljs.highlightElement(block);
+            });
+        });
+    });
+</script>
+</body>
+</html>

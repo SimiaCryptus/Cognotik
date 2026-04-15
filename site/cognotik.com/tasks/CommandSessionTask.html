@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | CommandSessionTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+      .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+      .reality-check-section {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          color: var(--text-tertiary);
+            font-size: 1.5rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+          font-family: var(--font-body);
+          font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Session > CommandSessionTask</div>
+        <h1>CommandSessionTask</h1>
+        <p class="page-pitch">
+            Execute commands in a stateful, interactive terminal session. Maintains environment persistence, supports
+            TTY allocation, and manages long-running process lifecycles.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Session</span>
+            <span class="badge">Stateful</span>
+            <span class="badge">TTY Supported</span>
+        </div>
+    </header>
+
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span>JSON</span>
+            </div>
+            <div class="panel-content">
+                <pre><code class="language-json">{
+  "command": ["bash", "-i"],
+  "inputs": [
+    "export PROJECT=Cognotik",
+    "ls -la",
+    "echo $PROJECT"
+  ],
+  "sessionId": "dev-shell-01",
+"tty": true,
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>Session UI Output</span>
+                <span>Rendered Markdown</span>
+            </div>
+            <div class="panel-content">
+                <div style="font-family: var(--font-mono); font-size: 0.85rem;">
+                    <div style="color: var(--text-dim); margin-bottom: 0.5rem;">### Input 2</div>
+                    <div style="background: #000; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem;">
+                        <span style="color: #4ade80;">$</span> ls -la
+                    </div>
+                    <div style="color: var(--text-dim); margin-bottom: 0.5rem;">Output:</div>
+                    <div style="background: #000; padding: 0.5rem; border-radius: 4px; color: #d1d5db; white-space: pre;">
+                        total 24
+                        drwxr-xr-x 4 user staff 128 May 20 10:00 .
+                        drwxr-xr-x 8 user staff 256 May 20 09:45 ..
+                        -rw-r--r-- 1 user staff 1024 May 20 10:00 README.md
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>command</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>The command to start the interactive session. Defaults to <code>["bash", "-i"]</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>inputs</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Sequential commands to send to the session's standard input.</td>
+                </tr>
+                <tr>
+                    <td><code>sessionId</code></td>
+                    <td><code>String?</code></td>
+                    <td>Optional ID to reuse an existing session. Enables state persistence (variables, working
+                        directory) across multiple task executions.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>timeout</code></td>
+                    <td><code>Long</code></td>
+                    <td>Maximum time (ms) for commands to finish. Default: <code>30000</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>idle_timeout</code></td>
+                    <td><code>Long</code></td>
+                    <td>Maximum time (ms) to wait for output after a command. Default: <code>2000</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>tty</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>If true, uses <code>pty4j</code> to allocate a pseudo-terminal. Required for TTY-aware
+                        applications.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3>Task Lifecycle</h3>
+            <ol style="color: var(--text-dim); max-width: 800px;">
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Session Resolution:</strong>
+                    Checks if a <code>sessionId</code> is provided and active. If not, it initializes a new <code>Process</code>
+                    or <code>PtyProcess</code>.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Output Monitoring:</strong>
+                    Spawns a daemon thread to continuously read the process's <code>inputStream</code> into a
+                    thread-safe buffer.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Command Execution:</strong>
+                    Iterates through <code>inputs</code>, writing each to the process <code>outputStream</code> and
+                    waiting for output based on <code>idle_timeout</code>.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Cleanup:</strong>
+                    Inactive or dead processes are automatically purged from the global session registry to prevent
+                    resource leaks.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel">
+                <div class="panel-header">Orchestration Setup</div>
+                <div class="panel-content">
+                    <pre><code class="language-kotlin">val config = CommandSessionTaskExecutionConfigData(
+    command = listOf("python3", "-i"),
+    inputs = listOf(
+        "import os",
+        "print(os.getcwd())"
+    ),
+    sessionId = "python-env",
+  tty = false,
+)
+
+val task = CommandSessionTask(orchestrationConfig, config)</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <title>Cognotik | FileSearchTask</title>
+</head>
+<body>
+<h1>FileSearchTask</h1>
+<p>Search for patterns in files.</p>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | FileSearchTask</title>
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+
+    <!-- 1. HEADER -->
+    <header class="page-header" style="margin-bottom: 2rem;">
+        <div class="breadcrumbs" style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.5rem;">
+            Tasks / File Operations
+        </div>
+        <h1 style="font-size: 2.5rem; margin: 0 0 0.5rem 0;">FileSearchTask</h1>
+        <p class="pitch" style="font-size: 1.2rem; color: var(--text-dim); max-width: 800px;">
+            Search project files using patterns with configurable context, glob support, and automated content
+            extraction for non-text formats.
+        </p>
+        <div class="badges" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <span class="badge"
+                  style="background: #238636; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem;">Side-Effect Safe</span>
+            <span class="badge"
+                  style="background: #388bfd; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem;">GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> SearchTaskExecutionConfigData</div>
+            <pre style="margin: 0; padding: 1rem; overflow: auto;"><code class="language-json"
+                                                                         style="font-family: var(--font-mono); font-size: 0.85rem; color: #d1d5db;">
+{
+  "search_pattern": "class \\w+Task",
+  "is_regex": true,
+  "context_lines": 2,
+  "input_files": ["src/**/*.kt"],
+  "extractContent": false
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI Output</div>
+            <div class="mock-ui-content" style="padding: 1rem; font-family: var(--font-mono); font-size: 0.8rem;">
+                <div style="color: var(--accent-primary); margin-bottom: 0.5rem; font-weight: bold;">Found 1 match(es)
+                    in 1 file(s).
+                </div>
+                <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.5rem;">
+                    <div style="color: var(--text-dim); border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.2rem; margin-bottom: 0.5rem;">
+                        src/main/Task.kt
+                    </div>
+                    <span style="color: #8b949e">10 : </span> import com.simiacryptus...<br>
+                    <span style="color: #58a6ff">> 11 : </span> <span style="color: #ff7b72">class</span> <span
+                        style="color: #d2a8ff">FileSearchTask</span><br>
+                    <span style="color: #8b949e">12 : </span> orchestrationConfig: ...
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the artifacts and search results generated during the <code>FileSearchTask</code> test execution.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <div class="tab-pane" id="tab-docs">
+            <h3 style="margin-top: 0;">Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>search_pattern</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The search pattern (substring or regex) to look for in the files.</td>
+                </tr>
+                <tr>
+                    <td><code>is_regex</code></td>
+                    <td>Boolean</td>
+                    <td>Whether the search pattern is a regex (true) or a substring (false). Default: <code>false</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>context_lines</code></td>
+                    <td>Int</td>
+                    <td>Number of context lines to include before and after each match. Default: <code>2</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for files to be searched (e.g., <code>["src/**/*.kt"]</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>extractContent</code></td>
+                    <td>Boolean</td>
+                    <td>Extract text from non-text files (PDF, HTML, etc.) before searching.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3>Task Lifecycle</h3>
+            <ul style="line-height: 1.6; color: var(--text-main);">
+                <li><strong>Initialization:</strong> Validates that <code>search_pattern</code> is not blank and <code>context_lines</code>
+                    is non-negative.
+                </li>
+                <li><strong>File Discovery:</strong> Resolves glob patterns against the workspace root, filtering out
+                    LLM-ignored files.
+                </li>
+                <li><strong>Search Execution:</strong> Reads files (with optional content extraction) and applies the
+                    regex/substring pattern.
+                </li>
+                <li><strong>Context Grouping:</strong> Merges overlapping context windows into contiguous display blocks
+                    to minimize redundancy.
+                </li>
+                <li><strong>Rendering:</strong> Generates a tabbed UI in the session view, separating the summary from
+                    individual file results.
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3>Prompt Segment</h3>
+            <pre class="panel" style="padding: 1rem; background: var(--bg-app); color: var(--accent-primary);"><code>FileSearch - Search for patterns in files and provide results with context
+* Specify the search pattern (substring or regex)
+* Specify whether the pattern is a regex or a substring
+* Specify the number of context lines to include
+* List files (incl glob patterns) to be searched</code></pre>
+
+            <h3>Kotlin Boilerplate</h3>
+            <pre class="panel" style="padding: 1rem; background: var(--bg-app); color: var(--text-main);"><code>import com.simiacryptus.cognotik.plan.tools.file.FileSearchTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+
+val config = FileSearchTaskExecutionConfigData(
+    search_pattern = "TODO|FIXME",
+    is_regex = true,
+    input_files = listOf("**/*.kt"),
+    context_lines = 2
+)
+
+harness.runTask(FileSearch, typeConfig, config, workspace)</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/FileSearch/');
+</script>
+
+</body>
+</html>

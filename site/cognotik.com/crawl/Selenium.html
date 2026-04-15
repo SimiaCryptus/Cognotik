@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | Selenium Fetch Strategy</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+          color: var(--text-tertiary);
+            font-size: 1.5rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+          font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid {
+                grid-template-columns: 1fr;
+            }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home / Tasks / Web Operations / Selenium</div>
+        <h1>Selenium Fetch Strategy</h1>
+        <p class="pitch">
+            High-fidelity web content extraction using headless Chrome. Designed for JavaScript-heavy applications where
+            standard HTTP clients fail to render the DOM.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">JS-Enabled</span>
+            <span class="badge">Auto-Fallback</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> Fetch Configuration</div>
+            <pre><code class="language-json">
+{
+  "method": "Selenium",
+  "url": "https://app.example.com/dashboard",
+  "wait_for_selector": ".main-content",
+  "timeout": 30000
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Rendered Output</div>
+            <div style="padding: 1rem;">
+                <div style="color: #4ade80; font-size: 0.85rem; margin-bottom: 0.5rem;">✔ DOM Fully Rendered (142kb)
+                </div>
+                <div style="background: #0d1117; border: 1px solid #30363d; padding: 0.5rem; font-family: monospace; font-size: 0.75rem; color: #8b949e;">
+                    &lt;div id="root"&gt;<br>
+                    &nbsp;&nbsp;&lt;nav class="sidebar"&gt;...&lt;/nav&gt;<br>
+                    &nbsp;&nbsp;&lt;main class="main-content"&gt;<br>
+                    <span style="color: #c9d1d9;">&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Welcome, User&lt;/h1&gt;</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+                    &nbsp;&nbsp;&lt;/main&gt;<br>
+                    &lt;/div&gt;
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h2>Fetch Parameters</h2>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>url</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The target URL to navigate to and extract source from.</td>
+                </tr>
+                <tr>
+                    <td><code>pool</code></td>
+                    <td>ExecutorService</td>
+                    <td>Thread pool used for managing the Selenium driver lifecycle.</td>
+                </tr>
+                <tr>
+                    <td><code>webSearchDir</code></td>
+                    <td>File</td>
+                    <td>Directory for storing temporary artifacts or search context.</td>
+                </tr>
+                <tr>
+                    <td><code>isSeleniumEnabled</code></td>
+                    <td>Boolean</td>
+                    <td>Global toggle. If a fetch fails, this is automatically set to <code>false</code> to trigger
+                        fallback.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h2 style="margin-top: var(--space-8);">Resource Usage</h2>
+            <p><strong>Token Consumption:</strong> Low (Retrieval only). Output length depends on target DOM density.
+            </p>
+            <p><strong>Compute:</strong> High (Requires local Chrome/Chromium instance).</p>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Lifecycle</h3>
+            <ol style="padding-left: 1.2rem;">
+                <li><strong>Initialization:</strong> Checks if <code>task.selenium</code> is null. If so, instantiates
+                    <code>Selenium2S3</code> with a fresh <code>chromeDriver</code>.
+                </li>
+                <li><strong>Navigation:</strong> Commands the driver to navigate to the target <code>url</code>.</li>
+                <li><strong>Extraction:</strong> Retrieves the full page source via <code>getPageSource()</code>.</li>
+                <li><strong>Cleanup:</strong> Executes <code>quit()</code> on the driver in a <code>finally</code> block
+                    to ensure no zombie processes remain.
+                </li>
+                <li><strong>Error Handling:</strong> If an exception occurs, <code>FetchConfig.isSeleniumEnabled</code>
+                    is disabled and the system retries using the next available strategy (e.g., HttpClient).
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h2>Kotlin Implementation</h2>
+            <div class="panel">
+                <div class="panel-header">Selenium.kt</div>
+                <pre><code class="language-kotlin">
+class Selenium : FetchMethodFactory {
+    override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {
+        override fun fetch(url: String, ...): String {
+            return try {
+                task.selenium = Selenium2S3(pool, driver = chromeDriver())
+                task.selenium?.navigate(url)
+                task.selenium?.getPageSource() ?: ""
+            } finally {
+                task.selenium?.quit()
+            }
+        }
+    }
+}
+                </code></pre>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

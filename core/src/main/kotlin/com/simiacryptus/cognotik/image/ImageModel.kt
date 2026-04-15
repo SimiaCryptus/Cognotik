@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.image
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -10,7 +11,10 @@ class ImageModel(
   val maxPrompt: Int,
   override val provider: APIProvider,
   val quality: String = "standard",
-  val pricingFunction: (width: Int, height: Int) -> Double
+  @JsonIgnore val pricingFunction: (Int, Int) -> Double = { _, _ ->
+    log.warn("Pricing function not defined for model $name, defaulting to 0.0")
+    0.0
+  },
 ) : AIModel {
 
   fun pricing(width: Int, height: Int): Double = pricingFunction(width, height)

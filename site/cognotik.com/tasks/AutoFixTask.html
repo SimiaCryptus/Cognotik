@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | AutoFixTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="assets/scripts/components/footer.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+      .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane h3 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-primary);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+        .panel pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .req { color: #f85149; margin-left: 2px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="page-container">
+
+    <!-- 1. PAGE HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Execution</div>
+        <h1>AutoFixTask</h1>
+        <p class="pitch">
+            Executes shell commands and automatically repairs failures using LLM-driven patch generation. Ideal for
+            CI/CD pipelines, automated builds, and self-healing infrastructure.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Execution</span>
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span><i class="fas fa-cog"></i> AutoFixTaskExecutionConfigData.json</span>
+                <span>JSON</span>
+            </div>
+            <pre><code class="language-json">{
+  "commands": [
+    {
+      "command": ["./gradlew", "test"],
+      "workingDir": "services/api"
+    }
+  ],
+  "task_description": "Run API tests and fix failures"
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span><i class="fas fa-terminal"></i> Session UI / Transcript</span>
+                <span>RENDERED</span>
+            </div>
+            <div style="padding: 1rem; font-size: 0.85rem;">
+                <div style="color: var(--text-dim); margin-bottom: 1rem;"># Self-Healing Task Execution</div>
+                <div style="background: #0d1117; border: 1px solid #30363d; padding: 0.75rem; border-radius: 4px; font-family: var(--font-mono);">
+                    <div style="color: #f85149;">✖ Command Failed: ./gradlew test</div>
+                    <div style="color: #8b949e; margin: 0.5rem 0;">Analyzing stack trace...</div>
+                    <div style="color: #58a6ff;">ℹ Applying Patch to UserAuth.kt:142</div>
+                    <div style="color: #3fb950; margin-top: 0.5rem;">✔ Retrying... Success.</div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <a href="#" style="color: var(--accent-primary); text-decoration: none; font-size: 0.8rem;">View
+                        Full Report (Markdown) →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-folder-open"></i> Live Results Showcase
+        </h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual artifacts, logs, and generated patches from the <code>AutoFixTask</code> test workspace.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>commands</code> <span class="req">*</span></td>
+                    <td><code>MutableList&lt;CommandWithWorkingDir&gt;</code></td>
+                    <td>A list of commands to execute. Each contains a <code>command</code> (List of strings) and an
+                        optional <code>workingDir</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td><code>String</code></td>
+                    <td>Human-readable description of the intent of this execution.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>IDs of tasks that must complete before this one starts.</td>
+                </tr>
+                </tbody>
+            </table>
+            <h3 style="margin-top: 2rem;">CommandWithWorkingDir</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>command</code> <span class="req">*</span></td>
+                    <td><code>MutableList&lt;String&gt;</code></td>
+                    <td>The command and its arguments (e.g. <code>["npm", "install"]</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>workingDir</code></td>
+                    <td><code>String?</code></td>
+                    <td>Relative path of the working directory.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Type Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>model</code></td>
+                    <td><code>ApiChatModel</code></td>
+                    <td><code>null</code> (Uses system default smart model)</td>
+                </tr>
+                <tr>
+                    <td><code>promptTemplate</code></td>
+                    <td><code>String</code></td>
+                    <td>The system prompt used to guide the self-healing logic.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Lifecycle</h3>
+            <ol style="padding-left: 1.2rem;">
+                <li><strong>Initialization:</strong> Resolves tool executables from <code>UserSettings</code> and
+                    validates the working directories.
+                </li>
+                <li><strong>Execution:</strong> Launches <code>CmdPatchApp</code> to run the specified shell commands.
+                </li>
+                <li><strong>Monitoring:</strong> Captures STDOUT/STDERR and streams it to a multi-format transcript (MD,
+                    HTML, PDF).
+                </li>
+                <li><strong>Self-Healing:</strong> If a command returns a non-zero exit code, the task invokes the LLM
+                    with the error context to generate and apply source code patches.
+                </li>
+                <li><strong>Verification:</strong> Re-runs the command to verify the fix.</li>
+                <li><strong>Completion:</strong> Finalizes the report and updates the session state. Supports
+                    interactive approval if <code>autoFix</code> is disabled.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Usage (UnifiedHarness)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run AutoFix as a headless agent in CI/CD pipelines or Gradle
+                tasks.
+            </p>
+            <div class="panel">
+                <pre><code class="language-kotlin">// 1. Define the Execution Configuration
+val executionConfig = AutoFixTaskExecutionConfigData(
+    commands = mutableListOf(
+        CommandWithWorkingDir(
+            command = mutableListOf("./gradlew", "test"),
+            workingDir = "services/api"
+        )
+    ),
+    task_description = "Run API tests and fix failures"
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = AutoFixTask.AutoFix,
+    executionConfig = executionConfig,
+    workspace = File("./project-root"),
+    autoFix = true // Enable autonomous repair
+)</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Direct Task Instantiation</h3>
+            <div class="panel">
+                <pre><code class="language-kotlin">val task = AutoFixTask(
+    orchestrationConfig = orchestrationConfig,
+    planTask = AutoFixTaskExecutionConfigData(
+        commands = mutableListOf(
+            CommandWithWorkingDir(
+                command = mutableListOf("npm", "run", "build"),
+                workingDir = "frontend"
+            )
+        )
+    )
+)</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM
+                context during healing:</p>
+            <div class="panel" style="background: #0d1117;">
+                  <pre style="color: var(--text-tertiary);">SelfHealing - Run a command and automatically fix any issues that arise
+* Specify the commands to be executed along with their working directories
+* Each command's working directory should be specified relative to the root directory
+* Provide the commands and their arguments in the 'commands' field
+* Each command should be a list of strings
+* Available commands:
+{executables}</pre>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/AutoFix/');
+    });
+</script>
+
+</body>
+</html>
