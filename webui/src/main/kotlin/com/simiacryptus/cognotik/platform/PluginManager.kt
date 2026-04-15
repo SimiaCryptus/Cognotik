@@ -215,13 +215,6 @@ class PluginManager(
 
       if (plugins.isEmpty()) {
         log.warn("No CognotikPlugin implementations found in JAR: {}", canonicalPath)
-        // Clean up classloader if no plugins were found
-        loadedJars.remove(canonicalPath)
-        try {
-          classLoader.close()
-        } catch (e: Exception) {
-          log.warn("Error closing classloader for empty JAR: {}", canonicalPath, e)
-        }
       } else {
         loadedPlugins[canonicalPath] = plugins
         loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath)
