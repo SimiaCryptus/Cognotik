@@ -8,7 +8,7 @@
 const TOUR_CHAPTERS = [
     {
         id: "plugin-install",
-        file: "edit/Plugin_Install.mp4",
+        file: "edit/install.mp4",
         title: "Plugin Installation",
         description: "Easily install and manage AI plugins from the Cognotik Hub — browse categories, read reviews, and add new capabilities to your workspace with a click.",
         icon: "🧩",
