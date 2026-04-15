@@ -923,6 +923,7 @@ function setupPluginManagerModal() {
      pluginManagerBtn?.addEventListener('click', () => {
          modal.style.display = 'block';
          pluginManagerRefreshLoaded();
+         pluginManagerRefreshAuthChains();
      });
      closeBtn?.addEventListener('click', () => {
          modal.style.display = 'none';
@@ -947,6 +948,8 @@ function setupPluginManagerModal() {
      document.getElementById('upload-plugin-btn')?.addEventListener('click', pluginManagerUpload);
      // Load by path
      document.getElementById('load-plugin-by-path-btn')?.addEventListener('click', pluginManagerLoadByPath);
+     // Authorization chains
+     document.getElementById('refresh-auth-chains')?.addEventListener('click', pluginManagerRefreshAuthChains);
 }
 function switchPluginTab(tabId) {
      document.querySelectorAll('#plugin-manager-modal .tab-content').forEach(c => c.classList.remove('active'));
@@ -1312,6 +1315,186 @@ function pluginManagerLoadByPath() {
          })
          .catch(e => showPluginMessage('Request failed: ' + e.message, 'error'));
 }
+// ===== Plugin Manager: Authorization Chains =====
+let authPollingTimer = null;
+function pluginManagerRefreshAuthChains() {
+     const container = document.getElementById('auth-chains-content');
+     if (!container) return;
+     container.innerHTML = '<em>Loading…</em>';
+     fetch('/pluginManager/?action=authChains', { headers: { 'Accept': 'application/json' } })
+         .then(r => {
+             if (!r.ok) throw new Error(`HTTP ${r.status}`);
+             return r.json();
+         })
+         .then(data => {
+             if (!data || data.length === 0) {
+                 container.innerHTML = '<p style="color:#888; text-align:center; padding:20px;">No authorization chains registered. Plugins can register authorization flows when loaded.</p>';
+                 return;
+             }
+             let html = `
+                 <table style="width:100%; border-collapse:collapse;">
+                     <thead>
+                         <tr style="background:#f0f0f0;">
+                             <th style="text-align:left; padding:8px 12px; border-bottom:2px solid #ddd;">Chain Name</th>
+                             <th style="text-align:center; padding:8px 12px; border-bottom:2px solid #ddd;">Actions</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+             `;
+             data.forEach(entry => {
+                 html += `
+                     <tr style="border-bottom:1px solid #eee;">
+                         <td style="padding:10px 12px;">
+                             <strong>🔐 ${escapeHtml(entry.name)}</strong>
+                         </td>
+                         <td style="padding:10px 12px; text-align:center;">
+                             <button class="button" style="font-size:0.85em; padding:5px 14px;"
+                                 data-chain-name="${escapeHtml(entry.name)}" data-action="start-auth">
+                                 Start Authorization
+                             </button>
+                         </td>
+                     </tr>
+                 `;
+             });
+             html += '</tbody></table>';
+             container.innerHTML = html;
+             container.querySelectorAll('button[data-action="start-auth"]').forEach(btn => {
+                 btn.addEventListener('click', () => pluginManagerStartAuth(btn.getAttribute('data-chain-name')));
+             });
+         })
+         .catch(e => {
+             container.innerHTML = `<p style="color:#c0392b;">Error loading authorization chains: ${escapeHtml(e.message)}</p>`;
+         });
+}
+function pluginManagerStartAuth(chainName) {
+     if (!chainName) return;
+     showPluginMessage(`Starting authorization for "${chainName}"...`, 'info');
+     fetch('/pluginManager/', {
+         method: 'POST',
+         body: new URLSearchParams({ action: 'startAuth', chain: chainName }),
+         headers: { 'Accept': 'application/json' }
+     })
+         .then(r => {
+             if (!r.ok) {
+                 return r.text().then(text => {
+                     try { return JSON.parse(text); } catch (e) { throw new Error(`Server returned ${r.status}: ${text.substring(0, 200)}`); }
+                 });
+             }
+             return r.json();
+         })
+         .then(data => {
+             if (data.success && data.sessionId && data.status === 'IN_PROGRESS') {
+                 // Show the auth status panel and start polling, or open in new window
+                 pluginManagerShowAuthProgress(data.sessionId, chainName, data.currentStep, data.totalSteps);
+             } else if (data.success && (data.status === 'completed' || data.status === 'COMPLETED')) {
+                 showPluginMessage(`Authorization completed for "${chainName}": No steps required.`, 'success');
+                 pluginManagerHideAuthProgress();
+             } else if (data.status === 'FAILED') {
+                 showPluginMessage(`Authorization failed for "${chainName}": ${data.failureReason || 'Unknown reason'}`, 'error');
+                 pluginManagerHideAuthProgress();
+             } else {
+                 showPluginMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+                 pluginManagerHideAuthProgress();
+             }
+         })
+         .catch(e => showPluginMessage('Request failed: ' + e.message, 'error'));
+}
+function pluginManagerShowAuthProgress(sessionId, chainName, currentStep, totalSteps) {
+     const panel = document.getElementById('auth-status-panel');
+     const progressFill = document.getElementById('auth-progress-fill');
+     const statusText = document.getElementById('auth-status-text');
+     const actionArea = document.getElementById('auth-action-area');
+     if (!panel) return;
+     panel.style.display = 'block';
+     const pct = totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
+     progressFill.style.width = pct + '%';
+     statusText.textContent = `Authorization "${chainName}" in progress — Step ${currentStep} of ${totalSteps}`;
+     actionArea.innerHTML = `
+         <button class="button" id="auth-open-flow-btn" style="margin-right:8px;">Open Authorization Page</button>
+         <button class="button secondary" id="auth-check-status-btn" style="margin-right:8px;">Check Status</button>
+         <button class="button secondary" id="auth-cancel-btn">Close</button>
+     `;
+     document.getElementById('auth-open-flow-btn')?.addEventListener('click', () => {
+         window.open(`/pluginManager?action=authStep&sessionId=${encodeURIComponent(sessionId)}`, '_blank',
+             'width=700,height=600,scrollbars=yes,resizable=yes');
+     });
+     document.getElementById('auth-check-status-btn')?.addEventListener('click', () => {
+         pluginManagerCheckAuthStatus(sessionId, chainName);
+     });
+     document.getElementById('auth-cancel-btn')?.addEventListener('click', () => {
+         pluginManagerHideAuthProgress();
+         pluginManagerStopAuthPolling();
+     });
+     // Start polling for status updates
+     pluginManagerStartAuthPolling(sessionId, chainName);
+}
+function pluginManagerHideAuthProgress() {
+     const panel = document.getElementById('auth-status-panel');
+     if (panel) panel.style.display = 'none';
+     pluginManagerStopAuthPolling();
+}
+function pluginManagerStartAuthPolling(sessionId, chainName) {
+     pluginManagerStopAuthPolling();
+     authPollingTimer = setInterval(() => {
+         pluginManagerCheckAuthStatus(sessionId, chainName, true);
+     }, 3000);
+}
+function pluginManagerStopAuthPolling() {
+     if (authPollingTimer) {
+         clearInterval(authPollingTimer);
+         authPollingTimer = null;
+     }
+}
+function pluginManagerCheckAuthStatus(sessionId, chainName, silent) {
+     fetch(`/pluginManager/?action=authStatus&sessionId=${encodeURIComponent(sessionId)}`, {
+         headers: { 'Accept': 'application/json' }
+     })
+         .then(r => {
+             if (!r.ok) throw new Error(`HTTP ${r.status}`);
+             return r.json();
+         })
+         .then(data => {
+             const progressFill = document.getElementById('auth-progress-fill');
+             const statusText = document.getElementById('auth-status-text');
+             if (data.isComplete) {
+                 pluginManagerStopAuthPolling();
+                 if (data.status === 'COMPLETED') {
+                     if (progressFill) progressFill.style.width = '100%';
+                     if (statusText) statusText.textContent = `Authorization "${chainName}" completed successfully!`;
+                     showPluginMessage(`Authorization "${chainName}" completed successfully!`, 'success');
+                     // Auto-hide after a delay
+                     setTimeout(() => pluginManagerHideAuthProgress(), 4000);
+                     // Refresh loaded plugins in case auth enabled something
+                     pluginManagerRefreshLoaded();
+                 } else {
+                     if (progressFill) {
+                         progressFill.style.width = '100%';
+                         progressFill.style.background = '#dc3545';
+                     }
+                     if (statusText) statusText.textContent = `Authorization "${chainName}" failed: ${data.failureReason || 'Unknown reason'}`;
+                     showPluginMessage(`Authorization "${chainName}" failed: ${data.failureReason || 'Unknown reason'}`, 'error');
+                 }
+             } else {
+                 const pct = data.totalSteps > 0 ? Math.round((data.currentStep / data.totalSteps) * 100) : 0;
+                 if (progressFill) {
+                     progressFill.style.width = pct + '%';
+                     progressFill.style.background = '#007bff';
+                 }
+                 if (statusText) statusText.textContent = `Authorization "${chainName}" in progress — Step ${data.currentStep} of ${data.totalSteps}`;
+                 if (!silent) {
+                     showPluginMessage(`Authorization in progress: Step ${data.currentStep} of ${data.totalSteps}`, 'info');
+                 }
+             }
+         })
+         .catch(e => {
+             if (!silent) {
+                 showPluginMessage('Error checking auth status: ' + e.message, 'error');
+             }
+             // Session may have expired/been cleaned up
+             pluginManagerStopAuthPolling();
+         });
+}
+
 function escapeHtml(str) {
      return String(str)
          .replace(/&/g, '&amp;')

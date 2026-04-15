@@ -30,7 +30,11 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
 
     @JvmStatic
     fun <T : DynamicEnum<T>> register(clazz: Class<T>, enumConstant: T) {
-      getRegistry(clazz).add(enumConstant.name to enumConstant)
+      val registry = getRegistry(clazz)
+      if (registry.any { it.first == enumConstant.name }) {
+        throw IllegalArgumentException("Enum constant with name '${enumConstant.name}' is already registered for class ${clazz.name}")
+      }
+      registry.add(enumConstant.name to enumConstant)
     }
      /**
       * Unregister a dynamic enum constant by name.

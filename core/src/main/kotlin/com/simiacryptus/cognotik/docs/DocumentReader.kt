@@ -32,13 +32,23 @@ fun File.getDocumentReader(): DocumentReader = when {
   this.name.endsWith(".html", ignoreCase = true) -> HTMLReader(this)
   this.name.endsWith(".htm", ignoreCase = true) -> HTMLReader(this)
   this.name.endsWith(".eml", ignoreCase = true) -> EmlReader(this)
+  this.name.endsWith(".jpg", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".jpeg", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".png", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".gif", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".bmp", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".tiff", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".tif", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".webp", ignoreCase = true) -> ImageReader(this)
+  this.name.endsWith(".svg", ignoreCase = true) -> ImageReader(this)
   else -> TextReader(this)
 }
 
 fun File.isDocumentFile(): Boolean {
   val supportedExtensions = listOf(
     ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
-    ".odt", ".rtf", ".html", ".htm", ".eml", ".txt"
+    ".odt", ".rtf", ".html", ".htm", ".eml", ".txt",
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".svg"
   )
   return supportedExtensions.any { this.name.endsWith(it, ignoreCase = true) }
 }
