@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | JdbcSessionTask</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0.5rem 0;
+            color: #fff;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--border-subtle);
+            font-size: 1.5rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        /* Mock SQL Table */
+        .mock-sql-table {
+            width: 100%;
+            border: 1px solid var(--border-subtle);
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+        .mock-sql-table th, .mock-sql-table td {
+            border: 1px solid var(--border-subtle);
+            padding: 4px 8px;
+        }
+        .mock-sql-table th { background: #21262d; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Database > JdbcSessionTask</div>
+        <h1>JdbcSessionTask</h1>
+        <p class="pitch">
+            Execute stateful SQL queries via JDBC with automatic Markdown table rendering, session persistence, and
+            multi-driver support.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Session</span>
+            <span class="badge">Side-Effect: External DB</span>
+            <span class="badge">Stateful</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️ TaskConfig.json</span>
+            </div>
+            <div class="panel-content">
+                <pre><code class="language-json">{
+  "url": "jdbc:h2:mem:testdb",
+  "sessionId": "analytics-run-01",
+  "sql": [
+    "CREATE TABLE users (id INT, name VARCHAR(255))",
+    "INSERT INTO users VALUES (1, 'Alice')",
+    "SELECT * FROM users"
+  ],
+  "closeSession": false
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ Session UI Output</span>
+            </div>
+            <div class="panel-content">
+                <div style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-dim);">### Query 3</div>
+                <table class="mock-sql-table">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>NAME</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Alice</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div style="margin-top: 1rem; font-size: 0.75rem; color: #4ade80;">✔ SQL execution finished.</div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore logs and artifacts generated by the <code>JdbcSessionTask</code> test suite.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>url</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>JDBC Connection URL. Required for new sessions.</td>
+                </tr>
+                <tr>
+                    <td><code>sql</code> <span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>A list of SQL statements to execute in sequence.</td>
+                </tr>
+                <tr>
+                    <td><code>sessionId</code></td>
+                    <td>String</td>
+                    <td>Identifier to reuse an existing connection for transactions or subsequent queries.</td>
+                </tr>
+                <tr>
+                    <td><code>user</code> / <code>password</code></td>
+                    <td>String</td>
+                    <td>Database credentials.</td>
+                </tr>
+                <tr>
+                    <td><code>driver</code></td>
+                    <td>String</td>
+                    <td>Optional JDBC Driver Class Name. Auto-detected for H2, MySQL, and Postgres.</td>
+                </tr>
+                <tr>
+                    <td><code>closeSession</code></td>
+                    <td>Boolean</td>
+                    <td>If true, closes the connection after this task completes. Default: <code>false</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3>Task Lifecycle</h3>
+            <ul class="process-list">
+                <li><strong>Initialization:</strong> Checks for an existing <code>SessionState</code> using the <code>sessionId</code>.
+                    If invalid or missing, it instantiates the driver (auto-detecting H2, MySQL, or Postgres if not
+                    specified) and establishes a new connection.
+                </li>
+                <li><strong>Execution:</strong> Iterates through the <code>sql</code> list. For each statement:
+                    <ul>
+                        <li>Logs the query to the session transcript.</li>
+                        <li>Executes the statement via the JDBC connection.</li>
+                        <li>If a <code>ResultSet</code> is returned, it is converted into a Markdown table (limited to
+                            100 rows).
+                        </li>
+                        <li>If no result set, it reports the <code>updateCount</code>.</li>
+                    </ul>
+                </li>
+                <li><strong>Cleanup:</strong> If <code>closeSession</code> is enabled, the connection is closed and
+                    removed from the active session registry.
+                </li>
+            </ul>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3>Embedded Invocation (Kotlin)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Use the <code>UnifiedHarness</code> to execute
+                database tasks programmatically in headless environments.</p>
+
+            <pre class="panel" style="padding: 1rem; font-size: 0.85rem; margin-bottom: 2rem;"><code
+                    class="language-kotlin">
+import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask.Companion.JdbcSession
+import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask.JdbcSessionTaskExecutionConfigData
+
+fun runDatabaseQuery(harness: UnifiedHarness, dbUrl: String) {
+    val config = JdbcSessionTaskExecutionConfigData(
+        url = dbUrl,
+        sql = listOf("SELECT TOP 5 * FROM audit_logs ORDER BY created_at DESC"),
+        sessionId = "security-audit-01",
+        task_description = "Fetch recent audit logs"
+    )
+
+    harness.runTask(
+        taskType = JdbcSession,
+        executionConfig = config,
+        workspace = File("./workspace")
+    )
+}
+            </code></pre>
+
+            <h3>LLM Prompt Context</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">The following segment is injected into the agent's
+                context window to describe the tool's capabilities and active state:</p>
+            <pre class="panel"
+                 style="padding: 1rem; font-size: 0.85rem; color: var(--accent-primary); background: #000;">
+JdbcSession - Execute SQL queries via JDBC in a stateful session.
+** Specify the `url`, `user`, and `password` to start a new session.
+** Use `sessionId` to reuse an existing connection for transactions or subsequent queries.
+** Provide a list of `sql` statements to execute.
+
+Active Sessions:
+  ** Session security-audit-01 (valid=true)</pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/JdbcSession/');
+</script>
+
+</body>
+</html>

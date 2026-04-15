@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | CausalInferenceTask - Industrial Reasoning Engine</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/header.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --success-green: #2ea043;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+      .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .page-header { margin-bottom: 2rem; }
+        .breadcrumbs { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+        h1 { font-size: 2rem; margin: 0 0 0.5rem 0; color: #fff; font-family: 'Cinzel', serif; }
+        .pitch { font-size: 1.2rem; color: var(--text-dim); max-width: 800px; }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 420px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre { margin: 0; padding: 1rem; overflow: auto; flex: 1; font-family: var(--font-mono); font-size: 0.85rem; }
+        code { color: var(--accent-primary); }
+
+        .mock-ui {
+            padding: 1rem;
+            background: #0d1117;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tabs-nav { display: flex; border-bottom: 1px solid var(--border-subtle); margin-bottom: 2rem; }
+        .tabs-nav button {
+            background: none; border: none; padding: 1rem 2rem; color: var(--text-dim);
+            cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600;
+        }
+        .tabs-nav button.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+
+        .docs-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .docs-table th { text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--border-subtle); padding: 0.75rem; font-size: 0.9rem; }
+        .docs-table td { padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+        .req { color: #f85149; font-weight: bold; }
+
+        .badge-ui {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: var(--border-subtle);
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="page-container">
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > CausalInferenceTask</div>
+        <h1>CausalInferenceTask</h1>
+        <p class="pitch">
+            Identify causal relationships and root causes using evidence-based reasoning, confounding factor
+            identification, and automated causal graph generation.
+        </p>
+        <div style="margin-top: 1rem;">
+            <span class="badge-ui">Side-Effect Safe</span>
+            <span class="badge-ui"
+                  style="color: #aff5b4; border: 1px solid var(--success-green);">Reasoning Engine</span>
+        </div>
+    </header>
+
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header"><span>ExecutionConfig.json</span><span>JSON</span></div>
+            <pre><code>{
+  "observed_effect": "High latency in checkout service",
+  "potential_causes": [
+    "Database connection pooling",
+    "Recent deployment of Auth module",
+    "Network congestion"
+  ],
+  "evidence_sources": ["logs/checkout/*.log"],
+  "input_files": ["src/services/AuthService.kt"],
+  "build_causal_graph": true
+}</code></pre>
+        </div>
+
+        <div style="text-align: center; color: var(--text-dim); font-size: 1.5rem;">→</div>
+
+        <div class="panel">
+            <div class="panel-header"><span>Session UI Output</span><span>Rendered</span></div>
+            <div class="mock-ui">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
+                    <h4 style="margin: 0; color: var(--accent-primary);">Causal Analysis Results</h4>
+                    <p style="font-size: 0.85rem; margin: 0.5rem 0;">Root Cause: <strong>Auth Module Token
+                        Validation</strong></p>
+                </div>
+                <div style="background: #1c2128; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono);">
+                    <div style="color: #8b949e;">graph TD</div>
+                    <div style="padding-left: 1rem;">
+                        Auth_Deploy -->|Increased CPU| Latency<br>
+                        DB_Pool -.->|Correlation| Latency<br>
+                        Confounder[Traffic Spike] --> Auth_Deploy
+                    </div>
+                </div>
+                <ul style="font-size: 0.8rem; padding-left: 1.2rem; color: var(--text-dim);">
+                    <li>Mechanism: Synchronous crypto calls blocking event loop</li>
+                    <li>Confidence: High (85%)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    <!-- LIVE SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem; font-size: 0.9rem;">
+            Explore actual analysis artifacts and Mermaid diagrams generated by the <code>CausalInferenceTask</code>.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </nav>
+
+        <div class="tab-pane" id="tab-docs">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>observed_effect</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The observed effect or outcome to explain (e.g., a bug or performance drop).</td>
+                </tr>
+                <tr>
+                    <td><code>potential_causes</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific hypotheses to investigate. If empty, the agent identifies causes from evidence.</td>
+                </tr>
+                <tr>
+                    <td><code>evidence_sources</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for logs, metrics, or data files to be used as evidence.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific files or patterns (e.g. <code>**/*.kt</code>) to be examined as primary input.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for context that are not primary evidence but relevant.</td>
+                </tr>
+                <tr>
+                    <td><code>build_causal_graph</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to generate a Mermaid-based visualization of the causal chain. Default:
+                        <code>true</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>identify_confounders</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to explicitly look for variables that create spurious correlations. Default:
+                        <code>true</code>.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="tab-process" style="display: none;">
+            <h3>Task Execution Flow</h3>
+            <ol style="color: var(--text-dim); line-height: 2;">
+                <li><strong>Evidence Gathering:</strong> Scans workspace for files matching
+                    <code>evidence_sources</code> and <code>input_files</code>.
+                </li>
+                <li><strong>Context Assembly:</strong> Aggregates evidence, prior task results, and user instructions
+                    into a reasoning prompt.
+                </li>
+                <li><strong>Causal Inference:</strong> LLM applies temporal precedence and counterfactual reasoning to
+                    distinguish causation from correlation.
+                </li>
+                <li><strong>Graph Generation:</strong> (Optional) Generates a Mermaid diagram representing the
+                    identified causal chain.
+                </li>
+                <li><strong>Reporting:</strong> Produces a structured <code>CausalAnalysisResult</code> with
+                    recommendations.
+                </li>
+            </ol>
+        </div>
+
+        <div class="tab-pane" id="tab-integration" style="display: none;">
+            <h3>Embedded Execution (Headless)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run this task as a standalone tool in CI/CD or scripts.
+            </p>
+            <div class="panel" style="height: auto;">
+                <pre><code>import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.reasoning.CausalInferenceTask.Companion.CausalInference
+import com.simiacryptus.cognotik.plan.tools.reasoning.CausalInferenceTask.CausalInferenceTaskExecutionConfigData
+
+fun runAnalysis(harness: UnifiedHarness, projectDir: File) {
+    val config = CausalInferenceTaskExecutionConfigData(
+        observed_effect = "High latency in checkout service",
+        evidence_sources = listOf("logs/checkout/*.log"),
+        input_files = listOf("src/services/AuthService.kt"),
+        build_causal_graph = true,
+        identify_confounders = true,
+        task_description = "Root Cause Analysis for Checkout Latency"
+    )
+
+    harness.runTask(
+        taskType = CausalInference,
+        typeConfig = TaskTypeConfig(), // Default static config
+        executionConfig = config,
+        workspace = projectDir,
+        autoFix = true
+    )
+}</code></pre>
+            </div>
+
+            <h3 style="margin-top: var(--space-8);">Direct Instantiation</h3>
+            <div class="panel" style="height: auto;">
+                <pre><code>val task = CausalInferenceTask(
+    orchestrationConfig = config,
+    planTask = executionConfigData // As defined above
+)
+task.run(agent, messages, sessionTask, { result -> println(result) }, config)</code></pre>
+            </div>
+            <h3 style="margin-top: var(--space-8);">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the
+                orchestrator's system prompt:</p>
+            <pre style="background: #000; border-radius: 4px;"><code>CausalInference - Identify causal relationships and root causes
+  ** Specify the observed effect or outcome to explain
+  ** List potential causes to investigate
+  ** Optionally build a causal graph showing relationships
+  ** Optionally identify confounding factors
+ ** Provide evidence sources (logs, metrics, code files)
+  ** Optionally, list input files (supports glob patterns) to be examined
+  ** Useful for:
+     - Root cause analysis
+     - Debugging complex issues
+     - Understanding system behavior
+     - Distinguishing correlation from causation</code></pre>
+        </div>
+    </section>
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/CausalInference/');
+</script>
+
+</body>
+</html>

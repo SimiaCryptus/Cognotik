@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | GeneratePresentationTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .docs-table th { color: var(--text-dim); font-weight: 600; }
+        .req { color: #f85149; font-weight: bold; }
+
+        .slide-mockup {
+            background: #111;
+            aspect-ratio: 16/9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid #444;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+
+    <!-- 1. HEADER -->
+    <header class="page-header" style="margin-bottom: 2rem;">
+        <div class="breadcrumbs" style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.5rem;">
+            Tasks / Writing / GeneratePresentationTask
+        </div>
+        <h1 style="font-family: 'Cinzel', serif; font-size: 2.5rem; margin: 0;">GeneratePresentationTask</h1>
+        <p class="pitch" style="color: var(--text-dim); font-size: 1.1rem; margin-top: 0.5rem;">
+            Create complete, self-contained Reveal.js presentations with AI-generated content, custom styling, and
+            optional visual assets.
+        </p>
+        <div class="badges" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <span class="badge" style="background: #238636; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">Side-Effect Safe</span>
+            <span class="badge" style="background: #1f6feb; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK SECTION -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
+            <pre style="margin: 0; padding: 1rem; font-size: 0.85rem;"><code class="language-json">
+{
+  "files": ["strategy_2024.html"],
+  "task_description": "Q4 Engineering Strategy",
+  "generate_images": true,
+  "max_images": 3,
+  "image_width": 1024,
+  "image_height": 1024
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Reveal.js Output</div>
+            <div class="slide-mockup">
+                <h2 style="color: #fff; margin-bottom: 1rem;">Engineering Strategy</h2>
+                <ul style="color: #ccc; text-align: left; font-size: 0.9rem;">
+                    <li>Scalable Infrastructure</li>
+                    <li>AI-First Development</li>
+                    <li>Automated Quality Gates</li>
+                </ul>
+                <div style="margin-top: 1rem; width: 60%; height: 60px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.7rem;">
+                    [AI Generated Image]
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated Reveal.js artifacts, CSS, and AI-generated images in the <code>GeneratePresentationTask</code>
+            workspace.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 350px; overflow: auto; padding: 1rem; background: #000;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <div class="tab-pane" id="tab-docs">
+            <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>files</code> <span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>The HTML presentation file to be created (must end with .html).</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Reference materials or existing presentations for context.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td>String</td>
+                    <td>Topic, key points, target audience, and desired style.</td>
+                </tr>
+                <tr>
+                    <td><code>generate_images</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to generate AI images for key slides (Default: false).</td>
+                </tr>
+                <tr>
+                    <td><code>image_width</code> / <code>height</code></td>
+                    <td>Int</td>
+                    <td>Dimensions for generated images (256px - 2048px, Default: 1024).</td>
+                </tr>
+                <tr>
+                    <td><code>max_images</code></td>
+                    <td>Int</td>
+                    <td>Maximum number of images to generate (1-10, Default: 5).</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Task Lifecycle</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem; color: var(--text-dim);">
+                <div style="padding-left: 1rem; border-left: 2px solid var(--accent-primary);">
+                    <strong style="color: var(--text-main);">1. Initialization:</strong> Validates file extensions and
+                    image dimensions (256px - 2048px).
+                </div>
+                <div style="padding-left: 1rem; border-left: 2px solid var(--accent-primary);">
+                    <strong style="color: var(--text-main);">2. Content Generation:</strong> Uses
+                    <code>ParsedAgent</code> to create a structured <code>PresentationStructure</code> with HTML
+                    sections and speaker notes.
+                </div>
+                <div style="padding-left: 1rem; border-left: 2px solid var(--accent-primary);">
+                    <strong style="color: var(--text-main);">3. Visual Assets:</strong> If enabled, <code>ImageProcessingAgent</code>
+                    generates slide-specific visuals.
+                </div>
+                <div style="padding-left: 1rem; border-left: 2px solid var(--accent-primary);">
+                    <strong style="color: var(--text-main);">4. Styling & Assembly:</strong> Generates custom CSS based
+                    on content and bundles Reveal.js dependencies.
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Invoke this task programmatically using the <code>UnifiedHarness</code>
+                for automated documentation or reporting.</p>
+            <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border-subtle);"><code
+                    class="language-kotlin">
+import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask
+import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask.Companion.GeneratePresentation
+
+val executionConfig = GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData(
+        files = listOf("presentation.html"),
+        task_description = "Deep dive into Cognotik architecture",
+        generate_images = true,
+        max_images = 5
+)
+
+// Run via the UnifiedHarness
+harness.runTask(
+    taskType = GeneratePresentation,
+    typeConfig = GeneratePresentationTask.GeneratePresentationTaskTypeConfig(),
+    executionConfig = executionConfig,
+    workspace = File("./docs/presentations"),
+    autoFix = true
+)</code></pre>
+        </div>
+    </section>
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.target.classList.add('active');
+  }
+</script>
+<script type="module">
+    import { initFileTree } from '/site/cognotik.com/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/GeneratePresentation/');
+</script>
+
+
+</body>
+</html>

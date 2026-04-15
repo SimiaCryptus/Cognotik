@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | TaskTypeConfig</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+          color: var(--text-tertiary);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid {
+                grid-template-columns: 1fr;
+            }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="task-type-config"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / Core Configuration</div>
+        <h1>TaskTypeConfig</h1>
+        <p class="pitch">
+            The foundational configuration layer for all Cognotik tasks, enabling polymorphic task resolution and
+            model-specific overrides.
+        </p>
+        <div class="badges">
+            <span class="badge">Core Component</span>
+            <span class="badge">Polymorphic</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">Polymorphic JSON Input</div>
+            <pre><code class="language-json">
+{
+  "task_type": "FileModificationTask",
+  "name": "RefactorService",
+  "model": {
+    "provider": "OpenAI",
+    "model": "gpt-4o"
+  }
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header">Resolved Task Instance</div>
+            <div class="mock-ui-content" style="padding: 1rem;">
+                <div style="color: var(--accent-primary); margin-bottom: 0.5rem;">ℹ Task Resolved via TypeIdResolver
+                </div>
+                <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
+                    <span style="color: #8b949e">Class:</span> FileModificationTaskTypeConfig<br>
+                    <span style="color: #8b949e">Model:</span> GPT-4o (OpenAI)<br>
+                    <span style="color: #8b949e">Status:</span> Ready for Execution
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Browse the artifacts and logs generated during the validation of TaskTypeConfig implementations.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>task_type</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The unique ID used by <code>PlanTaskTypeIdResolver</code> to instantiate the correct subclass.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>name</code></td>
+                    <td>String</td>
+                    <td>Optional display name. Defaults to <code>task_type</code> if not provided.</td>
+                </tr>
+                <tr>
+                    <td><code>model</code></td>
+                    <td>ApiChatModel</td>
+                    <td>Optional model override. Allows specific tasks to use different LLMs (e.g., GPT-4 for logic,
+                        GPT-3.5 for summaries).
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3>Embedded Invocation</h3>
+            <p>To invoke a task using <code>TaskTypeConfig</code> in an embedded environment:</p>
+            <pre><code class="language-kotlin">
+val harness = UnifiedHarness(serverless = true, ...)
+harness.start()
+
+// 1. Define the Type Configuration
+val typeConfig = TaskTypeConfig(
+    task_type = "FileModificationTask",
+    model = OpenAIModels.GPT4o.asApiChatModel()
+)
+
+// 2. Define Runtime Execution Data
+val executionConfig = FileModificationTaskExecutionConfigData(
+    files = listOf("src/Main.kt"),
+    modifications = "Add error handling to the main loop"
+)
+
+// 3. Execute
+harness.runTask(
+    taskType = TaskType.FileModificationTask,
+    typeConfig = typeConfig,
+    executionConfig = executionConfig,
+    workspace = File("./my-project")
+)
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/TaskTypeConfig/');
+</script>
+
+</body>
+</html>

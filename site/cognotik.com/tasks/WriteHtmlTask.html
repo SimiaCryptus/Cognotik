@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | WriteHtmlTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+      .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--border-subtle);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styles */
+        .mock-browser {
+            background: #1e1e1e;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        .browser-bar {
+            background: #333;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 4px;
+        }
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: #555; }
+        .browser-content {
+            padding: 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; font-weight: bold; }
+
+        .process-step {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+            border-left: 2px solid var(--border-subtle);
+        }
+        .step-number {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="page-container">
+
+    <!-- 1. PAGE HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > File Operations > Writing</div>
+        <h1>WriteHtmlTask</h1>
+        <p class="pitch">
+            Generates complete, self-contained HTML5 documents with embedded CSS, JavaScript, and AI-generated imagery.
+            Features a multi-stage refinement pipeline and integrated browser workspace for instant verification.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Browser-Ready</span>
+            <span class="badge">Auto-Fix Supported</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span>JSON</span>
+            </div>
+            <div class="panel-content">
+                <pre><code>{
+  "files": ["dashboard.html"],
+  "task_description": "A dark-themed analytics dashboard.",
+  "generate_images": true,
+  "image_count": 2,
+  "task_dependencies": []
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>SessionTask UI</span>
+                <span>Rendered</span>
+            </div>
+            <div class="panel-content">
+                <div class="mock-browser">
+                    <div class="browser-bar">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <div class="browser-content">
+                        <div style="color: #4ade80; font-weight: bold; margin-bottom: var(--space-2);">✔ Generation
+                            Complete
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">
+                            • File: <a href="#" style="color: var(--accent-primary);">dashboard.html</a><br>
+                            • Images: 2 generated (hero.png, chart-bg.png)<br>
+                            • Components: HTML5, CSS3, JS (ES6+)
+                        </div>
+                        <hr style="border: 0; border-top: 1px solid #333; margin: var(--space-2) 0;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <button style="background: var(--accent-primary); border: none; color: white; padding: 4px 8px; border-radius: 3px; font-size: 0.7rem; cursor: pointer;">
+                                🌐 Open in Browser Workspace
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: var(--space-1); opacity: 0.6;">
+                            <div style="width: 40px; height: 30px; background: #333; border: 1px solid #444;"></div>
+                            <div style="width: 40px; height: 30px; background: #333; border: 1px solid #444;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual artifacts generated by WriteHtmlTask in the test workspace.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: var(--space-4);"></div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>files</code> <span class="req">*</span></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>The HTML file to be created. Must end with <code>.html</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code> <span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>Detailed requirements including layout, styling, and functionality.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Context files (templates, existing code) to guide generation.</td>
+                </tr>
+                <tr>
+                    <td><code>generate_images</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>If true, triggers the AI image generation sub-process.</td>
+                </tr>
+                <tr>
+                    <td><code>image_count</code></td>
+                    <td><code>Int</code></td>
+                    <td>Number of images to generate (Range: 0-10).</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>IDs of tasks that must complete before this one.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>The Multi-Stage Pipeline</h3>
+            <p style="color: var(--text-dim); margin-bottom: 2rem;">WriteHtmlTask uses a sequential refinement process
+                to ensure high-quality code separation.</p>
+
+            <div class="process-step">
+                <div><span class="step-number">01</span> <strong>Structure Generation</strong></div>
+                <p>Generates semantic HTML5 markup with descriptive class names, excluding styles and scripts.</p>
+            </div>
+            <div class="process-step">
+                <div><span class="step-number">1.5</span> <strong>Visual Asset Creation</strong></div>
+                <p>If enabled, identifies image placeholders and generates PNG assets using
+                    <code>ImageProcessingAgent</code>.</p>
+            </div>
+            <div class="process-step">
+                <div><span class="step-number">02</span> <strong>Logic & Interactivity</strong></div>
+                <p>Generates modern ES6+ JavaScript based on the specific DOM structure created in Step 1.</p>
+            </div>
+            <div class="process-step">
+                <div><span class="step-number">03</span> <strong>Styling & Layout</strong></div>
+                <p>Generates responsive CSS (Flexbox/Grid) targeting the generated class names.</p>
+            </div>
+            <div class="process-step">
+                <div><span class="step-number">3.5</span> <strong>Image Insertion</strong></div>
+                <p>Re-processes the HTML structure to insert <code>&lt;img&gt;</code> tags for all generated assets with
+                    appropriate alt text.</p>
+            </div>
+            <div class="process-step">
+                <div><span class="step-number">04</span> <strong>Assembly</strong></div>
+                <p>Merges all components into a single self-contained file, inserting image references and base64
+                    fallbacks.</p>
+            </div>
+        </div>
+
+        <!-- TAB 3: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Invoke WriteHtmlTask directly from your Kotlin code
+                using the <code>UnifiedHarness</code>.</p>
+            <pre style="background: #000; padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); overflow-x: auto;"><code>import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
+import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask.Companion.WriteHtml
+
+// 1. Define the Job
+val executionConfig = WriteHtmlTask.WriteHtmlTaskExecutionConfigData(
+    files = listOf("index.html"),
+    task_description = "A modern landing page for a SaaS product with a pricing table.",
+    generate_images = true,
+    image_count = 3
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = WriteHtml,
+    typeConfig = TaskTypeConfig(), // Default settings
+    executionConfig = executionConfig,
+    workspace = File("./my-web-project"),
+    autoFix = true
+)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="color: var(--text-dim);">The following logic is injected into the LLM context when this task is
+                active:</p>
+            <pre style="background: #000; padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); overflow-x: auto; font-size: var(--text-xs);"><code>WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
+** Specify the HTML file path in the files array (must end with .html)
+** Provide a detailed description of the page requirements
+** The generated HTML will be a complete, self-contained document
+** Generated images (if enabled) embedded as base64 or saved as separate files</code></pre>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
+</script>
+<script type="module">
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/WriteHtml/');
+</script>
+
+</body>
+</html>

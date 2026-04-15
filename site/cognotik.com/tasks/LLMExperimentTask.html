@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | LLMExperimentTask - Industrial Design</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Cinzel', serif;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Styles */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--border-subtle);
+            font-size: 2rem;
+        }
+
+        /* Mock UI Output */
+        .mock-ui-content {
+            padding: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .ui-tab-strip {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .ui-tab { color: var(--text-dim); font-weight: 600; }
+        .ui-tab.active { color: var(--accent-primary); }
+
+        .stat-card {
+            background: #000;
+            border: 1px solid var(--border-subtle);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            color: #e6edf3;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+        /* Showcase Styles */
+        .showcase-section {
+            margin-bottom: 4rem;
+        }
+        #file-tree-demo {
+            height: 350px;
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Social > LLMExperimentTask</div>
+        <h1>LLMExperimentTask</h1>
+        <p class="pitch">
+            Conduct rigorous, multi-condition experiments to characterize LLM behaviors, biases, and performance metrics
+            with automated statistical validation and insight generation.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Social</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Multi-Condition</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span style="opacity: 0.5;">Kotlin / JSON</span>
+            </div>
+            <pre><code>{
+  "prompt_templates": [
+    "Explain {topic} to a {audience}"
+  ],
+  "prompt_variables": {
+    "topic": ["Quantum Computing"],
+    "audience": ["5-year old", "PhD"]
+  },
+  "temperature_values": [0.1, 0.8],
+  "repetitions": 3,
+  "metrics": ["clarity", "accuracy"],
+  "significance_level": 0.05
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>SessionTask UI</span>
+                <span style="color: #4ade80;">● Live</span>
+            </div>
+            <div class="mock-ui-content">
+                <div class="ui-tab-strip">
+                    <span class="ui-tab">Overview</span>
+                    <span class="ui-tab active">Statistical Tables</span>
+                    <span class="ui-tab">Insights</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.75rem;">
+                    <div style="color: var(--accent-primary); margin-bottom: 0.5rem;">### Table 2: Pairwise Temperature
+                        Comparisons
+                    </div>
+                    <table style="width: 100%; border-spacing: 0; border: 1px solid var(--border-subtle);">
+                        <tr style="background: #000;">
+                            <th style="border-bottom: 1px solid var(--border-subtle); padding: 4px;">Metric</th>
+                            <th style="border-bottom: 1px solid var(--border-subtle); padding: 4px;">p-value</th>
+                            <th style="border-bottom: 1px solid var(--border-subtle); padding: 4px;">Sig</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px;">Response Length</td>
+                            <td style="padding: 4px;">0.0042</td>
+                            <td style="padding: 4px; color: #4ade80;">✓</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px;">Clarity</td>
+                            <td style="padding: 4px;">0.1250</td>
+                            <td style="padding: 4px; color: #f85149;">✗</td>
+                        </tr>
+                    </table>
+                    <div class="stat-card">
+                        <span style="color: var(--text-dim);">Insight:</span> Higher temperatures significantly
+                        increased response length variance (Cohen's d: 0.82).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section">
+        <h2 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 1rem;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem;">
+            Explore actual experiment reports and statistical artifacts generated by this task.
+        </p>
+        <div class="panel" id="file-tree-demo" style="overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>prompt_templates</code><span class="req">*</span></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Base templates using <code>{variable}</code> syntax for substitution.</td>
+                </tr>
+                <tr>
+                    <td><code>prompt_variables</code></td>
+                    <td><code>Map&lt;String, List&lt;String&gt;&gt;</code></td>
+                    <td>Keys matching template placeholders and their possible values.</td>
+                </tr>
+                <tr>
+                    <td><code>temperature_values</code></td>
+                    <td><code>List&lt;Double&gt;</code></td>
+                    <td>LLM temperatures to test (e.g., <code>[0.0, 0.7, 1.0]</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>repetitions</code></td>
+                    <td><code>Int</code></td>
+                    <td>Number of times to repeat each condition (Default: 3).</td>
+                </tr>
+                <tr>
+                    <td><code>metrics</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Custom attributes for the LLM to rate in responses.</td>
+                </tr>
+                <tr>
+                    <td><code>statistical_analysis</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Whether to compute t-tests and variance (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>significance_level</code></td>
+                    <td><code>Double</code></td>
+                    <td>Alpha level for statistical tests (Default: 0.05).</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Execution Lifecycle</h3>
+            <ol style="padding-left: 1.5rem; color: var(--text-main);">
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Condition Generation:</strong> Computes the Cartesian product of all templates, variables,
+                    and temperatures.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Concurrent Execution:</strong> Trials are submitted to a thread pool for parallel processing
+                    across the configured model.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Metric Calculation:</strong> Uses a secondary <code>ParsedAgent</code> to objectively rate
+                    responses based on the <code>metrics</code> list.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Statistical Synthesis:</strong> Calculates Mean, SD, Cohen's d, and p-values for all metric
+                    pairs using an internal math engine.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Insight Generation:</strong> A specialized "Analyst" agent reviews the data to provide
+                    natural language interpretations of the findings.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim);">Invoke this task directly within your CI/CD pipeline or automated scripts
+                using the <code>UnifiedHarness</code>.</p>
+            <pre style="background: #000; border-radius: 6px;"><code>// 1. Initialize the Harness
+val harness = UnifiedHarness(serverless = true, openBrowser = false)
+harness.start()
+// 2. Define the Experiment Configuration
+val executionConfig = LLMExperimentTask.LLMExperimentTaskExecutionConfigData(
+    prompt_templates = listOf("Explain {topic} to a {audience}"),
+    prompt_variables = mapOf(
+        "topic" to listOf("Quantum Computing"),
+        "audience" to listOf("5-year old", "PhD")
+    ),
+    temperature_values = listOf(0.1, 0.8),
+    repetitions = 3,
+    metrics = listOf("clarity", "accuracy")
+)
+// 3. Run the Task
+harness.runTask(
+    taskType = LLMExperimentTask.LLMExperiment,
+    typeConfig = TaskTypeConfig(), // Default static config
+    executionConfig = executionConfig,
+    workspace = File("./experiments"),
+    autoFix = true
+)</code></pre>
+            <h3 style="margin-top: 2rem;">CLI Usage</h3>
+            <p style="color: var(--text-dim);">Run via the Cognotik CLI for quick characterization studies.</p>
+            <pre style="background: #000; border-radius: 6px; color: #4ade80;"><code>java -jar cognotik-cli.jar \
+  --task LLMExperiment \
+  --prompt_templates "Summarize: {text}" \
+  --prompt_variables '{"text": ["Long article A", "Long article B"]}' \
+  --repetitions 5 \
+  --workspace ./results</code></pre>
+
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following capabilities are injected into the
+                orchestrator's context:</p>
+            <pre style="background: rgba(88, 166, 255, 0.05); border: 1px solid var(--accent-primary); border-radius: 6px; color: var(--accent-primary);"><code>LLMExperiment - Conduct controlled experiments on LLM behavior
+** Specify one or more prompt templates with variables for substitution
+** Define experimental conditions (temperature(s), prompt variations)
+** Configure number of repetitions for statistical validity
+** Rate custom attributes in responses
+** Analyze statistical significance of results</code></pre>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/LLMExperiment/');
+    });
+</script>
+
+</body>
+</html>

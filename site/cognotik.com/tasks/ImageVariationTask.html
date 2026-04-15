@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | ImageVariationTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+
+        .gallery-grid img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .more-count {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-app);
+            border: 1px dashed var(--border-subtle);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Docs Table */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Media > ImageVariationTask</div>
+        <h1>ImageVariationTask</h1>
+        <p class="pitch">
+            Generates "Find the Differences" style image variations by decomposing images into regions and applying
+            controlled modifications.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Image Generation</span>
+            <span class="badge">Multi-Model Pipeline</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️</span> ImageVariationConfig.json
+            </div>
+            <pre><code>{
+  "input_file": "workspaces/base_scene.png",
+  "num_subimages": 7,
+  "num_variations": 11,
+  "num_changes_per_variation": 5,
+  "retarget_subimages": true,
+  "extension": "png"
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>🖼️</span> Generated Variants
+            </div>
+            <div class="gallery-grid">
+                <img alt="Variation 1" src="assets/images/var_sample_1.png">
+                <img alt="Variation 2" src="assets/images/var_sample_2.png">
+                <img alt="Variation 3" src="assets/images/var_sample_3.png">
+                <img alt="Variation 4" src="assets/images/var_sample_4.png">
+                <img alt="Variation 5" src="assets/images/var_sample_5.png">
+                <div class="more-count">+6 more</div>
+            </div>
+            <div style="padding: 0 1rem 1rem 1rem; font-size: 0.8rem; color: var(--text-dim);">
+                ✔ Generated 11 variations + Interactive HTML Game
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated patches, manifests, and the interactive game in the task workspace.
+        </p>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>input_file</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The input image file path relative to workspace root.</td>
+                </tr>
+                <tr>
+                    <td><code>num_subimages</code></td>
+                    <td>Int</td>
+                    <td>Number of distinct regions to identify and modify (Default: 7).</td>
+                </tr>
+                <tr>
+                    <td><code>num_subimage_alternates</code></td>
+                    <td>Int</td>
+                    <td>Number of alternate versions to generate per region (Default: 2).</td>
+                </tr>
+                <tr>
+                    <td><code>num_changes_per_variation</code></td>
+                    <td>Int</td>
+                    <td>Number of changes to apply to each final variation (Default: 5).</td>
+                </tr>
+                <tr>
+                    <td><code>num_variations</code></td>
+                    <td>Int</td>
+                    <td>Total number of alternative images to produce (Default: 11).</td>
+                </tr>
+                <tr>
+                    <td><code>retarget_subimages</code></td>
+                    <td>Boolean</td>
+                    <td>Uses image patch localization to align generated variations with the original image.</td>
+                </tr>
+                <tr>
+                    <td><code>output_prefix</code></td>
+                    <td>String</td>
+                    <td>Prefix for generated filenames (Default: "variation").</td>
+                </tr>
+                <tr>
+                    <td><code>extension</code></td>
+                    <td>String</td>
+                    <td>Output image format (png/jpg). Default: "png".</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Lifecycle</h3>
+            <ol style="color: var(--text-dim); padding-left: 1.2rem;">
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Structural Analysis:</strong>
+                    Uses a vision model to identify distinct objects or regions (coordinates 0-1000) suitable for
+                    modification.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Change Proposal:</strong>
+                    For each region, the agent suggests visual changes (e.g., "Change color", "Remove object") that
+                    retain the original style.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Patch Generation:</strong>
+                    Individual image patches are rendered using an image-to-image model based on the proposals.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Composition:</strong>
+                    Patches are recombined with the base image using feathering and optional retargeting to create the
+                    final variations.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Game Generation:</strong>
+                    Produces an interactive <code>diff_game.html</code> and JSON manifests for each variation.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Prompt Segment</h3>
+            <pre><code>ImageVariation - Creates 'Find the Differences' style image sets.
+* Use for: Game asset generation, data augmentation.
+* Mechanism: Decomposes image, generates N specific sub-image changes, and recombines them into M variations.</code></pre>
+
+            <h3 style="margin-top: 2rem;">Embedded Execution (UnifiedHarness)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                Invoke this task programmatically using the <code>UnifiedHarness</code> for automated asset pipelines.
+            </p>
+            <pre><code>import com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.Companion.ImageVariation
+import com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.ImageVariationConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+
+fun generateAssets(harness: UnifiedHarness, projectDir: File) {
+    val config = ImageVariationConfig(
+        input_file = "assets/background.png",
+        num_variations = 10,
+        num_subimages = 5,
+        retarget_subimages = true
+    )
+
+    harness.runTask(
+        taskType = ImageVariation,
+        typeConfig = TaskTypeConfig(), // Static tool settings
+        executionConfig = config,      // Runtime parameters
+        workspace = projectDir
+    )
+}</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+<script type="module">
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/ImageVariation/');
+</script>
+
+</body>
+</html>

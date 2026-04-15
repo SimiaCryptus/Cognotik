@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | SocraticDialogueTask - Industrial Reasoning</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Styles */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: flex;
+            align-items: stretch;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .reality-check-grid > .panel {
+            flex: 1;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styles */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .tab-strip {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 10px;
+        }
+
+        .mock-tab {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            background: #21262d;
+        }
+
+        .mock-tab.active {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--bg-panel);
+            margin-bottom: -1px;
+            color: var(--accent-primary);
+        }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .docs-table .type-label {
+            font-family: var(--font-mono);
+          font-size: 0.9em;
+            color: var(--text-dim);
+        }
+
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > SocraticDialogueTask</div>
+        <h1>SocraticDialogueTask</h1>
+        <p class="pitch">
+            Explore ideas through Socratic questioning. This task orchestrates a dialogue between specialized Questioner
+            and Responder agents to challenge assumptions, explore implications, and identify contradictions.
+        </p>
+        <div class="badges">
+            <span class="badge">Reasoning</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Multi-Agent</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️</span> ExecutionConfig.json
+            </div>
+            <pre><code>{
+  "initial_question": "Can AI possess true creativity?",
+  "input_files": ["docs/theory_of_mind.md"],
+  "max_depth": 5,
+  "challenge_assumptions": true,
+  "domain_constraints": ["Philosophy", "Computer Science"]
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️</span> TabbedDisplay Output
+            </div>
+            <div class="mock-ui-content">
+                <div class="tab-strip">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab active">Exchange 1</div>
+                    <div class="mock-tab">Synthesis</div>
+                </div>
+                <div style="border: 1px solid var(--border-subtle); padding: 10px; border-radius: 4px; background: #0d1117;">
+                    <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 8px;">Question</div>
+                    <div style="font-style: italic; color: var(--text-dim); margin-bottom: 12px;">"How do you define
+                        'true' creativity in a way that excludes algorithmic generation?"
+                    </div>
+                    <div style="color: #4ade80; font-weight: bold; margin-bottom: 8px;">Response</div>
+                    <div style="font-size: 0.85rem;">"True creativity often implies intent and subjective experience,
+                        which current LLMs lack..."
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #fff;">Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem;">
+            Explore actual dialogue transcripts and synthesis reports generated by this task in the test workspace.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 350px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Logic</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>initial_question</code><span class="req">*</span></td>
+                    <td><span class="type-label">String</span></td>
+                    <td>The starting hypothesis or question to explore through dialogue.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td><span class="type-label">List&lt;String&gt;</span></td>
+                    <td>Optional glob patterns for files to provide context (e.g., source code or documentation).</td>
+                </tr>
+                <tr>
+                    <td><code>max_depth</code></td>
+                    <td><span class="type-label">Int</span></td>
+                    <td>Number of question-answer exchanges. Default: <code>5</code>. Range: <code>1-20</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>challenge_assumptions</code></td>
+                    <td><span class="type-label">Boolean</span></td>
+                    <td>If true, the questioner agent actively looks for and challenges logical leaps and assumptions.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>domain_constraints</code></td>
+                    <td><span class="type-label">List&lt;String&gt;</span></td>
+                    <td>Limits the dialogue to specific fields or domains (e.g., "Legal", "Physics", "Philosophy").</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process">
+            <h3>Task Process Lifecycle</h3>
+            <ol style="color: var(--text-dim); line-height: 2;">
+                <li><strong style="color: var(--text-main)">Initialization:</strong> Loads context from <code>input_files</code>
+                    and validates the <code>initial_question</code>.
+                </li>
+                <li><strong style="color: var(--text-main)">Agent Creation:</strong> Spawns two distinct
+                    <code>ChatAgent</code> instances:
+                    <ul>
+                        <li><strong>Questioner:</strong> Probes for contradictions and fundamental principles.</li>
+                        <li><strong>Responder:</strong> Provides reasoned answers and acknowledges uncertainty.</li>
+                    </ul>
+                </li>
+                <li><strong style="color: var(--text-main)">Dialogue Loop:</strong> Iterates through
+                    <code>max_depth</code>. Each step is rendered in a new UI tab.
+                </li>
+                <li><strong style="color: var(--text-main)">Synthesis:</strong> After the loop, the Responder agent
+                    reviews the entire transcript to summarize key insights.
+                </li>
+                <li><strong style="color: var(--text-main)">Artifact Generation:</strong> Produces a full Markdown
+                    transcript and links to HTML/PDF versions.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
+            <h3>Embedded Usage (UnifiedHarness)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Invoke this task programmatically using the Cognotik
+                embedding engine.</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask.Companion.SocraticDialogue
+import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask.SocraticDialogueTaskExecutionConfigData
+
+fun runDialogue(harness: UnifiedHarness, workspace: File) {
+    val config = SocraticDialogueTaskExecutionConfigData(
+        initial_question = "What are the ethical implications of autonomous coding agents?",
+        input_files = listOf("docs/ethics/*.md"),
+        max_depth = 6,
+        challenge_assumptions = true,
+        domain_constraints = listOf("Ethics", "Software Engineering")
+    )
+
+    harness.runTask(
+        taskType = SocraticDialogue,
+        typeConfig = TaskTypeConfig(), // Default settings
+        executionConfig = config,
+        workspace = workspace,
+        autoFix = true
+    )
+    
+    println("Dialogue complete. Check SocraticDialogueTask_full_report_*.md in workspace.")
+}</code></pre>
+
+            <h3 style="margin-top: 2rem;">Direct Instantiation</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">For use within custom agents or orchestration
+                loops.</p>
+            <pre><code class="language-kotlin">val task = SocraticDialogueTask(
+    orchestrationConfig,
+    SocraticDialogueTaskExecutionConfigData(
+        initial_question = "Is the P vs NP problem solvable via heuristic search?",
+        input_files = listOf("src/**/*.kt"),
+        max_depth = 8,
+        challenge_assumptions = true,
+        domain_constraints = listOf("Computer Science", "Mathematics")
+    )
+)</code></pre>
+
+            <h3>Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">The following text is injected
+                into the orchestrator's context to describe this tool:</p>
+            <pre style="background: #000;"><code>SocraticDialogue - Explore ideas through Socratic questioning
+** Specify the initial question or hypothesis to explore
+** Optionally provide input files (supports glob patterns) for context
+** Configure maximum dialogue depth (default: 5 exchanges)
+** Enable/disable assumption challenging
+** Optionally constrain to specific topics or domains
+** Creates a dialogue between questioner and responder agents
+** Explores definitions, assumptions, implications, and contradictions
+** Produces a structured dialogue transcript with insights</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
+  import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+  $(document).ready(function() {
+      initFileTree('#file-tree-demo', 'webui/workspaces/SocraticDialogue/');
+  });
+</script>
+
+</body>
+</html>

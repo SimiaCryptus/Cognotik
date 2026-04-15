@@ -7,21 +7,37 @@
       "src": "host.json"
     },
     {
-      "label": "Apps",
+      "label": "Free/Core Apps",
       "type": "dropdown",
       "src": "apps.json"
     },
     {
-      "label": "Plan",
+      "label": "Office Apps",
       "type": "dropdown",
-      "url": "TaskPlanning.html",
-      "src": "plan.json",
-      "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan"
+      "src": "office.json"
     },
     {
-      "label": "Tools",
+      "label": "Job Search Apps",
+      "type": "dropdown",
+      "src": "jobs.json"
+    },
+    {
+      "label": "Docs",
       "type": "submenu",
       "items": [
+        {
+          "label": "Docs",
+          "type": "dropdown",
+          "src": "docs.json",
+          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/docs"
+        },
+        {
+          "label": "Planning",
+          "type": "dropdown",
+          "url": "TaskPlanning.html",
+          "src": "plan.json",
+          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan"
+        },
         {
           "label": "Execution",
           "type": "dropdown",
@@ -63,12 +79,6 @@
           "src": "writing.json"
         }
       ]
-    },
-    {
-      "label": "Docs",
-      "type": "dropdown",
-      "src": "docs.json",
-      "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/docs"
     }
   ]
 }

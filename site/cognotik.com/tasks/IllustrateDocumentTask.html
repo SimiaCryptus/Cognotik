@@ -1,0 +1,513 @@
+-<!--
+-  TEMPLATE: Cognotik Task Product Page (Industrial Theme)
+-  USAGE: Copy this file, rename to TaskName.html, and fill in the data.
+--->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    - <title>Cognotik | Task Name</title>
+    + <title>Cognotik | IllustrateDocumentTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        +        :root {
+        +            --bg-app: #0f1115;
+        +            --bg-panel: #161b22;
+        +            --border-subtle: #30363d;
+        +            --accent-primary: #58a6ff;
+        +            --text-main: #c9d1d9;
+        +            --text-dim: #8b949e;
+        +            --font-mono: 'JetBrains Mono', monospace;
+        +        }
+        +
+        +        body {
+        +            background-color: var(--bg-app);
+        +            color: var(--text-main);
+        +            font-family: 'Inter', sans-serif;
+        +            margin: 0;
+        +        }
+        +
+                 /* Page-Specific Overrides */
+        +        .task-container {
+        +            max-width: 1200px;
+        +            margin: 0 auto;
+        +            padding: 2rem;
+        +        }
+        +
+        +        .page-header {
+        +            margin-bottom: 3rem;
+        +        }
+        +
+        +        .breadcrumbs {
+        +            font-family: var(--font-mono);
+        +            font-size: 0.8rem;
+        +            color: var(--accent-primary);
+        +            margin-bottom: 0.5rem;
+        +        }
+        +
+        +        h1 {
+        +            font-size: 2.5rem;
+        +            margin: 0 0 1rem 0;
+        +            font-weight: 600;
+        +        }
+        +
+        +        .pitch {
+        +            font-size: 1.1rem;
+        +            color: var(--text-dim);
+        +            max-width: 800px;
+        +            margin-bottom: 1.5rem;
+        +        }
+        +
+        +        .badges {
+        +            display: flex;
+        +            gap: 0.5rem;
+        +        }
+        +
+        +        .badge {
+        +            background: var(--bg-panel);
+        +            border: 1px solid var(--border-subtle);
+        +            padding: 0.2rem 0.6rem;
+        +            border-radius: 4px;
+        +            font-size: 0.75rem;
+        +            font-family: var(--font-mono);
+        +            color: var(--text-dim);
+        +        }
+        +
+                 .reality-check-grid {
+                     display: grid;
+                     grid-template-columns: 1fr 40px 1fr; /* Code -> Arrow -> UI */
+                     gap: 1rem;
+                     margin-bottom: 2rem;
+                     align-items: center;
+                 }
+
+                 .panel {
+                     background: var(--bg-panel);
+                     border: 1px solid var(--border-subtle);
+                     border-radius: 6px;
+                     overflow: hidden;
+        +            height: 400px;
+        +            display: flex;
+        +            flex-direction: column;
+                 }
+
+                 .panel-header {
+                     background: var(--bg-app);
+                     padding: 0.5rem 1rem;
+                     border-bottom: 1px solid var(--border-subtle);
+                     font-family: var(--font-mono);
+                     font-size: 0.85rem;
+                     color: var(--text-dim);
+                     display: flex;
+                     align-items: center;
+                     gap: 0.5rem;
+                 }
+
+        +        pre {
+        +            margin: 0;
+        +            padding: 1rem;
+        +            font-family: var(--font-mono);
+        +            font-size: 0.85rem;
+        +            overflow: auto;
+        +            flex-grow: 1;
+        +        }
+        +
+                 .flow-arrow {
+                     text-align: center;
+                     color: var(--text-dim);
+                     font-size: 1.5rem;
+                 }
+
+        +        .mock-ui-content {
+        +            padding: 1rem;
+        +            font-size: 0.9rem;
+        +            overflow-y: auto;
+        +        }
+        +
+        +        .ui-tab-mock {
+        +            border-bottom: 1px solid var(--border-subtle);
+        +            display: flex;
+        +            gap: 1rem;
+        +            padding: 0 1rem;
+        +            background: var(--bg-app);
+        +        }
+        +
+        +        .ui-tab-mock span {
+        +            padding: 0.5rem 0;
+        +            font-size: 0.75rem;
+        +            color: var(--text-dim);
+        +            border-bottom: 2px solid transparent;
+        +        }
+        +
+        +        .ui-tab-mock span.active {
+        +            color: var(--accent-primary);
+        +            border-bottom-color: var(--accent-primary);
+        +        }
+        +
+                 /* Tab System */
+                 .tabs-nav {
+                     display: flex;
+                     border-bottom: 1px solid var(--border-subtle);
+                     margin-bottom: 1rem;
+                 }
+                 .tabs-nav button {
+                     background: none;
+                     border: none;
+                     padding: 0.75rem 1.5rem;
+                     color: var(--text-dim);
+                     cursor: pointer;
+                     border-bottom: 2px solid transparent;
+        +            font-family: var(--font-mono);
+        +            font-size: 0.9rem;
+                 }
+                 .tabs-nav button.active {
+                     color: var(--accent-primary);
+                     border-bottom-color: var(--accent-primary);
+                 }
+
+        +        .tab-pane {
+        +            padding: 1rem 0;
+        +        }
+        +
+        +        .docs-table {
+        +            width: 100%;
+        +            border-collapse: collapse;
+        +            font-size: 0.9rem;
+        +        }
+        +
+        +        .docs-table th, .docs-table td {
+        +            text-align: left;
+        +            padding: 0.75rem;
+        +            border-bottom: 1px solid var(--border-subtle);
+        +        }
+        +
+        +        .docs-table th {
+        +            color: var(--text-dim);
+        +            font-weight: 600;
+        +        }
+        +
+        +        .req { color: #f85149; }
+        +
+        +        code {
+        +            font-family: var(--font-mono);
+        +            background: rgba(110, 118, 129, 0.2);
+        +            padding: 0.1rem 0.3rem;
+        +            border-radius: 3px;
+        +        }
+        +
+                 /* Mobile Stack */
+                 @media (max-width: 768px) {
+                     .reality-check-grid {
+                         grid-template-columns: 1fr;
+                     }
+                     .flow-arrow { transform: rotate(90deg); }
+                 }
+    </style>
+</head>
+<body>
+
+-
+<cognotik-header current-page="task-id"></cognotik-header>
++
+<cognotik-header current-page="IllustrateDocumentTask"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        -
+        <div class="breadcrumbs">Tasks / File Operations</div>
+        - <h1>FileModificationTask</h1>
+        +
+        <div class="breadcrumbs">Home > Tasks > Writing > IllustrateDocumentTask</div>
+        + <h1>IllustrateDocumentTask</h1>
+        <p class="pitch">
+            - Safe, patch-based file editing with built-in syntax validation and rollback capabilities.
+            + Intelligently analyzes document content and generates contextually appropriate images to enhance
+            understanding and visual appeal.
+        </p>
+        <div class="badges">
+            - <span class="badge">Side-Effect: Destructive</span>
+            - <span class="badge">Auto-Fix Supported</span>
+            + <span class="badge">Side-Effect: Destructive (File Edit)</span>
+            + <span class="badge">Model: GPT-4 Preferred</span>
+            + <span class="badge">Category: Writing</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK (The "Anti-Vaporware" Section) -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            -
+            <div class="panel-header">Input Configuration</div>
+            +
+            <div class="panel-header">⚙️ IllustrateDocumentTaskExecutionConfigData</div>
+            <pre><code class="language-json">
+ {
+-  "target_file": "src/main/App.kt",
+-  "instructions": "Add a logging statement to the main loop",
+-  "context_lines": 5
++  "files": ["docs/architecture.md"],
++  "maxImages": 3,
++  "imageFormat": "png",
++  "autoInsert": true,
++  "composerDirective": "Blueprint style diagrams"
+ }
+             </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            -
+            <div class="panel-header">Session UI Output</div>
+            -
+            <div class="mock-ui-content" style="padding: 1rem;">
+                -
+                <div style="color: #4ade80; margin-bottom: 0.5rem;">✔ File Updated Successfully</div>
+                -
+                <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
+                    - <span style="color: grey">12</span> while(running) {<br>
+                    - <span style="color: green">13 +     logger.info("Heartbeat")</span><br>
+                    - <span style="color: grey">14</span> processNext()<br>
+                    +
+                    <div class="panel-header">👁️ SessionTask UI</div>
+                    +
+                    <div class="ui-tab-mock">
+                        + <span>Overview</span>
+                        + <span>Analysis</span>
+                        + <span class="active">Generation</span>
+                        + <span>Integration</span>
+                        +
+                    </div>
+                    +
+                    <div class="mock-ui-content">
+                        +
+                        <div style="margin-bottom: 1rem;">
+                            + <h4 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--text-dim);">Generating:
+                            system_overview</h4>
+                            +
+                            <div style="width: 100%; height: 120px; background: #21262d; border: 1px dashed var(--border-subtle); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 0.8rem;">
+                                + [Generated Blueprint Image]
+                                +
+                            </div>
+                            +
+                            <div style="margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.75rem; color: #4ade80;">
+                                + ✔ Saved as <code>system_overview.png</code>
+                                +
+                            </div>
+                            +
+                        </div>
+                        +
+                        <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+                            + <h4 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--text-dim);">Generating:
+                            data_flow</h4>
+                            +
+                            <div style="font-size: 0.8rem; color: var(--text-dim);">Processing image generation...</div>
+                        </div>
+                    </div>
+                </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            -
+            <button onclick="switchTab('preview')">Live Preview</button>
+            +
+            <button onclick="switchTab('process')">Process & Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane active" id="tab-docs">
+            - <h3>Configuration Parameters</h3>
+            + <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    -
+                    <td><code>target_file</code> <span class="req">*</span></td>
+                    -
+                    <td>String</td>
+                    -
+                    <td>Relative path to the file. Must exist in workspace.</td>
+                    -
+                </tr>
+                -
+                <tr>
+                    -
+                    <td><code>instructions</code></td>
+                    -
+                    <td>String</td>
+                    -
+                    <td>Natural language description of the edit desired.</td>
+                    +
+                    <td><code>files</code> <span class="req">*</span></td>
+                    +
+                    <td>List&lt;String&gt;</td>
+                    +
+                    <td>The document file to illustrate. Must be exactly one <code>.md</code> or <code>.html</code>
+                        file.
+                    </td>
+                    +
+                </tr>
+                +
+                <tr>
+                    +
+                    <td><code>maxImages</code></td>
+                    +
+                    <td>Int</td>
+                    +
+                    <td>Maximum number of images to generate (1-20). Default: <code>5</code>.</td>
+                    +
+                </tr>
+                +
+                <tr>
+                    +
+                    <td><code>imageFormat</code></td>
+                    +
+                    <td>String</td>
+                    +
+                    <td>Format for generated assets: <code>png</code>, <code>jpg</code>, or <code>jpeg</code>. Default:
+                        <code>png</code>.
+                    </td>
+                    +
+                </tr>
+                +
+                <tr>
+                    +
+                    <td><code>autoInsert</code></td>
+                    +
+                    <td>Boolean</td>
+                    +
+                    <td>Whether to automatically apply diff patches to insert image references. Default:
+                        <code>true</code>.
+                    </td>
+                    +
+                </tr>
+                +
+                <tr>
+                    +
+                    <td><code>composerDirective</code></td>
+                    +
+                    <td>String?</td>
+                    +
+                    <td>Instructions for the image generator (e.g., "Use a minimalist flat design style").</td>
+                    +
+                </tr>
+                +
+                <tr>
+                    +
+                    <td><code>integratorDirective</code></td>
+                    +
+                    <td>String?</td>
+                    +
+                    <td>Instructions for where and how to insert images (e.g., "Place images only after H2 headers").
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        -        <!-- TAB: PREVIEW (With Presets) -->
+        -
+        <div class="tab-pane" id="tab-preview" style="display:none;">
+            -
+            <div class="preset-bar">
+                - <span>Load Scenario:</span>
+                -
+                <button class="btn-small">Fix Syntax Error</button>
+                -
+                <button class="btn-small">Add Documentation</button>
+                -
+            </div>
+            -            <!-- Simulator UI goes here -->
+            +        <!-- TAB: PROCESS -->
+            +
+            <div class="tab-pane" id="tab-process" style="display:none;">
+                + <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Task Lifecycle</h3>
+                +
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    +
+                    <div>
+                        + <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">1. Document Analysis</h4>
+                        + <p style="color: var(--text-dim); font-size: 0.95rem;">The task reads the source file and uses
+                        an LLM to identify high-impact locations for visual aids. It generates specific prompts and
+                        filenames for each suggestion.</p>
+                        +
+                    </div>
+                    +
+                    <div>
+                        + <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">2. Image Generation</h4>
+                        + <p style="color: var(--text-dim); font-size: 0.95rem;">Using the
+                        <code>ImageProcessingAgent</code>, it creates assets based on the analysis and any <code>composerDirective</code>
+                        provided. Images are saved directly to the document's directory.</p>
+                        +
+                    </div>
+                    +
+                    <div>
+                        + <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">3. Patch Integration</h4>
+                        + <p style="color: var(--text-dim); font-size: 0.95rem;">The task generates <code>diff</code>
+                        patches to insert <code>![]()</code> or <code>&lt;img&gt;</code> tags. If <code>autoFix</code>
+                        is enabled, these are applied immediately; otherwise, they await user approval.</p>
+                        +
+                    </div>
+                    +
+                </div>
+                +
+            </div>
+            +
+            +        <!-- TAB: INTEGRATION -->
+            +
+            <div class="tab-pane" id="tab-integration" style="display:none;">
+                + <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Kotlin Usage</h3>
+                +
+                <pre><code class="language-kotlin">
++val task = IllustrateDocumentTask(
++    orchestrationConfig = config,
++    planTask = IllustrateDocumentTaskExecutionConfigData(
++        files = listOf("docs/README.md"),
++        maxImages = 2,
++        imageFormat = "png"
++    )
++)
++            </code></pre>
+                +
+                + <h3 style="font-size: 1.2rem; margin: 2rem 0 1rem 0;">Prompt Segment</h3>
+                + <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">The following logic is
+                injected into the orchestrator's context:</p>
+                +
+                <pre><code class="language-text">
++IllustrateDocument - Analyze a document and generate images to enhance its content
++  - Specify a markdown or HTML file to illustrate
++  - Configure maximum number of images (default: 5)
++  - Choose image format (png/jpg)
++  - Analyzes document structure and content
++  - Generates contextually appropriate images
++  - Saves images with descriptive names in the same folder
++  - Optionally inserts image references at appropriate locations
++            </code></pre>
+            </div>
+
+    </section>

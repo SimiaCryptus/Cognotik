@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="../logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik | RunToolTask - Industrial Design System</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
+
+    <link href="../assets/styles/main.css" rel="stylesheet">
+    <script src="../assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-serif: 'Cinzel', serif;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 4rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            background: var(--bg-panel);
+        }
+
+        .btn-action {
+            background: var(--accent-primary);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            color: #e6edf3;
+        }
+
+        .req { color: #f85149; }
+        .lifecycle-list {
+            padding-left: 1.2rem;
+            color: var(--text-main);
+        }
+        .lifecycle-list li {
+            margin-bottom: 1rem;
+        }
+        .lifecycle-list strong {
+            color: var(--accent-primary);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Execution > RunToolTask</div>
+        <h1>RunToolTask</h1>
+        <p class="pitch">
+            Executes external CLI tools and scripts within the workspace environment with real-time output streaming and
+            manual approval gates.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Execution</span>
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> Execution Config (JSON)</div>
+            <pre><code class="language-json">
+{
+  "tool": "npm",
+  "args": ["test", "--", "--watchAll=false"],
+  "workingDir": "webui",
+  "task_description": "Run frontend unit tests",
+  "task_dependencies": []
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI Render</div>
+            <div class="mock-ui-content">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Proposed command to run</div>
+                <div style="background: #000; padding: 0.75rem; border-radius: 4px; font-family: monospace; font-size: 0.85rem; border: 1px solid #333;">
+                    npm test -- --watchAll=false
+                </div>
+                <button class="btn-action">Run Tool</button>
+
+                <div style="margin-top: 1.5rem; color: var(--text-dim); font-size: 0.8rem; border-top: 1px solid #333; padding-top: 1rem;">
+                    <details>
+                        <summary>Process Output</summary>
+                        <pre style="font-size: 0.75rem; color: #8b949e; background: transparent; padding: 0.5rem 0;">
+PASS src/App.test.js
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        1.2s
+                        </pre>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 4rem;">
+        <h2 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 1rem;">Workspace Artifacts</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.9rem;">
+            The agent maintains a persistent workspace for each task. Below is the live file structure for the <code>RunToolTask</code>
+            test workspace, showing logs and generated outputs.
+        </p>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div class="tab-pane" id="tab-docs">
+            <h3 style="font-size: 1.2rem; margin-top: 0;">Execution Configuration (Runtime)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>tool</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The name of the tool to run. Resolved via <code>UserSettingsManager</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>args</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Arguments passed to the tool executable.</td>
+                </tr>
+                <tr>
+                    <td><code>workingDir</code></td>
+                    <td>String</td>
+                    <td>Relative path of the working directory for execution.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td>String</td>
+                    <td>Human-readable description of the intent.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>IDs of tasks that must complete before this one.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 1.2rem; margin-top: 2.5rem;">Type Configuration (Static)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>task_type</code></td>
+                    <td>String</td>
+                    <td>Always <code>RunTool</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>model</code></td>
+                    <td>ApiChatModel</td>
+                    <td>Optional LLM override for task-specific logic.</td>
+                </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 2rem; display: flex; gap: 2rem;">
+                <div>
+                    <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase;">Token Usage</h4>
+                    <span class="badge">Low</span>
+                </div>
+                <div>
+                    <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase;">Dependencies</h4>
+                    <span style="font-size: 0.9rem;">None (Standalone)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h3 style="font-size: 1.2rem; margin-top: 0;">Task Execution Lifecycle</h3>
+            <ul class="lifecycle-list">
+                <li>
+                    <strong>1. Context Loading</strong>
+                    Retrieves prior code context from the execution state to provide environment awareness.
+                </li>
+                <li>
+                    <strong>2. Tool Resolution</strong>
+                    Looks up the <code>tool</code> name in <code>UserSettings</code>. Resolves the absolute path to the
+                    executable using configured providers.
+                </li>
+                <li>
+                    <strong>3. Validation</strong>
+                    Ensures the executable exists and validates the <code>workingDir</code> relative to the project
+                    root.
+                </li>
+                <li>
+                    <strong>4. Interaction Gate</strong>
+                    If <code>autoFix</code> is false, the task enters a pending state, rendering a "Run Tool" button for
+                    manual approval.
+                </li>
+                <li>
+                    <strong>5. Process Execution</strong>
+                    Spawns a system process via <code>ProcessBuilder</code>. Merges <code>stdout</code> and
+                    <code>stderr</code> for unified logging.
+                </li>
+                <li>
+                    <strong>6. Reporting & Cleanup</strong>
+                    Captures exit codes and output. Writes results to the task transcript and updates the Session UI.
+                </li>
+            </ul>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h3 style="font-size: 1.2rem; margin-top: 0;">Kotlin Boilerplate</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">Example of invoking RunToolTask
+                using the <code>UnifiedHarness</code> in an embedded environment:</p>
+            <pre><code class="language-kotlin">
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTask.Companion.RunTool
+
+// 1. Define the Job settings
+val config = RunToolTaskExecutionConfigData(
+    tool = "python", // Must match a configured tool executable
+    args = listOf("scripts/verify_data.py", "--verbose"),
+    workingDir = ".",
+    task_description = "Verify data integrity using python script"
+)
+
+// 2. Execute via Harness
+harness.runTask(
+    taskType = RunTool,
+    typeConfig = RunToolTask.RunToolTaskTypeConfig(),
+    executionConfig = config,
+    workspace = File("./my-project"),
+    autoFix = true // Set to true for headless/CI execution
+)
+            </code></pre>
+
+            <h3 style="font-size: 1.2rem; margin-top: 2.5rem;">LLM Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">This segment is injected into the LLM's system prompt
+                to define the tool's capabilities:</p>
+            <pre style="background: #000; color: #4ade80; border: 1px solid #222;">
+RunTool - Execute a tool with custom arguments
+  * Available tools: [list of configured tools from settings]
+            </pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+    import { initFileTree } from '../assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/RunTool/');
+    });
+</script>
+
+</body>
+</html>
