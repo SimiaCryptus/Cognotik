@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <title>Embedding Cognotik — Headless AI Agents for Automated Coding</title>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
-    <!-- SEO Meta Tags -->
-    <title>Embedding Cognotik | Headless AI Agents for Automated Coding</title>
     <meta content="Embed Cognotik AI agents directly into your build process, CI/CD pipelines, or custom applications. Headless execution for automated coding tasks."
           name="description">
-    <meta content="Cognotik, Embedding, Headless AI, CI/CD, Gradle Plugin, Automated Coding, Agentic AI"
+    <meta content="Cognotik, Embedding, Headless AI, CI/CD, Gradle Plugin, Automated Coding, Agentic AI, UnifiedHarness"
           name="keywords">
+    <meta content="SimiaCryptus" name="author">
     <link href="https://cognotik.com/embedding.html" rel="canonical">
+    <meta content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" name="robots">
+    <meta content="#0f172a" name="theme-color">
 
     <!-- Open Graph / Social -->
-    <meta content="Embedding Cognotik | Headless AI Agents for Automated Coding" property="og:title">
+    <meta content="Embedding Cognotik — Headless AI Agents for Automated Coding" property="og:title">
     <meta content="Embed Cognotik AI agents directly into your build process, CI/CD pipelines, or custom applications."
           property="og:description">
     <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
@@ -22,45 +24,36 @@
 
     <!-- Twitter Card -->
     <meta content="summary_large_image" name="twitter:card">
-    <meta content="Embedding Cognotik | Headless AI Agents for Automated Coding" name="twitter:title">
+    <meta content="Embedding Cognotik — Headless AI Agents for Automated Coding" name="twitter:title">
     <meta content="Embed Cognotik AI agents directly into your build process, CI/CD pipelines, or custom applications."
           name="twitter:description">
     <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
-    <!-- Favicon Suite -->
-    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
-    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
-    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
-    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
-    <link href="/site.webmanifest" rel="manifest">
-    <meta content="#0f1115" name="theme-color">
+    <!-- Styles -->
+    <link href="assets/styles/styles.css" rel="stylesheet">
+    <link href="assets/styles/responsive.css" rel="stylesheet">
 
-    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap"
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
           rel="stylesheet">
-    <!-- Font Awesome for Icons -->
+
+    <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
-
-    <!-- jQuery & FileTree -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
-
-    <link href="assets/styles/main.css" rel="stylesheet">
     <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
-    <script src="assets/scripts/components/CognotikFooter.js" type="module"></script>
+
     <!-- Structured Data -->
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
             "@type": "TechArticle",
-            "headline": "Embedding Cognotik: A Guide for Automated Agentic Coding",
+            "headline": "Embedding Cognotik: Headless AI Agents for Automated Coding",
             "description": "Learn how to embed Cognotik AI agents into your build process, CI/CD pipelines, or custom applications for headless automated coding.",
             "author": {
                 "@type": "Organization",
-                "name": "Cognotik"
+                "name": "SimiaCryptus",
+                "url": "https://simiacrypt.us"
             },
             "publisher": {
                 "@type": "Organization",
@@ -73,403 +66,940 @@
             "mainEntityOfPage": "https://cognotik.com/embedding.html"
         }
     </script>
+
+    <style>
+        /* ===== EMBEDDING PAGE STYLES ===== */
+
+        /* Hero */
+        .embed-hero {
+            background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 70%);
+            position: relative;
+            overflow: hidden;
+            padding: 6rem 0 4rem;
+        }
+
+        .embed-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                radial-gradient(circle at 30% 40%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .embed-hero .container { position: relative; z-index: 2; }
+
+        .embed-hero .hero-eyebrow {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--accent-secondary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .embed-hero .hero-headline {
+            font-size: clamp(2rem, 4.5vw, 3.5rem);
+            font-family: var(--font-heading);
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(to right, #fff, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .embed-hero .hero-sub {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            max-width: 700px;
+        }
+
+        .embed-hero .hero-badges {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .embed-hero .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .badge-lib {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .badge-stable {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-maven {
+            background: rgba(251, 191, 36, 0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.25);
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            padding: 1rem 0 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .breadcrumbs a {
+            color: var(--accent-secondary);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover { text-decoration: underline; }
+        .breadcrumbs .sep { margin: 0 0.5rem; opacity: 0.5; }
+
+        /* Capabilities Grid */
+        .cap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+        }
+
+        .cap-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.75rem 1.5rem;
+            transition: transform var(--transition-normal), border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .cap-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-color);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.08);
+        }
+
+        .cap-card .cap-icon {
+            font-size: 1.8rem;
+            color: var(--accent-secondary);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .cap-card h4 {
+            font-family: var(--font-heading);
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cap-card p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover { color: var(--primary-color); }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-lang {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 0.3rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .copy-btn.copied {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border-color: #4ade80;
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 1.25rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            line-height: 1.65;
+            color: #e6edf3;
+            white-space: pre;
+        }
+
+        /* Inline code */
+        code.il {
+            background: rgba(139, 92, 246, 0.12);
+            color: #c4b5fd;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.88em;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: var(--border-radius-lg);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            margin: 1.5rem 0;
+        }
+
+        .info-panel .info-icon {
+            color: var(--accent-secondary);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+        }
+
+        .info-panel p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .info-panel strong { color: var(--primary-color); }
+
+        /* Task Reference Cards */
+        .task-ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .task-ref-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .task-ref-card:hover { border-color: var(--accent-color); }
+
+        .task-ref-card .trc-header {
+            padding: 1rem 1.25rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .task-ref-card .trc-badge {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .trc-badge.file { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+        .trc-badge.analysis { background: rgba(6, 182, 212, 0.15); color: #67e8f9; }
+        .trc-badge.exec { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
+        .trc-badge.plan { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+
+        .task-ref-card .trc-desc {
+            padding: 0 1.25rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .task-ref-card .trc-code {
+            border-top: 1px solid var(--border-color);
+            background: #0d1117;
+            padding: 1rem 1.25rem;
+        }
+
+        .task-ref-card .trc-code pre {
+            margin: 0;
+            overflow-x: auto;
+        }
+
+        .task-ref-card .trc-code code {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.55;
+            color: #e6edf3;
+            white-space: pre;
+        }
+
+        /* Troubleshooting */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+
+        .tip-card {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1.25rem;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            transition: border-color 0.3s;
+        }
+
+        .tip-card:hover { border-color: var(--accent-color); }
+
+        .tip-card .tip-num {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 8px;
+        }
+
+        .tip-card h4 {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            color: var(--primary-color);
+            margin-bottom: 0.3rem;
+        }
+
+        .tip-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Section divider */
+        .section-divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 2.5rem 0;
+        }
+
+        /* Subsection heading */
+        .sub-heading {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .sub-desc {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Config list */
+        .config-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+
+        .config-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .config-list li:last-child { border-bottom: none; }
+        .config-list li strong { color: var(--primary-color); }
+
+        .config-list .sub-list {
+            list-style: none;
+            padding-left: 1.5rem;
+            margin-top: 0.4rem;
+        }
+
+        .config-list .sub-list li {
+            border-bottom: none;
+            padding: 0.25rem 0;
+            font-size: 0.9rem;
+        }
+
+        .config-list .sub-list li::before {
+            content: '→';
+            color: var(--accent-secondary);
+            margin-right: 0.5rem;
+        }
+
+        /* CTA Banner */
+        .cta-banner {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 2.5rem;
+            text-align: center;
+            margin: 3rem 0 1rem;
+        }
+
+        .cta-banner h3 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .cta-banner p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-banner .cta-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .embed-hero { padding: 4rem 0 3rem; }
+            .tabs-nav { gap: 0; }
+            .tab-btn { padding: 0.7rem 1rem; font-size: 0.85rem; }
+            .task-ref-grid { grid-template-columns: 1fr; }
+            .tips-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-<cognotik-header></cognotik-header>
+<cognotik-header current-page="embedding"></cognotik-header>
 
-<main class="task-container">
-    <!-- Breadcrumbs -->
-    <nav aria-label="Breadcrumb" class="breadcrumbs mb-4">
-        <a class="text-secondary" href="/">Home</a>
-        <span class="text-tertiary mx-2">/</span>
-        <span class="text-primary">Embedding</span>
-    </nav>
+<main>
 
-    <!-- Hero Section -->
-    <section class="hero hero-gradient animate-fade-in"
-             style="padding: 3rem 2rem; border-radius: var(--border-radius); margin-bottom: 2rem;">
-        <div class="hero-content">
-            <div class="flex items-center justify-center gap-3 mb-4">
-                <span class="badge badge-primary">Library</span>
-                <span class="badge badge-success">Stable</span>
+    <!-- ===== HERO ===== -->
+    <section class="embed-hero" id="top">
+        <div class="container">
+            <nav class="breadcrumbs fade-in" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span class="sep">/</span>
+                <span>Embedding</span>
+            </nav>
+
+            <div class="hero-badges fade-in delay-1">
+                <span class="badge badge-lib"><i class="fas fa-cube"></i> Library</span>
+                <span class="badge badge-stable"><i class="fas fa-check-circle"></i> Stable</span>
+                <span class="badge badge-maven"><i class="fas fa-box"></i> Maven Central</span>
             </div>
-            <h1 class="hero-title">Embedding Cognotik</h1>
-            <p class="hero-subtitle">
-                Use the <code class="code-inline">com.cognotik:webapp</code> library as an embedded engine.
-                Run "Headless" AI agents for complex coding tasks, refactoring, or documentation generation without a
-                UI.
+
+            <h1 class="hero-headline fade-in delay-1">Embedding Cognotik</h1>
+            <p class="hero-sub fade-in delay-2">
+                Use <code class="il">com.cognotik:webapp</code> as an embedded engine.
+                Run headless AI agents for complex coding tasks, refactoring, documentation generation,
+                and automated workflows — no UI required.
             </p>
-            <div class="hero-actions">
+
+            <div class="hero-ctas fade-in delay-3">
                 <a class="btn btn-primary btn-lg" href="#getting-started">
                     <i class="fas fa-rocket"></i> Quick Start
                 </a>
-                <a class="btn btn-secondary btn-lg" href="https://github.com/SimiaCryptus/Cognotik" target="_blank">
-                    <i class="fab fa-github"></i> GitHub
+                <a class="btn btn-secondary btn-lg" href="https://github.com/SimiaCryptus/Cognotik" target="_blank" rel="noopener">
+                    <i class="fab fa-github"></i> Source Code
+                </a>
+                <a class="btn btn-secondary btn-lg" href="TaskPlanning.html">
+                    <i class="fas fa-book"></i> Planning Docs
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features" style="padding: 2rem 0;">
-        <h2 class="text-heading text-center mb-8">Key Capabilities</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-terminal"></i></div>
-                <h3 class="feature-title">Headless Execution</h3>
-                <p class="feature-description">Run agents without a UI using <code class="code-inline">serverless =
-                    true</code>. Perfect for background jobs, scripts, and server-side processing.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-code-branch"></i></div>
-                <h3 class="feature-title">CI/CD Integration</h3>
-                <p class="feature-description">Embed agents in GitHub Actions or Jenkins to perform code reviews,
-                    auto-fixes, or documentation generation on every push.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-cubes"></i></div>
-                <h3 class="feature-title">Gradle Plugin</h3>
-                <p class="feature-description">Wrap agent tasks in custom Gradle tasks to automate boilerplate
-                    generation as part of your build process.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"><i class="fas fa-robot"></i></div>
-                <h3 class="feature-title">UnifiedHarness API</h3>
-                <p class="feature-description">A simple entry point to configure models, inject API keys, and execute
-                    plans or individual tasks programmatically.</p>
+    <!-- ===== CAPABILITIES ===== -->
+    <section class="section" id="capabilities">
+        <div class="container">
+            <h2 class="section-title">Key Capabilities</h2>
+            <p class="section-subtitle">
+                Everything you need to integrate AI agents into your software lifecycle.
+            </p>
+            <div class="cap-grid">
+                <div class="cap-card fade-in">
+                    <span class="cap-icon"><i class="fas fa-terminal"></i></span>
+                    <h4>Headless Execution</h4>
+                    <p>Run agents without a UI using <code class="il">serverless = true</code>. Perfect for background jobs, scripts, and server-side processing.</p>
+                </div>
+                <div class="cap-card fade-in delay-1">
+                    <span class="cap-icon"><i class="fas fa-code-branch"></i></span>
+                    <h4>CI/CD Integration</h4>
+                    <p>Embed agents in GitHub Actions or Jenkins to perform code reviews, auto-fixes, or documentation generation on every push.</p>
+                </div>
+                <div class="cap-card fade-in delay-2">
+                    <span class="cap-icon"><i class="fas fa-cubes"></i></span>
+                    <h4>Gradle Plugin</h4>
+                    <p>Wrap agent tasks in custom Gradle tasks to automate boilerplate generation as part of your build process.</p>
+                </div>
+                <div class="cap-card fade-in delay-3">
+                    <span class="cap-icon"><i class="fas fa-robot"></i></span>
+                    <h4>UnifiedHarness API</h4>
+                    <p>A simple entry point to configure models, inject API keys, and execute plans or individual tasks programmatically.</p>
+                </div>
+                <div class="cap-card fade-in delay-4">
+                    <span class="cap-icon"><i class="fas fa-brain"></i></span>
+                    <h4>Cognitive Modes</h4>
+                    <p>Choose from Waterfall, Adaptive, Conversational, and more — each optimized for different problem types.</p>
+                </div>
+                <div class="cap-card fade-in delay-5">
+                    <span class="cap-icon"><i class="fas fa-shield-halved"></i></span>
+                    <h4>Budget &amp; Safety</h4>
+                    <p>Set spending limits, iteration caps, and temperature controls. Full auditability with usage logs and result artifacts.</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Main Content Tabs -->
-    <section class="my-8" id="getting-started">
-        <div class="tabs" data-tabs>
+    <!-- ===== MAIN CONTENT (TABS) ===== -->
+    <section class="section" id="getting-started">
+        <div class="container">
+            <h2 class="section-title">Developer Guide</h2>
+            <p class="section-subtitle">
+                From installation to production deployment — everything in one place.
+            </p>
+
             <div class="tabs-nav" role="tablist">
-                <button aria-selected="true" class="tab-btn active" data-tab="installation" role="tab">
+                <button class="tab-btn active" data-tab="installation" role="tab" aria-selected="true">
                     <i class="fas fa-download"></i> Installation
                 </button>
-                <button aria-selected="false" class="tab-btn" data-tab="scenarios" role="tab">
+                <button class="tab-btn" data-tab="scenarios" role="tab" aria-selected="false">
                     <i class="fas fa-sitemap"></i> Usage Scenarios
                 </button>
-                <button aria-selected="false" class="tab-btn" data-tab="tasks" role="tab">
+                <button class="tab-btn" data-tab="tasks" role="tab" aria-selected="false">
                     <i class="fas fa-tasks"></i> Task Reference
                 </button>
-                <button aria-selected="false" class="tab-btn" data-tab="integration" role="tab">
+                <button class="tab-btn" data-tab="integration" role="tab" aria-selected="false">
                     <i class="fas fa-plug"></i> Integration
                 </button>
             </div>
-            <div class="tabs-content">
-                <!-- Installation Tab -->
-                <div class="tab-panel active" data-tab-panel="installation" role="tabpanel">
-                    <h3 class="text-subheading mb-4">1. Add Dependency</h3>
-                    <p class="text-body mb-4">Add the dependency to your <code
-                            class="code-inline">build.gradle.kts</code>:</p>
 
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn" data-copy-target="install-code">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin" id="install-code">repositories {
+            <!-- ===== TAB: Installation ===== -->
+            <div class="tab-panel active" data-tab-panel="installation" role="tabpanel">
+
+                <h3 class="sub-heading">1. Add the Dependency</h3>
+                <p class="sub-desc">Add the core library to your <code class="il">build.gradle.kts</code>:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin DSL</span>
+                        <button class="copy-btn" data-copy-target="install-code">Copy</button>
+                    </div>
+                    <pre><code id="install-code">repositories {
     mavenCentral()
 }
 
 dependencies {
-    // The core webapp library contains the Harness and Planning engines
+    // Core library — contains the Harness and Planning engines
     implementation("com.cognotik:webapp:2.0.39")
-    // You may need SLF4J for logging
+
+    // Logging (recommended)
     implementation("org.slf4j:slf4j-simple:2.0.9")
 }</code></pre>
+                </div>
+
+                <hr class="section-divider">
+
+                <h3 class="sub-heading">2. Initialize the Harness</h3>
+                <p class="sub-desc">
+                    The <code class="il">UnifiedHarness</code> is your entry point. Initialize it with
+                    <code class="il">serverless = true</code> for headless environments:
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin</span>
+                        <button class="copy-btn" data-copy-target="harness-code">Copy</button>
                     </div>
-
-                    <h3 class="text-subheading mt-8 mb-4">2. Initialize UnifiedHarness</h3>
-                    <p class="text-body mb-4">The entry point for embedded execution is the <code class="code-inline">UnifiedHarness</code>
-                        class. Initialize it with <code class="code-inline">serverless = true</code> for CI/CD or script
-                        environments:</p>
-
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn" data-copy-target="harness-code">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin" id="harness-code">import com.simiacryptus.cognotik.util.UnifiedHarness
+                    <pre><code id="harness-code">import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.chat.model.OpenAIModels
 
 val harness = UnifiedHarness(
-    serverless = true,
+    serverless = true,       // No browser, no UI
     openBrowser = false,
 
-    // Define the models you want to use
+    // Model selection
     smartModel = OpenAIModels.GPT4o,
-    fastModel = OpenAIModels.GPT35Turbo,
+    fastModel  = OpenAIModels.GPT35Turbo,
 
-    // Inject API Keys from Environment Variables
+    // API key injection
     modelInstanceFn = { apiChatModel ->
-        val provider = apiChatModel.provider
-        val model = apiChatModel.model
-
-        // Fetch key based on provider (OpenAI, Anthropic, etc.)
         val apiKey = System.getenv("OPENAI_API_KEY")
-            ?: throw RuntimeException("Missing OPENAI_API_KEY env var")
-
-        model.instance(key = apiKey)
+            ?: throw RuntimeException("Missing OPENAI_API_KEY")
+        apiChatModel.model.instance(key = apiKey)
     }
 )
 
-// Initialize platform services (loads Task definitions, etc.)
+// Initialize platform services
 harness.start()</code></pre>
-                    </div>
-
-                    <div class="panel mt-6"
-                         style="background: rgba(88, 166, 255, 0.1); border-color: var(--accent-primary);">
-                        <div class="panel-body">
-                            <p class="text-body-sm"><strong><i class="fas fa-info-circle text-accent"></i>
-                                Important:</strong> The <code class="code-inline">modelInstanceFn</code> parameter is
-                                required to inject API keys programmatically. The harness does not load from local <code
-                                        class="code-inline">.config</code> files when this is used.</p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Usage Scenarios Tab -->
-                <div class="tab-panel" data-tab-panel="scenarios" hidden role="tabpanel">
-                    <h3 class="text-subheading mb-4">Scenario A: Full Agent Planning (The "Manager")</h3>
-                    <p class="text-body mb-4">Use this approach when you have a high-level goal and want the AI to
-                        figure out the steps, break them down, and execute them.</p>
+                <div class="info-panel">
+                    <i class="fas fa-info-circle info-icon"></i>
+                    <p>
+                        <strong>Note:</strong> When <code class="il">modelInstanceFn</code> is provided,
+                        the harness bypasses local <code class="il">.config</code> files entirely.
+                        All API keys must be injected programmatically — ideal for CI/CD secrets.
+                    </p>
+                </div>
+            </div>
 
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn" data-copy-target="plan-code">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin" id="plan-code">import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+            <!-- ===== TAB: Usage Scenarios ===== -->
+            <div class="tab-panel" data-tab-panel="scenarios" role="tabpanel">
+
+                <h3 class="sub-heading">Scenario A: Full Agent Planning</h3>
+                <p class="sub-desc">
+                    Give the AI a high-level goal and let it figure out the steps, break them down, and execute them autonomously.
+                    Think of it as "The Manager" — you describe the outcome, it handles the process.
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin</span>
+                        <button class="copy-btn" data-copy-target="plan-code">Copy</button>
+                    </div>
+                    <pre><code id="plan-code">import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import java.io.File
 
 fun runAgenticRefactor(projectDir: File, instruction: String) {
-    // 1. Configure the Strategy
+    // 1. Choose a cognitive strategy
     val strategy = CognitiveModeConfig(
-        type = CognitiveModeType.Waterfall, // or Auto_Plan, AdaptivePlanning
+        type = CognitiveModeType.Waterfall,
         name = "RefactorAgent"
     )
 
-    // 2. Execute the Plan
+    // 2. Execute the plan
     harness.runPlan(
-        prompt = instruction,
+        prompt            = instruction,
         cognitiveSettings = strategy,
-        workspace = projectDir, // The agent will read/write files here
-        timeoutMinutes = 60,
-        autoFix = true // Allow agent to fix its own errors without prompting
+        workspace         = projectDir,
+        timeoutMinutes    = 60,
+        autoFix           = true  // No human prompts — fully autonomous
     )
 
-    println("Agent execution complete. Check results.md in the workspace.")
+    println("Done. Check results.md in the workspace.")
 }
 
-// Example Call
+// Example
 runAgenticRefactor(
     File("./my-project"),
-    "Analyze the User class and convert all public fields to private with getters/setters."
+    "Convert all public fields in User.kt to private with getters/setters."
 )</code></pre>
+                </div>
+
+                <h4 class="sub-heading" style="font-size: 1.1rem; margin-top: 2rem;">Configuration Options</h4>
+                <ul class="config-list">
+                    <li>
+                        <strong><code class="il">workspace</code></strong> — The directory the agent reads/writes.
+                        Pass <code class="il">File(".")</code> for CI/CD, or <code class="il">null</code> for a temp directory.
+                    </li>
+                    <li>
+                        <strong><code class="il">autoFix</code></strong> — Set to <code class="il">true</code> for unattended execution.
+                        If <code class="il">false</code>, the agent may pause waiting for human confirmation.
+                    </li>
+                    <li>
+                        <strong><code class="il">cognitiveSettings</code></strong> — The planning strategy:
+                        <ul class="sub-list">
+                            <li><code class="il">Waterfall</code> — Plans everything first, then executes sequentially. Best for predictable tasks.</li>
+                            <li><code class="il">AdaptivePlanning</code> — Think → Act → Reflect loops. Best for research or debugging.</li>
+                            <li><code class="il">Conversational</code> — One task at a time with history. Best for interactive use.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <hr class="section-divider">
+
+                <h3 class="sub-heading">Scenario B: Single Task Execution</h3>
+                <p class="sub-desc">
+                    Use a specific Cognotik tool as a function call within your own code — skip the high-level planning entirely.
+                    Think of it as "The Tool" — you specify exactly what to do.
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin</span>
+                        <button class="copy-btn" data-copy-target="task-code">Copy</button>
                     </div>
-
-                    <h4 class="text-lg font-semibold mt-6 mb-3">Key Configuration Options</h4>
-                    <ul class="text-body mb-6" style="list-style: disc; padding-left: 1.5rem;">
-                        <li><strong>workspace:</strong> If <code class="code-inline">null</code>, creates a temp dir.
-                            For CI/CD, pass <code class="code-inline">File(".")</code> to modify the current repository.
-                        </li>
-                        <li><strong>autoFix:</strong> Set to <code class="code-inline">true</code> for unattended
-                            execution. If <code class="code-inline">false</code>, the agent might hang waiting for user
-                            confirmation.
-                        </li>
-                        <li><strong>cognitiveSettings:</strong>
-                            <ul style="list-style: circle; padding-left: 1.5rem; margin-top: 0.5rem;">
-                                <li><code class="code-inline">Waterfall</code>: Plans everything first, then executes.
-                                    Good for predictable tasks.
-                                </li>
-                                <li><code class="code-inline">AdaptivePlanning</code>: Loops through Think/Act cycles.
-                                    Good for research or debugging.
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-
-                    <hr class="my-8">
-
-                    <h3 class="text-subheading mb-4">Scenario B: Single Task Execution (The "Tool")</h3>
-                    <p class="text-body mb-4">Use this approach when you want to use a specific Cognotik tool (like the
-                        Crawler or File Modifier) as a function call within your own code, skipping the high-level
-                        planning.</p>
-
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn" data-copy-target="task-code">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin" id="task-code">import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+                    <pre><code id="task-code">import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.*
 
 fun generateReadme(projectDir: File) {
-    // 1. Define Static Configuration (The "Tool" settings)
+    // 1. Static config (the "tool" settings)
     val typeConfig = FileModificationTaskTypeConfig(
         name = "ReadmeGenerator"
     )
 
-    // 2. Define Runtime Input (The "Job" settings)
+    // 2. Runtime input (the "job" settings)
     val executionConfig = FileModificationTaskExecutionConfigData(
-        files = listOf("README.md"),
-        modifications = "Read the source code in src/main and generate a comprehensive README.md.",
+        files          = listOf("README.md"),
+        modifications  = "Read src/main and generate a comprehensive README.",
         extractContent = true,
         task_description = "Generate Documentation"
     )
 
-    // 3. Run
+    // 3. Execute
     harness.runTask(
-        taskType = TaskType.FileModificationTask,
-        typeConfig = typeConfig,
+        taskType        = TaskType.FileModificationTask,
+        typeConfig      = typeConfig,
         executionConfig = executionConfig,
-        workspace = projectDir,
-        autoFix = true
+        workspace       = projectDir,
+        autoFix         = true
     )
 }</code></pre>
-                    </div>
                 </div>
+            </div>
 
-                <!-- Task Reference Tab -->
-                <div class="tab-panel" data-tab-panel="tasks" hidden role="tabpanel">
-                    <p class="text-body mb-6">Every task requires two configuration components:
-                        <strong>TaskTypeConfig</strong> (static settings) and <strong>TaskExecutionConfig</strong>
-                        (runtime inputs).</p>
+            <!-- ===== TAB: Task Reference ===== -->
+            <div class="tab-panel" data-tab-panel="tasks" role="tabpanel">
 
-                    <div class="content-grid"
-                         style="grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem;">
-                        <!-- File Modification -->
-                        <div class="card card-bordered">
-                            <div class="card-header">
-                                <span class="badge badge-primary">FileModificationTask</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-body-sm mb-3">Used for refactoring, bug fixing, or feature
-                                    implementation.</p>
-                                <div class="code-block" style="margin-bottom: 0;">
-                                        <pre style="font-size: 0.8rem;"><code class="language-kotlin">FileModificationTaskExecutionConfigData(
-    files = listOf("src/Main.kt"),
-    related_files = listOf("src/Utils.kt"),
-    modifications = "Refactor the main loop.",
+                <p class="sub-desc">
+                    Every task requires two configuration objects:
+                    <strong>TaskTypeConfig</strong> (static tool settings) and
+                    <strong>TaskExecutionConfig</strong> (runtime job inputs).
+                    Here are the most commonly embedded tasks:
+                </p>
+
+                <div class="task-ref-grid">
+
+                    <div class="task-ref-card">
+                        <div class="trc-header">
+                            <span class="trc-badge file">File</span>
+                            <h4 style="margin:0; font-family: var(--font-heading); font-size: 1.05rem;">FileModificationTask</h4>
+                        </div>
+                        <p class="trc-desc">Refactoring, bug fixing, or feature implementation. Creates or modifies source files with AI assistance.</p>
+                        <div class="trc-code">
+                            <pre><code>FileModificationTaskExecutionConfigData(
+    files          = listOf("src/Main.kt"),
+    related_files  = listOf("src/Utils.kt"),
+    modifications  = "Refactor the main loop.",
     extractContent = true
 )</code></pre>
-                                </div>
-                            </div>
                         </div>
+                    </div>
 
-                        <!-- File Append -->
-                        <div class="card card-bordered">
-                            <div class="card-header">
-                                <span class="badge badge-primary">FileAppendTask</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-body-sm mb-3">Optimized for adding content to the end of a file.</p>
-                                <div class="code-block" style="margin-bottom: 0;">
-                                        <pre style="font-size: 0.8rem;"><code class="language-kotlin">FileAppendTaskExecutionConfigData(
-    file = "CHANGELOG.md",
+                    <div class="task-ref-card">
+                        <div class="trc-header">
+                            <span class="trc-badge file">File</span>
+                            <h4 style="margin:0; font-family: var(--font-heading); font-size: 1.05rem;">FileAppendTask</h4>
+                        </div>
+                        <p class="trc-desc">Optimized for adding content to the end of a file without modifying existing content.</p>
+                        <div class="trc-code">
+                            <pre><code>FileAppendTaskExecutionConfigData(
+    file           = "CHANGELOG.md",
     append_content = "## [1.0.1] - Fixed login bug",
-    related_files = listOf("src/auth/Login.kt")
+    related_files  = listOf("src/auth/Login.kt")
 )</code></pre>
-                                </div>
-                            </div>
                         </div>
+                    </div>
 
-                        <!-- Read Documents -->
-                        <div class="card card-bordered">
-                            <div class="card-header">
-                                <span class="badge badge-purple">ReadDocumentsTask</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-body-sm mb-3">Pure analysis task. Reads files and answers questions
-                                    without modifying the filesystem.</p>
-                                <div class="code-block" style="margin-bottom: 0;">
-                                        <pre style="font-size: 0.8rem;"><code class="language-kotlin">ReadDocumentsTaskExecutionConfigData(
-    input_files = listOf("src/**/*.java"),
+                    <div class="task-ref-card">
+                        <div class="trc-header">
+                            <span class="trc-badge analysis">Analysis</span>
+                            <h4 style="margin:0; font-family: var(--font-heading); font-size: 1.05rem;">ReadDocumentsTask</h4>
+                        </div>
+                        <p class="trc-desc">Pure analysis — reads files and answers questions without modifying the filesystem.</p>
+                        <div class="trc-code">
+                            <pre><code>ReadDocumentsTaskExecutionConfigData(
+    input_files      = listOf("src/**/*.java"),
     inquiry_questions = listOf(
         "How is authentication handled?"
     ),
     inquiry_goal = "Generate security docs"
 )</code></pre>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- File Search -->
-                        <div class="card card-bordered">
-                            <div class="card-header">
-                                <span class="badge badge-purple">FileSearchTask</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-body-sm mb-3">Performs grep-like searches (literal or regex) and returns
-                                    line numbers with context.</p>
-                                <div class="code-block" style="margin-bottom: 0;">
-                                        <pre style="font-size: 0.8rem;"><code class="language-kotlin">FileSearchTaskExecutionConfigData(
-    search_pattern = "TODO|FIXME",
-    is_regex = true,
-    input_files = listOf("**/*.kt"),
-    context_lines = 2
-)</code></pre>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Run Tool -->
-                        <div class="card card-bordered">
-                            <div class="card-header">
-                                <span class="badge badge-warning">RunToolTask</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-body-sm mb-3">Executes external CLI tools configured in the user
-                                    settings.</p>
-                                <div class="code-block" style="margin-bottom: 0;">
-                                        <pre style="font-size: 0.8rem;"><code class="language-kotlin">RunToolTaskExecutionConfigData(
-    tool = "python",
-    args = listOf("scripts/verify.py", "--verbose"),
-    workingDir = "."
-)</code></pre>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sub-Plan -->
-                        <div class="card card-bordered">
-                            <div class="card-header">
-                                <span class="badge badge-success">SubPlanTask</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-body-sm mb-3">Spawns a nested agent to solve a complex goal with its own
-                                    cognitive mode.</p>
-                                <div class="code-block" style="margin-bottom: 0;">
-                                        <pre style="font-size: 0.8rem;"><code class="language-kotlin">SubPlanTaskExecutionConfigData(
-    planning_goal = "Research JSON library and implement wrapper.",
-    context = listOf("Must be Java 11 compatible")
-)</code></pre>
-                                </div>
-                            </div>
                         </div>
                     </div>
+
+                    <div class="task-ref-card">
+                        <div class="trc-header">
+                            <span class="trc-badge analysis">Analysis</span>
+                            <h4 style="margin:0; font-family: var(--font-heading); font-size: 1.05rem;">FileSearchTask</h4>
+                        </div>
+                        <p class="trc-desc">Grep-like searches (literal or regex) with line numbers and surrounding context.</p>
+                        <div class="trc-code">
+                            <pre><code>FileSearchTaskExecutionConfigData(
+    search_pattern = "TODO|FIXME",
+    is_regex       = true,
+    input_files    = listOf("**/*.kt"),
+    context_lines  = 2
+)</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="task-ref-card">
+                        <div class="trc-header">
+                            <span class="trc-badge exec">Execution</span>
+                            <h4 style="margin:0; font-family: var(--font-heading); font-size: 1.05rem;">RunToolTask</h4>
+                        </div>
+                        <p class="trc-desc">Execute external CLI tools. Run tests, linters, formatters, or any command-line program.</p>
+                        <div class="trc-code">
+                            <pre><code>RunToolTaskExecutionConfigData(
+    tool       = "python",
+    args       = listOf("scripts/verify.py", "--verbose"),
+    workingDir = "."
+)</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="task-ref-card">
+                        <div class="trc-header">
+                            <span class="trc-badge plan">Planning</span>
+                            <h4 style="margin:0; font-family: var(--font-heading); font-size: 1.05rem;">SubPlanTask</h4>
+                        </div>
+                        <p class="trc-desc">Spawn a nested agent with its own cognitive mode to solve a complex sub-goal.</p>
+                        <div class="trc-code">
+                            <pre><code>SubPlanTaskExecutionConfigData(
+    planning_goal = "Research JSON library options " +
+                    "and implement a wrapper.",
+    context = listOf("Must be Java 11 compatible")
+)</code></pre>
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- Integration Tab -->
-                <div class="tab-panel" data-tab-panel="integration" hidden role="tabpanel">
-                    <h3 class="text-subheading mb-4">A. As a Gradle Plugin</h3>
-                    <p class="text-body mb-4">Wrap the harness in a custom Gradle Task to add AI capabilities to your
-                        build.</p>
+                <div class="info-panel">
+                    <i class="fas fa-book info-icon"></i>
+                    <p>
+                        For the full list of 60+ available tasks — including reasoning, writing, image generation,
+                        and game design — see the <a href="TaskPlanning.html" style="color: var(--accent-secondary);">Task Planning documentation</a>.
+                    </p>
+                </div>
+            </div>
 
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn" data-copy-target="gradle-code">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin" id="gradle-code">// buildSrc/src/main/kotlin/AiRefactorTask.kt
+            <!-- ===== TAB: Integration ===== -->
+            <div class="tab-panel" data-tab-panel="integration" role="tabpanel">
+
+                <h3 class="sub-heading">A. Custom Gradle Task</h3>
+                <p class="sub-desc">
+                    Wrap the harness in a Gradle task to add AI capabilities directly to your build pipeline.
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin</span>
+                        <button class="copy-btn" data-copy-target="gradle-code">Copy</button>
+                    </div>
+                    <pre><code id="gradle-code">// buildSrc/src/main/kotlin/AiRefactorTask.kt
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.Input
 import com.simiacryptus.cognotik.util.UnifiedHarness
+import com.simiacryptus.cognotik.plan.cognitive.*
 
 abstract class AiRefactorTask : DefaultTask() {
     @get:Input
@@ -482,37 +1012,56 @@ abstract class AiRefactorTask : DefaultTask() {
 
         harness.runPlan(
             prompt = instruction,
-            cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.Waterfall),
+            cognitiveSettings = CognitiveModeConfig(
+                type = CognitiveModeType.Waterfall
+            ),
             workspace = project.projectDir
         )
 
         harness.stop()
     }
 }</code></pre>
+                </div>
+
+                <p class="sub-desc" style="margin-top: 0.5rem;">
+                    Then register it in your <code class="il">build.gradle.kts</code>:
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin DSL</span>
+                        <button class="copy-btn" data-copy-target="gradle-register">Copy</button>
                     </div>
+                    <pre><code id="gradle-register">tasks.register&lt;AiRefactorTask&gt;("aiRefactor") {
+    instruction = "Add KDoc comments to all public functions in src/main."
+}
 
-                    <hr class="my-8">
+// Run with: ./gradlew aiRefactor</code></pre>
+                </div>
 
-                    <h3 class="text-subheading mb-4">B. As a GitHub Action</h3>
-                    <p class="text-body mb-4">Create a Kotlin CLI application, build a "Fat JAR" (Shadow JAR), and use
-                        it in a workflow:</p>
+                <hr class="section-divider">
 
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">yaml</span>
-                            <button class="copy-btn" data-copy-target="gha-code">Copy</button>
-                        </div>
-                        <pre><code class="language-yaml" id="gha-code">name: AI Code Reviewer
+                <h3 class="sub-heading">B. GitHub Actions Workflow</h3>
+                <p class="sub-desc">
+                    Build a CLI application (Fat JAR), then use it in a GitHub Actions workflow for automated code review and fixes:
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">YAML</span>
+                        <button class="copy-btn" data-copy-target="gha-code">Copy</button>
+                    </div>
+                    <pre><code id="gha-code">name: AI Code Reviewer
 on: [workflow_dispatch]
 
 jobs:
   ai-fix:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -523,119 +1072,184 @@ jobs:
         run: |
           java -jar cognotik-cli.jar \
             --instruction "Review src/main for potential NPEs and fix them." \
-            --workspace .
+            --workspace . \
+            --mode waterfall
+
+      - name: Archive Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-results
+          path: |
+            results.md
+            usage.json
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          title: "AI Automated Fixes"</code></pre>
+          title: "🤖 AI Automated Fixes"
+          body: "Auto-generated by Cognotik agent. See results.md for details."</code></pre>
+                </div>
+
+                <hr class="section-divider">
+
+                <h3 class="sub-heading">C. Advanced Configuration</h3>
+                <p class="sub-desc">
+                    Fine-tune budget, safety limits, and model selection with the configuration lambda:
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Kotlin</span>
+                        <button class="copy-btn" data-copy-target="config-code">Copy</button>
                     </div>
-
-                    <hr class="my-8">
-
-                    <h3 class="text-subheading mb-4">Advanced Configuration</h3>
-                    <p class="text-body mb-4">When running <code class="code-inline">runPlan</code>, inject a custom
-                        configuration lambda to control budget and safety limits:</p>
-
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn" data-copy-target="config-code">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin" id="config-code">harness.runPlan(
-    prompt = "...",
-    cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.Waterfall),
+                    <pre><code id="config-code">harness.runPlan(
+    prompt = "Analyze and optimize database queries in src/dao/",
+    cognitiveSettings = CognitiveModeConfig(
+        type = CognitiveModeType.AdaptivePlanning
+    ),
     config = { session, workspace ->
         OrchestrationConfig(
-            sessionId = session.sessionId,
+            sessionId  = session.sessionId,
             workingDir = workspace.absolutePath,
 
-            // Model Selection
+            // Model selection
             smartModel = OpenAIModels.GPT4o.asApiChatModel(),
-            fastModel = OpenAIModels.GPT35Turbo.asApiChatModel(),
+            fastModel  = OpenAIModels.GPT35Turbo.asApiChatModel(),
 
-            // Safety Limits
-            budget = 2.00,          // Max $2.00 USD spend
-            maxIterations = 15,     // Max planning loops
+            // Safety limits
+            budget              = 2.00,   // Max $2.00 USD
+            maxIterations       = 15,     // Max planning loops
             maxTasksPerIteration = 3,
 
             // Behavior
-            autoFix = true,
-            temperature = 0.1       // Low temperature for deterministic code
+            autoFix     = true,
+            temperature = 0.1   // Low temp for deterministic code
         )
     }
 )</code></pre>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ===== TROUBLESHOOTING ===== -->
+    <section class="section" id="troubleshooting">
+        <div class="container">
+            <h2 class="section-title">Best Practices</h2>
+            <p class="section-subtitle">
+                Tips for reliable headless execution in production environments.
+            </p>
+
+            <div class="tips-grid">
+                <div class="tip-card fade-in">
+                    <span class="tip-num">1</span>
+                    <div>
+                        <h4>Environment Variables</h4>
+                        <p>Ensure API keys are available where the JAR runs. The harness does not load from local
+                            <code class="il">.config</code> files when a custom <code class="il">modelInstanceFn</code> is used.</p>
+                    </div>
+                </div>
+                <div class="tip-card fade-in delay-1">
+                    <span class="tip-num">2</span>
+                    <div>
+                        <h4>Context Window</h4>
+                        <p>For large codebases, select a model with a large context window like
+                            <code class="il">gpt-4-turbo</code> or <code class="il">claude-3-opus</code>.</p>
+                    </div>
+                </div>
+                <div class="tip-card fade-in delay-2">
+                    <span class="tip-num">3</span>
+                    <div>
+                        <h4>Logging</h4>
+                        <p>Cognotik uses SLF4J. Add <code class="il">slf4j-simple</code> to see the agent's
+                            reasoning process in your console output.</p>
+                    </div>
+                </div>
+                <div class="tip-card fade-in delay-3">
+                    <span class="tip-num">4</span>
+                    <div>
+                        <h4>Synchronous Execution</h4>
+                        <p>In <code class="il">serverless</code> mode, the harness blocks the calling thread
+                            until completion — usually desired for CI/CD.</p>
+                    </div>
+                </div>
+                <div class="tip-card fade-in delay-4">
+                    <span class="tip-num">5</span>
+                    <div>
+                        <h4>Artifacts</h4>
+                        <p>The agent writes <code class="il">results.md</code> and <code class="il">usage.json</code>
+                            in the workspace. Archive these in your CI pipeline for audit trails.</p>
+                    </div>
+                </div>
+                <div class="tip-card fade-in delay-5">
+                    <span class="tip-num">6</span>
+                    <div>
+                        <h4>Budget Limits</h4>
+                        <p>Always set a <code class="il">budget</code> in production to prevent runaway API costs.
+                            Start with $1–2 and adjust based on task complexity.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Troubleshooting Section -->
-    <section class="my-12">
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-icon">🔧</span>
-                <span class="panel-title">Troubleshooting & Best Practices</span>
-            </div>
-            <div class="panel-body">
-                <ul class="text-body" style="list-style: none; padding: 0;">
-                    <li class="mb-4 flex gap-3">
-                        <span class="text-accent">1.</span>
-                        <div><strong>Environment Variables:</strong> Ensure API keys are available in the environment
-                            where the JAR runs. The <code class="code-inline">UnifiedHarness</code> does not load from
-                            local <code class="code-inline">.config</code> files when a custom <code
-                                    class="code-inline">modelInstanceFn</code> is used.
-                        </div>
-                    </li>
-                    <li class="mb-4 flex gap-3">
-                        <span class="text-accent">2.</span>
-                        <div><strong>Context Window:</strong> If working on large codebases, ensure you select a model
-                            with a large context window (e.g., <code class="code-inline">gpt-4-turbo</code> or <code
-                                    class="code-inline">claude-3-opus</code>).
-                        </div>
-                    </li>
-                    <li class="mb-4 flex gap-3">
-                        <span class="text-accent">3.</span>
-                        <div><strong>Logging:</strong> Cognotik uses SLF4J. Configure a simple logger (like <code
-                                class="code-inline">slf4j-simple</code>) to see the agent's "thought process" in your
-                            console logs.
-                        </div>
-                    </li>
-                    <li class="mb-4 flex gap-3">
-                        <span class="text-accent">4.</span>
-                        <div><strong>Concurrency:</strong> In <code class="code-inline">serverless</code> mode, the
-                            harness runs synchronously (blocking the thread until completion). This is usually desired
-                            for CI/CD.
-                        </div>
-                    </li>
-                    <li class="flex gap-3">
-                        <span class="text-accent">5.</span>
-                        <div><strong>Artifacts:</strong> The agent writes a <code class="code-inline">results.md</code>
-                            and a <code class="code-inline">usage.json</code> in the workspace. Archive these in your CI
-                            pipeline to review what the agent did.
-                        </div>
-                    </li>
-                </ul>
+
+    <!-- ===== CTA ===== -->
+    <section class="section">
+        <div class="container">
+            <div class="cta-banner fade-in">
+                <h3>Ready to Embed AI in Your Pipeline?</h3>
+                <p>
+                    Start with the Quick Start guide above, or explore the full task catalog
+                    to find the right tools for your workflow.
+                </p>
+                <div class="cta-actions">
+                    <a class="btn btn-primary btn-lg" href="https://github.com/SimiaCryptus/Cognotik" target="_blank" rel="noopener">
+                        <i class="fab fa-github"></i> Get the Source
+                    </a>
+                    <a class="btn btn-secondary btn-lg" href="TaskPlanning.html">
+                        <i class="fas fa-book"></i> Full Documentation
+                    </a>
+                    <a class="btn btn-secondary btn-lg" href="desktop.html">
+                        <i class="fas fa-desktop"></i> Try the Desktop App
+                    </a>
+                </div>
             </div>
         </div>
     </section>
+
 </main>
 
-<cognotik-footer></cognotik-footer>
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <p>&copy; 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All rights reserved.</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
+                <li><a href="desktop.html">Desktop</a></li>
+                <li><a href="embedding.html">Embedding</a></li>
+                <li><a href="tours/core/index.html">Tours</a></li>
+                <li><a href="TaskPlanning.html">Docs</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
 
-<!-- Core Scripts -->
-<script src="assets/scripts/core.js" type="module"></script>
-<script src="assets/scripts/vendor/prism.js"></script>
-<!-- Tab Functionality -->
+<!-- Scripts -->
+<script src="assets/scripts/main.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const tabsContainer = document.querySelector('[data-tabs]');
-        if (!tabsContainer) return;
-        const tabButtons = tabsContainer.querySelectorAll('.tab-btn');
-        const tabPanels = tabsContainer.querySelectorAll('.tab-panel');
+    // Tab functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const targetTab = button.dataset.tab;
+
                 // Update buttons
                 tabButtons.forEach(btn => {
                     btn.classList.remove('active');
@@ -643,23 +1257,26 @@ jobs:
                 });
                 button.classList.add('active');
                 button.setAttribute('aria-selected', 'true');
+
                 // Update panels
                 tabPanels.forEach(panel => {
                     if (panel.dataset.tabPanel === targetTab) {
                         panel.classList.add('active');
-                        panel.removeAttribute('hidden');
                     } else {
                         panel.classList.remove('active');
-                        panel.setAttribute('hidden', '');
                     }
                 });
             });
         });
+
         // Copy button functionality
         document.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const targetId = btn.dataset.copyTarget;
-                const codeElement = targetId ? document.getElementById(targetId) : btn.closest('.code-block').querySelector('code');
+                const codeElement = targetId
+                    ? document.getElementById(targetId)
+                    : btn.closest('.code-block').querySelector('code');
+
                 if (codeElement) {
                     try {
                         await navigator.clipboard.writeText(codeElement.textContent);
@@ -670,11 +1287,31 @@ jobs:
                             btn.classList.remove('copied');
                         }, 2000);
                     } catch (err) {
-                        console.error('Failed to copy:', err);
+                        // Fallback for older browsers
+                        const range = document.createRange();
+                        range.selectNodeContents(codeElement);
+                        const selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        document.execCommand('copy');
+                        selection.removeAllRanges();
+                        btn.textContent = 'Copied!';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = 'Copy';
+                            btn.classList.remove('copied');
+                        }, 2000);
                     }
                 }
             });
         });
+
+        // Deep-link to tab from URL hash
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            const targetBtn = document.querySelector(`.tab-btn[data-tab="${hash}"]`);
+            if (targetBtn) targetBtn.click();
+        }
     });
 </script>
 </body>
