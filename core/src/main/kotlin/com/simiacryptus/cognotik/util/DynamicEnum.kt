@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
 open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
   companion object {
+    private val log = LoggerFactory.getLogger(DynamicEnum::class.java)
     private val registries = mutableMapOf<Class<*>, MutableList<Pair<String, DynamicEnum<*>>>>()
 
     internal fun <T> getRegistry(clazz: Class<T>): MutableList<Pair<String, T>> {
@@ -32,9 +33,11 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
     fun <T : DynamicEnum<T>> register(clazz: Class<T>, enumConstant: T) {
       val registry = getRegistry(clazz)
       if (registry.any { it.first == enumConstant.name }) {
-        throw IllegalArgumentException("Enum constant with name '${enumConstant.name}' is already registered for class ${clazz.name}")
+        //throw IllegalArgumentException("Enum constant with name '${enumConstant.name}' is already registered for class ${clazz.name}")
+        log.info("Enum constant with name '${enumConstant.name}' is already registered for class ${clazz.name}, skipping registration")
+      } else {
+        registry.add(enumConstant.name to enumConstant)
       }
-      registry.add(enumConstant.name to enumConstant)
     }
      /**
       * Unregister a dynamic enum constant by name.

@@ -29,21 +29,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        configLogging()
         CoreProviders.init()
         CoreTasks.init()
         ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
-        setLogInfo("org.apache.hc.client5.http")
-        setLogInfo("org.eclipse.jetty")
-        setLogInfo("com.simiacryptus")
-        setLogDebug("com.simiacryptus.cognotik.chat")
-//        setLogDebug("com.simiacryptus.cognotik.plan")
-//        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgent)
-//        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
-//        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
-//        setLogDebug("com.simiacryptus.cognotik.chat")
-//        setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         System.getProperty("cognotik.config")?.let { configFile ->
             try {
@@ -191,5 +182,17 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
 
+        fun configLogging() {
+            setLogInfo("org.apache.hc.client5.http")
+            setLogInfo("org.eclipse.jetty")
+            setLogInfo("com.simiacryptus")
+            setLogDebug("com.simiacryptus.cognotik.chat")
+            //        setLogDebug("com.simiacryptus.cognotik.plan")
+            //        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgent)
+            //        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
+            //        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
+            //        setLogDebug("com.simiacryptus.cognotik.chat")
+            //        setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
+        }
     }
 }
