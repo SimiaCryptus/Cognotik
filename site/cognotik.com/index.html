@@ -27,7 +27,8 @@
     <link href="https://cognotik.com/" rel="canonical">
 
     <link href="assets/styles/styles.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+     <link href="assets/styles/responsive.css" rel="stylesheet">
+
 
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Headers -->
@@ -43,35 +44,30 @@
 
 </head>
 <body>
-<cognotik-header current-page="run_code"></cognotik-header>
+<cognotik-header current-page="home"></cognotik-header>
 <main>
     <section class="hero-section fade-in" id="hero">
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text fade-in delay-1">
                     <h1>Cognotik: The Cognitive Operating System</h1>
-                    <h2 style="font-size:1.3em;font-weight:400;margin-top:0.5em;color:#666;">Multi-Modal Cognitive
-                        Architecture for Reliable, Typed, Local-First Agents</h2>
-                    <div class="download-ui-simple">
-                        <div aria-live="polite" id="download-info-simple" role="status">
-                            <span aria-label="Detected Operating System status" id="detected-os">Detected OS: Checking...</span>
-                            <span aria-label="Latest Cognotik version status" id="latest-version"
-                                  style="margin-left:1em;">Latest Version: Checking...</span>
-                        </div>
-                        <div style="margin-top:1em;">
-                            <a aria-label="Download Cognotik" class="btn btn-primary btn-large download-btn" disabled
-                               href="#"
-                               id="download-button">
-                                Preparing your download...
-                            </a>
-                        </div>
-                        <div class="download-alternatives" style="margin-top:0.5em;">
-                            <a aria-label="View all Cognotik releases on GitHub"
-                               href="https://github.com/SimiaCryptus/Cognotik/releases" rel="noopener"
-                               target="_blank">
-                                Browse all versions on GitHub
-                            </a>
-                        </div>
+                     <p class="hero-subtitle">Multi-Modal Cognitive Architecture for Reliable, Typed, Local-First Agents</p>
+                     <div class="hero-download">
+                         <div class="download-status" aria-live="polite" id="download-info-simple" role="status">
+                             <span aria-label="Detected Operating System status" id="detected-os">Detected OS: Checking…</span>
+                             <span aria-label="Latest Cognotik version status" id="latest-version">Latest Version: Checking…</span>
+                         </div>
+                         <div class="download-actions">
+                             <a aria-label="Download Cognotik" class="btn btn-primary btn-lg download-btn" href="#" id="download-button" disabled>
+                                 <i class="fas fa-download"></i> Preparing your download…
+                             </a>
+                             <a class="btn btn-secondary btn-lg" href="https://github.com/SimiaCryptus/Cognotik/releases" rel="noopener" target="_blank">
+                                 <i class="fab fa-github"></i> All Releases
+                             </a>
+                         </div>
+                         <p class="download-note">
+                             Free &amp; open-source · Apache 2.0 · BYOK — your keys, your data
+                         </p>
                     </div>
                 </div>
                 <div class="hero-image fade-in delay-2">
@@ -102,8 +98,8 @@
     <!-- Features Section (Expanded for SEO and detail) -->
     <section class="features-section section" id="features">
         <div class="container">
-            <h2>A Cognitive OS for Developers</h2>
-            <p class="section-subtitle" style="max-width:700px;margin:0 auto 2em auto;color:#666;">
+             <h2 class="section-title">A Cognitive OS for Developers</h2>
+             <p class="section-subtitle">
                 Cognotik is not just a chatbot wrapper. It is a modular, typed, local-first platform that lets AI agents
                 plan, reason, execute tools, manipulate files, and generate complex outputs with reliability and
                 structure.
@@ -216,64 +212,66 @@
         </div>
     </section>
 
-    <!-- Video Section (SEO-optimized) -->
-    <section class="video-section section" id="video">
+     <!-- Quick-Start Paths -->
+     <section class="section" id="platforms">
         <div class="container">
-            <h2>Cognotik Demo: AI-Powered Development Workflow</h2>
-            <div class="video-container">
-                <video controls poster="assets/video-poster.jpg"
-                       preload="metadata"
-                       title="Cognotik AI Development Platform Demo - Code Generation and Refactoring">
-                    <source src="assets/demo.mp4" type="video/mp4">
-                    <track kind="captions" label="English" src="assets/demo-captions.vtt" srclang="en">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-            <p class="video-description">
-                Watch how Cognotik streamlines your development workflow with intelligent AI assistance.<br/>
-                <strong>Key highlights include:</strong>
-            <ul style="max-width:600px;margin:1em auto 0 auto;text-align:left;">
-                <li>Automated code generation and refactoring with full control</li>
-                <li>Interactive patch review system for safe code modifications</li>
-                <li>Multi-file project understanding and context awareness</li>
-                <li>Seamless IDE integration with IntelliJ and other popular editors</li>
-                <li>Real-time collaboration features for team development</li>
-                <li>Adaptive cognitive modes that match your workflow</li>
-            </ul>
-        </div>
-    </section>
+             <h2 class="section-title">Choose Your Path</h2>
+             <p class="section-subtitle">
+                 Cognotik meets you where you work — inside your IDE, on your desktop, or embedded in your build pipeline.
+             </p>
+             <div class="features-grid">
+                 <div class="feature-card">
+                     <div class="feature-icon"><i class="fas fa-laptop-code"></i></div>
+                     <h3>Desktop App</h3>
+                     <p>A local application server with system-tray integration, cognitive modes, and a browser-based UI. Ideal for solo developers and power users.</p>
+                     <a class="btn btn-primary" href="desktop.html">Learn More</a>
+                 </div>
+                 <div class="feature-card">
+                     <div class="feature-icon"><i class="fas fa-puzzle-piece"></i></div>
+                     <h3>IntelliJ Plugin</h3>
+                     <p>AI-powered editor actions, file operations, agentic tools, and voice control — all inside JetBrains IDEs.</p>
+                     <a class="btn btn-primary" href="intellij-plugin.html">Learn More</a>
+                 </div>
+                 <div class="feature-card">
+                     <div class="feature-icon"><i class="fas fa-code-branch"></i></div>
+                     <h3>Embed &amp; Automate</h3>
+                     <p>Run headless agents in Gradle tasks, GitHub Actions, or any JVM application. Perfect for CI/CD and batch processing.</p>
+                     <a class="btn btn-primary" href="embedding.html">Learn More</a>
+                 </div>
+             </div>
+         </div>
+     </section>
 
-    <section class="section" id="get-involved"> <!-- Added id and .section for padding -->
-        <div class="container">
-            <h2 class="section-title" style="margin-bottom: var(--spacing-lg);">Get Started with Cognotik</h2>
-            <div class="open-source-extra"> <!-- Removed inline styles, relying on CSS class -->
-                <div style="margin-top:0; text-align:center;"> <!-- Adjusted margin-top -->
-                    <strong>Ready to supercharge your development workflow?</strong><a class="btn btn-primary btn-lg"
-                                                                                       href="#hero"
-                                                                                       style="margin-left:1em;">Download
-                        Cognotik</a>
-                </div>
-                <p style="font-size:0.95em; margin-top: 1.5em; margin-bottom: 1.5em; text-align:center;">
-                    <!-- Changed span to p, adjusted margins -->
-                    Join thousands of developers, teams, and organizations using Cognotik to build better software
-                    faster. Whether you're a solo developer, a startup team, or an enterprise organization, Cognotik
-                    scales to meet your needs while keeping your data secure and your costs under control.
-                </p>
-                <div style="margin-top:1em; text-align:center;">
-                    <strong>Want to contribute?</strong>
-                    <a class="btn btn-secondary btn-lg scroll-link" href="contribute.html" style="margin-left:1em;">
-                        Contribute to Cognotik
-                    </a>
-                </div>
-                <div style="margin-top:1em; text-align:center;">
-                    <strong>Want to invest?</strong>
-                    <a class="btn btn-secondary btn-lg" href="monetization.html" style="margin-left:1em;">
-                        Invest in Cognotik
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
+     <!-- Interactive Tours -->
+     <section class="section" id="tours">
+         <div class="container">
+             <h2 class="section-title">Interactive Video Tours</h2>
+             <p class="section-subtitle">
+                 See Cognotik in action with guided, chapter-by-chapter walkthroughs.
+             </p>
+             <div class="features-grid">
+                 <div class="feature-card">
+                     <div class="feature-icon"><i class="fas fa-play-circle"></i></div>
+                     <h3>Getting Started</h3>
+                     <p>Install, configure API keys, explore the filesystem, and generate your first project — all from natural language.</p>
+                     <a class="btn btn-secondary" href="tours/core/index.html">Watch Tour</a>
+                 </div>
+                 <div class="feature-card">
+                     <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                     <h3>Office &amp; Document Tools</h3>
+                     <p>AI-powered plugins for presentations, OCR imports, LaTeX typesetting, and polished document generation.</p>
+                     <a class="btn btn-secondary" href="tours/office/index.html">Watch Tour</a>
+                 </div>
+                 <div class="feature-card">
+                     <div class="feature-icon"><i class="fas fa-briefcase"></i></div>
+                     <h3>Jobs &amp; Career</h3>
+                     <p>Career advice, opportunity hunting, and resume tailoring — all powered by Cognotik's plugin suite.</p>
+                     <a class="btn btn-secondary" href="tours/jobs/index.html">Watch Tour</a>
+                 </div>
+             </div>
+         </div>
+     </section>
+
 </main>
 <!-- Structured Data for SEO -->
 <script type="application/ld+json">
@@ -321,6 +319,7 @@
                 <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
                 <li><a href="desktop.html">Desktop</a></li>
                 <li><a href="embedding.html">Embedding</a></li>
+                 <li><a href="tours/core/index.html">Tours</a></li>
                 <li><a href="contribute.html">Contribute</a></li>
                 <li><a href="monetization.html">Invest</a></li>
                 <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
