@@ -16,17 +16,17 @@ const TOUR_CHAPTERS = [
         transcript: "edit/Install_Windows.md"
     },
     {
-        id: "plugin-install",
-        file: "edit/Plugin_Install.mp4",
-        title: "Installing Plugins",
-        description: "Learn how to extend Cognotik's capabilities by installing plugins from the plugin marketplace.",
-        icon: "🔌",
-        order: 2,
-        transcript: "edit/Plugin_Install.md"
+        id: "config",
+        file: "edit/config.mp4",
+        title: "Configuring Keys",
+        description: "Initialize a new user with api keys.",
+        icon: "💻",
+        order: 1,
+        transcript: "edit/config.md"
     },
     {
         id: "sys-wizard",
-        file: "edit/Sys_Wizard.mp4",
+        file: "edit/sys-wizard.mp4",
         title: "System Wizard",
         description: "Walk through the System Wizard to configure Cognotik's core settings and AI model connections.",
         icon: "🧙",
@@ -44,7 +44,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "comic-generator",
-        file: "edit/Comic_Generator.mp4",
+        file: "edit/comic-serial.mp4",
         title: "Comic Book Generator",
         description: "Watch the Comic Serial app generate a full comic book — from script and character references to rendered HTML pages with dialogue.",
         icon: "🎨",
@@ -53,7 +53,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "philosophical-calculator",
-        file: "edit/Philosophical_Calculator.mp4",
+        file: "edit/philosophical-calculator.mp4",
         title: "Philosophical Calculator",
         description: "A fun demonstration of AI-powered app generation — a calculator that provides philosophical commentary on your equations.",
         icon: "🧮",
@@ -62,7 +62,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "webapp-factory",
-        file: "edit/WebApp_Factory.mp4",
+        file: "edit/webapp-factory.mp4",
         title: "WebApp Factory",
         description: "See how Cognotik can generate complete web applications from natural language descriptions using the WebApp Factory.",
         icon: "🏭",
