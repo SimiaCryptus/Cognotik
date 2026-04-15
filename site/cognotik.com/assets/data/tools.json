@@ -2,7 +2,7 @@
   {
     "id": "runcode",
     "label": "Run Code",
-    "url": "RunCodeTask.html",
+    "url": "tasks/RunCodeTask.html",
     "description": "Execute code snippets with oversight",
     "image": "assets/images/task_icons_spritesheet/terminal_play.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/RunCodeTask.kt"
@@ -10,7 +10,7 @@
   {
     "id": "runtool",
     "label": "Run Tool",
-    "url": "RunToolTask.html",
+    "url": "tasks/RunToolTask.html",
     "description": "Execute external tools",
     "image": "assets/images/task_icons_spritesheet/gear_play.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/RunToolTask.kt"
@@ -18,7 +18,7 @@
   {
     "id": "autofix",
     "label": "Auto-Fix",
-    "url": "SelfHealingTask.html",
+    "url": "tasks/SelfHealingTask.html",
     "description": "Run a command and automatically fix any issues that arise",
     "image": "assets/images/task_icons_spritesheet/wrenches_tools.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/AutoFixTask.kt"
@@ -26,7 +26,7 @@
   {
     "id": "crawleragent",
     "label": "Crawler Agent",
-    "url": "CrawlerAgentTask.html",
+    "url": "tasks/CrawlerAgentTask.html",
     "description": "Search Google, fetch top results, and analyze content",
     "image": "assets/images/task_icons_spritesheet/server_ai.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/CrawlerAgentTask.kt"
@@ -34,7 +34,7 @@
   {
     "id": "githubsearch",
     "label": "GitHub Search",
-    "url": "GitHubSearchTask.html",
+    "url": "tasks/GitHubSearchTask.html",
     "description": "Perform advanced searches across GitHub",
     "image": "assets/images/task_icons_spritesheet/github_search.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/GitHubSearchTask.kt"
@@ -42,7 +42,7 @@
   {
     "id": "subplanning",
     "label": "Sub-Planning",
-    "url": "SubPlanningTask.html",
+    "url": "tasks/SubPlanningTask.html",
     "description": "Create and execute sub-plans using recursive planning",
     "image": "assets/images/task_icons_spritesheet/org_chart.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/SubPlanTask.kt"
@@ -50,7 +50,7 @@
   {
     "id": "mcptool",
     "label": "MCP Tool",
-    "url": "MCPToolTask.html",
+    "url": "tasks/MCPToolTask.html",
     "description": "Execute tools from Model Context Protocol servers",
     "image": "assets/images/task_icons_spritesheet/mcp_network.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/MCPToolTask.kt"
@@ -58,7 +58,7 @@
   {
     "id": "languageserver",
     "label": "Language Server",
-    "url": "LanguageServerTask.html",
+    "url": "tasks/LanguageServerTask.html",
     "description": "Query code intelligence (LSP) for definitions, references, and diagnostics",
     "image": "assets/images/cognotik_nav_icons/code_chip.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/LanguageServerTask.kt"
@@ -66,7 +66,7 @@
   {
     "id": "llmexperiment",
     "label": "LLM Experiment",
-    "url": "LLMExperimentTask.html",
+    "url": "tasks/LLMExperimentTask.html",
     "description": "Conduct controlled experiments on LLM behavior",
     "image": "assets/images/task_icons_spritesheet/flask_brain_blue.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMExperimentTask.kt"
@@ -74,7 +74,7 @@
   {
     "id": "llmpoll",
     "label": "LLM Poll Simulation",
-    "url": "LLMPollSimulationTask.html",
+    "url": "tasks/LLMPollSimulationTask.html",
     "description": "Simulate polls with diverse AI personas",
     "image": "assets/images/task_icons_spritesheet/chat_stats_1.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMPollSimulationTask.kt"
@@ -82,7 +82,7 @@
   {
     "id": "discussion",
     "label": "Discussion",
-    "url": "DiscussionTask.html",
+    "url": "tasks/DiscussionTask.html",
     "description": "Provide insights using the LLM that are discussed with and approved by the user.",
     "image": "assets/images/task_icons_spritesheet/chat_bubbles_1.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/DiscussionTask.kt"
@@ -90,7 +90,7 @@
   {
     "id": "commandsession",
     "label": "Command Session",
-    "url": "CommandSessionTask.html",
+    "url": "tasks/CommandSessionTask.html",
     "description": "Execute commands in a stateful, interactive session",
     "image": "assets/images/task_icons_spritesheet/terminal_clock_1.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/session/CommandSessionTask.kt"

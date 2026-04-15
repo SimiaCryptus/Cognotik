@@ -2,21 +2,21 @@
   {
     "id": "crawleragent",
     "label": "Crawler Agent",
-    "url": "CrawlerAgentTask.html",
+    "url": "tasks/CrawlerAgentTask.html",
     "description": "Search Google, fetch top results, and analyze content\n\n\n                    Searches Google for specified queries and analyzes the top results.\n                    \n                  \n",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/CrawlerAgentTask.kt"
   },
   {
     "id": "githubsearch",
     "label": "Git Hub Search",
-    "url": "GitHubSearchTask.html",
+    "url": "tasks/GitHubSearchTask.html",
     "description": "Search GitHub repositories, code, issues and users\n\n\n                    Performs comprehensive searches across GitHub's content.\n                    \n                  \n",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/GitHubSearchTask.kt"
   },
   {
     "id": "mcptool",
     "label": "MCPTool",
-    "url": "MCPToolTask.html",
+    "url": "tasks/MCPToolTask.html",
     "description": "Execute tools from Model Context Protocol servers\n\n\n                        Executes tools from MCP (Model Context Protocol) servers.\n                        \n                      \n",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/MCPToolTask.kt"
   }
