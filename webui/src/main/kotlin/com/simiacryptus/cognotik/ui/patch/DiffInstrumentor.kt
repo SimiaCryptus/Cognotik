@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
@@ -170,10 +171,12 @@ class DiffInstrumentor(
     filename: String,
     resolver: (Path, String) -> String?
   ): String? {
-    val currentDirName = root.fileName?.toString() ?: ""
-    if (filename.startsWith("../$currentDirName/")) {
-      val stripped = filename.removePrefix("../$currentDirName/")
-      log.debug("Stripping '../{}' prefix from filename '{}' -> '{}'", currentDirName, filename, stripped)
+    val updirCount = filename.split("/").takeWhile { it == ".." }.size
+    val trimmedFilename = filename.split("/").dropWhile { it == ".." }.joinToString("/")
+    val currentDirRelPath = root.toFile().absolutePath.split(File.separator).takeLast(updirCount).joinToString("/") + File.separator
+    if (trimmedFilename.startsWith(currentDirRelPath)) {
+      val stripped = trimmedFilename.removePrefix(currentDirRelPath)
+      log.debug("Stripping leading '../{}' from filename '{}' to resolve new file path: '{}'", currentDirRelPath, filename, stripped)
       return resolveNewFilePath(root, stripped, resolver)
     }
 
