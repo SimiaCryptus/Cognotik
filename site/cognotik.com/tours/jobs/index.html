@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik — Jobs Interactive Video Tour</title>
+     <title>Cognotik — Jobs & Career Interactive Video Tour</title>
     <link rel="icon" href="../../logo.svg" type="image/svg+xml">
     <!-- Site-wide styles -->
     <link rel="stylesheet" href="../../assets/styles/styles.css">
@@ -21,19 +21,19 @@
 <div id="app">
     <!-- Tour Nav Bar -->
     <div id="tour-nav-bar">
-        <div class="tour-nav-inner">
-            <span class="tour-nav-title">Jobs Tour</span>
-            <nav id="header-nav">
-                <button class="nav-btn" id="btn-overview" title="Overview">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                    <span>Overview</span>
-                </button>
-                <button class="nav-btn" id="btn-autoplay" title="Autoplay All">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg>
-                    <span>Play All</span>
-                </button>
-            </nav>
-        </div>
+         <div class="tour-nav-inner container">
+              <span class="tour-nav-title">Jobs &amp; Career Tour</span>
+             <nav id="header-nav" aria-label="Tour navigation">
+                 <button class="nav-btn" id="btn-overview" title="Back to Overview">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                     <span>Overview</span>
+                 </button>
+                 <button class="nav-btn" id="btn-autoplay" title="Autoplay all chapters">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+                     <span>Play All</span>
+                 </button>
+             </nav>
+         </div>
     </div>
 
     <!-- Progress Bar -->
@@ -45,8 +45,13 @@
     <!-- Overview Grid -->
     <section id="overview-panel" class="panel active">
         <div class="overview-intro">
-            <h2>Welcome to the Cognotik Tour</h2>
-            <p>Explore the features and capabilities of Cognotik through these guided video walkthroughs. Click any card to begin, or use <strong>Play All</strong> for the full tour.</p>
+              <h2 class="section-title">Land Your Next Role with AI</h2>
+             <p>
+                 This tour walks you through Cognotik's <strong>Jobs &amp; Career</strong> plugin suite —
+                 from installing plugins in seconds, to getting personalized career advice, hunting for
+                 the right opportunities, and tailoring your resume to every job posting.
+                 Click any chapter to dive in, or hit <strong>Play All</strong> for the full walkthrough.
+             </p>
         </div>
         <div id="overview-grid" class="overview-grid"></div>
     </section>
@@ -56,7 +61,7 @@
         <div class="player-layout">
             <!-- Sidebar: Chapter List -->
             <aside id="chapter-sidebar">
-                <h3>Tour Chapters</h3>
+                 <h3>Chapters</h3>
                 <ol id="chapter-list"></ol>
             </aside>
 
@@ -72,8 +77,8 @@
                             <h3 id="overlay-title"></h3>
                             <p id="overlay-description"></p>
                             <div class="overlay-actions">
-                                <button id="overlay-replay" class="btn btn-secondary">Replay</button>
-                                <button id="overlay-next" class="btn btn-primary">Next Chapter</button>
+                                 <button id="overlay-replay" class="btn btn-secondary btn-sm">Replay</button>
+                                 <button id="overlay-next" class="btn btn-primary btn-sm">Next Chapter</button>
                             </div>
                         </div>
                     </div>
@@ -86,12 +91,12 @@
                             <p id="current-description" class="description"></p>
                         </div>
                         <div class="player-controls">
-                            <button id="btn-prev" class="btn btn-icon" title="Previous" disabled>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                             <button id="btn-prev" class="btn btn-icon" title="Previous chapter" disabled aria-label="Previous chapter">
+                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15,18 9,12 15,6"/></svg>
                             </button>
                             <span id="chapter-indicator" class="chapter-indicator"></span>
-                            <button id="btn-next" class="btn btn-icon" title="Next">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+                             <button id="btn-next" class="btn btn-icon" title="Next chapter" aria-label="Next chapter">
+                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9,18 15,12 9,6"/></svg>
                             </button>
                         </div>
                     </div>
@@ -99,7 +104,7 @@
                     <!-- Transcript Panel -->
                     <details id="transcript-panel" class="transcript-panel">
                         <summary>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
                             Transcript
                         </summary>
                         <div id="transcript-content" class="transcript-content">
@@ -117,13 +122,13 @@
     <div class="container">
         <div class="footer-content">
             <p>&copy; 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All rights reserved.</p>
-            <ul class="footer-links">
+             <nav class="footer-links" aria-label="Footer navigation">
                 <li><a href="../../index.html">Home</a></li>
                 <li><a href="../../intellij-plugin.html">IntelliJ Plugin</a></li>
                 <li><a href="../../desktop.html">Desktop</a></li>
                 <li><a href="../../contribute.html">Contribute</a></li>
                 <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
-            </ul>
+             </nav>
         </div>
     </div>
 </footer>
