@@ -68,17 +68,13 @@
                      [smartSelect, fastSelect].forEach(sel => {
                          const option = document.createElement('option');
                          option.value = model.id;
-                         option.textContent = model.description
-                             ? `${model.name} (${provider}) — ${model.description}`
-                             : `${model.name} (${provider})`;
+                         option.textContent = `${model.name} (${provider})`;
                          sel.appendChild(option);
                      });
                      if (imageSelect) {
                          const option = document.createElement('option');
                          option.value = model.id;
-                         option.textContent = model.description
-                             ? `${model.name} (${provider}) — ${model.description}`
-                             : `${model.name} (${provider})`;
+                         option.textContent = `${model.name} (${provider})`;
                          imageSelect.appendChild(option);
                      }
                      addedModels.add(model.id);
