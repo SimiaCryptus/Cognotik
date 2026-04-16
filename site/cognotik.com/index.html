@@ -31,6 +31,7 @@
 
     <link href="assets/styles/styles.css" rel="stylesheet">
     <link href="assets/styles/responsive.css" rel="stylesheet">
+    <link href="assets/styles/micro-demo.css" rel="stylesheet">
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -41,6 +42,7 @@
     <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
+    <script src="assets/scripts/components/MicroDemo.js" type="module"></script>
 
     <style>
         /* ===== HOMEPAGE-SPECIFIC STYLES ===== */
@@ -914,6 +916,23 @@
             </div>
         </div>
     </section>
+    <!-- ===== MICRO-DEMO: HERO GATEWAY ===== -->
+    <section aria-label="Quick Demo" class="section" id="quick-demo" style="padding-top: 2rem; padding-bottom: 2rem;">
+        <div class="container">
+            <div class="micro-demo-featured fade-in">
+                <micro-demo
+                    title="See Cognotik Work — In 90 Seconds"
+                    hook="Watch the workspace plan a task, execute each step, and deliver real output — with human approval at every stage."
+                    video="tours/core/edit/Install_Windows.mp4"
+                    icon="🚀"
+                    bullets='["AI breaks the goal into a reviewable plan","Each step runs only after your approval","Output appears live — code, files, documents"]'
+                    link="tours/core/index.html"
+                    link-label="Watch the Full Getting Started Tour"
+                ></micro-demo>
+            </div>
+        </div>
+    </section>
+
 
     <!-- ===== SECTION 1: WHY CHAT BREAKS ===== -->
      <section aria-label="Why Chat Breaks" class="section" id="why-chat-breaks">
@@ -1094,6 +1113,26 @@
                 <a class="btn btn-secondary btn-lg" href="intellij-plugin.html" style="margin-left: 1rem;">
                     <i class="fas fa-puzzle-piece"></i> IntelliJ Plugin
                 </a>
+            </div>
+            <div class="micro-demo-grid fade-in" style="margin-top: 2rem;">
+                <micro-demo
+                    title="Desktop App in Action"
+                    hook="See the full workspace — panels, tools, file access, and live AI output."
+                    video="tours/core/edit/Install_Windows.mp4"
+                    icon="🖥️"
+                    bullets='["Side-by-side panels for code and output","Direct local filesystem access","Session history and configurable models"]'
+                    link="desktop.html"
+                    link-label="Explore Desktop App"
+                ></micro-demo>
+                <micro-demo
+                    title="IntelliJ Plugin in Action"
+                    hook="AI-powered code chat, refactoring, and generation — right inside your IDE."
+                    video="tours/core/edit/Install_Windows.mp4"
+                    icon="🧩"
+                    bullets='["Ask questions grounded in your actual codebase","Structured plans for multi-file changes","Review and approve every change before it applies"]'
+                    link="intellij-plugin.html"
+                    link-label="Explore IntelliJ Plugin"
+                ></micro-demo>
             </div>
         </div>
     </section>
@@ -1393,34 +1432,43 @@
             <p class="section-subtitle">
                 Guided walkthroughs showing real workflows — from first launch to finished output.
             </p>
-            <div class="features-grid">
-                <div class="feature-card fade-in">
-                    <div class="feature-icon"><i class="fas fa-play-circle"></i></div>
-                    <h3>Getting Started</h3>
-                    <p>Install, configure API keys, explore the filesystem, and generate your first project — all from
-                        natural language.</p>
-                    <a class="btn btn-secondary" href="tours/core/index.html">Watch Tour</a>
-                </div>
-                <div class="feature-card fade-in delay-1">
-                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
-                    <h3>Office &amp; Document Tools <span style="display:inline-block;background:linear-gradient(135deg,#8b5cf6,#a78bfa);color:#fff;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:1rem;vertical-align:middle;margin-left:0.4rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;">Premium</span></h3>
-                    <p>AI-powered plugins for presentations, OCR imports, LaTeX typesetting, and polished document
-                        generation.</p>
-                    <a class="btn btn-secondary" href="tours/office/index.html">Watch Tour</a>
-                </div>
-                <div class="feature-card fade-in delay-2">
-                    <div class="feature-icon"><i class="fas fa-briefcase"></i></div>
-                    <h3>Jobs &amp; Career <span style="display:inline-block;background:linear-gradient(135deg,#8b5cf6,#a78bfa);color:#fff;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:1rem;vertical-align:middle;margin-left:0.4rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;">Premium</span></h3>
-                    <p>Career advice, opportunity hunting, and resume tailoring — all powered by Cognotik's plugin
-                        suite.</p>
-                    <a class="btn btn-secondary" href="tours/jobs/index.html">Watch Tour</a>
-                </div>
-                 <div class="feature-card fade-in delay-3">
-                     <div class="feature-icon"><i class="fas fa-code"></i></div>
-                     <h3>Code Generation</h3>
-                     <p>Watch Cognotik plan, scaffold, and implement a full project — with human review at every step.</p>
-                     <a class="btn btn-secondary" href="intellij-plugin.html#actions">Learn More</a>
-                 </div>
+            <div class="micro-demo-grid fade-in">
+                <micro-demo
+                    title="Getting Started"
+                    hook="Install, configure, and generate your first project — all from natural language."
+                    video="tours/core/edit/Install_Windows.mp4"
+                    icon="▶️"
+                    bullets='["One-click install, no sign-up required","Connect your own API key in seconds","Generate a real project from a single prompt"]'
+                    link="tours/core/index.html"
+                    link-label="Watch Full Tour"
+                ></micro-demo>
+                <micro-demo
+                    title="Office &amp; Document Tools"
+                    hook="Presentations, OCR imports, LaTeX — polished documents from rough ideas."
+                    video="tours/office/edit/presentation-creator.mp4"
+                    icon="📊"
+                    bullets='["AI generates slide decks from your content","OCR imports scanned documents instantly","LaTeX typesetting with AI assistance"]'
+                    link="tours/office/index.html"
+                    link-label="Watch Full Tour"
+                ></micro-demo>
+                <micro-demo
+                    title="Jobs &amp; Career"
+                    hook="Resume tailoring, opportunity research, and career advice — powered by AI plugins."
+                    video="tours/jobs/edit/career-advisor.mp4"
+                    icon="💼"
+                    bullets='["Get personalized career path guidance","Automate job search and tracking","Tailor your resume to any posting"]'
+                    link="tours/jobs/index.html"
+                    link-label="Watch Full Tour"
+                ></micro-demo>
+                <micro-demo
+                    title="Code Generation"
+                    hook="Watch Cognotik plan, scaffold, and implement a full project — with human review at every step."
+                    video="tours/core/edit/Install_Windows.mp4"
+                    icon="💻"
+                    bullets='["AI breaks the project into a structured plan","Each step is reviewable and editable","Code is generated, tested, and committed"]'
+                    link="intellij-plugin.html#actions"
+                    link-label="Learn More"
+                ></micro-demo>
             </div>
             <p class="demos-note fade-in delay-3">
                  These demos were generated, narrated, and edited through Cognotik's own tools — a real demonstration of the platform building its own documentation.
