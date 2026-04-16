@@ -5,23 +5,26 @@
     <title>Cognotik — AI That Works Like Software</title>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Cognotik: AI that works like software. A workspace where AI apps, plugins, and workflows come together — and where you stay in control of your data, your keys, and your work."
+     <meta content="Cognotik: AI that works like software. An open-source workspace where AI apps, plugins, and workflows come together — and where you stay in control of your data, your keys, and your work. Local-first, BYOK, Apache 2.0."
           name="description">
-    <meta content="Cognotik, AI workspace, AI plugins, AI apps, local-first AI, BYOK, AI tools, AI workflow, open source AI, privacy-first AI, AI development platform, AI for developers"
+     <meta content="Cognotik, AI workspace, AI plugins, AI apps, local-first AI, BYOK, AI tools, AI workflow, open source AI, privacy-first AI, AI development platform, AI for developers, AI code assistant, AI document generation, AI automation, IntelliJ AI plugin, desktop AI app"
           name="keywords">
     <meta content="SimiaCryptus" name="author">
     <link href="https://cognotik.com/" hreflang="en" rel="alternate">
     <meta content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" name="robots">
     <meta content="#0f172a" name="theme-color">
+     <meta content="Cognotik" property="og:site_name">
     <meta content="Cognotik — AI That Works Like Software" property="og:title">
-    <meta content="A workspace where AI apps, plugins, and workflows come together — and where you stay in control of your data, your keys, and your work."
+     <meta content="An open-source workspace where AI apps, plugins, and workflows come together — and where you stay in control of your data, your keys, and your work."
           property="og:description">
     <meta content="https://cognotik.com/assets/og-image.png" property="og:image">
+     <meta content="1200" property="og:image:width">
+     <meta content="630" property="og:image:height">
     <meta content="website" property="og:type">
     <meta content="https://cognotik.com/" property="og:url">
     <meta content="summary_large_image" name="twitter:card">
     <meta content="Cognotik — AI That Works Like Software" name="twitter:title">
-    <meta content="A workspace where AI apps, plugins, and workflows come together — and where you stay in control of your data, your keys, and your work."
+     <meta content="An open-source workspace where AI apps, plugins, and workflows come together — and where you stay in control of your data, your keys, and your work."
           name="twitter:description">
     <meta content="https://cognotik.com/assets/og-image.png" name="twitter:image">
     <link href="https://cognotik.com/" rel="canonical">
@@ -47,9 +50,11 @@
             background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 70%);
             position: relative;
             overflow: hidden;
-            min-height: 70vh;
+             min-height: 75vh;
             display: flex;
             align-items: center;
+             padding-top: 5rem;
+             padding-bottom: 4rem;
         }
 
         .hero-new::before {
@@ -89,6 +94,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+             max-width: 70%;
         }
 
         .hero-new .hero-sub {
@@ -96,6 +102,7 @@
             color: var(--text-muted);
             line-height: 1.6;
             margin-bottom: 2.5rem;
+             max-width: 65%;
         }
 
         .hero-ctas {
@@ -273,6 +280,11 @@
             background: var(--surface-color);
             border-radius: var(--border-radius-md);
             border: 1px solid var(--border-color);
+             transition: transform var(--transition-normal), border-color 0.3s;
+         }
+         .control-item:hover {
+             transform: translateY(-2px);
+             border-color: var(--success-color);
         }
 
         .control-item .ci-icon {
@@ -299,11 +311,25 @@
         .mythos-section {
             background: var(--background-color);
             position: relative;
+             overflow: hidden;
+         }
+         .mythos-section::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 60%);
+             pointer-events: none;
         }
 
         .mythos-lines {
             margin: 0 auto;
             text-align: center;
+             max-width: 600px;
+             position: relative;
+             z-index: 1;
         }
 
         .mythos-lines p {
@@ -355,6 +381,14 @@
 
         .build-own-step {
             text-align: center;
+             min-width: 140px;
+             max-width: 180px;
+             padding: 1rem;
+             border-radius: var(--border-radius-md);
+             transition: transform var(--transition-normal);
+         }
+         .build-own-step:hover {
+             transform: translateY(-3px);
         }
 
         .build-own-step .bos-icon {
@@ -451,6 +485,252 @@
             opacity: 0.7;
             margin-bottom: 0;
         }
+         /* Comparison table */
+         .comparison-table-wrapper {
+             overflow-x: auto;
+             margin: 2.5rem 0 2rem;
+             border-radius: var(--border-radius-lg);
+             border: 1px solid var(--border-color);
+         }
+         .comparison-table {
+             width: 100%;
+             border-collapse: collapse;
+             font-size: 0.95rem;
+             min-width: 600px;
+         }
+         .comparison-table thead {
+             background: var(--surface-color);
+         }
+         .comparison-table th {
+             padding: 1rem 1.25rem;
+             text-align: left;
+             font-family: var(--font-heading);
+             color: var(--primary-color);
+             font-weight: 600;
+             border-bottom: 2px solid var(--border-color);
+             white-space: nowrap;
+         }
+         .comparison-table th:first-child {
+             min-width: 180px;
+         }
+         .comparison-table td {
+             padding: 0.85rem 1.25rem;
+             border-bottom: 1px solid var(--border-color);
+             color: var(--text-muted);
+             vertical-align: middle;
+         }
+         .comparison-table tbody tr:hover {
+             background: rgba(139, 92, 246, 0.04);
+         }
+         .comparison-table .check {
+             color: var(--success-color);
+             font-weight: bold;
+             font-size: 1.1rem;
+         }
+         .comparison-table .cross {
+             color: #ef4444;
+             font-weight: bold;
+             font-size: 1.1rem;
+         }
+         .comparison-table .partial {
+             color: #f59e0b;
+             font-weight: bold;
+             font-size: 1.1rem;
+         }
+         .comparison-table .highlight-col {
+             background: rgba(139, 92, 246, 0.06);
+             font-weight: 600;
+             color: var(--primary-color);
+         }
+         /* How it works flow */
+         .how-it-works-flow {
+             display: flex;
+             justify-content: center;
+             align-items: flex-start;
+             gap: 0.5rem;
+             flex-wrap: wrap;
+             margin: 2.5rem 0 2rem;
+         }
+         .hiw-step {
+             text-align: center;
+             padding: 1.5rem 1rem;
+             max-width: 180px;
+             flex: 1;
+             min-width: 140px;
+         }
+         .hiw-step .hiw-number {
+             display: inline-flex;
+             align-items: center;
+             justify-content: center;
+             width: 2.5rem;
+             height: 2.5rem;
+             border-radius: 50%;
+             background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+             color: #fff;
+             font-weight: 700;
+             font-size: 1.1rem;
+             margin-bottom: 0.75rem;
+             font-family: var(--font-mono);
+         }
+         .hiw-step h4 {
+             font-family: var(--font-heading);
+             color: var(--primary-color);
+             font-size: 1rem;
+             margin-bottom: 0.35rem;
+         }
+         .hiw-step p {
+             color: var(--text-muted);
+             font-size: 0.88rem;
+             margin-bottom: 0;
+         }
+         .hiw-arrow {
+             display: flex;
+             align-items: center;
+             padding-top: 2rem;
+             color: var(--accent-color);
+             font-size: 1.5rem;
+             opacity: 0.5;
+         }
+         /* Testimonial / quote strip */
+         .quote-strip {
+             background: var(--surface-color);
+             border-top: 1px solid var(--border-color);
+             border-bottom: 1px solid var(--border-color);
+             padding: 3rem 0;
+             text-align: center;
+         }
+         .quote-strip blockquote {
+             font-size: 1.35rem;
+             font-style: italic;
+             color: var(--text-color);
+             max-width: 700px;
+             margin: 0 auto 1rem;
+             line-height: 1.6;
+             position: relative;
+             padding: 0 2rem;
+         }
+         .quote-strip blockquote::before {
+             content: '\201C';
+             font-size: 4rem;
+             color: var(--accent-color);
+             position: absolute;
+             top: -1.5rem;
+             left: -0.5rem;
+             opacity: 0.3;
+             font-family: Georgia, serif;
+         }
+         .quote-strip cite {
+             font-size: 0.95rem;
+             color: var(--text-muted);
+             font-style: normal;
+         }
+         /* Supported models badges */
+         .model-badges {
+             display: flex;
+             flex-wrap: wrap;
+             justify-content: center;
+             gap: 0.75rem;
+             margin: 2rem 0;
+         }
+         .model-badge {
+             display: inline-flex;
+             align-items: center;
+             gap: 0.5rem;
+             padding: 0.5rem 1rem;
+             background: var(--surface-color);
+             border: 1px solid var(--border-color);
+             border-radius: 2rem;
+             font-size: 0.9rem;
+             color: var(--text-muted);
+             transition: border-color 0.3s, transform var(--transition-normal);
+         }
+         .model-badge:hover {
+             border-color: var(--accent-color);
+             transform: translateY(-2px);
+         }
+         .model-badge i {
+             color: var(--accent-secondary);
+         }
+         /* FAQ section */
+         .faq-list {
+             max-width: 750px;
+             margin: 2.5rem auto 0;
+         }
+         .faq-item {
+             border-bottom: 1px solid var(--border-color);
+         }
+         .faq-item:first-child {
+             border-top: 1px solid var(--border-color);
+         }
+         .faq-question {
+             width: 100%;
+             background: none;
+             border: none;
+             padding: 1.25rem 0;
+             font-size: 1.05rem;
+             font-family: var(--font-heading);
+             color: var(--primary-color);
+             cursor: pointer;
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             text-align: left;
+             transition: color 0.2s;
+         }
+         .faq-question:hover {
+             color: var(--accent-color);
+         }
+         .faq-question .faq-toggle {
+             font-size: 1.2rem;
+             transition: transform 0.3s;
+             color: var(--accent-color);
+             flex-shrink: 0;
+             margin-left: 1rem;
+         }
+         .faq-item.open .faq-question .faq-toggle {
+             transform: rotate(45deg);
+         }
+         .faq-answer {
+             max-height: 0;
+             overflow: hidden;
+             transition: max-height 0.35s ease, padding 0.35s ease;
+             padding: 0 0;
+         }
+         .faq-item.open .faq-answer {
+             max-height: 300px;
+             padding: 0 0 1.25rem;
+         }
+         .faq-answer p {
+             color: var(--text-muted);
+             font-size: 0.95rem;
+             line-height: 1.7;
+             margin: 0;
+         }
+         /* Responsive adjustments for new elements */
+         @media (max-width: 768px) {
+             .hero-new .hero-headline,
+             .hero-new .hero-sub {
+                 max-width: 100%;
+             }
+             .hero-new .hero-image {
+                 display: none !important;
+             }
+             .hiw-arrow {
+                 display: none;
+             }
+             .how-it-works-flow {
+                 gap: 1rem;
+             }
+             .hiw-step {
+                 max-width: 100%;
+                 flex-basis: 45%;
+             }
+             .comparison-table-wrapper {
+                 margin-left: -1rem;
+                 margin-right: -1rem;
+                 border-radius: 0;
+             }
+         }
     </style>
 </head>
 <body>
@@ -459,22 +739,23 @@
 <main>
 
     <!-- ===== HERO ===== -->
-    <section class="hero-new fade-in" id="hero">
+     <section aria-label="Hero" class="hero-new fade-in" id="hero">
         <div class="container">
             <div class="hero-eyebrow fade-in delay-1">AI That Works Like Software</div>
-            <h1 class="hero-headline fade-in delay-1">Stop fighting with chat.<br>Start working with tools.</h1>
+             <h1 class="hero-headline fade-in delay-1">Stop fighting with chat.<br>Start building with real tools.</h1>
             <p class="hero-sub fade-in delay-2">
-                A workspace where AI apps, plugins, and workflows come together —
-                and where you stay in control of your data, your keys, and your work.
+                 An open-source workspace where AI apps, plugins, and workflows come together —
+                 and where you stay in control of your data, your keys, and your work.
+                 Local-first. BYOK. Apache&nbsp;2.0.
             </p>
             <div class="hero-image fade-in delay-2" style="
     right: 0px;
     max-width: 20vw;
     position: absolute;
 ">
-                <div class="hero-logo-container" style="position: relative;width: -webkit-fill-available;">
-                    <svg aria-label="Animated Cognotik Logo" height="300" id="hero-logo" role="img"
-                         style="display:block;max-width:100%;height:auto;cursor:pointer;width: -webkit-fill-available;"
+                 <div class="hero-logo-container" style="position: relative; width: 100%;">
+                     <svg aria-label="Cognotik Logo" height="300" id="hero-logo" role="img"
+                          style="display:block;max-width:100%;height:auto;cursor:pointer;width: 100%;"
                          version="1.1" viewBox="0 0 588 586" width="300" xmlns="http://www.w3.org/2000/svg">
                         <!-- SVG paths from logo.svg -->
                         <path d="M430.84,8.1l4.61,26.91,1.07.86c11.66-3.14,22.9,4.07,33.8,6.94l17.25-21.69c5.04,2.36,30.06,11.35,31.23,15.57,1.55,5.56-13.62,22.97-10.37,28.28.64,1.05,4.51,2.74,5.98,4.03,6.84,6,11.81,13.73,17.11,21.03l26.26-9.92,17.01,28.55c.61,4.01-19.55,15.73-22.44,19.23-2.87,3.47.85,11.13,1.44,15.71.91,7.04.86,14.2,2.33,21.15l26.66,6.34-4.04,34.19c-.18.82-.81,1.15-1.42,1.6-3.13,2.33-23.46-1.98-28.75-.77l-15.33,28.33,16.46,22.15c.2,2.13-15.95,24.55-18.5,25.21-4.48,1.16-19.54-14.23-25.71-13.86-4.49.27-23.44,18.87-30.49,20.12l10,26.24-26.62,14.63c-.93.13-1.36-.43-1.95-.99-3.49-3.29-7.93-17.15-11.93-20.08-5.24-3.83-24.62,6.82-30.42,9.21-2.23,3.51,9,22.88,10.75,27.37-9.41,5.08-18.71,11.5-29.2,14.36-2.9-.73-10.35-17.99-12.48-21.6-.48-.82.3-1.67-1.69-1.26-12.05,9.22-24.33,18.12-34.5,29.48,2.63,4.16,16.6,13.06,17.01,17.04.34,3.26-13.22,22.15-16.57,22.49-4.8.37-24.38-13.01-26.33-11.89-6.41,10.11-14.66,19.46-18,31.26l23.83,14.09-16.97,25.07c-3.58,1.84-17.92-8.92-21.49-11.21-7.73-.49-18.11,23.97-22.06,29.58-1.93,2.74-9.18,8.56-9.49,11.61-.23,2.23,10.28,13.43,12.46,16.54.96,1.36,3.71,4.85,3.44,6.26-3.9,4.29-20.13,24.23-25.12,23.51-4.31-.62-13.62-14.71-20.47-15.7-3.19-.46-10.89,5.43-14.58,7.01-2.76,1.18-17.51,5.72-18.22,6.78-1.35,4.5-.47,26.59-2.43,28.57-1.39,1.41-7.35,1.92-9.69,2.31-5.69.93-14.24,2.05-19.85,2.17-1.38.03-3.77-.45-4.55-1.68-3.38-5.34-3.1-20.57-6.14-26.61-1.88-3.73-7.28-2.33-10.84-3.16-4.93-1.15-17.04-6.97-20.2-6.4-6.41,1.15-15.66,19.14-21.14,18.86-2.72-.14-24.81-19.25-25.46-21.72-.9-3.45,12.73-19.4,14.54-23.79l-13.62-24.04-2.57-1.46-29.48,2-4.87-31.28c.99-3.7,23.37-8.51,27.73-10.85l1.69-34.92c-1.68-5.05-23.33-11.25-24.44-14.61l5.82-30.88,32.07.07c17.94-32.96,40.77-65.09,69.5-89.48,15.56-13.21,33.01-24.17,48.48-37.51,10.55-9.09,19.84-19.82,30.46-28.46l3.23,1.27c3.54,6.51,12.52,12.58,16.35,18.15.61.88,1.43,1.35.5,2.52l-71.56,61.49c-33.73,33.42-65.92,69.19-75.51,117.46-10.75,54.12,13.73,111.74,77.56,99.56,47.98-9.16,63.92-58.4,86.54-94.44,21.7-34.58,59.51-76.71,93.09-99.89,42.91-29.62,100.28-42.35,134.81-82.16,48.28-55.65,23.63-133.21-46.51-152.49-38.33-10.54-81.18,6.57-110,31.98-11.17,9.85-24.13,23-32,35.5-1.45.39-1.66-.39-2.5-.97-1.72-1.19-17.16-16.44-17.37-17.66,26.33-36.94,61.55-72.65,106.44-85.29l1.58-27.92c11.71-4.2,24.42-4.47,36.75-4.03Z"></path>
@@ -511,9 +792,49 @@
             </div>
         </div>
     </section>
+     <!-- ===== QUICK OVERVIEW: HOW IT WORKS ===== -->
+     <section aria-label="How Cognotik Works" class="section" id="how-it-works">
+         <div class="container">
+             <h2 class="section-title">How It Works</h2>
+             <p class="section-subtitle">
+                 From install to output in four steps. No cloud accounts, no subscriptions, no lock-in.
+             </p>
+             <div class="how-it-works-flow fade-in">
+                 <div class="hiw-step">
+                     <span class="hiw-number">1</span>
+                     <h4>Install</h4>
+                     <p>Download the desktop app or install the IntelliJ plugin. One click, no sign-up.</p>
+                 </div>
+                 <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                 <div class="hiw-step">
+                     <span class="hiw-number">2</span>
+                     <h4>Connect</h4>
+                     <p>Add your own API key — OpenAI, Anthropic, Google, AWS, or a local model.</p>
+                 </div>
+                 <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                 <div class="hiw-step">
+                     <span class="hiw-number">3</span>
+                     <h4>Choose a Tool</h4>
+                     <p>Pick an AI app — code chat, document generator, planner, shell, or build your own.</p>
+                 </div>
+                 <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                 <div class="hiw-step">
+                     <span class="hiw-number">4</span>
+                     <h4>Work</h4>
+                     <p>Review plans, approve changes, iterate. You stay in control at every step.</p>
+                 </div>
+             </div>
+             <div class="text-center fade-in">
+                 <a class="btn btn-primary" href="tours/core/index.html">
+                     <i class="fas fa-play-circle"></i> Watch the Getting Started Tour
+                 </a>
+             </div>
+         </div>
+     </section>
+
 
     <!-- ===== SECTION 1: WHY CHAT BREAKS ===== -->
-    <section class="section" id="why-chat-breaks">
+     <section aria-label="Why Chat Breaks" class="section" id="why-chat-breaks">
         <div class="container">
             <h2 class="section-title">Why Chat Breaks</h2>
             <p class="section-subtitle">
@@ -545,13 +866,18 @@
                     <h4>Chat Collapses Everything</h4>
                     <p>Code, prose, data, images — all crammed into one text box with no structure.</p>
                 </div>
+                 <div class="chat-breaks-card fade-in delay-5">
+                     <span class="cb-icon">🔒</span>
+                     <h4>Chat Locks You In</h4>
+                     <p>Your conversations, your data, your workflows — trapped inside someone else's platform.</p>
+                 </div>
             </div>
             <p class="section-punchline fade-in delay-5">You deserve AI that works like real software.</p>
         </div>
     </section>
 
     <!-- ===== SECTION 2: AI APPS, NOT AI CHATS ===== -->
-    <section class="section" id="plugins">
+     <section aria-label="AI Apps" class="section" id="plugins">
         <div class="container">
             <h2 class="section-title">AI Apps, Not AI Chats</h2>
             <p class="section-subtitle">
@@ -601,12 +927,36 @@
                     <p>Run commands, execute scripts, and automate workflows — all from natural language.</p>
                     <a class="btn btn-sm btn-outline" href="tasks/CommandSessionTask.html">Learn More</a>
                 </div>
+                 <div class="plugin-card fade-in">
+                     <span class="plugin-tag">Research</span>
+                     <div class="plugin-icon"><i class="fas fa-magnifying-glass-chart"></i></div>
+                     <h4>Web Research</h4>
+                     <p>Search the web, summarize findings, and compile research — all within the workspace.</p>
+                     <a class="btn btn-sm btn-outline" href="tasks/WebSearchTask.html">Learn More</a>
+                 </div>
+                 <div class="plugin-card fade-in delay-1">
+                     <span class="plugin-tag">Data</span>
+                     <div class="plugin-icon"><i class="fas fa-table"></i></div>
+                     <h4>Data Analysis</h4>
+                     <p>Load CSVs, query databases, generate charts, and extract insights from structured data.</p>
+                     <a class="btn btn-sm btn-outline" href="desktop.html#features">Learn More</a>
+                 </div>
+                 <div class="plugin-card fade-in delay-2">
+                     <span class="plugin-tag">Career</span>
+                     <div class="plugin-icon"><i class="fas fa-briefcase"></i></div>
+                     <h4>Jobs &amp; Career</h4>
+                     <p>Resume tailoring, cover letter generation, opportunity research, and interview prep.</p>
+                     <a class="btn btn-sm btn-outline" href="tours/jobs/index.html">Watch Tour</a>
+                 </div>
             </div>
+             <p class="section-punchline fade-in" style="margin-top: 2.5rem;">
+                 …and more shipping every week. <a href="extending.html" style="color: var(--accent-color);">Or build your own.</a>
+             </p>
         </div>
     </section>
 
     <!-- ===== SECTION 3: YOUR WORKSPACE ===== -->
-    <section class="section" id="workspace">
+     <section aria-label="Workspace" class="section" id="workspace">
         <div class="container">
             <h2 class="section-title">Your Workspace</h2>
             <p class="section-subtitle">
@@ -643,6 +993,16 @@
                     <h4>Multi-Modal</h4>
                     <p>Text, code, images, and data — each rendered in its own view.</p>
                 </div>
+                 <div class="workspace-feature fade-in">
+                     <span class="wf-icon"><i class="fas fa-clock-rotate-left"></i></span>
+                     <h4>Session History</h4>
+                     <p>Every session is saved. Pick up where you left off, or review past work.</p>
+                 </div>
+                 <div class="workspace-feature fade-in delay-1">
+                     <span class="wf-icon"><i class="fas fa-sliders"></i></span>
+                     <h4>Configurable</h4>
+                     <p>Choose your model, temperature, system prompt, and tool set per session.</p>
+                 </div>
             </div>
             <p class="section-punchline fade-in">A place where AI can actually work — not just talk.</p>
             <div class="text-center mt-4 fade-in">
@@ -655,9 +1015,32 @@
             </div>
         </div>
     </section>
+     <!-- ===== SUPPORTED MODELS ===== -->
+     <section aria-label="Supported AI Models" class="section" id="models">
+         <div class="container">
+             <h2 class="section-title">Works With the Models You Trust</h2>
+             <p class="section-subtitle">
+                 Bring your own key. Connect to any major provider — or run fully local.
+             </p>
+             <div class="model-badges fade-in">
+                 <span class="model-badge"><i class="fas fa-brain"></i> OpenAI (GPT-4o, o1, o3)</span>
+                 <span class="model-badge"><i class="fas fa-robot"></i> Anthropic (Claude 4, Sonnet)</span>
+                 <span class="model-badge"><i class="fas fa-cloud"></i> Google (Gemini 2.5)</span>
+                 <span class="model-badge"><i class="fas fa-server"></i> AWS Bedrock</span>
+                 <span class="model-badge"><i class="fas fa-microchip"></i> Ollama (Local)</span>
+                 <span class="model-badge"><i class="fas fa-cube"></i> LM Studio</span>
+                 <span class="model-badge"><i class="fas fa-network-wired"></i> Any OpenAI-Compatible API</span>
+                 <span class="model-badge"><i class="fas fa-image"></i> DALL·E &amp; Stable Diffusion</span>
+             </div>
+             <p class="text-center fade-in" style="color: var(--text-muted); font-size: 0.95rem;">
+                 Switch models mid-session. Compare outputs. No vendor lock-in, ever.
+             </p>
+         </div>
+     </section>
+
 
     <!-- ===== SECTION 4: YOU STAY IN CONTROL ===== -->
-    <section class="section" id="control">
+     <section aria-label="Privacy and Control" class="section" id="control">
         <div class="container">
             <h2 class="section-title">You Stay in Control</h2>
             <p class="section-subtitle">
@@ -706,13 +1089,100 @@
                         <p>Nothing runs in our cloud. Every action is visible and auditable.</p>
                     </div>
                 </div>
+                 <div class="control-item fade-in">
+                     <span class="ci-icon"><i class="fas fa-code-branch"></i></span>
+                     <div>
+                         <h4>Fully Open Source</h4>
+                         <p>Read every line of code. Fork it, modify it, audit it. No black boxes.</p>
+                     </div>
+                 </div>
+                 <div class="control-item fade-in delay-1">
+                     <span class="ci-icon"><i class="fas fa-user-check"></i></span>
+                     <div>
+                         <h4>Human-in-the-Loop</h4>
+                         <p>Every plan requires your approval. Nothing executes without your explicit consent.</p>
+                     </div>
+                 </div>
             </div>
             <p class="section-punchline fade-in">AI that works for you — not the other way around.</p>
         </div>
     </section>
+     <!-- ===== COMPARISON TABLE ===== -->
+     <section aria-label="Comparison" class="section" id="comparison">
+         <div class="container">
+             <h2 class="section-title">How Cognotik Compares</h2>
+             <p class="section-subtitle">
+                 A quick look at what sets Cognotik apart from typical AI chat tools.
+             </p>
+             <div class="comparison-table-wrapper fade-in">
+                 <table class="comparison-table" role="table">
+                     <thead>
+                     <tr>
+                         <th scope="col">Feature</th>
+                         <th scope="col">Typical AI Chat</th>
+                         <th class="highlight-col" scope="col">Cognotik</th>
+                     </tr>
+                     </thead>
+                     <tbody>
+                     <tr>
+                         <td>Structured task planning</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Local file access</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Bring your own API key</td>
+                         <td><span class="partial" aria-label="Sometimes">~</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Multi-model support</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Human-in-the-loop approval</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Plugin / app ecosystem</td>
+                         <td><span class="partial" aria-label="Limited">~</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Open source (Apache 2.0)</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Works offline (local models)</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>Session persistence &amp; history</td>
+                         <td><span class="partial" aria-label="Limited">~</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     <tr>
+                         <td>No data sent to third-party servers</td>
+                         <td><span class="cross" aria-label="No">✗</span></td>
+                         <td class="highlight-col"><span class="check" aria-label="Yes">✓</span></td>
+                     </tr>
+                     </tbody>
+                 </table>
+             </div>
+         </div>
+     </section>
+
 
     <!-- ===== SECTION 5: HOW IT'S MADE ===== -->
-    <section class="section mythos-section" id="how-its-made">
+     <section aria-label="How It's Made" class="section mythos-section" id="how-its-made">
         <div class="container">
             <h2 class="section-title">How It's Made</h2>
             <div class="mythos-lines fade-in">
@@ -720,16 +1190,19 @@
                 <p>Cognotik builds demos.</p>
                 <p>Cognotik builds workflows.</p>
                 <p>Cognotik helped build this site.</p>
+                 <p>Cognotik writes its own documentation.</p>
+                 <p>Cognotik generates its own test suites.</p>
                 <div class="mythos-reveal">
                     One human orchestrated it.<br>
-                    The system did the rest.
+                     The system did the rest.<br>
+                     <small style="opacity: 0.7; font-size: 0.9em;">That's the point.</small>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ===== SECTION 6: SEE IT IN ACTION ===== -->
-    <section class="section" id="demos">
+     <section aria-label="Demos and Tours" class="section" id="demos">
         <div class="container">
             <h2 class="section-title">See It in Action</h2>
             <p class="section-subtitle">
@@ -757,15 +1230,31 @@
                         suite.</p>
                     <a class="btn btn-secondary" href="tours/jobs/index.html">Watch Tour</a>
                 </div>
+                 <div class="feature-card fade-in delay-3">
+                     <div class="feature-icon"><i class="fas fa-code"></i></div>
+                     <h3>Code Generation</h3>
+                     <p>Watch Cognotik plan, scaffold, and implement a full project — with human review at every step.</p>
+                     <a class="btn btn-secondary" href="intellij-plugin.html#actions">Learn More</a>
+                 </div>
             </div>
             <p class="demos-note fade-in delay-3">
-                These demos were generated, narrated, and edited through Cognotik's own tools.
+                 These demos were generated, narrated, and edited through Cognotik's own tools — a real demonstration of the platform building its own documentation.
             </p>
         </div>
     </section>
+     <!-- ===== QUOTE STRIP ===== -->
+     <section aria-label="Quote" class="quote-strip fade-in">
+         <div class="container">
+             <blockquote>
+                 The best AI tool is the one that lets you stay in the driver's seat — where you can see the road, steer the wheel, and stop the car.
+             </blockquote>
+             <cite>— The design philosophy behind Cognotik</cite>
+         </div>
+     </section>
+
 
     <!-- ===== SECTION 7: BUILD YOUR OWN ===== -->
-    <section class="section" id="build-your-own">
+     <section aria-label="Build Your Own" class="section" id="build-your-own">
         <div class="container">
             <h2 class="section-title">Build Your Own</h2>
             <p class="section-subtitle">
@@ -798,17 +1287,87 @@
                     The same tools that built Cognotik's own plugins are available to you.
                     Every app in the ecosystem started as an idea and a conversation with the workspace.
                 </p>
+                 <p style="font-size: 0.95rem; opacity: 0.85;">
+                     Extend the platform with Kotlin or Java. Use the plugin API to add new tools, new UIs, and new workflows.
+                     Or just describe what you need — and let the workspace build it for you.
+                 </p>
                 <div class="mt-4">
                     <a class="btn btn-primary btn-lg" href="desktop.html">
                         <i class="fas fa-rocket"></i> Get Started
                     </a>
+                     <a class="btn btn-secondary btn-lg" href="extending.html" style="margin-left: 0.75rem;">
+                         <i class="fas fa-book"></i> Plugin Developer Guide
+                     </a>
                 </div>
             </div>
         </div>
     </section>
+     <!-- ===== FAQ ===== -->
+     <section aria-label="Frequently Asked Questions" class="section" id="faq">
+         <div class="container">
+             <h2 class="section-title">Frequently Asked Questions</h2>
+             <div class="faq-list">
+                 <div class="faq-item">
+                     <button class="faq-question" aria-expanded="false" onclick="this.parentElement.classList.toggle('open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('open'))">
+                         Is Cognotik really free?
+                         <span class="faq-toggle" aria-hidden="true">+</span>
+                     </button>
+                     <div class="faq-answer">
+                         <p>Yes. Cognotik is open-source under the Apache 2.0 license. The software is free to download, use, modify, and distribute. You only pay for the AI model usage through your own API keys.</p>
+                     </div>
+                 </div>
+                 <div class="faq-item">
+                     <button class="faq-question" aria-expanded="false" onclick="this.parentElement.classList.toggle('open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('open'))">
+                         Do I need an API key to use it?
+                         <span class="faq-toggle" aria-hidden="true">+</span>
+                     </button>
+                     <div class="faq-answer">
+                         <p>For cloud-based models (OpenAI, Anthropic, Google), yes — you'll need your own API key. For local models via Ollama or LM Studio, no API key is needed. Cognotik never stores or transmits your keys to our servers.</p>
+                     </div>
+                 </div>
+                 <div class="faq-item">
+                     <button class="faq-question" aria-expanded="false" onclick="this.parentElement.classList.toggle('open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('open'))">
+                         What operating systems are supported?
+                         <span class="faq-toggle" aria-hidden="true">+</span>
+                     </button>
+                     <div class="faq-answer">
+                         <p>Cognotik runs on Windows, macOS, and Linux. The desktop app ships as native installers for each platform. The IntelliJ plugin works on any OS that supports IntelliJ IDEA.</p>
+                     </div>
+                 </div>
+                 <div class="faq-item">
+                     <button class="faq-question" aria-expanded="false" onclick="this.parentElement.classList.toggle('open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('open'))">
+                         Can I use it offline?
+                         <span class="faq-toggle" aria-hidden="true">+</span>
+                     </button>
+                     <div class="faq-answer">
+                         <p>Yes — when paired with a local model (e.g., via Ollama), Cognotik works entirely offline. No internet connection required. Your data never leaves your machine.</p>
+                     </div>
+                 </div>
+                 <div class="faq-item">
+                     <button class="faq-question" aria-expanded="false" onclick="this.parentElement.classList.toggle('open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('open'))">
+                         How is this different from Cursor, Copilot, or Windsurf?
+                         <span class="faq-toggle" aria-hidden="true">+</span>
+                     </button>
+                     <div class="faq-answer">
+                         <p>Cognotik is a general-purpose AI workspace, not just a code editor. It supports structured planning, multi-step workflows, document generation, image tools, and more — all with human-in-the-loop approval. It's also fully open-source and BYOK, with no subscription required.</p>
+                     </div>
+                 </div>
+                 <div class="faq-item">
+                     <button class="faq-question" aria-expanded="false" onclick="this.parentElement.classList.toggle('open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('open'))">
+                         Can I embed Cognotik in my own application?
+                         <span class="faq-toggle" aria-hidden="true">+</span>
+                     </button>
+                     <div class="faq-answer">
+                         <p>Yes. Cognotik can be embedded as a library in JVM applications. See the <a href="embedding.html" style="color: var(--accent-color);">embedding guide</a> for details on integrating the workspace into your own tools and services.</p>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </section>
+
 
     <!-- ===== SECTION 8: JOIN THE COMMUNITY ===== -->
-    <section class="section" id="community">
+     <section aria-label="Community" class="section" id="community">
         <div class="container">
             <h2 class="section-title">Join the Community</h2>
             <p class="section-subtitle">
@@ -835,6 +1394,16 @@
                     <h4>Shape the Platform</h4>
                     <p>Help decide what gets built next. Your feedback drives the roadmap.</p>
                 </div>
+                 <div class="community-card fade-in delay-4">
+                     <span class="cc-icon"><i class="fas fa-graduation-cap"></i></span>
+                     <h4>Learn &amp; Teach</h4>
+                     <p>Share tutorials, write guides, or create demo workflows for the community.</p>
+                 </div>
+                 <div class="community-card fade-in delay-5">
+                     <span class="cc-icon"><i class="fas fa-comments"></i></span>
+                     <h4>Discuss</h4>
+                     <p>Join GitHub Discussions to ask questions, share ideas, and connect with other users.</p>
+                 </div>
             </div>
             <div class="text-center mt-4 fade-in">
                 <a class="btn btn-primary btn-lg" href="https://github.com/SimiaCryptus/Cognotik" rel="noopener"
@@ -847,6 +1416,30 @@
             </div>
         </div>
     </section>
+     <!-- ===== FINAL CTA ===== -->
+     <section aria-label="Get Started" class="section" id="final-cta" style="text-align: center; padding-bottom: 5rem;">
+         <div class="container">
+             <h2 class="section-title">Ready to Work Differently?</h2>
+             <p class="section-subtitle" style="max-width: 600px; margin-left: auto; margin-right: auto;">
+                 Download Cognotik, connect your favorite model, and start building — in minutes, not months.
+             </p>
+             <div class="fade-in" style="margin-top: 2rem;">
+                 <a class="btn btn-primary btn-lg" href="https://github.com/SimiaCryptus/Cognotik/releases" rel="noopener" target="_blank">
+                     <i class="fas fa-download"></i> Download Now
+                 </a>
+                 <a class="btn btn-secondary btn-lg" href="desktop.html" style="margin-left: 0.75rem;">
+                     <i class="fas fa-desktop"></i> Desktop App
+                 </a>
+                 <a class="btn btn-secondary btn-lg" href="intellij-plugin.html" style="margin-left: 0.75rem;">
+                     <i class="fas fa-puzzle-piece"></i> IntelliJ Plugin
+                 </a>
+             </div>
+             <p class="fade-in" style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+                 Free &amp; open-source · Apache 2.0 · Windows, macOS, Linux · No account required
+             </p>
+         </div>
+     </section>
+
 
 </main>
 
@@ -873,7 +1466,7 @@
         "author": {
             "@type": "Organization",
             "name": "SimiaCryptus",
-            "url": "https://simiacrypt.us"
+            "url": "https://simia.net/"
         },
         "license": "https://www.apache.org/licenses/LICENSE-2.0",
         "programmingLanguage": [
@@ -881,21 +1474,93 @@
             "Kotlin",
             "JavaScript"
         ],
-        "codeRepository": "https://github.com/SimiaCryptus/Cognotik"
+         "codeRepository": "https://github.com/SimiaCryptus/Cognotik",
+         "softwareVersion": "latest",
+         "featureList": [
+             "AI-powered code chat",
+             "Structured task planning",
+             "Document generation",
+             "Image generation and editing",
+             "Shell and script automation",
+             "Local file management",
+             "Multi-model support (OpenAI, Anthropic, Google, local)",
+             "BYOK (Bring Your Own Key)",
+             "Human-in-the-loop approval",
+             "Plugin ecosystem",
+             "IntelliJ IDEA integration"
+         ]
     }
 </script>
+<!-- FAQ Structured Data -->
+<script type="application/ld+json">
+     {
+         "@context": "https://schema.org",
+         "@type": "FAQPage",
+         "mainEntity": [
+             {
+                 "@type": "Question",
+                 "name": "Is Cognotik really free?",
+                 "acceptedAnswer": {
+                     "@type": "Answer",
+                     "text": "Yes. Cognotik is open-source under the Apache 2.0 license. The software is free to download, use, modify, and distribute. You only pay for the AI model usage through your own API keys."
+                 }
+             },
+             {
+                 "@type": "Question",
+                 "name": "Do I need an API key to use it?",
+                 "acceptedAnswer": {
+                     "@type": "Answer",
+                     "text": "For cloud-based models (OpenAI, Anthropic, Google), yes — you'll need your own API key. For local models via Ollama or LM Studio, no API key is needed."
+                 }
+             },
+             {
+                 "@type": "Question",
+                 "name": "What operating systems are supported?",
+                 "acceptedAnswer": {
+                     "@type": "Answer",
+                     "text": "Cognotik runs on Windows, macOS, and Linux. The desktop app ships as native installers for each platform."
+                 }
+             },
+             {
+                 "@type": "Question",
+                 "name": "Can I use it offline?",
+                 "acceptedAnswer": {
+                     "@type": "Answer",
+                     "text": "Yes — when paired with a local model (e.g., via Ollama), Cognotik works entirely offline. No internet connection required."
+                 }
+             },
+             {
+                 "@type": "Question",
+                 "name": "How is this different from Cursor, Copilot, or Windsurf?",
+                 "acceptedAnswer": {
+                     "@type": "Answer",
+                     "text": "Cognotik is a general-purpose AI workspace, not just a code editor. It supports structured planning, multi-step workflows, document generation, image tools, and more — all with human-in-the-loop approval. It's also fully open-source and BYOK."
+                 }
+             },
+             {
+                 "@type": "Question",
+                 "name": "Can I embed Cognotik in my own application?",
+                 "acceptedAnswer": {
+                     "@type": "Answer",
+                     "text": "Yes. Cognotik can be embedded as a library in JVM applications. See the embedding guide for details."
+                 }
+             }
+         ]
+     }
+</script>
+
 
 <!-- Footer -->
 <footer>
     <div class="container">
         <div class="footer-content">
-            <p>&copy; 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All
-                rights reserved.</p>
+             <p>&copy; 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All rights reserved.</p>
             <ul class="footer-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
                 <li><a href="desktop.html">Desktop</a></li>
                 <li><a href="embedding.html">Embedding</a></li>
+                 <li><a href="extending.html">Extending</a></li>
                 <li><a href="tours/core/index.html">Tours</a></li>
                 <li><a href="TaskPlanning.html">Docs</a></li>
                 <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
