@@ -22,22 +22,22 @@ sys-wizard/
 ├── marked.min.js         # Markdown rendering library
 ├── goal.md               # User-defined objective (created at runtime)
 ├── code/
-│   ├── script.sh         # Generated shell script (created by code_sh)
-│   └── fix_log.md        # Execution & auto-fix log (created by run_sh)
+│   ├── script.sh         # Generated shell script (created by code_op)
+│   └── fix_log.md        # Execution & auto-fix log (created by run_op)
 └── ops/
-    ├── code_sh.md        # Operation: generate script from goal
-    └── run_sh.md         # Operation: run script with auto-fix
+    ├── code_op.md        # Operation: generate script from goal
+    └── run_op.md         # Operation: run script with auto-fix
 ```
 
 ## Operations
 
-### code_sh
+### code_op
 
 - **Input:** `goal.md`
 - **Output:** `code/script.sh`
 - Reads the goal and generates a shell script that implements it.
 
-### run_sh
+### run_op
 
 - **Input:** `code/script.sh`
 - **Output:** `code/fix_log.md`
@@ -50,8 +50,8 @@ A text editor where you describe your objective in plain language. The goal is s
 
 ### ⚙️ Pipeline
 - **Pipeline Overview** — Visual diagram showing the status of each stage (Ready, Running, Done, Error).
-- **Step 1: Generate Shell Script** — Triggers `code_sh` and displays the generated script.
-- **Step 2: Run & Auto-Fix** — Triggers `run_sh`, shows the execution log and final script.
+- **Step 1: Generate Shell Script** — Triggers `code_op` and displays the generated script.
+- **Step 2: Run & Auto-Fix** — Triggers `run_op`, shows the execution log and final script.
 - **Run Entire Pipeline** — Saves the goal, generates the script, and runs it with auto-fix in sequence. Includes a live batch log with links to monitor running sessions.
 
 ### 📊 Results
