@@ -12,14 +12,9 @@
       "src": "apps.json"
     },
     {
-      "label": "Office Apps",
+      "label": "Premium Plugins",
       "type": "dropdown",
-      "src": "office.json"
-    },
-    {
-      "label": "Job Search Apps",
-      "type": "dropdown",
-      "src": "jobs.json"
+      "src": "premium.json"
     },
     {
       "label": "Docs",
