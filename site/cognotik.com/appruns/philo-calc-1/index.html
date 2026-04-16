@@ -402,6 +402,8 @@
         }
     </style>
     <script src="../../assets/scripts/components/CognotikHeader.js" type="module"></script>
+     <script src="../../assets/scripts/components/MicroDemo.js" type="module"></script>
+     <link href="../../assets/styles/micro-demo.css" rel="stylesheet">
 </head>
 <body>
 <cognotik-header current-page="tasks"></cognotik-header>
@@ -419,6 +421,19 @@
         View the Demo <span class="arrow">→</span>
     </a>
 </div>
+<!-- ── Video Demo ── -->
+<div style="max-width: 860px; margin: 0 auto; padding: 0 24px 32px;">
+     <micro-demo
+         title="Philosophical Calculator in Action"
+         hook="A fun demonstration of AI-powered analysis — a calculator that provides philosophical commentary on your equations."
+         video="../../tours/core/edit/philosophical-calculator.mp4"
+         icon="🧮"
+         bullets='["Enter any expression and get multi-perspective analysis","Philosophical, rhetorical, and creative lenses applied","AI transforms content through diverse analytical frameworks"]'
+         link="app.html"
+         link-label="Try the Demo"
+     ></micro-demo>
+</div>
+
 
 <!-- ── README Content ── -->
 <div class="readme-container" id="readme">
