@@ -14,6 +14,114 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <!-- Tour-specific styles -->
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Premium Plugin Banner */
+        .premium-banner {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .premium-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.3rem 0.85rem;
+            border-radius: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .premium-text {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0;
+            flex: 1;
+            min-width: 200px;
+        }
+        .premium-text a {
+            color: #a78bfa;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .premium-text a:hover {
+            color: #c4b5fd;
+        }
+        /* Premium CTA Section */
+        .premium-cta-section {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 4rem 0;
+        }
+        .premium-cta-inner {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .premium-cta-inner h2 {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+            background: linear-gradient(to right, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        .premium-cta-inner > p {
+            color: #94a3b8;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+        .premium-cta-inner > p strong {
+            color: #e2e8f0;
+        }
+        .premium-perks {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto 2rem;
+            display: inline-flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            text-align: left;
+        }
+        .premium-perks li {
+            color: #cbd5e1;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .premium-perks li i {
+            color: #10b981;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .premium-cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .premium-cta-note {
+            color: #64748b;
+            font-size: 0.88rem;
+            font-style: italic;
+            margin: 0;
+        }
+    </style>
     <script type="module" src="../../assets/scripts/components/CognotikHeader.js"></script>
 </head>
 <body>
@@ -45,6 +153,16 @@
     <!-- Overview Grid -->
     <section id="overview-panel" class="panel active">
         <div class="overview-intro">
+             <div class="premium-banner">
+                 <div class="premium-badge"><i class="fas fa-gem"></i> Premium Plugin</div>
+                 <p class="premium-text">
+                     The <strong>Office &amp; Document Tools</strong> plugin suite is a <strong>premium plugin</strong> — available exclusively to
+                     <a href="https://www.patreon.com/cw/SimiaCryptusSoftware" rel="noopener" target="_blank">Patreon</a> and
+                     <a href="https://github.com/sponsors/acharneski" rel="noopener" target="_blank">GitHub Sponsors</a>.
+                     Your sponsorship keeps Cognotik independent, open-source, and evolving — and unlocks
+                     advanced tools like this one.
+                 </p>
+             </div>
               <h2 class="section-title">Office &amp; Document Tools</h2>
              <p>
                  Cognotik transforms how you create and manage documents. This tour covers the full
@@ -119,6 +237,36 @@
 </div>
 
 <!-- Site Footer -->
+<!-- Premium CTA Section -->
+<section class="premium-cta-section">
+    <div class="container">
+        <div class="premium-cta-inner">
+            <h2>Like What You See?</h2>
+            <p>
+                The <strong>Office &amp; Document Tools</strong> plugin suite is one of several premium plugins available to Cognotik sponsors.
+                Your support funds ongoing development of advanced AI tools — and gives you immediate access to the full suite.
+            </p>
+            <ul class="premium-perks">
+                <li><i class="fas fa-check-circle"></i> Instant access to all premium plugins</li>
+                <li><i class="fas fa-check-circle"></i> Early access to new tools &amp; features</li>
+                <li><i class="fas fa-check-circle"></i> Help shape the roadmap</li>
+                <li><i class="fas fa-check-circle"></i> Support independent, open-source AI software</li>
+            </ul>
+            <div class="premium-cta-buttons">
+                <a class="btn btn-primary btn-lg" href="https://www.patreon.com/cw/SimiaCryptusSoftware" rel="noopener" target="_blank">
+                    <i class="fab fa-patreon"></i> Become a Patron
+                </a>
+                <a class="btn btn-secondary btn-lg" href="https://github.com/sponsors/acharneski" rel="noopener" target="_blank">
+                    <i class="fab fa-github"></i> Sponsor on GitHub
+                </a>
+            </div>
+            <p class="premium-cta-note">
+                Cognotik itself is free &amp; open-source (Apache 2.0). Premium plugins are a thank-you for sponsors — not a paywall on the platform.
+            </p>
+        </div>
+    </div>
+</section>
+
 <footer>
     <div class="container">
         <div class="footer-content">
