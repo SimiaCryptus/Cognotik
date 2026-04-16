@@ -452,6 +452,128 @@
             font-size: 0.9rem;
             margin-bottom: 0;
         }
+         /* No Subscription / Economics section */
+         .economics-section {
+             background: var(--background-color);
+             position: relative;
+             overflow: hidden;
+         }
+         .economics-section::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             background: radial-gradient(circle at 30% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+             pointer-events: none;
+         }
+         .economics-headline {
+             font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+             font-family: var(--font-heading);
+             text-align: center;
+             margin-bottom: 0.75rem;
+             background: linear-gradient(to right, #fff, var(--success-color));
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+         }
+         .economics-subline {
+             text-align: center;
+             font-size: 1.15rem;
+             color: var(--text-muted);
+             max-width: 650px;
+             margin: 0 auto 2.5rem;
+             line-height: 1.6;
+         }
+         .economics-grid {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+             gap: 1.5rem;
+             margin: 0 auto 2.5rem;
+             max-width: 900px;
+         }
+         .economics-item {
+             display: flex;
+             align-items: center;
+             gap: 0.85rem;
+             padding: 1.1rem 1.25rem;
+             background: var(--surface-color);
+             border: 1px solid var(--border-color);
+             border-radius: var(--border-radius-md);
+             transition: transform var(--transition-normal), border-color 0.3s;
+         }
+         .economics-item:hover {
+             transform: translateY(-2px);
+             border-color: var(--success-color);
+         }
+         .economics-item .ei-icon {
+             font-size: 1.4rem;
+             color: var(--success-color);
+             flex-shrink: 0;
+         }
+         .economics-item span:last-child {
+             color: var(--primary-color);
+             font-size: 1rem;
+             font-weight: 600;
+             font-family: var(--font-heading);
+         }
+         .economics-coda {
+             text-align: center;
+             font-size: 1.05rem;
+             color: var(--text-muted);
+             max-width: 600px;
+             margin: 0 auto;
+             line-height: 1.7;
+         }
+         /* Premium Plugins / Sponsor section */
+         .sponsor-section {
+             background: var(--surface-color);
+             border-top: 1px solid var(--border-color);
+             border-bottom: 1px solid var(--border-color);
+         }
+         .sponsor-inner {
+             max-width: 750px;
+             margin: 0 auto;
+             text-align: center;
+         }
+         .sponsor-inner .sponsor-title {
+             font-family: var(--font-heading);
+             font-size: 1.6rem;
+             color: var(--primary-color);
+             margin-bottom: 1rem;
+         }
+         .sponsor-inner .sponsor-body {
+             color: var(--text-muted);
+             font-size: 1.05rem;
+             line-height: 1.7;
+             margin-bottom: 1.5rem;
+         }
+         .sponsor-inner .sponsor-body strong {
+             color: var(--text-color);
+         }
+         .sponsor-inner .sponsor-quote {
+             font-style: italic;
+             color: var(--text-color);
+             font-size: 1.1rem;
+             line-height: 1.6;
+             border-left: 3px solid var(--accent-color);
+             padding-left: 1.25rem;
+             margin: 2rem auto;
+             max-width: 620px;
+             text-align: left;
+         }
+         .sponsor-buttons {
+             display: flex;
+             justify-content: center;
+             gap: 1rem;
+             flex-wrap: wrap;
+             margin-top: 2rem;
+         }
+         .sponsor-buttons .btn {
+             font-size: 1.05rem;
+         }
+
 
         /* Download bar (compact, in hero) */
         .hero-download-bar {
@@ -792,46 +914,6 @@
             </div>
         </div>
     </section>
-     <!-- ===== QUICK OVERVIEW: HOW IT WORKS ===== -->
-     <section aria-label="How Cognotik Works" class="section" id="how-it-works">
-         <div class="container">
-             <h2 class="section-title">How It Works</h2>
-             <p class="section-subtitle">
-                 From install to output in four steps. No cloud accounts, no subscriptions, no lock-in.
-             </p>
-             <div class="how-it-works-flow fade-in">
-                 <div class="hiw-step">
-                     <span class="hiw-number">1</span>
-                     <h4>Install</h4>
-                     <p>Download the desktop app or install the IntelliJ plugin. One click, no sign-up.</p>
-                 </div>
-                 <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
-                 <div class="hiw-step">
-                     <span class="hiw-number">2</span>
-                     <h4>Connect</h4>
-                     <p>Add your own API key — OpenAI, Anthropic, Google, AWS, or a local model.</p>
-                 </div>
-                 <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
-                 <div class="hiw-step">
-                     <span class="hiw-number">3</span>
-                     <h4>Choose a Tool</h4>
-                     <p>Pick an AI app — code chat, document generator, planner, shell, or build your own.</p>
-                 </div>
-                 <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
-                 <div class="hiw-step">
-                     <span class="hiw-number">4</span>
-                     <h4>Work</h4>
-                     <p>Review plans, approve changes, iterate. You stay in control at every step.</p>
-                 </div>
-             </div>
-             <div class="text-center fade-in">
-                 <a class="btn btn-primary" href="tours/core/index.html">
-                     <i class="fas fa-play-circle"></i> Watch the Getting Started Tour
-                 </a>
-             </div>
-         </div>
-     </section>
-
 
     <!-- ===== SECTION 1: WHY CHAT BREAKS ===== -->
      <section aria-label="Why Chat Breaks" class="section" id="why-chat-breaks">
@@ -1015,7 +1097,81 @@
             </div>
         </div>
     </section>
-     <!-- ===== SUPPORTED MODELS ===== -->
+
+    <!-- ===== NO SUBSCRIPTIONS — ECONOMICS ===== -->
+    <section aria-label="No Subscriptions" class="section economics-section" id="no-subscriptions">
+        <div class="container" style="position: relative; z-index: 1;">
+            <h2 class="economics-headline fade-in">Cognotik Is Software, Not a Subscription.</h2>
+            <p class="economics-subline fade-in delay-1">
+                No subscriptions. No metered tokens. No usage tax.<br>
+                Just software you own, and optional plugins you choose.
+            </p>
+            <div class="economics-grid fade-in delay-2">
+                <div class="economics-item">
+                    <span class="ei-icon"><i class="fas fa-ban"></i></span>
+                    <span>No monthly fees</span>
+                </div>
+                <div class="economics-item">
+                    <span class="ei-icon"><i class="fas fa-gauge-high"></i></span>
+                    <span>No usage meters</span>
+                </div>
+                <div class="economics-item">
+                    <span class="ei-icon"><i class="fas fa-face-smile"></i></span>
+                    <span>No token anxiety</span>
+                </div>
+                <div class="economics-item">
+                    <span class="ei-icon"><i class="fas fa-lock-open"></i></span>
+                    <span>No cloud lock-in</span>
+                </div>
+            </div>
+            <p class="economics-coda fade-in delay-3">
+                Optional premium plugins are priced like normal software — not rented, not metered, not gated behind a recurring fee.
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ===== QUICK OVERVIEW: HOW IT WORKS ===== -->
+    <section aria-label="How Cognotik Works" class="section" id="how-it-works">
+        <div class="container">
+            <p class="section-subtitle">
+                Free Local Install. No cloud accounts, no subscriptions, no lock-in.
+            </p>
+            <div class="how-it-works-flow fade-in">
+                <div class="hiw-step">
+                    <span class="hiw-number">1</span>
+                    <h4>Install</h4>
+                    <p>Download the desktop app or install the IntelliJ plugin. One click, no sign-up.</p>
+                </div>
+                <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                <div class="hiw-step">
+                    <span class="hiw-number">2</span>
+                    <h4>Connect</h4>
+                    <p>Add your own API key — OpenAI, Anthropic, Google, AWS, or a local model.</p>
+                </div>
+                <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                <div class="hiw-step">
+                    <span class="hiw-number">3</span>
+                    <h4>Choose a Tool</h4>
+                    <p>Pick an AI app — code chat, document generator, planner, shell, or build your own.</p>
+                </div>
+                <div class="hiw-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                <div class="hiw-step">
+                    <span class="hiw-number">4</span>
+                    <h4>Work</h4>
+                    <p>Review plans, approve changes, iterate. You stay in control at every step.</p>
+                </div>
+            </div>
+            <div class="text-center fade-in">
+                <a class="btn btn-primary" href="tours/core/index.html">
+                    <i class="fas fa-play-circle"></i> Watch the Getting Started Tour
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ===== SUPPORTED MODELS ===== -->
      <section aria-label="Supported AI Models" class="section" id="models">
          <div class="container">
              <h2 class="section-title">Works With the Models You Trust</h2>
@@ -1179,6 +1335,35 @@
              </div>
          </div>
      </section>
+
+    <!-- ===== PREMIUM PLUGINS / SPONSOR ===== -->
+    <section aria-label="Premium Plugins and Sponsorship" class="section sponsor-section" id="sponsor">
+        <div class="container">
+            <div class="sponsor-inner fade-in">
+                <h2 class="sponsor-title">Premium Plugins — Support the Work, Unlock More Power</h2>
+                <p class="sponsor-body">
+                    Cognotik is <strong>free software</strong>.
+                    You own it, you run it, you inspect it.
+                </p>
+                <p class="sponsor-body">
+                    But some advanced plugins — the ones that push the frontier — are available to
+                    current <strong>Patreon</strong> or <strong>GitHub Sponsors</strong>.
+                </p>
+                <div class="sponsor-quote">
+                    If you want to help shape the next generation of tools — and unlock premium plugins — become a Patreon or GitHub Sponsor.
+                    It's how we keep Cognotik independent, open, and evolving.
+                </div>
+                <div class="sponsor-buttons">
+                    <a class="btn btn-primary btn-lg" href="https://www.patreon.com/cw/SimiaCryptusSoftware" rel="noopener" target="_blank">
+                        <i class="fab fa-patreon"></i> Support on Patreon
+                    </a>
+                    <a class="btn btn-secondary btn-lg" href="https://github.com/sponsors/acharneski" rel="noopener" target="_blank">
+                        <i class="fab fa-github"></i> Sponsor on GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
 
     <!-- ===== SECTION 5: HOW IT'S MADE ===== -->
@@ -1564,6 +1749,8 @@
                 <li><a href="tours/core/index.html">Tours</a></li>
                 <li><a href="TaskPlanning.html">Docs</a></li>
                 <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
+                 <li><a href="https://www.patreon.com/cw/SimiaCryptusSoftware" rel="noopener" target="_blank">Patreon</a></li>
+                 <li><a href="https://github.com/sponsors/acharneski" rel="noopener" target="_blank">Sponsor</a></li>
             </ul>
         </div>
     </div>
