@@ -162,12 +162,12 @@ abstract class PatchApp(
     val fixApplied: Boolean = false
   )
 
-fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = SessionController(
+  fun newSessionController(task: SessionTask, onComplete: (OutputResult) -> Unit = {}) = SessionController(
     task = task,
     settings = settings,
     model = model,
-   executeIteration = { t, m, i -> this.executeIteration(t, m, i) },
-   onComplete = onComplete,
+    executeIteration = { t, m, i -> this.executeIteration(t, m, i) },
+    onComplete = onComplete,
   )
 
   open class SessionController(
@@ -176,8 +176,8 @@ fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = Se
     val model: ChatInterface,
     val executeIteration: (SessionTask, ChatInterface, Int) -> OutputResult,
     var updateStatus: (String) -> Unit = { _ -> },
-   var lastParsedErrors: ParsedErrors? = null,
-   val onComplete: (exitCode: Int) -> Unit = { _ -> },
+    var lastParsedErrors: ParsedErrors? = null,
+    val onComplete: (exitCode: OutputResult) -> Unit = { _ -> },
   ) {
 
     private val retriesRemaining = AtomicInteger(if (settings.autoFix) settings.maxRetries else 0)
@@ -472,7 +472,7 @@ fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = Se
             renderControlPanel()
             renderSummary()
             renderIterationArea()
-           onComplete(0)
+            onComplete(result)
           } else {
             val remaining = retriesRemaining.get()
             if (remaining > 0 && autoRetryEnabled.get()) {
@@ -489,7 +489,7 @@ fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = Se
               renderControlPanel()
               renderSummary()
               renderIterationArea()
-             onComplete(result.exitCode)
+              onComplete(result)
             }
           }
         } catch (e: Exception) {
@@ -508,7 +508,7 @@ fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = Se
           renderControlPanel()
           renderSummary()
           renderIterationArea()
-         onComplete(-1)
+          onComplete(OutputResult(exitCode = -1, output = "Internal error: ${e.message}"))
         }
       }.start()
     }

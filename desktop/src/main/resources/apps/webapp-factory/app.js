@@ -11,8 +11,11 @@
         basePath = pathParts.slice(0, fileIndexIdx + 2).join('/');
         appId = pathParts[fileIndexIdx - 1] || 'webapp-factory';
     } else {
-        console.warn('Could not determine session from URL path. File operations may fail.');
-        basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+        // Fallback: try to detect basePath from the current directory
+        // Remove trailing filename (e.g. /app.html) to get the directory
+        const currentPath = window.location.pathname;
+        basePath = currentPath.replace(/\/[^/]*\.[^/]*$/, '') || currentPath.replace(/\/+$/, '');
+        console.warn('Could not determine session from URL path. Using basePath:', basePath);
     }
     const proxyBase = '/proxy/';
      // === Model management state ===
@@ -24,7 +27,9 @@
     let lastUsageData = null;
 
     // === Compute the URL for the generated app's index.html ===
-    const appIndexUrl = basePath + '/code/index.html';
+    const appIndexUrl = basePath + (basePath.endsWith('/') ? '' : '/') + 'code/index.html';
+    // Compute the absolute base URL for the code directory (used in iframe <base> tag)
+    const codeBaseAbsoluteUrl = window.location.origin + basePath + (basePath.endsWith('/') ? '' : '/') + 'code/';
      // === Model loading and selection ===
      async function loadApiProviders() {
          try {
@@ -214,7 +219,7 @@
     });
     window.parent.postMessage({ type: 'console-capture', level: 'info', message: 'App loaded successfully.', timestamp: Date.now() }, '*');
 })();
-</' + 'script>`;
+<\/script>`;
     function clearConsolePanel() {
         capturedLogs = [];
         consoleStat = { logs: 0, warnings: 0, errors: 0 };
@@ -297,31 +302,55 @@
             const resp = await fetch(appIndexUrl);
             if (!resp.ok) throw new Error('Could not fetch app');
             let html = await resp.text();
-            // Inject our console capture script right after <head> or at the start
+            // Remove any existing <base> tags to avoid conflicts
+            html = html.replace(/<base\s[^>]*>/gi, '');
+            // Inject <base> tag with an absolute URL so that relative resource
+            // references (CSS, JS, images) resolve correctly even inside a
+            // blob: URL document where relative paths would otherwise break.
+            const baseTag = '<base href="' + codeBaseAbsoluteUrl + '">';
+            const injectedHead = baseTag + '\n' + CONSOLE_CAPTURE_SCRIPT;
             if (html.includes('<head>')) {
-                html = html.replace('<head>', '<head>' + CONSOLE_CAPTURE_SCRIPT);
+                html = html.replace('<head>', '<head>' + injectedHead);
+            } else if (html.includes('<HEAD>')) {
+                html = html.replace('<HEAD>', '<HEAD>' + injectedHead);
             } else if (html.includes('<html>')) {
-                html = html.replace('<html>', '<html><head>' + CONSOLE_CAPTURE_SCRIPT + '</head>');
+                html = html.replace('<html>', '<html><head>' + injectedHead + '</head>');
+            } else if (html.includes('<HTML>')) {
+                html = html.replace('<HTML>', '<HTML><head>' + injectedHead + '</head>');
             } else {
-                html = CONSOLE_CAPTURE_SCRIPT + html;
+                html = '<head>' + injectedHead + '</head>' + html;
             }
-            // Rewrite relative URLs in the HTML to point to the code/ directory
-            // so that CSS, JS, images etc. load correctly
-            const codeBaseUrl = basePath + '/code/';
-            // Add a <base> tag so relative URLs resolve correctly
-            if (html.includes('<head>')) {
-                html = html.replace('<head>', '<head><base href="' + codeBaseUrl + '">');
-            }
-            // Use srcdoc to load the modified HTML
             if (previewPlaceholder) previewPlaceholder.style.display = 'none';
             previewIframe.style.display = 'block';
-            previewIframe.srcdoc = html;
+            previewIframe.style.minHeight = '600px';
+            // Try using srcdoc first — it works well when the <base> tag has
+            // an absolute URL.  Fall back to blob URL if srcdoc is unavailable.
+            if ('srcdoc' in HTMLIFrameElement.prototype) {
+                // Revoke any previous blob URL
+                if (previewIframe._blobUrl) {
+                    URL.revokeObjectURL(previewIframe._blobUrl);
+                    previewIframe._blobUrl = null;
+                }
+                previewIframe.removeAttribute('src');
+                previewIframe.srcdoc = html;
+            } else {
+                // Fallback: blob URL approach
+                const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                if (previewIframe._blobUrl) {
+                    URL.revokeObjectURL(previewIframe._blobUrl);
+                }
+                previewIframe._blobUrl = blobUrl;
+                previewIframe.removeAttribute('srcdoc');
+                previewIframe.src = blobUrl;
+            }
         } catch (e) {
             console.warn('Failed to load preview:', e);
             addConsoleEntry('error', 'Failed to load preview: ' + e.message);
             // Fallback: just set src directly (no console capture)
             if (previewPlaceholder) previewPlaceholder.style.display = 'none';
             previewIframe.style.display = 'block';
+            previewIframe.style.minHeight = '600px';
             previewIframe.src = appIndexUrl;
         }
     }
@@ -780,6 +809,11 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.classList.add('active');
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
+            // Auto-load preview when switching to Results section
+            if (sectionId === 'section-results') {
+                // Always reload the preview when switching to Results
+                loadPreviewIframe();
+            }
         });
     });
 
