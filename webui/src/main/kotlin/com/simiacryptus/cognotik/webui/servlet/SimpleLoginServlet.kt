@@ -276,7 +276,7 @@ class SimpleLoginServlet : HttpServlet() {
       val inputHash = hashPassword(password)
       if (inputHash != settings.passwordHash) {
         log.warn("Failed login attempt for user: {}", username)
-        serveLoginPage(req, resp, error = "Invalid username or password.", target = target)
+        serveLoginPage(req, resp, error = "Username password is not set.", target = target)
         return
       }
 

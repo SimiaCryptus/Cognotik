@@ -402,6 +402,8 @@
         }
     </style>
     <script src="../../assets/scripts/components/CognotikHeader.js" type="module"></script>
+     <script src="../../assets/scripts/components/MicroDemo.js" type="module"></script>
+     <link href="../../assets/styles/micro-demo.css" rel="stylesheet">
 </head>
 <body>
 <cognotik-header current-page="tasks"></cognotik-header>
@@ -418,6 +420,19 @@
         View the Demo <span class="arrow">→</span>
     </a>
 </div>
+<!-- ── Video Demo ── -->
+<div style="max-width: 860px; margin: 0 auto; padding: 0 24px 32px;">
+     <micro-demo
+         title="WebApp Factory in Action"
+         hook="See how Cognotik generates complete web applications from natural language descriptions — HTML, CSS, and JavaScript ready to launch."
+         video="../../tours/core/edit/webapp-factory.mp4"
+         icon="🏭"
+         bullets='["Describe your web app idea in plain language","AI generates a complete project with HTML, CSS, and JS","Preview and iterate on the result in real time"]'
+         link="app.html"
+         link-label="Try the Demo"
+     ></micro-demo>
+</div>
+
 
 <!-- ── README Content ── -->
 <div class="readme-container" id="readme">

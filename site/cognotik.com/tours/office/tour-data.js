@@ -11,7 +11,7 @@ const TOUR_CHAPTERS = [
         id: "plugin-install",
         file: "edit/Plugin_Install.mp4",
         title: "Plugin Installation",
-        description: "Easily install and manage AI plugins from the Cognotik Hub — browse categories, read reviews, and add new capabilities to your workspace with a click.",
+     description: "See how to browse, install, and activate premium plugins from the Cognotik Hub in under a minute — no command line required. This chapter covers the full flow from discovery to a ready-to-use workspace.",
         icon: "🧩",
         order: 0,
         transcript: "edit/plugin-install.md"
@@ -20,7 +20,7 @@ const TOUR_CHAPTERS = [
         id: "presentation-creator",
         file: "edit/presentation-creator.mp4",
         title: "Presentation Creator",
-        description: "Generate polished, professional presentations from your content using AI — turn ideas and documents into compelling slide decks.",
+     description: "Feed the AI a topic outline, meeting notes, or an existing document and receive a fully structured slide deck — with speaker notes, consistent styling, and export-ready formats like PPTX and PDF.",
         icon: "📊",
         order: 4,
         transcript: "edit/presentation-creator.md"
@@ -29,7 +29,7 @@ const TOUR_CHAPTERS = [
         id: "ocr-import",
         file: "edit/ocr-import.mp4",
         title: "OCR Import",
-        description: "Extract text from images and scanned documents with AI-powered OCR — import your existing materials into Cognotik with ease.",
+     description: "Drag in a photo, scanned PDF, or screenshot and the AI extracts clean, structured text — preserving tables, headings, and formatting so you can edit, search, and reuse legacy documents instantly.",
         icon: "📄",
         order: 3,
         transcript: "edit/ocr-import.md"
@@ -38,7 +38,7 @@ const TOUR_CHAPTERS = [
         id: "tex-wizard",
         file: "edit/tex-wizard.mp4",
         title: "TeX Wizard",
-        description: "Create beautifully typeset documents with AI-assisted LaTeX — from academic papers to professional reports, rendered with precision.",
+     description: "Describe what you need in plain English and the AI generates publication-quality LaTeX — handling equations, bibliographies, figures, and cross-references so you can focus on content, not markup.",
         icon: "✨",
         order: 6,
         transcript: "edit/tex-wizard.md"

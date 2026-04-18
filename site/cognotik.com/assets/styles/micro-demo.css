@@ -1,0 +1,167 @@
+/* ===== MICRO-DEMO COMPONENT ===== */
+
+micro-demo {
+    display: block;
+}
+
+.micro-demo-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.micro-demo-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.08);
+}
+
+/* --- Collapsed toggle button --- */
+.micro-demo-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+
+.micro-demo-toggle:hover {
+    background: rgba(139, 92, 246, 0.04);
+}
+
+.micro-demo-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    width: 2.4rem;
+    text-align: center;
+}
+
+.micro-demo-header-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.micro-demo-title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    line-height: 1.3;
+}
+
+.micro-demo-hook {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.micro-demo-chevron {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    transition: transform 0.35s ease;
+    width: 1.5rem;
+    text-align: center;
+}
+
+/* --- Expanded area --- */
+.micro-demo-expanded {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.45s ease, padding 0.35s ease;
+    padding: 0 1.25rem;
+}
+
+micro-demo.micro-demo--expanded .micro-demo-expanded {
+    padding: 0 1.25rem 1.25rem;
+}
+
+.micro-demo-video-wrap {
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    background: #000;
+    margin-bottom: 1rem;
+    aspect-ratio: 16 / 9;
+}
+
+.micro-demo-video-wrap video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.micro-demo-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.micro-demo-bullets li {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    padding-left: 1.4rem;
+    position: relative;
+    line-height: 1.5;
+}
+
+.micro-demo-bullets li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--success-color);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.micro-demo-link {
+    font-size: 0.9rem !important;
+}
+
+/* --- Grid layout for multiple micro-demos --- */
+.micro-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* Single featured demo (wider) */
+.micro-demo-featured {
+    max-width: 640px;
+    margin: 2rem auto 0;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .micro-demo-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .micro-demo-toggle {
+        padding: 0.85rem 1rem;
+        gap: 0.75rem;
+    }
+
+    .micro-demo-title {
+        font-size: 0.95rem;
+    }
+
+    .micro-demo-hook {
+        font-size: 0.85rem;
+    }
+}

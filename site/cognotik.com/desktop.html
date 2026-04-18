@@ -4,170 +4,679 @@
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Cognotik Desktop - AI Application Server</title>
-    <meta content="Cognotik Desktop Application Server. Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes."
+    <title>Cognotik Desktop — AI Application Server for Your Machine</title>
+    <meta content="Cognotik Desktop Application Server. Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes. Download for Windows, macOS, and Linux."
           name="description">
-    <meta content="Cognotik, Desktop, AI Server, Local AI, BYOK, Autonomous Agents, Task Chat, Plan Ahead, SimiaCryptus"
+    <meta content="Cognotik, Desktop, AI Server, Local AI, BYOK, Autonomous Agents, Task Chat, Plan Ahead, SimiaCryptus, download, Windows, macOS, Linux"
           name="keywords">
     <link href="https://cognotik.com/desktop.html" hreflang="en" rel="alternate">
     <meta content="SimiaCryptus" name="author">
-    <meta content="Cognotik Desktop - AI Application Server" property="og:title">
-    <meta content="Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes."
+    <meta content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" name="robots">
+    <meta content="#0f172a" name="theme-color">
+    <meta content="Cognotik Desktop — AI Application Server" property="og:title">
+    <meta content="Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes. Download free for Windows, macOS, and Linux."
           property="og:description">
     <meta content="https://cognotik.com/assets/og-image.png" property="og:image">
     <meta content="website" property="og:type">
     <meta content="https://cognotik.com/desktop.html" property="og:url">
     <meta content="summary_large_image" name="twitter:card">
-    <meta content="Cognotik Desktop - AI Application Server" name="twitter:title">
-    <meta content="Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes."
+    <meta content="Cognotik Desktop — AI Application Server" name="twitter:title">
+    <meta content="Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes. Download free for Windows, macOS, and Linux."
           name="twitter:description">
     <meta content="https://cognotik.com/assets/og-image.png" name="twitter:image">
     <link href="https://cognotik.com/desktop.html" rel="canonical">
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
+
     <link href="assets/styles/styles.css" rel="stylesheet">
     <link href="assets/styles/responsive.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
-    <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Headers -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
           rel="stylesheet">
 
-    <!-- Icons: FontAwesome CDN for UI icons -->
+    <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
+
+    <style>
+        /* ===== DESKTOP PAGE STYLES ===== */
+
+        .hero-desktop {
+            background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 70%);
+            position: relative;
+            overflow: hidden;
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-desktop::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 25% 60%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 75% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-desktop .container {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-desktop .hero-layout {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+        }
+
+        .hero-desktop .hero-text {
+            flex: 1;
+        }
+
+        .hero-desktop .hero-visual {
+            flex: 0 0 320px;
+        }
+
+        .hero-desktop .hero-eyebrow {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: var(--accent-secondary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .hero-desktop h1 {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-family: var(--font-heading);
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(to right, #fff, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desktop .hero-sub {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin-bottom: 2rem;
+            max-width: 620px;
+        }
+
+        .hero-visual-icon {
+            width: 280px;
+            height: 220px;
+            border-radius: var(--border-radius-lg);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+
+        .hero-visual-icon i {
+            font-size: 4.5rem;
+            opacity: 0.4;
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-visual-icon span {
+            font-size: 0.85rem;
+            opacity: 0.5;
+            font-family: var(--font-mono);
+        }
+
+        /* Download bar */
+        .hero-download-bar {
+            margin-top: 2rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            display: inline-flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .hero-download-bar .download-status {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .hero-download-bar .download-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-download-bar .download-note {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+            margin-bottom: 0;
+        }
+
+        /* Cognitive modes */
+        .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+        }
+
+        .mode-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem 1.5rem;
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color 0.3s;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .mode-card .mode-icon {
+            font-size: 2rem;
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .mode-card .mode-tag {
+            display: inline-block;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-secondary);
+            font-size: 0.78rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .mode-card h4 {
+            font-family: var(--font-heading);
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+        }
+
+        .mode-card p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .mode-card .btn {
+            margin-top: 0.75rem;
+        }
+
+        /* Platform cards */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
+        }
+
+        .platform-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.75rem;
+            text-align: center;
+            transition: transform var(--transition-normal), border-color 0.3s;
+        }
+
+        .platform-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-color);
+        }
+
+        .platform-card .platform-icon {
+            font-size: 2.5rem;
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .platform-card h4 {
+            font-family: var(--font-heading);
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .platform-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .platform-card code {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-color);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Section punchline */
+        .section-punchline {
+            text-align: center;
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            font-family: var(--font-heading);
+            margin-top: 2rem;
+            margin-bottom: 0;
+        }
+
+        /* CTA banner */
+        .cta-banner {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 2.5rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .cta-banner h3 {
+            font-family: var(--font-heading);
+            color: var(--primary-color);
+            margin-bottom: 0.75rem;
+            font-size: 1.5rem;
+        }
+
+        .cta-banner p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-banner .btn + .btn {
+            margin-left: 0.75rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-desktop .hero-layout {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-desktop .hero-visual {
+                flex: none;
+            }
+
+            .hero-download-bar {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
+<cognotik-header current-page="desktop"></cognotik-header>
+
 <main>
-    <cognotik-header current-page="desktop"></cognotik-header>
-    <section class="hero-section fade-in" style="padding-top:3em;padding-bottom:2em;">
+
+    <!-- ===== HERO ===== -->
+    <section class="hero-desktop fade-in" id="hero">
         <div class="container">
-            <div class="hero-content" style="flex-flow: row;">
-                <div class="hero-text fade-in delay-1">
-                    <h1>Cognotik Desktop</h1>
-                    <p style="font-size:1.2em;max-width:650px;">
-                        The Cognotik Application Server brings powerful AI agents to your desktop.
-                        Run autonomous workflows, chat with context, and manage tasks locally with full control over
-                        your data and API usage.
+            <div class="hero-layout">
+                <div class="hero-text">
+                    <div class="hero-eyebrow fade-in delay-1">Desktop Application Server</div>
+                    <h1 class="fade-in delay-1">AI That Runs<br>on Your Machine</h1>
+                    <p class="hero-sub fade-in delay-2">
+                        A local application server that brings powerful AI agents to your desktop.
+                        Run autonomous workflows, chat with context, plan complex tasks, and manage everything
+                        from your system tray — with full control over your data and API usage.
                     </p>
-                    <div class="download-ui-simple" style="margin-top: 1em;">
-                        <a class="btn btn-primary" href="https://github.com/SimiaCryptus/Cognotik/releases"
-                           rel="noopener" target="_blank">
-                            <i class="fas fa-download"></i> Download for Desktop
-                        </a>
-                        <a class="btn btn-secondary" href="https://github.com/SimiaCryptus/Cognotik" rel="noopener"
-                           style="margin-top:1em; margin-left: 0.5em;" target="_blank">
-                            <i class="fab fa-github"></i> View on GitHub
-                        </a>
+
+                    <div class="hero-download-bar fade-in delay-3">
+                        <div class="download-status" aria-live="polite" id="download-info-simple" role="status">
+                            <span id="detected-os">Detected OS: Checking…</span>
+                            <span id="latest-version">Latest Version: Checking…</span>
+                        </div>
+                        <div class="download-actions">
+                            <a aria-label="Download Cognotik Desktop" class="btn btn-primary download-btn" href="#"
+                               id="download-button" disabled>
+                                <i class="fas fa-download"></i> Preparing download…
+                            </a>
+                            <a class="btn btn-secondary"
+                               href="https://github.com/SimiaCryptus/Cognotik/releases" rel="noopener"
+                               target="_blank">
+                                <i class="fab fa-github"></i> All Releases
+                            </a>
+                        </div>
+                        <p class="download-note">
+                            Free &amp; open-source · Apache 2.0 · BYOK — your keys, your data
+                        </p>
                     </div>
                 </div>
-                <div class="hero-image fade-in delay-2">
-                    <div style="border-radius: var(--border-radius-lg); width: 300px; height: 250px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-light); font-style: italic; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                        <i class="fas fa-desktop" style="font-size: 5em; opacity: 0.5;"></i>
+                <div class="hero-visual fade-in delay-2">
+                    <div class="hero-visual-icon">
+                        <i class="fas fa-desktop"></i>
+                        <span>System Tray App</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <section class="features-section">
+
+    <!-- ===== CORE FEATURES ===== -->
+    <section class="section" id="features">
         <div class="container">
-            <h2>Core Features</h2>
+            <h2 class="section-title">Core Features</h2>
+            <p class="section-subtitle">
+                Everything you need to run AI workflows locally, with no cloud dependency.
+            </p>
             <div class="features-grid">
-                <div class="feature-card">
+                <div class="feature-card fade-in">
                     <div class="feature-icon"><i class="fas fa-server"></i></div>
                     <h3>Daemon Architecture</h3>
-                    <p>Runs efficiently in the background. Access applications via a web interface or the system
-                        tray.</p>
+                    <p>Runs efficiently in the background via your system tray. Access all applications through a
+                        web interface at <code>localhost:7681</code> — no browser extensions needed.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                <div class="feature-card fade-in delay-1">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
                     <h3>Cognitive Modes</h3>
-                    <p>Choose between Task Chat for interactive tasks, Autonomous Mode for self-directed goals, or Plan
-                        Ahead for structured execution.</p>
+                    <p>Choose the right thinking style: Conversational for chat, Waterfall for structured plans,
+                        Adaptive for complex problems, Hierarchical for large projects, and more.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in delay-2">
                     <div class="feature-icon"><i class="fas fa-key"></i></div>
-                    <h3>BYOK Model</h3>
-                    <p>Bring Your Own Key. Connect directly to OpenAI, Anthropic, or local models. Your keys, your data,
-                        your control.</p>
+                    <h3>BYOK — Your Keys</h3>
+                    <p>Connect directly to OpenAI, Anthropic, Google, AWS Bedrock, or local models.
+                        Your API keys stay on your machine. We never see them.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in delay-3">
                     <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
                     <h3>Auto-Updates</h3>
-                    <p>Built-in update manager keeps your application server current with the latest features and
-                        fixes.</p>
+                    <p>Built-in update manager keeps your application server current with the latest features,
+                        plugins, and security fixes — automatically.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in delay-4">
                     <div class="feature-icon"><i class="fas fa-terminal"></i></div>
                     <h3>Local Tools</h3>
-                    <p>Integrate with your local environment. Configure shell commands and file access for true agentic
-                        capabilities.</p>
+                    <p>Integrate with your local environment. Configure shell commands, file access, and
+                        command-line utilities for true agentic capabilities.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in delay-5">
                     <div class="feature-icon"><i class="fab fa-osi"></i></div>
                     <h3>Open Source</h3>
-                    <p>Fully open source under Apache 2.0. Inspect the code, contribute, or build your own
-                        extensions.</p>
+                    <p>Fully open under the Apache 2.0 license. Inspect the code, contribute improvements,
+                        or build your own extensions and plugins.</p>
                 </div>
             </div>
         </div>
     </section>
-    <section class="section">
-        <div class="container container-narrow">
-            <h2>Getting Started</h2>
-            <h3>Installation</h3>
-            <p>Download the installer for your operating system from the <a
-                    href="https://github.com/SimiaCryptus/Cognotik/releases">GitHub Releases</a> page.</p>
-            <ul>
-                <li><strong>Windows:</strong> Download and run the `.msi` installer.</li>
-                <li><strong>macOS:</strong> Download the `.dmg` file and drag the application to your Applications
-                    folder.
-                </li>
-                <li><strong>Linux:</strong> Download and install the `.deb` package.</li>
-            </ul>
 
-            <h3>Configuration</h3>
+    <!-- ===== COGNITIVE MODES ===== -->
+    <section class="section" id="modes">
+        <div class="container">
+            <h2 class="section-title">Cognitive Modes</h2>
+            <p class="section-subtitle">
+                Different problems need different thinking styles. Choose the mode that fits your task.
+            </p>
+            <div class="modes-grid">
+                <div class="mode-card fade-in">
+                    <span class="mode-tag">Interactive</span>
+                    <div class="mode-icon"><i class="fas fa-comments"></i></div>
+                    <h4>Conversational</h4>
+                    <p>The Partner. Best for general assistance and interactive debugging. Executes one task at a time
+                        while maintaining continuous history.</p>
+                    <a class="btn btn-sm btn-outline" href="ConversationalMode.html">Learn More</a>
+                </div>
+                <div class="mode-card fade-in delay-1">
+                    <span class="mode-tag">Planning</span>
+                    <div class="mode-icon"><i class="fas fa-project-diagram"></i></div>
+                    <h4>Waterfall</h4>
+                    <p>The Architect. Best for well-defined, linear projects. Generates a complete sequential plan
+                        for review before execution begins.</p>
+                    <a class="btn btn-sm btn-outline" href="WaterfallMode.html">Learn More</a>
+                </div>
+                <div class="mode-card fade-in delay-2">
+                    <span class="mode-tag">Autonomous</span>
+                    <div class="mode-icon"><i class="fas fa-route"></i></div>
+                    <h4>Adaptive</h4>
+                    <p>The Strategist. Best for complex, fuzzy problems. Uses an iterative Think-Act-Reflect loop
+                        to dynamically adjust its strategy.</p>
+                    <a class="btn btn-sm btn-outline" href="AdaptivePlanningMode.html">Learn More</a>
+                </div>
+                <div class="mode-card fade-in delay-3">
+                    <span class="mode-tag">Scale</span>
+                    <div class="mode-icon"><i class="fas fa-sitemap"></i></div>
+                    <h4>Hierarchical</h4>
+                    <p>The Manager. Best for massive projects with many dependencies. Decomposes requests into a
+                        goal tree with real-time visual progress tracking.</p>
+                    <a class="btn btn-sm btn-outline" href="HierarchicalPlanningMode.html">Learn More</a>
+                </div>
+                <div class="mode-card fade-in delay-4">
+                    <span class="mode-tag">Governance</span>
+                    <div class="mode-icon"><i class="fas fa-users"></i></div>
+                    <h4>Council</h4>
+                    <p>The Board. Best for high-stakes decisions. Simulates a meeting between specialized AI personas
+                        who nominate and vote on tasks.</p>
+                    <a class="btn btn-sm btn-outline" href="CouncilMode.html">Learn More</a>
+                </div>
+                <div class="mode-card fade-in delay-5">
+                    <span class="mode-tag">Batch</span>
+                    <div class="mode-icon"><i class="fas fa-layer-group"></i></div>
+                    <h4>Parallel</h4>
+                    <p>The Multitasker. Best for batch processing. Runs multiple tasks simultaneously using templates
+                        and variables across many files.</p>
+                    <a class="btn btn-sm btn-outline" href="ParallelMode.html">Learn More</a>
+                </div>
+            </div>
+            <p class="section-punchline fade-in">
+                Not sure which mode to use?
+                <a href="TaskPlanning.html" style="color: var(--accent-color);">Read the planning guide →</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- ===== DOWNLOAD / INSTALL ===== -->
+    <section class="section" id="install">
+        <div class="container">
+            <h2 class="section-title">Download &amp; Install</h2>
+            <p class="section-subtitle">
+                Native installers for every major platform. Up and running in under a minute.
+            </p>
+            <div class="platform-grid">
+                <div class="platform-card fade-in">
+                    <div class="platform-icon"><i class="fab fa-windows"></i></div>
+                    <h4>Windows</h4>
+                    <p>Download and run the MSI installer. Adds to Start Menu and system tray automatically.</p>
+                    <code>.msi</code>
+                </div>
+                <div class="platform-card fade-in delay-1">
+                    <div class="platform-icon"><i class="fab fa-apple"></i></div>
+                    <h4>macOS</h4>
+                    <p>Download the DMG, drag to Applications. Appears in your menu bar on launch.</p>
+                    <code>.dmg</code>
+                </div>
+                <div class="platform-card fade-in delay-2">
+                    <div class="platform-icon"><i class="fab fa-linux"></i></div>
+                    <h4>Linux</h4>
+                    <p>Install the Debian package. Integrates with your desktop environment's system tray.</p>
+                    <code>.deb</code>
+                </div>
+            </div>
+            <div class="text-center mt-4 fade-in">
+                <a class="btn btn-primary btn-lg" href="https://github.com/SimiaCryptus/Cognotik/releases"
+                   rel="noopener" target="_blank">
+                    <i class="fas fa-download"></i> Download Latest Release
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== GETTING STARTED ===== -->
+    <section class="section" id="getting-started">
+        <div class="container container-narrow">
+            <h2 class="section-title">Getting Started</h2>
+
+            <h3>First Launch</h3>
             <ol>
-                <li>Launch the application. The Cognotik icon will appear in your system tray.</li>
-                <li>The Welcome Wizard will open in your default browser (usually at `http://localhost:7681`).</li>
-                <li>Click <strong>User Settings</strong> to configure your API keys (OpenAI, Anthropic, etc.).</li>
+                <li>Install and launch the application. The Cognotik icon appears in your system tray.</li>
+                <li>The Welcome Wizard opens in your default browser (usually at
+                    <code>http://localhost:7681</code>).
+                </li>
+                <li>Click <strong>User Settings</strong> to configure your API keys (OpenAI, Anthropic, Google, etc.).</li>
                 <li>(Optional) Configure <strong>Local Tools</strong> to allow the agent to use specific command-line
-                    utilities.
+                    utilities on your machine.
                 </li>
             </ol>
 
-            <h3>Usage</h3>
-            <p>From the Welcome Wizard, select a mode to start a session:</p>
+            <h3>Starting a Session</h3>
+            <p>From the Welcome Wizard, select a cognitive mode to start a session:</p>
             <ul>
-                <li><strong>Chat:</strong> Interactive task execution with the `TaskChatMode` strategy.</li>
-                <li><strong>Autonomous:</strong> Give the agent a high-level goal and let it plan and execute using
-                    `AutoPlanMode`.
+                <li><strong>Conversational:</strong> Interactive task execution with continuous history.
+                    Best for general assistance.
                 </li>
-                <li><strong>Plan Ahead:</strong> Create a detailed plan before execution begins with `PlanAheadMode`.
+                <li><strong>Waterfall:</strong> Create a detailed plan before execution begins.
+                    Best for well-defined projects.
+                </li>
+                <li><strong>Adaptive:</strong> Give the agent a high-level goal and let it plan, execute, and adjust
+                    dynamically. Best for complex problems.
+                </li>
+                <li><strong>Hierarchical:</strong> Decompose large requests into a goal tree with dependency tracking.
+                    Best for massive projects.
                 </li>
             </ul>
+
+            <h3>What Happens Next</h3>
+            <p>
+                Each session opens in a browser tab with a rich UI — panels for conversation, output, logs, and file
+                diffs. You review every plan and approve every change before it's applied. Nothing runs without your
+                consent.
+            </p>
         </div>
     </section>
+
+    <!-- ===== SEE IT IN ACTION ===== -->
+    <section class="section" id="demos">
+        <div class="container">
+            <h2 class="section-title">See It in Action</h2>
+            <p class="section-subtitle">
+                Guided walkthroughs showing real desktop workflows.
+            </p>
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-play-circle"></i></div>
+                    <h3>Getting Started Tour</h3>
+                    <p>Install, configure API keys, explore the filesystem, and generate your first project — all from
+                        natural language.</p>
+                    <a class="btn btn-secondary" href="tours/core/index.html">Watch Tour</a>
+                </div>
+                <div class="feature-card fade-in delay-1">
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <h3>Office &amp; Document Tools</h3>
+                    <p>AI-powered plugins for presentations, OCR imports, LaTeX typesetting, and polished document
+                        generation.</p>
+                    <a class="btn btn-secondary" href="tours/office/index.html">Watch Tour</a>
+                </div>
+                <div class="feature-card fade-in delay-2">
+                    <div class="feature-icon"><i class="fas fa-briefcase"></i></div>
+                    <h3>Jobs &amp; Career</h3>
+                    <p>Career advice, opportunity hunting, and resume tailoring — all powered by Cognotik's plugin
+                        suite.</p>
+                    <a class="btn btn-secondary" href="tours/jobs/index.html">Watch Tour</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ALSO AVAILABLE ===== -->
+    <section class="section" id="also">
+        <div class="container">
+            <div class="cta-banner fade-in">
+                <h3>Also Available As…</h3>
+                <p>Cognotik runs wherever you work. Choose the form factor that fits your workflow.</p>
+                <div>
+                    <a class="btn btn-primary btn-lg" href="intellij-plugin.html">
+                        <i class="fas fa-puzzle-piece"></i> IntelliJ Plugin
+                    </a>
+                    <a class="btn btn-secondary btn-lg" href="embedding.html">
+                        <i class="fas fa-code"></i> Embed in Your Build
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
 </main>
+
+<!-- Structured Data for SEO -->
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Cognotik Desktop",
+        "description": "AI Application Server for your desktop. Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes.",
+        "url": "https://cognotik.com/desktop.html",
+        "downloadUrl": "https://github.com/SimiaCryptus/Cognotik/releases",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": ["Windows", "macOS", "Linux"],
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "SimiaCryptus",
+            "url": "https://simia.net"
+        },
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "codeRepository": "https://github.com/SimiaCryptus/Cognotik"
+    }
+</script>
+
+<!-- Footer -->
 <footer>
     <div class="container">
         <div class="footer-content">
-            <p>© 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All
+            <p>&copy; 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All
                 rights reserved.</p>
             <ul class="footer-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
                 <li><a href="desktop.html">Desktop</a></li>
                 <li><a href="embedding.html">Embedding</a></li>
-                <li><a href="contribute.html">Contribute</a></li>
-                <li><a href="monetization.html">Invest</a></li>
+                <li><a href="tours/core/index.html">Tours</a></li>
                 <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
             </ul>
         </div>
     </div>
 </footer>
-<script src="assets/scripts/logo-animation.js"></script>
+
+<!-- Scripts -->
+<script src="assets/scripts/os-detection.js"></script>
+<script src="assets/scripts/github-api.js"></script>
+<script src="assets/scripts/download-ui.js"></script>
 <script src="assets/scripts/main.js"></script>
 </body>
 </html>
