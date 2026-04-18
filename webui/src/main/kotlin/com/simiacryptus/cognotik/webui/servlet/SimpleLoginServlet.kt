@@ -29,6 +29,8 @@ class SimpleLoginServlet : HttpServlet() {
 
   companion object {
     private val log = LoggerFactory.getLogger(SimpleLoginServlet::class.java)
+     private const val LOGIN_TEMPLATE_RESOURCE = "login.html"
+     private const val REGISTER_TEMPLATE_RESOURCE = "register.html"
     private const val DEBOUNCE_INTERVAL_MS = 30_000L // 30 seconds between registration attempts per IP/username
     private val registrationAttempts = ConcurrentHashMap<String, Long>()
     private val dialogActive = AtomicBoolean(false)
@@ -230,6 +232,20 @@ class SimpleLoginServlet : HttpServlet() {
         dialogActive.set(false)
       }
     }
+   /**
+    * Loads an HTML template from the classpath resources relative to this class.
+    * Templates use HTML comment placeholders like `<!--PLACEHOLDER-->` which are
+    * replaced by the servlet when serving pages.
+    */
+   private fun loadTemplate(resourceName: String): String {
+     val stream = SimpleLoginServlet::class.java.getResourceAsStream(resourceName)
+       ?: throw IllegalStateException("Template resource not found: $resourceName")
+     return stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+   }
+   private fun escapeHtml(text: String): String {
+     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+       .replace("\"", "&quot;").replace("'", "&#x27;")
+   }
   }
 
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
@@ -407,57 +423,15 @@ class SimpleLoginServlet : HttpServlet() {
       if (encodedTarget != null) """<input type="hidden" name="target" value="$encodedTarget">""" else ""
     val registerLink =
       if (encodedTarget != null) "/login?action=register&target=$encodedTarget" else "/login?action=register"
+     val errorBlock = if (error != null) """<div class="error">${escapeHtml(error)}</div>""" else ""
+     val html = loadTemplate(LOGIN_TEMPLATE_RESOURCE)
+       .replace("<!--ERROR_BLOCK-->", errorBlock)
+       .replace("<!--TARGET_HIDDEN_FIELD-->", targetHiddenField)
+       .replace("<!--REGISTER_LINK-->", registerLink)
+
     resp.contentType = "text/html"
     resp.characterEncoding = "UTF-8"
-    resp.writer.write(
-      """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Login</title>
-                <style>
-                    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f5f5f5; }
-                    .login-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-                    h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
-                    .form-group { margin-bottom: 1rem; }
-                    label { display: block; margin-bottom: 0.5rem; color: #555; font-weight: bold; }
-                    input[type="text"], input[type="password"] { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
-                    input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 3px rgba(74,144,217,0.3); }
-                    button { width: 100%; padding: 0.75rem; background-color: #4a90d9; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
-                    button:hover { background-color: #357abd; }
-                    .error { color: #d9534f; background-color: #fdf2f2; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; text-align: center; }
-                    .links { text-align: center; margin-top: 1rem; }
-                    .links a { color: #4a90d9; text-decoration: none; }
-                    .links a:hover { text-decoration: underline; }
-                </style>
-            </head>
-            <body>
-                <div class="login-container">
-                    <h2>Login</h2>
-                    ${if (error != null) """<div class="error">$error</div>""" else ""}
-                    <form method="POST" action="/login/" autocomplete="on">
-                        <input type="hidden" name="action" value="login">
-                       $targetHiddenField
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" autocomplete="username" required autofocus>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" autocomplete="current-password" required>
-                        </div>
-                        <button type="submit">Login</button>
-                    </form>
-                    <div class="links">
-                       <a href="$registerLink">Don't have an account? Register</a>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """.trimIndent()
-    )
+     resp.writer.write(html)
   }
 
   private fun serveRegistrationPage(
@@ -472,111 +446,14 @@ class SimpleLoginServlet : HttpServlet() {
     val targetHiddenField =
       if (encodedTarget != null) """<input type="hidden" name="target" value="$encodedTarget">""" else ""
     val loginLink = if (encodedTarget != null) "/login/?target=$encodedTarget" else "/login/"
+     val errorBlock = if (error != null) """<div class="error">${escapeHtml(error)}</div>""" else ""
+     val html = loadTemplate(REGISTER_TEMPLATE_RESOURCE)
+       .replace("<!--ERROR_BLOCK-->", errorBlock)
+       .replace("<!--TARGET_HIDDEN_FIELD-->", targetHiddenField)
+       .replace("<!--LOGIN_LINK-->", loginLink)
+
     resp.contentType = "text/html"
     resp.characterEncoding = "UTF-8"
-    resp.writer.write(
-      """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Register</title>
-                <style>
-                    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f5f5f5; }
-                    .login-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-                    h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
-                    .form-group { margin-bottom: 1rem; }
-                    label { display: block; margin-bottom: 0.5rem; color: #555; font-weight: bold; }
-                    input[type="text"], input[type="password"] { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
-                    input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 3px rgba(74,144,217,0.3); }
-                    button { width: 100%; padding: 0.75rem; background-color: #4a90d9; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
-                    button:hover { background-color: #357abd; }
-                    .error { color: #d9534f; background-color: #fdf2f2; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; text-align: center; }
-                    .links { text-align: center; margin-top: 1rem; }
-                    .links a { color: #4a90d9; text-decoration: none; }
-                    .links a:hover { text-decoration: underline; }
-                    .password-strength { margin-top: 0.4rem; font-size: 0.85rem; min-height: 1.2em; }
-                    .strength-meter { height: 4px; border-radius: 2px; background: #eee; margin-top: 0.3rem; overflow: hidden; }
-                    .strength-meter-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background-color 0.3s; width: 0%; }
-                    .strength-weak { color: #d9534f; }
-                    .strength-fair { color: #f0ad4e; }
-                    .strength-good { color: #5cb85c; }
-                    .strength-strong { color: #0275d8; }
-                </style>
-            </head>
-            <body>
-                <div class="login-container">
-                    <h2>Register</h2>
-                    ${if (error != null) """<div class="error">$error</div>""" else ""}
-                    <form method="POST" action="/login/" autocomplete="on">
-                        <input type="hidden" name="action" value="register">
-                       $targetHiddenField
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" autocomplete="username" required autofocus>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" autocomplete="new-password" required>
-                            <div class="strength-meter"><div class="strength-meter-fill" id="strengthMeterFill"></div></div>
-                            <div class="password-strength" id="passwordStrength"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirmPassword">Confirm Password</label>
-                            <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
-                            <div class="password-strength" id="confirmMatch"></div>
-                        </div>
-                        <button type="submit">Register</button>
-                    </form>
-                    <div class="links">
-                       <a href="$loginLink">Already have an account? Login</a>
-                    </div>
-                </div>
-                <script>
-                (function() {
-                  var pw = document.getElementById('password');
-                  var cpw = document.getElementById('confirmPassword');
-                  var strengthEl = document.getElementById('passwordStrength');
-                  var meterFill = document.getElementById('strengthMeterFill');
-                  var matchEl = document.getElementById('confirmMatch');
-                  function evaluateStrength(p) {
-                    if (!p) return { score: 0, label: '', cls: '', tips: [] };
-                    var score = 0; var tips = [];
-                    if (p.length >= 6) score++; else tips.push('6+ characters recommended');
-                    if (p.length >= 10) score++;
-                    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++; else if (p.length > 0) tips.push('mix upper & lowercase');
-                    if (/\d/.test(p)) score++; else tips.push('add a number');
-                    if (/[^a-zA-Z0-9]/.test(p)) score++; else tips.push('add a special character');
-                    if (score <= 1) return { score: score, label: 'Weak', cls: 'strength-weak', tips: tips };
-                    if (score <= 2) return { score: score, label: 'Fair', cls: 'strength-fair', tips: tips };
-                    if (score <= 3) return { score: score, label: 'Good', cls: 'strength-good', tips: tips };
-                    return { score: score, label: 'Strong', cls: 'strength-strong', tips: [] };
-                  }
-                  function update() {
-                    var r = evaluateStrength(pw.value);
-                    if (!pw.value) { strengthEl.textContent = ''; meterFill.style.width = '0%'; meterFill.style.backgroundColor = '#eee'; }
-                    else {
-                      var pct = Math.min(100, (r.score / 5) * 100);
-                      var colors = { 'strength-weak': '#d9534f', 'strength-fair': '#f0ad4e', 'strength-good': '#5cb85c', 'strength-strong': '#0275d8' };
-                      meterFill.style.width = pct + '%';
-                      meterFill.style.backgroundColor = colors[r.cls] || '#eee';
-                      var tip = r.tips.length > 0 ? ' \u2014 ' + r.tips.slice(0, 2).join(', ') : '';
-                      strengthEl.innerHTML = '<span class="' + r.cls + '">' + r.label + tip + '</span>';
-                    }
-                    if (cpw.value && pw.value !== cpw.value) {
-                      matchEl.innerHTML = '<span class="strength-weak">Passwords do not match</span>';
-                    } else if (cpw.value && pw.value === cpw.value) {
-                      matchEl.innerHTML = '<span class="strength-good">Passwords match</span>';
-                    } else { matchEl.textContent = ''; }
-                  }
-                  pw.addEventListener('input', update);
-                  cpw.addEventListener('input', update);
-                })();
-                </script>
-            </body>
-            </html>
-            """.trimIndent()
-    )
+     resp.writer.write(html)
   }
 }

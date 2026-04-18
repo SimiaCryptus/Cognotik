@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/favicon.svg" rel="icon"/>
+    <title>Login — Cognotik</title>
+    <style>
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f4f6f9 0%, #e8edf5 50%, #dce3ed 100%);
+            color: #333;
+            line-height: 1.6;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative background shapes */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            z-index: 0;
+            opacity: 0.07;
+        }
+        body::before {
+            width: 600px;
+            height: 600px;
+            background: #3498db;
+            top: -200px;
+            right: -150px;
+        }
+        body::after {
+            width: 500px;
+            height: 500px;
+            background: #8e44ad;
+            bottom: -180px;
+            left: -120px;
+        }
+
+        /* ===== Logo Area ===== */
+        .brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 8px;
+            z-index: 1;
+        }
+        .brand-logo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        .brand img {
+            width: 48px;
+            height: 48px;
+            filter: drop-shadow(0 2px 8px rgba(52,152,219,0.25));
+        }
+        .brand-name {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2c3e50;
+            letter-spacing: -0.5px;
+        }
+        .brand-tagline {
+            font-size: 0.92em;
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        /* ===== Card ===== */
+        .login-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(12px);
+            padding: 36px 32px 28px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255,255,255,0.6);
+            width: 100%;
+            max-width: 420px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .login-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin: 0 0 6px;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        .subtitle {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 0.9em;
+            margin: 0 0 24px;
+        }
+
+        /* ===== Form ===== */
+        .form-group { margin-bottom: 16px; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #444;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #dde1e7;
+            border-radius: 8px;
+            font-size: 0.98em;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #fafbfc;
+            color: #333;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+            background: #fff;
+        }
+        input[type="text"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #b0b8c1;
+        }
+
+        /* ===== Button ===== */
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+            margin-top: 4px;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #2471a3 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.35);
+        }
+        button[type="submit"]:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+        button[type="submit"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
+        }
+
+        /* ===== Error ===== */
+        .error {
+            color: #c0392b;
+            background: linear-gradient(135deg, #fdf2f2 0%, #fce8e8 100%);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 0.9em;
+            border: 1px solid #f5c6cb;
+            font-weight: 500;
+        }
+
+        /* ===== Links ===== */
+        .links {
+            text-align: center;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid #eef0f3;
+        }
+        .links a {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.92em;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .links a:hover {
+            color: #2471a3;
+            text-decoration: underline;
+        }
+
+        /* ===== Divider ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0 16px;
+            gap: 12px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0e3e8;
+        }
+        .divider span {
+            font-size: 0.8em;
+            color: #aab0b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.78em;
+            color: #95a5a6;
+            z-index: 1;
+        }
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .footer img {
+            width: 16px;
+            height: 16px;
+            opacity: 0.5;
+        }
+
+        /* ===== Dark Mode ===== */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
+                color: #e0e0e0;
+            }
+            body::before { opacity: 0.04; }
+            body::after { opacity: 0.04; }
+
+            .brand-name { color: #e0e0e0; }
+            .brand-tagline { color: #777; }
+
+            .login-container {
+                background: rgba(30, 34, 46, 0.95);
+                border-color: rgba(255,255,255,0.06);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+            }
+            .login-container:hover {
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+            }
+
+            h2 { color: #e0e0e0; }
+            .subtitle { color: #666; }
+
+            label { color: #ccc; }
+
+            input[type="text"],
+            input[type="password"] {
+                background: #2a2e3a;
+                border-color: #3a3f4c;
+                color: #e0e0e0;
+            }
+            input[type="text"]:focus,
+            input[type="password"]:focus {
+                border-color: #3498db;
+                background: #2e3340;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            }
+            input[type="text"]::placeholder,
+            input[type="password"]::placeholder {
+                color: #555;
+            }
+
+            .error {
+                background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
+                color: #e74c3c;
+                border-color: #5a2a2a;
+            }
+
+            .links { border-top-color: #2a2e3a; }
+            .links a { color: #5dade2; }
+            .links a:hover { color: #85c1e9; }
+
+            .divider::before, .divider::after { background: #333; }
+            .divider span { color: #555; }
+
+            .footer { color: #555; }
+            .footer img { opacity: 0.3; }
+
+            button[type="submit"] {
+                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+            }
+            button[type="submit"]:hover {
+                box-shadow: 0 6px 20px rgba(52, 152, 219, 0.25);
+            }
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 480px) {
+            body { padding: 16px; }
+            .login-container { padding: 28px 22px 22px; }
+            .brand img { width: 40px; height: 40px; }
+            .brand-name { font-size: 1.5em; }
+        }
+
+        /* ===== Animations ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .brand { animation: fadeInUp 0.5s ease-out; }
+        .login-container { animation: fadeInUp 0.6s ease-out 0.1s both; }
+        .footer { animation: fadeInUp 0.5s ease-out 0.2s both; }
+    </style>
+</head>
+<body>
+    <div class="brand">
+        <div class="brand-logo-row">
+            <img alt="Cognotik Logo" src="/logo.svg">
+            <span class="brand-name">Cognotik</span>
+        </div>
+        <p class="brand-tagline">AI-powered applications for analysis, creation, and automation</p>
+    </div>
+
+    <div class="login-container">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Sign in to your account to continue</p>
+        <!--ERROR_BLOCK-->
+        <form method="POST" action="/login/" autocomplete="on">
+            <input type="hidden" name="action" value="login">
+            <!--TARGET_HIDDEN_FIELD-->
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" placeholder="Enter your username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit">Sign In</button>
+        </form>
+        <div class="links">
+            <a href="<!--REGISTER_LINK-->">Don't have an account? <strong>Create one</strong></a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-content">
+            <img alt="Cognotik" src="/logo.svg">
+            <span>Cognotik &copy; 2026 SimiaCryptus Software</span>
+        </div>
+    </div>
+</body>
+</html>
