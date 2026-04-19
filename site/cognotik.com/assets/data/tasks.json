@@ -17,6 +17,11 @@
       "src": "premium.json"
     },
     {
+      "label": "Sponsors",
+      "type": "link",
+      "url": "sponsors.html"
+    },
+    {
       "label": "Docs",
       "type": "submenu",
       "items": [
