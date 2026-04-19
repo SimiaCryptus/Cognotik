@@ -1,0 +1,325 @@
+
+
+
+
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cmap}
+\usepackage[T1]{fontenc}
+\usepackage{libertine}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fontawesome5}
+\usepackage{needspace}
+\usepackage[parfill]{parskip}
+
+% Define colors (simplified from standard)
+\definecolor{sectioncolor}{RGB}{41, 98, 255}
+\definecolor{linkcolor}{RGB}{41, 98, 255}
+\definecolor{textcolor}{RGB}{45, 45, 55}
+\definecolor{accentcolor}{RGB}{100, 116, 139}
+
+% Configure hyperlinks
+\hypersetup{
+    pdftitle={Resume - Alex Rivera },
+    pdfauthor={Alex Rivera},
+    pdfsubject={Resume},
+    pdfkeywords={  },
+    colorlinks=true,
+    linkcolor=linkcolor,
+    urlcolor=linkcolor,
+    citecolor=linkcolor,
+    pdfborder={0 0 0}
+}
+
+% Configure section formatting
+\titleformat{\section}{\color{sectioncolor}\Large\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{12pt}{8pt}
+
+\titleformat{\subsection}{\large\bfseries}{}{0em}{}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+
+% Reduce list spacing
+\setlist{nosep, leftmargin=1.5em, topsep=2pt, itemsep=2pt}
+
+\begin{document}
+
+% --- HEADER ---
+\begin{center}
+    {\Huge\bfseries\color{textcolor} \MakeUppercase{Alex Rivera} } \\
+    \vspace{0.2cm}
+    {\Large\color{sectioncolor} Senior Full-Stack Engineer | Rust \& Svelte Specialist } \\
+    \vspace{0.2cm}
+    
+    \small
+    
+        \faIcon{map-marker-alt} San Francisco, CA (Remote Friendly) \quad
+    
+    
+        \faIcon{envelope} \href{mailto:alex.rivera@example.com}{alex.rivera@example.com} \quad
+    
+    
+    
+        \faIcon{linkedin} \href{linkedin.com/in/arivera-dev}{LinkedIn} \quad
+    
+    
+        \faIcon{github} \href{github.com/arivera-codes}{GitHub}
+    
+    
+    
+        \\ \vspace{0.1cm}
+        
+              \faIcon{link} \href{https://twitter.com/arivera\_dev}{Twitter} \quad
+        
+    
+\end{center}
+
+\vspace{0.2cm}
+
+% --- SUMMARY ---
+
+\section{Executive Summary}
+\color{textcolor}
+Senior Full-Stack Engineer with over 8 years of experience building high-performance distributed systems and intuitive user interfaces. Expert in \textbf{Rust (Actix)} and \textbf{Svelte}, with a deep background in \textbf{GCP} and \textbf{Kubernetes}. Passionate about enhancing \textbf{developer experience (DX)}, mentoring engineering teams, and contributing to open-source tooling. Proven track record in transitioning legacy monoliths to scalable microservices and implementing robust CI/CD pipelines.
+
+
+% --- CORE COMPETENCIES ---
+
+\section{Core Competencies}
+\begin{itemize}[label=\textbullet]
+    
+        \item Systems Programming (Rust)
+    
+        \item Modern Frontend (Svelte, TypeScript)
+    
+        \item Cloud Native Architecture (GCP, K8s)
+    
+        \item Microservices \& API Design
+    
+        \item CI/CD \& DevOps Automation
+    
+        \item Technical Mentorship \& Leadership
+    
+\end{itemize}
+
+
+% --- EXPERIENCE ---
+
+\section{Professional Experience}
+
+    \color{sectioncolor}
+    \textbf{
+        Senior Platform Engineer
+        \hfill
+        2021-03 - Present \\
+        DevStream Solutions
+        \hfill
+        Remote \\
+    }
+
+    \color{textcolor}
+    \vspace{2pt}
+    
+        {\footnotesize\color{accentcolor}\textbf{Technologies:} Rust, Actix, GCP, Kubernetes, Terraform, TypeScript } \\
+    
+    
+    
+        \begin{itemize}[label=\textbullet]
+        
+            \item
+            
+                Architected and deployed a high-throughput telemetry ingestion service using \textbf{Rust} and \textbf{Actix-web}, reducing latency by 40\% compared to the previous Node.js implementation.
+            
+            
+            
+        
+            \item
+            
+                Led the migration of core services from on-premise to \textbf{GCP}, leveraging GKE and Cloud Spanner for global scalability.
+            
+            
+            
+        
+            \item
+            
+                Developed a custom internal CLI tool in Rust to streamline developer workflows, improving deployment frequency by 25\%.
+            
+            
+            
+        
+            \item
+            
+                Mentored 4 junior and mid-level engineers through code reviews, architecture workshops, and pair programming, fostering a culture of continuous learning.
+            
+            
+            
+        
+            \item
+            
+                Implemented comprehensive \textbf{CI/CD pipelines} using GitHub Actions and Docker, ensuring 99.9\% build reliability.
+            
+            
+            
+        
+        \end{itemize}
+    
+    \vspace{6pt}
+
+    \color{sectioncolor}
+    \textbf{
+        Full-Stack Developer
+        \hfill
+        2018-06 - 2021-02 \\
+        Interface Labs
+        \hfill
+        Austin, TX \\
+    }
+
+    \color{textcolor}
+    \vspace{2pt}
+    
+        {\footnotesize\color{accentcolor}\textbf{Technologies:} Svelte, TypeScript, Node.js, AWS, PostgreSQL } \\
+    
+    
+    
+        \begin{itemize}[label=\textbullet]
+        
+            \item
+            
+                Designed and built a real-time dashboard using \textbf{Svelte} and SvelteKit, providing users with instant insights into system performance.
+            
+            
+            
+        
+            \item
+            
+                Optimized frontend bundle sizes by 60\% through advanced tree-shaking and Svelte's compile-time optimizations.
+            
+            
+            
+        
+            \item
+            
+                Collaborated with product designers to create a reusable UI component library, ensuring visual consistency across multiple product lines.
+            
+            
+            
+        
+            \item
+            
+                Integrated AWS Lambda and API Gateway to handle bursty traffic patterns for seasonal marketing campaigns.
+            
+            
+            
+        
+        \end{itemize}
+    
+    \vspace{6pt}
+
+    \color{sectioncolor}
+    \textbf{
+        Software Engineer
+        \hfill
+        2015-07 - 2018-05 \\
+        DataPulse Systems
+        \hfill
+        Boston, MA \\
+    }
+
+    \color{textcolor}
+    \vspace{2pt}
+    
+        {\footnotesize\color{accentcolor}\textbf{Technologies:} Kotlin, JVM, Kafka, Docker, Spring Boot } \\
+    
+    
+    
+        \begin{itemize}[label=\textbullet]
+        
+            \item
+            
+                Developed event-driven microservices using \textbf{Kotlin} and \textbf{Apache Kafka} to process millions of events per second.
+            
+            
+            
+        
+            \item
+            
+                Refactored a legacy Java monolith into a suite of Spring Boot services, improving maintainability and deployment velocity.
+            
+            
+            
+        
+            \item
+            
+                Implemented automated integration testing suites that reduced production regressions by 15\%.
+            
+            
+            
+        
+        \end{itemize}
+    
+    \vspace{6pt}
+
+
+
+% --- EDUCATION ---
+
+\section{Education}
+\needspace{2\baselineskip}
+\noindent\textbf{Massachusetts Institute of Technology (MIT)} \\
+\textit{B.S. in Computer Science and Engineering}
+
+
+% --- PUBLICATIONS ---
+
+
+% --- PROJECTS ---
+
+\section{Open Source Projects}
+
+    \needspace{3\baselineskip}
+    \noindent
+    \textbf{Rust-DX-Toolkit}
+    \hfill 
+    
+    
+    
+        \par{\footnotesize \faIcon{github} \href{github.com/arivera-codes/rust-dx-toolkit}{github.com/arivera-codes/rust-dx-toolkit}}
+    
+    
+    
+        \par{\footnotesize\color{accentcolor}\textbf{Technologies:} Rust, Macros }
+    
+    
+    \vspace{2pt}
+    \begin{itemize}[label=\textbullet]
+        \item An open-source collection of macros and utilities designed to improve the developer experience when building Actix-web services.
+        
+            
+               \item Gained 500+ stars on GitHub.
+            
+               \item Used by several small startups to accelerate their Rust backend development.
+            
+        
+    \end{itemize}
+    \vspace{4pt}
+
+
+
+% --- SKILLS ---
+
+\section{Technical Skills}
+
+    \textbf{\color{sectioncolor}Languages:} \hfill\color{textcolor}Rust, TypeScript, Kotlin, Go, SQL \\
+
+    \textbf{\color{sectioncolor}:} \hfill\color{textcolor}Actix-web, Svelte / SvelteKit, React, Spring Boot, Tokio \\
+
+    \textbf{\color{sectioncolor}:} \hfill\color{textcolor}Google Cloud Platform (GCP), Kubernetes (K8s), Docker, Terraform, AWS, GitHub Actions \\
+
+    \textbf{\color{sectioncolor}Architectures:} \hfill\color{textcolor}Microservices, Event-Driven Architecture, REST \& gRPC, Serverless \\
+
+
+
+\end{document}

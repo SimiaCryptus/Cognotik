@@ -1,0 +1,1 @@
+Ensure the skills section prominently features cloud and Kubernetes experience. Improve visual hierarchy of section headings.

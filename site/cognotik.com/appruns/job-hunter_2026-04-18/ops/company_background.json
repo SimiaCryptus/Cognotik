@@ -1,0 +1,18 @@
+{
+  "seed_method" : "GoogleProxy",
+  "fetch_method" : "HttpClient",
+  "processing_strategy" : "DefaultSummarizer",
+  "respect_robots_txt" : true,
+  "max_pages_per_task" : 30,
+  "max_depth" : 3,
+  "max_queue_size" : 100,
+  "concurrent_page_processing" : 3,
+  "max_final_output_size" : 30000,
+  "min_content_length" : 500,
+  "follow_links" : true,
+  "allow_revisit_pages" : false,
+  "create_final_summary" : true,
+  "task_type" : "CrawlerAgent",
+  "name" : "CrawlerAgent",
+  "verbose" : false
+}

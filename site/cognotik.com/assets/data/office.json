@@ -4,5 +4,23 @@
     "url": "tours/office/index.html",
     "type": "link",
     "description": "Complete Video Tour"
-  }
+   },
+   {
+     "label": "Presentation Creator",
+     "url": "appruns/presentation-creator_2026-04-18/index.html",
+     "type": "link",
+     "description": "AI-powered tool for creating and updating presentations from notes. Generate professional presentations from your content, then refine them with targeted updates."
+   },
+   {
+     "label": "OCR Import",
+     "url": "appruns/ocr-import_2026-04-18/index.html",
+     "type": "link",
+     "description": "AI-powered OCR tool for extracting text from images and scanned documents. Convert PDFs and images into clean, editable Markdown with drag-and-drop simplicity."
+   },
+   {
+     "label": "TeX Wizard",
+     "url": "appruns/tex-wizard_2026-04-18/index.html",
+     "type": "link",
+     "description": "A LaTeX document authoring and rendering pipeline. Create, render, and build LaTeX documents with ERB templating, PDF compilation, and automatic rebuild capabilities."
+   }
 ]

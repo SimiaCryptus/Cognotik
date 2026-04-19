@@ -10,5 +10,41 @@
     "url": "tours/jobs/index.html",
     "type": "link",
     "description": "Interactive video tour of AI-driven career tools — personalized advice, automated job hunting, and resume tailoring"
+  },
+  {
+    "label": "Presentation Creator",
+    "url": "appruns/presentation-creator_2026-04-18/index.html",
+    "type": "link",
+    "description": "AI-powered tool for creating and updating presentations from notes. Generate professional presentations from your content, then refine them with targeted updates."
+  },
+  {
+    "label": "OCR Import",
+    "url": "appruns/ocr-import_2026-04-18/index.html",
+    "type": "link",
+    "description": "AI-powered OCR tool for extracting text from images and scanned documents. Convert PDFs and images into clean, editable Markdown with drag-and-drop simplicity."
+  },
+  {
+    "label": "TeX Wizard",
+    "url": "appruns/tex-wizard_2026-04-18/index.html",
+    "type": "link",
+    "description": "A LaTeX document authoring and rendering pipeline. Create, render, and build LaTeX documents with ERB templating, PDF compilation, and automatic rebuild capabilities."
+  },
+  {
+    "label": "Career Advisor",
+    "url": "appruns/career-advisor_2026-04-18/index.html",
+    "type": "link",
+    "description": "An AI-powered career coaching pipeline that analyzes your professional situation, explores opportunities, and produces a personalized career development plan."
+  },
+  {
+    "label": "AI Job Hunter",
+    "url": "appruns/job-hunter_2026-04-18/index.html",
+    "type": "link",
+    "description": "An automated job search pipeline that uses AI to find, research, and apply for jobs matching your profile. Search the web, extract opportunities, research companies, and generate tailored applications."
+  },
+  {
+    "label": "Resume Customizer",
+    "url": "appruns/resume-customizer_2026-04-18/index.html",
+    "type": "link",
+    "description": "AI-powered resume tailoring application that customizes your resume for specific job opportunities using a multi-step pipeline. Analyze job descriptions, research companies, and generate polished PDF documents."
   }
 ]

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeX Wizard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+<div class="app-container">
+    <header class="app-header">
+        <h1>📐 TeX Wizard</h1>
+        <p class="subtitle">AI-powered LaTeX document authoring &amp; PDF rendering</p>
+        <div class="header-controls">
+            <div class="model-selectors">
+                <label>
+                    Smart Model
+                    <select id="smart-model-select"></select>
+                </label>
+                <label>
+                    Fast Model
+                    <select id="fast-model-select"></select>
+                </label>
+                 <label>
+                     Image Model
+                     <select id="image-model-select"></select>
+                 </label>
+            </div>
+            <div class="session-info">
+                <span id="session-id-display" class="session-badge"></span>
+            </div>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="main-content">
+        <!-- Left Panel: Inputs -->
+        <section class="panel panel-inputs">
+            <h2>📝 Inputs</h2>
+
+            <!-- Notes Editor -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Notes</h3>
+                    <div class="card-actions">
+                        <button id="btn-save-notes" class="btn btn-sm btn-primary">💾 Save</button>
+                        <span id="status-notes" class="status-msg"></span>
+                    </div>
+                </div>
+                <textarea id="editor-notes" class="editor" rows="12"
+                          placeholder="Enter your document notes here. Describe what you want in your LaTeX document..."></textarea>
+            </div>
+
+            <!-- Update Notes Editor -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Update Notes</h3>
+                    <div class="card-actions">
+                        <button id="btn-save-update-notes" class="btn btn-sm btn-primary">💾 Save</button>
+                        <span id="status-update-notes" class="status-msg"></span>
+                    </div>
+                </div>
+                <textarea id="editor-update-notes" class="editor" rows="6"
+                          placeholder="Describe changes you want made to the existing document..."></textarea>
+            </div>
+            <!-- Style Directives Editor -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Style Directives</h3>
+                    <div class="card-actions">
+                        <button id="btn-save-style" class="btn btn-sm btn-primary">💾 Save</button>
+                        <span id="status-style" class="status-msg"></span>
+                    </div>
+                </div>
+                <textarea id="editor-style" class="editor" rows="6"
+                          placeholder="Optional: Enter style directives here (e.g., preferred LaTeX packages, document class, formatting rules, font choices, color schemes...)"></textarea>
+            </div>
+        </section>
+
+        <!-- Center Panel: Pipeline -->
+        <section class="panel panel-pipeline">
+            <h2>⚙️ Pipeline</h2>
+
+            <!-- Step 1: Render TeX from template -->
+            <div class="pipeline-step" id="step-render-tex">
+                <div class="step-header">
+                    <span id="badge-render-tex" class="badge badge-pending">1</span>
+                    <div class="step-info">
+                        <h3>Render TeX</h3>
+                        <p>Generate <code>doc.tex</code> from notes</p>
+                    </div>
+                    <button id="btn-render-tex" class="btn btn-primary">▶ Render</button>
+                </div>
+                <div id="render-tex-links" class="session-link-container"></div>
+                <div id="status-render-tex" class="step-status"></div>
+            </div>
+
+
+            <!-- Step 2: Build PDF -->
+            <div class="pipeline-step" id="step-render-pdf">
+                <div class="step-header">
+                    <span id="badge-render-pdf" class="badge badge-pending">2</span>
+                    <div class="step-info">
+                        <h3>Build PDF</h3>
+                        <p>Compile <code>doc.tex</code> → <code>doc.pdf</code></p>
+                    </div>
+                    <button id="btn-render-pdf" class="btn btn-accent">🔨 Build</button>
+                </div>
+                <div id="render-pdf-links" class="session-link-container"></div>
+                <div id="status-render-pdf" class="step-status"></div>
+            </div>
+
+            <!-- Step 3: Update TeX -->
+            <div class="pipeline-step" id="step-update-tex">
+                <div class="step-header">
+                    <span id="badge-update-tex" class="badge badge-pending">3</span>
+                    <div class="step-info">
+                        <h3>Update TeX</h3>
+                        <p>Revise <code>doc.tex</code> using update notes</p>
+                    </div>
+                    <button id="btn-update-tex" class="btn btn-secondary">✏️ Update</button>
+                </div>
+                <div id="update-tex-links" class="session-link-container"></div>
+                <div id="status-update-tex" class="step-status"></div>
+            </div>
+
+
+
+            <!-- Build Log -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>📋 Build Log</h3>
+                    <button id="btn-refresh-build-log" class="btn btn-sm btn-ghost">🔄 Refresh</button>
+                </div>
+                <pre id="build-log-content" class="log-viewer">No build log yet.</pre>
+            </div>
+        </section>
+
+        <!-- Right Panel: Output -->
+        <section class="panel panel-output">
+            <h2>📄 Output</h2>
+
+            <!-- TeX Source Preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>doc.tex</h3>
+                    <div class="card-actions">
+                        <button id="btn-refresh-tex" class="btn btn-sm btn-ghost">🔄 Refresh</button>
+                        <button id="btn-save-tex" class="btn btn-sm btn-primary">💾 Save</button>
+                        <button id="btn-download-tex" class="btn btn-sm btn-ghost">⬇ Download</button>
+                        <span id="status-tex" class="status-msg"></span>
+                    </div>
+                </div>
+                <textarea id="editor-tex" class="editor editor-mono editor-tall"
+                          placeholder="LaTeX source will appear here after rendering..."></textarea>
+            </div>
+
+            <!-- PDF Preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>doc.pdf</h3>
+                    <div class="card-actions">
+                        <button id="btn-refresh-pdf" class="btn btn-sm btn-ghost">🔄 Refresh</button>
+                        <button id="btn-download-pdf" class="btn btn-sm btn-ghost">⬇ Download</button>
+                    </div>
+                </div>
+                <div id="pdf-preview-container" class="pdf-container">
+                    <p class="placeholder-text">PDF will appear here after building.</p>
+                </div>
+            </div>
+
+            <!-- Git Controls -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>🗂 Git</h3>
+                    <div class="card-actions">
+                        <button id="btn-git-init" class="btn btn-sm btn-ghost">Init</button>
+                        <button id="btn-git-commit" class="btn btn-sm btn-primary">Commit</button>
+                        <button id="btn-git-status" class="btn btn-sm btn-ghost">Status</button>
+                    </div>
+                </div>
+                <div id="git-status-display" class="git-status"></div>
+            </div>
+
+            <!-- Usage -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>📊 Token Usage</h3>
+                    <button id="btn-refresh-usage" class="btn btn-sm btn-ghost">🔄 Refresh</button>
+                </div>
+                <div class="usage-summary">
+                    <span>Prompt: <strong id="usage-prompt">—</strong></span>
+                    <span>Completion: <strong id="usage-completion">—</strong></span>
+                    <span>Total: <strong id="usage-total">—</strong></span>
+                    <span>Cost: <strong id="usage-cost">—</strong></span>
+                </div>
+                <div id="usage-table-container"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
