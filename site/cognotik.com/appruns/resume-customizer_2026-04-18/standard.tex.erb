@@ -1,0 +1,430 @@
+<%#
+@type TemplateData = {
+  personal: {
+    name?: string;
+    title?: string;
+    location?: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    github?: string;
+    website?: string;
+    socialMedia?: { platform: string; username?: string; url: string }[];
+  };
+  metadata?: {
+    theme?: {
+      primary?: string;
+      secondary?: string;
+      text?: string;
+      background?: string;
+      accent?: string;
+      backgroundAccent?: string;
+      gradientEnd?: string;
+    };
+  };
+  skills?: { [key: string]: string[] };
+  summary?: string;
+  coreCompetencies?: string[];
+  experience?: {
+    position: string;
+    company: string;
+    startDate: string;
+    endDate?: string;
+    employmentType?: string;
+    remote?: boolean;
+    location?: string;
+    teamSize?: string;
+    technologies?: string[];
+    highlights?: string[];
+    achievements?: string[];
+  }[];
+  education?: {
+    institution: string;
+    degree: string;
+    minor?: string;
+  }[];
+  publications?: {
+    name: string;
+    url?: string;
+    description?: string;
+  }[];
+  projects?: {
+    name: string;
+    url?: string;
+    startDate?: string;
+    endDate?: string;
+    repository?: string;
+    technologies?: string[];
+    description?: string;
+    highlights?: string[];
+  }[];
+};
+%>
+<% def getSkillLabel(key) %>
+def labelMap = [
+    'languages': 'Languages',
+    'mlai': 'ML/AI Technologies',
+    'ml/ai': 'ML/AI Technologies',
+    'ai': 'ML/AI Technologies',
+    'cloud': 'Cloud Infrastructure',
+    'infrastructure': 'Infrastructure',
+    'practices': 'Development Practices',
+    'development': 'Development Practices'
+]
+def lowerKey = key.toLowerCase()
+if (labelMap.containsKey(lowerKey)) {
+    return labelMap[lowerKey]
+}
+def label = key.replaceAll(/([A-Z])/, ' $1').trim()
+label = label.split(' ').collect { word -> word.substring(0,1).toUpperCase() + word.substring(1).toLowerCase() }.join(' ')
+label = label.replaceAll(/\bA I\b/, 'AI')
+return label
+<% enddef %>
+<% def formatSkills(skillsList) %>
+if (skillsList == null) return ""
+def names = skillsList.collect { item ->
+    if (item instanceof java.util.Map && item.name) return item.name
+    try { if (item.name) return item.name } catch(Exception e) {}
+    return item.toString()
+}
+return names.join(', ')
+<% enddef %>
+
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cmap}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{libertine}
+\usepackage[top=0.8in, bottom=0.8in, left=0.9in, right=0.9in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\usepackage{setspace}
+\usepackage{tikz}
+\usepackage{pgfornament}
+\usepackage{calc}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{afterpage}
+\usepackage{pagecolor}
+\usepackage{eso-pic}
+\usepackage{transparent}
+\usepackage[letterspace=85]{microtype}
+\usepackage{needspace}
+\usepackage{textcomp}
+\usepackage{qrcode}
+\usepackage{ragged2e}
+\usepackage[most]{tcolorbox}
+
+% Reserve space for footer
+\setlength{\footskip}{40pt}
+% Define card style for sections
+\newtcolorbox{infocard}[1][]{
+    enhanced,
+    colback=gradientstart!3,
+    colframe=gradientstart!20,
+    boxrule=0.3pt,
+    arc=4pt,
+    boxsep=2pt,
+    left=2pt, right=2pt, top=2pt, bottom=2pt,
+    drop shadow={opacity=0.1, shadow xshift=0pt, shadow yshift=1pt},
+    #1
+}
+\addtolength{\textheight}{-20pt}
+
+% Define colors
+\definecolor{headercolor}{RGB}{ <%= metadata.theme.secondary | default:"20, 20, 35" %> }
+\definecolor{sectioncolor}{RGB}{ <%= metadata.theme.primary | default:"41, 98, 255" %> }
+\definecolor{linkcolor}{RGB}{ <%= metadata.theme.primary | default:"41, 98, 255" %> }
+\definecolor{textcolor}{RGB}{ <%= metadata.theme.text | default:"45, 45, 55" %> }
+\definecolor{lightgray}{RGB}{ <%= metadata.theme.background | default:"248, 249, 252" %> }
+\definecolor{accentcolor}{RGB}{ <%= metadata.theme.accent | default:"100, 116, 139" %> }
+\definecolor{bgaccent}{RGB}{ <%= metadata.theme.backgroundAccent | default:"252, 252, 254" %> }
+\definecolor{goldaccent}{RGB}{255, 215, 0}
+\definecolor{gradientstart}{RGB}{ <%= metadata.theme.primary | default:"41, 98, 255" %> }
+\definecolor{gradientend}{RGB}{ <%= metadata.theme.gradientEnd | default:"123, 104, 238" %> }
+\definecolor{shadowcolor}{RGB}{200, 200, 220}
+
+% TikZ libraries
+\usetikzlibrary{calc,shadows,shapes.geometric,decorations.pathmorphing,patterns,fadings,positioning}
+
+% Configure hyperlinks
+\hypersetup{
+    pdftitle={Resume - <%= personal.name | escape %> },
+    pdfauthor={<%= personal.name | escape %>},
+    pdfsubject={Resume},
+    pdfkeywords={ },
+    colorlinks=true,
+    linkcolor=linkcolor,
+    urlcolor=linkcolor,
+    citecolor=linkcolor,
+    pdfborder={0 0 0}
+}
+
+% Configure page style with footer
+\pagestyle{fancy}
+\fancyhf{} % Clear all header and footer fields
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Footer configuration
+\fancyfoot[L]{%
+  \begin{tikzpicture}[remember picture, overlay, baseline=(current bounding box.center)]
+    \node[anchor=south west,
+          fill=white,
+          draw=gradientstart!30,
+          line width=0.3pt,
+          rounded corners=2pt,
+          inner sep=2pt] at ($(current page.south west) + (0.9in, 0.4in)$) {
+      \qrcode[height=0.4in]{ <% if personal.website %><%= personal.website | escape %><% else %>https://simiacrypt.us/<% end %> }
+    };
+  \end{tikzpicture}%
+}
+\fancyfoot[C]{%
+  \color{accentcolor}\footnotesize
+  <% if personal.name %><%= personal.name | escape %><% else %>Professional<% end %> Resume
+  <% if personal.title %> -- <%= personal.title | escape %><% end %>
+}
+\fancyfoot[R]{%
+  \color{accentcolor}\footnotesize Page \thepage
+}
+
+
+% Set line spacing
+\setstretch{1.1}
+
+% Create gradient background
+\AddToShipoutPictureBG{%
+  \AtPageUpperLeft{%
+    \tikz[remember picture,overlay] {
+      \fill[bgaccent] (0,0) rectangle (\paperwidth,-\paperheight);
+      \begin{scope}[transparency group, opacity=0.03]
+        \node[anchor=north east, inner sep=0pt] at (\paperwidth,0) {
+          \tikz{
+            \foreach \i in {1,...,20} {
+              \draw[gradientstart!\i!gradientend, line width=0.5pt, opacity=0.1]
+                (rand*2,rand*2) circle (rand*3+1);
+            }
+          }
+        };
+      \end{scope}
+    }
+  }%
+}
+
+% Configure section formatting
+\titleformat{\section}{\color{sectioncolor}\LARGE\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{10pt}{8pt}
+
+% Configure subsection formatting
+\titleformat{\subsection}{\color{headercolor}\large\bfseries}{}{0em}{}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+
+% Reduce list spacing
+\setlist{nosep, leftmargin=1.5em, topsep=1pt, itemsep=1pt}
+\setlist[itemize]{label=\tikz{\draw[fill=gradientstart,draw=none] (0,0) circle (2pt);}}
+
+% Custom commands
+\newcommand{\skillbox}[1]{%
+  \tikz[baseline=(char.base)]{
+    \node[fill=gradientstart!8,
+          draw=gradientstart!30,
+          line width=0.3pt,
+          inner sep=4pt,
+          rounded corners=2pt,
+          font=\footnotesize\sffamily] (char) {#1};
+  }%
+}
+
+% Enable microtype for better typography
+\microtypesetup{protrusion=true, expansion=true, kerning=true}
+
+\begin{document}
+% Resume generated from JSON
+
+% Header
+\begin{tikzpicture}[remember picture, overlay]
+  % Background shade
+  \shade[top color=gradientstart!15, bottom color=bgaccent, opacity=0.7]
+    (current page.north west) rectangle ($(current page.north east) + (0, -3.5cm)$);
+  \draw[gradientstart, line width=0.5pt, opacity=0.3]
+    ($(current page.north west) + (0, -3.5cm)$) -- ($(current page.north east) + (0, -3.5cm)$);
+
+ % Name and Title on the left
+  \node[anchor=north west, text width=\paperwidth-3cm] at ($(current page.north west) + (1.5cm, -1.2cm)$) (name) {
+    {\fontsize{32}{36}\selectfont\bfseries\color{headercolor} <% if personal.name %>\MakeUppercase{<%= personal.name | escape %>}<% else %>YOUR NAME<% end %> } \\
+    \vspace{0.1cm}
+    {\LARGE\itshape\color{gradientstart} <% if personal.title %><%= personal.title | escape %><% else %>Professional Title<% end %> }
+  };
+
+  % Contact Info below Name/Title
+  \node[anchor=north west, below=0.4cm of name] {
+    \begin{tabular}{@{}l@{\hspace{1.5cm}}l@{\hspace{1.5cm}}l@{}}
+    <% if personal.location %>\textcolor{gradientstart}{\faIcon{map-marker-alt}} \hspace{0.5em} <%= personal.location | escape %><% end %> &
+    <% if personal.email %>\textcolor{gradientstart}{\faIcon{envelope}} \hspace{0.5em} \href{mailto:<%= personal.email | escape %>}{<%= personal.email | escape %>}<% end %> &
+    \\
+    <% if personal.phone %>\textcolor{gradientstart}{\faIcon{phone}} \hspace{0.5em} <%= personal.phone | escape %><% end %> &
+    <% if personal.linkedin %>\textcolor{gradientstart}{\faIcon{linkedin}} \hspace{0.5em} \href{<%= personal.linkedin | escape %>}{<%= personal.linkedin | escape %>}<% end %> &
+    \\
+    <% if personal.github %>\textcolor{gradientstart}{\faIcon{github}} \hspace{0.5em} \href{<%= personal.github | escape %>}{<%= personal.github | escape %>}<% end %> &
+    <% if personal.website %>\textcolor{gradientstart}{\faIcon{globe}} \hspace{0.5em} \href{<%= personal.website | escape %>}{<%= personal.website | escape %>}<% end %> &
+    \\
+    <% if personal.socialMedia %>
+    <% for sm in personal.socialMedia %>
+        \textcolor{gradientstart}{\faIcon{link}} \hspace{0.5em} \href{<%= sm.url | escape %>}{<%= sm.platform | escape %><% if sm.username %>: <%= sm.username | escape %><% end %>} \\[0.15cm]
+    <% end %>
+    <% end %>
+    \end{tabular}
+  };
+\end{tikzpicture}
+
+\vspace{3cm}
+
+<% if summary %>
+    % Executive Summary
+    \section{Executive Summary}
+    \begin{infocard}[colback=white, drop shadow={opacity=0.15}]
+        \color{textcolor}
+        <%= summary | markdown %>
+    \end{infocard}
+<% end %>
+
+<% if coreCompetencies %>
+    % Core Competencies
+    \section{Core Competencies}
+    \begin{multicols}{2}
+    \begin{itemize}[itemsep=2pt, parsep=1pt]
+    <% for competency in coreCompetencies %>
+        \item <%= competency | escape | markdown %>
+    <% end %>
+    \end{itemize}
+    \end{multicols}
+<% end %>
+
+<% if experience %>
+    % Professional Experience
+    \section{Professional Experience}
+
+    <% for job in experience %>
+        \begin{infocard}
+        \begin{tabularx}{\linewidth}{@{}X r@{}}
+        \textbf{\large\color{headercolor} <%= job.position | escape %> } & \textbf{\color{accentcolor} <%= job.startDate %> - <%= job.endDate | default:'Present' %> } \\
+        \vspace{4pt}
+        \textit{\color{headercolor} <%= job.company | escape %> } \color{accentcolor} <% if job.employmentType %> $\cdot$ <%= job.employmentType | escape %><% end %><% if job.remote %> $\cdot$ Remote<% end %> & <% if job.location %>\textit{\color{accentcolor} <%= job.location | escape %> }<% end %> \\
+        <% if job.teamSize %>
+            \multicolumn{2}{@{}l@{}}{\footnotesize\color{accentcolor}Team Size: <%= job.teamSize %> } \\
+        <% end %>
+        <% if job.technologies %>
+            \multicolumn{2}{@{}l@{}}{\footnotesize\color{accentcolor}\raggedright Technologies: \mbox{}<%= job.technologies | join:', ' | escape %> } \\
+        <% end %>
+        \end{tabularx}
+
+        \vspace{2pt}
+        \color{textcolor}
+        <% if job.highlights %>
+            \begin{itemize}[itemsep=2pt, parsep=1pt, leftmargin=1em]
+            <% for highlight in job.highlights %>
+                \item
+                <% if highlight.url %>
+                    \textbf{\href{<%= highlight.url | escape %>}{\color{gradientstart} <%= highlight.title | escape %>}}
+                <% else %><% if highlight.title %>
+                    \textbf{\color{gradientstart} <%= highlight.title | escape %>}
+                <% else %>
+                    <%= highlight | escape | markdown %>
+                <% end %><% end %>
+                <% if highlight.type %>
+                    \textit{\color{accentcolor}(<%= highlight.type | escape %>)}
+                <% end %>
+                <% if highlight.description %>
+                    -- <%= highlight.description | escape | markdown %>
+                <% end %>
+            <% end %>
+            \end{itemize}
+        <% else %>
+            <% if job.achievements %>
+                \textbf{\color{gradientstart}Key Achievements:}
+                \begin{itemize}[itemsep=2pt, parsep=1pt, leftmargin=1em]
+                <% for achievement in job.achievements %>
+                    \item <%= achievement | escape | markdown %>
+                <% end %>
+                \end{itemize}
+            <% end %>
+        <% end %>
+        \end{infocard}
+        \vspace{6pt}
+    <% end %>
+<% end %>
+
+<% if education %>
+    % Education
+    \section{Education}
+    \begin{infocard}[drop shadow={opacity=0}]
+        \textbf{\color{headercolor} <%= education.institution | escape %> } \\
+        \color{textcolor} <%= education.degree | escape %><% if education.minor %> $\cdot$ <%= education.minor | escape %><% end %>
+    \end{infocard}
+<% end %>
+
+<% if publications %>
+    % Publications
+    \section{Publications}
+    <% for pub in publications %>
+        \noindent\begin{minipage}{\linewidth}
+        <% if pub.url %>
+            \textbf{\href{<%= pub.url | escape %>}{\color{gradientstart} <%= pub.name | escape %>}}
+        <% else %>
+            \textbf{\color{gradientstart} <%= pub.name | escape %>}
+        <% end %>
+        <% if pub.description %>
+        -- <%= pub.description | escape | markdown %>
+        <% end %>
+        \end{minipage}\par\vspace{4pt}
+    <% end %>
+<% end %>
+
+<% if projects %>
+    % Projects
+    \section{Open Source Projects}
+    <% for project in projects %>
+        \begin{infocard}
+        \textbf{\large\color{headercolor}<% if project.url %>\href{<%= project.url | escape %>}{<%= project.name | escape %>}<% else %><%= project.name | escape %><% end %>} \hfill <% if project.startDate %>\textbf{\color{gradientstart} <%= project.startDate %> - <%= project.endDate | default:'Present' %>}<% end %> \\
+        \vspace{2pt}
+        <% if project.repository %>
+            {\footnotesize\textcolor{gradientstart}{\faIcon{github}} \href{<%= project.repository | escape %>}{<%= project.repository | escape %>}} \\
+        <% end %>
+        <% if project.technologies %>
+            {\footnotesize\color{accentcolor}\raggedright Technologies: \mbox{}<%= project.technologies | join:', ' | escape %>} \\
+        <% end %>
+        \vspace{2pt}
+        \color{textcolor}
+        <%= project.description | escape | markdown %>
+        <% if project.highlights %>
+            \begin{itemize}[itemsep=2pt, parsep=1pt, leftmargin=1em]
+            <% for highlight in project.highlights %>
+                \item <%= highlight | escape | markdown %>
+            <% end %>
+            \end{itemize}
+        <% end %>
+        \end{infocard}
+        \vspace{4pt}
+    <% end %>
+<% end %>
+
+<% if skills %>
+    % Technical Skills
+    \section{Technical Skills}
+    <% for entry in skills %>
+        \noindent\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}X@{}}
+        \color{headercolor}
+        \textbf{\color{gradientstart}<%= getSkillLabel(entry.key) %>:} &
+        \color{textcolor}
+        <%= formatSkills(entry.value) | escape %>
+        \end{tabularx}\par\vspace{3pt}
+    <% end %>
+<% end %>
+
+\end{document}

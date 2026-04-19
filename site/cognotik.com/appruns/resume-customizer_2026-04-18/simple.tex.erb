@@ -1,0 +1,291 @@
+<%#
+@type TemplateData = {
+  personal: {
+    name?: string;
+    title?: string;
+    location?: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    github?: string;
+    website?: string;
+    socialMedia?: { platform: string; username?: string; url: string }[];
+  };
+  skills?: { [key: string]: string[] };
+  summary?: string;
+  coreCompetencies?: string[];
+  experience?: {
+    position: string;
+    company: string;
+    startDate: string;
+    endDate?: string;
+    location?: string;
+    technologies?: string[];
+    highlights?: string[];
+    achievements?: string[];
+  }[];
+  education?: {
+    institution: string;
+    degree: string;
+    minor?: string;
+  }[];
+  publications?: {
+    name: string;
+    url?: string;
+    description?: string;
+  }[];
+  projects?: {
+    name: string;
+    url?: string;
+    startDate?: string;
+    endDate?: string;
+    repository?: string;
+    technologies?: string[];
+    description?: string;
+    highlights?: string[];
+  }[];
+};
+%>
+<% def getSkillLabel(key) %>
+def labelMap = [
+    'languages': 'Languages',
+    'mlai': 'ML/AI Technologies',
+    'ml/ai': 'ML/AI Technologies',
+    'ai': 'ML/AI Technologies',
+    'cloud': 'Cloud Infrastructure',
+    'infrastructure': 'Infrastructure',
+    'practices': 'Development Practices',
+    'development': 'Development Practices'
+]
+def lowerKey = key.toLowerCase()
+if (labelMap.containsKey(lowerKey)) {
+    return labelMap[lowerKey]
+}
+def label = key.replaceAll(/([A-Z])/, ' $1').trim()
+label = label.split(' ').collect { word -> word.substring(0,1).toUpperCase() + word.substring(1).toLowerCase() }.join(' ')
+label = label.replaceAll(/\bA I\b/, 'AI')
+return label
+<% enddef %>
+<% def formatSkills(skillsList) %>
+if (skillsList == null) return ""
+def names = skillsList.collect { item ->
+    if (item instanceof java.util.Map && item.name) return item.name
+    try { if (item.name) return item.name } catch(Exception e) {}
+    return item.toString()
+}
+return names.join(', ')
+<% enddef %>
+
+\documentclass[11pt,letterpaper]{article}
+\usepackage{cmap}
+\usepackage[T1]{fontenc}
+\usepackage{libertine}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fontawesome5}
+\usepackage{needspace}
+\usepackage[parfill]{parskip}
+
+% Define colors (simplified from standard)
+\definecolor{sectioncolor}{RGB}{41, 98, 255}
+\definecolor{linkcolor}{RGB}{41, 98, 255}
+\definecolor{textcolor}{RGB}{45, 45, 55}
+\definecolor{accentcolor}{RGB}{100, 116, 139}
+
+% Configure hyperlinks
+\hypersetup{
+    pdftitle={Resume - <%= personal.name | escape %> },
+    pdfauthor={<%= personal.name | escape %>},
+    pdfsubject={Resume},
+    pdfkeywords={ <% if skills %><%= skills.keys.join(', ') | escape %><% end %> },
+    colorlinks=true,
+    linkcolor=linkcolor,
+    urlcolor=linkcolor,
+    citecolor=linkcolor,
+    pdfborder={0 0 0}
+}
+
+% Configure section formatting
+\titleformat{\section}{\color{sectioncolor}\Large\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{12pt}{8pt}
+
+\titleformat{\subsection}{\large\bfseries}{}{0em}{}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+
+% Reduce list spacing
+\setlist{nosep, leftmargin=1.5em, topsep=2pt, itemsep=2pt}
+
+\begin{document}
+
+% --- HEADER ---
+\begin{center}
+    {\Huge\bfseries\color{textcolor} <% if personal.name %>\MakeUppercase{<%= personal.name | escape %>}<% else %>YOUR NAME<% end %> } \\
+    \vspace{0.2cm}
+    {\Large\color{sectioncolor} <% if personal.title %><%= personal.title | escape %><% else %>Professional Title<% end %> } \\
+    \vspace{0.2cm}
+    
+    \small
+    <% if personal.location %>
+        \faIcon{map-marker-alt} <%= personal.location | escape %> \quad
+    <% end %>
+    <% if personal.email %>
+        \faIcon{envelope} \href{mailto:<%= personal.email | escape %>}{<%= personal.email | escape %>} \quad
+    <% end %>
+    <% if personal.phone %>
+        \faIcon{phone} <%= personal.phone | escape %> \quad
+    <% end %>
+    <% if personal.linkedin %>
+        \faIcon{linkedin} \href{<%= personal.linkedin | escape %>}{LinkedIn} \quad
+    <% end %>
+    <% if personal.github %>
+        \faIcon{github} \href{<%= personal.github | escape %>}{GitHub}
+    <% end %>
+    
+    <% if personal.socialMedia %>
+        \\ \vspace{0.1cm}
+        <% for sm in personal.socialMedia %>
+              \faIcon{link} \href{<%= sm.url | escape %>}{<%= sm.platform | escape %>} \quad
+        <% end %>
+    <% end %>
+\end{center}
+
+\vspace{0.2cm}
+
+% --- SUMMARY ---
+<% if summary %>
+\section{Executive Summary}
+\color{textcolor}
+<%= summary | markdown %>
+<% end %>
+
+% --- CORE COMPETENCIES ---
+<% if coreCompetencies %>
+\section{Core Competencies}
+\begin{itemize}[label=\textbullet]
+    <% for competency in coreCompetencies %>
+        \item <%= competency | escape | markdown %>
+    <% end %>
+\end{itemize}
+<% end %>
+
+% --- EXPERIENCE ---
+<% if experience %>
+\section{Professional Experience}
+<% for job in experience %>
+    \color{sectioncolor}
+    \textbf{
+        <% if job.position %><%= job.position | escape %><% else %>Position<% end %>
+        \hfill
+        <% if job.startDate %><%= job.startDate %> - <%= job.endDate | default:'Present' %><% end %> \\
+        <% if job.company %><%= job.company | escape %><% end %>
+        \hfill
+        <% if job.location %><%= job.location | escape %><% end %> \\
+    }
+
+    \color{textcolor}
+    \vspace{2pt}
+    <% if job.technologies %>
+        {\footnotesize\color{accentcolor}\textbf{Technologies:} <%= job.technologies | join:', ' | escape %> } \\
+    <% end %>
+    
+    <% if job.highlights %>
+        \begin{itemize}[label=\textbullet]
+        <% for highlight in job.highlights %>
+            \item
+            <% if highlight.url %>
+                \textbf{\href{<%= highlight.url | escape %>}{<%= highlight.title | escape %>}}
+            <% else %><% if highlight.title %>
+                \textbf{<%= highlight.title | escape %>}
+            <% else %>
+                <%= highlight | escape | markdown %>
+            <% end %><% end %>
+            <% if highlight.type %>
+                \textit{(<%= highlight.type | escape %>)}
+            <% end %>
+            <% if highlight.description %>
+                -- <%= highlight.description | escape | markdown %>
+            <% end %>
+        <% end %>
+        \end{itemize}
+    <% else %>
+        <% if job.achievements %>
+            \begin{itemize}[label=\textbullet]
+            <% for achievement in job.achievements %>
+                \item <%= achievement | escape | markdown %>
+            <% end %>
+            \end{itemize}
+        <% end %>
+    <% end %>
+    \vspace{6pt}
+<% end %>
+<% end %>
+
+% --- EDUCATION ---
+<% if education %>
+\section{Education}
+\needspace{2\baselineskip}
+\noindent\textbf{<%= education.institution | escape %>} \\
+\textit{<%= education.degree | escape %>}<% if education.minor %> $\cdot$ <%= education.minor | escape %><% end %>
+<% end %>
+
+% --- PUBLICATIONS ---
+<% if publications %>
+\section{Publications}
+\begin{itemize}[label=\textbullet]
+<% for pub in publications %>
+    \item 
+    <% if pub.url %>
+        \textbf{\href{<%= pub.url | escape %>}{<%= pub.name | escape %>}}
+    <% else %>
+        \textbf{<%= pub.name | escape %>}
+    <% end %>
+    <% if pub.description %>
+        -- <%= pub.description | escape | markdown %>
+    <% end %>
+<% end %>
+\end{itemize}
+<% end %>
+
+% --- PROJECTS ---
+<% if projects %>
+\section{Open Source Projects}
+<% for project in projects %>
+    \needspace{3\baselineskip}
+    \noindent
+    \textbf{<% if project.url %>\href{<%= project.url | escape %>}{<%= project.name | escape %>}<% else %><%= project.name | escape %><% end %>}
+    \hfill 
+    <% if project.startDate %>\textbf{\color{accentcolor} <%= project.startDate %> - <%= project.endDate | default:'Present' %> }<% end %>
+    
+    <% if project.repository %>
+        \par{\footnotesize \faIcon{github} \href{<%= project.repository | escape %>}{<%= project.repository | escape %>}}
+    <% end %>
+    
+    <% if project.technologies %>
+        \par{\footnotesize\color{accentcolor}\textbf{Technologies:} <%= project.technologies | join:', ' | escape %> }
+    <% end %>
+    
+    \vspace{2pt}
+    \begin{itemize}[label=\textbullet]
+        \item <%= project.description | escape | markdown %>
+        <% if project.highlights %>
+            <% for highlight in project.highlights %>
+               \item <%= highlight | escape | markdown %>
+            <% end %>
+        <% end %>
+    \end{itemize}
+    \vspace{4pt}
+<% end %>
+<% end %>
+
+% --- SKILLS ---
+<% if skills %>
+\section{Technical Skills}
+<% for entry in skills %>
+    \textbf{\color{sectioncolor}<%= getSkillLabel(entry.key) %>:} \hfill\color{textcolor}<%= formatSkills(entry.value) | escape %> \\
+<% end %>
+<% end %>
+
+\end{document}

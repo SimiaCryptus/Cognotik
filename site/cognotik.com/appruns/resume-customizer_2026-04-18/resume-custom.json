@@ -1,0 +1,127 @@
+{
+  "personal": {
+    "name": "Alex Rivera",
+    "title": "Senior Full-Stack Engineer | Rust & Svelte Specialist",
+    "email": "alex.rivera@example.com",
+    "location": "San Francisco, CA (Remote Friendly)",
+    "linkedin": "linkedin.com/in/arivera-dev",
+    "github": "github.com/arivera-codes",
+    "socialMedia": [
+      {
+        "platform": "Twitter",
+        "url": "https://twitter.com/arivera_dev",
+        "username": "arivera_dev"
+      }
+    ]
+  },
+  "summary": "Senior Full-Stack Engineer with over 8 years of experience building high-performance distributed systems and intuitive user interfaces. Expert in **Rust (Actix)** and **Svelte**, with a deep background in **GCP** and **Kubernetes**. Passionate about enhancing **developer experience (DX)**, mentoring engineering teams, and contributing to open-source tooling. Proven track record in transitioning legacy monoliths to scalable microservices and implementing robust CI/CD pipelines.",
+  "coreCompetencies": [
+    "Systems Programming (Rust)",
+    "Modern Frontend (Svelte, TypeScript)",
+    "Cloud Native Architecture (GCP, K8s)",
+    "Microservices & API Design",
+    "CI/CD & DevOps Automation",
+    "Technical Mentorship & Leadership"
+  ],
+  "experience": [
+    {
+      "position": "Senior Platform Engineer",
+      "company": "DevStream Solutions",
+      "location": "Remote",
+      "startDate": "2021-03",
+      "endDate": "Present",
+      "employmentType": "full-time",
+      "remote": true,
+      "technologies": ["Rust", "Actix", "GCP", "Kubernetes", "Terraform", "TypeScript"],
+      "highlights": [
+        "Architected and deployed a high-throughput telemetry ingestion service using **Rust** and **Actix-web**, reducing latency by 40% compared to the previous Node.js implementation.",
+        "Led the migration of core services from on-premise to **GCP**, leveraging GKE and Cloud Spanner for global scalability.",
+        "Developed a custom internal CLI tool in Rust to streamline developer workflows, improving deployment frequency by 25%.",
+        "Mentored 4 junior and mid-level engineers through code reviews, architecture workshops, and pair programming, fostering a culture of continuous learning.",
+        "Implemented comprehensive **CI/CD pipelines** using GitHub Actions and Docker, ensuring 99.9% build reliability."
+      ]
+    },
+    {
+      "position": "Full-Stack Developer",
+      "company": "Interface Labs",
+      "location": "Austin, TX",
+      "startDate": "2018-06",
+      "endDate": "2021-02",
+      "employmentType": "full-time",
+      "technologies": ["Svelte", "TypeScript", "Node.js", "AWS", "PostgreSQL"],
+      "highlights": [
+        "Designed and built a real-time dashboard using **Svelte** and SvelteKit, providing users with instant insights into system performance.",
+        "Optimized frontend bundle sizes by 60% through advanced tree-shaking and Svelte's compile-time optimizations.",
+        "Collaborated with product designers to create a reusable UI component library, ensuring visual consistency across multiple product lines.",
+        "Integrated AWS Lambda and API Gateway to handle bursty traffic patterns for seasonal marketing campaigns."
+      ]
+    },
+    {
+      "position": "Software Engineer",
+      "company": "DataPulse Systems",
+      "location": "Boston, MA",
+      "startDate": "2015-07",
+      "endDate": "2018-05",
+      "employmentType": "full-time",
+      "technologies": ["Kotlin", "JVM", "Kafka", "Docker", "Spring Boot"],
+      "highlights": [
+        "Developed event-driven microservices using **Kotlin** and **Apache Kafka** to process millions of events per second.",
+        "Refactored a legacy Java monolith into a suite of Spring Boot services, improving maintainability and deployment velocity.",
+        "Implemented automated integration testing suites that reduced production regressions by 15%."
+      ]
+    }
+  ],
+  "skills": {
+    "Languages": [
+      { "name": "Rust", "level": "expert", "yearsOfExperience": 5 },
+      { "name": "TypeScript", "level": "expert", "yearsOfExperience": 6 },
+      { "name": "Kotlin", "level": "advanced", "yearsOfExperience": 4 },
+      "Go",
+      "SQL"
+    ],
+    "Frameworks & Libraries": [
+      "Actix-web",
+      "Svelte / SvelteKit",
+      "React",
+      "Spring Boot",
+      "Tokio"
+    ],
+    "Infrastructure & Tools": [
+      "Google Cloud Platform (GCP)",
+      "Kubernetes (K8s)",
+      "Docker",
+      "Terraform",
+      "AWS",
+      "GitHub Actions"
+    ],
+    "Architectures": [
+      "Microservices",
+      "Event-Driven Architecture",
+      "REST & gRPC",
+      "Serverless"
+    ]
+  },
+  "projects": [
+    {
+      "name": "Rust-DX-Toolkit",
+      "repository": "github.com/arivera-codes/rust-dx-toolkit",
+      "description": "An open-source collection of macros and utilities designed to improve the developer experience when building Actix-web services.",
+      "technologies": ["Rust", "Macros"],
+      "highlights": [
+        "Gained 500+ stars on GitHub.",
+        "Used by several small startups to accelerate their Rust backend development."
+      ]
+    }
+  ],
+  "education": {
+    "institution": "Massachusetts Institute of Technology (MIT)",
+    "degree": "B.S. in Computer Science and Engineering"
+  },
+  "metadata": {
+    "version": "1.1.0",
+    "lastUpdated": "2023-10-27T10:00:00Z",
+    "targetRole": "Senior Full-Stack Engineer",
+    "industry": "Developer Productivity & Tooling",
+    "keywords": ["Rust", "Actix", "Svelte", "GCP", "Kubernetes", "Kotlin", "DevOps"]
+  }
+}

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Advisor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="app-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+                    <path d="M8 22 L16 10 L24 22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <circle cx="16" cy="10" r="2.5" fill="white"/>
+                    <line x1="10" y1="22" x2="22" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="header-title">
+                <h1>Career Advisor</h1>
+                <span class="header-subtitle">AI-Powered Career Strategy</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="model-controls">
+                <div class="model-select-group">
+                    <label for="smart-model">Smart Model</label>
+                    <select id="smart-model" class="model-select"></select>
+                </div>
+                <div class="model-select-group">
+                    <label for="fast-model">Fast Model</label>
+                    <select id="fast-model" class="model-select"></select>
+                </div>
+            </div>
+            <button id="usage-btn" class="btn btn-ghost btn-sm" title="View Usage">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                Usage
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+
+        <!-- Left Panel: Inputs -->
+        <aside class="left-panel">
+            <div class="panel-header">
+                <h2>Your Information</h2>
+                <button id="save-all-btn" class="btn btn-primary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save All
+                </button>
+            </div>
+
+            <div class="input-tabs">
+                <button class="tab-btn active" data-tab="profile">Profile</button>
+                <button class="tab-btn" data-tab="resume">Resume</button>
+                <button class="tab-btn" data-tab="goals">Goals</button>
+            </div>
+
+            <div class="tab-content active" id="tab-profile">
+                <div class="field-header">
+                    <label>Professional Profile</label>
+                    <span class="field-hint">Background, experience summary, key skills</span>
+                </div>
+                <textarea id="profile-editor" class="editor-textarea" placeholder="Describe your professional background, years of experience, key skills, education, and anything else relevant to your career situation..."></textarea>
+                <div class="field-status" id="profile-status"></div>
+            </div>
+
+            <div class="tab-content" id="tab-resume">
+                <div class="field-header">
+                    <label>Resume / CV</label>
+                    <span class="field-hint">Paste your resume in plain text or markdown</span>
+                </div>
+                <textarea id="resume-editor" class="editor-textarea" placeholder="Paste your resume here in plain text or markdown format...&#10;&#10;## Experience&#10;**Company Name** | Role | Dates&#10;- Achievement 1&#10;- Achievement 2&#10;&#10;## Education&#10;..."></textarea>
+                <div class="field-status" id="resume-status"></div>
+            </div>
+
+            <div class="tab-content" id="tab-goals">
+                <div class="field-header">
+                    <label>Career Goals</label>
+                    <span class="field-hint">What you want to achieve, constraints, preferences</span>
+                </div>
+                <textarea id="goals-editor" class="editor-textarea" placeholder="Describe your career goals:&#10;&#10;- What roles or industries interest you?&#10;- What's your timeline?&#10;- Any constraints (location, salary, work style)?&#10;- What does success look like in 3 years?&#10;- What are you trying to move away from?"></textarea>
+                <div class="field-status" id="goals-status"></div>
+            </div>
+
+            <div class="input-actions">
+                <button id="start-pipeline-btn" class="btn btn-primary btn-full">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start Career Analysis
+                </button>
+            </div>
+        </aside>
+
+        <!-- Center Panel: Pipeline & Results -->
+        <main class="center-panel">
+
+            <!-- Pipeline Status -->
+            <div class="pipeline-section">
+                <div class="section-header">
+                    <h2>Analysis Pipeline</h2>
+                    <div class="pipeline-actions">
+                        <button id="add-round-btn" class="btn btn-secondary btn-sm" disabled>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                            Add Round
+                        </button>
+                        <button id="generate-plan-btn" class="btn btn-accent btn-sm" disabled>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            Generate Final Plan
+                        </button>
+                        <button id="generate-assets-btn" class="btn btn-accent btn-sm" disabled>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                            Generate Search &amp; Resume
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pipeline-flow" id="pipeline-flow">
+                    <!-- Foundation Stage -->
+                    <div class="pipeline-stage" id="stage-foundation">
+                        <div class="stage-label">Foundation</div>
+                        <div class="pipeline-nodes">
+                            <div class="pipeline-node" id="node-ideas">
+                                <div class="node-icon">💡</div>
+                                <div class="node-info">
+                                    <div class="node-title">Ideas</div>
+                                    <div class="node-subtitle">Career path brainstorm</div>
+                                </div>
+                                <div class="node-badge" id="badge-ideas">
+                                    <span class="badge badge-idle">idle</span>
+                                </div>
+                                <div class="node-actions">
+                                    <button class="node-view-btn hidden" id="view-ideas" data-file="ideas.md" title="View output">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="ideas-links" class="session-links" aria-label="Ideas session links"></div>
+                            </div>
+
+                            <div class="pipeline-arrow">→</div>
+
+                            <div class="pipeline-node" id="node-review1">
+                                <div class="node-icon">🔍</div>
+                                <div class="node-info">
+                                    <div class="node-title">Review</div>
+                                    <div class="node-subtitle">Materials analysis</div>
+                                </div>
+                                <div class="node-badge" id="badge-review1">
+                                    <span class="badge badge-idle">idle</span>
+                                </div>
+                                <div class="node-actions">
+                                    <button class="node-view-btn hidden" id="view-review1" data-file="round_1/review.md" title="View output">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="review1-links" class="session-links" aria-label="Review session links"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rounds Container -->
+                    <div id="rounds-container">
+                        <!-- Round 1 will be injected here -->
+                    </div>
+
+                    <!-- Final Plan Stage -->
+                    <div class="pipeline-stage" id="stage-plan">
+                        <div class="stage-label">Final Output</div>
+                        <div class="pipeline-nodes">
+                            <div class="pipeline-node" id="node-plan">
+                                <div class="node-icon">📋</div>
+                                <div class="node-info">
+                                    <div class="node-title">Career Plan</div>
+                                    <div class="node-subtitle">Comprehensive strategy</div>
+                                </div>
+                                <div class="node-badge" id="badge-plan">
+                                    <span class="badge badge-idle">idle</span>
+                                </div>
+                                <div class="node-actions">
+                                    <button class="node-view-btn hidden" id="view-plan" data-file="career_plan.md" title="View output">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="plan-links" class="session-links" aria-label="Plan session links"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Post-Plan Stage: Search + Resume -->
+                <div class="pipeline-stage" id="stage-post-plan">
+                    <div class="stage-label">Job Search Assets</div>
+                    <div class="pipeline-nodes">
+                        <div class="pipeline-node" id="node-search">
+                            <div class="node-icon">🔎</div>
+                            <div class="node-info">
+                                <div class="node-title">Search Strategies</div>
+                                <div class="node-subtitle">Job search plan</div>
+                            </div>
+                            <div class="node-badge" id="badge-search">
+                                <span class="badge badge-idle">idle</span>
+                            </div>
+                            <div class="node-actions">
+                                <button class="node-view-btn hidden" id="view-search" data-file="search-plan.md" title="View output">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="search-links" class="session-links" aria-label="Search session links"></div>
+                        </div>
+                        <div class="pipeline-node" id="node-resume-gen">
+                            <div class="node-icon">📄</div>
+                            <div class="node-info">
+                                <div class="node-title">ATS Resume</div>
+                                <div class="node-subtitle">Optimized resume (JSON)</div>
+                            </div>
+                            <div class="node-badge" id="badge-resume-gen">
+                                <span class="badge badge-idle">idle</span>
+                            </div>
+                            <div class="node-actions">
+                                <button class="node-view-btn hidden" id="view-resume-gen" data-file="resume.json" title="View output">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="resume-gen-links" class="session-links" aria-label="Resume session links"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="activity-log-container">
+                    <div class="activity-log-header">
+                        <span>Activity Log</span>
+                        <button id="clear-log-btn" class="btn btn-ghost btn-xs">Clear</button>
+                    </div>
+                    <div id="activity-log" class="activity-log"></div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Right Panel: Output Viewer -->
+        <aside class="right-panel" id="right-panel">
+            <div class="panel-header">
+                <h2 id="viewer-title">Output Viewer</h2>
+                <div class="viewer-controls">
+                    <button id="toggle-raw-btn" class="btn btn-ghost btn-sm" title="Toggle raw markdown">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        Raw
+                    </button>
+                 <button id="expand-viewer-btn" class="btn btn-ghost btn-sm" title="Expand viewer">
+                     <svg id="expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                         <polyline points="15 3 21 3 21 9"/>
+                         <polyline points="9 21 3 21 3 15"/>
+                         <line x1="21" y1="3" x2="14" y2="10"/>
+                         <line x1="3" y1="21" x2="10" y2="14"/>
+                     </svg>
+                     Expand
+                 </button>
+                    <button id="copy-output-btn" class="btn btn-ghost btn-sm" title="Copy to clipboard">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                    <button id="close-viewer-btn" class="btn btn-ghost btn-sm">✕</button>
+                </div>
+            </div>
+            <div id="viewer-content" class="viewer-content">
+                <div class="viewer-empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    <p>Click the eye icon on any completed step to view its output</p>
+                </div>
+            </div>
+
+            <!-- Questions Answer Panel -->
+            <div id="questions-panel" class="questions-panel hidden">
+                <div class="questions-header">
+                     <div class="questions-header-row">
+                         <h3 id="questions-title">Answer Questions</h3>
+                         <button id="maximize-questions-btn" class="btn btn-ghost btn-xs" title="Maximize editor">
+                             <svg id="maximize-questions-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                 <polyline points="15 3 21 3 21 9"/>
+                                 <polyline points="9 21 3 21 3 15"/>
+                                 <line x1="21" y1="3" x2="14" y2="10"/>
+                                 <line x1="3" y1="21" x2="10" y2="14"/>
+                             </svg>
+                         </button>
+                     </div>
+                     <span class="questions-hint">Fill in your answers below, then submit to continue</span>
+                </div>
+                <div id="questions-editor-container">
+                    <textarea id="questions-editor" class="editor-textarea questions-textarea" placeholder="Loading questions..."></textarea>
+                </div>
+                <div class="questions-actions">
+                    <button id="save-questions-btn" class="btn btn-secondary btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        </svg>
+                        Save Draft
+                    </button>
+                    <button id="submit-questions-btn" class="btn btn-primary btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Submit & Continue
+                    </button>
+                </div>
+                <div class="field-status" id="questions-status"></div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Usage Modal -->
+    <div id="usage-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Token Usage & Costs</h3>
+                <button class="modal-close btn btn-ghost btn-sm">✕</button>
+            </div>
+            <div class="modal-body" id="usage-content">
+                <div class="loading-spinner">Loading usage data...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+</div>
+
+<script src="utils/session.js"></script>
+<script src="utils/fileIO.js"></script>
+<script src="utils/docops.js"></script>
+<script src="utils/models.js"></script>
+<script src="utils/ui.js"></script>
+<script src="utils/usage.js"></script>
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

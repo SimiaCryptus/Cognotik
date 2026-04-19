@@ -29,7 +29,11 @@ include(":stdtools")
 include(":desktop")
 include(":experiment")
 include(":tool")
-//include(":Cognotik-Jobs")
+//include(":Cognotik-Jobs:auth")
+//include(":Cognotik-Jobs:jobs")
+//include(":Cognotik-Jobs:office")
+//include(":Cognotik-Jobs:omni")
+//include(":Cognotik-Jobs:games")
 
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 //    include(":android")

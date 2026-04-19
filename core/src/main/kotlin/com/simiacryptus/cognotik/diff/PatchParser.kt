@@ -48,7 +48,7 @@ interface PatchParser {
         }
         // Also check if the filename itself starts with a prefix that matches part of the root path
         val rootParts = root.normalize().toList().map { it.toString() }
-        val fileParts = Path.of(filename!!).normalize().toList().map { it.toString() }
+        val fileParts = Path.of(filename).normalize().toList().map { it.toString() }
         // Check if the file path starts with segments that overlap with the end of the root path
         for (overlap in minOf(rootParts.size, fileParts.size) downTo 1) {
           val rootSuffix = rootParts.subList(rootParts.size - overlap, rootParts.size)
