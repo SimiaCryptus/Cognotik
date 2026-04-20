@@ -80,6 +80,7 @@ class SecureString {
 
     private fun decrypt(bytes: ByteArray): String? {
       try {
+        if (bytes.isEmpty()) return ""
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val iv = bytes.copyOfRange(0, 12)
         val encrypted = bytes.copyOfRange(12, bytes.size)

@@ -189,7 +189,8 @@ class DocProcessorServlet(
     private fun resolveModel(modelId: String?): ChatModel? {
       if (modelId.isNullOrBlank()) return null
       // Look up in registered ChatModel values
-      ChatModel.values().values.find { it.modelId == modelId }?.let { return it }
+      val values = ChatModel.values
+      values.values.find { it.modelId == modelId }?.let { return it }
       // Fall back: create a generic ChatModel wrapper
       log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
       return object : ChatModel(modelId = modelId, provider = null) {

@@ -1897,7 +1897,7 @@ fun ChatModel.asApiChatModel(
   val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
   val name = provider?.name
   if (name == null) {
-      throw IllegalStateException("Provider not specified for model $name")
+      throw IllegalStateException("Provider not specified for model $modelId")
   }
   val secureString = (userSettings.apis.find { it.provider?.name == name }?.key
     ?: throw IllegalStateException("API key for model provider $name not found in user settings"))

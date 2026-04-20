@@ -1,13 +1,18 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import java.util.concurrent.Executors
 
 class ApiProviderServlet : HttpServlet() {
   data class ApiProvidersResponse(
@@ -37,81 +42,10 @@ class ApiProviderServlet : HttpServlet() {
 
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
-      val userinfo = authenticate(request, response) ?: return
-      val userSettings = ApplicationServices.fileApplicationServices()
-        .userSettingsManager.getUserSettings(userinfo)
-      // Get all available providers (including unconfigured)
-      val availableProviders = APIProvider.values().map { provider ->
-        val isConfigured = userSettings.apis.any {
-          it.provider?.name == provider.name && !it.key?.decrypt.isNullOrEmpty()
-        }
-        AvailableProviderInfo(
-          id = provider.name,
-          name = provider.name,
-          baseUrl = provider.base,
-          isConfigured = isConfigured
-        )
-      }
-
-
-      val providers = mutableListOf<ProviderInfo>()
-
-      // Get all registered API providers
-      APIProvider.values().forEach { provider ->
-        try {
-          // Find matching API configuration for this provider
-          val apiConfig = userSettings.apis.find {
-            it.provider?.name == provider.name
-          }
-
-          if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
-            val models = try {
-              provider.getChatModels(
-                key = apiConfig.key,
-                baseUrl = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
-              ).filter { !it.deprecated }.map { model ->
-                ModelInfo(
-                  name = model.modelId,
-                  maxTokens = model.maxTotalTokens
-                )
-              }
-            } catch (e: Exception) {
-              log.warn("Failed to fetch models for provider ${provider.name}", e)
-              emptyList()
-            }
-
-            val supportsEmbedding = try {
-              provider.getEmbeddingClient(
-                key = apiConfig.key,
-                base = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
-                workPool = com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService(),
-                scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
-                  java.util.concurrent.Executors.newScheduledThreadPool(1)
-                )
-              )
-              true
-            } catch (e: UnsupportedOperationException) {
-              false
-            } catch (e: Exception) {
-              log.warn("Error checking embedding support for ${provider.name}", e)
-              false
-            }
-
-            providers.add(
-              ProviderInfo(
-                name = provider.name,
-                baseUrl = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
-                models = models,
-                supportsChat = models.isNotEmpty(),
-                supportsEmbedding = supportsEmbedding
-              )
-            )
-          }
-        } catch (e: Exception) {
-          log.error("Error processing provider ${provider.name}", e)
-        }
-      }
-
+      val user = authenticate(request, response) ?: return
+      val userSettings = user.userSettings()
+      val providers = userSettings.providerInfos()
+      val availableProviders = userSettings.getAvailableProviders()
 
       response.status = HttpServletResponse.SC_OK
       val acceptHeader = request.getHeader("Accept") ?: ""
@@ -301,5 +235,112 @@ class ApiProviderServlet : HttpServlet() {
 
   companion object {
     private val log = LoggerFactory.getLogger(ApiProviderServlet::class.java)
+
+    fun UserSettings.models(): Map<String, ChatModel> {
+      val models = mutableListOf<ChatModel>()
+
+      // Get all registered API providers
+      APIProvider.values().forEach { provider ->
+        try {
+          // Find matching API configuration for this provider
+          val apiConfig = apis.find {
+            it.provider?.name == provider.name
+          }
+
+          if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
+
+            models += try {
+              provider.getChatModels(
+                key = apiConfig.key,
+                baseUrl = apiConfig.apiBase
+                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
+              ).filter { !it.deprecated }
+            } catch (e: Exception) {
+              log.warn("Failed to fetch models for provider ${provider.name}", e)
+              emptyList()
+            }
+          }
+        } catch (e: Exception) {
+          log.error("Error processing provider ${provider.name}", e)
+        }
+      }
+      return models.associateBy { it.name }
+    }
+
+    fun UserSettings.providerInfos(): List<ProviderInfo> {
+      val providers = mutableListOf<ProviderInfo>()
+
+      // Get all registered API providers
+      APIProvider.values().forEach { provider ->
+        try {
+          // Find matching API configuration for this provider
+          val apiConfig = apis.find {
+            it.provider?.name == provider.name
+          }
+
+          if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
+            val models = try {
+              provider.getChatModels(
+                key = apiConfig.key,
+                baseUrl = apiConfig.apiBase
+                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
+              ).filter { !it.deprecated }
+            } catch (e: Exception) {
+              log.warn("Failed to fetch models for provider ${provider.name}", e)
+              emptyList()
+            }
+
+            providers.add(
+              ProviderInfo(
+                name = provider.name,
+                baseUrl = apiConfig.apiBase
+                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
+                models = models.map { model ->
+                  ModelInfo(
+                    name = model.modelId,
+                    maxTokens = model.maxTotalTokens
+                  )
+                },
+                supportsChat = models.isNotEmpty(),
+                supportsEmbedding = try {
+                  provider.getEmbeddingClient(
+                    key = apiConfig.key,
+                    base = apiConfig.apiBase
+                      ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
+                    workPool = MoreExecutors.newDirectExecutorService(),
+                    scheduledPool = MoreExecutors.listeningDecorator(
+                      Executors.newScheduledThreadPool(1)
+                    )
+                  )
+                  true
+                } catch (e: UnsupportedOperationException) {
+                  false
+                } catch (e: Exception) {
+                  log.warn("Error checking embedding support for ${provider.name}", e)
+                  false
+                }
+              )
+            )
+          }
+        } catch (e: Exception) {
+          log.error("Error processing provider ${provider.name}", e)
+        }
+      }
+      return providers
+    }
+    fun User.userSettings(): UserSettings = ApplicationServices.fileApplicationServices()
+      .userSettingsManager.getUserSettings(this)
+    fun UserSettings.getAvailableProviders(): List<AvailableProviderInfo> =
+      APIProvider.values().map { provider ->
+        val isConfigured = apis.any {
+          it.provider?.name == provider.name && !it.key?.decrypt.isNullOrEmpty()
+        }
+        AvailableProviderInfo(
+          id = provider.name,
+          name = provider.name,
+          baseUrl = provider.base,
+          isConfigured = isConfigured
+        )
+      }
   }
 }

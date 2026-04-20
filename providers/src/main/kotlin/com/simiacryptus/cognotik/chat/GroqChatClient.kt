@@ -86,7 +86,7 @@ class GroqChatClient(
       val response = JsonUtil.objectMapper().readValue(result, GroqModelsResponse::class.java)
       val models = response.data.filter { it.active }.mapNotNull { groqModel ->
         // Try to find existing ChatModel definition first
-        (ChatModel.values().values.find { it.modelId == groqModel.id }
+        (ChatModel.values.values.find { it.modelId == groqModel.id }
           ?: run {
             // Create a basic ChatModel for unknown models
             log.debug("Creating basic ChatModel for unknown Groq model: ${groqModel.id}")

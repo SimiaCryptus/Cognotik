@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
@@ -80,12 +79,9 @@ open class ChatModel(
   companion object {
     val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
 
-    fun values(): Map<String, ChatModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
-    private val values: MutableMap<String, ChatModel?> by lazy {
-      APIProvider.values().flatMap { it.getChatModels().map {
-        it.modelId to it
-      } }.toMap().toMutableMap()
-    }
+    var values: Map<String, ChatModel> = APIProvider.values().flatMap { it.getChatModels() }.associateBy { it.modelId }
+        .toMutableMap<String, ChatModel?>()
+        .mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
   }
 
 

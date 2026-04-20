@@ -33,7 +33,7 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
     scheduledPool: ListeningScheduledExecutorService
   ): ChatClientInterface
 
-  abstract fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel>
+  open fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
   open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
 
   open fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> = emptyList()
@@ -65,7 +65,14 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
     throw UnsupportedOperationException("${this.name} does not support image generation functionality")
   }
 
-  open fun getChatModels(): Iterable<ChatModel> = emptyList()
+  open fun getChatModels(): Iterable<ChatModel> {
+    try {
+      getChatModels(SecureString(""), this.base)
+    } catch (e: Exception) {
+      log.error("Error retrieving chat models for provider ${this.name}", e)
+    }
+    return emptyList()
+  }
   open fun getEmbeddingModels() = emptyList<EmbeddingModel>()
 
   companion object {
