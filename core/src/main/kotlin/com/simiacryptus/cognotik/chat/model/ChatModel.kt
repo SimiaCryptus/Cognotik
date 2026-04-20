@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
@@ -31,6 +32,9 @@ open class ChatModel(
   provider: APIProvider? = null,
   val inputTokenPricePerK: Double = 0.0,
   val outputTokenPricePerK: Double = inputTokenPricePerK,
+  val supportsTemperature : Boolean = true,
+  val supportsReasoning : Boolean = false,
+  val deprecated: Boolean = false,
 ) : LLMModel(
   modelId = modelId,
   maxTotalTokens = maxTotalTokens,
@@ -73,9 +77,7 @@ open class ChatModel(
     onUsage = onUsage
   )
 
-
   companion object {
-
     val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
 
     fun values(): Map<String, ChatModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
@@ -84,8 +86,9 @@ open class ChatModel(
         it.modelId to it
       } }.toMap().toMutableMap()
     }
-
   }
+
+
 }
 
 class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {

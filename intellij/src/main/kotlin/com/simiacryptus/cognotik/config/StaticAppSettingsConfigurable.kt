@@ -476,10 +476,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName")
 
             val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")) ?: emptyList()
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { !it.deprecated } ?: emptyList()
             }
             val imageModels = userSettings.apis.flatMap { apiData ->
-                apiData.provider?.getImageModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")) ?: emptyList()
+                apiData.provider?.getImageModels(apiData.key!!, apiData.apiBase) ?: emptyList()
             }
             val fastChatModel =
                 chatModels.find { model -> model.modelId == fastModelName || model.name == fastModelName }

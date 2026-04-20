@@ -334,7 +334,7 @@ open class PlanConfigDialog(
       ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
                 model.provider == apiData.provider && model.modelId.isNotBlank() && isVisible(model)
-            } ?: listOf()
+            }?.filter { !it.deprecated } ?: listOf()
         }.distinctBy { it.modelId }.sortedBy { "${it.provider?.name} - ${it.modelId}" }
 
     private fun saveCurrentConfig() {
@@ -644,7 +644,8 @@ open class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
         fun isVisible(chatModel: AIModel) =
-          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.filter { it.key?.decrypt != null }
+          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis
+              .filter { it.key?.decrypt != null }
                 .any { it.provider == chatModel.provider }
     }
 }

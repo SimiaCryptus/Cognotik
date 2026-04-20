@@ -69,7 +69,7 @@ class ApiProviderServlet : HttpServlet() {
               provider.getChatModels(
                 key = apiConfig.key,
                 baseUrl = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
-              ).map { model ->
+              ).filter { !it.deprecated }.map { model ->
                 ModelInfo(
                   name = model.modelId,
                   maxTokens = model.maxTotalTokens

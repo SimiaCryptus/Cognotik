@@ -26,7 +26,7 @@
       "type": "submenu",
       "items": [
         {
-          "label": "Docs",
+          "label": "Platform",
           "type": "dropdown",
           "src": "docs.json",
           "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/docs"

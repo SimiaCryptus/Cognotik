@@ -15,7 +15,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.00125,
-    outputTokenPricePerK = 0.005
+    outputTokenPricePerK = 0.005,
+    deprecated = true,
   )
 
   @JvmStatic
@@ -26,7 +27,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.00025,
-    outputTokenPricePerK = 0.0005
+    outputTokenPricePerK = 0.0005,
+    deprecated = true
   )
 
   @JvmStatic
@@ -37,7 +39,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.000075,
-    outputTokenPricePerK = 0.0003
+    outputTokenPricePerK = 0.0003,
+    deprecated = true
   )
 
   @JvmStatic
@@ -48,7 +51,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0000375,
-    outputTokenPricePerK = 0.00015
+    outputTokenPricePerK = 0.00015,
+    deprecated = true
   )
   // Gemini 2.0 models - Deprecated, shutting down June 1, 2026
 
@@ -61,7 +65,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0004
+    outputTokenPricePerK = 0.0004,
+    deprecated = true
   )
 
   @JvmStatic
@@ -72,7 +77,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.000075,
-    outputTokenPricePerK = 0.0003
+    outputTokenPricePerK = 0.0003,
+    deprecated = true
   )
 
   @JvmStatic
@@ -83,7 +89,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0004
+    outputTokenPricePerK = 0.0004,
+    deprecated = true
   )
 
   @JvmStatic
@@ -94,7 +101,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0004
+    outputTokenPricePerK = 0.0004,
+    deprecated = true
   )
   // Gemini 2.5 models
 
@@ -107,7 +115,8 @@ object GeminiModels {
     maxOutTokens = 32768,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0003,
-    outputTokenPricePerK = 0.03 // $30/1M tokens for image output
+    outputTokenPricePerK = 0.03,
+    deprecated = true
   )
 
   @JvmStatic
@@ -118,7 +127,8 @@ object GeminiModels {
     maxOutTokens = 65536,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.00125,
-    outputTokenPricePerK = 0.01
+    outputTokenPricePerK = 0.01,
+    deprecated = true
   )
 
   @JvmStatic
@@ -129,7 +139,8 @@ object GeminiModels {
     maxOutTokens = 65536,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0003,
-    outputTokenPricePerK = 0.0025
+    outputTokenPricePerK = 0.0025,
+    deprecated = true
   )
 
   @JvmStatic
@@ -140,7 +151,8 @@ object GeminiModels {
     maxOutTokens = 65536,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0004
+    outputTokenPricePerK = 0.0004,
+    deprecated = true
   )
 
   @JvmStatic
@@ -151,7 +163,8 @@ object GeminiModels {
     maxOutTokens = 65536,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0004
+    outputTokenPricePerK = 0.0004,
+    deprecated = true
   )
 
   @JvmStatic
@@ -162,7 +175,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0005,
-    outputTokenPricePerK = 0.002
+    outputTokenPricePerK = 0.002,
+    deprecated = true
   )
 
   @JvmStatic
@@ -173,7 +187,8 @@ object GeminiModels {
     maxOutTokens = 16384,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0005,
-    outputTokenPricePerK = 0.01
+    outputTokenPricePerK = 0.01,
+    deprecated = true
   )
 
   @JvmStatic
@@ -184,7 +199,8 @@ object GeminiModels {
     maxOutTokens = 16384,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.001,
-    outputTokenPricePerK = 0.02
+    outputTokenPricePerK = 0.02,
+    deprecated = true
   )
 
   @JvmStatic
@@ -195,7 +211,8 @@ object GeminiModels {
     maxOutTokens = 65536,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.00125,
-    outputTokenPricePerK = 0.01
+    outputTokenPricePerK = 0.01,
+    deprecated = true
   )
 
   // Gemini 3 models
@@ -219,7 +236,7 @@ object GeminiModels {
     maxOutTokens = 32768,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.002,
-    outputTokenPricePerK = 0.12 // $120/1M tokens for image output
+    outputTokenPricePerK = 0.12
   )
 
   @JvmStatic
@@ -264,7 +281,7 @@ object GeminiModels {
     maxOutTokens = 32768,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0005,
-    outputTokenPricePerK = 0.06 // $60/1M tokens for image output
+    outputTokenPricePerK = 0.06
   )
 
   // Specialized models
@@ -277,7 +294,8 @@ object GeminiModels {
     maxOutTokens = 8192,
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0003,
-    outputTokenPricePerK = 0.0025
+    outputTokenPricePerK = 0.0025,
+    deprecated = true
   )
 
 
