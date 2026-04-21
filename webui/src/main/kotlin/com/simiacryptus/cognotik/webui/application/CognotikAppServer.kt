@@ -16,7 +16,6 @@ import java.util.*
 class CognotikAppServer(
   val localName: String,
   val port: Int = 8080,
-  val endpoint: String = "127.0.0.1",
 ) {
   val server by lazy {
     try {

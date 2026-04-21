@@ -127,7 +127,7 @@ abstract class ApplicationDirectory(
       init(args.contains("--server"))
       setupPlatform()
       ApplicationServicesConfig.isLocked = true
-      val server = start(port, "127.0.0.1", *(webAppContexts()))
+      val server = start(port, "0.0.0.0", *(webAppContexts()))
       log.info("Server started successfully on port $port")
       server.join()
     } catch (e: Throwable) {
