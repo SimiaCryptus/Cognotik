@@ -24,7 +24,7 @@ open class LLMModel(
 class LLMModelSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<LLMModel>(LLMModel::class.java) {
   override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
     ((listOf(
-      ChatModel.values(),
+      ChatModel.values,
       EmbeddingModel.values(),
     ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelId)
       .let { gen.writeString(it) }
@@ -35,7 +35,7 @@ class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLM
   override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
     val modelName = p.readValueAs(String::class.java)
     listOf(
-      ChatModel.values(),
+      ChatModel.values,
       EmbeddingModel.values(),
     ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
     return LLMModel(

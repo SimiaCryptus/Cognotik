@@ -13,8 +13,6 @@ object ServiceProviders {
   @JvmStatic
   val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
 
-    override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
-
     override fun getChatClient(
       key: SecureString,
       base: String,
@@ -28,8 +26,6 @@ object ServiceProviders {
   @JvmStatic
   val Google: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
 
-    override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
-
     override fun getChatClient(
       key: SecureString,
       base: String,
@@ -42,8 +38,6 @@ object ServiceProviders {
 
   @JvmStatic
   val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
-
-    override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
 
     override fun getChatClient(
       key: SecureString,

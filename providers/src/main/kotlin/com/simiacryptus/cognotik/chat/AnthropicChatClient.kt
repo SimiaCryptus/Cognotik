@@ -101,6 +101,7 @@ class AnthropicChatClient(
   }
 
 
+  @Suppress("OVERRIDE_DEPRECATION") // Depreciated only for external users
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
@@ -113,8 +114,8 @@ class AnthropicChatClient(
         require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
         require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
         val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
+        val temperature = if(model.supportsTemperature) chatRequest.temperature else null
         val model = chatRequest.model ?: model.modelId
-        val temperature = chatRequest.temperature
         val system = chatMessages
           .firstOrNull { it.role == ModelSchema.Role.system }
           ?.content

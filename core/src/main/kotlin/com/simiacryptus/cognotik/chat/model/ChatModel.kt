@@ -31,6 +31,9 @@ open class ChatModel(
   provider: APIProvider? = null,
   val inputTokenPricePerK: Double = 0.0,
   val outputTokenPricePerK: Double = inputTokenPricePerK,
+  val supportsTemperature : Boolean = true,
+  val supportsReasoning : Boolean = false,
+  val deprecated: Boolean = false,
 ) : LLMModel(
   modelId = modelId,
   maxTotalTokens = maxTotalTokens,
@@ -73,19 +76,15 @@ open class ChatModel(
     onUsage = onUsage
   )
 
-
   companion object {
-
     val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
 
-    fun values(): Map<String, ChatModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
-    private val values: MutableMap<String, ChatModel?> by lazy {
-      APIProvider.values().flatMap { it.getChatModels().map {
-        it.modelId to it
-      } }.toMap().toMutableMap()
-    }
-
+    var values: Map<String, ChatModel> = APIProvider.values().flatMap { it.getChatModels() }.associateBy { it.modelId }
+        .toMutableMap<String, ChatModel?>()
+        .mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
   }
+
+
 }
 
 class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {

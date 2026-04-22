@@ -1,1 +1,0 @@
-An astrological meal planner

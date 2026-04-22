@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
 
 object AnthropicModels {
@@ -13,6 +12,7 @@ object AnthropicModels {
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 0.25 / 1000.0,
     outputTokenPricePerK = 1.25 / 1000.0,
+    deprecated = true,
   )
 
   @JvmStatic
@@ -24,11 +24,12 @@ object AnthropicModels {
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 0.80 / 1000.0,
     outputTokenPricePerK = 4.0 / 1000.0,
+    deprecated = true,
   )
 
   @JvmStatic
   val Claude45Haiku = ChatModel(
-    name = "Claude45Haiku",
+    name = "Claude Haiku 4.5",
     modelId = "claude-haiku-4-5-20251001",
     maxTotalTokens = 200000,
     maxOutTokens = 64000,
@@ -48,6 +49,7 @@ object AnthropicModels {
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 3.0 / 1000.0,
     outputTokenPricePerK = 15.0 / 1000.0,
+    deprecated = true,
   )
 
   @JvmStatic
@@ -59,6 +61,7 @@ object AnthropicModels {
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 3.0 / 1000.0,
     outputTokenPricePerK = 15.0 / 1000.0,
+    deprecated = true,
   )
 
 
@@ -75,7 +78,7 @@ object AnthropicModels {
 
   @JvmStatic
   val Claude46Sonnet = ChatModel(
-    name = "Claude46Sonnet",
+    name = "Claude Sonnet 4.6",
     modelId = "claude-sonnet-4-6",
     maxTotalTokens = 1000000,
     maxOutTokens = 64000,
@@ -93,6 +96,7 @@ object AnthropicModels {
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 15.0 / 1000.0,
     outputTokenPricePerK = 75.0 / 1000.0,
+    deprecated = true,
   )
 
   @JvmStatic
@@ -104,28 +108,45 @@ object AnthropicModels {
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 15.0 / 1000.0,
     outputTokenPricePerK = 75.0 / 1000.0,
+    deprecated = true,
   )
 
   @JvmStatic
   val Claude45Opus = ChatModel(
-    name = "Claude45Opus",
+    name = "Claude Opus 4.5",
     modelId = "claude-opus-4-5",
     maxTotalTokens = 200000,
     maxOutTokens = 128000,
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 5.0 / 1000.0,
     outputTokenPricePerK = 25.0 / 1000.0,
+    deprecated = true,
   )
 
   @JvmStatic
   val Claude46Opus = ChatModel(
-    name = "Claude46Opus",
+    name = "Claude Opus 4.6",
     modelId = "claude-opus-4-6",
     maxTotalTokens = 1000000,
     maxOutTokens = 128000,
     provider = CoreProviders.Anthropic,
     inputTokenPricePerK = 5.0 / 1000.0,
     outputTokenPricePerK = 25.0 / 1000.0,
+    supportsTemperature = false,
+    supportsReasoning = true
+  )
+
+  @JvmStatic
+  val Claude47Opus = ChatModel(
+    name = "Claude Opus 4.7",
+    modelId = "claude-opus-4-7",
+    maxTotalTokens = 1000000,
+    maxOutTokens = 128000,
+    provider = CoreProviders.Anthropic,
+    inputTokenPricePerK = 5.0 / 1000.0,
+    outputTokenPricePerK = 25.0 / 1000.0,
+    supportsTemperature = false,
+    supportsReasoning = true
   )
 
   @JvmStatic
@@ -141,6 +162,7 @@ object AnthropicModels {
     "Claude41Opus" to Claude41Opus,
     "Claude45Opus" to Claude45Opus,
     "Claude46Opus" to Claude46Opus,
+    "Claude47Opus" to Claude47Opus,
   )
 
 }

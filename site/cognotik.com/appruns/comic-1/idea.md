@@ -1,1 +1,0 @@
-The history of labor automation, taught by a race of sentient cybernetic ferrets.

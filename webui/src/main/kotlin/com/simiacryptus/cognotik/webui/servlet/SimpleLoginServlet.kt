@@ -2,10 +2,13 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -306,6 +309,7 @@ class SimpleLoginServlet : HttpServlet() {
       resp.addCookie(cookie)
 
       log.info("User logged in successfully: {}", username)
+      initializeSystem(user)
       val redirectUrl = if (!target.isNullOrBlank()) {
         try {
           URLDecoder.decode(target, "UTF-8")
@@ -318,6 +322,10 @@ class SimpleLoginServlet : HttpServlet() {
       log.error("Error during login for user: {}", username, e)
       serveLoginPage(req, resp, error = "An error occurred during login.", target = target)
     }
+  }
+
+  private fun initializeSystem(user: User) {
+    ChatModel.values = user.userSettings().models()
   }
 
   private fun handleRegistration(req: HttpServletRequest, resp: HttpServletResponse) {

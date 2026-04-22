@@ -1,4 +1,0 @@
-{
-  "template_file" : "standard.tex.erb",
-  "task_type": "RenderErbTemplate"
-}

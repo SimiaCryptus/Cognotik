@@ -570,9 +570,9 @@ class AppSettingsComponent : Disposable {
                     api.key?.decrypt != null
                 }.flatMap { api ->
                     try {
-                        api.provider?.getChatModels(api.key!!, api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${api.provider?.name}"))?.filter { model ->
-                            isVisible(model)
-                        }?.map { it.name to it } ?: emptyList()
+                        api.provider?.getChatModels(api.key!!, api.apiBase)
+                            ?.filter { !it.deprecated }?.filter { isVisible(it) }?.map { it.name to it }
+                            ?: emptyList()
                     } catch (e: Exception) {
                         log.warn("Failed to get chat models for provider ${api.provider?.name}: ${e.message}")
                         emptyList()
