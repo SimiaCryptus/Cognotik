@@ -804,6 +804,77 @@ function createProviderInput(providerId, apiKey, baseUrl) {
     baseUrlInput.value = baseUrl || '';
     baseUrlGroup.appendChild(baseUrlLabel);
     baseUrlGroup.appendChild(baseUrlInput);
+     // AWS-specific fields container (hidden by default)
+     const awsGroup = document.createElement('div');
+     awsGroup.className = 'provider-aws-group';
+     awsGroup.style.flex = '1 1 100%';
+     awsGroup.style.display = 'none';
+     awsGroup.style.padding = '10px';
+     awsGroup.style.marginTop = '8px';
+     awsGroup.style.border = '1px solid #ddd';
+     awsGroup.style.borderRadius = '4px';
+     awsGroup.style.background = '#f8f9fa';
+     const awsHeader = document.createElement('div');
+     awsHeader.style.fontWeight = '600';
+     awsHeader.style.marginBottom = '8px';
+     awsHeader.textContent = 'AWS Configuration';
+     awsGroup.appendChild(awsHeader);
+     // Profile
+     const awsProfileLabel = document.createElement('label');
+     awsProfileLabel.textContent = 'AWS Profile:';
+     awsProfileLabel.style.display = 'block';
+     awsProfileLabel.style.marginTop = '6px';
+     const awsProfileInput = document.createElement('input');
+     awsProfileInput.type = 'text';
+     awsProfileInput.className = 'provider-aws-profile';
+     awsProfileInput.placeholder = 'default';
+     awsProfileInput.style.width = '100%';
+     awsGroup.appendChild(awsProfileLabel);
+     awsGroup.appendChild(awsProfileInput);
+     // Region
+     const awsRegionLabel = document.createElement('label');
+     awsRegionLabel.textContent = 'AWS Region:';
+     awsRegionLabel.style.display = 'block';
+     awsRegionLabel.style.marginTop = '6px';
+     const awsRegionInput = document.createElement('input');
+     awsRegionInput.type = 'text';
+     awsRegionInput.className = 'provider-aws-region';
+     awsRegionInput.placeholder = 'us-west-2';
+     awsRegionInput.style.width = '100%';
+     awsGroup.appendChild(awsRegionLabel);
+     awsGroup.appendChild(awsRegionInput);
+     // Custom Models (JSON)
+     const awsModelsLabel = document.createElement('label');
+     awsModelsLabel.textContent = 'Custom Model IDs (JSON object, optional):';
+     awsModelsLabel.style.display = 'block';
+     awsModelsLabel.style.marginTop = '6px';
+     const awsModelsInput = document.createElement('textarea');
+     awsModelsInput.className = 'provider-aws-models';
+     awsModelsInput.placeholder = '{"modelName": "custom-model-id"}';
+     awsModelsInput.style.width = '100%';
+     awsModelsInput.style.minHeight = '60px';
+     awsModelsInput.style.fontFamily = 'monospace';
+     awsModelsInput.style.fontSize = '0.9em';
+     awsGroup.appendChild(awsModelsLabel);
+     awsGroup.appendChild(awsModelsInput);
+     // Flatten Chat
+     const awsFlattenLabel = document.createElement('label');
+     awsFlattenLabel.style.display = 'block';
+     awsFlattenLabel.style.marginTop = '6px';
+     awsFlattenLabel.style.fontWeight = 'normal';
+     const awsFlattenSelect = document.createElement('select');
+     awsFlattenSelect.className = 'provider-aws-flatten';
+     awsFlattenSelect.style.marginLeft = '6px';
+     ['default', 'true', 'false'].forEach(v => {
+         const opt = document.createElement('option');
+         opt.value = v === 'default' ? '' : v;
+         opt.textContent = v === 'default' ? 'Default (unset)' : v;
+         awsFlattenSelect.appendChild(opt);
+     });
+     awsFlattenLabel.textContent = 'Flatten Chat:';
+     awsFlattenLabel.appendChild(awsFlattenSelect);
+     awsGroup.appendChild(awsFlattenLabel);
+
 
     const removeBtn = document.createElement('button');
     removeBtn.className = 'button secondary';
@@ -815,7 +886,52 @@ function createProviderInput(providerId, apiKey, baseUrl) {
     keyGroup.appendChild(providerSelectGroup);
     keyGroup.appendChild(apiKeyGroup);
     keyGroup.appendChild(baseUrlGroup);
+     keyGroup.appendChild(awsGroup);
     keyGroup.appendChild(removeBtn);
+     // Helper to detect provider type by name
+     const isOllama = (id) => id && id.toLowerCase() === 'ollama';
+     const isAws = (id) => id && (id.toLowerCase() === 'aws' || id.toLowerCase().includes('bedrock'));
+     // Function to update UI based on selected provider
+     const updateProviderUI = () => {
+         const selectedId = providerSelect.value;
+         if (isOllama(selectedId)) {
+             // Ollama: no key, use '-'
+             apiKeyInput.value = '-';
+             apiKeyInput.disabled = true;
+             apiKeyInput.placeholder = 'Not required (auto-filled with "-")';
+             apiKeyGroup.style.display = 'none';
+             awsGroup.style.display = 'none';
+         } else if (isAws(selectedId)) {
+             // AWS: hide normal key input, show AWS fields
+             apiKeyGroup.style.display = 'none';
+             awsGroup.style.display = 'block';
+             apiKeyInput.disabled = false;
+             // Try to parse existing JSON key into AWS fields
+             if (apiKeyInput.value && apiKeyInput.value.trim().startsWith('{')) {
+                 try {
+                     const parsed = JSON.parse(apiKeyInput.value);
+                     awsProfileInput.value = parsed.profile || '';
+                     awsRegionInput.value = parsed.region || '';
+                     awsModelsInput.value = parsed.models ? JSON.stringify(parsed.models, null, 2) : '';
+                     awsFlattenSelect.value = (parsed.flattenChat === true) ? 'true' :
+                                              (parsed.flattenChat === false) ? 'false' : '';
+                 } catch (e) {
+                     console.warn('[createProviderInput] Could not parse AWS auth JSON:', e);
+                 }
+             }
+         } else {
+             // Standard provider
+             apiKeyGroup.style.display = '';
+             awsGroup.style.display = 'none';
+             apiKeyInput.disabled = false;
+             apiKeyInput.placeholder = 'Enter API key';
+             if (apiKeyInput.value === '-') apiKeyInput.value = '';
+         }
+     };
+     providerSelect.addEventListener('change', updateProviderUI);
+     // Initialize UI for existing provider
+     updateProviderUI();
+
     return keyGroup;
 }
 
@@ -827,12 +943,62 @@ function saveUserSettings() {
         const selectInput = group.querySelector('.provider-select');
         const keyInput = group.querySelector('.provider-key');
         const baseUrlInput = group.querySelector('.provider-base-url');
-        if (selectInput && keyInput && selectInput.value) {
-            apiKeys[selectInput.value] = keyInput.value;
-            if (baseUrlInput && baseUrlInput.value) {
-                apiBase[selectInput.value] = baseUrlInput.value;
-            }
-        }
+         if (!selectInput || !selectInput.value) return;
+
+         const providerId = selectInput.value;
+         const providerLower = providerId.toLowerCase();
+         const isOllama = providerLower === 'ollama';
+         const isAws = providerLower === 'aws' || providerLower.includes('bedrock');
+
+         let keyValue;
+         if (isOllama) {
+             // Ollama: always use '-' as the key
+             keyValue = '-';
+         } else if (isAws) {
+             // AWS: build JSON-encoded AWSAuth object
+             const profileInput = group.querySelector('.provider-aws-profile');
+             const regionInput = group.querySelector('.provider-aws-region');
+             const modelsInput = group.querySelector('.provider-aws-models');
+             const flattenSelect = group.querySelector('.provider-aws-flatten');
+
+             const awsAuth = {
+                 profile: (profileInput && profileInput.value.trim()) || 'default',
+                 region: (regionInput && regionInput.value.trim()) || 'us-west-2',
+                 models: {}
+             };
+
+             if (modelsInput && modelsInput.value.trim()) {
+                 try {
+                     const parsed = JSON.parse(modelsInput.value);
+                     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                         awsAuth.models = parsed;
+                     } else {
+                         notificationService.showNotification(
+                             `AWS Custom Models must be a JSON object for ${providerId}`, 'error');
+                         return;
+                     }
+                 } catch (e) {
+                     notificationService.showNotification(
+                         `Invalid JSON in AWS Custom Models for ${providerId}: ${e.message}`, 'error');
+                     return;
+                 }
+             }
+
+             if (flattenSelect && flattenSelect.value !== '') {
+                 awsAuth.flattenChat = flattenSelect.value === 'true';
+             }
+
+             keyValue = JSON.stringify(awsAuth);
+         } else {
+             if (!keyInput) return;
+             keyValue = keyInput.value;
+             if (!keyValue) return;
+         }
+
+         apiKeys[providerId] = keyValue;
+         if (baseUrlInput && baseUrlInput.value) {
+             apiBase[providerId] = baseUrlInput.value;
+         }
     });
 
     appState.apiSettings.apiKeys = apiKeys;
