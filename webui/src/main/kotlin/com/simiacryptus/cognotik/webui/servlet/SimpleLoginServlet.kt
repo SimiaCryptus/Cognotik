@@ -25,6 +25,7 @@ import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import javax.swing.JFrame
 import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 
@@ -37,6 +38,7 @@ class SimpleLoginServlet : HttpServlet() {
     private const val DEBOUNCE_INTERVAL_MS = 30_000L // 30 seconds between registration attempts per IP/username
     private val registrationAttempts = ConcurrentHashMap<String, Long>()
     private val dialogActive = AtomicBoolean(false)
+    private val alwaysDeny = AtomicBoolean(false)
     private const val GCM_IV_LENGTH = 12
     private const val GCM_TAG_LENGTH = 128
     private val secureRandom = SecureRandom()
@@ -200,6 +202,11 @@ class SimpleLoginServlet : HttpServlet() {
      * to approve a new user registration. Returns true if approved.
      */
     fun confirmRegistrationViaDialog(username: String, remoteAddr: String): Boolean {
+      // If the operator has previously chosen "Always Deny", short-circuit all future requests
+      if (alwaysDeny.get()) {
+        log.warn("Registration auto-denied (always-deny mode active) for user: {}", username)
+        return false
+      }
       // Prevent multiple dialogs from stacking up
       if (!dialogActive.compareAndSet(false, true)) {
         log.warn("Registration confirmation dialog already active, rejecting request for user: {}", username)
@@ -209,19 +216,56 @@ class SimpleLoginServlet : HttpServlet() {
         val latch = CountDownLatch(1)
         val approved = AtomicBoolean(false)
         SwingUtilities.invokeLater {
+          var parentFrame: JFrame? = null
           try {
-            val result = JOptionPane.showConfirmDialog(
-              null,
-              "A new user registration has been requested:\n\n" + "Username: $username\n" + "Remote IP: $remoteAddr\n\n" + "Do you want to allow this registration?",
+            // Create an always-on-top invisible parent frame to ensure the dialog surfaces
+            // reliably on Windows/macOS, where null-parent dialogs often appear behind other windows.
+            parentFrame = JFrame().apply {
+              isUndecorated = true
+              isAlwaysOnTop = true
+              setLocationRelativeTo(null)
+              // Keep it off-screen and effectively invisible, but realized so it can own the dialog
+              setSize(1, 1)
+              setLocation(-10000, -10000)
+              isVisible = true
+              toFront()
+              requestFocus()
+            }
+            val options = arrayOf<Any>("Allow", "Deny", "Always Deny")
+            val message = "A new user registration has been requested:\n\n" +
+                "Username: $username\n" +
+                "Remote IP: $remoteAddr\n\n" +
+                "Do you want to allow this registration?\n" +
+                "(Choose 'Always Deny' to stop asking and automatically reject all future registrations.)"
+            val result = JOptionPane.showOptionDialog(
+              parentFrame,
+              message,
               "Registration Confirmation",
-              JOptionPane.YES_NO_OPTION,
-              JOptionPane.QUESTION_MESSAGE
+              JOptionPane.YES_NO_CANCEL_OPTION,
+              JOptionPane.QUESTION_MESSAGE,
+              null,
+              options,
+              options[1] // Default to "Deny"
             )
-            approved.set(result == JOptionPane.YES_OPTION)
+            when (result) {
+              0 -> approved.set(true)                      // Allow
+              1 -> approved.set(false)                     // Deny
+              2 -> {                                       // Always Deny
+                alwaysDeny.set(true)
+                approved.set(false)
+                log.warn("Operator selected 'Always Deny' - all future registration requests will be automatically rejected")
+              }
+              else -> approved.set(false)                  // Closed / escaped
+            }
           } catch (e: Exception) {
             log.error("Error showing registration confirmation dialog", e)
             approved.set(false)
           } finally {
+            try {
+              parentFrame?.dispose()
+            } catch (e: Exception) {
+              log.debug("Error disposing parent frame", e)
+            }
             latch.countDown()
           }
         }
