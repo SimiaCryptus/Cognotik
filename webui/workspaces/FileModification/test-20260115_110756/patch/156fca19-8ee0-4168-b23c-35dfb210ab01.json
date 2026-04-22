@@ -1,6 +1,0 @@
-{
-  "filename" : "src/Calculator.js",
-  "code" : "add(a, b) {\n     return a + b;\n   }\n+\n+  subtract(a, b) {\n+    return a - b;\n+  }\n }",
-  "header" : "src/Calculator.js",
-  "language" : "diff"
-}

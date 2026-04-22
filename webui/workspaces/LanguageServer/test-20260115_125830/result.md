@@ -1,1 +1,0 @@
-Error: Failed to start Language Server 'kotlin-language-server'. Ensure it is installed and on your PATH.

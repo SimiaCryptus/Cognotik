@@ -1,11 +1,14 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -83,8 +86,9 @@ class UserSettingsServlet : HttpServlet() {
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
     val user = authenticate(request, response) ?: return
     val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
+    val userSettingsManager = ApplicationServices.fileApplicationServices().userSettingsManager
     val prevSettings =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+      userSettingsManager.getUserSettings(user)
     val reconstructedApis = settings.apis.mapIndexed { index, apiData ->
       val prevApiData = prevSettings.apis.getOrNull(index)
       ApiData(
@@ -101,11 +105,12 @@ class UserSettingsServlet : HttpServlet() {
       tools = (prevSettings.tools + settings.tools).distinctBy { it.provider?.name }.toMutableList(),
       etc = settings.etc
     )
-    ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
+    userSettingsManager.updateUserSettings(
       user,
       reconstructedSettings
     )
     response.sendRedirect("/")
+    ChatModel.values = user.userSettings().models() // Force refresh of model list for the user after settings update
   }
 
   companion object

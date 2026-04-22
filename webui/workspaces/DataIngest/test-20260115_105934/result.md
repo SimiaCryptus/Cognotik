@@ -1,1 +1,0 @@
-Successfully ingested 5 records from 1 files using 1 patterns. Artifacts: data.jsonl, data.csv, patterns.json, index.csv.

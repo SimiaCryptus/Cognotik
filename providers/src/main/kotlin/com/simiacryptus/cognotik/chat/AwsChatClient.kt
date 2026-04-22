@@ -367,11 +367,10 @@ class AwsChatClient(
       ).build()
 
     data class AWSAuth(
-      val profile: String = "default",
+      val profile: String = "default", // AWS CLI profile name to use for credentials
       val region: String = Region.US_WEST_2.id(),
-      val models: Map<String, String> = emptyMap(),
-      val s3OutputUri: String? = null,
-      val flattenChat: Boolean? = null,
+      val models: Map<String, String> = emptyMap(), // Custom model ids
+      val flattenChat: Boolean? = null, // Whether to flatten the chat history into a single user message (true) or keep as separate messages (false). Default is false.
     )
 
     fun toConverseRequest(
