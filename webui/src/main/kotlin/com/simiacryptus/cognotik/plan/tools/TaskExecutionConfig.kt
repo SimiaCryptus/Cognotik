@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
+import java.io.File
 
 @JsonTypeIdResolver(TaskExecutionConfig.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
@@ -22,7 +24,13 @@ open class TaskExecutionConfig(
 ) {
 
   @Description("The file to be generated as output for the task (relative paths)")
-  open var main_file: String = ""
+  var main_file: String = ""
+    set(value) {
+      if(value.contains(File.separator)) {
+        log.warn("The main_file in executionConfig contains a path separator. Ensure that the file is correctly resolved within the task implementation. Provided value: ${value}")
+      }
+      field = value
+    }
 
   class PlanTaskTypeIdResolver : TypeIdResolverBase() {
     override fun idFromValue(value: Any) = when (value) {
@@ -48,5 +56,9 @@ open class TaskExecutionConfig(
     override fun getMechanism(): JsonTypeInfo.Id {
       return JsonTypeInfo.Id.CUSTOM
     }
+  }
+
+  companion object {
+    private val log = LoggerFactory.getLogger(TaskExecutionConfig::class.java)
   }
 }

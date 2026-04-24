@@ -7,8 +7,6 @@ import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.instance
@@ -516,13 +514,13 @@ open class ConversationalMode(
       )
       log.debug("ParsedAgent created, sending request with ${history.size} history messages")
       // Use the expanded userMessage with full conversation context for task selection
-      val inputMessages = history + listOf(
-        "USER: $userMessage",
-        "Please choose a single task to execute based on the current conversation context above."
-      )
-      log.debug("Input messages to ParsedAgent (count: ${inputMessages.size}): ${inputMessages.lastOrNull()?.take(200)}")
       val answer = try {
-        parsedActor.answer(inputMessages).also {
+        parsedActor.answer(
+          history + listOf(
+            "USER: $userMessage",
+            "Please choose a single task to execute based on the current conversation context above."
+          )
+        ).also {
           log.info("ParsedAgent returned response with ${it.obj.tasks?.size ?: 0} task(s)")
           log.debug("ParsedAgent raw response text (first 500 chars): ${it.text.take(500)}")
         }

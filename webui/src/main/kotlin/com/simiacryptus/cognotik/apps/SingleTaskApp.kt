@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -9,7 +8,6 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.instance
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
@@ -41,7 +39,6 @@ abstract class SingleTaskApp(
   showMenubar = showMenubar,
   root = dataStorageRoot,
 ) {
-  private val log = LoggerFactory.getLogger(SingleTaskApp::class.java)
 
   override val stickyInput = false
   override val inputCnt: Int = 1
@@ -166,5 +163,9 @@ abstract class SingleTaskApp(
     ui.newTask().error(
       IllegalStateException("This is a single-task application. User messages are not supported.")
     )
+  }
+
+  companion object {
+    private val log = LoggerFactory.getLogger(SingleTaskApp::class.java)
   }
 }

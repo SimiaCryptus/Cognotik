@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.chat
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.relativeTo_smart
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -143,7 +144,7 @@ class DocOpsApp(
       var found = false
       resourceDir.walkTopDown().forEach { file ->
         if (file.isFile) {
-          val relativePath = file.relativeTo(resourceDir).path
+          val relativePath = file.relativeTo_smart(resourceDir).path
           val targetFile = File(targetDir, relativePath)
           targetFile.parentFile?.mkdirs()
           copyFileWithLineEndingNormalization(file, targetFile)
@@ -204,8 +205,8 @@ class DocOpsApp(
           val resourceDir = File(dir, resourcePath)
           if (resourceDir.isDirectory) {
             resourceDir.walkTopDown().forEach { file ->
-             if (file.isFile && !containsDemoFolder(file.relativeTo(resourceDir).path)) {
-                val relativePath = file.relativeTo(resourceDir).path
+             if (file.isFile && !containsDemoFolder(file.relativeTo_smart(resourceDir).path)) {
+                val relativePath = file.relativeTo_smart(resourceDir).path
                 val targetFile = File(targetDir, relativePath)
                 targetFile.parentFile?.mkdirs()
                copyFileWithLineEndingNormalization(file, targetFile)

@@ -2,8 +2,10 @@ package com.simiacryptus.cognotik.plan.tools
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.util.*
+import java.io.File
 
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)
@@ -18,6 +20,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
   companion object {
 
+    private val log = LoggerFactory.getLogger(TaskType::class.java)
     val _taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> =
       mutableMapOf()
 
@@ -118,7 +121,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         method.newInstance(settings, task) as AbstractTask<T, U>
       }
     }
-
 }
 
 class TaskTypeSerializer : DynamicEnumSerializer<TaskType<*, *>>(TaskType::class.java)

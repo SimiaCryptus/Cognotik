@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.now
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
+import com.simiacryptus.cognotik.util.relativeTo_smart
 import java.io.File
 
 object ModeProductPageGenerator {
@@ -24,7 +25,7 @@ object ModeProductPageGenerator {
     val files =
       File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive").listFilesRecursively()
     val filter = files.filter { it.isFile && it.extension in setOf("kt") }
-      .map { it.relativeTo(root.absoluteFile) }
+      .map { it.relativeTo_smart(root.absoluteFile) }
     filter
       .forEach { codeFile ->
         val htmlFile = File("site/cognotik.com").resolve(codeFile.nameWithoutExtension + ".html")

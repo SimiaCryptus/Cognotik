@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.relativeTo_smart
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -322,7 +323,7 @@ ${planResult.text}
     // Re-read files to get current state (may have been modified by previous iterations)
     val currentFileContents = change.targetFiles.mapNotNull { targetFilePath ->
       val file = root.resolve(targetFilePath).toFile()
-      val relativePath = file.relativeTo(root.toFile()).path
+      val relativePath = file.relativeTo_smart(root.toFile()).path
       if (file.exists()) {
         "# $relativePath\n\n${TRIPLE_TILDE}\n${file.readText()}\n${TRIPLE_TILDE}"
       } else null

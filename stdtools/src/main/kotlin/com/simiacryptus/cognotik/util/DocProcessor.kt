@@ -93,6 +93,88 @@ class DocProcessor(
   val parentSession: Session? = null,
 ) {
   private val statusFile = File(root, "docops.status.json")
+  private val sessionStatusDir = File(root, ".docops")
+  /**
+   * Data structure for per-session status files written under .docops/${sessionId}.status.json
+   */
+  data class SessionStatus(
+    val sessionId: String,
+    val target: String,
+    val status: TaskStatus,
+    val startedAt: String? = null,
+    val completedAt: String? = null,
+    val error: String? = null,
+    val taskType: String? = null,
+    val taskDescription: String? = null,
+    val mainFile: String? = null,
+    val relatedFiles: List<String>? = null,
+    val root: String? = null,
+    val executionConfig: Any? = null,
+    val message: String? = null,
+  )
+  /**
+   * Write out a per-session status file at .docops/${sessionId}.status.json with full task details,
+   * execution config, and current status. Safe to call multiple times; overwrites existing file.
+   */
+  private fun writeSessionStatus(
+    sessionId: String,
+    targetKey: String,
+    status: TaskStatus,
+    mod: ModificationTask? = null,
+    executionConfig: Any? = null,
+    error: String? = null,
+    startedAt: String? = null,
+    completedAt: String? = null,
+  ) {
+    try {
+      synchronized(statusLock) {
+        sessionStatusDir.mkdirs()
+        val safeSessionId = sessionId.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        val sessionFile = File(sessionStatusDir, "${safeSessionId}.status.json")
+        val existing : SessionStatus? = when {
+          sessionFile.exists() ->
+            try {
+              JsonUtil.fromJson(sessionFile.readText(), SessionStatus::class.java)
+            } catch (_: Exception) {
+              null
+            }
+          else -> null
+        }
+        val now = nowTimestamp()
+        val effectiveStartedAt = startedAt
+          ?: existing?.startedAt
+          ?: if (status == TaskStatus.RUNNING) now else null
+        val effectiveCompletedAt = completedAt
+          ?: existing?.completedAt
+          ?: if (status in setOf(TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)) now else null
+        val sessionStatus = SessionStatus(
+          sessionId = sessionId,
+          target = targetKey,
+          status = status,
+          startedAt = effectiveStartedAt,
+          completedAt = effectiveCompletedAt,
+          error = error ?: existing?.error,
+          taskType = mod?.taskType?.name ?: existing?.taskType,
+          taskDescription = mod?.data?.task_description ?: existing?.taskDescription,
+          mainFile = mod?.data?.main_file?.absolutePath ?: existing?.mainFile,
+          relatedFiles = mod?.data?.related_files?.map { it.absolutePath } ?: existing?.relatedFiles,
+          root = mod?.data?.root?.absolutePath ?: existing?.root,
+          executionConfig = executionConfig ?: existing?.executionConfig,
+          message = mod?.let {
+            try {
+              it.message()
+            } catch (_: Exception) {
+              null
+            }
+          } ?: existing?.message,
+        )
+        sessionFile.writeText(JsonUtil.toJson(sessionStatus))
+        log.debug("Wrote session status file: ${sessionFile.absolutePath}")
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to write session status file for session $sessionId", e)
+    }
+  }
 
   private fun readStatusLocked(): DocOpsStatus {
     return try {
@@ -175,7 +257,7 @@ class DocProcessor(
       val taskEntries = tasks.associate { task ->
         val targetKey = task.data.main_file?.let { filePath ->
           try {
-            filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+            filePath.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
           } catch (_: IllegalArgumentException) {
             filePath.canonicalFile.absolutePath
           }
@@ -393,10 +475,19 @@ class DocProcessor(
     val data: Map<String, Any>? = null,
     val taskConfigOverrides: Map<String, Any>? = null,
   ) {
+    val relative_main_file: String?
+      get() = main_file?.let {
+        try {
+          it.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
+        } catch (_: IllegalArgumentException) {
+          // File is outside root, return absolute path
+          it.canonicalFile.absolutePath
+        }
+      }
     val relative_files: List<String>?
       get() = main_file?.let { listOf(it) }?.map { main_file ->
         try {
-          main_file.canonicalFile.relativeTo(root.canonicalFile).toString()
+          main_file.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
         } catch (_: IllegalArgumentException) {
           // File is outside root, return absolute path
           main_file.canonicalFile.absolutePath
@@ -405,7 +496,7 @@ class DocProcessor(
     val relative_related_files: List<String>?
       get() = related_files?.map { filePath ->
         try {
-          filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+          filePath.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
         } catch (_: IllegalArgumentException) {
           // File is outside root, return absolute path
           filePath.canonicalFile.absolutePath
@@ -563,7 +654,7 @@ class DocProcessor(
         for (targetPath in newTargetPaths) {
           val targetFile = File(targetPath)
           val relativePath = try {
-            targetFile.relativeTo(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
+            targetFile.relativeTo_smart(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
           } catch (_: IllegalArgumentException) {
             continue
           }
@@ -616,7 +707,7 @@ class DocProcessor(
     val generates = generateMatches.entries.filter { normalizePath(it.key) == normalizedTarget }.flatMap { it.value }
     val targetFileObj = File(targetFile)
     val relativeTarget = try {
-      targetFileObj.relativeTo(root.absoluteFile)
+      targetFileObj.relativeTo_smart(root.absoluteFile)
     } catch (_: IllegalArgumentException) {
       log.warn("Target file is outside root: $targetFile")
       return null
@@ -705,7 +796,7 @@ class DocProcessor(
                   } else {
                     root.resolve(relatedFile)
                   }
-                  this.appendLine("# Context file: ${resolvedFile.relativeTo(root)}")
+                  this.appendLine("# Context file: ${resolvedFile.relativeTo_smart(root)}")
                   this.appendLine("```")
                   if (resolvedFile.exists()) {
                     var text = resolvedFile.readText().trim()
@@ -1055,7 +1146,7 @@ class DocProcessor(
             mods.forEach { mod ->
               val targetKey = mod.data.main_file?.let { filePath ->
                 try {
-                  filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+                  filePath.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
                 } catch (_: IllegalArgumentException) {
                   filePath.canonicalFile.absolutePath
                 }
@@ -1075,7 +1166,7 @@ class DocProcessor(
             remainingMods.forEach { mod ->
               val targetKey = mod.data.main_file?.let { filePath ->
                 try {
-                  filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+                  filePath.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
                 } catch (_: IllegalArgumentException) {
                   filePath.canonicalFile.absolutePath
                 }
@@ -1087,7 +1178,7 @@ class DocProcessor(
             remainingMods.forEach { mod ->
               val targetKey = mod.data.main_file?.let { filePath ->
                 try {
-                  filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+                  filePath.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
                 } catch (_: IllegalArgumentException) {
                   filePath.canonicalFile.absolutePath
                 }
@@ -1130,7 +1221,7 @@ class DocProcessor(
   ) {
     val targetKey = mod.data.main_file?.let { filePath ->
       try {
-        filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+        filePath.canonicalFile.relativeTo_smart(root.canonicalFile).toString()
       } catch (_: IllegalArgumentException) {
         filePath.canonicalFile.absolutePath
       }
@@ -1158,16 +1249,29 @@ class DocProcessor(
     }
     updateTaskStatus(targetKey, TaskStatus.RUNNING)
     try {
+      val execConfig = try {
+        executionConfig(rebasedMod, harness)
+      } catch (e: Exception) {
+        log.warn("Failed to compute execution config for session status snapshot", e)
+        null
+      }
       harness.runTask(
         taskType = rebasedMod.taskType,
         timeoutMinutes = 30,
         message = rebasedMod.message(),
-        executionConfig = executionConfig(rebasedMod, harness),
+        executionConfig = execConfig ?: executionConfig(rebasedMod, harness),
         parentSession = parentSession,
         onComplete = { _: String, task: SessionTask ->
           val sessionId = task.ui.sessionId.toString()
           log.info("Task completed for target '$targetKey' in session $sessionId")
           updateTaskStatus(targetKey, TaskStatus.COMPLETED, sessionId = sessionId)
+          writeSessionStatus(
+            sessionId = sessionId,
+            targetKey = targetKey,
+            status = TaskStatus.COMPLETED,
+            mod = rebasedMod,
+            executionConfig = execConfig
+          )
         },
         onError = { error: Throwable ->
           log.warn("Task failed for target '$targetKey' with error: ${error.message}", error)
@@ -1177,9 +1281,23 @@ class DocProcessor(
         if (cancelFlag.get()) {
           log.info("Cancellation requested, skipping execution of remaining tasks")
           updateTaskStatus(targetKey, TaskStatus.CANCELLED, sessionId = session.toString())
+          writeSessionStatus(
+            sessionId = session.toString(),
+            targetKey = targetKey,
+            status = TaskStatus.CANCELLED,
+            mod = rebasedMod,
+            executionConfig = execConfig
+          )
           throw CancellationException("Execution cancelled")
         }
         updateTaskStatus(targetKey, TaskStatus.RUNNING, sessionId = session.toString())
+        writeSessionStatus(
+          sessionId = session.toString(),
+          targetKey = targetKey,
+          status = TaskStatus.RUNNING,
+          mod = rebasedMod,
+          executionConfig = execConfig
+        )
         onNewSession(session)
         sessions += session
         harness.createSettings(
@@ -1210,12 +1328,17 @@ class DocProcessor(
     val model = model ?: harness.fastModel.asApiChatModel(user).let {
       if (task != null) it.getChildClient(task) else it
     }
-    val data = mod.data.copy()
+    var data = mod.data.copy()
+    data = data.copy(root = data.main_file?.parentFile ?: root)
     return when {
       FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
-        val baseCfgJson = mapOf(
+        val baseCfgJson = data.jsonCast<Map<String, Any>>() + mapOf(
           "task_type" to mod.taskType.name,
-        ) + data.jsonCast<Map<String, Any>>()
+          "main_file" to data.relative_main_file,
+        )
+        if(baseCfgJson["main_file"]?.toString()?.contains(File.separator) == true) {
+          log.warn("Task config main_file contains a path separator, which may cause issues: ${baseCfgJson}")
+        }
         data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
       }
 
@@ -1232,35 +1355,31 @@ class DocProcessor(
         mod.patchProcessor?.apply {
           harness.processor = this
         }
-        val newRoot = data.main_file?.parentFile ?: root
-        val data = data.copy(root = newRoot)
-        val orchestrationConfig = harness.createSettings(
-          session = Session.newGlobalID(),
-          autoFix = true,
-          typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
-          workingDir = newRoot.toString(),
-        )
-        val contextMessages = buildList {
-          add("Task type: ${mod.taskType.name}")
-          add("Task description: ${data.task_description}")
-          data.relative_files?.forEach { text -> add("Target file: $text") }
-          data.relative_related_files?.forEach { relatedFile ->
-            val resolvedFile =
-              if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
-            if (resolvedFile.exists()) {
-              add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
-            }
-          }
-          val message = mod.message()
-          if (message.isNotBlank()) add(message)
-        }
         val (_, taskConfig) = ConversationalMode.requestToTask(
           defaultModel = model,
           fastModel = model,
           userMessage = data.task_description,
-          orchestrationConfig = orchestrationConfig,
+          orchestrationConfig = harness.createSettings(
+            session = Session.newGlobalID(),
+            autoFix = true,
+            typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
+            workingDir = data.root.toString(),
+          ),
           prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
-          history = contextMessages,
+          history = buildList {
+            add("Task type: ${mod.taskType.name}")
+            add("Task description: ${data.task_description}")
+            data.relative_files?.forEach { text -> add("Target file: $text") }
+            data.relative_related_files?.forEach { relatedFile ->
+              val resolvedFile =
+                if (File(relatedFile).isAbsolute) File(relatedFile) else data.root.resolve(relatedFile)
+              if (resolvedFile.exists()) {
+                add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
+              }
+            }
+            val message = mod.message()
+            if (message.isNotBlank()) add(message)
+          },
           singleStage = true,
           taskTypes = listOf(mod.taskType)
         )
@@ -1851,7 +1970,7 @@ class DocProcessor(
         return emptyList()
       }
       return root.listFilesRecursively().filter { it.isFile }.mapNotNull { sourceFile ->
-        val relativePath = sourceFile.relativeTo(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
+        val relativePath = sourceFile.relativeTo_smart(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
         val matcher = sourceRegex.matcher(relativePath)
         if (matcher.matches()) {
           // Apply backreferences (with optional arithmetic) to destination pattern

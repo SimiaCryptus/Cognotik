@@ -33,8 +33,6 @@ class CreateErbTemplateTask(
   class CreateErbTemplateTaskExecutionConfigData(
     @Description("Description of the template to generate, including its purpose and expected data structure")
     var template_description: String? = null,
-    @Description("The output file path for the generated template (relative to working directory)")
-    override var main_file: String = "",
     @Description("The target format for the template output (e.g., 'latex', 'html', 'markdown', 'text')")
     var output_format: String = "latex",
     @Description("Example data structure in JSON format to help define the schema")
