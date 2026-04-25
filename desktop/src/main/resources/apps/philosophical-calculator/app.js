@@ -274,7 +274,8 @@
         'narrative.md': 'badge-narrative',
         'comic.md': 'badge-comic',
         'technical_explanation.md': 'badge-technical',
-        'illustrated_content.md': 'badge-illustration'
+         'illustrated_content.md': 'badge-illustration',
+         'page.html': 'badge-webpage'
     };
 
     function startStatusPolling() {
@@ -760,7 +761,7 @@
         { key: 'narrative', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
         { key: 'comic', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
         { key: 'technical', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Explanation' },
-        { key: 'illustration', op: 'ops/illustration_op.md', output: 'content.md', badge: 'badge-illustration', viewer: 'viewer-illustration', label: 'Illustrate Document' }
+         { key: 'webpage', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'Webpage Generation' }
     ];
 
 
@@ -865,7 +866,8 @@
             { file: 'narrative.md', badge: 'badge-narrative' },
             { file: 'comic.md', badge: 'badge-comic' },
             { file: 'technical_explanation.md', badge: 'badge-technical' },
-            { file: 'illustrated_content.md', badge: 'badge-illustration' }
+             { file: 'illustrated_content.md', badge: 'badge-illustration' },
+             { file: 'page.html', badge: 'badge-webpage' }
         ];
 
         for (var i = 0; i < fileChecks.length; i++) {
@@ -1603,6 +1605,11 @@
     });
     // Initialize usage links
     updateUsageLinks();
+     // Initialize webpage open link
+     var webpageOpenLink = document.getElementById('webpage-open-link');
+     if (webpageOpenLink) {
+         webpageOpenLink.href = basePath + '/page.html';
+     }
 
 
 })();

@@ -510,26 +510,26 @@
                     <div class="viewer" id="viewer-technical"></div>
                 </div>
             </div>
-            <!-- Illustration -->
+             <!-- Webpage -->
             <div class="card lens-card">
                 <div class="step">
                     <div class="step-header">
-                        <span class="lens-icon">🎨</span>
-                        <span class="step-title">Illustrate Document</span>
-                        <span class="step-badge pending" id="badge-illustration-lens">pending</span>
+                         <span class="lens-icon">🌐</span>
+                         <span class="step-title">Webpage</span>
+                         <span class="step-badge pending" id="badge-webpage">pending</span>
                     </div>
-                    <p class="step-desc">Add inline AI-generated illustrations throughout the article to enhance the narrative and visually explain complex concepts.</p>
+                     <p class="step-desc">Generate a standalone HTML webpage representation of the article with proper styling and structure.</p>
                     <div class="button-row">
                         <button class="btn btn-primary btn-run"
-                                data-op="ops/illustration_op.md"
-                                data-output="content.md"
-                                data-badge="badge-illustration-lens"
-                                data-viewer="viewer-illustration-lens">▶ Run</button>
+                                 data-op="ops/webpage_op.md"
+                                 data-output="page.html"
+                                 data-badge="badge-webpage"
+                                 data-viewer="viewer-webpage">▶ Run</button>
                         <button class="btn btn-secondary btn-view"
-                                data-file="content.md"
-                                data-viewer="viewer-illustration-lens">👁 View</button>
+                                 data-file="page.html"
+                                 data-viewer="viewer-webpage">👁 View</button>
                     </div>
-                    <div class="viewer" id="viewer-illustration-lens"></div>
+                     <div class="viewer" id="viewer-webpage"></div>
                 </div>
             </div>
 
@@ -550,7 +550,7 @@
                 <label><input type="checkbox" class="lens-check" value="narrative"> 📖 Narrative</label>
                 <label><input type="checkbox" class="lens-check" value="comic"> 💬 Comic</label>
                 <label><input type="checkbox" class="lens-check" value="technical"> 🔧 Technical</label>
-                <label><input type="checkbox" class="lens-check" value="illustration"> 🎨 Illustrate</label>
+                 <label><input type="checkbox" class="lens-check" value="webpage"> 🌐 Webpage</label>
             </div>
             <div class="button-row">
                 <button class="btn btn-accent" id="run-selected-lenses">▶ Run Selected Lenses</button>
@@ -577,7 +577,8 @@
             <button class="results-tab" data-tab="tab-narrative">📖 Narrative</button>
             <button class="results-tab" data-tab="tab-comic">💬 Comic</button>
             <button class="results-tab" data-tab="tab-technical">🔧 Technical</button>
-            <button class="results-tab" data-tab="tab-illustration">🎨 Illustrated</button>
+             <button class="results-tab" data-tab="tab-illustration">🎨 Illustrated</button>
+             <button class="results-tab" data-tab="tab-webpage">🌐 Webpage</button>
         </div>
 
         <div class="results-content">
