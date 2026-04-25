@@ -110,7 +110,7 @@ class DocProcessorServlet(
         val targetFile = sessionDir.resolve(targetPath).canonicalFile
         allTasks.filter { task ->
           try {
-            task.data.main_file?.canonicalFile == targetFile
+            task.data.main_file?.canonicalFile?.endsWith(targetFile) == true
           } catch (e: Exception) {
             false
           } ?: false
