@@ -33,6 +33,18 @@
     "appId": "sys-wizard"
   },
   {
+    "id": "app-interactive-stories",
+    "name": "Interactive Stories",
+    "icon": "📖",
+    "description": "Craft branching, AI-powered narratives. Write a premise, generate an opening scene, then explore a tree of story nodes by choosing one of three branches (A/B/C) at every step. Each path is saved to disk so you can revisit and continue any branch later.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/interactive-stories",
+    "resource_path": "apps/interactive-stories",
+    "appId": "interactive-stories"
+  },
+  {
     "id": "app-comic-serial",
     "name": "Comic Serial",
     "icon": "📚",
@@ -48,7 +60,7 @@
     "name": "Omega App Factory",
     "icon": "🔮",
     "description": "Meta-application that designs and produces other DocOps applications from plain language descriptions.",
-    "badge": "Advanced",
+    "badge": "Experimental",
     "badgeClass": "accent",
     "type": "docops",
     "path": "/omega",
@@ -59,7 +71,7 @@
     "name": "Basic Chat",
     "icon": "💬",
     "description": "Interactive conversation with AI. Ask questions, brainstorm ideas, or get help with any topic.",
-    "badge": "Quick Start",
+    "badge": null,
     "badgeClass": "",
     "type": "chat",
     "path": "/chat"

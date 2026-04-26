@@ -274,7 +274,8 @@
         'narrative.md': 'badge-narrative',
         'comic.md': 'badge-comic',
         'technical_explanation.md': 'badge-technical',
-        'illustrated_content.md': 'badge-illustration'
+         'illustrated_content.md': 'badge-illustration',
+         'page.html': 'badge-webpage'
     };
 
     function startStatusPolling() {
@@ -374,8 +375,24 @@
             container = document.createElement('div');
             container.id = linkContainerId;
             container.className = 'session-link-container';
-            // Try to find the viewer for this target and insert before it
-            var viewerIdGuess = 'viewer-' + target.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]/g, '-');
+            // Map target file -> viewer ID
+            var targetToViewer = {
+                'summary.md': 'viewer-summary',
+                'content.md': 'viewer-content',
+                'brainstorm.md': 'viewer-brainstorm',
+                'dialectical.md': 'viewer-dialectical',
+                'socratic.md': 'viewer-socratic',
+                'perspectives.md': 'viewer-perspectives',
+                'persuasive.md': 'viewer-persuasive',
+                'gametheory.md': 'viewer-gametheory',
+                'narrative.md': 'viewer-narrative',
+                'comic.md': 'viewer-comic',
+                'technical_explanation.md': 'viewer-technical',
+                'illustrated_content.md': 'viewer-illustration',
+                'page.html': 'viewer-webpage'
+            };
+            var viewerIdGuess = targetToViewer[target] ||
+                ('viewer-' + target.replace(/\.(md|html)$/, '').replace(/[^a-zA-Z0-9]/g, '-'));
             var viewer = document.getElementById(viewerIdGuess);
             if (viewer && viewer.parentElement) {
                 viewer.parentElement.insertBefore(container, viewer);
@@ -760,7 +777,7 @@
         { key: 'narrative', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
         { key: 'comic', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
         { key: 'technical', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Explanation' },
-        { key: 'illustration', op: 'ops/illustration_op.md', output: 'content.md', badge: 'badge-illustration', viewer: 'viewer-illustration', label: 'Illustrate Document' }
+         { key: 'webpage', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'Webpage Generation' }
     ];
 
 
@@ -865,7 +882,8 @@
             { file: 'narrative.md', badge: 'badge-narrative' },
             { file: 'comic.md', badge: 'badge-comic' },
             { file: 'technical_explanation.md', badge: 'badge-technical' },
-            { file: 'illustrated_content.md', badge: 'badge-illustration' }
+             { file: 'illustrated_content.md', badge: 'badge-illustration' },
+             { file: 'page.html', badge: 'badge-webpage' }
         ];
 
         for (var i = 0; i < fileChecks.length; i++) {
@@ -1085,12 +1103,43 @@
     // ========================================================================
     // Viewer Mode Toggle (Markdown source vs Rendered HTML) & Zoom
     // ========================================================================
+    function isHtmlViewer(viewerId) {
+        return viewerId === 'viewer-webpage' || viewerId === 'result-webpage';
+    }
+
     function renderViewerContent(viewerId) {
         var viewer = document.getElementById(viewerId);
         if (!viewer) return;
         var raw = viewerRawContent[viewerId];
         if (raw === undefined || raw === null) return;
         var mode = viewerModes[viewerId] || 'rendered';
+        // For HTML files (page.html), render in iframe or show source
+        if (isHtmlViewer(viewerId)) {
+            if (mode === 'markdown' || mode === 'source') {
+                viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+            } else {
+                // Render HTML in a sandboxed iframe
+                var iframe = document.createElement('iframe');
+                iframe.className = 'html-preview-iframe';
+                iframe.setAttribute('sandbox', 'allow-same-origin');
+                iframe.style.width = '100%';
+                iframe.style.minHeight = '600px';
+                iframe.style.border = '1px solid var(--color-border, #ccc)';
+                iframe.style.background = '#fff';
+                viewer.innerHTML = '';
+                viewer.appendChild(iframe);
+                // Write content after attaching to DOM
+                try {
+                    var doc = iframe.contentDocument || iframe.contentWindow.document;
+                    doc.open();
+                    doc.write(raw);
+                    doc.close();
+                } catch (e) {
+                    viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+                }
+            }
+            return;
+        }
         if (mode === 'markdown') {
             viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
         } else {
@@ -1112,25 +1161,61 @@
         toolbar.id = 'toolbar-' + viewerId;
         toolbar.className = 'viewer-toolbar';
         var currentMode = viewerModes[viewerId] || 'rendered';
-        var btnLabel = currentMode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
-        toolbar.innerHTML =
-            '<button class="btn btn-sm btn-toolbar btn-toggle-mode" data-viewer="' + viewerId + '" title="Toggle Markdown / Rendered">' + btnLabel + '</button>' +
-            '<button class="btn btn-sm btn-toolbar btn-zoom" data-viewer="' + viewerId + '" title="Zoom / Fullscreen">' +
-            '🔍 Zoom</button>';
+        var isHtml = isHtmlViewer(viewerId);
+        var btnLabel;
+        if (isHtml) {
+            btnLabel = currentMode === 'rendered' ? '📄 Source' : '🌐 Rendered';
+        } else {
+            btnLabel = currentMode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+        }
+        var toolbarHtml =
+            '<button class="btn btn-sm btn-toolbar btn-toggle-mode" data-viewer="' + viewerId + '" title="Toggle source / Rendered">' + btnLabel + '</button>' +
+            '<button class="btn btn-sm btn-toolbar btn-zoom" data-viewer="' + viewerId + '" title="Zoom / Fullscreen">🔍 Zoom</button>';
+        if (isHtml) {
+            toolbarHtml +=
+                '<a class="btn btn-sm btn-toolbar btn-open-newtab" href="' + escapeHtml(basePath + '/page.html') + '" target="_blank" rel="noopener" title="Open in new tab">🚀 Open in New Tab</a>';
+        }
+        toolbar.innerHTML = toolbarHtml;
         viewer.parentElement.insertBefore(toolbar, viewer);
         // Attach toggle handler
         toolbar.querySelector('.btn-toggle-mode').addEventListener('click', function () {
             var vid = this.dataset.viewer;
             var current = viewerModes[vid] || 'rendered';
             viewerModes[vid] = current === 'rendered' ? 'markdown' : 'rendered';
-            this.textContent = viewerModes[vid] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+            var isH = isHtmlViewer(vid);
+            if (isH) {
+                this.textContent = viewerModes[vid] === 'rendered' ? '📄 Source' : '🌐 Rendered';
+            } else {
+                this.textContent = viewerModes[vid] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+            }
             renderViewerContent(vid);
             // Also update zoom overlay if open
             if (zoomedViewerId === vid) {
                 var zoomBody = document.getElementById('zoom-overlay-body');
                 if (zoomBody) {
                     var raw = viewerRawContent[vid];
-                    if (viewerModes[vid] === 'markdown') {
+                    if (isHtmlViewer(vid)) {
+                        if (viewerModes[vid] === 'markdown') {
+                            zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+                        } else {
+                            zoomBody.innerHTML = '';
+                            var zIframe = document.createElement('iframe');
+                            zIframe.className = 'html-preview-iframe';
+                            zIframe.setAttribute('sandbox', 'allow-same-origin');
+                            zIframe.style.width = '100%';
+                            zIframe.style.height = '100%';
+                            zIframe.style.minHeight = '600px';
+                            zIframe.style.border = 'none';
+                            zIframe.style.background = '#fff';
+                            zoomBody.appendChild(zIframe);
+                            try {
+                                var zDoc = zIframe.contentDocument || zIframe.contentWindow.document;
+                                zDoc.open();
+                                zDoc.write(raw);
+                                zDoc.close();
+                            } catch (e) { /* ignore */ }
+                        }
+                    } else if (viewerModes[vid] === 'markdown') {
                         zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
                     } else {
                         zoomBody.innerHTML = renderMarkdown(raw);
@@ -1159,6 +1244,7 @@
                 '<span class="zoom-title" id="zoom-overlay-title"></span>' +
                 '<div class="zoom-header-buttons">' +
                 '<button class="btn btn-sm btn-toolbar" id="zoom-toggle-mode">📝 Markdown</button>' +
+                '<a class="btn btn-sm btn-toolbar" id="zoom-open-newtab" href="#" target="_blank" rel="noopener" style="display:none;">🚀 Open in New Tab</a>' +
                 '<button class="btn btn-sm btn-toolbar" id="zoom-close-btn">✕ Close</button>' +
                 '</div>' +
                 '</div>' +
@@ -1171,12 +1257,38 @@
                 if (!zoomedViewerId) return;
                 var current = viewerModes[zoomedViewerId] || 'rendered';
                 viewerModes[zoomedViewerId] = current === 'rendered' ? 'markdown' : 'rendered';
-                this.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+                var isH = isHtmlViewer(zoomedViewerId);
+                if (isH) {
+                    this.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📄 Source' : '🌐 Rendered';
+                } else {
+                    this.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+                }
                 // Update both zoom and inline viewer
                 renderViewerContent(zoomedViewerId);
                 var zoomBody = document.getElementById('zoom-overlay-body');
                 var raw2 = viewerRawContent[zoomedViewerId];
-                if (viewerModes[zoomedViewerId] === 'markdown') {
+                if (isH) {
+                    if (viewerModes[zoomedViewerId] === 'markdown') {
+                        zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw2) + '</pre>';
+                    } else {
+                        zoomBody.innerHTML = '';
+                        var zIframe2 = document.createElement('iframe');
+                        zIframe2.className = 'html-preview-iframe';
+                        zIframe2.setAttribute('sandbox', 'allow-same-origin');
+                        zIframe2.style.width = '100%';
+                        zIframe2.style.height = '100%';
+                        zIframe2.style.minHeight = '600px';
+                        zIframe2.style.border = 'none';
+                        zIframe2.style.background = '#fff';
+                        zoomBody.appendChild(zIframe2);
+                        try {
+                            var zDoc2 = zIframe2.contentDocument || zIframe2.contentWindow.document;
+                            zDoc2.open();
+                            zDoc2.write(raw2);
+                            zDoc2.close();
+                        } catch (e) { /* ignore */ }
+                    }
+                } else if (viewerModes[zoomedViewerId] === 'markdown') {
                     zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw2) + '</pre>';
                 } else {
                     zoomBody.innerHTML = renderMarkdown(raw2);
@@ -1184,7 +1296,11 @@
                 // Sync inline toolbar button text
                 var inlineBtn = document.querySelector('#toolbar-' + zoomedViewerId + ' .btn-toggle-mode');
                 if (inlineBtn) {
-                    inlineBtn.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+                    if (isH) {
+                        inlineBtn.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📄 Source' : '🌐 Rendered';
+                    } else {
+                        inlineBtn.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+                    }
                 }
             });
             // Close on Escape
@@ -1196,9 +1312,43 @@
         var zoomBody = document.getElementById('zoom-overlay-body');
         var zoomTitle = document.getElementById('zoom-overlay-title');
         var zoomToggle = document.getElementById('zoom-toggle-mode');
+        var zoomOpenNewtab = document.getElementById('zoom-open-newtab');
         zoomTitle.textContent = viewerId.replace(/^(viewer-|result-)/, '').replace(/-/g, ' ');
-        zoomToggle.textContent = mode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
-        if (mode === 'markdown') {
+        var isHtml = isHtmlViewer(viewerId);
+        if (isHtml) {
+            zoomToggle.textContent = mode === 'rendered' ? '📄 Source' : '🌐 Rendered';
+            if (zoomOpenNewtab) {
+                zoomOpenNewtab.href = basePath + '/page.html';
+                zoomOpenNewtab.style.display = '';
+            }
+        } else {
+            zoomToggle.textContent = mode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+            if (zoomOpenNewtab) {
+                zoomOpenNewtab.style.display = 'none';
+            }
+        }
+        if (isHtml) {
+            if (mode === 'markdown') {
+                zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+            } else {
+                zoomBody.innerHTML = '';
+                var zIframe3 = document.createElement('iframe');
+                zIframe3.className = 'html-preview-iframe';
+                zIframe3.setAttribute('sandbox', 'allow-same-origin');
+                zIframe3.style.width = '100%';
+                zIframe3.style.height = '100%';
+                zIframe3.style.minHeight = '600px';
+                zIframe3.style.border = 'none';
+                zIframe3.style.background = '#fff';
+                zoomBody.appendChild(zIframe3);
+                try {
+                    var zDoc3 = zIframe3.contentDocument || zIframe3.contentWindow.document;
+                    zDoc3.open();
+                    zDoc3.write(raw);
+                    zDoc3.close();
+                } catch (e) { /* ignore */ }
+            }
+        } else if (mode === 'markdown') {
             zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
         } else {
             zoomBody.innerHTML = renderMarkdown(raw);
@@ -1603,6 +1753,11 @@
     });
     // Initialize usage links
     updateUsageLinks();
+     // Initialize webpage open link
+     var webpageOpenLink = document.getElementById('webpage-open-link');
+     if (webpageOpenLink) {
+         webpageOpenLink.href = basePath + '/page.html';
+     }
 
 
 })();
