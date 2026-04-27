@@ -151,11 +151,9 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
   fun transcriptFile(): String = getOutputFile(".md") ?: transcriptFile(taskType)
 
-  open fun getOutputFile(extension: String): String? = executionConfig?.let { listOf(it.main_file) }?.let {
-    when {
-      it.filter { it.endsWith(extension) }.size == 1 -> it.first { it.endsWith(extension) }
-      else -> null
-    }
+  open fun getOutputFile(extension: String): String? = when {
+    executionConfig?.main_file?.endsWith(extension) == true -> executionConfig?.main_file
+    else -> null
   }
 
   fun createTabbedDisplay(task: SessionTask) = TabbedDisplay(task)

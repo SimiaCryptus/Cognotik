@@ -41,6 +41,7 @@ const INITIAL_NODE = '0';
 const AUTO_READ_KEY = `${APP_PREFIX}.autoRead`;
 const VOICE_KEY = `${APP_PREFIX}.voice`;
 const AUTO_IMAGE_KEY = `${APP_PREFIX}.autoImage`;
+const HIGHLIGHT_KEY = `${APP_PREFIX}.highlightReadalong`;
 const STYLESHEET_FILE = 'stylesheet_instructions.md';
 
 const { basePath, sessionId } = parseSessionUrl();
@@ -55,6 +56,20 @@ let logger = null;
 let statusPoller = null;
 let isSpeaking = false;
 let isGeneratingImage = false;
+let _pendingAutoRead = false;        // true when auto-read is queued but waiting for a user gesture
+let _hasUserGesture = false;         // true once the user has interacted with the page
+let _ttsTimerInterval = null;        // setInterval handle for timer-based word highlight fallback
+let _ttsTimerWordIdx = 0;            // current word index for timer-based highlight
+let _ttsTimerStartTime = 0;          // performance.now() when speech chunk started
+let _ttsTimerChunkOffset = 0;        // char offset of the current chunk in _ttsPlainText
+// TTS word-highlight state
+let _ttsWordSpans = [];      // flat array of <span class="tts-sentence"> elements in reading order
+let _ttsCharOffset = 0;     // cumulative char offset at the start of the current chunk
+let _ttsActiveSpan = null;  // the currently highlighted span
+// Plain text derived from word spans — used as the single source of truth for
+// both the utterance text and the offset index so boundary charIndex values
+// map exactly to span positions.
+let _ttsPlainText = '';
 
 // Timing helpers
 const _timers = new Map();
@@ -111,6 +126,9 @@ async function init() {
 
         // Immersive mode toggle
         document.getElementById('toggle-immersive').addEventListener('click', toggleImmersive);
+         // Track user gestures so auto-read can fire after the first interaction
+         document.addEventListener('click', _onUserGesture, { once: true });
+         document.addEventListener('keydown', _onUserGesture, { once: true });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && document.body.classList.contains('immersive')) {
                 toggleImmersive();
@@ -149,6 +167,18 @@ async function init() {
             console.log('[init] auto-image toggled →', autoImageEl.checked);
             log(`Auto-image ${autoImageEl.checked ? 'enabled' : 'disabled'}.`, 'info');
         });
+         // Highlight readalong toggle
+         const highlightEl = document.getElementById('highlight-readalong');
+         // Default to true if no saved preference exists yet
+         highlightEl.checked = localStorage.getItem(HIGHLIGHT_KEY) !== 'false';
+         console.log('[init] highlight-readalong initial state:', highlightEl.checked);
+         highlightEl.addEventListener('change', () => {
+             localStorage.setItem(HIGHLIGHT_KEY, highlightEl.checked ? 'true' : 'false');
+             console.log('[init] highlight-readalong toggled →', highlightEl.checked);
+             log(`Readalong highlighting ${highlightEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+             // If highlighting was just turned off, clear any active highlight immediately.
+             if (!highlightEl.checked) clearWordHighlight();
+         });
 
 
         // Save model selections on change
@@ -776,7 +806,13 @@ async function loadNode(nodeId) {
 
     currentNode = nodeId;
     document.getElementById('current-node-path').textContent = path;
-    document.getElementById('node-content').innerHTML = renderMarkdown(content);
+     const nodeContentEl = document.getElementById('node-content');
+     nodeContentEl.innerHTML = renderMarkdown(content);
+      _ttsWordSpans = buildSentenceSpans(nodeContentEl);
+      _ttsOffsetIndex = buildSpanOffsetIndex(_ttsWordSpans);
+     _ttsPlainText = _ttsOffsetIndex.plainText;
+     _ttsCharOffset = 0;
+     _ttsActiveSpan = null;
     document.getElementById('choice-actions').style.display = 'block';
     setBadge('badge-node', 'done');
 
@@ -803,7 +839,13 @@ async function loadNode(nodeId) {
     if (document.getElementById('auto-read').checked) {
         log(`Auto-read enabled — starting speech for node "${nodeId}".`, 'info');
         console.log(`[loadNode] Auto-read enabled — triggering speech for node "${nodeId}".`);
-         setTimeout(() => speakText(content), 150);
+           // Auto-read requires a prior user gesture (browser autoplay policy).
+           // We set a flag so the next user interaction can trigger it, but we
+           // do NOT call speak() here because it will be blocked with "not-allowed"
+           // when the page loads without a prior gesture.
+           _pendingAutoRead = true;
+           _updateAutoReadIndicator(true);
+           console.log('[loadNode] Auto-read: set _pendingAutoRead=true (waiting for user gesture).');
     }
     // Load existing image (if any)
     await loadNodeImage(nodeId);
@@ -811,6 +853,206 @@ async function loadNode(nodeId) {
 // -------------------------------------------------------------------------
 // Text-to-speech
 // -------------------------------------------------------------------------
+/**
+   * Walk all text nodes inside `rootEl`, wrap each sentence in
+   * a <span class="tts-sentence"> element, and return the ordered array of spans.
+  * This must be called after the markdown has been rendered into the DOM.
+  */
+function buildSentenceSpans(rootEl) {
+     const spans = [];
+     // Collect all text nodes in document order, skipping script/style subtrees.
+     const walker = document.createTreeWalker(
+         rootEl,
+         NodeFilter.SHOW_TEXT,
+         {
+             acceptNode(node) {
+                 const tag = node.parentElement && node.parentElement.tagName.toUpperCase();
+                 if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+                 return NodeFilter.FILTER_ACCEPT;
+             }
+         }
+     );
+     const textNodes = [];
+     let n;
+     while ((n = walker.nextNode())) textNodes.push(n);
+      // Collect all text content per block-level parent, then split into sentences.
+      // We group consecutive text nodes that share the same block ancestor so that
+      // sentence boundaries don't get split across sibling inline elements.
+      const BLOCK_TAGS = new Set(['P','LI','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','TD','TH','DIV','SECTION','ARTICLE']);
+      function getBlockAncestor(node) {
+          let el = node.parentElement;
+          while (el && el !== rootEl) {
+              if (BLOCK_TAGS.has(el.tagName.toUpperCase())) return el;
+              el = el.parentElement;
+          }
+          return el || rootEl;
+      }
+      // Split a string into sentence-sized tokens, preserving trailing punctuation.
+      function splitSentences(text) {
+          // Match runs ending in sentence-terminal punctuation, or the remainder.
+          const parts = [];
+          // Split on .  !  ?  followed by whitespace or end-of-string,
+          // keeping the delimiter attached to the preceding token.
+          const re = /[^.!?]*[.!?]+[\s]*/g;
+          let match;
+          let lastIdx = 0;
+          while ((match = re.exec(text)) !== null) {
+              const s = match[0];
+              if (s.trim()) parts.push(s);
+              lastIdx = re.lastIndex;
+          }
+          // Any trailing text without terminal punctuation
+          if (lastIdx < text.length) {
+              const tail = text.slice(lastIdx);
+              if (tail.trim()) parts.push(tail);
+          }
+          return parts.length ? parts : (text.trim() ? [text] : []);
+      }
+
+     for (const textNode of textNodes) {
+         const text = textNode.nodeValue;
+         if (!text || !text.trim()) continue;
+
+          const sentences = splitSentences(text);
+          if (!sentences.length) continue;
+
+         const frag = document.createDocumentFragment();
+          for (const sentence of sentences) {
+              const span = document.createElement('span');
+              span.className = 'tts-sentence';
+              span.textContent = sentence;
+              frag.appendChild(span);
+              spans.push(span);
+         }
+         textNode.parentNode.replaceChild(frag, textNode);
+     }
+      console.debug('[buildSentenceSpans] Built', spans.length, 'sentence spans.');
+     return spans;
+}
+/**
+  * Build a plain-text string from the word spans (joined by single spaces) and
+  * return it alongside a parallel array of character-start offsets so that a
+  * boundary charIndex can be mapped back to a span index in O(log n).
+  *
+  * Returns { plainText: string, offsets: number[] }
+  * where offsets[i] is the start index of spans[i] inside plainText.
+  * For sentence spans the text is joined without extra spaces (each span
+  * already carries its own trailing whitespace).
+  */
+function buildSpanOffsetIndex(spans) {
+     let plainText = '';
+     const offsets = [];
+     for (let i = 0; i < spans.length; i++) {
+         offsets.push(plainText.length);
+          // Sentence spans already include trailing whitespace from the original
+          // text, so we concatenate directly without adding extra separators.
+          plainText += spans[i].textContent;
+     }
+     console.debug('[buildSpanOffsetIndex] plainText length:', plainText.length, '| spans:', spans.length);
+     return { plainText, offsets };
+}
+// Cached offset index — rebuilt whenever _ttsWordSpans changes (i.e. on node load).
+let _ttsOffsetIndex = { plainText: '', offsets: [] };
+/** Returns true when the readalong-highlight checkbox is checked. */
+function isHighlightEnabled() {
+     const el = document.getElementById('highlight-readalong');
+     return el ? el.checked : true;
+}
+
+/**
+  * Given a character offset into the *plain text* being spoken (as reported by
+  * the `boundary` event), find and highlight the corresponding word span.
+  *
+  * `chunkOffset` is the cumulative character count of all chunks spoken before
+  * the current one, so that offsets from the boundary event (which are relative
+  * to the current utterance) can be mapped to the global span array.
+  */
+function highlightWordAtOffset(charOffset) {
+     if (!_ttsWordSpans.length) return;
+      if (!isHighlightEnabled()) return;
+      // Binary-search the pre-built offset index for the sentence span whose
+      // range contains charOffset.
+      const { offsets } = _ttsOffsetIndex;
+      let lo = 0, hi = offsets.length - 1, spanIdx = 0;
+      while (lo <= hi) {
+          const mid = (lo + hi) >>> 1;
+          if (offsets[mid] <= charOffset) {
+              spanIdx = mid;
+              lo = mid + 1;
+          } else {
+              hi = mid - 1;
+          }
+      }
+       // Advance by one: the boundary event fires at the *start* of the word
+       // being spoken, so by the time the event arrives the previous span has
+       // already been read.  Shifting forward by one keeps the highlight in
+       // sync with the audio.
+       const advancedIdx = Math.min(spanIdx + 1, _ttsWordSpans.length - 1);
+       const found = _ttsWordSpans[advancedIdx] || null;
+     if (found === _ttsActiveSpan) return; // no change
+     if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
+     _ttsActiveSpan = found;
+     if (_ttsActiveSpan) {
+         _ttsActiveSpan.classList.add('tts-highlight');
+          // Scroll within the markdown-preview container rather than the page,
+          // so the card itself doesn't jump around.
+          scrollSpanIntoView(_ttsActiveSpan);
+     }
+}
+/** Remove any active word highlight without stopping speech. */
+function clearWordHighlight() {
+     if (_ttsActiveSpan) {
+         _ttsActiveSpan.classList.remove('tts-highlight');
+         _ttsActiveSpan = null;
+     }
+}
+/**
+  * Return the span index whose range contains `charOffset` (binary search).
+  * Used to seed the timer-based fallback at the correct position.
+  */
+function _spanIdxForCharOffset(charOffset) {
+      if (!_ttsOffsetIndex.offsets.length) return 0;
+      const { offsets } = _ttsOffsetIndex;
+      let lo = 0, hi = offsets.length - 1, spanIdx = 0;
+      while (lo <= hi) {
+          const mid = (lo + hi) >>> 1;
+          if (offsets[mid] <= charOffset) { spanIdx = mid; lo = mid + 1; }
+          else { hi = mid - 1; }
+      }
+      return spanIdx;
+}
+/**
+  * Scroll `span` into view inside its nearest scrollable ancestor
+  * (the .markdown-preview container).  Falls back to the native
+  * scrollIntoView if no scrollable ancestor is found.
+  */
+function scrollSpanIntoView(span) {
+     // Walk up the DOM to find the first scrollable ancestor.
+     let container = span.parentElement;
+     while (container && container !== document.body) {
+         const style = window.getComputedStyle(container);
+         const overflowY = style.overflowY;
+         if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') break;
+         container = container.parentElement;
+     }
+     if (!container || container === document.body) {
+         span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+         return;
+     }
+     const containerRect = container.getBoundingClientRect();
+     const spanRect = span.getBoundingClientRect();
+     // How far is the span from the visible edges of the container?
+     const topDelta    = spanRect.top    - containerRect.top;
+     const bottomDelta = spanRect.bottom - containerRect.bottom;
+     // Add a small margin (40 px) so the highlighted word is never right at the edge.
+     const margin = 40;
+     if (topDelta < margin) {
+         container.scrollBy({ top: topDelta - margin, behavior: 'smooth' });
+     } else if (bottomDelta > -margin) {
+         container.scrollBy({ top: bottomDelta + margin, behavior: 'smooth' });
+     }
+}
+
 function stripMarkdown(md) {
     if (!md) return '';
      const result = md
@@ -839,12 +1081,12 @@ function stripMarkdown(md) {
      return result;
 }
 function speakText(markdown) {
-     console.log('[speakText] Called — markdown length:', markdown ? markdown.length : 0, '| isSpeaking:', isSpeaking);
-     console.log('[speakText] speechSynthesis state — available:', 'speechSynthesis' in window,
+      console.log('[speakText] Called (legacy/manual path) — markdown length:', markdown ? markdown.length : 0, '| isSpeaking:', isSpeaking);
+      console.log('[speakText] speechSynthesis state — available:', 'speechSynthesis' in window,
          '| speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A',
          '| pending:', ('speechSynthesis' in window) ? window.speechSynthesis.pending : 'N/A',
          '| paused:', ('speechSynthesis' in window) ? window.speechSynthesis.paused : 'N/A');
-     log(`speakText() called — markdown: ${markdown ? markdown.length : 0} chars, isSpeaking: ${isSpeaking}.`, 'info');
+      log(`speakText() called — markdown: ${markdown ? markdown.length : 0} chars, isSpeaking: ${isSpeaking}.`, 'info');
      if (isSpeaking) {
          console.warn('[speakText] Already speaking — ignoring duplicate call. Call stopSpeaking() first.');
          log('speakText() called while already speaking — ignoring. Use stopSpeaking() first.', 'warning');
@@ -856,12 +1098,16 @@ function speakText(markdown) {
         console.error('[speakText] speechSynthesis not available.');
         return;
     }
-    const text = stripMarkdown(markdown);
-     console.log('[speakText] Stripped text length:', text.length, '| first 100 chars:', text.slice(0, 100));
+    // Prefer the span-derived plain text so boundary offsets align with highlights.
+    // Fall back to stripMarkdown only when called without a pre-built span index
+    // (e.g. from the manual read-aloud button before a node has been loaded).
+    const text = (_ttsPlainText && _ttsPlainText.length > 0) ? _ttsPlainText : stripMarkdown(markdown);
+    console.log('[speakText] Text source:', _ttsPlainText ? 'span plain-text' : 'stripMarkdown',
+        '| length:', text.length, '| first 100 chars:', text.slice(0, 100));
     if (!text) {
         showToast('Nothing to read.', 'warning');
-        log('speakText: stripped text is empty — nothing to read.', 'warning');
-        console.warn('[speakText] Stripped text is empty — nothing to speak.');
+        log('speakText: text is empty — nothing to read.', 'warning');
+        console.warn('[speakText] Text is empty — nothing to speak.');
         return;
     }
     try {
@@ -876,9 +1122,34 @@ function speakText(markdown) {
     }
 }
 // Chrome Web Speech API silently kills utterances longer than ~15 seconds.
-// Work around this by splitting the text into sentence-sized chunks and
-// queuing them as separate SpeechSynthesisUtterance objects.
-function splitIntoChunks(text, maxLen = 200) {
+  // Work around this by splitting the text into sentence-sized chunks and
+  // queuing them as separate SpeechSynthesisUtterance objects.
+/**
+  * Preferred entry-point for reading the current node aloud.
+  * Uses _ttsPlainText (derived from word spans) so that boundary charIndex
+  * values map exactly to span positions in _ttsOffsetIndex.
+  */
+function speakSpanText() {
+     if (!_ttsPlainText) {
+         log('speakSpanText: no span plain-text available — nothing to read.', 'warning');
+         console.warn('[speakSpanText] _ttsPlainText is empty — nothing to speak.');
+         return;
+     }
+     if (isSpeaking) {
+         console.warn('[speakSpanText] Already speaking — ignoring duplicate call.');
+         return;
+     }
+     if (!('speechSynthesis' in window)) {
+         showToast('Text-to-speech is not supported in this browser.', 'error');
+         return;
+     }
+     console.log('[speakSpanText] Speaking span plain-text — length:', _ttsPlainText.length);
+     log(`speakSpanText() — ${_ttsPlainText.length} chars.`, 'info');
+     window.speechSynthesis.cancel();
+     setTimeout(() => doSpeakChunked(_ttsPlainText), 100);
+}
+
+  function splitIntoChunks(text, maxLen = 200) {
      const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
      const chunks = [];
      let current = '';
@@ -893,6 +1164,82 @@ function splitIntoChunks(text, maxLen = 200) {
      if (current.trim()) chunks.push(current.trim());
      return chunks;
 }
+// -------------------------------------------------------------------------
+// User-gesture tracking & auto-read
+// -------------------------------------------------------------------------
+function _onUserGesture() {
+     if (_hasUserGesture) return;
+     _hasUserGesture = true;
+     console.log('[_onUserGesture] First user gesture detected.');
+     if (_pendingAutoRead && !isSpeaking && currentNode) {
+         _pendingAutoRead = false;
+         _updateAutoReadIndicator(false);
+         console.log('[_onUserGesture] Firing pending auto-read for node:', currentNode);
+         log(`Auto-read: firing deferred speech for node "${currentNode}" after user gesture.`, 'info');
+         setTimeout(() => speakSpanText(), 80);
+     }
+}
+function _updateAutoReadIndicator(pending) {
+     const btn = document.getElementById('read-aloud');
+     const label = document.getElementById('read-aloud-label');
+     if (!btn || !label) return;
+     if (pending) {
+         label.textContent = 'Click to Read';
+         btn.title = 'Auto-read is ready — click anywhere or press a key to start';
+     } else if (!isSpeaking) {
+         label.textContent = 'Read Aloud';
+         btn.title = 'Read this node aloud';
+     }
+}
+// -------------------------------------------------------------------------
+// Timer-based word-highlight fallback
+// (used when onboundary events are not fired by the browser/voice)
+// -------------------------------------------------------------------------
+const TTS_WORDS_PER_MINUTE = 160;   // average speaking rate
+// Estimate ms per sentence by counting average words per sentence span.
+// We recompute this lazily each time _startTimerHighlight is called.
+function _mspSentence() {
+     if (!_ttsWordSpans.length) return 2000;
+     const totalWords = _ttsWordSpans.reduce((acc, s) => acc + (s.textContent.trim().split(/\s+/).length || 1), 0);
+     const avgWordsPerSentence = totalWords / _ttsWordSpans.length;
+     return (avgWordsPerSentence / TTS_WORDS_PER_MINUTE) * 60000;
+}
+function _startTimerHighlight(startSpanIdx) {
+     _stopTimerHighlight();
+      const msPerSentence = _mspSentence();
+     const tick = () => {
+         if (!isSpeaking) { _stopTimerHighlight(); return; }
+          if (!isHighlightEnabled()) return;
+         const elapsed = performance.now() - _ttsTimerStartTime;
+         const wordIdx = Math.min(
+                startSpanIdx + 1 + Math.floor(elapsed / msPerSentence),
+             _ttsWordSpans.length - 1
+         );
+         if (wordIdx !== _ttsTimerWordIdx) {
+             _ttsTimerWordIdx = wordIdx;
+             const span = _ttsWordSpans[wordIdx] || null;
+             if (span !== _ttsActiveSpan) {
+                 if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
+                 _ttsActiveSpan = span;
+                 if (_ttsActiveSpan) {
+                     _ttsActiveSpan.classList.add('tts-highlight');
+                     scrollSpanIntoView(_ttsActiveSpan);
+                 }
+             }
+         }
+     };
+     _ttsTimerStartTime = performance.now();
+      _ttsTimerWordIdx = startSpanIdx;
+     _ttsTimerInterval = setInterval(tick, 80);
+     console.debug('[_startTimerHighlight] Timer-based highlight started.');
+}
+function _stopTimerHighlight() {
+     if (_ttsTimerInterval != null) {
+         clearInterval(_ttsTimerInterval);
+         _ttsTimerInterval = null;
+         console.debug('[_stopTimerHighlight] Timer-based highlight stopped.');
+     }
+}
 function doSpeakChunked(text) {
      console.log('[doSpeakChunked] state before queuing: speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
      const voice = getSelectedVoice();
@@ -902,6 +1249,31 @@ function doSpeakChunked(text) {
      // Mark as speaking immediately so the button updates before onstart fires.
      isSpeaking = true;
      updateReadAloudButton();
+      // Compute cumulative char offsets for each chunk by walking the chunks
+      // array in order.  Because splitIntoChunks operates on the same `text`
+      // string that was used to build _ttsOffsetIndex (i.e. _ttsPlainText),
+      // these offsets map exactly to span positions in the offset index.
+      const chunkOffsets = [];
+      let runningOffset = 0;
+      for (const chunk of chunks) {
+          chunkOffsets.push(runningOffset);
+          // +1 for the space that splitIntoChunks implicitly consumes between chunks
+          runningOffset += chunk.length + 1;
+      }
+      console.debug('[doSpeakChunked] chunkOffsets (cumulative):', chunkOffsets);
+       // Track whether onboundary has ever fired for the current chunk.
+       // We give the browser a short grace period (500ms) before falling back to
+       // the timer-based highlight, so we don't start the timer unnecessarily.
+       let _boundaryFired = false;
+       let _boundaryGraceTimer = null;
+       // Span index at the start of each chunk — used to seed the timer fallback
+       // at the correct position if onboundary never fires.
+       const chunkStartSpanIdx = [];
+       for (let i = 0; i < chunks.length; i++) {
+           const spanIdx = _spanIdxForCharOffset(chunkOffsets[i]);
+           chunkStartSpanIdx.push(spanIdx);
+       }
+       console.debug('[doSpeakChunked] chunkStartSpanIdx:', chunkStartSpanIdx);
      chunks.forEach((chunk, idx) => {
          const utter = new SpeechSynthesisUtterance(chunk);
          utter.rate = 1.0;
@@ -916,12 +1288,54 @@ function doSpeakChunked(text) {
                  updateReadAloudButton();
                  console.log('[doSpeakChunked] Speech started (chunk 0).');
                  log('Speech playback started.', 'info');
+                 // Give the browser 500 ms to fire its first onboundary event.
+                 // If none arrives in that window, fall back to timer-based highlight.
+                 _boundaryFired = false;
+                 _boundaryGraceTimer = setTimeout(() => {
+                     if (!_boundaryFired && isSpeaking) {
+                         console.debug('[doSpeakChunked] No onboundary after 500ms — starting timer fallback.');
+                         _startTimerHighlight(chunkStartSpanIdx[0]);
+                     }
+                 }, 500);
+             };
+         }
+          // Word boundary highlighting
+          utter.onboundary = (e) => {
+              if (e.name !== 'word') return;
+              if (!_boundaryFired) {
+                  _boundaryFired = true;
+                  // onboundary IS supported — cancel the grace timer and stop any
+                  // timer fallback that may have already started.
+                  if (_boundaryGraceTimer != null) {
+                      clearTimeout(_boundaryGraceTimer);
+                      _boundaryGraceTimer = null;
+                  }
+                  _stopTimerHighlight();
+                  console.debug('[doSpeakChunked] onboundary fired — switching from timer to event-based highlight.');
+              }
+              const globalOffset = chunkOffsets[idx] + e.charIndex;
+              highlightWordAtOffset(globalOffset);
+          };
+         // When a chunk ends, reset the boundary-fired flag and seed the timer
+         // for the next chunk in case onboundary stops firing mid-way.
+         if (idx < chunks.length - 1) {
+             utter.onend = () => {
+                 _boundaryFired = false;
+                 _boundaryGraceTimer = setTimeout(() => {
+                     if (!_boundaryFired && isSpeaking) {
+                         console.debug(`[doSpeakChunked] No onboundary for chunk ${idx + 1} — starting timer fallback.`);
+                         _startTimerHighlight(chunkStartSpanIdx[idx + 1]);
+                     }
+                 }, 500);
              };
          }
          if (idx === chunks.length - 1) {
              utter.onend = () => {
                  isSpeaking = false;
                  updateReadAloudButton();
+                 _stopTimerHighlight();
+                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                  clearWordHighlight();
                  log('Speech playback finished.', 'info');
                  console.log('[doSpeakChunked] Speech ended (final chunk).');
              };
@@ -931,11 +1345,17 @@ function doSpeakChunked(text) {
              if (e.error && e.error !== 'interrupted' && e.error !== 'canceled') {
                  isSpeaking = false;
                  updateReadAloudButton();
+                 _stopTimerHighlight();
+                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                  clearWordHighlight();
                  log(`Speech error on chunk ${idx}: ${e.error}`, 'warning');
                  console.warn(`[doSpeakChunked] Speech error on chunk ${idx}:`, e.error);
              } else {
                  isSpeaking = false;
                  updateReadAloudButton();
+                 _stopTimerHighlight();
+                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                  clearWordHighlight();
                  console.log(`[doSpeakChunked] Chunk ${idx} cancelled/interrupted (expected):`, e.error);
              }
          };
@@ -952,7 +1372,11 @@ function stopSpeaking() {
     if (isSpeaking) log('Speech stopped by user or navigation.', 'info');
     if (isSpeaking) console.log('[stopSpeaking] Cancelling active speech.');
     isSpeaking = false;
+     _pendingAutoRead = false;
+     _updateAutoReadIndicator(false);
+     _stopTimerHighlight();
     updateReadAloudButton();
+     clearWordHighlight();
 }
 function updateReadAloudButton() {
     const btn = document.getElementById('read-aloud');
@@ -969,6 +1393,14 @@ function updateReadAloudButton() {
 async function onReadAloudToggle() {
      console.log('[onReadAloudToggle] Called — isSpeaking:', isSpeaking, '| currentNode:', currentNode);
      log(`Read-aloud toggle clicked — isSpeaking: ${isSpeaking}, currentNode: "${currentNode}".`, 'info');
+     // Clicking the button is itself a user gesture — record it so pending auto-read
+     // can fire and future auto-reads are allowed.
+     _hasUserGesture = true;
+     // If there's a pending auto-read, cancel it (we're about to handle it manually).
+     if (_pendingAutoRead) {
+         _pendingAutoRead = false;
+         _updateAutoReadIndicator(false);
+     }
     if (isSpeaking) {
         stopSpeaking();
         return;
@@ -1003,7 +1435,13 @@ async function onReadAloudToggle() {
              log('Duplicate speakText() call prevented in setTimeout (isSpeaking already true).', 'warning');
              return;
          }
-         speakText(content);
+          // Use speakSpanText so boundary offsets align with the word-span index.
+          // speakText(content) is kept as a fallback for contexts without a loaded node.
+          if (_ttsPlainText && _ttsPlainText.length > 0) {
+              speakSpanText();
+          } else {
+              speakText(content);
+          }
      }, 150);
 }
 // -------------------------------------------------------------------------
