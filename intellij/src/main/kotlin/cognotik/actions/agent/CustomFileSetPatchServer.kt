@@ -734,8 +734,8 @@ class CustomFileSetPatchServer(
         if (design.isNotBlank()) {
             task.add(
                 DiffInstrumentor(
-                  processor,
-                  SessionRenderer(task),
+                    processor,
+                    SessionRenderer(task),
                 ).instrument(
                 root = _root ?: throw IllegalStateException("Root directory is not set"),
                 response = design,
@@ -832,8 +832,8 @@ class CustomFileSetPatchServer(
                 """<div>${
                     renderMarkdown(design) {
                         DiffInstrumentor(
-                          processor,
-                          SessionRenderer(task),
+                            processor,
+                            SessionRenderer(task),
                         ).instrument(
                         root = _root ?: throw IllegalStateException("Root directory is not set"),
                         response = design,

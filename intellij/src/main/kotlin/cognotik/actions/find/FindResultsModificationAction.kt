@@ -155,8 +155,8 @@ class FindResultsModificationAction(
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
                     DiffInstrumentor(
-                      AppSettingsState.instance.processor,
-                      SessionRenderer(task),
+                        AppSettingsState.instance.processor,
+                        SessionRenderer(task),
                     ).instrument(
                     root = root.toPath(),
                     response = response,

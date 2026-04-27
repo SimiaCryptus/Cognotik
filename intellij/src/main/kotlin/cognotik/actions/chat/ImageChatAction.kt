@@ -165,8 +165,8 @@ class ImageChatAction : BaseAction() {
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
             renderMarkdown(response, tabs=true) { markdown ->
                 DiffInstrumentor(
-                  AppSettingsState.instance.processor,
-                  SessionRenderer(task),
+                    AppSettingsState.instance.processor,
+                    SessionRenderer(task),
                 ).instrument(
                 root = root.toPath(),
                 response = markdown,

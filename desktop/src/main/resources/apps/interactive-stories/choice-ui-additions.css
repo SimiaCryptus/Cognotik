@@ -1,0 +1,54 @@
+/* -----------------------------------------------------------------------
+     Choice button description text
+     ----------------------------------------------------------------------- */
+  .btn-choice {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+  }
+  
+  .choice-desc {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 400;
+      opacity: 0.82;
+      line-height: 1.35;
+      white-space: normal;
+      text-align: left;
+      margin-top: 0.15rem;
+  }
+  
+  /* -----------------------------------------------------------------------
+     End-state panel
+     ----------------------------------------------------------------------- */
+  .end-state-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 2rem 1.5rem;
+      margin: 1rem 0;
+      border: 2px dashed var(--color-border, #555);
+      border-radius: 0.75rem;
+      background: var(--color-surface-alt, rgba(0,0,0,0.15));
+      text-align: center;
+  }
+  
+  .end-state-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+  }
+  
+  .end-state-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+      opacity: 0.9;
+  }
+  
+  .end-state-hint {
+      font-size: 0.85rem;
+      opacity: 0.65;
+      margin: 0;
+  }
