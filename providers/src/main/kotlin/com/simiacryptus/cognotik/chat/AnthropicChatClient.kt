@@ -1,21 +1,21 @@
 package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.chat.model.AnthropicModels
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.SecureString
-import org.apache.hc.core5.http.HttpRequest
-import org.slf4j.event.Level
-import java.io.BufferedOutputStream
-import java.net.URLEncoder
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutorService
+  import com.simiacryptus.cognotik.CoreProviders
+  import com.simiacryptus.cognotik.chat.model.AnthropicModels
+  import com.simiacryptus.cognotik.chat.model.ChatModel
+  import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
+  import com.simiacryptus.cognotik.models.APIProvider
+  import com.simiacryptus.cognotik.models.LLMModel
+  import com.simiacryptus.cognotik.models.ModelSchema
+  import com.simiacryptus.cognotik.util.JsonUtil
+  import com.simiacryptus.cognotik.util.SecureString
+  import org.apache.hc.core5.http.HttpRequest
+  import org.slf4j.event.Level
+  import java.io.BufferedOutputStream
+  import java.net.URLEncoder
+  import java.util.concurrent.ConcurrentHashMap
+  import java.util.concurrent.ExecutorService
 
 class AnthropicChatClient(
   apiKey: SecureString,
@@ -134,17 +134,60 @@ class AnthropicChatClient(
                   remainingMessages.takeWhile { it.role == thisRole }
                     .toTypedArray<ModelSchema.ChatMessage>()
                 remainingMessages.removeAll(toConsolidate)
-                alternatingMessages += AnthropicMessage(
-                  role = thisRole.toString(),
-                  content = toConsolidate.joinToString("\n\n") {
-                    it.content?.joinToString("\n") { it.text.orEmpty() }
-                      .orEmpty()
-                  })
+                 val contentBlocks = mutableListOf<AnthropicContentInput>()
+                 for (msg in toConsolidate) {
+                   msg.content?.forEach { part ->
+                     when {
+                       part.image_url != null -> {
+                         val imageUrl = part.image_url
+                         if (imageUrl != null && imageUrl.startsWith("data:")) {
+                           // data URI: data:<media_type>;base64,<data>
+                           val withoutScheme = imageUrl.removePrefix("data:")
+                           val semicolonIdx = withoutScheme.indexOf(';')
+                           val mediaType = if (semicolonIdx >= 0) withoutScheme.substring(0, semicolonIdx) else "image/jpeg"
+                           val base64Data = withoutScheme.substringAfter("base64,")
+                           contentBlocks += AnthropicImageContentBlock(
+                             source = AnthropicImageSource(
+                               type = "base64",
+                               media_type = mediaType,
+                               data = base64Data
+                             )
+                           )
+                         } else if (imageUrl != null) {
+                           contentBlocks += AnthropicImageContentBlock(
+                             source = AnthropicImageSource(
+                               type = "url",
+                               url = imageUrl
+                             )
+                           )
+                         }
+                       }
+                       !part.text.isNullOrBlank() -> {
+                         contentBlocks += AnthropicTextContentBlock(text = part.text ?: "")
+                       }
+                     }
+                   }
+                 }
+                 // If no structured blocks were produced, fall back to plain text
+                 if (contentBlocks.isEmpty()) {
+                   val plainText = toConsolidate.joinToString("\n\n") {
+                     it.content?.joinToString("\n") { it.text.orEmpty() }.orEmpty()
+                   }
+                   if (plainText.isNotBlank()) {
+                     contentBlocks += AnthropicTextContentBlock(text = plainText)
+                   }
+                 }
+                 if (contentBlocks.isNotEmpty()) {
+                   alternatingMessages += AnthropicMessage(
+                     role = thisRole.toString(),
+                     content = contentBlocks
+                   )
+                 }
               }
               alternatingMessages
             }
           }
-          .filter { !it.content.isNullOrBlank() }
+          .filter { !it.content.isNullOrEmpty() }
         AnthropicChatRequest(
           model = model,
           system = system,
@@ -243,8 +286,32 @@ class AnthropicChatClient(
     )
 
     data class AnthropicMessage(
-      val role: String? = null, val content: String? = null
+       val role: String? = null,
+       val content: List<AnthropicContentInput>? = null
     )
+     @com.fasterxml.jackson.annotation.JsonTypeInfo(
+       use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME,
+       include = com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY,
+       property = "type"
+     )
+     @com.fasterxml.jackson.annotation.JsonSubTypes(
+       com.fasterxml.jackson.annotation.JsonSubTypes.Type(value = AnthropicTextContentBlock::class, name = "text"),
+       com.fasterxml.jackson.annotation.JsonSubTypes.Type(value = AnthropicImageContentBlock::class, name = "image")
+     )
+     sealed class AnthropicContentInput
+     data class AnthropicTextContentBlock(
+       val text: String
+     ) : AnthropicContentInput()
+     data class AnthropicImageContentBlock(
+       val source: AnthropicImageSource
+     ) : AnthropicContentInput()
+     data class AnthropicImageSource(
+       val type: String,                  // "base64" or "url"
+       val media_type: String? = null,    // e.g. "image/jpeg" — required for base64
+       val data: String? = null,          // base64-encoded bytes — required for base64
+       val url: String? = null            // required for url type
+     )
+
 
     data class AnthropicResponse(
       val id: String? = null,
