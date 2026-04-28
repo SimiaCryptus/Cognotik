@@ -9,8 +9,8 @@ with no local build tools required.
 | App                                                                                       | Description                                                                                                                                                                                                     |
 |-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [🧮 Philosophical Calculator](src/main/resources/apps/philosophical-calculator/README.md) | Multi-perspective analytical toolkit that processes content through philosophical, rhetorical, and creative lenses — dialectical analysis, Socratic dialogue, game theory, persuasive essays, comics, and more. |
-| [🏥 Medical AI Diagnostic Pipeline](src/main/resources/apps/health-improvement/README.md) | Interactive, multi-round health analysis tool that guides users from symptom intake through differential diagnosis to personalized action plans and clinical handoff documents.                                 |
 | [📚 Comic Serial Generator](src/main/resources/apps/comic-serial/README.md)               | Transforms story ideas into an ongoing comic book series, generating episodes that maintain consistent characters, settings, and narrative arcs.                                                                |
+| [📖 Interactive Stories](src/main/resources/apps/interactive-stories/README.md)           | Branching, AI-powered narrative generator — write a premise, then explore an ever-growing story tree by choosing one of three options (A/B/C) at every node.                                                    |
 | [🧙 System Wizard](src/main/resources/apps/sys-wizard/README.md)                          | Describe a goal in plain language, and the wizard generates a shell script to accomplish it — then runs and auto-fixes the script until it succeeds.                                                            |
 | [🏗️ Webapp Builder](src/main/resources/apps/webapp-factory/README.md)                    | AI-powered web application factory that turns natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.                                                                    |
 | [🔮 Omega — App Factory](src/main/resources/apps/omega/README.md)                         | Meta-application that designs and produces other DocOps applications — describe the app you want in plain language and Omega analyzes, designs, generates, and reviews a complete pipeline app.                  |
@@ -66,12 +66,6 @@ src/main/resources/apps/
 ├── philosophical-calculator/   # 🧮 Multi-lens content analysis
 │   ├── ops/                    #    Operation definitions
 │   └── README.md
-├── health-improvement/         # 🏥 Medical diagnostic pipeline
-│   ├── ops/
-│   ├── round_1/
-│   ├── round_2/
-│   ├── plan/
-│   └── README.md
 ├── comic-serial/               # 📚 Serialized comic generator
 │   ├── ops/
 │   └── README.md
@@ -85,6 +79,10 @@ src/main/resources/apps/
     └── README.md
 └── omega/                      # 🔮 DocOps App Factory
      ├── ops/
+     └── README.md
+└── interactive-stories/        # 📖 Branching narrative generator
+     ├── ops/
+      ├── story/
      └── README.md
 ```
 
