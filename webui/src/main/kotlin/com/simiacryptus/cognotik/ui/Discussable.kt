@@ -100,9 +100,9 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     feedbackTask: SessionTask,
   ) = task.hrefLink("Accept", classname = "href-link cmd-button") {
     log.info("Accept link clicked for tabIndex: $tabIndex")
+    accept(tabIndex, tabContent, design)
     feedbackSB.clear()
     feedbackTask.complete()
-    accept(tabIndex, tabContent, design)
   }
 
   private fun textInput(
@@ -173,7 +173,6 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
       return
     }
     try {
-
       tabContent.apply {
         val prevTab = toString()
         set(prevTab)
@@ -182,7 +181,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     } catch (e: Exception) {
       log.error("Error accepting design", e)
       task.error(e)
-      acceptGuard.set(blocking)
+      acceptGuard.set(false)
       throw e
     }
     atomicRef.set(design)

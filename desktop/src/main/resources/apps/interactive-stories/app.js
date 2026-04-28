@@ -1,17 +1,17 @@
 /**
-     * Interactive Stories — Main App
-     *
-     * Pipeline:
-     *   1. User writes a story idea -> story_idea.md
-     *   2. ops/initial_node.md     -> story/0.md
-     *   3. ops/choice_{a,b,c}.md   -> story/{path}{a|b|c}.md
-     *
-     * Story node paths follow the pattern: story/<sequence>.md
-     *   - "0"     : initial node
-     *   - "0a"    : after choosing A from 0
-     *   - "0ab"   : after choosing B from 0a
-     *   - etc.
-     */
+ * Interactive Stories — Main App
+ *
+ * Pipeline:
+ *   1. User writes a story idea -> story_idea.md
+ *   2. ops/initial_node.md     -> story/0.md
+ *   3. ops/choice_{a,b,c}.md   -> story/{path}{a|b|c}.md
+ *
+ * Story node paths follow the pattern: story/<sequence>.md
+ *   - "0"     : initial node
+ *   - "0a"    : after choosing A from 0
+ *   - "0ab"   : after choosing B from 0a
+ *   - etc.
+ */
 import { parseSessionUrl, getProxyUrl } from './utils/session.js';
 import {
     loadApiProviders,
@@ -41,8 +41,11 @@ const INITIAL_NODE = '0';
 const AUTO_READ_KEY = `${APP_PREFIX}.autoRead`;
 const VOICE_KEY = `${APP_PREFIX}.voice`;
 const AUTO_IMAGE_KEY = `${APP_PREFIX}.autoImage`;
+const HIGHLIGHT_KEY = `${APP_PREFIX}.highlightReadalong`;
+const STYLESHEET_FILE = 'stylesheet_instructions.md';
 
 const { basePath, sessionId } = parseSessionUrl();
+console.log('[app] Parsed session URL — basePath:', basePath, '| sessionId:', sessionId);
 
 // Persistent state
 const linkManager = createSessionLinkManager(getProxyUrl);
@@ -53,6 +56,36 @@ let logger = null;
 let statusPoller = null;
 let isSpeaking = false;
 let isGeneratingImage = false;
+let _pendingAutoRead = false;        // true when auto-read is queued but waiting for a user gesture
+let _hasUserGesture = false;         // true once the user has interacted with the page
+let _ttsTimerInterval = null;        // setInterval handle for timer-based word highlight fallback
+let _ttsTimerWordIdx = 0;            // current word index for timer-based highlight
+let _ttsTimerStartTime = 0;          // performance.now() when speech chunk started
+let _ttsTimerChunkOffset = 0;        // char offset of the current chunk in _ttsPlainText
+// TTS word-highlight state
+let _ttsWordSpans = [];      // flat array of <span class="tts-sentence"> elements in reading order
+let _ttsCharOffset = 0;     // cumulative char offset at the start of the current chunk
+let _ttsActiveSpan = null;  // the currently highlighted span
+// Plain text derived from word spans — used as the single source of truth for
+// both the utterance text and the offset index so boundary charIndex values
+// map exactly to span positions.
+let _ttsPlainText = '';
+
+// Timing helpers
+const _timers = new Map();
+function timeStart(label) {
+    console.debug('[timer] START', label);
+    _timers.set(label, performance.now());
+}
+function timeEnd(label) {
+    const start = _timers.get(label);
+    if (start == null) return '';
+    _timers.delete(label);
+    const ms = Math.round(performance.now() - start);
+    const formatted = ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+    console.debug('[timer] END', label, '→', formatted);
+    return formatted;
+}
 
 // -------------------------------------------------------------------------
 // Initialization
@@ -62,12 +95,18 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
     try {
         logger = createBatchLogger('activity-log');
-        log('Initializing...', 'info');
+        console.group('[init] App initialization started');
+        console.log('[init] sessionId:', sessionId, '| basePath:', basePath);
+        log('App initializing…', 'info');
 
         if (!sessionId) {
             showToast('Could not determine session from URL.', 'error', 8000);
+            log('Initialization aborted: no sessionId found in URL.', 'error');
+            console.error('[init] Aborted — no sessionId found in URL.');
             return;
         }
+        log(`Session: ${sessionId} | basePath: ${basePath}`, 'info');
+
 
         await initModels();
         initVoices();
@@ -75,6 +114,7 @@ async function init() {
         await refreshTree();
 
         // Wire up handlers
+        console.log('[init] Wiring up DOM event handlers…');
         document.getElementById('save-idea').addEventListener('click', onSaveIdea);
         document.getElementById('start-story').addEventListener('click', onStartStory);
         document.getElementById('refresh-tree').addEventListener('click', refreshTree);
@@ -82,34 +122,67 @@ async function init() {
         document.querySelectorAll('.btn-choice').forEach(btn => {
             btn.addEventListener('click', () => onChoice(btn.dataset.choice));
         });
-          // Immersive mode toggle
-          document.getElementById('toggle-immersive').addEventListener('click', toggleImmersive);
-          document.addEventListener('keydown', (e) => {
-              if (e.key === 'Escape' && document.body.classList.contains('immersive')) {
-                  toggleImmersive();
-              } else if (e.key === 'f' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
-                  // 'f' to toggle when not typing in a field
-                  if (currentNode) toggleImmersive();
-              }
-          });
-         // Read aloud controls
-         document.getElementById('read-aloud').addEventListener('click', onReadAloudToggle);
-         const autoReadEl = document.getElementById('auto-read');
-         autoReadEl.checked = localStorage.getItem(AUTO_READ_KEY) === 'true';
-         autoReadEl.addEventListener('change', () => {
-             localStorage.setItem(AUTO_READ_KEY, autoReadEl.checked ? 'true' : 'false');
+        document.getElementById('update-stylesheet').addEventListener('click', onUpdateStylesheet);
+
+        // Immersive mode toggle
+        document.getElementById('toggle-immersive').addEventListener('click', toggleImmersive);
+         // Track user gestures so auto-read can fire after the first interaction
+         document.addEventListener('click', _onUserGesture, { once: true });
+         document.addEventListener('keydown', _onUserGesture, { once: true });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.body.classList.contains('immersive')) {
+                toggleImmersive();
+            } else if (e.key === 'f' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+                // 'f' to toggle when not typing in a field
+                if (currentNode) toggleImmersive();
+            }
+        });
+        // Read aloud controls
+        const readAloudBtn = document.getElementById('read-aloud');
+        if (!readAloudBtn) {
+            console.error('[init] CRITICAL: #read-aloud button not found in DOM!');
+            log('CRITICAL: #read-aloud button not found in DOM — read-aloud will not work.', 'error');
+        } else {
+            console.log('[init] Binding click handler to #read-aloud button:', readAloudBtn);
+            readAloudBtn.addEventListener('click', (e) => {
+                console.log('[read-aloud click] Event fired — target:', e.target, '| currentTarget:', e.currentTarget, '| isSpeaking:', isSpeaking, '| currentNode:', currentNode);
+                onReadAloudToggle();
+            });
+        }
+        const autoReadEl = document.getElementById('auto-read');
+        autoReadEl.checked = localStorage.getItem(AUTO_READ_KEY) === 'true';
+        console.log('[init] auto-read initial state:', autoReadEl.checked);
+        autoReadEl.addEventListener('change', () => {
+            localStorage.setItem(AUTO_READ_KEY, autoReadEl.checked ? 'true' : 'false');
+            console.log('[init] auto-read toggled →', autoReadEl.checked);
+            log(`Auto-read ${autoReadEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+        });
+        // Image controls
+        document.getElementById('generate-image').addEventListener('click', onGenerateImage);
+        const autoImageEl = document.getElementById('auto-image');
+        autoImageEl.checked = localStorage.getItem(AUTO_IMAGE_KEY) === 'true';
+        console.log('[init] auto-image initial state:', autoImageEl.checked);
+        autoImageEl.addEventListener('change', () => {
+            localStorage.setItem(AUTO_IMAGE_KEY, autoImageEl.checked ? 'true' : 'false');
+            console.log('[init] auto-image toggled →', autoImageEl.checked);
+            log(`Auto-image ${autoImageEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+        });
+         // Highlight readalong toggle
+         const highlightEl = document.getElementById('highlight-readalong');
+         // Default to true if no saved preference exists yet
+         highlightEl.checked = localStorage.getItem(HIGHLIGHT_KEY) !== 'false';
+         console.log('[init] highlight-readalong initial state:', highlightEl.checked);
+         highlightEl.addEventListener('change', () => {
+             localStorage.setItem(HIGHLIGHT_KEY, highlightEl.checked ? 'true' : 'false');
+             console.log('[init] highlight-readalong toggled →', highlightEl.checked);
+             log(`Readalong highlighting ${highlightEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+             // If highlighting was just turned off, clear any active highlight immediately.
+             if (!highlightEl.checked) clearWordHighlight();
          });
-          // Image controls
-          document.getElementById('generate-image').addEventListener('click', onGenerateImage);
-          const autoImageEl = document.getElementById('auto-image');
-          autoImageEl.checked = localStorage.getItem(AUTO_IMAGE_KEY) === 'true';
-          autoImageEl.addEventListener('change', () => {
-              localStorage.setItem(AUTO_IMAGE_KEY, autoImageEl.checked ? 'true' : 'false');
-          });
 
 
         // Save model selections on change
-         ['smart-model', 'fast-model', 'image-model'].forEach(id => {
+        ['smart-model', 'fast-model', 'image-model'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', persistModelSelections);
         });
@@ -125,22 +198,36 @@ async function init() {
         // Start global status poller
         statusPoller = createStatusPoller(basePath, onStatusUpdate, 4000);
         statusPoller.start();
+        log('Status poller started (interval: 4s).', 'info');
+        console.log('[init] Status poller started — interval: 4000ms.');
 
         // If initial node already exists, load it
+        console.log('[init] Checking for existing initial node at', `${STORY_DIR}/${INITIAL_NODE}.md`);
         if (await fileExists(basePath, `${STORY_DIR}/${INITIAL_NODE}.md`)) {
             setBadge('badge-tree', 'done');
+            log(`Existing initial node found (${STORY_DIR}/${INITIAL_NODE}.md). Loading…`, 'info');
+            console.log('[init] Existing initial node found — loading node', INITIAL_NODE);
             if (!currentNode) await loadNode(INITIAL_NODE);
+        } else {
+            log('No initial story node found — story not yet started.', 'info');
+            console.log('[init] No initial node found — story not yet started.');
         }
+        await loadStylesheetInstructions();
+        console.groupEnd();
+        console.log('[init] App ready ✓');
 
-        log('Ready.', 'success');
+
+        log('App ready.', 'success');
     } catch (err) {
         console.error(err);
         log(`Init error: ${err.message}`, 'error');
         showToast(`Init error: ${err.message}`, 'error');
     }
 
-    window.addEventListener('error', e => log(`Error: ${e.message}`, 'error'));
-    window.addEventListener('unhandledrejection', e => log(`Unhandled: ${e.reason}`, 'error'));
+    window.addEventListener('error', e => log(`Uncaught error: ${e.message} (${e.filename}:${e.lineno})`, 'error'));
+    window.addEventListener('unhandledrejection', e => log(`Unhandled promise rejection: ${e.reason}`, 'error'));
+    window.addEventListener('error', e => console.error('[window] Uncaught error:', e.message, `(${e.filename}:${e.lineno})`));
+    window.addEventListener('unhandledrejection', e => console.error('[window] Unhandled promise rejection:', e.reason));
 }
 
 // -------------------------------------------------------------------------
@@ -148,28 +235,39 @@ async function init() {
 // -------------------------------------------------------------------------
 async function initModels() {
     try {
+        console.group('[initModels] Loading API providers and model lists…');
+        log('Loading API providers and model lists…', 'info');
         const available = await loadApiProviders();
+        console.log('[initModels] loadApiProviders() response:', available);
         const selects = MODEL_KEYS
-             .map(k => {
-                 const idMap = { smartModel: 'smart-model', fastModel: 'fast-model', imageModel: 'image-model' };
-                 return document.getElementById(idMap[k]);
-             })
+            .map(k => {
+                const idMap = { smartModel: 'smart-model', fastModel: 'fast-model', imageModel: 'image-model' };
+                return document.getElementById(idMap[k]);
+            })
             .filter(Boolean);
         const saved = loadModelSelections(APP_PREFIX, MODEL_KEYS);
+        console.log('[initModels] Saved model selections:', saved);
         populateModelDropdowns(available, selects, saved);
-        log('Models loaded.', 'info');
+        const providerCount = Array.isArray(available) ? available.length : Object.keys(available || {}).length;
+        log(`Models loaded — ${providerCount} provider(s) available. Saved selections: smart="${saved.smartModel || 'none'}", fast="${saved.fastModel || 'none'}", image="${saved.imageModel || 'none'}".`, 'info');
+        console.log(`[initModels] Done — ${providerCount} provider(s). smart="${saved.smartModel || 'none'}", fast="${saved.fastModel || 'none'}", image="${saved.imageModel || 'none'}".`);
+        console.groupEnd();
     } catch (e) {
         log(`Failed to load models: ${e.message}`, 'error');
+        console.error('[initModels]', e);
+        console.groupEnd();
     }
 }
 
 function persistModelSelections() {
     const selections = {
         smartModel: document.getElementById('smart-model').value,
-         fastModel: document.getElementById('fast-model').value,
-         imageModel: document.getElementById('image-model').value
+        fastModel: document.getElementById('fast-model').value,
+        imageModel: document.getElementById('image-model').value
     };
     saveModelSelections(APP_PREFIX, selections);
+    console.log('[persistModelSelections] Saved:', selections);
+    log(`Model selections saved — smart="${selections.smartModel || 'none'}", fast="${selections.fastModel || 'none'}", image="${selections.imageModel || 'none'}".`, 'info');
 }
 // -------------------------------------------------------------------------
 // Voices (browser TTS)
@@ -178,6 +276,8 @@ function initVoices() {
     const select = document.getElementById('voice-select');
     if (!select) return;
     if (!('speechSynthesis' in window)) {
+        log('Text-to-speech not supported in this browser.', 'warning');
+        console.warn('[initVoices] speechSynthesis not available in this browser.');
         const opt = document.createElement('option');
         opt.textContent = 'Not supported';
         opt.disabled = true;
@@ -188,6 +288,7 @@ function initVoices() {
     const populate = () => {
         const voices = window.speechSynthesis.getVoices() || [];
         const saved = localStorage.getItem(VOICE_KEY) || '';
+        console.log(`[initVoices] populate() — ${voices.length} voice(s) available. Saved URI: "${saved || 'none'}".`);
         select.innerHTML = '';
         const defaultOpt = document.createElement('option');
         defaultOpt.value = '';
@@ -201,15 +302,23 @@ function initVoices() {
         });
         if (saved && voices.some(v => v.voiceURI === saved)) {
             select.value = saved;
+            log(`Voice restored from preferences: "${saved}".`, 'info');
+            console.log('[initVoices] Voice restored from preferences:', saved);
+        } else if (voices.length > 0) {
+            log(`${voices.length} voice(s) available. Using browser default.`, 'info');
+            console.log(`[initVoices] Using browser default voice (${voices.length} available).`);
         }
     };
     populate();
     // Voices often load asynchronously
     if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+        console.log('[initVoices] Registering onvoiceschanged handler for async voice loading.');
         window.speechSynthesis.onvoiceschanged = populate;
     }
     select.addEventListener('change', () => {
         localStorage.setItem(VOICE_KEY, select.value);
+        console.log('[initVoices] Voice selection changed →', select.value, '|', select.options[select.selectedIndex]?.textContent);
+        log(`Voice changed to: "${select.options[select.selectedIndex]?.textContent || select.value}".`, 'info');
     });
 }
 function getSelectedVoice() {
@@ -218,7 +327,9 @@ function getSelectedVoice() {
     const uri = select ? select.value : '';
     if (!uri) return null;
     const voices = window.speechSynthesis.getVoices() || [];
-    return voices.find(v => v.voiceURI === uri) || null;
+    const voice = voices.find(v => v.voiceURI === uri) || null;
+    console.debug('[getSelectedVoice] URI:', uri, '→ found:', voice ? voice.name : 'null');
+    return voice;
 }
 
 
@@ -226,10 +337,11 @@ function getModelOverrides() {
     const out = {};
     const smart = document.getElementById('smart-model').value;
     const fast = document.getElementById('fast-model').value;
-     const image = document.getElementById('image-model').value;
+    const image = document.getElementById('image-model').value;
     if (smart) out.smartModel = smart;
     if (fast) out.fastModel = fast;
-     if (image) out.imageModel = image;
+    if (image) out.imageModel = image;
+    console.debug('[getModelOverrides] Overrides:', out);
     return out;
 }
 
@@ -237,10 +349,17 @@ function getModelOverrides() {
 // Story idea
 // -------------------------------------------------------------------------
 async function loadIdea() {
+    log(`Loading story idea from "${IDEA_FILE}"…`, 'info');
+    console.log('[loadIdea] Reading file:', IDEA_FILE);
     const content = await readFile(basePath, IDEA_FILE);
     if (content != null) {
         document.getElementById('idea-editor').value = content;
         setBadge('badge-idea', 'done');
+        log(`Story idea loaded (${content.length} chars).`, 'info');
+        console.log(`[loadIdea] Loaded ${content.length} chars from "${IDEA_FILE}".`);
+    } else {
+        log('No existing story idea found.', 'info');
+        console.log('[loadIdea] File not found or empty — no existing idea.');
     }
 }
 
@@ -248,16 +367,22 @@ async function onSaveIdea() {
     const content = document.getElementById('idea-editor').value.trim();
     if (!content) {
         setStatus('idea-status', 'Idea cannot be empty.', 'error');
+        log('Save idea aborted: editor is empty.', 'warning');
+        console.warn('[onSaveIdea] Aborted — editor is empty.');
         return;
     }
     try {
+        log(`Saving story idea (${content.length} chars)…`, 'info');
+        console.log(`[onSaveIdea] Writing ${content.length} chars to "${IDEA_FILE}"…`);
         await writeFile(basePath, IDEA_FILE, content);
         setStatus('idea-status', 'Idea saved.', 'success');
         setBadge('badge-idea', 'done');
-        log('Idea saved.', 'success');
+        log(`Story idea saved successfully (${content.length} chars).`, 'success');
+        console.log('[onSaveIdea] Save successful.');
     } catch (e) {
         setStatus('idea-status', `Save failed: ${e.message}`, 'error');
-        log(`Idea save failed: ${e.message}`, 'error');
+        log(`Story idea save failed: ${e.message}`, 'error');
+        console.error('[onSaveIdea]', e);
     }
 }
 
@@ -265,11 +390,15 @@ async function autoSaveIdea() {
     const content = document.getElementById('idea-editor').value.trim();
     if (!content) return;
     try {
+        console.debug('[autoSaveIdea] Auto-saving idea —', content.length, 'chars…');
         await writeFile(basePath, IDEA_FILE, content);
         setStatus('idea-status', 'Auto-saved.', 'info', 2000);
         setBadge('badge-idea', 'done');
+        log(`Story idea auto-saved (${content.length} chars).`, 'info');
+        console.debug('[autoSaveIdea] Auto-save successful.');
     } catch (e) {
-        // Silent on auto-save failures
+        log(`Story idea auto-save failed: ${e.message}`, 'warning');
+        console.warn('[autoSaveIdea] Auto-save failed:', e);
     }
 }
 
@@ -280,6 +409,8 @@ async function onStartStory() {
     const ideaContent = document.getElementById('idea-editor').value.trim();
     if (!ideaContent) {
         showToast('Please write a story idea first.', 'warning');
+        log('Start story aborted: no idea content.', 'warning');
+        console.warn('[onStartStory] Aborted — idea editor is empty.');
         return;
     }
 
@@ -288,20 +419,30 @@ async function onStartStory() {
     setBadge('badge-idea', 'done');
 
     const target = `${STORY_DIR}/${INITIAL_NODE}.md`;
+    console.log('[onStartStory] Target file:', target);
 
     // Confirm if initial node already exists
     if (await fileExists(basePath, target)) {
+        log(`Initial node already exists at "${target}". Prompting user for confirmation.`, 'info');
+        console.log('[onStartStory] Initial node already exists — prompting user for confirmation.');
         if (!confirm('An initial story node already exists. Regenerate it? This will overwrite the current root node (existing branches will remain on disk).')) {
+            log('User cancelled regeneration of initial node.', 'info');
+            console.log('[onStartStory] User cancelled regeneration.');
             await loadNode(INITIAL_NODE);
             return;
         }
+        log('User confirmed regeneration of initial node.', 'info');
+        console.log('[onStartStory] User confirmed regeneration of initial node.');
     }
 
     const startBtn = document.getElementById('start-story');
     startBtn.disabled = true;
     setBadge('badge-tree', 'running');
     setStatus('idea-status', 'Generating initial node...', 'info', 0);
-    log('Starting story...', 'info');
+    log(`Starting story — op: ops/initial_node.md → target: "${target}".`, 'info');
+    timeStart('startStory');
+    console.group('[onStartStory] Generating initial story node…');
+    console.log('[onStartStory] op: ops/initial_node.md | target:', target, '| overrides:', getModelOverrides());
 
     try {
         const taskId = await runDocOp(
@@ -310,40 +451,51 @@ async function onStartStory() {
             target,
             getModelOverrides()
         );
-         log(`DocOp started: ${formatTaskId(taskId)}`, 'info');
+        console.log('[onStartStory] runDocOp() returned taskId:', taskId);
+        log(`DocOp started for initial node — task: ${formatTaskId(taskId)}.`, 'info');
 
         await waitForTask(basePath, target, 600000, (tgt, info) => {
             trackedSessions.set(tgt, info);
             linkManager.update(tgt, info);
             updateSessionLinks(tgt, info, getProxyUrl, 'initial-links');
+            console.debug('[onStartStory] waitForTask progress — target:', tgt, '| status:', info.status, '| info:', info);
+            log(`Task progress for "${tgt}": status=${info.status}.`, 'info');
         });
 
-        log('Initial node generated.', 'success');
+        log(`Initial node generated successfully in ${timeEnd('startStory')}.`, 'success');
+        console.log('[onStartStory] Initial node generation complete.');
         setBadge('badge-tree', 'done');
         setStatus('idea-status', 'Story started!', 'success');
         await refreshTree();
         await loadNode(INITIAL_NODE);
-         maybeAutoGenerateImage(INITIAL_NODE);
+        maybeAutoGenerateImage(INITIAL_NODE);
     } catch (e) {
-        log(`Failed to start story: ${e.message}`, 'error');
+        log(`Failed to generate initial node after ${timeEnd('startStory')}: ${e.message}`, 'error');
+        console.error('[onStartStory]', e);
         setStatus('idea-status', `Error: ${e.message}`, 'error');
         setBadge('badge-tree', 'error');
         showToast(`Failed: ${e.message}`, 'error');
     } finally {
         startBtn.disabled = false;
+        console.groupEnd();
     }
 }
 
 async function onChoice(letter) {
     if (!currentNode) {
         showToast('Select a node first.', 'warning');
+        log('Choice aborted: no current node selected.', 'warning');
+        console.warn('[onChoice] Aborted — no current node selected.');
         return;
     }
     const target = `${STORY_DIR}/${currentNode}${letter}.md`;
     const opPath = `ops/choice_${letter}.md`;
+    console.log(`[onChoice] letter="${letter}" | currentNode="${currentNode}" | target="${target}" | op="${opPath}"`);
 
     // If node already exists, just load it
     if (await fileExists(basePath, target)) {
+        log(`Branch "${currentNode}${letter}" already exists — loading from disk.`, 'info');
+        console.log(`[onChoice] Branch "${currentNode}${letter}" already exists — loading from disk.`);
         await loadNode(`${currentNode}${letter}`);
         return;
     }
@@ -352,7 +504,10 @@ async function onChoice(letter) {
     buttons.forEach(b => b.disabled = true);
     setBadge('badge-node', 'running');
     setStatus('choice-status', `Generating branch ${letter.toUpperCase()}...`, 'info', 0);
-    log(`Generating branch: ${target}`, 'info');
+    log(`Generating branch ${letter.toUpperCase()} — op: ${opPath} → target: "${target}".`, 'info');
+    timeStart(`branch_${letter}`);
+    console.group(`[onChoice] Generating branch ${letter.toUpperCase()}…`);
+    console.log(`[onChoice] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
 
     try {
         const taskId = await runDocOp(
@@ -361,28 +516,34 @@ async function onChoice(letter) {
             target,
             getModelOverrides()
         );
-         log(`DocOp started: ${formatTaskId(taskId)}`, 'info');
+        console.log(`[onChoice] runDocOp() returned taskId:`, taskId);
+        log(`DocOp started for branch ${letter.toUpperCase()} — task: ${formatTaskId(taskId)}.`, 'info');
 
         await waitForTask(basePath, target, 600000, (tgt, info) => {
             trackedSessions.set(tgt, info);
             linkManager.update(tgt, info);
             updateSessionLinks(tgt, info, getProxyUrl, 'node-links');
+            console.debug(`[onChoice] waitForTask progress — target: ${tgt} | status: ${info.status} | info:`, info);
+            log(`Task progress for "${tgt}": status=${info.status}.`, 'info');
         });
 
-        log(`Branch ${letter.toUpperCase()} generated.`, 'success');
+        log(`Branch ${letter.toUpperCase()} generated successfully in ${timeEnd(`branch_${letter}`)}.`, 'success');
+        console.log(`[onChoice] Branch ${letter.toUpperCase()} generation complete.`);
         setBadge('badge-node', 'done');
         setStatus('choice-status', `Branch ${letter.toUpperCase()} ready.`, 'success');
         await refreshTree();
-         const newNode = `${currentNode}${letter}`;
-         await loadNode(newNode);
-         maybeAutoGenerateImage(newNode);
+        const newNode = `${currentNode}${letter}`;
+        await loadNode(newNode);
+        maybeAutoGenerateImage(newNode);
     } catch (e) {
-        log(`Failed to generate branch ${letter}: ${e.message}`, 'error');
+        log(`Failed to generate branch ${letter.toUpperCase()} after ${timeEnd(`branch_${letter}`)}: ${e.message}`, 'error');
+        console.error(`[onChoice(${letter})]`, e);
         setStatus('choice-status', `Error: ${e.message}`, 'error');
         setBadge('badge-node', 'error');
         showToast(`Failed: ${e.message}`, 'error');
     } finally {
         buttons.forEach(b => b.disabled = false);
+        console.groupEnd();
     }
 }
 
@@ -391,6 +552,8 @@ async function onChoice(letter) {
 // -------------------------------------------------------------------------
 async function refreshTree() {
     try {
+        log(`Refreshing story tree from "${STORY_DIR}/"…`, 'info');
+        timeStart('refreshTree');
         const files = await listFiles(basePath, STORY_DIR);
         allNodes = new Set();
         (files || []).forEach(f => {
@@ -400,9 +563,13 @@ async function refreshTree() {
                 if (/^0[a-c]*$/.test(id)) allNodes.add(id);
             }
         });
+         log(`Tree refreshed in ${timeEnd('refreshTree')} — ${allNodes.size} node(s): [${Array.from(allNodes).sort().join(', ')}].`, 'info');
+         console.log('[refreshTree] Done —', allNodes.size, 'node(s):', Array.from(allNodes).sort());
         renderTree();
     } catch (e) {
+         timeEnd('refreshTree'); // ensure timer is always cleared
         log(`Tree refresh failed: ${e.message}`, 'warning');
+        console.warn('[refreshTree]', e);
     }
 }
 
@@ -413,324 +580,997 @@ function renderTree() {
         return;
     }
 
+    const childrenOf = new Map();
+    allNodes.forEach(id => childrenOf.set(id, []));
+    allNodes.forEach(id => {
+        if (id === INITIAL_NODE) return;
+        const parent = id.slice(0, -1);
+        if (childrenOf.has(parent)) {
+            childrenOf.get(parent).push(id);
+        }
+    });
+    childrenOf.forEach(arr => arr.sort((a, b) => a.localeCompare(b)));
 
+    const ordered = [];
+    function walk(id, ancestorIsLast) {
+        const kids = childrenOf.get(id) || [];
+        ordered.push({ id, ancestorIsLast: ancestorIsLast.slice() });
+        kids.forEach((kid, i) => {
+            const isLast = i === kids.length - 1;
+            walk(kid, ancestorIsLast.concat(isLast));
+        });
+    }
+    if (allNodes.has(INITIAL_NODE)) {
+        walk(INITIAL_NODE, []);
+    } else {
+        // Fallback: render any orphaned nodes alphabetically
+        Array.from(allNodes).sort().forEach(id => ordered.push({ id, ancestorIsLast: [] }));
+    }
 
+    const frag = document.createDocumentFragment();
+    ordered.forEach(({ id, ancestorIsLast }) => {
+        const depth = ancestorIsLast.length;
+        const div = document.createElement('div');
+        div.className = 'tree-node' + (id === currentNode ? ' active' : '');
+        div.dataset.nodeId = id;
 
+        let label = '📖 Root';
+        if (id !== INITIAL_NODE) {
+            const lastChoice = id.charAt(id.length - 1).toUpperCase();
+            label = `↳ Branch ${lastChoice} <span style="opacity:0.6;">(${id})</span>`;
+        }
 
-     // Build a parent->children map so we can do an ordered DFS traversal.
-     // Children are sorted alphabetically (a, b, c) so siblings appear in
-     // a stable order under their parent.
-     const childrenOf = new Map();
-     allNodes.forEach(id => childrenOf.set(id, []));
-     allNodes.forEach(id => {
-         if (id === INITIAL_NODE) return;
-         const parent = id.slice(0, -1);
-         if (childrenOf.has(parent)) {
-             childrenOf.get(parent).push(id);
-         }
-     });
-     childrenOf.forEach(arr => arr.sort((a, b) => a.localeCompare(b)));
+        let indent = '';
+        if (depth > 0) {
+            for (let i = 0; i < depth - 1; i++) {
+                indent += ancestorIsLast[i] ? '  ' : '│ ';
+            }
+            indent += ancestorIsLast[depth - 1] ? '└ ' : '├ ';
+        }
+        div.innerHTML = `<span class="tree-indent">${escapeHtml(indent)}</span><span>${label}</span>`;
+        div.addEventListener('click', () => loadNode(id));
+        frag.appendChild(div);
+    });
 
-     // DFS traversal producing { id, ancestorIsLast[] , isLast } per node,
-     // where ancestorIsLast[i] tells us whether the ancestor at depth (i+1)
-     // was the last child of its parent (so we draw a space) or not (draw │).
-     const ordered = [];
-     function walk(id, ancestorIsLast) {
-         const kids = childrenOf.get(id) || [];
-         ordered.push({ id, ancestorIsLast: ancestorIsLast.slice() });
-         kids.forEach((kid, i) => {
-             const isLast = i === kids.length - 1;
-             walk(kid, ancestorIsLast.concat(isLast));
-         });
-     }
-     if (allNodes.has(INITIAL_NODE)) {
-         walk(INITIAL_NODE, []);
-     } else {
-         // Fallback: render any orphaned nodes alphabetically
-         Array.from(allNodes).sort().forEach(id => ordered.push({ id, ancestorIsLast: [] }));
-     }
-
-     const frag = document.createDocumentFragment();
-     ordered.forEach(({ id, ancestorIsLast }) => {
-         const depth = ancestorIsLast.length;
-         const div = document.createElement('div');
-         div.className = 'tree-node' + (id === currentNode ? ' active' : '');
-         div.dataset.nodeId = id;
-
-         let label = '📖 Root';
-         if (id !== INITIAL_NODE) {
-             const lastChoice = id.charAt(id.length - 1).toUpperCase();
-             label = `↳ Branch ${lastChoice} <span style="opacity:0.6;">(${id})</span>`;
-         }
-
-         // Build proper tree connectors:
-         //   - For each ancestor level (except the immediate parent), draw "│ "
-         //     if that ancestor had more siblings after it, otherwise "  ".
-         //   - For the node itself, draw "└ " if it's the last child of its
-         //     parent, otherwise "├ ".
-         let indent = '';
-         if (depth > 0) {
-             for (let i = 0; i < depth - 1; i++) {
-                 indent += ancestorIsLast[i] ? '  ' : '│ ';
-             }
-             indent += ancestorIsLast[depth - 1] ? '└ ' : '├ ';
-         }
-         div.innerHTML = `<span class="tree-indent">${escapeHtml(indent)}</span><span>${label}</span>`;
-         div.addEventListener('click', () => loadNode(id));
-         frag.appendChild(div);
-     });
-
-     container.innerHTML = '';
-     container.appendChild(frag);
+    container.innerHTML = '';
+    container.appendChild(frag);
 }
 
 // -------------------------------------------------------------------------
 // Node loading
 // -------------------------------------------------------------------------
+/**
+  * Parse a story node's markdown to extract:
+  *   - choices: { a: string, b: string, c: string } (may be partial or empty)
+  *   - isEndState: true if no choices block is present (story ending)
+  *   - choicePrompt: the heading text above the choices (if any)
+  *
+  * Expected markdown pattern (graceful fallback if absent):
+  *   ### Some heading
+  *   * **Choice A** - Description text
+  *   * **Choice B** - Description text
+  *   * **Choice C** - Description text
+  */
+function parseNodeContent(markdown) {
+     const result = { isEndState: false, choices: {}, choicePrompt: null };
+     try {
+         if (!markdown) return result;
+         // Match list items that look like choice entries.
+         // Handles both:
+         //   * **Choice A** - Description
+         //   * **A** - Description
+         //   * **Choice A:** Description
+          //   * **Choice A** - **Title** — Body text
+         const choiceLineRe = /^\s*[*-]\s+\*\*(?:Choice\s+)?([ABC])\**[:\s*-]+\s*(.+)$/gim;
+         let match;
+         while ((match = choiceLineRe.exec(markdown)) !== null) {
+             const letter = match[1].toLowerCase();
+              // Strip any leading/trailing ** artifacts left by partial markdown stripping
+              const description = match[2].trim()
+                  .replace(/^\*+/, '')           // strip leading **
+                  .replace(/\*+\s*([—–-])/, ' $1') // strip ** immediately before an em/en-dash
+                  .replace(/\*+$/, '')            // strip trailing **
+                  .trim();
+             result.choices[letter] = description;
+         }
+         // Detect end-state: no choices found AND the node contains an epitaph
+         // marker (italic line at the end) or simply has no choice list at all.
+         const hasChoices = Object.keys(result.choices).length > 0;
+         if (!hasChoices) {
+             result.isEndState = true;
+         }
+         // Extract the choice prompt heading (### …) that precedes the list, if any.
+         if (hasChoices) {
+             const promptRe = /^#{2,4}\s+(.+?)\s*$/m;
+             // Find the last heading before the first choice line
+             const firstChoiceIdx = markdown.search(/^\s*[*-]\s+\*\*(?:Choice\s+)?[ABC]/im);
+             const beforeChoices = firstChoiceIdx > 0 ? markdown.slice(0, firstChoiceIdx) : markdown;
+             const headings = [...beforeChoices.matchAll(/^#{2,4}\s+(.+?)\s*$/gm)];
+             if (headings.length > 0) {
+                 result.choicePrompt = headings[headings.length - 1][1].trim();
+             }
+         }
+         console.debug('[parseNodeContent] result:', result);
+     } catch (e) {
+         console.warn('[parseNodeContent] Parsing failed — using defaults:', e);
+         // Return safe defaults; UI will fall back to generic labels.
+         result.isEndState = false;
+         result.choices = {};
+         result.choicePrompt = null;
+     }
+     return result;
+}
+/**
+  * Apply parsed choice data to the choice-actions UI block.
+  * Handles three states:
+  *   1. End-state  — hide choice buttons, show "The End" panel.
+  *   2. Choices found — populate button labels with story text.
+  *   3. Fallback   — show generic "Generate Branch X" labels.
+  */
+function applyParsedChoicesToUI(nodeId, parsed) {
+     const choiceActions = document.getElementById('choice-actions');
+     const choiceButtons = document.getElementById('choice-buttons');
+     const choicePromptEl = document.querySelector('#choice-actions .choice-prompt');
+     let endPanel = document.getElementById('end-state-panel');
+     // Remove any previous end-state panel
+     if (endPanel) endPanel.remove();
+     if (parsed.isEndState) {
+         // Hide the choice buttons, show an end-state message
+         choiceActions.style.display = 'block';
+         if (choiceButtons) choiceButtons.style.display = 'none';
+         if (choicePromptEl) choicePromptEl.style.display = 'none';
+         endPanel = document.createElement('div');
+         endPanel.id = 'end-state-panel';
+         endPanel.className = 'end-state-panel';
+         endPanel.innerHTML = `
+             <div class="end-state-icon">📜</div>
+             <p class="end-state-title">The story has reached its end.</p>
+             <p class="end-state-hint">Select another branch from the tree, or start a new story.</p>
+         `;
+         // Insert before the session-link container
+         const nodeLinks = document.getElementById('node-links');
+         choiceActions.insertBefore(endPanel, nodeLinks || null);
+         console.log('[applyParsedChoicesToUI] End-state panel shown for node:', nodeId);
+         return;
+     }
+     // Not an end-state — show choice buttons
+     if (choiceButtons) choiceButtons.style.display = '';
+     if (choicePromptEl) {
+         choicePromptEl.style.display = '';
+         choicePromptEl.textContent = parsed.choicePrompt || 'Continue the story by choosing a path:';
+     }
+     ['a', 'b', 'c'].forEach(letter => {
+         const btn = document.querySelector(`.btn-choice[data-choice="${letter}"]`);
+         if (!btn) return;
+         const childId = `${nodeId}${letter}`;
+         const exists = allNodes.has(childId);
+         const labelEl = btn.querySelector('.choice-label');
+         const descEl = btn.querySelector('.choice-desc');
+         const storyText = parsed.choices[letter] || null;
+         if (exists) {
+              labelEl.textContent = `✓ Already explored`;
+         } else {
+              labelEl.textContent = '';
+         }
+         if (storyText) {
+              // Split into title (before em-dash) and body, render both as markdown
+              const dashIdx = storyText.search(/\s*[—–-]{1,2}\s+/);
+              let titleHtml, bodyHtml;
+              if (dashIdx > 0) {
+                  const title = storyText.slice(0, dashIdx).trim();
+                  const body = storyText.slice(dashIdx).replace(/^\s*[—–-]+\s*/, '').trim();
+                  // Wrap in ** so renderMarkdown bolds it if not already marked up
+                  const titleMd = title.startsWith('**') ? title : `**${title.replace(/\*+/g, '')}**`;
+                  titleHtml = renderMarkdown(titleMd);
+                  bodyHtml = renderMarkdown(body);
+              } else {
+                  titleHtml = '';
+                  bodyHtml = renderMarkdown(storyText);
+              }
+              // Set label to the title (bold short phrase)
+              if (titleHtml && !exists) {
+                  labelEl.innerHTML = titleHtml;
+              } else if (!exists) {
+                  labelEl.textContent = '';
+              }
+             if (descEl) {
+                  descEl.innerHTML = bodyHtml;
+                 descEl.style.display = '';
+             } else {
+                 const newDesc = document.createElement('span');
+                 newDesc.className = 'choice-desc';
+                  newDesc.innerHTML = bodyHtml;
+                 btn.appendChild(newDesc);
+             }
+         } else {
+             // Fallback: no parsed text — hide description if present
+             if (descEl) descEl.style.display = 'none';
+         }
+     });
+}
+
 async function loadNode(nodeId) {
     const path = `${STORY_DIR}/${nodeId}.md`;
+    log(`Loading node "${nodeId}" from "${path}"…`, 'info');
+    timeStart(`loadNode_${nodeId}`);
+    console.group(`[loadNode] Loading node "${nodeId}" from "${path}"…`);
     const content = await readFile(basePath, path);
     if (content == null) {
         showToast(`Node ${nodeId} not available yet.`, 'warning');
+        log(`Node "${nodeId}" could not be read — file may not exist yet.`, 'warning');
+        console.warn(`[loadNode] Could not read "${path}" — file may not exist yet.`);
+        console.groupEnd();
         return;
     }
+    console.log(`[loadNode] Read ${content.length} chars. Previous currentNode: "${currentNode}" → new: "${nodeId}".`);
 
     currentNode = nodeId;
     document.getElementById('current-node-path').textContent = path;
-    document.getElementById('node-content').innerHTML = renderMarkdown(content);
+     const nodeContentEl = document.getElementById('node-content');
+     nodeContentEl.innerHTML = renderMarkdown(content);
+      _ttsWordSpans = buildSentenceSpans(nodeContentEl);
+      _ttsOffsetIndex = buildSpanOffsetIndex(_ttsWordSpans);
+     _ttsPlainText = _ttsOffsetIndex.plainText;
+     _ttsCharOffset = 0;
+     _ttsActiveSpan = null;
     document.getElementById('choice-actions').style.display = 'block';
     setBadge('badge-node', 'done');
 
-    // Update tree active highlight
     document.querySelectorAll('.tree-node').forEach(el => {
         el.classList.toggle('active', el.dataset.nodeId === nodeId);
     });
 
-    // Update choice button labels - mark which branches already exist
-    ['a', 'b', 'c'].forEach(letter => {
-        const btn = document.querySelector(`.btn-choice[data-choice="${letter}"]`);
-        const childId = `${nodeId}${letter}`;
-        const exists = allNodes.has(childId);
-        const label = btn.querySelector('.choice-label');
-        if (exists) {
-            label.textContent = `Visit Branch ${letter.toUpperCase()} ✓`;
-        } else {
-            label.textContent = `Generate Branch ${letter.toUpperCase()}`;
-        }
-    });
 
-    log(`Loaded node: ${nodeId}`, 'info');
-     // Auto-read if enabled
-     stopSpeaking();
-     if (document.getElementById('auto-read').checked) {
-         speakText(content);
-     }
-     // Load existing image (if any)
-     await loadNodeImage(nodeId);
+     // Parse choices and detect end-state from markdown content
+     const parsed = parseNodeContent(content);
+     console.log(`[loadNode] Parsed node content — isEndState: ${parsed.isEndState} | choices:`, parsed.choices);
+     log(`Node "${nodeId}" parsed — isEndState: ${parsed.isEndState}, choices found: ${Object.keys(parsed.choices).length}.`, 'info');
+
+     applyParsedChoicesToUI(nodeId, parsed);
+
+     const existingBranches = ['a', 'b', 'c'].filter(l => allNodes.has(`${nodeId}${l}`));
+     log(`Node "${nodeId}" loaded in ${timeEnd(`loadNode_${nodeId}`)} — ${content.length} chars. Existing branches: [${existingBranches.join(', ') || 'none'}]. End-state: ${parsed.isEndState}.`, 'success');
+     console.log(`[loadNode] Node "${nodeId}" ready. Existing branches: [${existingBranches.join(', ') || 'none'}]. End-state: ${parsed.isEndState}.`);
+    console.groupEnd();
+
+    // Auto-read if enabled
+    stopSpeaking();
+     console.log('[loadNode] After stopSpeaking() — isSpeaking:', isSpeaking, '| speechSynthesis.speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A');
+    if (document.getElementById('auto-read').checked) {
+        log(`Auto-read enabled — starting speech for node "${nodeId}".`, 'info');
+        console.log(`[loadNode] Auto-read enabled — triggering speech for node "${nodeId}".`);
+           // Auto-read requires a prior user gesture (browser autoplay policy).
+           // We set a flag so the next user interaction can trigger it, but we
+           // do NOT call speak() here because it will be blocked with "not-allowed"
+           // when the page loads without a prior gesture.
+           _pendingAutoRead = true;
+           _updateAutoReadIndicator(true);
+           console.log('[loadNode] Auto-read: set _pendingAutoRead=true (waiting for user gesture).');
+    }
+    // Load existing image (if any)
+    await loadNodeImage(nodeId);
 }
 // -------------------------------------------------------------------------
 // Text-to-speech
 // -------------------------------------------------------------------------
+/**
+   * Walk all text nodes inside `rootEl`, wrap each sentence in
+   * a <span class="tts-sentence"> element, and return the ordered array of spans.
+  * This must be called after the markdown has been rendered into the DOM.
+  */
+function buildSentenceSpans(rootEl) {
+     const spans = [];
+     // Collect all text nodes in document order, skipping script/style subtrees.
+     const walker = document.createTreeWalker(
+         rootEl,
+         NodeFilter.SHOW_TEXT,
+         {
+             acceptNode(node) {
+                 const tag = node.parentElement && node.parentElement.tagName.toUpperCase();
+                 if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+                 return NodeFilter.FILTER_ACCEPT;
+             }
+         }
+     );
+     const textNodes = [];
+     let n;
+     while ((n = walker.nextNode())) textNodes.push(n);
+      // Collect all text content per block-level parent, then split into sentences.
+      // We group consecutive text nodes that share the same block ancestor so that
+      // sentence boundaries don't get split across sibling inline elements.
+      const BLOCK_TAGS = new Set(['P','LI','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','TD','TH','DIV','SECTION','ARTICLE']);
+      function getBlockAncestor(node) {
+          let el = node.parentElement;
+          while (el && el !== rootEl) {
+              if (BLOCK_TAGS.has(el.tagName.toUpperCase())) return el;
+              el = el.parentElement;
+          }
+          return el || rootEl;
+      }
+      // Split a string into sentence-sized tokens, preserving trailing punctuation.
+      function splitSentences(text) {
+          // Match runs ending in sentence-terminal punctuation, or the remainder.
+          const parts = [];
+          // Split on .  !  ?  followed by whitespace or end-of-string,
+          // keeping the delimiter attached to the preceding token.
+          const re = /[^.!?]*[.!?]+[\s]*/g;
+          let match;
+          let lastIdx = 0;
+          while ((match = re.exec(text)) !== null) {
+              const s = match[0];
+              if (s.trim()) parts.push(s);
+              lastIdx = re.lastIndex;
+          }
+          // Any trailing text without terminal punctuation
+          if (lastIdx < text.length) {
+              const tail = text.slice(lastIdx);
+              if (tail.trim()) parts.push(tail);
+          }
+          return parts.length ? parts : (text.trim() ? [text] : []);
+      }
+
+     for (const textNode of textNodes) {
+         const text = textNode.nodeValue;
+         if (!text || !text.trim()) continue;
+
+          const sentences = splitSentences(text);
+          if (!sentences.length) continue;
+
+         const frag = document.createDocumentFragment();
+          for (const sentence of sentences) {
+              const span = document.createElement('span');
+              span.className = 'tts-sentence';
+              span.textContent = sentence;
+              frag.appendChild(span);
+              spans.push(span);
+         }
+         textNode.parentNode.replaceChild(frag, textNode);
+     }
+      console.debug('[buildSentenceSpans] Built', spans.length, 'sentence spans.');
+     return spans;
+}
+/**
+  * Build a plain-text string from the word spans (joined by single spaces) and
+  * return it alongside a parallel array of character-start offsets so that a
+  * boundary charIndex can be mapped back to a span index in O(log n).
+  *
+  * Returns { plainText: string, offsets: number[] }
+  * where offsets[i] is the start index of spans[i] inside plainText.
+  * For sentence spans the text is joined without extra spaces (each span
+  * already carries its own trailing whitespace).
+  */
+function buildSpanOffsetIndex(spans) {
+     let plainText = '';
+     const offsets = [];
+     for (let i = 0; i < spans.length; i++) {
+         offsets.push(plainText.length);
+          // Sentence spans already include trailing whitespace from the original
+          // text, so we concatenate directly without adding extra separators.
+          plainText += spans[i].textContent;
+     }
+     console.debug('[buildSpanOffsetIndex] plainText length:', plainText.length, '| spans:', spans.length);
+     return { plainText, offsets };
+}
+// Cached offset index — rebuilt whenever _ttsWordSpans changes (i.e. on node load).
+let _ttsOffsetIndex = { plainText: '', offsets: [] };
+/** Returns true when the readalong-highlight checkbox is checked. */
+function isHighlightEnabled() {
+     const el = document.getElementById('highlight-readalong');
+     return el ? el.checked : true;
+}
+
+/**
+  * Given a character offset into the *plain text* being spoken (as reported by
+  * the `boundary` event), find and highlight the corresponding word span.
+  *
+  * `chunkOffset` is the cumulative character count of all chunks spoken before
+  * the current one, so that offsets from the boundary event (which are relative
+  * to the current utterance) can be mapped to the global span array.
+  */
+function highlightWordAtOffset(charOffset) {
+     if (!_ttsWordSpans.length) return;
+      if (!isHighlightEnabled()) return;
+      // Binary-search the pre-built offset index for the sentence span whose
+      // range contains charOffset.
+      const { offsets } = _ttsOffsetIndex;
+      let lo = 0, hi = offsets.length - 1, spanIdx = 0;
+      while (lo <= hi) {
+          const mid = (lo + hi) >>> 1;
+          if (offsets[mid] <= charOffset) {
+              spanIdx = mid;
+              lo = mid + 1;
+          } else {
+              hi = mid - 1;
+          }
+      }
+       // Advance by one: the boundary event fires at the *start* of the word
+       // being spoken, so by the time the event arrives the previous span has
+       // already been read.  Shifting forward by one keeps the highlight in
+       // sync with the audio.
+       const advancedIdx = Math.min(spanIdx + 1, _ttsWordSpans.length - 1);
+       const found = _ttsWordSpans[advancedIdx] || null;
+     if (found === _ttsActiveSpan) return; // no change
+     if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
+     _ttsActiveSpan = found;
+     if (_ttsActiveSpan) {
+         _ttsActiveSpan.classList.add('tts-highlight');
+          // Scroll within the markdown-preview container rather than the page,
+          // so the card itself doesn't jump around.
+          scrollSpanIntoView(_ttsActiveSpan);
+     }
+}
+/** Remove any active word highlight without stopping speech. */
+function clearWordHighlight() {
+     if (_ttsActiveSpan) {
+         _ttsActiveSpan.classList.remove('tts-highlight');
+         _ttsActiveSpan = null;
+     }
+}
+/**
+  * Return the span index whose range contains `charOffset` (binary search).
+  * Used to seed the timer-based fallback at the correct position.
+  */
+function _spanIdxForCharOffset(charOffset) {
+      if (!_ttsOffsetIndex.offsets.length) return 0;
+      const { offsets } = _ttsOffsetIndex;
+      let lo = 0, hi = offsets.length - 1, spanIdx = 0;
+      while (lo <= hi) {
+          const mid = (lo + hi) >>> 1;
+          if (offsets[mid] <= charOffset) { spanIdx = mid; lo = mid + 1; }
+          else { hi = mid - 1; }
+      }
+      return spanIdx;
+}
+/**
+  * Scroll `span` into view inside its nearest scrollable ancestor
+  * (the .markdown-preview container).  Falls back to the native
+  * scrollIntoView if no scrollable ancestor is found.
+  */
+function scrollSpanIntoView(span) {
+     // Walk up the DOM to find the first scrollable ancestor.
+     let container = span.parentElement;
+     while (container && container !== document.body) {
+         const style = window.getComputedStyle(container);
+         const overflowY = style.overflowY;
+         if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') break;
+         container = container.parentElement;
+     }
+     if (!container || container === document.body) {
+         span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+         return;
+     }
+     const containerRect = container.getBoundingClientRect();
+     const spanRect = span.getBoundingClientRect();
+     // How far is the span from the visible edges of the container?
+     const topDelta    = spanRect.top    - containerRect.top;
+     const bottomDelta = spanRect.bottom - containerRect.bottom;
+     // Add a small margin (40 px) so the highlighted word is never right at the edge.
+     const margin = 40;
+     if (topDelta < margin) {
+         container.scrollBy({ top: topDelta - margin, behavior: 'smooth' });
+     } else if (bottomDelta > -margin) {
+         container.scrollBy({ top: bottomDelta + margin, behavior: 'smooth' });
+     }
+}
+
 function stripMarkdown(md) {
-     if (!md) return '';
-     return md
-         // Remove code blocks
-         .replace(/```[\s\S]*?```/g, '')
-         // Remove inline code
-         .replace(/`([^`]+)`/g, '$1')
-         // Remove images ![alt](url)
-         .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-         // Convert links [text](url) -> text
-         .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-         // Remove headings markers
-         .replace(/^#{1,6}\s+/gm, '')
-         // Remove emphasis markers
-         .replace(/(\*\*|__)(.*?)\1/g, '$2')
-         .replace(/(\*|_)(.*?)\1/g, '$2')
-         // Remove blockquote markers
-         .replace(/^>\s?/gm, '')
-         // Remove list markers
-         .replace(/^\s*[-*+]\s+/gm, '')
-         .replace(/^\s*\d+\.\s+/gm, '')
-         // Collapse extra whitespace
-         .replace(/\n{3,}/g, '\n\n')
-         .trim();
+    if (!md) return '';
+     const result = md
+        // Remove code blocks
+        .replace(/```[\s\S]*?```/g, '')
+        // Remove inline code
+        .replace(/`([^`]+)`/g, '$1')
+        // Remove images ![alt](url)
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+        // Convert links [text](url) -> text
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+        // Remove headings markers
+        .replace(/^#{1,6}\s+/gm, '')
+        // Remove emphasis markers
+        .replace(/(\*\*|__)(.*?)\1/g, '$2')
+        .replace(/(\*|_)(.*?)\1/g, '$2')
+        // Remove blockquote markers
+        .replace(/^>\s?/gm, '')
+        // Remove list markers
+        .replace(/^\s*[-*+]\s+/gm, '')
+        .replace(/^\s*\d+\.\s+/gm, '')
+        // Collapse extra whitespace
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+     console.debug('[stripMarkdown] Input length:', md.length, '→ Output length:', result.length);
+     return result;
 }
 function speakText(markdown) {
+      console.log('[speakText] Called (legacy/manual path) — markdown length:', markdown ? markdown.length : 0, '| isSpeaking:', isSpeaking);
+      console.log('[speakText] speechSynthesis state — available:', 'speechSynthesis' in window,
+         '| speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A',
+         '| pending:', ('speechSynthesis' in window) ? window.speechSynthesis.pending : 'N/A',
+         '| paused:', ('speechSynthesis' in window) ? window.speechSynthesis.paused : 'N/A');
+      log(`speakText() called — markdown: ${markdown ? markdown.length : 0} chars, isSpeaking: ${isSpeaking}.`, 'info');
+     if (isSpeaking) {
+         console.warn('[speakText] Already speaking — ignoring duplicate call. Call stopSpeaking() first.');
+         log('speakText() called while already speaking — ignoring. Use stopSpeaking() first.', 'warning');
+         return;
+     }
+    if (!('speechSynthesis' in window)) {
+        showToast('Text-to-speech is not supported in this browser.', 'error');
+        log('Speech synthesis not available in this browser.', 'error');
+        console.error('[speakText] speechSynthesis not available.');
+        return;
+    }
+    // Prefer the span-derived plain text so boundary offsets align with highlights.
+    // Fall back to stripMarkdown only when called without a pre-built span index
+    // (e.g. from the manual read-aloud button before a node has been loaded).
+    const text = (_ttsPlainText && _ttsPlainText.length > 0) ? _ttsPlainText : stripMarkdown(markdown);
+    console.log('[speakText] Text source:', _ttsPlainText ? 'span plain-text' : 'stripMarkdown',
+        '| length:', text.length, '| first 100 chars:', text.slice(0, 100));
+    if (!text) {
+        showToast('Nothing to read.', 'warning');
+        log('speakText: text is empty — nothing to read.', 'warning');
+        console.warn('[speakText] Text is empty — nothing to speak.');
+        return;
+    }
+    try {
+        window.speechSynthesis.cancel();
+         console.log('[speakText] speechSynthesis.cancel() called. State — speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending, '| paused:', window.speechSynthesis.paused);
+          // Chrome bug: speak() called too soon after cancel() is silently ignored.
+          // Use a short delay to let the cancel settle before queuing chunks.
+          setTimeout(() => doSpeakChunked(text), 100);
+    } catch (e) {
+        log(`Speech failed: ${e.message}`, 'error');
+        console.error('[speakText]', e);
+    }
+}
+// Chrome Web Speech API silently kills utterances longer than ~15 seconds.
+  // Work around this by splitting the text into sentence-sized chunks and
+  // queuing them as separate SpeechSynthesisUtterance objects.
+/**
+  * Preferred entry-point for reading the current node aloud.
+  * Uses _ttsPlainText (derived from word spans) so that boundary charIndex
+  * values map exactly to span positions in _ttsOffsetIndex.
+  */
+function speakSpanText() {
+     if (!_ttsPlainText) {
+         log('speakSpanText: no span plain-text available — nothing to read.', 'warning');
+         console.warn('[speakSpanText] _ttsPlainText is empty — nothing to speak.');
+         return;
+     }
+     if (isSpeaking) {
+         console.warn('[speakSpanText] Already speaking — ignoring duplicate call.');
+         return;
+     }
      if (!('speechSynthesis' in window)) {
          showToast('Text-to-speech is not supported in this browser.', 'error');
          return;
      }
-     const text = stripMarkdown(markdown);
-     if (!text) {
-         showToast('Nothing to read.', 'warning');
-         return;
+     console.log('[speakSpanText] Speaking span plain-text — length:', _ttsPlainText.length);
+     log(`speakSpanText() — ${_ttsPlainText.length} chars.`, 'info');
+     window.speechSynthesis.cancel();
+     setTimeout(() => doSpeakChunked(_ttsPlainText), 100);
+}
+
+  function splitIntoChunks(text, maxLen = 200) {
+     const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+     const chunks = [];
+     let current = '';
+     for (const sentence of sentences) {
+         if (current.length + sentence.length > maxLen && current.length > 0) {
+             chunks.push(current.trim());
+             current = sentence;
+         } else {
+             current += sentence;
+         }
      }
-     try {
-         window.speechSynthesis.cancel();
-         const utter = new SpeechSynthesisUtterance(text);
+     if (current.trim()) chunks.push(current.trim());
+     return chunks;
+}
+// -------------------------------------------------------------------------
+// User-gesture tracking & auto-read
+// -------------------------------------------------------------------------
+function _onUserGesture() {
+     if (_hasUserGesture) return;
+     _hasUserGesture = true;
+     console.log('[_onUserGesture] First user gesture detected.');
+     if (_pendingAutoRead && !isSpeaking && currentNode) {
+         _pendingAutoRead = false;
+         _updateAutoReadIndicator(false);
+         console.log('[_onUserGesture] Firing pending auto-read for node:', currentNode);
+         log(`Auto-read: firing deferred speech for node "${currentNode}" after user gesture.`, 'info');
+         setTimeout(() => speakSpanText(), 80);
+     }
+}
+function _updateAutoReadIndicator(pending) {
+     const btn = document.getElementById('read-aloud');
+     const label = document.getElementById('read-aloud-label');
+     if (!btn || !label) return;
+     if (pending) {
+         label.textContent = 'Click to Read';
+         btn.title = 'Auto-read is ready — click anywhere or press a key to start';
+     } else if (!isSpeaking) {
+         label.textContent = 'Read Aloud';
+         btn.title = 'Read this node aloud';
+     }
+}
+// -------------------------------------------------------------------------
+// Timer-based word-highlight fallback
+// (used when onboundary events are not fired by the browser/voice)
+// -------------------------------------------------------------------------
+const TTS_WORDS_PER_MINUTE = 160;   // average speaking rate
+// Estimate ms per sentence by counting average words per sentence span.
+// We recompute this lazily each time _startTimerHighlight is called.
+function _mspSentence() {
+     if (!_ttsWordSpans.length) return 2000;
+     const totalWords = _ttsWordSpans.reduce((acc, s) => acc + (s.textContent.trim().split(/\s+/).length || 1), 0);
+     const avgWordsPerSentence = totalWords / _ttsWordSpans.length;
+     return (avgWordsPerSentence / TTS_WORDS_PER_MINUTE) * 60000;
+}
+function _startTimerHighlight(startSpanIdx) {
+     _stopTimerHighlight();
+      const msPerSentence = _mspSentence();
+     const tick = () => {
+         if (!isSpeaking) { _stopTimerHighlight(); return; }
+          if (!isHighlightEnabled()) return;
+         const elapsed = performance.now() - _ttsTimerStartTime;
+         const wordIdx = Math.min(
+                startSpanIdx + 1 + Math.floor(elapsed / msPerSentence),
+             _ttsWordSpans.length - 1
+         );
+         if (wordIdx !== _ttsTimerWordIdx) {
+             _ttsTimerWordIdx = wordIdx;
+             const span = _ttsWordSpans[wordIdx] || null;
+             if (span !== _ttsActiveSpan) {
+                 if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
+                 _ttsActiveSpan = span;
+                 if (_ttsActiveSpan) {
+                     _ttsActiveSpan.classList.add('tts-highlight');
+                     scrollSpanIntoView(_ttsActiveSpan);
+                 }
+             }
+         }
+     };
+     _ttsTimerStartTime = performance.now();
+      _ttsTimerWordIdx = startSpanIdx;
+     _ttsTimerInterval = setInterval(tick, 80);
+     console.debug('[_startTimerHighlight] Timer-based highlight started.');
+}
+function _stopTimerHighlight() {
+     if (_ttsTimerInterval != null) {
+         clearInterval(_ttsTimerInterval);
+         _ttsTimerInterval = null;
+         console.debug('[_stopTimerHighlight] Timer-based highlight stopped.');
+     }
+}
+function doSpeakChunked(text) {
+     console.log('[doSpeakChunked] state before queuing: speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
+     const voice = getSelectedVoice();
+     const chunks = splitIntoChunks(text, 200);
+     console.log(`[doSpeakChunked] Queuing ${chunks.length} chunk(s) with voice "${voice ? voice.name : 'default'}".`);
+     log(`Speaking ${chunks.length} chunk(s) with voice "${voice ? voice.name : 'browser default'}".`, 'info');
+     // Mark as speaking immediately so the button updates before onstart fires.
+     isSpeaking = true;
+     updateReadAloudButton();
+      // Compute cumulative char offsets for each chunk by walking the chunks
+      // array in order.  Because splitIntoChunks operates on the same `text`
+      // string that was used to build _ttsOffsetIndex (i.e. _ttsPlainText),
+      // these offsets map exactly to span positions in the offset index.
+      const chunkOffsets = [];
+      let runningOffset = 0;
+      for (const chunk of chunks) {
+          chunkOffsets.push(runningOffset);
+          // +1 for the space that splitIntoChunks implicitly consumes between chunks
+          runningOffset += chunk.length + 1;
+      }
+      console.debug('[doSpeakChunked] chunkOffsets (cumulative):', chunkOffsets);
+       // Track whether onboundary has ever fired for the current chunk.
+       // We give the browser a short grace period (500ms) before falling back to
+       // the timer-based highlight, so we don't start the timer unnecessarily.
+       let _boundaryFired = false;
+       let _boundaryGraceTimer = null;
+       // Span index at the start of each chunk — used to seed the timer fallback
+       // at the correct position if onboundary never fires.
+       const chunkStartSpanIdx = [];
+       for (let i = 0; i < chunks.length; i++) {
+           const spanIdx = _spanIdxForCharOffset(chunkOffsets[i]);
+           chunkStartSpanIdx.push(spanIdx);
+       }
+       console.debug('[doSpeakChunked] chunkStartSpanIdx:', chunkStartSpanIdx);
+     chunks.forEach((chunk, idx) => {
+         const utter = new SpeechSynthesisUtterance(chunk);
          utter.rate = 1.0;
          utter.pitch = 1.0;
-         const voice = getSelectedVoice();
          if (voice) {
              utter.voice = voice;
              utter.lang = voice.lang;
          }
-         utter.onstart = () => {
-             isSpeaking = true;
-             updateReadAloudButton();
-         };
-         utter.onend = () => {
-             isSpeaking = false;
-             updateReadAloudButton();
-         };
+         if (idx === 0) {
+             utter.onstart = () => {
+                 isSpeaking = true;
+                 updateReadAloudButton();
+                 console.log('[doSpeakChunked] Speech started (chunk 0).');
+                 log('Speech playback started.', 'info');
+                 // Give the browser 500 ms to fire its first onboundary event.
+                 // If none arrives in that window, fall back to timer-based highlight.
+                 _boundaryFired = false;
+                 _boundaryGraceTimer = setTimeout(() => {
+                     if (!_boundaryFired && isSpeaking) {
+                         console.debug('[doSpeakChunked] No onboundary after 500ms — starting timer fallback.');
+                         _startTimerHighlight(chunkStartSpanIdx[0]);
+                     }
+                 }, 500);
+             };
+         }
+          // Word boundary highlighting
+          utter.onboundary = (e) => {
+              if (e.name !== 'word') return;
+              if (!_boundaryFired) {
+                  _boundaryFired = true;
+                  // onboundary IS supported — cancel the grace timer and stop any
+                  // timer fallback that may have already started.
+                  if (_boundaryGraceTimer != null) {
+                      clearTimeout(_boundaryGraceTimer);
+                      _boundaryGraceTimer = null;
+                  }
+                  _stopTimerHighlight();
+                  console.debug('[doSpeakChunked] onboundary fired — switching from timer to event-based highlight.');
+              }
+              const globalOffset = chunkOffsets[idx] + e.charIndex;
+              highlightWordAtOffset(globalOffset);
+          };
+         // When a chunk ends, reset the boundary-fired flag and seed the timer
+         // for the next chunk in case onboundary stops firing mid-way.
+         if (idx < chunks.length - 1) {
+             utter.onend = () => {
+                 _boundaryFired = false;
+                 _boundaryGraceTimer = setTimeout(() => {
+                     if (!_boundaryFired && isSpeaking) {
+                         console.debug(`[doSpeakChunked] No onboundary for chunk ${idx + 1} — starting timer fallback.`);
+                         _startTimerHighlight(chunkStartSpanIdx[idx + 1]);
+                     }
+                 }, 500);
+             };
+         }
+         if (idx === chunks.length - 1) {
+             utter.onend = () => {
+                 isSpeaking = false;
+                 updateReadAloudButton();
+                 _stopTimerHighlight();
+                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                  clearWordHighlight();
+                 log('Speech playback finished.', 'info');
+                 console.log('[doSpeakChunked] Speech ended (final chunk).');
+             };
+         }
          utter.onerror = (e) => {
-             isSpeaking = false;
-             updateReadAloudButton();
-             // 'interrupted' fires when we cancel intentionally — don't log as error
+             // Only clear isSpeaking on the last chunk or a non-interruption error.
              if (e.error && e.error !== 'interrupted' && e.error !== 'canceled') {
-                 log(`Speech error: ${e.error}`, 'warning');
+                 isSpeaking = false;
+                 updateReadAloudButton();
+                 _stopTimerHighlight();
+                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                  clearWordHighlight();
+                 log(`Speech error on chunk ${idx}: ${e.error}`, 'warning');
+                 console.warn(`[doSpeakChunked] Speech error on chunk ${idx}:`, e.error);
+             } else {
+                 isSpeaking = false;
+                 updateReadAloudButton();
+                 _stopTimerHighlight();
+                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                  clearWordHighlight();
+                 console.log(`[doSpeakChunked] Chunk ${idx} cancelled/interrupted (expected):`, e.error);
              }
          };
          window.speechSynthesis.speak(utter);
-     } catch (e) {
-         log(`Speech failed: ${e.message}`, 'error');
-     }
+     });
+     console.log(`[doSpeakChunked] All ${chunks.length} chunk(s) queued. speaking:`, window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
 }
+
 function stopSpeaking() {
-     if ('speechSynthesis' in window) {
-         window.speechSynthesis.cancel();
-     }
-     isSpeaking = false;
-     updateReadAloudButton();
+     console.log('[stopSpeaking] Called — isSpeaking:', isSpeaking, '| speechSynthesis.speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A');
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+    if (isSpeaking) log('Speech stopped by user or navigation.', 'info');
+    if (isSpeaking) console.log('[stopSpeaking] Cancelling active speech.');
+    isSpeaking = false;
+     _pendingAutoRead = false;
+     _updateAutoReadIndicator(false);
+     _stopTimerHighlight();
+    updateReadAloudButton();
+     clearWordHighlight();
 }
 function updateReadAloudButton() {
-     const btn = document.getElementById('read-aloud');
-     const label = document.getElementById('read-aloud-label');
-     if (!btn || !label) return;
-     if (isSpeaking) {
-         btn.firstChild.textContent = '⏹ ';
-         label.textContent = 'Stop Reading';
-     } else {
-         btn.firstChild.textContent = '🔊 ';
-         label.textContent = 'Read Aloud';
-     }
+    const btn = document.getElementById('read-aloud');
+    const label = document.getElementById('read-aloud-label');
+    if (!btn || !label) return;
+    if (isSpeaking) {
+        btn.firstChild.textContent = '⏹ ';
+        label.textContent = 'Stop Reading';
+    } else {
+        btn.firstChild.textContent = '🔊 ';
+        label.textContent = 'Read Aloud';
+    }
 }
 async function onReadAloudToggle() {
-     if (isSpeaking) {
-         stopSpeaking();
-         return;
+     console.log('[onReadAloudToggle] Called — isSpeaking:', isSpeaking, '| currentNode:', currentNode);
+     log(`Read-aloud toggle clicked — isSpeaking: ${isSpeaking}, currentNode: "${currentNode}".`, 'info');
+     // Clicking the button is itself a user gesture — record it so pending auto-read
+     // can fire and future auto-reads are allowed.
+     _hasUserGesture = true;
+     // If there's a pending auto-read, cancel it (we're about to handle it manually).
+     if (_pendingAutoRead) {
+         _pendingAutoRead = false;
+         _updateAutoReadIndicator(false);
      }
-     if (!currentNode) {
-         showToast('Select a node first.', 'warning');
-         return;
-     }
-     const path = `${STORY_DIR}/${currentNode}.md`;
-     const content = await readFile(basePath, path);
-     if (content == null) {
-         showToast('Could not load node content.', 'warning');
-         return;
-     }
-     speakText(content);
+    if (isSpeaking) {
+        stopSpeaking();
+        return;
+    }
+    if (!currentNode) {
+        showToast('Select a node first.', 'warning');
+         console.warn('[onReadAloudToggle] Aborted — no current node.');
+        return;
+    }
+    const path = `${STORY_DIR}/${currentNode}.md`;
+     console.log('[onReadAloudToggle] Reading file:', path);
+    const content = await readFile(basePath, path);
+     console.log('[onReadAloudToggle] readFile result — content length:', content != null ? content.length : 'null (file not found)');
+     log(`Read file "${path}" — result: ${content != null ? content.length + ' chars' : 'null'}.`, 'info');
+    if (content == null) {
+        showToast('Could not load node content.', 'warning');
+         console.warn('[onReadAloudToggle] readFile returned null for path:', path);
+        return;
+    }
+     // Capture the node at the time of the click; guard against navigation during the async readFile.
+     const nodeAtClick = currentNode;
+     console.log('[onReadAloudToggle] Scheduling speakText() in 150ms for node:', nodeAtClick, '(captured at click time)');
+     log(`Scheduling speakText() for node "${nodeAtClick}" (${content.length} chars) in 150ms.`, 'info');
+     setTimeout(() => {
+         if (currentNode !== nodeAtClick) {
+             console.warn(`[onReadAloudToggle] Node changed from "${nodeAtClick}" to "${currentNode}" during readFile — aborting speak.`);
+             log(`Node changed during readFile (${nodeAtClick} → ${currentNode}) — aborting speak.`, 'warning');
+             return;
+         }
+         if (isSpeaking) {
+             console.warn('[onReadAloudToggle] isSpeaking=true when setTimeout fired — duplicate speak prevented.');
+             log('Duplicate speakText() call prevented in setTimeout (isSpeaking already true).', 'warning');
+             return;
+         }
+          // Use speakSpanText so boundary offsets align with the word-span index.
+          // speakText(content) is kept as a fallback for contexts without a loaded node.
+          if (_ttsPlainText && _ttsPlainText.length > 0) {
+              speakSpanText();
+          } else {
+              speakText(content);
+          }
+     }, 150);
 }
 // -------------------------------------------------------------------------
 // Image generation
 // -------------------------------------------------------------------------
 function getImageOpForNode(nodeId) {
-     // Initial node uses initial_image.md, branches use choice_{a|b|c}_image.md
-     if (nodeId === INITIAL_NODE) return 'ops/initial_image.md';
-     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
-     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-         return `ops/choice_${lastChar}_image.md`;
-     }
-     return null;
+    // Initial node uses initial_image.md, branches use choice_{a|b|c}_image.md
+    if (nodeId === INITIAL_NODE) return 'ops/initial_image.md';
+    const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+    if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
+        return `ops/choice_${lastChar}_image.md`;
+    }
+    return null;
 }
 async function loadNodeImage(nodeId) {
-     const container = document.getElementById('node-image-container');
-     const img = document.getElementById('node-image');
-     const statusEl = document.getElementById('node-image-status');
-     const btn = document.getElementById('generate-image');
-     const label = document.getElementById('generate-image-label');
-     const imgPath = `${STORY_DIR}/${nodeId}.png`;
-     statusEl.textContent = '';
-     statusEl.className = 'status-msg';
-     const exists = await fileExists(basePath, imgPath);
-     if (exists) {
-         // Cache-bust so newly generated images replace old ones
-         const url = `${basePath}/${imgPath}?t=${Date.now()}`;
-         img.src = url;
-         container.style.display = 'block';
-         label.textContent = 'Regenerate Image';
-     } else {
-         img.removeAttribute('src');
-         container.style.display = 'none';
-         label.textContent = 'Generate Image';
-     }
-     btn.disabled = isGeneratingImage;
+    const container = document.getElementById('node-image-container');
+    const img = document.getElementById('node-image');
+    const statusEl = document.getElementById('node-image-status');
+    const btn = document.getElementById('generate-image');
+    const label = document.getElementById('generate-image-label');
+    const imgPath = `${STORY_DIR}/${nodeId}.png`;
+    console.log(`[loadNodeImage] Checking for image at "${imgPath}"…`);
+    statusEl.textContent = '';
+    statusEl.className = 'status-msg';
+    const exists = await fileExists(basePath, imgPath);
+    if (exists) {
+        // Cache-bust so newly generated images replace old ones
+        const url = `${basePath}/${imgPath}?t=${Date.now()}`;
+        img.src = url;
+        container.style.display = 'block';
+        label.textContent = 'Regenerate Image';
+        log(`Image found for node "${nodeId}" — loaded from "${imgPath}".`, 'info');
+        console.log(`[loadNodeImage] Image found for node "${nodeId}" — src: ${url}`);
+    } else {
+        img.removeAttribute('src');
+        container.style.display = 'none';
+        label.textContent = 'Generate Image';
+        log(`No image found for node "${nodeId}" (${imgPath}).`, 'info');
+        console.log(`[loadNodeImage] No image found for node "${nodeId}" at "${imgPath}".`);
+    }
+    btn.disabled = isGeneratingImage;
 }
 async function onGenerateImage() {
-     if (!currentNode) {
-         showToast('Select a node first.', 'warning');
-         return;
-     }
-     await generateImageForNode(currentNode);
+    if (!currentNode) {
+        showToast('Select a node first.', 'warning');
+        log('Generate image aborted: no current node selected.', 'warning');
+        console.warn('[onGenerateImage] Aborted — no current node selected.');
+        return;
+    }
+    log(`User requested image generation for node "${currentNode}".`, 'info');
+    console.log(`[onGenerateImage] User requested image for node "${currentNode}".`);
+    await generateImageForNode(currentNode);
 }
 function maybeAutoGenerateImage(nodeId) {
-     const autoImageEl = document.getElementById('auto-image');
-     if (autoImageEl && autoImageEl.checked) {
-         // Fire-and-forget; status is reflected in UI
-         generateImageForNode(nodeId).catch(err => {
-             log(`Auto image generation failed: ${err.message}`, 'warning');
-         });
-     }
+    const autoImageEl = document.getElementById('auto-image');
+    if (autoImageEl && autoImageEl.checked) {
+        log(`Auto-image enabled — triggering image generation for node "${nodeId}".`, 'info');
+        console.log(`[maybeAutoGenerateImage] Auto-image enabled — firing for node "${nodeId}".`);
+        // Fire-and-forget; status is reflected in UI
+        generateImageForNode(nodeId).catch(err => {
+            log(`Auto image generation failed: ${err.message}`, 'warning');
+            console.warn(`[maybeAutoGenerateImage] Auto image generation failed for "${nodeId}":`, err);
+        });
+    } else {
+        log(`Auto-image disabled — skipping image generation for node "${nodeId}".`, 'info');
+        console.log(`[maybeAutoGenerateImage] Auto-image disabled — skipping node "${nodeId}".`);
+    }
 }
 async function generateImageForNode(nodeId) {
-     const opPath = getImageOpForNode(nodeId);
-     if (!opPath) {
-         showToast(`No image operation defined for node ${nodeId}.`, 'warning');
-         return;
-     }
-     const target = `${STORY_DIR}/${nodeId}.png`;
-     const btn = document.getElementById('generate-image');
-     const statusEl = document.getElementById('node-image-status');
-     const container = document.getElementById('node-image-container');
-     isGeneratingImage = true;
-     btn.disabled = true;
-     container.style.display = 'block';
-     statusEl.textContent = `Generating image for node ${nodeId}...`;
-     statusEl.className = 'status-msg info';
-     log(`Generating image: ${target}`, 'info');
-     try {
-         const taskId = await runDocOp(
-             sessionId,
-             opPath,
-             target,
-             getModelOverrides()
-         );
-         log(`Image DocOp started: ${formatTaskId(taskId)}`, 'info');
-         await waitForTask(basePath, target, 600000, (tgt, info) => {
-             trackedSessions.set(tgt, info);
-             linkManager.update(tgt, info);
-             updateSessionLinks(tgt, info, getProxyUrl, 'node-links');
-         });
-         log(`Image generated for node ${nodeId}.`, 'success');
-         statusEl.textContent = 'Image ready.';
-         statusEl.className = 'status-msg success';
-         // Reload only if user is still viewing the same node
-         if (currentNode === nodeId) {
-             await loadNodeImage(nodeId);
-         }
-     } catch (e) {
-         log(`Image generation failed for ${nodeId}: ${e.message}`, 'error');
-         statusEl.textContent = `Error: ${e.message}`;
-         statusEl.className = 'status-msg error';
-         showToast(`Image failed: ${e.message}`, 'error');
-     } finally {
-         isGeneratingImage = false;
-         if (currentNode === nodeId) {
-             document.getElementById('generate-image').disabled = false;
-         }
-     }
+    const opPath = getImageOpForNode(nodeId);
+    if (!opPath) {
+        showToast(`No image operation defined for node ${nodeId}.`, 'warning');
+        log(`generateImageForNode: no op path for node "${nodeId}" — skipping.`, 'warning');
+        console.warn(`[generateImageForNode] No op path for node "${nodeId}" — skipping.`);
+        return;
+    }
+    const target = `${STORY_DIR}/${nodeId}.png`;
+    const btn = document.getElementById('generate-image');
+    const statusEl = document.getElementById('node-image-status');
+    const container = document.getElementById('node-image-container');
+    isGeneratingImage = true;
+    btn.disabled = true;
+    container.style.display = 'block';
+    statusEl.textContent = `Generating image for node ${nodeId}...`;
+    statusEl.className = 'status-msg info';
+    log(`Generating image for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
+    timeStart(`image_${nodeId}`);
+    console.group(`[generateImageForNode] Generating image for node "${nodeId}"…`);
+    console.log(`[generateImageForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    try {
+        const taskId = await runDocOp(
+            sessionId,
+            opPath,
+            target,
+            getModelOverrides()
+        );
+        console.log(`[generateImageForNode] runDocOp() returned taskId:`, taskId);
+        log(`Image DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
+        await waitForTask(basePath, target, 600000, (tgt, info) => {
+            trackedSessions.set(tgt, info);
+            linkManager.update(tgt, info);
+            updateSessionLinks(tgt, info, getProxyUrl, 'node-links');
+            console.debug(`[generateImageForNode] waitForTask progress — target: ${tgt} | status: ${info.status} | info:`, info);
+            log(`Image task progress for "${tgt}": status=${info.status}.`, 'info');
+        });
+        log(`Image generated for node "${nodeId}" in ${timeEnd(`image_${nodeId}`)}.`, 'success');
+        console.log(`[generateImageForNode] Image generation complete for node "${nodeId}".`);
+        statusEl.textContent = 'Image ready.';
+        statusEl.className = 'status-msg success';
+        // Reload only if user is still viewing the same node
+        if (currentNode === nodeId) {
+            await loadNodeImage(nodeId);
+        } else {
+            log(`Image ready for "${nodeId}" but user has navigated to "${currentNode}" — skipping reload.`, 'info');
+            console.log(`[generateImageForNode] Image ready for "${nodeId}" but user is now on "${currentNode}" — skipping reload.`);
+        }
+    } catch (e) {
+        log(`Image generation failed for node "${nodeId}" after ${timeEnd(`image_${nodeId}`)}: ${e.message}`, 'error');
+        console.error(`[generateImageForNode(${nodeId})]`, e);
+        statusEl.textContent = `Error: ${e.message}`;
+        statusEl.className = 'status-msg error';
+        showToast(`Image failed: ${e.message}`, 'error');
+    } finally {
+        isGeneratingImage = false;
+        if (currentNode === nodeId) {
+            document.getElementById('generate-image').disabled = false;
+        }
+        console.groupEnd();
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -743,12 +1583,24 @@ function onStatusUpdate(target, taskInfo) {
     // Pick container based on target
     const containerId = target === `${STORY_DIR}/${INITIAL_NODE}.md`
         ? 'initial-links'
-        : 'node-links';
+        : target === 'style.css'
+            ? 'stylesheet-links'
+            : 'node-links';
     updateSessionLinks(target, taskInfo, getProxyUrl, containerId);
 
     // Auto-refresh tree when a new node completes
     if (taskInfo.status === 'COMPLETED' && target.startsWith(`${STORY_DIR}/`)) {
+        log(`Poller: task for "${target}" completed — refreshing tree.`, 'info');
+        console.log(`[onStatusUpdate] Task COMPLETED for "${target}" — triggering tree refresh.`);
         refreshTree();
+    } else if (taskInfo.status === 'COMPLETED' && target === 'style.css') {
+        log(`Poller: stylesheet update completed.`, 'info');
+        console.log('[onStatusUpdate] Stylesheet task COMPLETED.');
+        setBadge('badge-stylesheet', 'done');
+        setStatus('stylesheet-status', 'Stylesheet updated! Reload the page to see changes.', 'success');
+    } else if (taskInfo.status === 'FAILED') {
+        log(`Poller: task for "${target}" FAILED — ${taskInfo.error || 'no details'}.`, 'error');
+        console.error(`[onStatusUpdate] Task FAILED for "${target}":`, taskInfo.error || taskInfo);
     }
 }
 
@@ -756,39 +1608,39 @@ function onStatusUpdate(target, taskInfo) {
 // Logging
 // -------------------------------------------------------------------------
 function formatTaskId(taskId) {
-     // taskId may be a string id, or a JSON string / object containing a binary
-     // "content" field (e.g. PNG bytes) which we must NOT dump into the log.
-     if (taskId == null) return '';
-     let obj = taskId;
-     if (typeof taskId === 'string') {
-         // If it looks like JSON, try to parse and sanitize; otherwise return as-is.
-         const trimmed = taskId.trim();
-         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-             try {
-                 obj = JSON.parse(trimmed);
-             } catch {
-                 return taskId.length > 200 ? taskId.slice(0, 200) + '…' : taskId;
-             }
-         } else {
-             return taskId;
-         }
-     }
-     if (typeof obj !== 'object') return String(obj);
-     // Strip large/binary fields
-     const safe = {};
-     for (const [k, v] of Object.entries(obj)) {
-         if (k === 'content') continue;
-         if (typeof v === 'string' && v.length > 200) {
-             safe[k] = v.slice(0, 200) + '…';
-         } else {
-             safe[k] = v;
-         }
-     }
-     try {
-         return JSON.stringify(safe);
-     } catch {
-         return '[unserializable task info]';
-     }
+    // taskId may be a string id, or a JSON string / object containing a binary
+    // "content" field (e.g. PNG bytes) which we must NOT dump into the log.
+    if (taskId == null) return '';
+    let obj = taskId;
+    if (typeof taskId === 'string') {
+        // If it looks like JSON, try to parse and sanitize; otherwise return as-is.
+        const trimmed = taskId.trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            try {
+                obj = JSON.parse(trimmed);
+            } catch {
+                return taskId.length > 200 ? taskId.slice(0, 200) + '…' : taskId;
+            }
+        } else {
+            return taskId;
+        }
+    }
+    if (typeof obj !== 'object') return String(obj);
+    // Strip large/binary fields
+    const safe = {};
+    for (const [k, v] of Object.entries(obj)) {
+        if (k === 'content') continue;
+        if (typeof v === 'string' && v.length > 200) {
+            safe[k] = v.slice(0, 200) + '…';
+        } else {
+            safe[k] = v;
+        }
+    }
+    try {
+        return JSON.stringify(safe);
+    } catch {
+        return '[unserializable task info]';
+    }
 }
 
 function log(msg, type = 'info') {
@@ -799,19 +1651,97 @@ function log(msg, type = 'info') {
     }
 }
 // -------------------------------------------------------------------------
+// Stylesheet updater
+// -------------------------------------------------------------------------
+async function loadStylesheetInstructions() {
+    log(`Loading stylesheet instructions from "${STYLESHEET_FILE}"…`, 'info');
+    console.log(`[loadStylesheetInstructions] Reading "${STYLESHEET_FILE}"…`);
+    const content = await readFile(basePath, STYLESHEET_FILE);
+    if (content != null) {
+        document.getElementById('stylesheet-instructions').value = content;
+        setBadge('badge-stylesheet', 'done');
+        log(`Stylesheet instructions loaded (${content.length} chars).`, 'info');
+        console.log(`[loadStylesheetInstructions] Loaded ${content.length} chars.`);
+    } else {
+        log('No existing stylesheet instructions found.', 'info');
+        console.log('[loadStylesheetInstructions] File not found — no existing instructions.');
+    }
+}
+async function onUpdateStylesheet() {
+    const instructions = document.getElementById('stylesheet-instructions').value.trim();
+    if (!instructions) {
+        setStatus('stylesheet-status', 'Please describe the changes you want.', 'error');
+        log('Update stylesheet aborted: no instructions provided.', 'warning');
+        console.warn('[onUpdateStylesheet] Aborted — no instructions provided.');
+        return;
+    }
+    // Persist instructions to disk so the op can read them
+    try {
+        await writeFile(basePath, STYLESHEET_FILE, instructions);
+        log(`Stylesheet instructions saved (${instructions.length} chars).`, 'info');
+        console.log(`[onUpdateStylesheet] Instructions saved (${instructions.length} chars).`);
+    } catch (e) {
+        setStatus('stylesheet-status', `Could not save instructions: ${e.message}`, 'error');
+        log(`Failed to save stylesheet instructions: ${e.message}`, 'error');
+        console.error('[onUpdateStylesheet] Failed to save instructions:', e);
+        return;
+    }
+    const btn = document.getElementById('update-stylesheet');
+    btn.disabled = true;
+    setBadge('badge-stylesheet', 'running');
+    setStatus('stylesheet-status', 'Updating stylesheet…', 'info', 0);
+    log('Starting stylesheet update — op: ops/update_stylesheet.md → target: style.css.', 'info');
+    timeStart('updateStylesheet');
+    console.group('[onUpdateStylesheet] Updating stylesheet…');
+    console.log('[onUpdateStylesheet] op: ops/update_stylesheet.md | target: style.css | overrides:', getModelOverrides());
+    try {
+        const taskId = await runDocOp(
+            sessionId,
+            'ops/update_stylesheet.md',
+            'style.css',
+            getModelOverrides()
+        );
+        log(`DocOp started for stylesheet update — task: ${formatTaskId(taskId)}.`, 'info');
+        console.log('[onUpdateStylesheet] runDocOp() returned taskId:', taskId);
+        await waitForTask(basePath, 'style.css', 600000, (tgt, info) => {
+            trackedSessions.set(tgt, info);
+            linkManager.update(tgt, info);
+            updateSessionLinks(tgt, info, getProxyUrl, 'stylesheet-links');
+            log(`Task progress for "${tgt}": status=${info.status}.`, 'info');
+            console.debug(`[onUpdateStylesheet] waitForTask progress — target: ${tgt} | status: ${info.status} | info:`, info);
+        });
+        log(`Stylesheet updated successfully in ${timeEnd('updateStylesheet')}.`, 'success');
+        console.log('[onUpdateStylesheet] Stylesheet update complete.');
+        setBadge('badge-stylesheet', 'done');
+        setStatus('stylesheet-status', 'Stylesheet updated! Reload the page to see changes.', 'success');
+        showToast('Stylesheet updated — reload to apply changes.', 'success', 6000);
+    } catch (e) {
+        log(`Stylesheet update failed after ${timeEnd('updateStylesheet')}: ${e.message}`, 'error');
+        console.error('[onUpdateStylesheet]', e);
+        setStatus('stylesheet-status', `Error: ${e.message}`, 'error');
+        setBadge('badge-stylesheet', 'error');
+        showToast(`Stylesheet update failed: ${e.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        console.groupEnd();
+    }
+}
+// -------------------------------------------------------------------------
 // Immersive mode
 // -------------------------------------------------------------------------
 function toggleImmersive() {
-     const body = document.body;
-     const btn = document.getElementById('toggle-immersive');
-     const isImmersive = body.classList.toggle('immersive');
-     if (btn) {
-         btn.textContent = isImmersive ? '✕' : '⛶';
-         btn.title = isImmersive ? 'Exit immersive mode (Esc)' : 'Toggle immersive mode (F)';
-     }
-     // Scroll the node content into view when entering immersive mode
-     if (isImmersive) {
-         const card = document.getElementById('node-card');
-         if (card) card.scrollTop = 0;
-     }
+    const body = document.body;
+    const btn = document.getElementById('toggle-immersive');
+    const isImmersive = body.classList.toggle('immersive');
+    console.log('[toggleImmersive] Immersive mode →', isImmersive ? 'ON' : 'OFF');
+    if (btn) {
+        btn.textContent = isImmersive ? '✕' : '⛶';
+        btn.title = isImmersive ? 'Exit immersive mode (Esc)' : 'Toggle immersive mode (F)';
+    }
+    // Scroll the node content into view when entering immersive mode
+    if (isImmersive) {
+        const card = document.getElementById('node-card');
+        if (card) card.scrollTop = 0;
+    }
+    log(`Immersive mode ${isImmersive ? 'enabled' : 'disabled'}.`, 'info');
 }

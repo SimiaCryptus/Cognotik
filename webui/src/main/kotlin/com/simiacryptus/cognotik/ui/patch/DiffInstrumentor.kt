@@ -13,7 +13,8 @@ import kotlin.io.path.name
 class DiffInstrumentor(
   private val processor: PatchProcessor,
   private val renderer: DiffUIRenderer,
-  private val fs: FileSystem = RealFileSystem()
+  private val fs: FileSystem = RealFileSystem(),
+  val allowInvalid: Boolean = true
 ) {
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(DiffInstrumentor::class.java)
@@ -108,7 +109,7 @@ class DiffInstrumentor(
               result.appendLine(renderer.renderWarning("Error applying diff to create new file '${filename}': ${e.message}. Rendering diff as code block."))
               null
             }
-            if (applyResult != null && applyResult.isValid && applyResult.newCode.isNotBlank()) {
+            if (applyResult != null && applyResult.newCode.isNotBlank() && (applyResult.isValid || allowInvalid)) {
               // Resolve the path for the new file
               val newFileResolved = resolveNewFilePath(root, filename, resolver)
               if (newFileResolved != null) {

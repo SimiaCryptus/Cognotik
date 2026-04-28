@@ -376,6 +376,7 @@ input:focus {
     max-height: 600px;
     overflow-y: auto;
     line-height: 1.7;
+      scroll-behavior: smooth;
 }
 
 .markdown-preview h1,
@@ -441,6 +442,24 @@ code {
      width: auto;
      margin: 0;
      cursor: pointer;
+}
+/* TTS sentence-level highlight */
+.tts-sentence {
+     border-radius: 4px;
+     transition: background-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+.tts-highlight {
+     background-color: rgba(253, 230, 138, 0.45); /* amber-200 @ 45% */
+     color: inherit;
+     border-radius: 4px;
+     box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35); /* very soft amber ring */
+     transition: background-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+/* In immersive mode: slightly more visible against the dark background */
+body.immersive .tts-highlight {
+     background-color: rgba(251, 191, 36, 0.25); /* amber-400 @ 25% */
+     color: inherit;
+     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3);
 }
 /* Node image */
 .node-image-container {
@@ -637,6 +656,8 @@ body.immersive #node-card .markdown-preview {
      margin: 0 auto 1rem;
      width: 100%;
      max-width: 900px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
 }
 body.immersive #node-card .node-image-container {
      background: transparent;

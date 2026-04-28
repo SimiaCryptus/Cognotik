@@ -45,30 +45,6 @@ object HtmlSimplifier {
     "hr",
     "img"
   )
-  private val DEFAULT_IMPORTANT_ATTRIBUTES = setOf(
-    "href",
-    "src",
-    "alt",
-    "title",
-    "style",
-    "class",
-    "name",
-    "rel",
-    "type",
-    "content",
-    "colspan",
-    "rowspan",
-    "scope",
-    "id",
-    "lang",
-    "action",
-    "method",
-    "value",
-    "placeholder",
-    "aria-label",
-    "aria-describedby",
-    "role"
-  )
   private val SCRIPT_ATTRIBUTES = setOf(
     "onclick", "onload", "onsubmit", "oninput", "onchange"
   )
@@ -181,13 +157,7 @@ object HtmlSimplifier {
     }
 
     simplifyDocument(stepName = "FilterAttributes") {
-      val importantAttributes = DEFAULT_IMPORTANT_ATTRIBUTES.let { baseSet ->
-        when {
-          includeCssData -> baseSet
-          keepObjectIds -> baseSet - setOf("style", "class", "width", "height", "target")
-          else -> baseSet - setOf("style", "class", "id", "width", "height", "target")
-        }
-      }.toSet()
+      val importantAttributes = getImportantAttributes(keepObjectIds, includeCssData)
       select("*").forEach { element ->
         val iterator = element.attributes().iterator()
         while (iterator.hasNext()) {
@@ -243,8 +213,7 @@ object HtmlSimplifier {
 
     simplifyDocument(stepName = "UnwrapSimpleTextElements") {
       select("*").forEach { element ->
-        if (element.tagName() !in PRESERVED_ELEMENTS
-          && element.tagName() !in setOf("html", "head", "body")
+        if (!shouldPreserveElement(element.tagName())
           && element.childNodes().size == 1
           && element.childNodes().first()?.nodeName() == "#text" && element.attributes().isEmpty()
         ) {
@@ -322,7 +291,43 @@ object HtmlSimplifier {
         }
       }
     }
+    return if (simplifyStructure) {
+      document.body().html() ?: ""
+    } else {
+      document.html() ?: ""
+    }
+  }
 
-    return document.body().html() ?: ""
+  private fun shouldPreserveElement(tagName: String): Boolean =
+    (tagName in PRESERVED_ELEMENTS || tagName in setOf("html", "head", "body"))
+
+  private fun getImportantAttributes(
+    keepObjectIds: Boolean,
+    includeCssData: Boolean
+  ): MutableSet<String> {
+    val importantAttributes = mutableSetOf(
+      "href",
+      "src",
+      "alt",
+      "title",
+      "name",
+      "rel",
+      "type",
+      "content",
+      "colspan",
+      "rowspan",
+      "scope",
+      "lang",
+      "action",
+      "method",
+      "value",
+      "placeholder",
+      "aria-label",
+      "aria-describedby",
+      "role"
+    )
+    if (keepObjectIds) importantAttributes += setOf("id")
+    if (includeCssData) importantAttributes += setOf("style", "class", "id", "width", "height", "target")
+    return importantAttributes
   }
 }

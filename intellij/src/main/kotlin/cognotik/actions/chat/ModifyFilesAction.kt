@@ -170,8 +170,8 @@ open class ModifyFilesAction(
 
         override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
             DiffInstrumentor(
-              AppSettingsState.instance.processor,
-              SessionRenderer(task),
+                AppSettingsState.instance.processor,
+                SessionRenderer(task),
             )
               .instrument(
                 root = root.toPath(),

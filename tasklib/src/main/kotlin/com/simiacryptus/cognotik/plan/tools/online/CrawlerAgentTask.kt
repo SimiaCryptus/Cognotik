@@ -360,6 +360,12 @@ class CrawlerAgentTask(
 
   // Priority calculation: higher relevance and lower depth = higher priority
   fun LinkData.calculatePriority(): Double = relevance_score // / (depth + 1.0)
+  private fun normalizeUrl(url: String): String {
+    // Remove fragment/anchor portion (#...) from URL to prevent duplicates
+    val hashIndex = url.indexOf('#')
+    return if (hashIndex >= 0) url.substring(0, hashIndex) else url
+  }
+
 
   enum class PageType {
     Error, Irrelevant, OK
@@ -915,7 +921,7 @@ class CrawlerAgentTask(
     newLink: LinkData, maxDepth: Int, maxQueueSize: Int
   ): Boolean = synchronized(pageQueueLock) {
     val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
-    val newUrl = newLink.url
+   val newUrl = newLink.url?.let { normalizeUrl(it) }?.also { newLink.url = it }
     if (newUrl.isNullOrBlank()) {
       log.warn("Attempted to add invalid or empty URL to queue: $newLink")
       return false
@@ -1123,7 +1129,7 @@ class CrawlerAgentTask(
 
     run {
       try {
-        val url = link
+        var url = link
         val title = page.title
         task.add("## ${currentIndex}. [${title}]($url)".renderMarkdown(true))
         val statusBuffer = task.add("Fetching content...", additionalClasses = "text-muted")
@@ -1242,6 +1248,10 @@ class CrawlerAgentTask(
                 linkData = extractLinksFromMarkdown(pageResult.content)
                 log.debug("Extracted ${linkData.size} links from markdown for '$url'")
               } else {
+               // Normalize URLs in extracted links to remove fragments
+               linkData = linkData.map { link ->
+                 link.apply { url = url.let { normalizeUrl(it) } }
+               }
                 log.debug("Using ${linkData.size} structured links from analysis for '$url'")
               }
               // Add extracted links section to UI
@@ -1694,7 +1704,7 @@ class CrawlerAgentTask(
         break
       }
       val linkText = matcher.group(1)
-      val linkUrl = matcher.group(2)
+     val linkUrl = normalizeUrl(matcher.group(2))
       try {
         if (VALID_URL_PATTERN.matcher(linkUrl).matches()) {
           links.add(Pair(linkText, linkUrl))

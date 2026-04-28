@@ -46,7 +46,7 @@ class DiffInstrumentorResolveNewFilePathTest {
       override fun recordPatch(data: Map<String, Any?>): String = ""
     }
 
-    val instrumentor = DiffInstrumentor(processor, renderer, mockFs)
+    val instrumentor = DiffInstrumentor(processor, renderer, mockFs,)
 
 
 
@@ -96,7 +96,7 @@ class DiffInstrumentorResolveNewFilePathTest {
       override fun recordPatch(data: Map<String, Any?>): String = ""
     }
 
-    val instrumentor = DiffInstrumentor(processor, renderer, mockFs)
+    val instrumentor = DiffInstrumentor(processor, renderer, mockFs,)
 
     val method = DiffInstrumentor::class.java.getDeclaredMethod(
       "resolveNewFilePath",
@@ -140,7 +140,7 @@ class DiffInstrumentorResolveNewFilePathTest {
       override fun recordPatch(data: Map<String, Any?>): String = ""
     }
 
-    val instrumentor = DiffInstrumentor(processor, renderer, mockFs)
+    val instrumentor = DiffInstrumentor(processor, renderer, mockFs,)
 
     val method = DiffInstrumentor::class.java.getDeclaredMethod(
       "resolveNewFilePath",

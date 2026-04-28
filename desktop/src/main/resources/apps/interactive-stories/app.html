@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Interactive Stories</title>
     <link rel="stylesheet" href="style.css">
+     <link rel="stylesheet" href="choice-ui-additions.css">
     <script src="./utils/marked.min.js"></script>
 </head>
 <body>
@@ -86,6 +87,9 @@
               <label class="auto-read-toggle">
                   <input type="checkbox" id="auto-image"> Auto-generate images
               </label>
+              <label class="auto-read-toggle">
+                  <input type="checkbox" id="highlight-readalong" checked> Highlight while reading
+              </label>
          </div>
          <div id="node-image-container" class="node-image-container" style="display:none;">
              <img id="node-image" class="node-image" alt="Story illustration"/>
@@ -96,18 +100,21 @@
         </div>
         <div class="choice-actions" id="choice-actions" style="display:none;">
             <p class="choice-prompt">Continue the story by choosing a path:</p>
-            <div class="choice-buttons">
+             <div class="choice-buttons" id="choice-buttons">
                 <button class="btn btn-choice btn-choice-a" data-choice="a">
                     <span class="choice-letter">A</span>
-                    <span class="choice-label">Branch A</span>
+                    <span class="choice-label"></span>
+                    <span class="choice-desc"></span>
                 </button>
                 <button class="btn btn-choice btn-choice-b" data-choice="b">
                     <span class="choice-letter">B</span>
-                    <span class="choice-label">Branch B</span>
+                    <span class="choice-label"></span>
+                    <span class="choice-desc"></span>
                 </button>
                 <button class="btn btn-choice btn-choice-c" data-choice="c">
                     <span class="choice-letter">C</span>
-                    <span class="choice-label">Branch C</span>
+                    <span class="choice-label"></span>
+                    <span class="choice-desc"></span>
                 </button>
             </div>
             <span id="choice-status" class="status-msg"></span>
@@ -123,6 +130,21 @@
         </div>
         <div id="activity-log" class="activity-log"></div>
     </section>
+     <!-- Update Stylesheet -->
+     <section class="card">
+         <div class="step-header">
+             <span class="step-badge pending" id="badge-stylesheet">4</span>
+             <h2>🎨 Update Stylesheet</h2>
+         </div>
+         <p class="step-help">Describe a visual change or new component to style, then apply it to <code>style.css</code>.</p>
+         <textarea id="stylesheet-instructions" rows="5"
+                   placeholder="e.g. Add a glowing border to the active tree node, or make the choice buttons larger on mobile…"></textarea>
+         <div class="actions">
+             <button id="update-stylesheet" class="btn btn-primary">🖌 Update Stylesheet</button>
+             <span id="stylesheet-status" class="status-msg"></span>
+         </div>
+         <div class="session-link-container" id="stylesheet-links"></div>
+     </section>
 </main>
 
 <script type="module" src="app.js"></script>
