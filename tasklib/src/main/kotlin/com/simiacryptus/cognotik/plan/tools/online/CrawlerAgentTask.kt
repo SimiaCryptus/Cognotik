@@ -643,7 +643,7 @@ class CrawlerAgentTask(
               activeTasks = activeTasks,
               errorCount = errorCount,
               maxErrors = maxErrors,
-              tabs = tabs,
+              task = task,
               processedCount = processedCount,
               maxPages = maxPages,
               maxDepth = maxDepthConfig,
@@ -684,11 +684,37 @@ class CrawlerAgentTask(
           )
           if (!continuationDecision.shouldContinue) {
             log.info("Strategy requested early termination: ${continuationDecision.reason}")
+            transcriptStream?.let { stream ->
+              try {
+                writeToTranscript(stream, buildString {
+                  appendLine()
+                  appendLine("## Strategy Requested Early Termination")
+                  appendLine()
+                  appendLine("The processing strategy determined that sufficient information has been gathered or further crawling is unlikely to yield valuable results. Reason: ${continuationDecision.reason}")
+                  appendLine()
+                })
+              } catch (e: Exception) {
+                log.debug("Failed to write strategy termination to transcript", e)
+              }
+            }
             break
           }
         }
         if (loopIterations.get() >= maxIterations) {
           log.warn("Reached maximum iteration limit: $maxIterations")
+          transcriptStream?.let { stream ->
+            try {
+              writeToTranscript(stream, buildString {
+                appendLine()
+                appendLine("## Warning: Reached maximum iteration limit")
+                appendLine()
+                appendLine("The crawler stopped after reaching the maximum number of iterations ($maxIterations) to prevent infinite loops. Check logs for details.")
+                appendLine()
+              })
+            } catch (e: Exception) {
+              log.debug("Failed to write iteration limit warning to transcript", e)
+            }
+          }
         }
       } catch (e: Exception) {
         log.error("Error during processing", e)
@@ -1008,7 +1034,7 @@ class CrawlerAgentTask(
     activeTasks: MutableSet<String>,
     errorCount: AtomicInteger,
     maxErrors: Int,
-    tabs: TabbedDisplay,
+    task: SessionTask,
     processedCount: AtomicInteger,
     maxPages: Int,
     maxDepth: Int,
@@ -1037,9 +1063,7 @@ class CrawlerAgentTask(
     log.info("Queuing page for processing: url='$pageUrl', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
     val subTask = try {
-      tabs.task.newTask().apply {
-        tabs[pageUrl] = placeholder
-      }
+      task.linkedTask("Processing: ${page.title ?: pageUrl}")
     } catch (e: Exception) {
       log.error("Failed to create subtask for URL: $pageUrl", e)
       errorCount.incrementAndGet()
