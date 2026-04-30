@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchStrategy
-import com.simiacryptus.cognotik.util.crawl.processing.DefaultSummarizerStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.PageProcessingResult
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.ProcessingContext
@@ -63,7 +62,8 @@ class CrawlerAgentTask(
     @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean = true,
     @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean = false,
     @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean = true,
-     @Description("Path to a JSON file for persisting crawl state (link database) across runs. If not specified, defaults to .websearch/crawl_state.json relative to the task root. The file is loaded at start and saved at end, allowing editable persistence for ongoing crawls.") var crawl_state_file: String? = null,
+    @Description("Path to a JSON file for persisting crawl state (link database) across runs. If not specified, defaults to .websearch/crawl_state.json relative to the task root. The file is loaded at start and saved at end, allowing editable persistence for ongoing crawls.") var crawl_state_file: String? = null,
+    @Description("Whether to use the state file for persistence. If false, the crawl state will not be loaded or saved, and the crawler will start fresh on each run. This allows you to disable persistence.") var use_state_file: Boolean = true,
     task_type: String = "CrawlerAgent",
     model: ApiChatModel? = null,
     name: String? = task_type,
@@ -105,7 +105,7 @@ class CrawlerAgentTask(
 
 
   class CrawlerTaskExecutionConfigData(
-    @Description("The search query to use for Google search. Either this or direct_urls must be provided.") var search_query: String? = null,
+    @Description("The search queries to use for Google search. Either this or direct_urls must be provided.") var search_query: List<String>? = null,
     @Description("Direct URLs to analyze. Each must be a valid http or https URL. Either this or search_query must be provided.") var direct_urls: List<String>? = null,
     @Description("The query considered when processing the content. This should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform each page into the desired summary.") var content_queries: Any? = null,
     task_description: String? = null,
@@ -119,7 +119,8 @@ class CrawlerAgentTask(
   ), ValidatedObject {
     override fun validate(): String? {
       val directUrls = direct_urls
-      if (search_query.isNullOrBlank() && directUrls.isNullOrEmpty()) {
+      val searchQueries = search_query
+      if ((searchQueries.isNullOrEmpty() || searchQueries.all { it.isBlank() }) && directUrls.isNullOrEmpty()) {
         return "Either search_query or direct_urls must be provided"
       }
 
@@ -448,7 +449,7 @@ class CrawlerAgentTask(
 
       val startTime = System.currentTimeMillis()
       log.info(
-        "Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${
+        "Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query?.joinToString(", ") ?: ""}', direct_urls='${
           executionConfig?.direct_urls?.joinToString(
             ", "
           ) ?: ""
@@ -462,19 +463,32 @@ class CrawlerAgentTask(
         }
         log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
       }
-       // Load crawl state
-       crawlStateFile = resolveCrawlStateFile(agent.root.toFile())
-       currentCrawlState = loadCrawlState(crawlStateFile!!)
-       currentRunNumber = currentCrawlState.run_count + 1
-       currentCrawlState.run_count = currentRunNumber
-       executionConfig?.search_query?.let { query ->
-         if (query.isNotBlank() && !currentCrawlState.search_queries.contains(query)) {
-           currentCrawlState.search_queries.add(query)
-         }
+       // Load crawl state (only if use_state_file is enabled)
+       if (typeConfig.use_state_file) {
+         crawlStateFile = resolveCrawlStateFile(agent.root.toFile())
+         currentCrawlState = loadCrawlState(crawlStateFile!!)
+         currentRunNumber = currentCrawlState.run_count + 1
+         currentCrawlState.run_count = currentRunNumber
+         executionConfig?.search_query?.forEach { query ->
+           if (query.isNotBlank() && !currentCrawlState.search_queries.contains(query)) {
+             currentCrawlState.search_queries.add(query)
+           }
+           }
+         // Restore previously queued/errored links from crawl state
+         restoreFromCrawlState(currentCrawlState, typeConfig.max_depth, typeConfig.max_queue_size)
+         log.info("After restoring crawl state: queue_size=${pageQueue.size}, seen_urls=${seenUrls.size}")
+       } else {
+         log.info("State file persistence is disabled (use_state_file=false); starting fresh crawl state")
+         crawlStateFile = null
+         currentCrawlState = CrawlState()
+         currentRunNumber = 1
+         currentCrawlState.run_count = currentRunNumber
+         executionConfig?.search_query?.forEach { query ->
+           if (query.isNotBlank()) {
+             currentCrawlState.search_queries.add(query)
+           }
+           }
        }
-       // Restore previously queued/errored links from crawl state
-       restoreFromCrawlState(currentCrawlState, typeConfig.max_depth, typeConfig.max_queue_size)
-       log.info("After restoring crawl state: queue_size=${pageQueue.size}, seen_urls=${seenUrls.size}")
 
       val tabs = TabbedDisplay(task)
 
@@ -741,12 +755,16 @@ class CrawlerAgentTask(
       } finally {
         log.info("Crawling phase completed, cleaning up resources")
       }
-       // Sync and save crawl state after crawling phase
-       try {
-         syncInMemoryStateToCrawlState()
-         crawlStateFile?.let { saveCrawlState(it, currentCrawlState) }
-       } catch (e: Exception) {
-         log.error("Failed to save crawl state after crawling phase", e)
+       // Sync and save crawl state after crawling phase (only if use_state_file is enabled)
+       if (typeConfig.use_state_file) {
+         try {
+           syncInMemoryStateToCrawlState()
+           crawlStateFile?.let { saveCrawlState(it, currentCrawlState) }
+         } catch (e: Exception) {
+           log.error("Failed to save crawl state after crawling phase", e)
+         }
+       } else {
+         log.debug("Skipping crawl state save (use_state_file=false)")
        }
       val totalTime = System.currentTimeMillis() - startTime
       log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
@@ -878,11 +896,13 @@ class CrawlerAgentTask(
               }"
             )
             appendLine()
-            appendLine("**Search Query:** ${executionConfig?.search_query ?: "N/A"}")
+            appendLine("**Search Query:** ${executionConfig?.search_query?.joinToString(", ") ?: "N/A"}")
             appendLine()
             appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
             appendLine()
-           appendLine("**Crawl State File:** ${crawlStateFile?.absolutePath ?: "N/A"}")
+           appendLine("**Crawl State File:** ${crawlStateFile?.absolutePath ?: "N/A (persistence disabled)"}")
+           appendLine()
+           appendLine("**State Persistence Enabled:** ${typeConfig?.use_state_file ?: true}")
            appendLine()
            appendLine("**Run Number:** $currentRunNumber")
            appendLine()
@@ -977,17 +997,19 @@ class CrawlerAgentTask(
       )
     )
     log.debug("Added new link to queue: $newUrl (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
-     // Record in crawl state
-     currentCrawlState.links.getOrPut(newUrl) {
-       CrawlLinkEntry(
-         url = newUrl,
-         title = newLink.title,
-         tags = newLink.tags,
-         relevance_score = newLink.relevance_score,
-         depth = newLink.depth,
-         status = "queued",
-         discovered_at = LocalDateTime.now().toString()
-       )
+     // Record in crawl state (only if use_state_file is enabled)
+     if (typeConfig.use_state_file) {
+       currentCrawlState.links.getOrPut(newUrl) {
+         CrawlLinkEntry(
+           url = newUrl,
+           title = newLink.title,
+           tags = newLink.tags,
+           relevance_score = newLink.relevance_score,
+           depth = newLink.depth,
+           status = "queued",
+           discovered_at = LocalDateTime.now().toString()
+         )
+       }
      }
     true
   }
@@ -1455,30 +1477,32 @@ class CrawlerAgentTask(
         page.completed = true
         page.processingTimeMs = System.currentTimeMillis() - pageStartTime
         log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
-       // Update crawl state for this page
-       try {
-         val entry = currentCrawlState.links.getOrPut(link) {
-           CrawlLinkEntry(
-             url = link,
-             discovered_at = LocalDateTime.now().toString()
-           )
+       // Update crawl state for this page (only if use_state_file is enabled)
+       if (typeConfig.use_state_file) {
+         try {
+           val entry = currentCrawlState.links.getOrPut(link) {
+             CrawlLinkEntry(
+               url = link,
+               discovered_at = LocalDateTime.now().toString()
+             )
+           }
+           entry.title = page.title ?: entry.title
+           entry.tags = page.tags ?: entry.tags
+           entry.relevance_score = page.relevance_score
+           entry.depth = page.depth
+           entry.status = if (page.error != null) "error" else "completed"
+           entry.error = page.error
+           entry.processing_time_ms = page.processingTimeMs
+           entry.processed_at = LocalDateTime.now().toString()
+           entry.completed_in_run = currentRunNumber
+           // Periodic save every 5 pages
+           if (processedCount.get() % 5 == 0) {
+             syncInMemoryStateToCrawlState()
+             crawlStateFile?.let { saveCrawlState(it, currentCrawlState) }
+           }
+         } catch (e: Exception) {
+           log.debug("Failed to update crawl state for page: $link", e)
          }
-         entry.title = page.title ?: entry.title
-         entry.tags = page.tags ?: entry.tags
-         entry.relevance_score = page.relevance_score
-         entry.depth = page.depth
-         entry.status = if (page.error != null) "error" else "completed"
-         entry.error = page.error
-         entry.processing_time_ms = page.processingTimeMs
-         entry.processed_at = LocalDateTime.now().toString()
-         entry.completed_in_run = currentRunNumber
-         // Periodic save every 5 pages
-         if (processedCount.get() % 5 == 0) {
-           syncInMemoryStateToCrawlState()
-           crawlStateFile?.let { saveCrawlState(it, currentCrawlState) }
-         }
-       } catch (e: Exception) {
-         log.debug("Failed to update crawl state for page: $link", e)
        }
         task.complete()
       }
@@ -1559,7 +1583,7 @@ class CrawlerAgentTask(
     val header = if (headerEndIndex > 0) {
       analysisResults.substring(0, headerEndIndex)
     } else {
-      "# Web Search: ${executionConfig?.search_query ?: executionConfig?.direct_urls?.joinToString(", ") ?: ""}\n\n"
+      "# Web Search: ${executionConfig?.search_query?.joinToString(", ") ?: executionConfig?.direct_urls?.joinToString(", ") ?: ""}\n\n"
     }
 
     val urlSections = extractUrlSections(analysisResults)
@@ -1567,7 +1591,7 @@ class CrawlerAgentTask(
     val summaryPrompt = buildString {
       appendLine("Create a comprehensive summary of the following web search results and analyses.")
       appendLine()
-      appendLine("Original analysis contained ${urlSections.size} web pages related to: ${executionConfig?.search_query ?: ""}")
+      appendLine("Original analysis contained ${urlSections.size} web pages related to: ${executionConfig?.search_query?.joinToString(", ") ?: ""}")
       appendLine()
       appendLine("Analysis goal: ${executionConfig?.content_queries ?: executionConfig?.task_description ?: "Provide key insights"}")
       appendLine()
@@ -1786,7 +1810,7 @@ class CrawlerAgentTask(
         "timestamp" to LocalDateTime.now().toString(),
         "index" to index,
         "page_type" to result.pageType.name,
-        "query" to (executionConfig?.search_query ?: ""),
+        "query" to (executionConfig?.search_query?.joinToString(", ") ?: ""),
         "content_query" to (executionConfig?.content_queries ?: ""),
         "metadata" to result.metadata
       )

@@ -24,53 +24,59 @@ class GoogleProxy : SeedMethodFactory {
       orchestrationConfig: OrchestrationConfig
     ): List<SeedItem> {
       SeedMethod.log.info("Starting Google Search via proxy with query: ${taskConfig?.search_query}")
+      val searchLimit = 20
 
-      if (taskConfig?.search_query.isNullOrBlank()) {
+      if (taskConfig?.search_query.isNullOrEmpty()) {
         SeedMethod.log.error("Search query is missing")
         throw IllegalArgumentException("Search query is required")
       }
 
       val client = HttpClient.newBuilder().build()
-      val query = taskConfig.search_query?.trim()
-      val encodedQuery = URLEncoder.encode(query, "UTF-8")
-      val resultCount = 20
-      val searchLimit = resultCount
+      val items = taskConfig.search_query?.flatMap {
+        val query = it.trim()
 
-      SeedMethod.log.debug("Using proxy endpoint: $PROXY_ENDPOINT")
 
-      val uri = "$PROXY_ENDPOINT?q=$encodedQuery&num=$resultCount"
-      val request = HttpRequest.newBuilder()
-        .uri(URI.create(uri))
-        .timeout(Duration.ofSeconds(30))
-        .header("User-Agent", "CognoTik-Crawler/1.0")
-        .GET()
-        .build()
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
 
-      SeedMethod.log.info("Sending request to Google Search proxy")
+        SeedMethod.log.debug("Using proxy endpoint: $PROXY_ENDPOINT")
 
-      val response = try {
-        client.send(request, HttpResponse.BodyHandlers.ofString())
-      } catch (e: Exception) {
-        SeedMethod.log.error("Failed to connect to proxy", e)
-        throw RuntimeException("Failed to connect to search proxy: ${e.message}", e)
+        val uri = "$PROXY_ENDPOINT?q=$encodedQuery&num=$searchLimit"
+        val request = HttpRequest.newBuilder()
+          .uri(URI.create(uri))
+          .timeout(Duration.ofSeconds(30))
+          .header("User-Agent", "CognoTik-Crawler/1.0")
+          .GET()
+          .build()
+
+        SeedMethod.log.info("Sending request to Google Search proxy")
+
+        val response = try {
+          client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: Exception) {
+          SeedMethod.log.error("Failed to connect to proxy", e)
+          throw RuntimeException("Failed to connect to search proxy: ${e.message}", e)
+        }
+
+        val statusCode = response.statusCode()
+        if (statusCode != 200) {
+          SeedMethod.log.error("Proxy request failed with status $statusCode: ${response.body()}")
+          throw RuntimeException("Search proxy error: HTTP $statusCode")
+        }
+
+        val searchData: Map<String, Any> = try {
+          ObjectMapper().readValue(response.body())
+        } catch (e: Exception) {
+          SeedMethod.log.error("Failed to parse proxy response", e)
+          throw RuntimeException("Invalid response from search proxy", e)
+        }
+
+        searchData["items"] as? List<Map<String, Any>> ?: run {
+          SeedMethod.log.warn("No 'items' field in proxy response for query: $query")
+          emptyList()
+        }
       }
-
-      val statusCode = response.statusCode()
-      if (statusCode != 200) {
-        SeedMethod.log.error("Proxy request failed with status $statusCode: ${response.body()}")
-        throw RuntimeException("Search proxy error: HTTP $statusCode")
-      }
-
-      val searchData: Map<String, Any> = try {
-        ObjectMapper().readValue(response.body())
-      } catch (e: Exception) {
-        SeedMethod.log.error("Failed to parse proxy response", e)
-        throw RuntimeException("Invalid response from search proxy", e)
-      }
-
-      val items = searchData["items"] as? List<Map<String, Any>>
       if (items.isNullOrEmpty()) {
-        SeedMethod.log.warn("No search results found for query: $query")
+        SeedMethod.log.warn("No search results found for query: ${taskConfig.search_query?.toList()}")
         return emptyList()
       }
 

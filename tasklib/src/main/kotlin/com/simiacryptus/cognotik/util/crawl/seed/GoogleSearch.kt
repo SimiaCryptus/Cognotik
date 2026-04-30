@@ -23,15 +23,12 @@ class GoogleSearch : SeedMethodFactory {
       orchestrationConfig: OrchestrationConfig
     ): List<SeedItem> {
       SeedMethod.log.info("Starting Google Search seed method with query: ${taskConfig?.search_query}")
-      if (taskConfig?.search_query.isNullOrBlank()) {
+      if (taskConfig?.search_query.isNullOrEmpty()) {
         SeedMethod.log.error("Search query is missing for Google Search seed method")
         throw IllegalArgumentException("Search query is required when using Google Search seed method")
       }
       val client = HttpClient.newBuilder().build()
 
-      val query = taskConfig?.search_query?.trim()
-      SeedMethod.log.debug("Using search query: $query")
-      val encodedQuery = URLEncoder.encode(query, "UTF-8")
 
       val resultCount = 20 // Ensure we don't exceed API limits
       val searchLimit = resultCount // Reduced from 20 to be more conservative
@@ -45,44 +42,55 @@ class GoogleSearch : SeedMethodFactory {
       val engineId = Google.base?.trim()
         ?: throw IllegalStateException("Search engine ID is required but not configured")
       SeedMethod.log.debug("Preparing Google Search API request with engine ID: $engineId")
-      val uriBuilder =
-        "https://www.googleapis.com/customsearch/v1?key=${key}&cx=${engineId}&q=$encodedQuery&num=$resultCount"
-      val request = HttpRequest.newBuilder()
-        .uri(URI.create(uriBuilder))
-        .timeout(Duration.ofSeconds(30))
-        .header("User-Agent", "CognoTik-Crawler/1.0")
-        .GET()
-        .build()
-      SeedMethod.log.info("Sending request to Google Search API")
-      val response = try {
-        client.send(request, HttpResponse.BodyHandlers.ofString())
-      } catch (e: Exception) {
-        SeedMethod.log.error("Failed to connect to Google Search API", e)
-        throw RuntimeException("Failed to connect to Google Search API: ${e.message}", e)
-      }
-      val statusCode = response.statusCode()
 
-      if (statusCode != 200) {
-        SeedMethod.log.error("Google API request failed with status $statusCode: ${response.body()}")
-        val errorMsg = when (statusCode) {
-          401 -> "Invalid API key"
-          403 -> "API quota exceeded or access forbidden"
-          429 -> "Rate limit exceeded"
-          else -> "HTTP $statusCode"
+
+      val items = taskConfig?.search_query?.flatMap {
+        val query = it.trim()
+        SeedMethod.log.debug("Using search query: $query")
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+
+        val uriBuilder =
+          "https://www.googleapis.com/customsearch/v1?key=${key}&cx=${engineId}&q=$encodedQuery&num=$resultCount"
+        val request = HttpRequest.newBuilder()
+          .uri(URI.create(uriBuilder))
+          .timeout(Duration.ofSeconds(30))
+          .header("User-Agent", "CognoTik-Crawler/1.0")
+          .GET()
+          .build()
+        SeedMethod.log.info("Sending request to Google Search API")
+        val response = try {
+          client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: Exception) {
+          SeedMethod.log.error("Failed to connect to Google Search API", e)
+          throw RuntimeException("Failed to connect to Google Search API: ${e.message}", e)
         }
-        throw RuntimeException("Google API error: $errorMsg")
-      }
-      SeedMethod.log.debug("Parsing Google Search API response")
+        val statusCode = response.statusCode()
 
-      val searchData: Map<String, Any> = try {
-        ObjectMapper().readValue(response.body())
-      } catch (e: Exception) {
-        SeedMethod.log.error("Failed to parse Google Search API response", e)
-        throw RuntimeException("Invalid response from Google Search API", e)
+        if (statusCode != 200) {
+          SeedMethod.log.error("Google API request failed with status $statusCode: ${response.body()}")
+          val errorMsg = when (statusCode) {
+            401 -> "Invalid API key"
+            403 -> "API quota exceeded or access forbidden"
+            429 -> "Rate limit exceeded"
+            else -> "HTTP $statusCode"
+          }
+          throw RuntimeException("Google API error: $errorMsg")
+        }
+        SeedMethod.log.debug("Parsing Google Search API response")
+
+        val searchData: Map<String, Any> = try {
+          ObjectMapper().readValue(response.body())
+        } catch (e: Exception) {
+          SeedMethod.log.error("Failed to parse Google Search API response", e)
+          throw RuntimeException("Invalid response from Google Search API", e)
+        }
+        searchData["items"] as? List<Map<String, Any>> ?: run {
+          SeedMethod.log.warn("No 'items' field in Google Search response for query: $query")
+          emptyList()
+        }
       }
-      val items = searchData["items"] as? List<Map<String, Any>>
       if (items.isNullOrEmpty()) {
-        SeedMethod.log.warn("No search results found for query: $query")
+        SeedMethod.log.warn("No search results found for query: ${taskConfig?.search_query?.toList()}")
         return emptyList()
       }
       SeedMethod.log.info(
