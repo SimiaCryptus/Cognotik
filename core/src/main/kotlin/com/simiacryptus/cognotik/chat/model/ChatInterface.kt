@@ -18,6 +18,7 @@ class ChatInterface(
   private val base: String,
   private val logLevel: Level,
   private val temperature: Double,
+  val audio: MutableMap<String, String> = mutableMapOf(),
   val provider: APIProvider,
   val modelType: ChatModel,
   private val workPool: ExecutorService,
@@ -46,6 +47,7 @@ class ChatInterface(
       model = modelType.modelId,
       messages = messages,
       temperature = temperature,
+      audio = audio
     ),
     model = modelType,
     logStreams = logStreams

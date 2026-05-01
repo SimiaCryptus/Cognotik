@@ -10,18 +10,6 @@ import javax.imageio.ImageIO
 
 @Suppress("PropertyName", "SpellCheckingInspection")
 interface ModelSchema {
-  data class AudioInput(
-    var data: String = "",
-    var format: String = "wav",
-  ) {
-    var audioBytes: ByteArray
-      @JsonIgnore
-      get() = Base64.getDecoder().decode(data)
-      @JsonIgnore
-      set(value) {
-        data = Base64.getEncoder().encodeToString(value)
-      }
-  }
 
   data class ApiError(
     var message: String? = null,
@@ -294,6 +282,10 @@ interface ModelSchema {
     var audio_data: ByteArray? = null,
     var audio_mime_type: String? = null,
     var audio_format: String? = null,
+
+    var audio_channels: Int? = null,
+
+    var audio_sample_rate: Int? = null,
   ) {
     var image: BufferedImage?
       @JsonIgnore

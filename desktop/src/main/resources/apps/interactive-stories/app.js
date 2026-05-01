@@ -1609,7 +1609,7 @@ async function loadNodeAudio(nodeId) {
      const statusEl = document.getElementById('node-audio-status');
      const btn = document.getElementById('generate-audio');
      const label = document.getElementById('generate-audio-label');
-     const audioPath = `${STORY_DIR}/${nodeId}.mp3`;
+     const audioPath = `${STORY_DIR}/${nodeId}.wav`;
      console.log(`[loadNodeAudio] Checking for audio at "${audioPath}"…`);
      statusEl.textContent = '';
      statusEl.className = 'status-msg';
@@ -1665,7 +1665,7 @@ async function generateAudioForNode(nodeId) {
          console.warn(`[generateAudioForNode] No op path for node "${nodeId}" — skipping.`);
          return;
      }
-     const target = `${STORY_DIR}/${nodeId}.mp3`;
+     const target = `${STORY_DIR}/${nodeId}.wav`;
      const btn = document.getElementById('generate-audio');
      const statusEl = document.getElementById('node-audio-status');
      const container = document.getElementById('node-audio-container');
