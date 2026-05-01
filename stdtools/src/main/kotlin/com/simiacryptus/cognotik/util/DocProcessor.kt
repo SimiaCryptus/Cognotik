@@ -82,9 +82,10 @@ class DocProcessor(
   val docsFolder: File,
   val updateMode: UpdateMode = UpdateModes.PatchToUpdate,
   val additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
-  val fastModel: ChatModel,
   val smartModel: ChatModel,
-  val imageModel: ChatModel,
+  val fastModel: ChatModel = smartModel,
+  val imageModel: ChatModel = fastModel,
+  val audioModel: ChatModel = imageModel,
   val serverless: Boolean = false,
   val openBrowser: Boolean = false,
   val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache"),
@@ -1043,6 +1044,7 @@ class DocProcessor(
           fastModel = fastModel,
           smartModel = smartModel,
           imageModel = imageModel,
+           audioModel = audioModel,
           showMenubar = showMenubar,
           user = user
         ) {

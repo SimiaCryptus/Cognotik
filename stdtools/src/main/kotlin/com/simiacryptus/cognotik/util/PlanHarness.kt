@@ -44,6 +44,7 @@ open class PlanHarness(
   val fastModel: ChatModel,
   var smartModel: ChatModel,
   val imageModel: ChatModel,
+  val audioModel: ChatModel,
   val workspace: File? = null,
   val user: User,
 ) {
@@ -56,6 +57,7 @@ open class PlanHarness(
     fastModel = fastModel,
     smartModel = smartModel,
     imageModel = imageModel,
+    audioModel = audioModel,
     showMenubar = true,
     user = user
   ) {
@@ -95,6 +97,7 @@ open class PlanHarness(
     fastModel = fastModel.modelId,
     smartModel = smartModel.modelId,
     imageModel = imageModel.modelId,
+    audioModel = audioModel.modelId,
     autoFix = !openBrowser,
     cognitiveSettings = cognitiveSettings,
     user = user,
