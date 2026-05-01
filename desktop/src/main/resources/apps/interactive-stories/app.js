@@ -34,13 +34,14 @@ import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLin
 'use strict';
 
 const APP_PREFIX = 'interactiveStories';
-const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel'];
+const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel', 'audioModel'];
 const IDEA_FILE = 'story_idea.md';
 const STORY_DIR = 'story';
 const INITIAL_NODE = '0';
 const AUTO_READ_KEY = `${APP_PREFIX}.autoRead`;
 const VOICE_KEY = `${APP_PREFIX}.voice`;
 const AUTO_IMAGE_KEY = `${APP_PREFIX}.autoImage`;
+const AUTO_AUDIO_KEY = `${APP_PREFIX}.autoAudio`;
 const HIGHLIGHT_KEY = `${APP_PREFIX}.highlightReadalong`;
 const STYLESHEET_FILE = 'stylesheet_instructions.md';
 
@@ -56,6 +57,7 @@ let logger = null;
 let statusPoller = null;
 let isSpeaking = false;
 let isGeneratingImage = false;
+let isGeneratingAudio = false;
 let _pendingAutoRead = false;        // true when auto-read is queued but waiting for a user gesture
 let _hasUserGesture = false;         // true once the user has interacted with the page
 let _ttsTimerInterval = null;        // setInterval handle for timer-based word highlight fallback
@@ -167,6 +169,16 @@ async function init() {
             console.log('[init] auto-image toggled →', autoImageEl.checked);
             log(`Auto-image ${autoImageEl.checked ? 'enabled' : 'disabled'}.`, 'info');
         });
+         // Audio controls
+         document.getElementById('generate-audio').addEventListener('click', onGenerateAudio);
+         const autoAudioEl = document.getElementById('auto-audio');
+         autoAudioEl.checked = localStorage.getItem(AUTO_AUDIO_KEY) === 'true';
+         console.log('[init] auto-audio initial state:', autoAudioEl.checked);
+         autoAudioEl.addEventListener('change', () => {
+             localStorage.setItem(AUTO_AUDIO_KEY, autoAudioEl.checked ? 'true' : 'false');
+             console.log('[init] auto-audio toggled →', autoAudioEl.checked);
+             log(`Auto-audio ${autoAudioEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+         });
          // Highlight readalong toggle
          const highlightEl = document.getElementById('highlight-readalong');
          // Default to true if no saved preference exists yet
@@ -182,7 +194,7 @@ async function init() {
 
 
         // Save model selections on change
-        ['smart-model', 'fast-model', 'image-model'].forEach(id => {
+        ['smart-model', 'fast-model', 'image-model', 'audio-model'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', persistModelSelections);
         });
@@ -241,7 +253,7 @@ async function initModels() {
         console.log('[initModels] loadApiProviders() response:', available);
         const selects = MODEL_KEYS
             .map(k => {
-                const idMap = { smartModel: 'smart-model', fastModel: 'fast-model', imageModel: 'image-model' };
+                const idMap = { smartModel: 'smart-model', fastModel: 'fast-model', imageModel: 'image-model', audioModel: 'audio-model' };
                 return document.getElementById(idMap[k]);
             })
             .filter(Boolean);
@@ -249,8 +261,8 @@ async function initModels() {
         console.log('[initModels] Saved model selections:', saved);
         populateModelDropdowns(available, selects, saved);
         const providerCount = Array.isArray(available) ? available.length : Object.keys(available || {}).length;
-        log(`Models loaded — ${providerCount} provider(s) available. Saved selections: smart="${saved.smartModel || 'none'}", fast="${saved.fastModel || 'none'}", image="${saved.imageModel || 'none'}".`, 'info');
-        console.log(`[initModels] Done — ${providerCount} provider(s). smart="${saved.smartModel || 'none'}", fast="${saved.fastModel || 'none'}", image="${saved.imageModel || 'none'}".`);
+        log(`Models loaded — ${providerCount} provider(s) available. Saved selections: smart="${saved.smartModel || 'none'}", fast="${saved.fastModel || 'none'}", image="${saved.imageModel || 'none'}", audio="${saved.audioModel || 'none'}".`, 'info');
+        console.log(`[initModels] Done — ${providerCount} provider(s). smart="${saved.smartModel || 'none'}", fast="${saved.fastModel || 'none'}", image="${saved.imageModel || 'none'}", audio="${saved.audioModel || 'none'}".`);
         console.groupEnd();
     } catch (e) {
         log(`Failed to load models: ${e.message}`, 'error');
@@ -263,11 +275,12 @@ function persistModelSelections() {
     const selections = {
         smartModel: document.getElementById('smart-model').value,
         fastModel: document.getElementById('fast-model').value,
-        imageModel: document.getElementById('image-model').value
+        imageModel: document.getElementById('image-model').value,
+        audioModel: document.getElementById('audio-model').value
     };
     saveModelSelections(APP_PREFIX, selections);
     console.log('[persistModelSelections] Saved:', selections);
-    log(`Model selections saved — smart="${selections.smartModel || 'none'}", fast="${selections.fastModel || 'none'}", image="${selections.imageModel || 'none'}".`, 'info');
+    log(`Model selections saved — smart="${selections.smartModel || 'none'}", fast="${selections.fastModel || 'none'}", image="${selections.imageModel || 'none'}", audio="${selections.audioModel || 'none'}".`, 'info');
 }
 // -------------------------------------------------------------------------
 // Voices (browser TTS)
@@ -338,9 +351,11 @@ function getModelOverrides() {
     const smart = document.getElementById('smart-model').value;
     const fast = document.getElementById('fast-model').value;
     const image = document.getElementById('image-model').value;
+    const audio = document.getElementById('audio-model').value;
     if (smart) out.smartModel = smart;
     if (fast) out.fastModel = fast;
     if (image) out.imageModel = image;
+    if (audio) out.audioModel = audio;
     console.debug('[getModelOverrides] Overrides:', out);
     return out;
 }
@@ -469,6 +484,7 @@ async function onStartStory() {
         await refreshTree();
         await loadNode(INITIAL_NODE);
         maybeAutoGenerateImage(INITIAL_NODE);
+         maybeAutoGenerateAudio(INITIAL_NODE);
     } catch (e) {
         log(`Failed to generate initial node after ${timeEnd('startStory')}: ${e.message}`, 'error');
         console.error('[onStartStory]', e);
@@ -535,6 +551,7 @@ async function onChoice(letter) {
         const newNode = `${currentNode}${letter}`;
         await loadNode(newNode);
         maybeAutoGenerateImage(newNode);
+         maybeAutoGenerateAudio(newNode);
     } catch (e) {
         log(`Failed to generate branch ${letter.toUpperCase()} after ${timeEnd(`branch_${letter}`)}: ${e.message}`, 'error');
         console.error(`[onChoice(${letter})]`, e);
@@ -849,6 +866,8 @@ async function loadNode(nodeId) {
     }
     // Load existing image (if any)
     await loadNodeImage(nodeId);
+     // Load existing audio (if any)
+     await loadNodeAudio(nodeId);
 }
 // -------------------------------------------------------------------------
 // Text-to-speech
@@ -1571,6 +1590,133 @@ async function generateImageForNode(nodeId) {
         }
         console.groupEnd();
     }
+}
+// -------------------------------------------------------------------------
+// Audio generation
+// -------------------------------------------------------------------------
+function getAudioOpForNode(nodeId) {
+     // Initial node uses initial_audio.md, branches use choice_{a|b|c}_audio.md
+     if (nodeId === INITIAL_NODE) return 'ops/initial_audio.md';
+     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
+         return `ops/choice_${lastChar}_audio.md`;
+     }
+     return null;
+}
+async function loadNodeAudio(nodeId) {
+     const container = document.getElementById('node-audio-container');
+     const audio = document.getElementById('node-audio');
+     const statusEl = document.getElementById('node-audio-status');
+     const btn = document.getElementById('generate-audio');
+     const label = document.getElementById('generate-audio-label');
+     const audioPath = `${STORY_DIR}/${nodeId}.mp3`;
+     console.log(`[loadNodeAudio] Checking for audio at "${audioPath}"…`);
+     statusEl.textContent = '';
+     statusEl.className = 'status-msg';
+     const exists = await fileExists(basePath, audioPath);
+     if (exists) {
+         // Cache-bust so newly generated audio replaces old ones
+         const url = `${basePath}/${audioPath}?t=${Date.now()}`;
+         audio.src = url;
+         container.style.display = 'block';
+         label.textContent = 'Regenerate Audio';
+         log(`Audio found for node "${nodeId}" — loaded from "${audioPath}".`, 'info');
+         console.log(`[loadNodeAudio] Audio found for node "${nodeId}" — src: ${url}`);
+     } else {
+         audio.removeAttribute('src');
+         audio.load();
+         container.style.display = 'none';
+         label.textContent = 'Generate Audio';
+         log(`No audio found for node "${nodeId}" (${audioPath}).`, 'info');
+         console.log(`[loadNodeAudio] No audio found for node "${nodeId}" at "${audioPath}".`);
+     }
+     btn.disabled = isGeneratingAudio;
+}
+async function onGenerateAudio() {
+     if (!currentNode) {
+         showToast('Select a node first.', 'warning');
+         log('Generate audio aborted: no current node selected.', 'warning');
+         console.warn('[onGenerateAudio] Aborted — no current node selected.');
+         return;
+     }
+     log(`User requested audio generation for node "${currentNode}".`, 'info');
+     console.log(`[onGenerateAudio] User requested audio for node "${currentNode}".`);
+     await generateAudioForNode(currentNode);
+}
+function maybeAutoGenerateAudio(nodeId) {
+     const autoAudioEl = document.getElementById('auto-audio');
+     if (autoAudioEl && autoAudioEl.checked) {
+         log(`Auto-audio enabled — triggering audio generation for node "${nodeId}".`, 'info');
+         console.log(`[maybeAutoGenerateAudio] Auto-audio enabled — firing for node "${nodeId}".`);
+         generateAudioForNode(nodeId).catch(err => {
+             log(`Auto audio generation failed: ${err.message}`, 'warning');
+             console.warn(`[maybeAutoGenerateAudio] Auto audio generation failed for "${nodeId}":`, err);
+         });
+     } else {
+         log(`Auto-audio disabled — skipping audio generation for node "${nodeId}".`, 'info');
+         console.log(`[maybeAutoGenerateAudio] Auto-audio disabled — skipping node "${nodeId}".`);
+     }
+}
+async function generateAudioForNode(nodeId) {
+     const opPath = getAudioOpForNode(nodeId);
+     if (!opPath) {
+         showToast(`No audio operation defined for node ${nodeId}.`, 'warning');
+         log(`generateAudioForNode: no op path for node "${nodeId}" — skipping.`, 'warning');
+         console.warn(`[generateAudioForNode] No op path for node "${nodeId}" — skipping.`);
+         return;
+     }
+     const target = `${STORY_DIR}/${nodeId}.mp3`;
+     const btn = document.getElementById('generate-audio');
+     const statusEl = document.getElementById('node-audio-status');
+     const container = document.getElementById('node-audio-container');
+     isGeneratingAudio = true;
+     btn.disabled = true;
+     container.style.display = 'block';
+     statusEl.textContent = `Generating audio for node ${nodeId}...`;
+     statusEl.className = 'status-msg info';
+     log(`Generating audio for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
+     timeStart(`audio_${nodeId}`);
+     console.group(`[generateAudioForNode] Generating audio for node "${nodeId}"…`);
+     console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+     try {
+         const taskId = await runDocOp(
+             sessionId,
+             opPath,
+             target,
+             getModelOverrides()
+         );
+         console.log(`[generateAudioForNode] runDocOp() returned taskId:`, taskId);
+         log(`Audio DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
+         await waitForTask(basePath, target, 600000, (tgt, info) => {
+             trackedSessions.set(tgt, info);
+             linkManager.update(tgt, info);
+             updateSessionLinks(tgt, info, getProxyUrl, 'node-links');
+             console.debug(`[generateAudioForNode] waitForTask progress — target: ${tgt} | status: ${info.status} | info:`, info);
+             log(`Audio task progress for "${tgt}": status=${info.status}.`, 'info');
+         });
+         log(`Audio generated for node "${nodeId}" in ${timeEnd(`audio_${nodeId}`)}.`, 'success');
+         console.log(`[generateAudioForNode] Audio generation complete for node "${nodeId}".`);
+         statusEl.textContent = 'Audio ready.';
+         statusEl.className = 'status-msg success';
+         if (currentNode === nodeId) {
+             await loadNodeAudio(nodeId);
+         } else {
+             log(`Audio ready for "${nodeId}" but user has navigated to "${currentNode}" — skipping reload.`, 'info');
+             console.log(`[generateAudioForNode] Audio ready for "${nodeId}" but user is now on "${currentNode}" — skipping reload.`);
+         }
+     } catch (e) {
+         log(`Audio generation failed for node "${nodeId}" after ${timeEnd(`audio_${nodeId}`)}: ${e.message}`, 'error');
+         console.error(`[generateAudioForNode(${nodeId})]`, e);
+         statusEl.textContent = `Error: ${e.message}`;
+         statusEl.className = 'status-msg error';
+         showToast(`Audio failed: ${e.message}`, 'error');
+     } finally {
+         isGeneratingAudio = false;
+         if (currentNode === nodeId) {
+             document.getElementById('generate-audio').disabled = false;
+         }
+         console.groupEnd();
+     }
 }
 
 // -------------------------------------------------------------------------

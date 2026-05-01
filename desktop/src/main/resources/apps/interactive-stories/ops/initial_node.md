@@ -39,3 +39,11 @@ FILE: ../story/image_style.md
 such as art style, color palette, mood, lighting, and any recurring visual motifs. This should
 be consistent with the tone and setting of the story and will be referenced by all image generation operations.)
 ```
+
+FILE: ../story/audio_style.md
+```markdown
+(A concise description of the audio/sonic style to be used for all audio generated in this story —
+such as ambient soundscape, musical genre/instrumentation, mood, tempo, and any recurring sonic motifs.
+This should be consistent with the tone and setting of the story and will be referenced by all audio
+generation operations. Keep it brief — a few sentences at most.)
+```

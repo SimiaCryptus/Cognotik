@@ -482,6 +482,34 @@ body.immersive .tts-highlight {
      display: block;
      margin-top: 0.5rem;
 }
+/* Node audio */
+.node-audio-container {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      text-align: center;
+}
+.node-audio {
+      width: 100%;
+      max-width: 600px;
+      display: block;
+      margin: 0 auto;
+}
+.node-audio-container .status-msg {
+      display: block;
+      margin-top: 0.5rem;
+}
+/* Immersive mode for audio container */
+body.immersive #node-card .node-audio-container {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0 auto 1.25rem;
+      max-width: 900px;
+      width: 100%;
+}
 
 
 /* Activity log */

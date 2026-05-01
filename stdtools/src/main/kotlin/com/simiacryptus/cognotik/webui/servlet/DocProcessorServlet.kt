@@ -58,10 +58,11 @@ class DocProcessorServlet(
     }
     val modeName = request.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.Companion.fromName(modeName) ?: UpdateModes.PatchExisting
-    val effectiveSmartModel = resolveModel(request.getParameter("smartModel")) ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: throw IllegalArgumentException("Invalid or missing fastModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: throw IllegalArgumentException("Invalid or missing imageModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-     val effectiveAudioModel = resolveModel(request.getParameter("audioModel")) ?: throw IllegalArgumentException("Invalid or missing audioModel parameter. Provide a valid model ID or omit the parameter to use the default.")
+    val smartModel = resolveModel(request.getParameter("smartModel"))
+    val effectiveSmartModel = smartModel ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
+    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: effectiveSmartModel
+    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: effectiveFastModel
+     val effectiveAudioModel = resolveModel(request.getParameter("audioModel")) ?: effectiveFastModel
     try {
       val session = Session(sessionId)
       val user = authenticate(request, response) ?: return
