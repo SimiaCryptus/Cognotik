@@ -55,6 +55,17 @@
     "path": "/comic-serial",
     "appId": "comic-serial"
   },
+   {
+     "id": "app-quiz-wiz",
+     "name": "Quiz Whiz",
+     "icon": "🧠",
+     "description": "Turn a plain-English quiz idea into a fully working, playable web-based quiz game through a multi-step AI pipeline that designs, generates data, and implements the code.",
+     "badge": null,
+     "badgeClass": "",
+     "type": "docops",
+     "path": "/quiz-wiz",
+     "appId": "quiz-wiz"
+   },
   {
     "id": "app-omega",
     "name": "Omega App Factory",
