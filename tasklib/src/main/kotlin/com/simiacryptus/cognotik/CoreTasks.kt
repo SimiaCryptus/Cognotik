@@ -33,6 +33,7 @@ object CoreTasks : CognotikPlugin {
   override fun init() {
     // Core Task Types
     TaskType.registerTaskType(AutoFixTask.AutoFix)
+    TaskType.registerTaskType(AudioGenerationTask.GenerateAudio)
     TaskType.registerTaskType(BrainstormingTask.Brainstorming)
     TaskType.registerTaskType(ComicBookGenerationTask.ComicBookGeneration)
     TaskType.registerTaskType(CreateErbTemplateTask.CreateErbTemplate)

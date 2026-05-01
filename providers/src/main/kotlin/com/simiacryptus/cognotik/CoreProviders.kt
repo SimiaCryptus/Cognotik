@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.AnthropicChatClient
 import com.simiacryptus.cognotik.chat.AwsChatClient
 import com.simiacryptus.cognotik.chat.DeepSeekChatClient
-import com.simiacryptus.cognotik.chat.GeminiChatClient
 import com.simiacryptus.cognotik.chat.GeminiSdkChatClient
 import com.simiacryptus.cognotik.chat.GroqChatClient
 import com.simiacryptus.cognotik.chat.MistralChatClient
@@ -72,14 +71,7 @@ object CoreProviders : CognotikPlugin {
       logLevel: Level,
       logStreams: MutableList<BufferedOutputStream>,
       scheduledPool: ListeningScheduledExecutorService
-    ) = if (false) GeminiChatClient(
-      apiKey = key,
-      apiBase = base,
-      workPool = workPool,
-      logLevel = logLevel,
-      logStreams = logStreams,
-      scheduledPool = scheduledPool
-    ) else GeminiSdkChatClient(
+    ) = GeminiSdkChatClient(
       apiKey = key,
       apiBase = base,
       workPool = workPool,

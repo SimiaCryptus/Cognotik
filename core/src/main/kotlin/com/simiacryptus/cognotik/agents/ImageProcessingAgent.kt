@@ -37,8 +37,9 @@ open class ImageProcessingAgent(
         listOf(
           ContentPart(
             text = question.text,
-            image_url = question.image?.let { "data:image/png;base64,${it.encodeImageToBase64()}" },
-          )
+          ).apply {
+            image = question.image
+          }
         )
       }
     )
@@ -67,13 +68,4 @@ open class ImageProcessingAgent(
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(ImageProcessingAgent::class.java)
   }
-}
-
-/**
- * Encodes a BufferedImage to a Base64 string in PNG format
- */
-fun BufferedImage.encodeImageToBase64(): String {
-  val outputStream = ByteArrayOutputStream()
-  ImageIO.write(this, "png", outputStream)
-  return Base64.getEncoder().encodeToString(outputStream.toByteArray())
 }

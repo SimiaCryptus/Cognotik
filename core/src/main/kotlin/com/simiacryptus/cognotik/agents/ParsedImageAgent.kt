@@ -50,8 +50,9 @@ ${describer.describe(resultClass!!)}
         listOf(
           ModelSchema.ContentPart(
             text = question.text,
-            image_url = question.image?.let { "data:image/png;base64,${it.encodeImageToBase64()}" },
-          )
+          ).apply {
+              image = question.image
+          }
         )
       }
     )

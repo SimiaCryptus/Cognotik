@@ -189,6 +189,17 @@ class GeminiSdkChatClient(
               )
             }
           }
+          "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac",
+          "audio/ogg", "audio/flac", "audio/pcm", "audio/L16" -> {
+            val audioBytes = inlineData.data().getOrNull()
+            if (audioBytes != null) {
+              val mime = inlineData.mimeType().getOrNull() ?: "audio/wav"
+              sb.append(
+                "<audio controls src=\"data:${mime};base64,${audioBytes.base64()}\">[audio: ${mime}, ${audioBytes.size} bytes]</audio>\n"
+              )
+            }
+          }
+
 
           else -> {
             sb.append("`[Unsupported inline data of type ${inlineData.mimeType().getOrNull()}]`\n")
@@ -203,6 +214,46 @@ class GeminiSdkChatClient(
     val builder = GenerateContentConfig.builder()
     chatRequest.temperature.let { builder.temperature(it.toFloat()) }
     chatRequest.max_tokens?.let { builder.maxOutputTokens(it) }
+    // Configure response modalities (e.g., for TTS audio output)
+    chatRequest.modalities?.let { modalities ->
+      val mapped = modalities.mapNotNull { modality ->
+        when (modality.lowercase()) {
+          "text" -> "TEXT"
+          "audio" -> "AUDIO"
+          "image" -> "IMAGE"
+          else -> null
+        }
+      }
+      if (mapped.isNotEmpty()) {
+        try {
+          builder.responseModalities(mapped)
+        } catch (e: Exception) {
+          log.warn("Failed to set response modalities: ${e.message}")
+        }
+      }
+    }
+    // Configure speech (voice) settings for TTS output
+    chatRequest.audio?.let { audioConfig ->
+      try {
+        val voiceName = audioConfig["voice"]
+        if (voiceName != null) {
+          val speechConfig = SpeechConfig.builder()
+            .voiceConfig(
+              VoiceConfig.builder()
+                .prebuiltVoiceConfig(
+                  PrebuiltVoiceConfig.builder()
+                    .voiceName(voiceName)
+                    .build()
+                )
+                .build()
+            )
+            .build()
+          builder.speechConfig(speechConfig)
+        }
+      } catch (e: Exception) {
+        log.warn("Failed to configure speech config for TTS: ${e.message}")
+      }
+    }
     val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
     if (systemMessages.isNotEmpty()) {
       builder.systemInstruction(systemMessages.reduceOrNull { acc, message ->
@@ -254,6 +305,27 @@ class GeminiSdkChatClient(
         Part.fromUri(imageUrl, "image/jpeg")
       }
     }
+    input_audio != null -> {
+      // Handle audio input - Gemini supports audio via inline data
+      val audio = input_audio!!
+      val format = audio.format.lowercase()
+      val mimeType = when (format) {
+        "wav" -> "audio/wav"
+        "mp3" -> "audio/mp3"
+        "aiff" -> "audio/aiff"
+        "aac" -> "audio/aac"
+        "ogg" -> "audio/ogg"
+        "flac" -> "audio/flac"
+        else -> "audio/$format"
+      }
+      val audioBytes = audio.audioBytes
+      if (audioBytes.isNotEmpty()) {
+        Part.fromBytes(audioBytes, mimeType)
+      } else {
+        fromText("")
+      }
+    }
+
 
     text != null -> fromText(text)
 
@@ -265,6 +337,11 @@ class GeminiSdkChatClient(
       copy(text = null).part(),
       copy(image_url = null).part()
     )
+    input_audio != null && text != null -> listOfNotNull(
+      copy(text = null).part(),
+      copy(input_audio = null).part()
+    )
+
 
     else -> listOfNotNull(
       this.part()
@@ -291,6 +368,17 @@ class GeminiSdkChatClient(
             "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
               chatMessageResponse.image_data = this.data().getOrNull()
               chatMessageResponse.image_mime_type = this.mimeType().getOrNull()
+            }
+            "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac",
+            "audio/ogg", "audio/flac", "audio/pcm", "audio/L16" -> {
+              val audioBytes = this.data().getOrNull()
+              if (audioBytes != null) {
+                val mime = this.mimeType().getOrNull() ?: "audio/wav"
+                val format = mime.substringAfter("audio/").substringBefore(";").lowercase()
+                chatMessageResponse.audio_data = audioBytes
+                chatMessageResponse.audio_mime_type = mime
+                chatMessageResponse.audio_format = format
+              }
             }
           }
         }

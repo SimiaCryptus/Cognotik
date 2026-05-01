@@ -8,8 +8,11 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
-import com.simiacryptus.cognotik.plan.tools.*
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
@@ -25,6 +28,7 @@ class OrchestrationConfig(
   var smartModel: String? = null,
   var fastModel: String? = null,
   var imageModel: String? = null,
+  var audioModel: String? = null,
   val shellCmd: List<String> = listOf(if (System.getProperty("os.name").lowercase(getDefault()).contains("windows")) "powershell" else "bash"),
   var temperature: Double = 0.2,
   val budget: Double = 2.0,
@@ -56,6 +60,11 @@ class OrchestrationConfig(
   @get:JsonIgnore
   val defaultImage get() = (imageModel?.instance(user)
     ?: throw IllegalStateException("Image chat model not set")).instance(user)
+
+  @get:JsonIgnore
+  val defaultAudio
+    get() = (audioModel?.instance(user)
+      ?: throw IllegalStateException("Audio chat model not set")).instance(user)
 
 
   @get:JsonIgnore
@@ -97,6 +106,7 @@ class OrchestrationConfig(
     model: String? = this.smartModel,
     fastModel: String? = this.fastModel,
     imageChatModel: String? = this.imageModel,
+    audioChatModel: String? = this.audioModel,
     shellCmd: List<String> = this.shellCmd,
     temperature: Double = this.temperature,
     budget: Double = this.budget,
@@ -109,6 +119,7 @@ class OrchestrationConfig(
     smartModel = model,
     fastModel = fastModel,
     imageModel = imageChatModel,
+    audioModel = audioChatModel,
     shellCmd = shellCmd,
     temperature = temperature,
     budget = budget,

@@ -11,8 +11,8 @@ import javax.imageio.ImageIO
 @Suppress("PropertyName", "SpellCheckingInspection")
 interface ModelSchema {
   data class AudioInput(
-    var data: String,
-    var format: String
+    var data: String = "",
+    var format: String = "wav",
   ) {
     var audioBytes: ByteArray
       @JsonIgnore
@@ -186,7 +186,7 @@ interface ModelSchema {
   data class ContentPart(
     var text: String? = null,
     var image_url: String? = null,
-    //var input_audio: AudioInput? = null
+    var input_audio: AudioInput? = null
   ) {
     var image_data: ByteArray?
       @JsonIgnore
@@ -228,19 +228,19 @@ interface ModelSchema {
           image_url = null
         }
       }
-//        var audio_data: ByteArray?
-//            @JsonIgnore
-//            get() {
-//                return input_audio?.audioBytes
-//            }
-//            @JsonIgnore
-//            set(value) {
-//                input_audio = if (value != null) {
-//                    AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
-//                } else {
-//                    null
-//                }
-//            }
+        var audio_data: ByteArray?
+            @JsonIgnore
+            get() {
+                return input_audio?.audioBytes
+            }
+            @JsonIgnore
+            set(value) {
+                input_audio = if (value != null) {
+                    AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
+                } else {
+                    null
+                }
+            }
 
     companion object {
       private var log = LoggerFactory.getLogger(ContentPart::class.java)
@@ -291,6 +291,9 @@ interface ModelSchema {
     var function_call: FunctionCall? = null,
     var image_url: String? = null,
     var image_mime_type: String? = null,
+    var audio_data: ByteArray? = null,
+    var audio_mime_type: String? = null,
+    var audio_format: String? = null,
   ) {
     var image: BufferedImage?
       @JsonIgnore
