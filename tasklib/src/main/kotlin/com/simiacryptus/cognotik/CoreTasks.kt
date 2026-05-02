@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.SeleniumFetchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
@@ -48,6 +49,7 @@ object CoreTasks : CognotikPlugin {
     TaskType.registerTaskType(NarrativeGenerationTask.NarrativeGeneration)
     TaskType.registerTaskType(PersuasiveEssayTask.PersuasiveEssay)
     TaskType.registerTaskType(RenderErbTemplateTask.RenderErbTemplate)
+    TaskType.registerTaskType(SeleniumFetchTask.SeleniumFetch)
     TaskType.registerTaskType(SocraticDialogueTask.SocraticDialogue)
     TaskType.registerTaskType(SubPlanTask.SubPlan)
     TaskType.registerTaskType(TutorialGenerationTask.TutorialGeneration)

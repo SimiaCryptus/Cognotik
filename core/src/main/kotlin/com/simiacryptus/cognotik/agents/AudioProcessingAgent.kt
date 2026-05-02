@@ -32,7 +32,7 @@ open class AudioProcessingAgent(
   model: ChatInterface,
   temperature: Double = 0.3,
   val textModel: ChatInterface? = null,
-  val voices: Map<String, String> = DEFAULT_VOICES,
+  val voices: Map<String, String> = GEMINI_VOICES,
   val defaultVoice: String = "Callirrhoe",
   val parallelism: Int = 4,
   val renderTimeoutMinutes: Long = 30,
@@ -680,8 +680,11 @@ open class AudioProcessingAgent(
      *
      * The voices are named after stars and mythological figures; descriptors below
      * are inferred from those associations and the published gender of each voice.
+     *
+     * See Also: https://ai.google.dev/gemini-api/docs/speech-generation#voices
+     *
      */
-    val DEFAULT_VOICES: Map<String, String> = linkedMapOf(
+    val GEMINI_VOICES: Map<String, String> = linkedMapOf(
       "Achernar" to "Female. Bright, clear, and crisp; like a star at the river's end - articulate and luminous.",
       "Achird" to "Male. Warm, steady, and approachable; conversational with a friendly edge.",
       "Algenib" to "Male. Confident and resonant; a poised, slightly formal delivery.",
