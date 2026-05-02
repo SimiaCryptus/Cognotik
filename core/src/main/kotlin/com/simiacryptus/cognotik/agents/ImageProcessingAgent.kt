@@ -3,12 +3,9 @@ package com.simiacryptus.cognotik.agents
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.models.ModelSchema.ContentPart
 import com.simiacryptus.cognotik.util.toContentList
-import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import java.util.*
-import javax.imageio.ImageIO
 
 /**
  * Agent that processes text/images input and generates text/images output based on the prompt.
@@ -49,7 +46,14 @@ open class ImageProcessingAgent(
     input: List<ImageAndText>,
     vararg messages: ChatMessage
   ): ImageAndText {
-    val choices = response(*messages).choices
+    val choices = model.chat(
+      ChatRequest(
+        model = model.modelType.modelId,
+        messages = messages.toList(),
+        temperature = model.temperature,
+        audio = model.audio,
+      )
+    ).choices
     val image = choices.firstOrNull { it.message?.image_url != null }?.let { it.message?.image }
     if (image == null) {
       log.info("No image returned in response, falling back to input image.")

@@ -43,6 +43,53 @@ data class AudioInput(
 
     else -> throw UnsupportedOperationException("Conversion from $format to $targetFormat is not supported")
   }
+   /**
+    * Concatenates two [AudioInput] instances into a single [AudioInput].
+    *
+    * If the formats differ, [other] is converted to this instance's format first.
+    * The sample rate, channel count, and bits-per-sample must match after conversion.
+    *
+    * For WAV inputs, the RIFF/WAVE header of [other] is stripped and a new WAV
+    * header is generated reflecting the combined PCM data size. For other
+    * (raw) formats, the audio bytes are simply concatenated.
+    */
+   operator fun plus(other: AudioInput): AudioInput {
+     val rhs = if (this.format == other.format) other else other.convert(this.format)
+     require(this.sampleRate == rhs.sampleRate) {
+       "Sample rates do not match: ${this.sampleRate} vs ${rhs.sampleRate}"
+     }
+     require(this.channels == rhs.channels) {
+       "Channel counts do not match: ${this.channels} vs ${rhs.channels}"
+     }
+     require(this.bitsPerSample == rhs.bitsPerSample) {
+       "Bits-per-sample do not match: ${this.bitsPerSample} vs ${rhs.bitsPerSample}"
+     }
+     val combinedBytes: ByteArray = when (format.lowercase()) {
+       "wav" -> {
+         val lhsPcm = stripWavHeader(this.audioBytes)
+         val rhsPcm = stripWavHeader(rhs.audioBytes)
+         val merged = ByteArray(lhsPcm.size + rhsPcm.size)
+         System.arraycopy(lhsPcm, 0, merged, 0, lhsPcm.size)
+         System.arraycopy(rhsPcm, 0, merged, lhsPcm.size, rhsPcm.size)
+         pcmToWav(merged, sampleRate, channels, bitsPerSample)
+       }
+       else -> {
+         val a = this.audioBytes
+         val b = rhs.audioBytes
+         val merged = ByteArray(a.size + b.size)
+         System.arraycopy(a, 0, merged, 0, a.size)
+         System.arraycopy(b, 0, merged, a.size, b.size)
+         merged
+       }
+     }
+     return AudioInput(
+       format = this.format,
+       sampleRate = this.sampleRate,
+       channels = this.channels,
+       bitsPerSample = this.bitsPerSample
+     ).also { it.audioBytes = combinedBytes }
+   }
+
 
   fun writeAudio(
     outputPath: Path
@@ -113,9 +160,34 @@ data class AudioInput(
       System.arraycopy(pcm, 0, out, 44, dataSize)
       return out
     }
+     /**
+      * Returns the PCM payload of a WAV byte array by locating the "data"
+      * sub-chunk and returning its contents. Falls back to skipping the
+      * standard 44-byte header if parsing fails or the input does not appear
+      * to be a WAV (RIFF/WAVE) container.
+      */
+     internal fun stripWavHeader(wav: ByteArray): ByteArray {
+       if (wav.size < 44) return wav
+       val isRiff = wav[0] == 'R'.code.toByte() && wav[1] == 'I'.code.toByte() &&
+           wav[2] == 'F'.code.toByte() && wav[3] == 'F'.code.toByte()
+       val isWave = wav[8] == 'W'.code.toByte() && wav[9] == 'A'.code.toByte() &&
+           wav[10] == 'V'.code.toByte() && wav[11] == 'E'.code.toByte()
+       if (!isRiff || !isWave) return wav
+       val buf = ByteBuffer.wrap(wav).order(ByteOrder.LITTLE_ENDIAN)
+       var pos = 12
+       while (pos + 8 <= wav.size) {
+         val id = String(wav, pos, 4, Charsets.US_ASCII)
+         val size = buf.getInt(pos + 4)
+         val dataStart = pos + 8
+         if (id == "data") {
+           val end = (dataStart + size).coerceAtMost(wav.size)
+           return wav.copyOfRange(dataStart, end)
+         }
+         pos = dataStart + size + (size and 1)
+       }
+       return wav.copyOfRange(44, wav.size)
+     }
   }
 
 
 }
-
-

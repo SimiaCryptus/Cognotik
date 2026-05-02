@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.toContentList
@@ -117,26 +118,31 @@ class CreateFileFromDescriptionAction :
         require(directive.isNotBlank()) { "Directive cannot be empty" }
         try {
             val response = run {
-                model.chat(
-                    listOf(
-                        ChatMessage(
-                            Role.system, """
-                        You will interpret natural language requirements to create a new file.
-                        Provide a new filename and the code to be written to the file.
-                        Paths should be relative to the project root and should not exist.
-                        Output the file path using the a line with the format "File: <path>".
-                        Output the file code directly after the header line with no additional decoration.
-                    """.trimIndent().toContentList()
-                        ),
-                        ChatMessage(
-                            Role.user, """
-                        Create a new file based on the following directive: $directive
-    
-                        The file location should be based on the selected path `$basePath`
-                    """.trimIndent().toContentList()
-                        )
+              model.chat(
+                ChatRequest(
+                  model = model.modelType.modelId,
+                  messages = listOf(
+                    ChatMessage(
+                      Role.system, """
+                                    You will interpret natural language requirements to create a new file.
+                                    Provide a new filename and the code to be written to the file.
+                                    Paths should be relative to the project root and should not exist.
+                                    Output the file path using the a line with the format "File: <path>".
+                                    Output the file code directly after the header line with no additional decoration.
+                                """.trimIndent().toContentList()
+                    ),
+                    ChatMessage(
+                      Role.user, """
+                                    Create a new file based on the following directive: $directive
+                
+                                    The file location should be based on the selected path `$basePath`
+                                """.trimIndent().toContentList()
                     )
-                ).choices.firstOrNull()?.message?.content?.trim()
+                  ),
+                  temperature = model.temperature,
+                  audio = model.audio,
+                )
+              ).choices.firstOrNull()?.message?.content?.trim()
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")

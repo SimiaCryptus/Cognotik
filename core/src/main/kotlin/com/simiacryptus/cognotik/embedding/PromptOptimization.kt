@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.toContentList
 import org.slf4j.LoggerFactory
 import kotlin.math.ceil
@@ -193,7 +194,14 @@ open class PromptOptimization(
       val startTemp = 0.3
       chatRequest = chatRequest.copy(temperature = startTemp)
       for (retry in 0..testCase.retries) {
-        response = model.chat(chatRequest.messages)
+        response = model.chat(
+          ChatRequest(
+            model = model.modelType.modelId,
+            messages = chatRequest.messages,
+            temperature = model.temperature,
+            audio = model.audio,
+          )
+        )
         matched = turn.expectations.all {
           it.matches(
             embeddingModel,

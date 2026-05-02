@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 
 abstract class BaseAgent<I, R>(
   open val prompt: String,
@@ -15,11 +15,17 @@ abstract class BaseAgent<I, R>(
     vararg messages: ModelSchema.ChatMessage = this.chatMessages(input),
   ): R
 
-  protected open fun response(
-    vararg input: ModelSchema.ChatMessage,
-    model: AIModel = this.model.modelType
+  protected fun response1(
+    vararg input: ModelSchema.ChatMessage
   ): ModelSchema.ChatResponse =
-    this.model.chat(input.toList())
+    this.model.chat(
+      ChatRequest(
+        model = this.model.modelType.modelId,
+        messages = input.toList(),
+        temperature = this.model.temperature,
+        audio = this.model.audio,
+      )
+    )
 
   open fun answer(input: I): R = respond(input = input, *chatMessages(input))
 

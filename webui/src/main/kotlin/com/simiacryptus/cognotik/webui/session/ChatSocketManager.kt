@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.chat
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
@@ -328,7 +329,14 @@ open class ChatSocketManager(
         baseMessages + ModelSchema.ChatMessage(ModelSchema.Role.user, currentMessage.toContentList())
       val responseRef = AtomicReference<String>()
       try {
-        val chatResponse = model.chat(finalMessages)
+        val chatResponse = model.chat(
+          ChatRequest(
+            model = model.modelType.modelId,
+            messages = finalMessages,
+            temperature = model.temperature,
+            audio = model.audio,
+          )
+        )
         val choices = chatResponse.choices
         var responseText = choices.firstOrNull()?.message?.content.orEmpty()
         choices.forEach { choice ->

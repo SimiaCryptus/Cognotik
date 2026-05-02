@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
@@ -106,7 +107,14 @@ open class SmartChatSocketManager(
 
       task.add("")
       try {
-        val chatResponse = modelToUse.chat(finalMessages)
+        val chatResponse = modelToUse.chat(
+          ChatRequest(
+            model = modelToUse.modelType.modelId,
+            messages = finalMessages,
+            temperature = modelToUse.temperature,
+            audio = modelToUse.audio,
+          )
+        )
         val choices = chatResponse.choices
         var responseText = choices.firstOrNull()?.message?.content.orEmpty()
 
@@ -319,7 +327,15 @@ open class SmartChatSocketManager(
         ModelSchema.ChatMessage(ModelSchema.Role.user, summaryPrompt.toContentList())
       )
 
-      val response = fastModel.getChildClient(task).chat(summaryMessages)
+      val childClient = fastModel.getChildClient(task)
+      val response = childClient.chat(
+        ChatRequest(
+          model = childClient.modelType.modelId,
+          messages = summaryMessages,
+          temperature = childClient.temperature,
+          audio = childClient.audio,
+        )
+      )
       response.choices.firstOrNull()?.message?.content ?: "Unable to generate summary"
     } catch (e: Exception) {
       log.error("Error generating summary", e)

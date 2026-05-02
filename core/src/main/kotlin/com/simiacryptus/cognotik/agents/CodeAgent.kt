@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.defaultUser
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
@@ -433,7 +433,14 @@ Correct the code and try again.
   )
 
   private fun chat(request: ChatRequest, model: ChatInterface): String {
-    return model.chat(request.messages)
+    return model.chat(
+      ChatRequest(
+        model = model.modelType.modelId,
+        messages = request.messages,
+        temperature = model.temperature,
+        audio = model.audio,
+      )
+    )
       .choices.first().message?.content.orEmpty().trim()
   }
 

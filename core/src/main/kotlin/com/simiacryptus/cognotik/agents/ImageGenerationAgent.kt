@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.image.ImageClientInterface
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
@@ -59,19 +60,31 @@ open class ImageGenerationAgent(
   }
 
   override fun respond(input: List<String>, vararg messages: ChatMessage): ImageAndText {
-    var text = response(*messages).choices.first().message?.content
+    var text = model.chat(
+      ChatRequest(
+        model = model.modelType.modelId,
+        messages = messages.toList(),
+        temperature = model.temperature,
+        audio = model.audio,
+      )
+    ).choices.first().message?.content
       ?: throw RuntimeException("No response")
     val maxPrompt = imageModel?.maxPrompt ?: Int.MAX_VALUE
     while (maxPrompt <= text.length && null != imageClient) {
-      text = response(
-        *listOf(
-          messages.toList(),
-          listOf(
-            text.toChatMessage(),
-            "Please shorten the description".toChatMessage(),
-          ),
-        ).flatten().toTypedArray(),
-        model = imageModel!!
+      text = model.chat(
+        ChatRequest(
+          model = model.modelType.modelId,
+          messages = listOf(
+            messages.toList(),
+            listOf(
+              text.toChatMessage(),
+              "Please shorten the description".toChatMessage(),
+            ),
+          ).flatten().toTypedArray()
+            .toList(),
+          temperature = model.temperature,
+          audio = model.audio,
+        )
       ).choices.first().message?.content ?: throw RuntimeException("No response")
     }
     return ImageAndText(

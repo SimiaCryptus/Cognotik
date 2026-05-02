@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.toContentList
 
 open class ChatAgent(
@@ -17,7 +18,14 @@ open class ChatAgent(
 ) {
 
   override fun respond(input: List<String>, vararg messages: ModelSchema.ChatMessage): String =
-    response(*messages).choices.first().message?.content ?: throw RuntimeException("No response")
+    model.chat(
+      ChatRequest(
+        model = model.modelType.modelId,
+        messages = messages.toList(),
+        temperature = model.temperature,
+        audio = model.audio,
+      )
+    ).choices.first().message?.content ?: throw RuntimeException("No response")
 
   override fun chatMessages(questions: List<String>) = arrayOf(
     ModelSchema.ChatMessage(

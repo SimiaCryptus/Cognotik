@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.DescriptorUtil
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -195,7 +196,14 @@ open class ProxyAgent<T : Any>(
     request = request.copy(temperature = temperature)
     val json = JsonUtil.toJson(request)
     log.info("Request JSON: {}", json)
-    val completion = model.chat(request.messages).choices.first().message?.content.orEmpty()
+    val completion = model.chat(
+      ChatRequest(
+        model = model.modelType.modelId,
+        messages = request.messages,
+        temperature = model.temperature,
+        audio = model.audio,
+      )
+    ).choices.first().message?.content.orEmpty()
     log.debug("Received completion: {}", completion)
     val trimPrefix = trimPrefix(completion)
     val trimSuffix = trimSuffix(trimPrefix)

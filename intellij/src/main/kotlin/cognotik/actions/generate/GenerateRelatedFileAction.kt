@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
@@ -160,30 +161,37 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
         val response =
-            model.chat(
-                listOf(
-                    ChatMessage(
-                        Role.system, """
-            You will combine natural language instructions with a user provided code example to create a new file.
-            Provide a new filename and the code to be written to the file.
-            Paths should be relative to the project root and should not exist.
-            Output the file path using the a line with the format "File: <path>".
-            Output the file code directly after the header line with no additional decoration.
-            """.trimIndent().toContentList(),
-                    ),
-                    ChatMessage(
-                        Role.user, ("""
-                              Create a new file based on the following directive: """.trimIndent() + directive + """
-
-                              The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
-
-                              ```
-                              """.trimIndent() + baseFile.code + """
-                              ```
-                              """.trimIndent()).toContentList(),
-                    )
+          model.chat(
+            ChatRequest(
+              model = model.modelType.modelId,
+              messages = listOf(
+                ChatMessage(
+                  Role.system,
+                  """
+                    You will combine natural language instructions with a user provided code example to create a new file.
+                    Provide a new filename and the code to be written to the file.
+                    Paths should be relative to the project root and should not exist.
+                    Output the file path using the a line with the format "File: <path>".
+                    Output the file code directly after the header line with no additional decoration.
+                    """.trimIndent().toContentList(),
+                ),
+                ChatMessage(
+                  Role.user,
+                  ("""
+                                      Create a new file based on the following directive: """.trimIndent() + directive + """
+        
+                                      The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
+        
+                                      ```
+                                      """.trimIndent() + baseFile.code + """
+                                      ```
+                                      """.trimIndent()).toContentList(),
                 )
-            ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
+              ),
+              temperature = model.temperature,
+              audio = model.audio,
+            )
+          ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
                 "No response from API"
             )
         var outputPath = baseFile.path

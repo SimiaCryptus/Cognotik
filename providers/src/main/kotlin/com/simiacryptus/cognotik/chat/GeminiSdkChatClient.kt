@@ -114,10 +114,8 @@ class GeminiSdkChatClient(
       val sysInstruct = config?.systemInstruction()?.getOrNull()?.text()?.indent("  ")
       val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
       val toJson = toJson(config).indent("  ")
-      val msg =
-        "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>"
       log(
-        msg,
+        "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>",
         logStreams
       )
       val response = client.models.generateContent(model.modelId, contents, config)

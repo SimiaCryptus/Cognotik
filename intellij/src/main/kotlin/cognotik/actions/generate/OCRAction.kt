@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.RenderableDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.UITools
 import java.io.File
 
@@ -40,18 +41,23 @@ class OCRAction : BaseAction() {
 
                                 val image = reader.renderImage(page, 150f)
                                 val response = AppSettingsState.Companion.instance.imageChatClient.chat(
-                                    listOfNotNull(
-                                        ModelSchema.ChatMessage(
-                                            ModelSchema.Role.system,
-                                            listOf(ModelSchema.ContentPart("You are an OCR engine. Convert the image to Markdown. Output only the markdown content."))
-                                        ),
-                                        ModelSchema.ChatMessage(
-                                            ModelSchema.Role.user,
-                                            listOf(
-                                                ModelSchema.ContentPart("Convert this page")
-                                                    .apply { this.image = image })
-                                        )
-                                    )
+                                  ChatRequest(
+                                    model = AppSettingsState.Companion.instance.imageChatClient.modelType.modelId,
+                                    messages = listOfNotNull(
+                                      ModelSchema.ChatMessage(
+                                        ModelSchema.Role.system,
+                                        listOf(ModelSchema.ContentPart("You are an OCR engine. Convert the image to Markdown. Output only the markdown content."))
+                                      ),
+                                      ModelSchema.ChatMessage(
+                                        ModelSchema.Role.user,
+                                        listOf(
+                                          ModelSchema.ContentPart("Convert this page")
+                                            .apply { this.image = image })
+                                      )
+                                                                  ),
+                                    temperature = AppSettingsState.Companion.instance.imageChatClient.temperature,
+                                    audio = AppSettingsState.Companion.instance.imageChatClient.audio,
+                                  )
                                 ).choices.first().message?.content ?: ""
                                 sb.append(response).append("\n\n")
                             }

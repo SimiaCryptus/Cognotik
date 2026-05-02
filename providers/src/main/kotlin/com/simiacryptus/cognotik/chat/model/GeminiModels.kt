@@ -188,8 +188,21 @@ object GeminiModels {
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.0005,
     outputTokenPricePerK = 0.01,
-    deprecated = true
+    deprecated = false
   )
+
+  @JvmStatic
+  val GeminiFlash_25_Lite_Preview_TTS = ChatModel(
+    name = "GeminiFlash_25_Lite_Preview_TTS",
+    modelId = "gemini-2.5-flash-lite-preview-tts",
+    maxTotalTokens = 8192,
+    maxOutTokens = 16384,
+    provider = CoreProviders.Gemini,
+    inputTokenPricePerK = 0.0001,
+    outputTokenPricePerK = 0.0004,
+    deprecated = false
+  )
+
 
   @JvmStatic
   val GeminiPro_25_Preview_TTS = ChatModel(
@@ -200,7 +213,7 @@ object GeminiModels {
     provider = CoreProviders.Gemini,
     inputTokenPricePerK = 0.001,
     outputTokenPricePerK = 0.02,
-    deprecated = true
+    deprecated = false
   )
 
   @JvmStatic
@@ -319,6 +332,7 @@ object GeminiModels {
     "GeminiFlash_25_Live" to GeminiFlash_25_Live,
     "GeminiFlash_25_Image_Generation" to GeminiFlash_25_Image_Generation,
     "GeminiFlash_25_Preview_TTS" to GeminiFlash_25_Preview_TTS,
+    "GeminiFlash_25_Lite_Preview_TTS" to GeminiFlash_25_Lite_Preview_TTS,
     "GeminiPro_25_Preview_TTS" to GeminiPro_25_Preview_TTS,
     "GeminiComputerUse_25" to GeminiComputerUse_25,
     // 3.0 models

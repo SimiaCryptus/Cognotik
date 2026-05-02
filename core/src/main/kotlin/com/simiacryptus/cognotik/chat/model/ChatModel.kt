@@ -78,13 +78,8 @@ open class ChatModel(
 
   companion object {
     val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
-
-    var values: Map<String, ChatModel> = APIProvider.values().flatMap { it.getChatModels() }.associateBy { it.modelId }
-        .toMutableMap<String, ChatModel?>()
-        .mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
+    var values: Map<String, ChatModel> = emptyMap()
   }
-
-
 }
 
 class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
@@ -102,32 +97,30 @@ class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
 }
 
 class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
-    return when (p.currentToken) {
-      JsonToken.START_OBJECT -> {
-        // Handle object format
-        val node = p.readValueAsTree<JsonNode>()
-        val name = node.get("name")?.asText() ?: ""
-        val modelName = node.get("modelName")?.asText() ?: name
-        val maxTotalTokens = node.get("maxTotalTokens")?.asInt() ?: -1
-        val maxOutTokens = node.get("maxOutTokens")?.asInt() ?: maxTotalTokens
-        val providerName = node.get("provider")?.asText()
-        val provider = providerName?.let { APIProvider.valueOf(it) }
-        val inputTokenPricePerK = node.get("inputTokenPricePerK")?.asDouble() ?: 0.0
-        val outputTokenPricePerK = node.get("outputTokenPricePerK")?.asDouble() ?: inputTokenPricePerK
+  override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = when (p.currentToken) {
+    JsonToken.START_OBJECT -> {
+      // Handle object format
+      val node = p.readValueAsTree<JsonNode>()
+      val name = node.get("name")?.asText() ?: ""
+      val modelName = node.get("modelName")?.asText() ?: name
+      val maxTotalTokens = node.get("maxTotalTokens")?.asInt() ?: -1
+      val maxOutTokens = node.get("maxOutTokens")?.asInt() ?: maxTotalTokens
+      val providerName = node.get("provider")?.asText()
+      val provider = providerName?.let { APIProvider.valueOf(it) }
+      val inputTokenPricePerK = node.get("inputTokenPricePerK")?.asDouble() ?: 0.0
+      val outputTokenPricePerK = node.get("outputTokenPricePerK")?.asDouble() ?: inputTokenPricePerK
 
-        return ChatModel(
-          name = name,
-          modelId = modelName,
-          maxTotalTokens = maxTotalTokens,
-          maxOutTokens = maxOutTokens,
-          provider = provider,
-          inputTokenPricePerK = inputTokenPricePerK,
-          outputTokenPricePerK = outputTokenPricePerK
-        )
-      }
-
-      else -> throw IllegalArgumentException("ChatModel must be deserialized from an object")
+      ChatModel(
+        name = name,
+        modelId = modelName,
+        maxTotalTokens = maxTotalTokens,
+        maxOutTokens = maxOutTokens,
+        provider = provider,
+        inputTokenPricePerK = inputTokenPricePerK,
+        outputTokenPricePerK = outputTokenPricePerK
+      )
     }
+
+    else -> throw IllegalArgumentException("ChatModel must be deserialized from an object")
   }
 }
