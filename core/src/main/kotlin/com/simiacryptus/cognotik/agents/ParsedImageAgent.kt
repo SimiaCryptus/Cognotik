@@ -111,17 +111,6 @@ ${describer.describe(resultClass!!)}
       throw e
     }
 
-  override fun withModel(model: ChatInterface): ParsedImageAgent<T> = ParsedImageAgent(
-    resultClass = resultClass,
-    exampleInstance = exampleInstance,
-    prompt = prompt,
-    name = name,
-    model = model,
-    temperature = temperature,
-    deserializerRetries = deserializerRetries,
-    validation = validation,
-    describer = describer,
-  )
 
   companion object {
     private val log = LoggerFactory.getLogger(ParsedImageAgent::class.java)

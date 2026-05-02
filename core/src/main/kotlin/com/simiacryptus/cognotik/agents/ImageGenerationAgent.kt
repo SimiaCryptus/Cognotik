@@ -96,16 +96,6 @@ open class ImageGenerationAgent(
     )
   }
 
-  override fun withModel(model: ChatInterface): ImageGenerationAgent = ImageGenerationAgent(
-    prompt = prompt,
-    name = name,
-    textModel = model,
-    imageModel = imageModel,
-    imageClient = imageClient,
-    temperature = temperature,
-    width = width,
-    height = height,
-  )
 
 }
 

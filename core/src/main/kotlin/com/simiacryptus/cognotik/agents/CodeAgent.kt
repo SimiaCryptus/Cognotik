@@ -444,20 +444,6 @@ Correct the code and try again.
       .choices.first().message?.content.orEmpty().trim()
   }
 
-  override fun withModel(model: ChatInterface): CodeAgent = CodeAgent(
-    codeRuntime = codeRuntime,
-//        codeRuntimeClass = codeRuntimeClass,
-    symbols = symbols,
-    describer = describer,
-    name = name,
-    details = details,
-    model = model,
-    fallbackModel = fallbackModel,
-    temperature = temperature,
-    runtimeSymbols = runtimeSymbols,
-    codeInterceptor = codeInterceptor,
-    user = user
-  )
 
   companion object {
     private val log = LoggerFactory.getLogger(CodeAgent::class.java)

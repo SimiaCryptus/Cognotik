@@ -15,6 +15,13 @@ data class AudioInput(
   var channels: Int = 1,
   var bitsPerSample: Int = 16,
 ) {
+  val durationSeconds: Double
+    get() {
+      val bytesPerSample = bitsPerSample / 8
+      val totalSamples = audioBytes.size / (channels * bytesPerSample)
+      return totalSamples.toDouble() / sampleRate
+    }
+
   var audioBytes: ByteArray
     @JsonIgnore
     get() = Base64.getDecoder().decode(data)
@@ -161,12 +168,13 @@ data class AudioInput(
       return out
     }
      /**
-      * Returns the PCM payload of a WAV byte array by locating the "data"
-      * sub-chunk and returning its contents. Falls back to skipping the
-      * standard 44-byte header if parsing fails or the input does not appear
-      * to be a WAV (RIFF/WAVE) container.
-      */
-     internal fun stripWavHeader(wav: ByteArray): ByteArray {
+       * Returns the PCM payload of a WAV byte array by locating the "data"
+       * sub-chunk and returning its contents. Falls back to skipping the
+       * standard 44-byte header if parsing fails or the input does not appear
+       * to be a WAV (RIFF/WAVE) container.
+       */
+      @JvmStatic
+      fun stripWavHeader(wav: ByteArray): ByteArray {
        if (wav.size < 44) return wav
        val isRiff = wav[0] == 'R'.code.toByte() && wav[1] == 'I'.code.toByte() &&
            wav[2] == 'F'.code.toByte() && wav[3] == 'F'.code.toByte()

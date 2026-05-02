@@ -222,19 +222,6 @@ open class ParsedAgent<T : Any>(
       throw e
     }
 
-  override fun withModel(model: ChatInterface): ParsedAgent<T> = ParsedAgent(
-    resultClass = resultClass,
-    prompt = prompt,
-    name = name,
-    model = model,
-    temperature = temperature,
-    parsingChatter = parsingChatter,
-    deserializerRetries = deserializerRetries,
-    validation = validation,
-    describer = describer,
-    parserPrompt = parserPrompt,
-    singleStage = singleStage,
-  )
 
   companion object {
     private val log = LoggerFactory.getLogger(ParsedAgent::class.java)

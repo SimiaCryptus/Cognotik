@@ -39,10 +39,4 @@ open class ChatAgent(
     )
   }
 
-  override fun withModel(model: ChatInterface): ChatAgent = ChatAgent(
-    prompt = prompt,
-    name = name,
-    model = model,
-    temperature = temperature,
-  )
 }

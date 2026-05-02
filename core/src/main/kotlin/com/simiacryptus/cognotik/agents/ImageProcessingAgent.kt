@@ -62,12 +62,6 @@ open class ImageProcessingAgent(
     return ImageAndText(text = text, image = image ?: input.map { it.image }.firstOrNull())
   }
 
-  override fun withModel(model: ChatInterface): ImageProcessingAgent = ImageProcessingAgent(
-    prompt = prompt,
-    name = name,
-    model = model,
-    temperature = temperature,
-  )
 
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(ImageProcessingAgent::class.java)
