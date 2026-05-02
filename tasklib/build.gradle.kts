@@ -36,6 +36,8 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.zxing.core)
     implementation(libs.zxing.javase)
+     compileOnly("org.seleniumhq.selenium:selenium-java:4.27.0")
+     compileOnly("io.github.bonigarcia:webdrivermanager:5.9.2")
 
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
