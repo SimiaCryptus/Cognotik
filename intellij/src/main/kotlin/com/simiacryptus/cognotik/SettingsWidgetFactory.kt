@@ -49,6 +49,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
         private var imageChatModelTree: Tree? = null
+        private var audioModelTree: Tree? = null
         private var patchProcessorList: JBList<PatchProcessor>? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
@@ -72,6 +73,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return imageChatModelTree!!
         }
+        private fun getAudioModelTree(): Tree {
+            if (audioModelTree == null) {
+                audioModelTree = createModelTree("Audio Model", AppSettingsState.instance.audioModel)
+            }
+            return audioModelTree!!
+        }
+
 
         private fun getPatchProcessorList(): JBList<PatchProcessor> {
             if (patchProcessorList == null) {
@@ -114,6 +122,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
             fastModelTree = null
             imageChatModelTree = null
+            audioModelTree = null
         }
 
         private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
@@ -189,6 +198,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                             ApiChatModel(chatModel, apiData)
 
                         "Image Chat Model" -> AppSettingsState.instance.imageChatModel =
+                            ApiChatModel(chatModel, apiData)
+                        "Audio Model" -> AppSettingsState.instance.audioModel =
                             ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
@@ -415,6 +426,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                         AppSettingsState.instance.imageChatModel?.model.let { model ->
                             setSelectedModel(getImageChatModelTree(), model?.name ?: "")
                         }
+                        AppSettingsState.instance.audioModel?.model.let { model ->
+                            setSelectedModel(getAudioModelTree(), model?.name ?: "")
+                        }
                     }
                 }.start()
             }
@@ -432,6 +446,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 AppSettingsState.instance.imageChatModel?.model.let { model ->
                     SwingUtilities.invokeLater {
                         setSelectedModel(getImageChatModelTree(), model?.name ?: "")
+                    }
+                }
+                AppSettingsState.instance.audioModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
+                        setSelectedModel(getAudioModelTree(), model?.name ?: "")
                     }
                 }
             }.start()
@@ -493,6 +512,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
             val imageChatModelPanel = JPanel(BorderLayout())
             imageChatModelPanel.add(JScrollPane(getImageChatModelTree()), BorderLayout.CENTER)
+            val audioModelPanel = JPanel(BorderLayout())
+            audioModelPanel.add(JScrollPane(getAudioModelTree()), BorderLayout.CENTER)
             val patchProcessorPanel = JPanel(BorderLayout())
             patchProcessorPanel.add(JScrollPane(getPatchProcessorList()), BorderLayout.CENTER)
 
@@ -506,6 +527,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
             tabbedPane.addTab(getMessage("tab.imageChatModel"), imageChatModelPanel)
+            tabbedPane.addTab("Audio Model", audioModelPanel)
             tabbedPane.addTab("Patch Processor", patchProcessorPanel)
             tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel())
             tabbedPane.addTab(getMessage("tab.usage"), usagePanel)
@@ -533,6 +555,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     Smart Model: ${AppSettingsState.instance.smartModel?.model?.name ?: "Not configured"}<br/>
     Fast Model: ${AppSettingsState.instance.fastModel?.model?.name ?: "Not configured"}<br/>
     Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.name ?: "Not configured"}<br/>
+    Audio Model: ${AppSettingsState.instance.audioModel?.model?.name ?: "Not configured"}<br/>
     Patch Processor: ${AppSettingsState.instance.processor.label}<br/>
     Temperature: ${AppSettingsState.instance.temperature}<br/>
     ${

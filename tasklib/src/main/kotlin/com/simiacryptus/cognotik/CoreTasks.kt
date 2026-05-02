@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.plan.tools.file.GenerateAudioFilesTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -35,6 +36,7 @@ object CoreTasks : CognotikPlugin {
     // Core Task Types
     TaskType.registerTaskType(AutoFixTask.AutoFix)
     TaskType.registerTaskType(AudioGenerationTask.GenerateAudio)
+    TaskType.registerTaskType(GenerateAudioFilesTask.GenerateAudioFiles)
     TaskType.registerTaskType(BrainstormingTask.Brainstorming)
     TaskType.registerTaskType(ComicBookGenerationTask.ComicBookGeneration)
     TaskType.registerTaskType(CreateErbTemplateTask.CreateErbTemplate)

@@ -83,6 +83,9 @@ class AppSettingsComponent : Disposable {
 
     @Name("Main Image Model")
     val mainImageModel = ComboBox<String>()
+    @Name("Audio Model")
+    val audioModel = ComboBox<String>()
+
 
     @Name("Embedding Model")
     val embeddingModel = ComboBox<String>()
@@ -649,6 +652,31 @@ class AppSettingsComponent : Disposable {
         } catch (e: Exception) {
             log.error("Error loading image and embedding models: ${e.message}", e)
         }
+        try {
+            // Populate audio models - use chat model providers that support audio
+            val availableAudioModels = try {
+                apis.filter { api ->
+                    api.key?.decrypt != null
+                }.flatMap { api ->
+                    try {
+                        api.provider?.getChatModels(api.key!!, api.apiBase)
+                            ?.filter { !it.deprecated }?.map { it.modelId to it }
+                            ?: emptyList()
+                    } catch (e: Exception) {
+                        log.warn("Failed to get audio models for provider ${api.provider?.name}: ${e.message}")
+                        emptyList()
+                    }
+                }.toMap().toSortedMap(compareBy { it })
+            } catch (e: Exception) {
+                log.error("Failed to load available audio models: ${e.message}", e)
+                emptyMap()
+            }
+            availableAudioModels.forEach {
+                this.audioModel.addItem(it.value.modelId)
+            }
+        } catch (e: Exception) {
+            log.error("Error loading audio models: ${e.message}", e)
+        }
 
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
@@ -736,6 +764,8 @@ class AppSettingsComponent : Disposable {
         this.imageChatModel.renderer = getModelRenderer()
         this.mainImageModel.isEditable = true
         this.mainImageModel.renderer = getImageModelRenderer()
+        this.audioModel.isEditable = true
+        this.audioModel.renderer = getModelRenderer()
         this.embeddingModel.isEditable = true
         this.embeddingModel.renderer = getEmbeddingModelRenderer()
         this.patchProcessor.isEditable = false
@@ -752,6 +782,9 @@ class AppSettingsComponent : Disposable {
         }
         AppSettingsState.instance.embeddingModel?.let { model ->
             this.embeddingModel.selectedItem = model
+        }
+        AppSettingsState.instance.audioModel?.model?.let { modelId ->
+            this.audioModel.selectedItem = modelId
         }
         AppSettingsState.instance.processor.let { processor ->
             this.patchProcessor.selectedItem = processor.label

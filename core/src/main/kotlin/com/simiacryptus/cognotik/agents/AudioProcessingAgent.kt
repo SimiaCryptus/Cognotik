@@ -176,6 +176,58 @@ open class AudioProcessingAgent(
   override fun respond(
     input: List<AudioAndText>, vararg messages: ChatMessage
   ): AudioAndText {
+   val segmentResults = renderSegments(input, *messages)
+   if (segmentResults.isEmpty()) {
+     return AudioAndText(text = "", audio = null)
+   }
+   if (segmentResults.size == 1 && segmentResults[0].isSingleCall) {
+     return AudioAndText(text = segmentResults[0].text, audio = segmentResults[0].audio)
+   }
+   val combinedAudio: AudioSegment? = try {
+     segmentResults.foldIndexed(null as AudioSegment?) { idx, acc, result ->
+       try {
+         when {
+           acc == null -> result.audio
+           result.audio == null -> acc
+           else -> acc + result.audio
+         }
+       } catch (e: Exception) {
+         log.error("Failed to concatenate audio for segment {}; keeping accumulated audio.", idx + 1, e)
+         acc
+       }
+     }
+   } catch (e: Exception) {
+     log.error("Failed to combine segment audio outputs.", e)
+     null
+   }
+   log.info("Combined audio duration: {} seconds", combinedAudio?.durationSeconds ?: 0)
+   return AudioAndText(
+     text = segmentResults.joinToString("\n---\n") { it.text },
+     audio = combinedAudio
+   )
+}
+/**
+  * Result of rendering a single segment. Exposes the per-segment text, audio, and
+  * the parsed segment information (including any voice / silence directives).
+  */
+data class SegmentResult(
+   val index: Int,
+   val text: String,
+   val audio: AudioSegment?,
+   val parsedSegment: ParsedSegment?,
+   val isSingleCall: Boolean = false,
+)
+/**
+  * Renders the input as a list of per-segment results, exposing the individual
+  * audio outputs and their associated script portions. Useful for callers that
+  * want to save each segment independently (e.g. to disk) along with metadata.
+  *
+  * If the input contains no segment delimiters, a single-call render is performed
+  * and returned as a one-element list with `isSingleCall = true`.
+  */
+open fun renderSegments(
+   input: List<AudioAndText>, vararg messages: ChatMessage
+): List<SegmentResult> {
     val segments = try {
       extractSegments(messages)
     } catch (e: Exception) {
@@ -202,10 +254,18 @@ open class AudioProcessingAgent(
         if (responseMessage == null) {
           log.warn("Audio model returned no choices for single-call request.")
         }
-        AudioAndText(text = responseMessage?.content ?: "", audio = responseMessage?.getAudio())
+       listOf(
+         SegmentResult(
+           index = 0,
+           text = responseMessage?.content ?: "",
+           audio = responseMessage?.getAudio(),
+           parsedSegment = null,
+           isSingleCall = true,
+         )
+       )
       } catch (e: Exception) {
         log.error("Single-call audio generation failed.", e)
-        AudioAndText(text = "", audio = null)
+       emptyList()
       }
     }
 
@@ -261,7 +321,6 @@ open class AudioProcessingAgent(
           (parsed[index].text to null)
         }
       }
-      val texts = results.map { it.first }
       val successCount = results.count { it.second != null }
       log.info(
         "All segments rendered ({}/{} produced audio in {} ms). Combining results...",
@@ -269,25 +328,15 @@ open class AudioProcessingAgent(
         results.size,
         System.currentTimeMillis() - overallStart
       )
-      val combinedAudio: AudioSegment? = try {
-        results.foldIndexed(null as AudioSegment?) { idx, acc, (_, segAudio) ->
-          try {
-            when {
-              acc == null -> segAudio
-              segAudio == null -> acc
-              else -> acc + segAudio
-            }
-          } catch (e: Exception) {
-            log.error("Failed to concatenate audio for segment {}; keeping accumulated audio.", idx + 1, e)
-            acc
-          }
-        }
-      } catch (e: Exception) {
-        log.error("Failed to combine segment audio outputs.", e)
-        null
-      }
-      log.info("Combined audio duration: {} seconds", combinedAudio?.durationSeconds ?: 0)
-      return AudioAndText(text = texts.joinToString("\n---\n"), audio = combinedAudio)
+     return results.mapIndexed { index, (text, audio) ->
+       SegmentResult(
+         index = index,
+         text = text,
+         audio = audio,
+         parsedSegment = parsed[index],
+         isSingleCall = false,
+       )
+     }
     } finally {
       pool.shutdown()
       timeoutScheduler.shutdown()
