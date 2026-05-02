@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
 import java.util.concurrent.Executors
@@ -37,10 +36,39 @@ open class AudioProcessingAgent(
   val defaultVoice: String = "Callirrhoe",
   val parallelism: Int = 4,
   val renderTimeoutMinutes: Long = 30,
-   val segmentTimeoutMinutes: Long = 3,
-   val maxRetries: Int = 3,
-   val retryBackoffSeconds: Long = 2,
+  val segmentTimeoutMinutes: Long = 3,
+  val maxRetries: Int = 3,
+  val retryBackoffSeconds: Long = 2,
   scriptPrompt: String? = null,
+  /**
+   * Whether to strip `[...]` bracketed narration / style directives from segment text
+   * before sending it to the audio generation model. Voice and silence directives are
+   * already parsed out separately; this controls removal of any remaining bracketed
+   * cues such as `[calm tone]`, `[pause]`, `[enthusiastic]`, etc.
+   */
+  val scrubBracketedDirectives: Boolean = true,
+  /**
+   * Whether to strip punctuation characters from segment text before sending it to
+   * the audio generation model.
+   */
+  val scrubPunctuation: Boolean = false,
+  /**
+   * Whether to strip markdown / common formatting characters (e.g. `*`, `_`, backticks,
+   * `#`, `>`) from segment text before sending it to the audio generation model.
+   */
+  val scrubFormatting: Boolean = false,
+  /**
+   * Whether to lowercase segment text before sending it to the audio generation model.
+   */
+  val scrubCapitalization: Boolean = false,
+  /**
+   * Whether to strip any characters that are not letters or whitespace from segment
+   * text before sending it to the audio generation model. Applied after the other
+   * scrubbing options so that bracketed directives and other features can be removed
+   * first by their dedicated rules. When true, this effectively reduces the text to
+   * letters and spaces only.
+   */
+  val scrubNonAllowedPatterns: Boolean = true,
 ) : BaseAgent<List<AudioAndText>, AudioAndText>(
   prompt = prompt,
   name = name,
@@ -70,7 +98,9 @@ open class AudioProcessingAgent(
           } catch (e: Exception) {
             log.error(
               "Failed to generate script for question (text length={}, hasAudio={}); falling back to original input.",
-              q.text.length, q.audio != null, e
+              q.text.length,
+              q.audio != null,
+              e
             )
             q
           }
@@ -153,8 +183,7 @@ open class AudioProcessingAgent(
     }
     if (segments.isEmpty()) {
       log.info(
-        "No segments found in input; performing single-call audio generation with default voice '{}'.",
-        defaultVoice
+        "No segments found in input; performing single-call audio generation with default voice '{}'.", defaultVoice
       )
       // Nothing to render - fall back to a single call with the original messages.
       this.model.audio["voice"] = defaultVoice
@@ -163,7 +192,7 @@ open class AudioProcessingAgent(
           ChatRequest(
             model = model.modelType.modelId,
             messages = messages.toList(),
-            temperature = model.temperature,
+            temperature = 0.0,
             audio = model.audio,
             modalities = listOf("audio"),
           )
@@ -191,18 +220,21 @@ open class AudioProcessingAgent(
 
     // Render in parallel.
     val pool = Executors.newFixedThreadPool(parallelism.coerceAtLeast(1))
-     val timeoutScheduler = Executors.newScheduledThreadPool(parallelism.coerceAtLeast(1))
+    val timeoutScheduler = Executors.newScheduledThreadPool(parallelism.coerceAtLeast(1))
     val overallStart = System.currentTimeMillis()
     try {
       log.info("Submitting {} segments for parallel rendering...", parsed.size)
       val futures = parsed.mapIndexed { index, seg ->
         pool.submit<Pair<String, AudioSegment?>> {
           try {
-             renderSegmentWithRetry(messages, seg, index, parsed.size, timeoutScheduler)
+            renderSegmentWithRetry(messages, seg, index, parsed.size, timeoutScheduler)
           } catch (e: Exception) {
             log.error(
               "Failed to render segment {} of {} (voice='{}'); substituting empty result.",
-              index + 1, parsed.size, seg.voice ?: defaultVoice, e
+              index + 1,
+              parsed.size,
+              seg.voice ?: defaultVoice,
+              e
             )
             (seg.text to null)
           }
@@ -214,14 +246,16 @@ open class AudioProcessingAgent(
         } catch (e: java.util.concurrent.TimeoutException) {
           log.error(
             "Segment {} of {} timed out after {} minute(s); cancelling and substituting empty result.",
-            index + 1, parsed.size, renderTimeoutMinutes, e
+            index + 1,
+            parsed.size,
+            renderTimeoutMinutes,
+            e
           )
           future.cancel(true)
           (parsed[index].text to null)
         } catch (e: Exception) {
           log.error(
-            "Error retrieving result for segment {} of {}; substituting empty result.",
-            index + 1, parsed.size, e
+            "Error retrieving result for segment {} of {}; substituting empty result.", index + 1, parsed.size, e
           )
           (parsed[index].text to null)
         }
@@ -230,7 +264,9 @@ open class AudioProcessingAgent(
       val successCount = results.count { it.second != null }
       log.info(
         "All segments rendered ({}/{} produced audio in {} ms). Combining results...",
-        successCount, results.size, System.currentTimeMillis() - overallStart
+        successCount,
+        results.size,
+        System.currentTimeMillis() - overallStart
       )
       val combinedAudio: AudioSegment? = try {
         results.foldIndexed(null as AudioSegment?) { idx, acc, (_, segAudio) ->
@@ -253,102 +289,119 @@ open class AudioProcessingAgent(
       return AudioAndText(text = texts.joinToString("\n---\n"), audio = combinedAudio)
     } finally {
       pool.shutdown()
-       timeoutScheduler.shutdown()
+      timeoutScheduler.shutdown()
       try {
         if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
           log.warn("Thread pool did not terminate within 5 seconds; forcing shutdown.")
           pool.shutdownNow()
         }
-         if (!timeoutScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-           log.warn("Timeout scheduler did not terminate within 5 seconds; forcing shutdown.")
-           timeoutScheduler.shutdownNow()
-         }
+        if (!timeoutScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+          log.warn("Timeout scheduler did not terminate within 5 seconds; forcing shutdown.")
+          timeoutScheduler.shutdownNow()
+        }
       } catch (e: InterruptedException) {
         log.warn("Interrupted while awaiting thread pool termination; forcing shutdown.", e)
         pool.shutdownNow()
-         timeoutScheduler.shutdownNow()
+        timeoutScheduler.shutdownNow()
         Thread.currentThread().interrupt()
       }
     }
   }
-   /**
-    * Wraps [renderSegment] with timeout and retry logic. A segment will be attempted up
-    * to `maxRetries + 1` times. Each attempt is bounded by `segmentTimeoutMinutes`.
-    * Between attempts an exponential backoff (base `retryBackoffSeconds`) is applied.
-    *
-    * If all attempts fail or time out, returns the segment text with null audio.
-    */
-   protected open fun renderSegmentWithRetry(
-     messages: Array<out ChatMessage>,
-     segment: ParsedSegment,
-     index: Int,
-     total: Int,
-     timeoutScheduler: java.util.concurrent.ScheduledExecutorService,
-   ): Pair<String, AudioSegment?> {
-     log.info(
-       "Rendering segment {} of {} with voice '{}' and retry support (maxRetries={}, timeout={} min)...",
-       index + 1, total, segment.voice ?: defaultVoice, maxRetries, segmentTimeoutMinutes
-     )
-     val totalAttempts = maxRetries.coerceAtLeast(0) + 1
-     var lastError: Throwable? = null
-     for (attempt in 1..totalAttempts) {
-       val attemptThread = Thread.currentThread()
-       // Schedule a watchdog that interrupts this thread if the attempt exceeds the timeout.
-       val watchdog = timeoutScheduler.schedule(
-         {
-           log.warn(
-             "Segment {} of {} attempt {}/{} exceeded timeout of {} minute(s); interrupting.",
-             index + 1, total, attempt, totalAttempts, segmentTimeoutMinutes
-           )
-           attemptThread.interrupt()
-         },
-         segmentTimeoutMinutes, TimeUnit.MINUTES
-       )
-       try {
-         val result = renderSegment(messages, segment, index, total)
-         watchdog.cancel(false)
-         // Clear any stale interrupt flag set after a successful return.
-         Thread.interrupted()
-         if (attempt > 1) {
-           log.info(
-             "Segment {} of {} succeeded on attempt {}/{}.",
-             index + 1, total, attempt, totalAttempts
-           )
-         }
-         return result
-       } catch (e: Throwable) {
-         watchdog.cancel(false)
-         val interrupted = Thread.interrupted() || e is InterruptedException
-         lastError = e
-         val isTimeout = interrupted
-         log.warn(
-           "Segment {} of {} attempt {}/{} failed{}: {}",
-           index + 1, total, attempt, totalAttempts,
-           if (isTimeout) " (timeout)" else "",
-           e.message ?: e.javaClass.simpleName
-         )
-         if (attempt < totalAttempts) {
-           val backoff = retryBackoffSeconds * (1L shl (attempt - 1).coerceAtMost(10))
-           log.info(
-             "Retrying segment {} of {} after {} second(s) (next attempt {}/{}).",
-             index + 1, total, backoff, attempt + 1, totalAttempts
-           )
-           try {
-             TimeUnit.SECONDS.sleep(backoff)
-           } catch (ie: InterruptedException) {
-             log.warn("Interrupted during retry backoff for segment {} of {}; aborting retries.", index + 1, total)
-             Thread.currentThread().interrupt()
-             break
-           }
-         }
-       }
-     }
-     log.error(
-       "Segment {} of {} failed after {} attempt(s); substituting empty audio.",
-       index + 1, total, totalAttempts, lastError
-     )
-     return segment.text to null
-   }
+
+  /**
+   * Wraps [renderSegment] with timeout and retry logic. A segment will be attempted up
+   * to `maxRetries + 1` times. Each attempt is bounded by `segmentTimeoutMinutes`.
+   * Between attempts an exponential backoff (base `retryBackoffSeconds`) is applied.
+   *
+   * If all attempts fail or time out, returns the segment text with null audio.
+   */
+  protected open fun renderSegmentWithRetry(
+    messages: Array<out ChatMessage>,
+    segment: ParsedSegment,
+    index: Int,
+    total: Int,
+    timeoutScheduler: java.util.concurrent.ScheduledExecutorService,
+  ): Pair<String, AudioSegment?> {
+    log.info(
+      "Rendering segment {} of {} with voice '{}' and retry support (maxRetries={}, timeout={} min)...",
+      index + 1,
+      total,
+      segment.voice ?: defaultVoice,
+      maxRetries,
+      segmentTimeoutMinutes
+    )
+    val totalAttempts = maxRetries.coerceAtLeast(0) + 1
+    var lastError: Throwable? = null
+    for (attempt in 1..totalAttempts) {
+      val attemptThread = Thread.currentThread()
+      // Schedule a watchdog that interrupts this thread if the attempt exceeds the timeout.
+      val watchdog = timeoutScheduler.schedule(
+        {
+          log.warn(
+            "Segment {} of {} attempt {}/{} exceeded timeout of {} minute(s); interrupting.",
+            index + 1,
+            total,
+            attempt,
+            totalAttempts,
+            segmentTimeoutMinutes
+          )
+          attemptThread.interrupt()
+        }, segmentTimeoutMinutes, TimeUnit.MINUTES
+      )
+      try {
+        val result = renderSegment(messages, segment, index, total)
+        watchdog.cancel(false)
+        // Clear any stale interrupt flag set after a successful return.
+        Thread.interrupted()
+        if (attempt > 1) {
+          log.info(
+            "Segment {} of {} succeeded on attempt {}/{}.", index + 1, total, attempt, totalAttempts
+          )
+        }
+        return result
+      } catch (e: Throwable) {
+        watchdog.cancel(false)
+        val interrupted = Thread.interrupted() || e is InterruptedException
+        lastError = e
+        val isTimeout = interrupted
+        log.warn(
+          "Segment {} of {} attempt {}/{} failed{}: {}",
+          index + 1,
+          total,
+          attempt,
+          totalAttempts,
+          if (isTimeout) " (timeout)" else "",
+          e.message ?: e.javaClass.simpleName
+        )
+        if (attempt < totalAttempts) {
+          val backoff = retryBackoffSeconds * (1L shl (attempt - 1).coerceAtMost(10))
+          log.info(
+            "Retrying segment {} of {} after {} second(s) (next attempt {}/{}).",
+            index + 1,
+            total,
+            backoff,
+            attempt + 1,
+            totalAttempts
+          )
+          try {
+            TimeUnit.SECONDS.sleep(backoff)
+          } catch (ie: InterruptedException) {
+            log.warn("Interrupted during retry backoff for segment {} of {}; aborting retries.", index + 1, total)
+            Thread.currentThread().interrupt()
+            break
+          }
+        }
+      }
+    }
+    log.error(
+      "Segment {} of {} failed after {} attempt(s); substituting empty audio.",
+      index + 1,
+      total,
+      totalAttempts,
+      lastError
+    )
+    return segment.text to null
+  }
 
 
   /**
@@ -364,8 +417,7 @@ open class AudioProcessingAgent(
     // Handle planned silence segments without invoking the audio model.
     segment.silenceSeconds?.let { seconds ->
       log.info(
-        "Rendering segment {} of {} as silence ({} seconds).",
-        index + 1, total, seconds
+        "Rendering segment {} of {} as silence ({} seconds).", index + 1, total, seconds
       )
       val silenceAudio = try {
         // Match the audio model's configured output format/parameters where possible.
@@ -390,11 +442,26 @@ open class AudioProcessingAgent(
     val voice = resolveVoice(segment.voice)
     // Audio config map is mutated per-call; copy to avoid cross-thread interference.
     val audioConfig = LinkedHashMap(model.audio).apply { put("voice", voice) }
-    val segmentMessages = replaceUserScript(messages, segment.text)
-    val wordCount = segment.text.split("\\s+".toRegex()).size
+    val scrubbedText = scrubText(segment.text)
+    if (scrubbedText != segment.text) {
+      log.debug(
+        "Scrubbed segment {} of {} text from {} chars to {} chars before audio generation.",
+        index + 1,
+        total,
+        segment.text.length,
+        scrubbedText.length
+      )
+    }
+    val segmentMessages = replaceUserScript(messages, scrubbedText)
+    val wordCount = scrubbedText.split("\\s+".toRegex()).size
     log.info(
       "Rendering segment {} of {} with voice '{}' ({} words, {} chars)... Segment text: \n\t{}",
-      index + 1, total, voice, wordCount, segment.text.length, segment.text.indent("\t")
+      index + 1,
+      total,
+      voice,
+      wordCount,
+      scrubbedText.length,
+      scrubbedText.indent("\t")
     )
     val startTime = System.currentTimeMillis()
     val responseMessage = try {
@@ -402,7 +469,7 @@ open class AudioProcessingAgent(
         ChatRequest(
           model = model.modelType.modelId,
           messages = segmentMessages.toList(),
-          temperature = model.temperature,
+          temperature = 0.0,
           audio = audioConfig,
           modalities = listOf("audio"),
         )
@@ -415,8 +482,7 @@ open class AudioProcessingAgent(
       responseMessage?.getAudio()
     } catch (e: Exception) {
       log.error(
-        "Failed to extract audio from response for segment {} of {} (voice='{}').",
-        index + 1, total, voice, e
+        "Failed to extract audio from response for segment {} of {} (voice='{}').", index + 1, total, voice, e
       )
       null
     }
@@ -424,16 +490,65 @@ open class AudioProcessingAgent(
     if (responseMessage == null) {
       log.warn(
         "Audio model returned no message for segment {} of {} (voice='{}', elapsed={} ms).",
-        index + 1, total, voice, elapsed
+        index + 1,
+        total,
+        voice,
+        elapsed
       )
     } else {
       log.info(
         "Rendered segment {} of {} with voice '{}' in {} ms (audio: {}s)",
-        index + 1, total, voice, elapsed, segAudio?.durationSeconds?.truncateDecimals(3) ?: 0.0
+        index + 1,
+        total,
+        voice,
+        elapsed,
+        segAudio?.durationSeconds?.truncateDecimals(3) ?: 0.0
       )
     }
     return (responseMessage?.content ?: "") to segAudio
   }
+
+  /**
+   * Applies the configured scrubbing options to text being sent to the audio model.
+   * The order of operations is:
+   *   1. Remove `[...]` bracketed narration directives (if enabled).
+   *   2. Remove markdown / formatting characters (if enabled).
+   *   3. Remove punctuation (if enabled).
+   *   4. Remove all non-letter, non-whitespace characters (if enabled).
+   *   5. Lowercase the result (if enabled).
+   * Whitespace is collapsed and the result is trimmed.
+   */
+  protected open fun scrubText(input: String): String {
+    if (input.isEmpty()) return input
+    var text = input
+    if (scrubBracketedDirectives) {
+      // Remove any [..] bracketed directive (non-greedy, no nested brackets).
+      text = text.replace(Regex("""\[[^\[\]]*]"""), " ")
+    }
+    if (scrubFormatting) {
+      // Compact lines
+      text = text.lines().map { it.trim() }.joinToString(" ")
+      // Compact whitespace
+      text = text.replace(Regex("""\s{2,}"""), " ")
+    }
+    if (scrubPunctuation) {
+      // Unicode punctuation property; covers most punctuation across scripts.
+      text = text.replace(Regex("""\p{P}+"""), " ")
+    }
+    if (scrubNonAllowedPatterns) {
+      // Remove any xml-like tags that may have been returned by the model, as well as any remaining non-letter, non-whitespace characters.
+      text = text.replace(Regex("""<[^>]+>"""), " ")
+      // Keep only letters (any script) and whitespace.
+      text = text.replace(Regex("""[^\p{L}\p{P}\s]+"""), " ")
+    }
+    if (scrubCapitalization) {
+      text = text.lowercase()
+    }
+    // Collapse runs of whitespace and trim.
+    text = text.replace(Regex("""\s+"""), " ").trim()
+    return text
+  }
+
 
   /**
    * Resolves a requested voice id against the configured catalog. Falls back to
@@ -473,8 +588,7 @@ open class AudioProcessingAgent(
     val trimmed = raw.trim()
     // Silence directive: e.g. [silence:1.5] or [silence: 0.75 ]
     val silenceDirective = Regex(
-      """^\s*\[silence\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*\]\s*""",
-      RegexOption.IGNORE_CASE
+      """^\s*\[silence\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*\]\s*""", RegexOption.IGNORE_CASE
     )
     val silenceMatch = silenceDirective.find(trimmed)
     if (silenceMatch != null) {
@@ -503,9 +617,7 @@ open class AudioProcessingAgent(
    */
   protected open fun splitScript(script: String): List<String> {
     if (script.isBlank()) return listOf(script)
-    return script.split(Regex("(?m)^\\s*---\\s*$"))
-      .map { it.trim() }
-      .filter { it.isNotBlank() }
+    return script.split(Regex("(?m)^\\s*---\\s*$")).map { it.trim() }.filter { it.isNotBlank() }
       .ifEmpty { listOf(script) }
   }
 
@@ -551,8 +663,7 @@ open class AudioProcessingAgent(
       )
     } catch (e: Exception) {
       log.error(
-        "Failed to construct AudioInput from response (bytes={}, format={}).",
-        audioBytes.size, audio_format, e
+        "Failed to construct AudioInput from response (bytes={}, format={}).", audioBytes.size, audio_format, e
       )
       null
     }

@@ -10,9 +10,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import okio.ByteString.Companion.decodeBase64
@@ -38,495 +36,215 @@ class GeminiSdkChatClient(
   private val project: String? = null,
   private val location: String? = null,
 ) : ChatClientBase(
-  workPool = workPool, logLevel = logLevel, logStreams = logStreams, scheduledPool = scheduledPool
+  workPool = workPool,
+  logLevel = logLevel,
+  logStreams = logStreams,
+  scheduledPool = scheduledPool
 ), ChatClientInterface {
 
   private val client: Client = buildClient(apiKey, useVertexAI, project, location)
 
   private fun buildClient(
-    apiKey: SecureString, useVertexAI: Boolean, project: String?, location: String?
+    apiKey: SecureString,
+    useVertexAI: Boolean,
+    project: String?,
+    location: String?
   ): Client {
 
-    return try {
+
+    log.debug("Building Gemini client (useVertexAI={}, project={}, location={})", useVertexAI, project, location)
+    try {
       val builder = Client.builder()
+
       if (useVertexAI) {
-        log.info("Building Gemini client in Vertex AI mode (project=$project, location=$location)")
         builder.vertexAI(true)
         if (project != null && location != null) {
+          log.info("Configuring Gemini client with Vertex AI: project={}, location={}", project, location)
           builder.project(project).location(location)
         } else {
-          log.warn("Vertex AI mode requested but project/location not provided; falling back to API key auth")
+          log.info("Configuring Gemini client with Vertex AI using API key (project/location not provided)")
           builder.apiKey(apiKey.decrypt)
         }
       } else {
-        log.debug("Building Gemini client in API key mode")
+        log.info("Configuring Gemini client with API key (Generative Language API)")
         builder.apiKey(apiKey.decrypt)
       }
-      builder.build()
+
+      val client = builder.build()
+      log.debug("Gemini client built successfully")
+      return client
+    } catch (e: IllegalArgumentException) {
+      log.error("Invalid configuration for Gemini client: {}", e.message, e)
+      throw IllegalStateException("Failed to configure Gemini client due to invalid arguments", e)
     } catch (e: Exception) {
-      log.error("Failed to build Gemini SDK client (useVertexAI=$useVertexAI, project=$project, location=$location)", e)
-      throw IllegalStateException("Failed to initialize Gemini SDK client: ${e.message}", e)
-    }
-
-  }
-
-  /**
-   * Convert a GenerateContentConfig (or any object containing many Optional<T>
-   * fields) into a clean map suitable for JSON logging. The Gemini SDK's
-   * config classes serialize each Optional as `{empty: true, present: false}`
-   * which is extremely noisy. This walks the object reflectively, unwraps
-   * Optionals, and omits any empty fields.
-   */
-  private fun configToLoggable(config: Any?): Any? {
-    if (config == null) return null
-    return unwrapForLogging(config, depth = 0)
-  }
-
-  private fun unwrapForLogging(value: Any?, depth: Int): Any? {
-    if (value == null) return null
-    if (depth > 8) return value.toString()
-    return when (value) {
-      is Optional<*> -> value.getOrNull()?.let { unwrapForLogging(it, depth + 1) }
-      is CharSequence, is Number, is Boolean, is Enum<*> -> value
-      is Map<*, *> -> value.entries.mapNotNull { (k, v) ->
-        val unwrapped = unwrapForLogging(v, depth + 1)
-        if (unwrapped == null) null else k.toString() to unwrapped
-      }.toMap()
-
-      is Iterable<*> -> value.mapNotNull { unwrapForLogging(it, depth + 1) }
-      is Array<*> -> value.mapNotNull { unwrapForLogging(it, depth + 1) }
-      else -> {
-        // Try to reflectively read getters / accessor methods.
-        val cls = value.javaClass
-        val pkg = cls.`package`?.name ?: ""
-        // Only deeply traverse Gemini SDK types; otherwise fall back to toString.
-        if (!pkg.startsWith("com.google.genai")) {
-          return try {
-            value.toString()
-          } catch (e: Throwable) {
-            log.trace("toString() failed for ${cls.name}: ${e.message}")
-            "<${cls.simpleName}>"
-          }
-        }
-        val result = linkedMapOf<String, Any?>()
-        for (method in cls.methods) {
-          if (method.parameterCount != 0) continue
-          if (method.declaringClass == Object::class.java) continue
-          val name = method.name
-          // Skip common non-property accessors
-          if (name in setOf("toString", "hashCode", "toBuilder", "getClass", "isEmpty")) continue
-          if (name.startsWith("__") || name.contains("$")) continue
-          try {
-            method.isAccessible = true
-            val raw = method.invoke(value)
-            val unwrapped = unwrapForLogging(raw, depth + 1) ?: continue
-            // Skip empty maps/lists
-            if (unwrapped is Map<*, *> && unwrapped.isEmpty()) continue
-            if (unwrapped is List<*> && unwrapped.isEmpty()) continue
-            result[name] = unwrapped
-          } catch (t: Throwable) {
-            // Ignore reflection failures but log at trace level for diagnostics
-            log.trace("Reflection failed for ${cls.simpleName}.${method.name}: ${t.message}")
-          }
-        }
-        if (result.isEmpty()) null else result
-      }
+      log.error("Unexpected error building Gemini client: {}", e.message, e)
+      throw IllegalStateException("Failed to build Gemini client", e)
     }
   }
-
 
   override fun getModels(): List<ChatModel>? {
     // Check cache first
-    modelsCache[apiBase]?.let { return it }
+    modelsCache[apiBase]?.let {
+      log.debug("Returning cached models list for apiBase={} ({} models)", apiBase, it.size)
+      return it
+    }
+    log.debug("Fetching models from Gemini API for apiBase={}", apiBase)
     val models = try {
-      log.debug("Fetching available Gemini models from $apiBase")
       client.models.list(
         ListModelsConfig.builder().build()
       ).mapNotNull {
         try {
-          val model = it.name().getOrNull() ?: run {
-            log.warn("Gemini model entry has no name; skipping")
-            return@mapNotNull null
-          }
+          val model = it.name().get()
           val baseModelId = model.removePrefix("models/")
-          GeminiModels.values.values.find { m ->
-            m.modelId == baseModelId || m.modelId == model
+          GeminiModels.values.values.find { gm ->
+            gm.modelId == baseModelId || gm.modelId == model
           } ?: run {
             // If not found in predefined models, create a dynamic one
-            log.debug("Creating basic ChatModel for unknown Gemini model: $baseModelId")
-            val inputLimit = it.inputTokenLimit().getOrNull() ?: 0
-            val outputLimit = it.outputTokenLimit().getOrNull() ?: 0
-            if (inputLimit == 0 && outputLimit == 0) {
-              log.warn("Model $baseModelId has no token limits reported; using defaults")
+            log.debug("Creating basic ChatModel for unknown Gemini model: {}", baseModelId)
+            try {
+              ChatModel(
+                name = model,
+                modelId = baseModelId,
+                maxTotalTokens = it.inputTokenLimit().get() + it.outputTokenLimit().get(),
+                maxOutTokens = it.outputTokenLimit().get(),
+                provider = CoreProviders.Gemini,
+                inputTokenPricePerK = 0.0, // Default pricing - would need to be configured
+                outputTokenPricePerK = 0.0
+              )
+            } catch (e: NoSuchElementException) {
+              log.warn("Skipping model {} due to missing token limits: {}", baseModelId, e.message)
+              null
             }
-            ChatModel(
-              name = model,
-              modelId = baseModelId,
-              maxTotalTokens = inputLimit + outputLimit,
-              maxOutTokens = outputLimit,
-              provider = CoreProviders.Gemini,
-              inputTokenPricePerK = 0.0, // Default pricing - would need to be configured
-              outputTokenPricePerK = 0.0
-            )
           }
         } catch (e: Exception) {
-          log.warn("Failed to process Gemini model entry: ${e.message}", e)
+          log.warn("Failed to process model entry, skipping: {}", e.message, e)
           null
         }
       }.toList()
-    } catch (e: IllegalStateException) {
-      log.error("Gemini SDK client is not properly configured: ${e.message}", e)
+    } catch (e: java.net.SocketTimeoutException) {
+      log.warn("Timeout while fetching Gemini models from {}: {}", apiBase, e.message)
+      null
+    } catch (e: java.io.IOException) {
+      log.warn("I/O error while fetching Gemini models from {}: {}", apiBase, e.message, e)
       null
     } catch (e: Exception) {
-      log.warn("Failed to fetch models from Gemini API ($apiBase): ${e.message}", e)
+      log.warn("Failed to fetch models from {}: {}", apiBase, e.message, e)
       null
     }
     // Cache the result
     models?.let {
+      log.info("Cached {} Gemini models for apiBase={}", it.size, apiBase)
       modelsCache[apiBase] = it
-      log.debug("Cached ${it.size} Gemini models for $apiBase")
     }
     return models
   }
 
   override fun chat(
-    chatRequest: ModelSchema.ChatRequest, model: ChatModel, logStreams: MutableList<BufferedOutputStream>
+    chatRequest: ModelSchema.ChatRequest,
+    model: ChatModel,
+    logStreams: MutableList<BufferedOutputStream>
   ): ModelSchema.ChatResponse {
     val requestID = UUID.randomUUID().toString()
     val startTime = System.currentTimeMillis()
+    log.debug("Starting Gemini chat request {} for model {}", requestID, model.modelId)
     try {
       val supportsSystemInstruction = modelSupportsSystemInstruction(model.modelId)
-      val config = buildGenerateContentConfig(chatRequest, supportsSystemInstruction)
-      val contents: List<Content> = convertToGeminiContents(chatRequest.messages, supportsSystemInstruction)
-      if (contents.isEmpty()) {
-        log.warn("Chat request $requestID has no content after conversion (model=${model.modelId})")
+      log.debug(
+        "Request {}: model {} supportsSystemInstruction={}",
+        requestID,
+        model.modelId,
+        supportsSystemInstruction
+      )
+      val config = try {
+        buildGenerateContentConfig(chatRequest, supportsSystemInstruction)
+      } catch (e: Exception) {
+        log.error("Request {}: Failed to build GenerateContentConfig: {}", requestID, e.message, e)
+        throw IllegalStateException("Failed to build Gemini generation config for request $requestID", e)
       }
+      val contents: List<Content> = try {
+        convertToGeminiContents(chatRequest.messages, supportsSystemInstruction)
+      } catch (e: Exception) {
+        log.error("Request {}: Failed to convert messages to Gemini contents: {}", requestID, e.message, e)
+        throw IllegalStateException("Failed to convert messages for request $requestID", e)
+      }
+      log.debug("Request {}: built config and {} content items", requestID, contents.size)
       val sysInstruct = config?.systemInstruction()?.getOrNull()?.text()?.indent("  ")
       val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
-      val toJson = try {
-        config?.toJson()?.indent("  ")
-      } catch (e: Exception) {
-        log.warn("Failed to serialize config for logging (request $requestID): ${e.message}")
-        "<config serialization failed: ${e.message}>"
-      }
+      val toJson = config?.toJson()?.indent("  ") ?: "No config"
       log(
         "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>",
         logStreams
       )
-      // Use streaming for audio modality (TTS) to avoid huge single-payload
-      // responses and to allow chunks to be concatenated as they arrive.
-      // Streaming is also generally faster for any long generation.
-      val wantsAudio = chatRequest.modalities?.any { it.equals("audio", ignoreCase = true) } == true
-      val chatResponse = if (wantsAudio) {
-        log.debug("Using streaming path for request $requestID (audio modality requested)")
-        streamAndAggregate(model, contents, config, requestID, logStreams)
-      } else {
-        val response = try {
-          client.models.generateContent(model.modelId, contents, config)
-        } catch (e: Exception) {
-          log.error("Gemini generateContent call failed (request $requestID, model=${model.modelId}): ${e.message}", e)
-          throw e
-        }
-        // Log response
-        log(
-          "\n<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n\n${
-            response.candidates().orElse(emptyList()).joinToString("\n\n") { candidate ->
-              try {
-                candidate.content().orElse(null)?.toMarkdown() ?: "\n\n**No content**\n\n"
-              } catch (e: Exception) {
-                log.warn("Failed to render candidate content for logging (request $requestID): ${e.message}")
-                "\n\n**[render error: ${e.message}]**\n\n"
-              }
-            }
-          }\n</details>", logStreams
+      val response = try {
+        client.models.generateContent(model.modelId, contents, config)
+      } catch (e: java.net.SocketTimeoutException) {
+        log.error("Request {}: Timeout calling Gemini API for model {}: {}", requestID, model.modelId, e.message)
+        throw e
+      } catch (e: java.io.IOException) {
+        log.error("Request {}: I/O error calling Gemini API for model {}: {}", requestID, model.modelId, e.message, e)
+        throw e
+      } catch (e: IllegalArgumentException) {
+        log.error(
+          "Request {}: Invalid arguments to Gemini API for model {}: {}",
+          requestID,
+          model.modelId,
+          e.message,
+          e
         )
+        throw e
+      } catch (e: Exception) {
+        log.error(
+          "Request {}: Unexpected error calling Gemini API for model {}: {}",
+          requestID,
+          model.modelId,
+          e.message,
+          e
+        )
+        throw e
+      }
+      val elapsed = System.currentTimeMillis() - startTime
+      log.debug("Request {}: Gemini API responded in {} ms", requestID, elapsed)
+      // Log response
+      log(
+        "\n<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n\n${
+          response.candidates().orElse(emptyList()).joinToString("\n\n") { candidate ->
+            candidate.content().orElse(null)?.toMarkdown() ?: "\n\n**No content**\n\n"
+          }
+        }\n</details>",
+        logStreams
+      )
+      val chatResponse = try {
         convertFromGeminiResponse(response)
+      } catch (e: Exception) {
+        log.error("Request {}: Failed to convert Gemini response: {}", requestID, e.message, e)
+        throw IllegalStateException("Failed to convert Gemini response for request $requestID", e)
       }
       if (chatResponse.usage != null) {
         try {
           onUsage(
-            model, chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!, logStreams = logStreams
+            model,
+            chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,
+            logStreams = logStreams
           )
         } catch (e: Exception) {
-          log.warn("Failed to record usage for request $requestID: ${e.message}", e)
+          log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }
       } else {
+        log.debug("Request {}: No usage data returned from Gemini SDK", requestID)
         log("No usage data returned from Gemini SDK for request ${requestID}", logStreams)
-        log.debug("Request $requestID completed without usage metadata")
       }
-      val elapsed = System.currentTimeMillis() - startTime
-      log.debug("Gemini chat request $requestID completed in ${elapsed}ms (model=${model.modelId})")
+      log.info(
+        "Request {}: completed successfully in {} ms ({} choices)",
+        requestID, System.currentTimeMillis() - startTime, chatResponse.choices?.size ?: 0
+      )
       return chatResponse
     } catch (e: Exception) {
       val elapsed = System.currentTimeMillis() - startTime
       log.error(
-        "Error during Gemini SDK chat request $requestID after ${elapsed}ms (model=${model.modelId}): ${e.message}",
-        e
+        "Error during Gemini SDK chat request {} for model {} after {} ms: {}",
+        requestID, model.modelId, elapsed, e.message, e
       )
       throw e
-    }
-  }
-
-  /**
-   * Stream a generateContent request, aggregating text and (most importantly)
-   * audio bytes across all chunks/parts. The non-streaming path concatenates
-   * the entire response as a single huge base64 JSON blob which is both slow
-   * and prone to truncation; worse, the prior aggregation logic only kept
-   * the last audio Part's bytes, producing audio that goes silent after the
-   * first chunk (~10s).
-   *
-   * For raw PCM/L16 chunks (Gemini's typical TTS output), simple byte
-   * concatenation is correct since every chunk shares the same sample rate,
-   * channel count, and bit depth. For WAV chunks (rare from the API), each
-   * chunk's RIFF header is stripped and a single WAV header is generated
-   * over the merged PCM data.
-   */
-  private fun streamAndAggregate(
-    model: ChatModel,
-    contents: List<Content>,
-    config: GenerateContentConfig?,
-    requestID: String,
-    logStreams: MutableList<BufferedOutputStream>
-  ): ModelSchema.ChatResponse {
-    val textBuilder = StringBuilder()
-    val audioChunks = mutableListOf<ByteArray>()
-    var audioMime: String? = null
-    var audioFormat: String? = null
-    var audioSampleRate: Int? = null
-    var audioChannels: Int? = null
-    var imageBytes: ByteArray? = null
-    var imageMime: String? = null
-    var finishReason: String? = null
-    var promptTokens = 0L
-    var completionTokens = 0L
-    var totalTokens = 0L
-    var chunkCount = 0
-    var partErrorCount = 0
-    val streamStart = System.currentTimeMillis()
-    val stream = try {
-      client.models.generateContentStream(model.modelId, contents, config)
-    } catch (e: Exception) {
-      log.error("Failed to initiate Gemini streaming request $requestID (model=${model.modelId}): ${e.message}", e)
-      throw e
-    }
-    try {
-      val iterator = stream.iterator()
-      while (iterator.hasNext()) {
-        val chunk = try {
-          iterator.next()
-        } catch (e: Exception) {
-          log.warn("Failed to fetch next chunk #${chunkCount + 1} from stream (request $requestID): ${e.message}", e)
-          break
-        }
-        chunkCount++
-        try {
-          chunk.usageMetadata().getOrNull()?.let { meta ->
-            promptTokens = meta.promptTokenCount().orElse(0)!!.toLong().coerceAtLeast(promptTokens)
-            completionTokens = meta.candidatesTokenCount().orElse(0)!!.toLong().coerceAtLeast(completionTokens)
-            totalTokens = meta.totalTokenCount().orElse(0)!!.toLong().coerceAtLeast(totalTokens)
-          }
-          for (candidate in chunk.candidates().orElse(emptyList())!!) {
-            candidate.finishReason().getOrNull()?.toString()?.let { finishReason = it }
-            val content = candidate.content().getOrNull() ?: continue
-            for (part in content.parts().orElse(emptyList())!!) {
-              try {
-                part.text().getOrNull()?.let { textBuilder.append(it) }
-                part.inlineData().getOrNull()?.let { inline ->
-                  val rawMime = inline.mimeType().getOrNull()
-                  val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()
-                  val data = inline.data().getOrNull() ?: run {
-                    log.warn("Streaming request $requestID: inline data part has null bytes (mime=$rawMime)")
-                    return@let
-                  }
-                  when (baseMime) {
-                    "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac",
-                    "audio/ogg", "audio/flac", "audio/pcm", "audio/l16" -> {
-                      audioMime = audioMime ?: rawMime
-                      audioFormat = audioFormat ?: baseMime.substringAfter("audio/")
-                      if (rawMime?.contains(";") == true) {
-                        try {
-                          val params = rawMime.substringAfter(";").split(";").mapNotNull { p ->
-                            val kv = p.trim().split("=", limit = 2)
-                            if (kv.size == 2) kv[0].trim().lowercase() to kv[1].trim() else null
-                          }.toMap()
-                          params["rate"]?.toIntOrNull()?.let { audioSampleRate = audioSampleRate ?: it }
-                          params["channels"]?.toIntOrNull()?.let { audioChannels = audioChannels ?: it }
-                        } catch (e: Exception) {
-                          log.warn("Failed to parse audio MIME parameters '$rawMime' (request $requestID): ${e.message}")
-                        }
-                      }
-                      audioChunks.add(data)
-                    }
-
-                    "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
-                      imageBytes = data
-                      imageMime = rawMime
-                    }
-
-                    else -> log.warn("Streaming request $requestID: unsupported inline data type: $rawMime")
-                  }
-                }
-              } catch (e: Exception) {
-                partErrorCount++
-                log.warn("Failed to process part in chunk #$chunkCount (request $requestID): ${e.message}", e)
-              }
-            }
-          }
-        } catch (e: Exception) {
-          log.warn("Failed to process chunk #$chunkCount in stream (request $requestID): ${e.message}", e)
-        }
-      }
-    } catch (e: Exception) {
-      log.error("Stream iteration failed for request $requestID after $chunkCount chunks: ${e.message}", e)
-      // Re-throw only if we got nothing useful; otherwise return partial results
-      if (chunkCount == 0 || (textBuilder.isEmpty() && audioChunks.isEmpty() && imageBytes == null)) {
-        throw e
-      }
-      log.warn("Returning partial results for request $requestID despite stream error")
-    } finally {
-      closeStreamQuietly(stream, requestID)
-    }
-    val streamElapsed = System.currentTimeMillis() - streamStart
-    log(
-      "\n<details>\n<summary>Gemini SDK Streaming Response (${requestID}) - $chunkCount chunks, " +
-          "${audioChunks.size} audio parts, ${audioChunks.sumOf { it.size }} audio bytes, " +
-          "${streamElapsed}ms${if (partErrorCount > 0) ", $partErrorCount part errors" else ""}</summary>\n</details>",
-      logStreams
-    )
-    log.debug(
-      "Stream $requestID complete: $chunkCount chunks, ${audioChunks.size} audio parts, " +
-        "${audioChunks.sumOf { it.size }} audio bytes in ${streamElapsed}ms"
-    )
-    val mergedAudio: ByteArray? = if (audioChunks.isNotEmpty()) {
-      try {
-        mergeAudioChunks(audioChunks, audioFormat, audioSampleRate, audioChannels)
-      } catch (e: Exception) {
-        log.error(
-          "Failed to merge ${audioChunks.size} audio chunks for request $requestID " +
-              "(format=$audioFormat, rate=$audioSampleRate, channels=$audioChannels): ${e.message}", e
-        )
-        null
-      }
-    } else null
-    val message = ModelSchema.ChatMessageResponse(
-      content = textBuilder.toString().ifEmpty { null }
-    )
-    mergedAudio?.let {
-      message.audio_data = it
-      message.audio_mime_type = audioMime
-      message.audio_format = audioFormat
-      audioSampleRate?.let { sr -> message.audio_sample_rate = sr }
-      audioChannels?.let { ch -> message.audio_channels = ch }
-    }
-    imageBytes?.let {
-      message.image_data = it
-      message.image_mime_type = imageMime
-    }
-    val usage = if (promptTokens > 0 || completionTokens > 0 || totalTokens > 0) {
-      ModelSchema.Usage(
-        prompt_tokens = promptTokens,
-        completion_tokens = completionTokens,
-        total_tokens = if (totalTokens > 0) totalTokens else promptTokens + completionTokens
-      )
-    } else null
-    return ModelSchema.ChatResponse(
-      choices = listOf(
-        ModelSchema.ChatChoice(message = message, index = 0, finish_reason = finishReason)
-      ),
-      usage = usage
-    )
-  }
-
-  /**
-   * Concatenate audio chunks correctly:
-   *  - Raw PCM/L16 chunks are simply byte-concatenated (all chunks share the
-   *    same sample rate / channels / bit-depth).
-   *  - WAV chunks have their RIFF headers stripped, the PCM payloads are
-   *    concatenated, and a fresh WAV header is generated.
-   */
-  /**
-   * Close a Gemini SDK stream using whatever close mechanism is available.
-   * The SDK's ResponseStream is iterable and holds an underlying HTTP
-   * connection that MUST be released; otherwise the connection pool will
-   * be exhausted under concurrent load (e.g. parallel TTS rendering),
-   * causing the application to hang indefinitely.
-   *
-   * We try multiple strategies because the concrete return type of
-   * generateContentStream() varies across SDK versions:
-   *   1. AutoCloseable / Closeable
-   *   2. A reflective close() / cancel() method
-   */
-  private fun closeStreamQuietly(stream: Any?, requestID: String) {
-    if (stream == null) return
-    // Strategy 1: AutoCloseable (covers Closeable too)
-    if (stream is AutoCloseable) {
-      try {
-        stream.close()
-        return
-      } catch (t: Throwable) {
-        log.debug("AutoCloseable.close() failed for Gemini stream (request $requestID): ${t.message}")
-      }
-    }
-    // Strategy 2: Reflective close() or cancel()
-    val cls = stream.javaClass
-    for (methodName in listOf("close", "cancel", "shutdown")) {
-      try {
-        val method = cls.methods.firstOrNull { it.name == methodName && it.parameterCount == 0 }
-        if (method != null) {
-          method.isAccessible = true
-          method.invoke(stream)
-          log.debug("Closed Gemini stream via reflective $methodName() (request $requestID)")
-          return
-        }
-      } catch (t: Throwable) {
-        log.debug("Reflective $methodName() failed for Gemini stream (request $requestID): ${t.message}")
-      }
-    }
-    log.warn(
-      "Could not close Gemini stream (request $requestID, type=${cls.name}); " +
-        "underlying HTTP connection may leak"
-    )
-  }
-
-  private fun mergeAudioChunks(
-    chunks: List<ByteArray>,
-    format: String?,
-    sampleRate: Int?,
-    channels: Int?
-  ): ByteArray {
-    require(chunks.isNotEmpty()) { "Cannot merge empty audio chunks list" }
-    if (chunks.size == 1) return chunks[0]
-    val fmt = format?.lowercase()
-    log.debug("Merging ${chunks.size} audio chunks (format=$fmt, rate=$sampleRate, channels=$channels)")
-    return when (fmt) {
-      "wav" -> {
-        val pcmTotal = chunks.foldIndexed(ByteArray(0)) { idx, acc, c ->
-          try {
-            acc + AudioSegment.stripWavHeader(c)
-          } catch (e: Exception) {
-            log.warn("Failed to strip WAV header from chunk $idx (size=${c.size}): ${e.message}")
-            acc + c
-          }
-        }
-        AudioSegment.pcmToWav(
-          pcm = pcmTotal,
-          sampleRate = sampleRate ?: 24000,
-          channels = channels ?: 1,
-          bitsPerSample = 16
-        )
-      }
-
-      else -> {
-        // Raw PCM/L16/etc.: direct concatenation is correct.
-        val total = chunks.sumOf { it.size }
-        val out = ByteArray(total)
-        var off = 0
-        for (c in chunks) {
-          System.arraycopy(c, 0, out, off, c.size)
-          off += c.size
-        }
-        out
-      }
     }
   }
 
@@ -551,168 +269,221 @@ class GeminiSdkChatClient(
 
   private fun Content.toMarkdown(): CharSequence {
     val sb = StringBuilder()
-    this.role().getOrNull()?.let { role ->
-      sb.append("**Role:** ").append(role).append("\n\n")
-    }
-    this.parts().orElse(emptyList()).forEach { part ->
-      part.text().getOrNull()?.let { text ->
-        sb.append("\n```text\n").append(text.indent("    ")).append("\n```\n")
+
+
+
+    try {
+      this.role().getOrNull()?.let { role ->
+        sb.append("**Role:** ").append(role).append("\n\n")
       }
-      part.inlineData().getOrNull()?.let { inlineData ->
-        val rawMime = inlineData.mimeType().getOrNull()
-        val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()
-        when (baseMime) {
-          "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
-            val imageBytes = inlineData.data().getOrNull()
-            if (imageBytes != null) {
-              try {
-                /*Resize to no more than 256 px wide*/
-                val maxWidth = 256
-                var sourceImage = javax.imageio.ImageIO.read(imageBytes.inputStream())
-                if (sourceImage == null) {
-                  log.warn("Could not decode image bytes (mime=$rawMime, size=${imageBytes.size})")
-                  sb.append("`[Image decode failed: ${rawMime}, ${imageBytes.size} bytes]`\n")
-                  return@let
+      this.parts().orElse(emptyList()).forEach { part ->
+        try {
+          part.text().getOrNull()?.let { text ->
+            sb
+              .append("\n```text\n")
+              .append(text.indent("    "))
+              .append("\n```\n")
+          }
+          part.inlineData().getOrNull()?.let { inlineData ->
+            val rawMime = inlineData.mimeType().getOrNull()
+            val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()
+            when (baseMime) {
+              "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
+                try {
+                  val imageBytes = inlineData.data().getOrNull()
+                  if (imageBytes != null) {
+                    /*Resize to no more than 256 px wide*/
+                    val maxWidth = 256
+                    var sourceImage = javax.imageio.ImageIO.read(imageBytes.inputStream())
+                    if (sourceImage == null) {
+                      log.warn(
+                        "Failed to decode image of type {} ({} bytes) for markdown rendering",
+                        rawMime, imageBytes.size
+                      )
+                      sb.append("`[Unable to decode image of type ${rawMime}]`\n")
+                      return@let
+                    }
+                    if (sourceImage.width > maxWidth) {
+                      val aspectRatio = sourceImage.height.toDouble() / sourceImage.width.toDouble()
+                      val newHeight = (maxWidth * aspectRatio).toInt()
+                      val resizedImage = java.awt.image.BufferedImage(maxWidth, newHeight, sourceImage.type)
+                      val g2d = resizedImage.createGraphics()
+                      try {
+                        g2d.drawImage(sourceImage, 0, 0, maxWidth, newHeight, null)
+                      } finally {
+                        g2d.dispose()
+                      }
+                      sourceImage = resizedImage
+                    }
+                    val logBytes = java.io.ByteArrayOutputStream()
+                    javax.imageio.ImageIO.write(
+                      sourceImage,
+                      baseMime!!.substringAfter("image/"),
+                      logBytes
+                    )
+                    val outBytes = logBytes.toByteArray()
+                    sb.append(
+                      "<img src=\"data:${
+                        baseMime
+                      };base64,${outBytes.base64()}\" alt=\"image\" width=\"${sourceImage.width}\" height=\"${sourceImage.height}\" />\n"
+                    )
+                  }
+                } catch (e: java.io.IOException) {
+                  log.warn("I/O error while processing image inline data ({}): {}", rawMime, e.message, e)
+                  sb.append("`[Error rendering image of type ${rawMime}: ${e.message}]`\n")
+                } catch (e: OutOfMemoryError) {
+                  log.error("Out of memory while processing image inline data ({}): {}", rawMime, e.message)
+                  sb.append("`[Out of memory rendering image of type ${rawMime}]`\n")
+                } catch (e: Exception) {
+                  log.warn("Unexpected error while processing image inline data ({}): {}", rawMime, e.message, e)
+                  sb.append("`[Error rendering image of type ${rawMime}]`\n")
                 }
-                if (sourceImage.width > maxWidth) {
-                  val aspectRatio = sourceImage.height.toDouble() / sourceImage.width.toDouble()
-                  val newHeight = (maxWidth * aspectRatio).toInt()
-                  val resizedImage = java.awt.image.BufferedImage(maxWidth, newHeight, sourceImage.type)
-                  val g2d = resizedImage.createGraphics()
-                  g2d.drawImage(sourceImage, 0, 0, maxWidth, newHeight, null)
-                  g2d.dispose()
-                  sourceImage = resizedImage
+              }
+
+              "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac",
+              "audio/ogg", "audio/flac", "audio/pcm", "audio/l16" -> {
+                try {
+                  val audioBytes = inlineData.data().getOrNull()
+                  if (audioBytes != null) {
+                    val mime = rawMime ?: "audio/wav"
+                    sb.append(
+                      "<audio controls src=\"data:${mime};base64,${audioBytes.base64()}\">[audio: ${mime}, ${audioBytes.size} bytes]</audio>\n"
+                    )
+                  }
+                } catch (e: Exception) {
+                  log.warn("Error while processing audio inline data ({}): {}", rawMime, e.message, e)
+                  sb.append("`[Error rendering audio of type ${rawMime}]`\n")
                 }
-                val logBytes = java.io.ByteArrayOutputStream()
-                javax.imageio.ImageIO.write(
-                  sourceImage, baseMime!!.substringAfter("image/"), logBytes
-                )
-                val resizedBytes = logBytes.toByteArray()
-                sb.append(
-                  "<img src=\"data:${
-                    baseMime
-                  };base64,${resizedBytes.base64()}\" alt=\"image\" width=\"${sourceImage.width}\" height=\"${sourceImage.height}\" />\n"
-                )
-              } catch (e: Exception) {
-                log.warn("Failed to render image for logging (mime=$rawMime): ${e.message}", e)
-                sb.append("`[Image render error: ${e.message}]`\n")
+              }
+
+
+              else -> {
+                log.debug("Unsupported inline data type encountered in markdown rendering: {}", rawMime)
+                sb.append("`[Unsupported inline data of type ${rawMime}]`\n")
               }
             }
           }
-
-          "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac", "audio/ogg", "audio/flac", "audio/pcm", "audio/l16" -> {
-            val audioBytes = inlineData.data().getOrNull()
-            if (audioBytes != null) {
-              val mime = rawMime ?: "audio/wav"
-              try {
-                sb.append(
-                  "<audio controls src=\"data:${mime};base64,${audioBytes.base64()}\">[audio: ${mime}, ${audioBytes.size} bytes]</audio>\n"
-                )
-              } catch (e: Exception) {
-                log.warn("Failed to encode audio for logging (mime=$mime, size=${audioBytes.size}): ${e.message}")
-                sb.append("`[Audio: $mime, ${audioBytes.size} bytes - encode failed]`\n")
-              }
-            }
-          }
-
-
-          else -> {
-            sb.append("`[Unsupported inline data of type ${rawMime}]`\n")
-          }
+        } catch (e: Exception) {
+          log.warn("Error processing content part for markdown rendering: {}", e.message, e)
+          sb.append("`[Error rendering content part: ${e.message}]`\n")
         }
       }
+    } catch (e: Exception) {
+      log.warn("Error converting Content to markdown: {}", e.message, e)
+      sb.append("`[Error converting content: ${e.message}]`\n")
     }
     return sb.toString()
   }
 
   private fun buildGenerateContentConfig(
-    chatRequest: ModelSchema.ChatRequest, supportsSystemInstruction: Boolean = true
+    chatRequest: ModelSchema.ChatRequest,
+    supportsSystemInstruction: Boolean = true
   ): GenerateContentConfig? {
-    return try {
-      val builder = GenerateContentConfig.builder()
+    val builder = GenerateContentConfig.builder()
+    try {
+      chatRequest.temperature.let { builder.temperature(it.toFloat()) }
+    } catch (e: Exception) {
+      log.warn("Failed to set temperature ({}): {}", chatRequest.temperature, e.message)
+    }
+    chatRequest.max_tokens?.let {
       try {
-        builder.temperature(chatRequest.temperature.toFloat())
+        builder.maxOutputTokens(it)
       } catch (e: Exception) {
-        log.warn("Failed to set temperature ${chatRequest.temperature}: ${e.message}")
+        log.warn("Failed to set max output tokens ({}): {}", it, e.message)
       }
-      chatRequest.max_tokens?.let {
+    }
+    // Configure response modalities (e.g., for TTS audio output)
+    chatRequest.modalities?.let { modalities ->
+      val mapped = modalities.mapNotNull { modality ->
+        when (modality.lowercase()) {
+          "text" -> "TEXT"
+          "audio" -> "AUDIO"
+          "image" -> "IMAGE"
+          else -> {
+            log.debug("Ignoring unsupported modality '{}'", modality)
+            null
+          }
+        }
+      }
+      if (mapped.isNotEmpty()) {
         try {
-          builder.maxOutputTokens(it)
+          log.debug("Setting Gemini response modalities: {}", mapped)
+          builder.responseModalities(mapped)
         } catch (e: Exception) {
-          log.warn("Failed to set maxOutputTokens $it: ${e.message}")
+          log.warn("Failed to set response modalities {}: {}", mapped, e.message, e)
         }
       }
-      // Configure response modalities (e.g., for TTS audio output)
-      chatRequest.modalities?.let { modalities ->
-        val mapped = modalities.mapNotNull { modality ->
-          when (modality.lowercase()) {
-            "text" -> "TEXT"
-            "audio" -> "AUDIO"
-            "image" -> "IMAGE"
-            else -> {
-              log.warn("Unknown response modality '$modality'; ignoring")
-              null
-            }
-          }
-        }
-        if (mapped.isNotEmpty()) {
-          try {
-            builder.responseModalities(mapped)
-          } catch (e: Exception) {
-            log.warn("Failed to set response modalities $mapped: ${e.message}", e)
-          }
-        }
-      }
-      // Configure speech (voice) settings for TTS output
-      chatRequest.audio?.let { audioConfig ->
-        try {
-          val voiceName = audioConfig["voice"]
-          if (voiceName != null) {
-            val speechConfig = SpeechConfig.builder().voiceConfig(
-              VoiceConfig.builder().prebuiltVoiceConfig(
-                PrebuiltVoiceConfig.builder().voiceName(voiceName).build()
-              ).build()
-            ).build()
-            builder.speechConfig(speechConfig)
-          } else {
-            log.debug("Audio config provided without 'voice' key; skipping speech config")
-          }
-        } catch (e: Exception) {
-          log.warn("Failed to configure speech config for TTS (audioConfig=$audioConfig): ${e.message}", e)
-        }
-      }
-      val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
-      if (systemMessages.isNotEmpty() && supportsSystemInstruction) {
-        try {
-          builder.systemInstruction(systemMessages.reduceOrNull { acc, message ->
-            ModelSchema.ChatMessage(
-              role = ModelSchema.Role.system, content = (acc.content ?: emptyList()) + (message.content ?: emptyList())
+    }
+    // Configure speech (voice) settings for TTS output
+    chatRequest.audio?.let { audioConfig ->
+      try {
+        val voiceName = audioConfig["voice"]
+        if (voiceName != null) {
+          log.debug("Configuring Gemini speech config with voice '{}'", voiceName)
+          val speechConfig = SpeechConfig.builder()
+            .voiceConfig(
+              VoiceConfig.builder()
+                .prebuiltVoiceConfig(
+                  PrebuiltVoiceConfig.builder()
+                    .voiceName(voiceName)
+                    .build()
+                )
+                .build()
             )
-          }?.let { reduceOrNull ->
-            builder().role("system").parts(reduceOrNull.content?.map { it.part() } ?: listOf(fromText(""))).build()
-          })
-        } catch (e: Exception) {
-          log.warn("Failed to set system instruction (${systemMessages.size} system messages): ${e.message}", e)
+            .build()
+          builder.speechConfig(speechConfig)
+        } else {
+          log.debug("Audio config provided but no 'voice' key found; skipping speech config")
         }
-      } else if (systemMessages.isNotEmpty()) {
-        log.debug("Model does not support system instructions; ${systemMessages.size} system messages will be merged into user content")
+      } catch (e: Exception) {
+        log.warn("Failed to configure speech config for TTS: {}", e.message, e)
       }
+    }
+    val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
+    if (systemMessages.isNotEmpty() && supportsSystemInstruction) {
+      try {
+        builder.systemInstruction(systemMessages.reduceOrNull { acc, message ->
+          ModelSchema.ChatMessage(
+            role = ModelSchema.Role.system,
+            content = (acc.content ?: emptyList()) + (message.content ?: emptyList())
+          )
+        }?.let { reduceOrNull ->
+          builder()
+            .role("system")
+            .parts(reduceOrNull.content?.map { it.part() } ?: listOf(fromText("")))
+            .build()
+        })
+      } catch (e: Exception) {
+        log.warn("Failed to set system instruction (continuing without): {}", e.message, e)
+      }
+    } else if (systemMessages.isNotEmpty() && !supportsSystemInstruction) {
+      log.debug(
+        "Model does not support system instruction; {} system message(s) will be merged into user content",
+        systemMessages.size
+      )
+    }
+    return try {
       builder.build()
     } catch (e: Exception) {
-      log.error("Failed to build GenerateContentConfig: ${e.message}", e)
-      null
+      log.error("Failed to build GenerateContentConfig: {}", e.message, e)
+      throw e
     }
   }
 
   private fun convertToGeminiContents(
-    messages: List<ModelSchema.ChatMessage>, supportsSystemInstruction: Boolean = true
+    messages: List<ModelSchema.ChatMessage>,
+    supportsSystemInstruction: Boolean = true
   ): List<Content> {
     if (supportsSystemInstruction) {
-      return messages.filter { it.role != ModelSchema.Role.system }.mapNotNull { it.toContent() }
+      return messages
+        .filter { it.role != ModelSchema.Role.system }
+        .mapNotNull { it.toContent() }
     }
     // Model does not support system instructions: merge system messages
     // into the first user message (or prepend as a user message).
-    val systemContent = messages.filter { it.role == ModelSchema.Role.system }.flatMap { it.content ?: emptyList() }
+    val systemContent = messages
+      .filter { it.role == ModelSchema.Role.system }
+      .flatMap { it.content ?: emptyList() }
     val nonSystem = messages.filter { it.role != ModelSchema.Role.system }
     if (systemContent.isEmpty()) {
       return nonSystem.mapNotNull { it.toContent() }
@@ -722,7 +493,8 @@ class GeminiSdkChatClient(
       nonSystem.mapIndexedNotNull { idx, msg ->
         if (idx == firstUserIdx) {
           ModelSchema.ChatMessage(
-            role = ModelSchema.Role.user, content = mergeTextParts(systemContent + (msg.content ?: emptyList()))
+            role = ModelSchema.Role.user,
+            content = mergeTextParts(systemContent + (msg.content ?: emptyList()))
           ).toContent()
         } else {
           msg.toContent()
@@ -732,20 +504,24 @@ class GeminiSdkChatClient(
       // No user message exists; prepend system content as a user message
       listOfNotNull(
         ModelSchema.ChatMessage(
-          role = ModelSchema.Role.user, content = mergeTextParts(systemContent)
+          role = ModelSchema.Role.user,
+          content = mergeTextParts(systemContent)
         ).toContent()
       ) + nonSystem.mapNotNull { it.toContent() }
     }
   }
 
-  private fun ModelSchema.ChatMessage.toContent() = builder().role(
-    when (this.role) {
-      ModelSchema.Role.system -> "user" // Gemini does not have a system role, treat as user
-      ModelSchema.Role.user -> "user"
-      ModelSchema.Role.assistant -> "model"
-      else -> "user"
-    }
-  ).parts(content?.flatMap { it.parts() } ?: listOf(fromText(""))).build()
+  private fun ModelSchema.ChatMessage.toContent() = builder()
+    .role(
+      when (this.role) {
+        ModelSchema.Role.system -> "user" // Gemini does not have a system role, treat as user
+        ModelSchema.Role.user -> "user"
+        ModelSchema.Role.assistant -> "model"
+        else -> "user"
+      }
+    )
+    .parts(content?.flatMap { it.parts() } ?: listOf(fromText("")))
+    .build()
 
   /**
    * Merge consecutive text-only ContentParts into a single ContentPart with
@@ -780,45 +556,53 @@ class GeminiSdkChatClient(
 
   fun ModelSchema.ContentPart.part(): Part? = when {
     image_url != null -> {
-      // Handle image URLs
-      val imageUrl = image_url
       try {
-        if (imageUrl?.startsWith("data:") == true) {
-          // Base64 encoded image
-          val parts = imageUrl.split(",")
-          if (parts.size < 2) {
-            log.warn("Malformed data URL (missing comma): ${imageUrl.take(80)}...")
-            fromText("[malformed image data URL]")
-          } else {
-            val mimeType = parts[0].substringAfter("data:").substringBefore(";")
-            val data = parts[1]
-            val decoded = data.decodeBase64()?.toByteArray()
-            if (decoded == null) {
-              log.warn("Failed to base64-decode image data URL (mime=$mimeType, len=${data.length})")
-              fromText("[invalid base64 image]")
+        // Handle image URLs
+        val imageUrl = image_url
+        when {
+          imageUrl?.startsWith("data:") == true -> {
+            // Base64 encoded image
+            val parts = imageUrl.split(",")
+            if (parts.size < 2) {
+              log.warn("Malformed data URL for image; falling back to empty text part")
+              fromText("")
             } else {
-              Part.fromBytes(decoded, mimeType)
+              val mimeType = parts[0].substringAfter("data:").substringBefore(";")
+              val data = parts[1]
+              val decoded = data.decodeBase64()?.toByteArray()
+              if (decoded == null) {
+                log.warn("Failed to base64-decode image data URL (mime={})", mimeType)
+                fromText("")
+              } else {
+                Part.fromBytes(decoded, mimeType)
+              }
             }
           }
-        } else if (imageUrl?.startsWith("gs://") == true) {
-          // GCS URI
-          Part.fromUri(imageUrl, "image/jpeg")
-        } else if (imageUrl != null) {
-          // Regular URL - convert to text description
-          Part.fromUri(imageUrl, "image/jpeg")
-        } else {
-          log.warn("ContentPart.image_url is null in non-null branch")
-          fromText("")
+
+          imageUrl?.startsWith("gs://") == true -> {
+            // GCS URI
+            Part.fromUri(imageUrl, "image/jpeg")
+          }
+
+          imageUrl != null -> {
+            // Regular URL - convert to text description
+            Part.fromUri(imageUrl, "image/jpeg")
+          }
+
+          else -> {
+            log.debug("Image URL is null; emitting empty text part")
+            fromText("")
+          }
         }
       } catch (e: Exception) {
-        log.warn("Failed to convert image_url to Part (url prefix='${imageUrl?.take(40)}'): ${e.message}", e)
-        fromText("[image conversion failed: ${e.message}]")
+        log.warn("Failed to convert image content part to Gemini Part: {}", e.message, e)
+        fromText("")
       }
     }
 
     input_audio != null -> {
-      // Handle audio input - Gemini supports audio via inline data
       try {
+        // Handle audio input - Gemini supports audio via inline data
         val audio = input_audio!!
         val format = audio.format.lowercase()
         val mimeType = when (format) {
@@ -829,7 +613,7 @@ class GeminiSdkChatClient(
           "ogg" -> "audio/ogg"
           "flac" -> "audio/flac"
           else -> {
-            log.debug("Using fallback MIME type for audio format '$format'")
+            log.debug("Using non-standard audio MIME type for format '{}'", format)
             "audio/$format"
           }
         }
@@ -837,12 +621,12 @@ class GeminiSdkChatClient(
         if (audioBytes.isNotEmpty()) {
           Part.fromBytes(audioBytes, mimeType)
         } else {
-          log.warn("input_audio has empty audioBytes (format=$format)")
+          log.warn("Audio input has empty audioBytes (format={}); emitting empty text part", format)
           fromText("")
         }
       } catch (e: Exception) {
-        log.warn("Failed to convert input_audio to Part: ${e.message}", e)
-        fromText("[audio conversion failed: ${e.message}]")
+        log.warn("Failed to convert audio content part to Gemini Part: {}", e.message, e)
+        fromText("")
       }
     }
 
@@ -854,11 +638,13 @@ class GeminiSdkChatClient(
 
   fun ModelSchema.ContentPart.parts(): List<Part> = when {
     image_url != null && text != null -> listOfNotNull(
-      copy(text = null).part(), copy(image_url = null).part()
+      copy(text = null).part(),
+      copy(image_url = null).part()
     )
 
     input_audio != null && text != null -> listOfNotNull(
-      copy(text = null).part(), copy(input_audio = null).part()
+      copy(text = null).part(),
+      copy(input_audio = null).part()
     )
 
 
@@ -871,21 +657,23 @@ class GeminiSdkChatClient(
     val choices = response.candidates().orElse(emptyList()).mapIndexed { index, candidate ->
 
 
+
       try {
         val content = candidate.content().orElse(null)
-        val text = content?.parts()?.orElse(emptyList())?.mapNotNull {
-          try {
-            it.text().getOrNull()
-          } catch (e: Exception) {
-            log.warn("Failed to extract text from part in candidate $index: ${e.message}")
-            null
+        val text = content?.parts()?.orElse(emptyList())
+          ?.mapNotNull {
+            try {
+              it.text().getOrNull()
+            } catch (e: Exception) {
+              log.warn("Failed to extract text from response part at choice {}: {}", index, e.message, e)
+              null
+            }
+          }?.joinToString("\n")?.let {
+            when (it) {
+              "" -> null
+              else -> it
+            }
           }
-        }?.joinToString("\n")?.let {
-          when (it) {
-            "" -> null
-            else -> it
-          }
-        }
 
         val chatMessageResponse = ModelSchema.ChatMessageResponse(
           content = text,
@@ -899,41 +687,56 @@ class GeminiSdkChatClient(
                 "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
                   chatMessageResponse.image_data = this.data().getOrNull()
                   chatMessageResponse.image_mime_type = rawMime
+                  log.debug(
+                    "Choice {}: extracted image data ({} bytes, mime={})",
+                    index, chatMessageResponse.image_data?.size ?: 0, rawMime
+                  )
                 }
 
-                "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac", "audio/ogg", "audio/flac", "audio/pcm", "audio/l16" -> {
+                "audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac",
+                "audio/ogg", "audio/flac", "audio/pcm", "audio/l16" -> {
                   val audioBytes = this.data().getOrNull()
                   if (audioBytes != null) {
                     val format = baseMime.substringAfter("audio/")
                     chatMessageResponse.audio_data = audioBytes
                     chatMessageResponse.audio_mime_type = rawMime
                     chatMessageResponse.audio_format = format
+                    log.debug(
+                      "Choice {}: extracted audio data ({} bytes, mime={}, format={})",
+                      index, audioBytes.size, rawMime, format
+                    )
                     // Extract additional parameters from MIME type (e.g., rate, channels)
-                    if (rawMime?.contains(";") == true) {
+                    if (rawMime.contains(";")) {
                       try {
-                        val params = rawMime.substringAfter(";").split(";").mapNotNull { param ->
-                          val kv = param.trim().split("=", limit = 2)
-                          if (kv.size == 2) kv[0].trim().lowercase() to kv[1].trim() else null
-                        }.toMap()
+                        val params = rawMime.substringAfter(";")
+                          .split(";")
+                          .mapNotNull { param ->
+                            val kv = param.trim().split("=", limit = 2)
+                            if (kv.size == 2) kv[0].trim().lowercase() to kv[1].trim() else null
+                          }
+                          .toMap()
                         params["rate"]?.toIntOrNull()?.let { chatMessageResponse.audio_sample_rate = it }
                         params["channels"]?.toIntOrNull()?.let { chatMessageResponse.audio_channels = it }
                       } catch (e: Exception) {
-                        log.warn("Failed to parse audio MIME parameters '$rawMime': ${e.message}")
+                        log.warn("Failed to parse audio MIME parameters from '{}': {}", rawMime, e.message)
                       }
                     }
                   } else {
-                    log.warn("Audio inline data has null bytes (mime=$rawMime)")
+                    log.warn("Choice {}: audio inline data is null (mime={})", index, rawMime)
                   }
                 }
 
                 else -> {
                   // Unsupported inline data type - ignore or log as needed
-                  log.warn("Received unsupported inline data type in Gemini response: ${rawMime}")
+                  log.warn(
+                    "Choice {}: received unsupported inline data type in Gemini response: {}",
+                    index, rawMime
+                  )
                 }
               }
             }
           } catch (e: Exception) {
-            log.warn("Failed to process inline data part in candidate $index: ${e.message}", e)
+            log.warn("Choice {}: error processing response part: {}", index, e.message, e)
           }
         }
         ModelSchema.ChatChoice(
@@ -942,9 +745,9 @@ class GeminiSdkChatClient(
           finish_reason = candidate.finishReason().orElse(null)?.toString()
         )
       } catch (e: Exception) {
-        log.error("Failed to convert candidate $index from Gemini response: ${e.message}", e)
+        log.error("Failed to convert candidate at index {}: {}", index, e.message, e)
         ModelSchema.ChatChoice(
-          message = ModelSchema.ChatMessageResponse(content = "[response conversion error: ${e.message}]"),
+          message = ModelSchema.ChatMessageResponse(content = null),
           index = index,
           finish_reason = "error"
         )
@@ -960,20 +763,19 @@ class GeminiSdkChatClient(
         )
       }
     } catch (e: Exception) {
-      log.warn("Failed to extract usage metadata from Gemini response: ${e.message}", e)
+      log.warn("Failed to extract usage metadata from Gemini response: {}", e.message, e)
       null
     }
 
     return ModelSchema.ChatResponse(
-      choices = choices, usage = usage
+      choices = choices,
+      usage = usage
     )
   }
 
   override fun authorize(request: HttpRequest, apiProvider: APIProvider) {
-    log.error("authorize() called on GeminiSdkChatClient but is not implemented (apiProvider=${apiProvider})")
-    throw UnsupportedOperationException(
-      "authorize() is not implemented for GeminiSdkChatClient; authentication is handled via SDK client construction"
-    )
+    log.error("authorize() called on GeminiSdkChatClient but is not implemented (provider={})", apiProvider)
+    TODO("Not yet implemented")
   }
 
   companion object {
@@ -986,15 +788,12 @@ class GeminiSdkChatClient(
       // that exceed Jackson's default 20MB string length limit. Raise the
       // global default to 256MB to accommodate these responses.
       try {
-        val constraints =
-          com.fasterxml.jackson.core.StreamReadConstraints.builder().maxStringLength(256 * 1024 * 1024).build()
+        val constraints = com.fasterxml.jackson.core.StreamReadConstraints.builder()
+          .maxStringLength(256 * 1024 * 1024)
+          .build()
         com.fasterxml.jackson.core.StreamReadConstraints.overrideDefaultStreamReadConstraints(constraints)
-        log.debug("Overrode Jackson StreamReadConstraints maxStringLength to 256MB for Gemini SDK")
       } catch (e: Throwable) {
-        log.warn(
-          "Failed to override Jackson StreamReadConstraints (large responses may fail to parse): ${e.message}",
-          e
-        )
+        log.warn("Failed to override Jackson StreamReadConstraints: ${e.message}")
       }
     }
   }
