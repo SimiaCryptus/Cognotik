@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.agents
     
-    import com.simiacryptus.cognotik.models.AudioInput
+    import com.simiacryptus.cognotik.models.AudioSegment
     
     /**
      * Data class representing a combined audio and text payload.
@@ -10,6 +10,6 @@ package com.simiacryptus.cognotik.agents
      * @property audio The audio content (may be null if not present).
      */
     data class AudioAndText(
-        val text: String = "",
-        val audio: AudioInput? = null,
+      val text: String = "",
+      val audio: AudioSegment? = null,
     )

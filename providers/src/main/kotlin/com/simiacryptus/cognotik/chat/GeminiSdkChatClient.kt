@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.AudioInput
+import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -204,7 +204,7 @@ class GeminiSdkChatClient(
       val sysInstruct = config?.systemInstruction()?.getOrNull()?.text()?.indent("  ")
       val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
       val toJson = try {
-        toJson(configToLoggable(config)).indent("  ")
+        config?.toJson()?.indent("  ")
       } catch (e: Exception) {
         log.warn("Failed to serialize config for logging (request $requestID): ${e.message}")
         "<config serialization failed: ${e.message}>"
@@ -310,7 +310,14 @@ class GeminiSdkChatClient(
       throw e
     }
     try {
-      for (chunk in stream) {
+      val iterator = stream.iterator()
+      while (iterator.hasNext()) {
+        val chunk = try {
+          iterator.next()
+        } catch (e: Exception) {
+          log.warn("Failed to fetch next chunk #${chunkCount + 1} from stream (request $requestID): ${e.message}", e)
+          break
+        }
         chunkCount++
         try {
           chunk.usageMetadata().getOrNull()?.let { meta ->
@@ -377,11 +384,7 @@ class GeminiSdkChatClient(
       }
       log.warn("Returning partial results for request $requestID despite stream error")
     } finally {
-      try {
-        (stream as? AutoCloseable)?.close()
-      } catch (t: Throwable) {
-        log.debug("Failed to close Gemini stream for request $requestID: ${t.message}")
-      }
+      closeStreamQuietly(stream, requestID)
     }
     val streamElapsed = System.currentTimeMillis() - streamStart
     log(
@@ -441,6 +444,50 @@ class GeminiSdkChatClient(
    *  - WAV chunks have their RIFF headers stripped, the PCM payloads are
    *    concatenated, and a fresh WAV header is generated.
    */
+  /**
+   * Close a Gemini SDK stream using whatever close mechanism is available.
+   * The SDK's ResponseStream is iterable and holds an underlying HTTP
+   * connection that MUST be released; otherwise the connection pool will
+   * be exhausted under concurrent load (e.g. parallel TTS rendering),
+   * causing the application to hang indefinitely.
+   *
+   * We try multiple strategies because the concrete return type of
+   * generateContentStream() varies across SDK versions:
+   *   1. AutoCloseable / Closeable
+   *   2. A reflective close() / cancel() method
+   */
+  private fun closeStreamQuietly(stream: Any?, requestID: String) {
+    if (stream == null) return
+    // Strategy 1: AutoCloseable (covers Closeable too)
+    if (stream is AutoCloseable) {
+      try {
+        stream.close()
+        return
+      } catch (t: Throwable) {
+        log.debug("AutoCloseable.close() failed for Gemini stream (request $requestID): ${t.message}")
+      }
+    }
+    // Strategy 2: Reflective close() or cancel()
+    val cls = stream.javaClass
+    for (methodName in listOf("close", "cancel", "shutdown")) {
+      try {
+        val method = cls.methods.firstOrNull { it.name == methodName && it.parameterCount == 0 }
+        if (method != null) {
+          method.isAccessible = true
+          method.invoke(stream)
+          log.debug("Closed Gemini stream via reflective $methodName() (request $requestID)")
+          return
+        }
+      } catch (t: Throwable) {
+        log.debug("Reflective $methodName() failed for Gemini stream (request $requestID): ${t.message}")
+      }
+    }
+    log.warn(
+      "Could not close Gemini stream (request $requestID, type=${cls.name}); " +
+        "underlying HTTP connection may leak"
+    )
+  }
+
   private fun mergeAudioChunks(
     chunks: List<ByteArray>,
     format: String?,
@@ -455,13 +502,13 @@ class GeminiSdkChatClient(
       "wav" -> {
         val pcmTotal = chunks.foldIndexed(ByteArray(0)) { idx, acc, c ->
           try {
-            acc + AudioInput.stripWavHeader(c)
+            acc + AudioSegment.stripWavHeader(c)
           } catch (e: Exception) {
             log.warn("Failed to strip WAV header from chunk $idx (size=${c.size}): ${e.message}")
             acc + c
           }
         }
-        AudioInput.pcmToWav(
+        AudioSegment.pcmToWav(
           pcm = pcmTotal,
           sampleRate = sampleRate ?: 24000,
           channels = channels ?: 1,

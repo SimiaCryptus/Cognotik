@@ -174,7 +174,7 @@ interface ModelSchema {
   data class ContentPart(
     var text: String? = null,
     var image_url: String? = null,
-    var input_audio: AudioInput? = null
+    var input_audio: AudioSegment? = null
   ) {
     var image_data: ByteArray?
       @JsonIgnore
@@ -224,7 +224,7 @@ interface ModelSchema {
             @JsonIgnore
             set(value) {
                 input_audio = if (value != null) {
-                    AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
+                    AudioSegment(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
                 } else {
                     null
                 }

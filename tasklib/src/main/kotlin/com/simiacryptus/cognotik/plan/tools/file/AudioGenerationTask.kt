@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.AudioAndText
 import com.simiacryptus.cognotik.agents.AudioProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.AudioInput
+import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -107,7 +107,7 @@ class AudioGenerationTask(
                             val data = Base64.getEncoder().encodeToString(file.toFile().readBytes())
                             AudioAndText(
                                 text = "Reference audio: $filePath",
-                                audio = AudioInput(data = data, format = format)
+                                audio = AudioSegment(data = data, format = format)
                             )
                         } else {
                             null
