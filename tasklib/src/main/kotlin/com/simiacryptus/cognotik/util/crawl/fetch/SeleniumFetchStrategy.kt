@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.util.crawl.fetch
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.util.HtmlSimplifier
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
@@ -27,32 +28,41 @@ import java.util.concurrent.TimeUnit
  */
 open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStrategy {
 
-    // -------------------------------------------------------------------------
-    // Configuration
-    // -------------------------------------------------------------------------
-
-    /** Maximum time (seconds) to wait for the page to reach a "ready" state. */
     open val pageLoadTimeoutSeconds: Long = 30L
 
-    /** Extra time (seconds) to wait after DOMContentLoaded for JS to settle. */
     open val scriptSettleMillis: Long = 1_500L
 
-    /** Maximum time (seconds) to wait for a specific element to appear. */
     open val elementWaitSeconds: Long = 10L
 
-    /** CSS selector used to detect that the main content has been rendered. */
     open val contentReadySelector: String = "body"
-
-    // -------------------------------------------------------------------------
-    // Driver lifecycle
-    // -------------------------------------------------------------------------
 
     private val driverLocal: ThreadLocal<WebDriver> = ThreadLocal.withInitial {
         log.info("Initialising ChromeDriver for thread: ${Thread.currentThread().name}")
         createDriver()
     }
 
-    /** Override to supply a custom [WebDriver] (e.g. Firefox, remote Grid). */
+    open fun simplifyHtml(body: String, url: String): String {
+        var simplified = HtmlSimplifier.scrubHtml(
+            str = body,
+            baseUrl = url,
+            includeCssData = false,
+            simplifyStructure = true,
+            keepObjectIds = false,
+            preserveWhitespace = false,
+            keepScriptElements = false,
+            keepInteractiveElements = false,
+            keepMediaElements = false,
+            keepEventHandlers = false
+        )
+
+        // Check for reasonable content length
+        if (simplified.length > 5_000_000) { // 5MB limit
+            FetchMethod.log.info("Content too large (${simplified.length} chars) for URL: $url, truncating")
+            simplified = simplified.substring(0, 1_000_000)
+        }
+        return simplified
+    }
+
     open fun createDriver(): WebDriver {
         val options = buildChromeOptions()
         return ChromeDriver(options)
@@ -76,7 +86,6 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
         setAcceptInsecureCerts(true)
     }
 
-    /** Returns the thread-local driver, creating it on first access. */
     protected val driver: WebDriver get() = driverLocal.get()
 
     /**
@@ -108,7 +117,7 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
             navigateTo(wd, url)
             waitForContent(wd, url)
             val pageSource = wd.pageSource ?: ""
-            val renderedText = pageSource
+           val renderedText = simplifyHtml(pageSource, url)
             task.urlContentCache[url] = renderedText
             log.info("Selenium successfully processed URL: $url, content length: ${renderedText.length}")
             renderedText
@@ -118,10 +127,6 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
             throw RuntimeException("Selenium failed to fetch URL: $url – ${e.message}", e)
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Navigation helpers
-    // -------------------------------------------------------------------------
 
     open fun configureTimeouts(wd: WebDriver) {
         wd.manage().timeouts().apply {
@@ -136,12 +141,6 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
         wd.get(url)
     }
 
-    /**
-     * Waits until the page is considered "ready":
-     * 1. `document.readyState == "complete"`
-     * 2. The [contentReadySelector] element is present in the DOM
-     * 3. An optional extra settle delay for async JS frameworks
-     */
     open fun waitForContent(wd: WebDriver, url: String) {
         val wait = WebDriverWait(wd, Duration.ofSeconds(pageLoadTimeoutSeconds))
 
@@ -161,14 +160,9 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
         }
     }
 
-    /** Executes a JavaScript snippet and returns the result. */
     protected fun js(wd: WebDriver, script: String, vararg args: Any?): Any? =
         (wd as? JavascriptExecutor)?.executeScript(script, *args)
 
-    /**
-     * Attempts to capture a PNG screenshot and save it next to the other
-     * artefacts so that failures can be diagnosed visually.
-     */
     private fun captureErrorScreenshot(wd: WebDriver, webSearchDir: File, url: String, index: Int) {
         try {
             val screenshotsDir = webSearchDir.resolve("screenshots").also { it.mkdirs() }
@@ -182,9 +176,6 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Companion / statics
-    // -------------------------------------------------------------------------
     companion object {
         private val log = LoggerFactory.getLogger(SeleniumFetchStrategy::class.java)
     }
