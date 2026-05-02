@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.toContentList
@@ -32,7 +33,7 @@ open class AudioProcessingAgent(
   model: ChatInterface,
   temperature: Double = 0.3,
   val textModel: ChatInterface? = null,
-  val voices: Map<String, String> = GEMINI_VOICES,
+  val voices: Map<String, String> = model.provider.pickVoices(),
   val defaultVoice: String = "Callirrhoe",
   val parallelism: Int = 4,
   val renderTimeoutMinutes: Long = 30,
@@ -559,6 +560,14 @@ open class AudioProcessingAgent(
     // Case-insensitive lookup.
     val match = voices.keys.firstOrNull { it.equals(requested, ignoreCase = true) }
     if (match != null) return match
+       // Fallback: search descriptions for a voice whose name matches (e.g. "Bella" -> id).
+       val nameMatch = voices.entries.firstOrNull { (_, desc) ->
+         desc.split(".").firstOrNull()?.trim()?.equals(requested, ignoreCase = true) == true
+       }
+       if (nameMatch != null) {
+         log.debug("Resolved voice name '{}' to id '{}'.", requested, nameMatch.key)
+         return nameMatch.key
+       }
     log.warn("Requested voice '{}' not found in catalog; falling back to '{}'.", requested, defaultVoice)
     return defaultVoice
   }
@@ -600,7 +609,7 @@ open class AudioProcessingAgent(
       }
     }
     // Match a leading voice directive on its own (possibly followed by text on the same line).
-    val directive = Regex("""^\s*\[voice\s*:\s*([A-Za-z][A-Za-z0-9_\- ]*)\s*\]\s*""", RegexOption.IGNORE_CASE)
+       val directive = Regex("""^\s*\[voice\s*:\s*([A-Za-z0-9][A-Za-z0-9_\- ]*)\s*\]\s*""", RegexOption.IGNORE_CASE)
     val match = directive.find(trimmed)
     return if (match != null) {
       val voice = match.groupValues[1].trim()
@@ -718,11 +727,34 @@ open class AudioProcessingAgent(
     )
 
     /**
+     * ElevenLabs default voice catalog: voice id -> description.
+     * Descriptions are derived from the published ElevenLabs voice characteristics.
+     *
+     * See Also: https://elevenlabs.io/docs/voices/default-voices
+     */
+    val ELEVENLABS_VOICES: Map<String, String> = linkedMapOf(
+       // Keys are ElevenLabs voice_id values; descriptions include the human-readable name
+       // so the script-preparation model can reference voices by name in [voice:...] directives.
+       "hpp4J3VqNfWAUOO0d1Us" to "Bella. Female. Professional, bright, and warm; Standard American accent with crisp diction and a polished narrative quality. Ideal for educational and long-form listening.",
+       "CwhRBWXzGAHq8TQ4Fs17" to "Roger. Male. Laid-back, casual, and resonant; easy-going American voice perfect for casual conversations.",
+       "EXAVITQu4vr4xnSDxMaL" to "Sarah. Female. Mature, reassuring, and confident; young adult woman with a warm, professional tone. Great for entertainment content.",
+       "FGY2WhTYpPnrIDTdsKH5" to "Laura. Female. Enthusiastic with a quirky attitude; sunny young adult American voice suited for social media content.",
+       "IKne3meq5aSn9XLyUdCD" to "Charlie. Male. Deep, confident, and energetic; young Australian male voice suited for conversational content.",
+       "JBFqnCBsd6RMkjVDRZzb" to "George. Male. Warm, captivating storyteller; resonant British voice that instantly captivates listeners. Ideal for narration.",
+       "N2lVS1w4EtoT3dr4eOWO" to "Callum. Male. Husky trickster; deceptively gravelly with an unsettling edge. Suited for character voices.",
+       "SAz9YHcvj6GT2YYXdXww" to "River. Neutral. Relaxed, neutral, and informative; American voice ready for narrations or conversational projects.",
+       "SOYHLrjzK2X1ezoPC6cr" to "Harry. Male. Fierce warrior; animated and energetic American voice ready to charge forward. Suited for character voices.",
+       "TX3LPaxmHKxFdv7VOQHJ" to "Liam. Male. Energetic social media creator; young adult American voice with energy and warmth, suitable for reels and shorts.",
+    )
+
+
+    /**
      * Builds the default script-preparation prompt from a voice catalog, instructing
      * the text model how to segment the script and tag voices.
      */
     fun buildDefaultScriptPrompt(voices: Map<String, String>, defaultVoice: String): String {
-      val voiceList = voices.entries.joinToString("\n") { (id, desc) -> "  - $id: $desc" }
+       val voiceList = voices.entries.joinToString("\n") { (id, desc) -> "  - id=$id  $desc" }
+       val defaultDesc = voices[defaultVoice] ?: defaultVoice
       return """
             |You are a script preparation assistant. Your job is to take the user's raw request
             |and produce a clear speaking script suitable for being read aloud by a
@@ -741,8 +773,9 @@ open class AudioProcessingAgent(
             |  reasonable, since segments are rendered in parallel.
             |- For each segment, you MAY (and SHOULD, when multiple voices are appropriate)
             |  begin the segment with a voice directive of the form `[voice:VoiceId]` on its
-            |  own at the start of the segment. The voice id MUST be one of the voices listed
-            |  below. If you omit the directive, the default voice (`$defaultVoice`) will be used.
+             |  own at the start of the segment. The VoiceId MUST be the exact `id=...` value
+             |  listed below (copy it verbatim). If you omit the directive, the default voice
+             |  will be used ($defaultDesc).
             |- Choose voices based on the described characteristics to best fit the segment's
             |  speaker, mood, or role. For dialogue, alternate voices between speakers.
             |- You MAY plan explicit silences (gaps / pauses) between spoken segments by
@@ -770,6 +803,17 @@ open class AudioProcessingAgent(
     }
   }
 }
+
+fun APIProvider.pickVoices() = when (this.name) {
+  "Gemini" -> AudioProcessingAgent.GEMINI_VOICES
+  "ElevenLabs" -> AudioProcessingAgent.ELEVENLABS_VOICES
+  else -> throw IllegalArgumentException("No default voice catalog available for API provider '${this.name}'. Please provide a custom voice catalog.")
+}
+/**
+* Returns the default voice id for ElevenLabs (Bella).
+*/
+fun APIProvider.defaultElevenLabsVoice() = "hpp4J3VqNfWAUOO0d1Us"
+
 
 fun Double.truncateDecimals(decimals: Int): Double {
   val factor = 10.0.pow(decimals)

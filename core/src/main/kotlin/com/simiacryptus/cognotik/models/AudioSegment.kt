@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.extension
@@ -39,24 +40,37 @@ data class AudioSegment(
         format = "wav", sampleRate = sampleRate, channels = channels, bitsPerSample = bitsPerSample
       ).also { it.audioBytes = wavBytes }
     }
+    format.lowercase() == "wav" && targetFormat.uppercase() == "L16" -> {
+      val pcmBytes = stripWavHeader(audioBytes)
+      AudioSegment(
+        format = "L16", sampleRate = sampleRate, channels = channels, bitsPerSample = bitsPerSample
+      ).also { it.audioBytes = pcmBytes }
+    }
 
-    else -> throw UnsupportedOperationException("Conversion from $format to $targetFormat is not supported")
+    format.uppercase() == "L16" && targetFormat.uppercase() == "L16" -> this
+
+    else -> convertViaFfmpeg(targetFormat)
   }
 
   operator fun plus(other: AudioSegment): AudioSegment {
-    val rhs = if (this.format == other.format) other else other.convert(this.format)
-    require(this.sampleRate == rhs.sampleRate) {
-      "Sample rates do not match: ${this.sampleRate} vs ${rhs.sampleRate}"
+    val (lhs, rhs) = when {
+      this.format.equals(other.format, ignoreCase = true) -> Pair(this, other)
+      this.format.lowercase() == "wav" -> Pair(this, other.convert(this.format))
+      other.format.lowercase() == "wav" -> Pair(this.convert(other.format), other)
+      else -> Pair(this.convert("wav"), other.convert("wav"))
     }
-    require(this.channels == rhs.channels) {
-      "Channel counts do not match: ${this.channels} vs ${rhs.channels}"
+    require(lhs.sampleRate == rhs.sampleRate) {
+      "Sample rates do not match: ${lhs.sampleRate} vs ${rhs.sampleRate}"
     }
-    require(this.bitsPerSample == rhs.bitsPerSample) {
-      "Bits-per-sample do not match: ${this.bitsPerSample} vs ${rhs.bitsPerSample}"
+    require(lhs.channels == rhs.channels) {
+      "Channel counts do not match: ${lhs.channels} vs ${rhs.channels}"
     }
-    val combinedBytes: ByteArray = when (format.lowercase()) {
+    require(lhs.bitsPerSample == rhs.bitsPerSample) {
+      "Bits-per-sample do not match: ${lhs.bitsPerSample} vs ${rhs.bitsPerSample}"
+    }
+    val combinedBytes: ByteArray = when (lhs.format.lowercase()) {
       "wav" -> {
-        val lhsPcm = stripWavHeader(this.audioBytes)
+        val lhsPcm = stripWavHeader(lhs.audioBytes)
         val rhsPcm = stripWavHeader(rhs.audioBytes)
         val merged = ByteArray(lhsPcm.size + rhsPcm.size)
         System.arraycopy(lhsPcm, 0, merged, 0, lhsPcm.size)
@@ -64,8 +78,43 @@ data class AudioSegment(
         pcmToWav(merged, sampleRate, channels, bitsPerSample)
       }
 
+      "mp3" -> {
+        val inputFile1 = Files.createTempFile("audio_mp3_1_", ".mp3").toFile()
+        val inputFile2 = Files.createTempFile("audio_mp3_2_", ".mp3").toFile()
+        val listFile = Files.createTempFile("audio_mp3_list_", ".txt").toFile()
+        val outputFile = Files.createTempFile("audio_mp3_out_", ".mp3").toFile()
+        try {
+          inputFile1.writeBytes(lhs.audioBytes)
+          inputFile2.writeBytes(rhs.audioBytes)
+          listFile.writeText("file '${inputFile1.absolutePath}'\nfile '${inputFile2.absolutePath}'\n")
+          val cmd = listOf(
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+            "-i", listFile.absolutePath,
+            "-c", "copy",
+            outputFile.absolutePath
+          )
+          val process = ProcessBuilder(cmd)
+            .redirectErrorStream(true)
+            .start()
+          val output = process.inputStream.readBytes()
+          val exitCode = process.waitFor()
+          if (exitCode != 0) {
+            throw IOException(
+              "FFmpeg MP3 concatenation failed (exit $exitCode):\n${String(output)}"
+            )
+          }
+          outputFile.readBytes()
+        } finally {
+          inputFile1.delete()
+          inputFile2.delete()
+          listFile.delete()
+          outputFile.delete()
+        }
+      }
+
+
       else -> {
-        val a = this.audioBytes
+        val a = lhs.audioBytes
         val b = rhs.audioBytes
         val merged = ByteArray(a.size + b.size)
         System.arraycopy(a, 0, merged, 0, a.size)
@@ -74,7 +123,7 @@ data class AudioSegment(
       }
     }
     return AudioSegment(
-      format = this.format, sampleRate = this.sampleRate, channels = this.channels, bitsPerSample = this.bitsPerSample
+      format = lhs.format, sampleRate = lhs.sampleRate, channels = lhs.channels, bitsPerSample = lhs.bitsPerSample
     ).also { it.audioBytes = combinedBytes }
   }
 
@@ -97,6 +146,52 @@ data class AudioSegment(
   }
 
   companion object {
+    private fun AudioSegment.convertViaFfmpeg(targetFormat: String): AudioSegment {
+      val inputExt = when (format.lowercase()) {
+        "l16" -> "raw"
+        else -> format.lowercase()
+      }
+      val outputExt = when (targetFormat.lowercase()) {
+        "l16" -> "raw"
+        else -> targetFormat.lowercase()
+      }
+      val inputFile = Files.createTempFile("audio_in_", ".$inputExt").toFile()
+      val outputFile = Files.createTempFile("audio_out_", ".$outputExt").toFile()
+      try {
+        inputFile.writeBytes(audioBytes)
+        val cmd = mutableListOf("ffmpeg", "-y", "-i", inputFile.absolutePath)
+        if (inputExt == "raw") {
+          cmd.addAll(listOf("-f", "s${bitsPerSample}le", "-ar", sampleRate.toString(), "-ac", channels.toString()))
+        }
+        if (outputExt == "raw") {
+          cmd.addAll(listOf("-f", "s${bitsPerSample}le", "-ar", sampleRate.toString(), "-ac", channels.toString()))
+        } else {
+          cmd.addAll(listOf("-ar", sampleRate.toString(), "-ac", channels.toString()))
+        }
+        cmd.add(outputFile.absolutePath)
+        val process = ProcessBuilder(cmd)
+          .redirectErrorStream(true)
+          .start()
+        val output = process.inputStream.readBytes()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+          throw IOException(
+            "FFmpeg conversion from $format to $targetFormat failed (exit $exitCode):\n${String(output)}"
+          )
+        }
+        val convertedBytes = outputFile.readBytes()
+        return AudioSegment(
+          format = targetFormat,
+          sampleRate = sampleRate,
+          channels = channels,
+          bitsPerSample = bitsPerSample,
+        ).also { it.audioBytes = convertedBytes }
+      } finally {
+        inputFile.delete()
+        outputFile.delete()
+      }
+    }
+
 
     fun pcmToWav(
       pcm: ByteArray, sampleRate: Int, channels: Int, bitsPerSample: Int

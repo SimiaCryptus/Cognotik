@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.providers.AnthropicProvider
 import com.simiacryptus.cognotik.providers.BedrockProvider
 import com.simiacryptus.cognotik.providers.DeepSeekProvider
+import com.simiacryptus.cognotik.providers.ElevenLabsProvider
 import com.simiacryptus.cognotik.providers.GeminiProvider
 import com.simiacryptus.cognotik.providers.GroqProvider
 import com.simiacryptus.cognotik.providers.MistralProvider
@@ -47,6 +48,9 @@ object CoreProviders : CognotikPlugin {
 
   @JvmStatic
   val DeepSeek: APIProvider = DeepSeekProvider()
+   @JvmStatic
+   val ElevenLabs: APIProvider = ElevenLabsProvider()
+
 
   override fun init() {
     log.info("Registering API providers")
@@ -60,6 +64,6 @@ object CoreProviders : CognotikPlugin {
     DynamicEnum.register(APIProvider::class.java, Mistral)
     DynamicEnum.register(APIProvider::class.java, DeepSeek)
     DynamicEnum.register(APIProvider::class.java, Ollama)
+     DynamicEnum.register(APIProvider::class.java, ElevenLabs)
   }
 }
-
