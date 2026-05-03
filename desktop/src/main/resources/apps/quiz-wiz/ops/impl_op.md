@@ -1,5 +1,5 @@
 ---
-folder: ../code
+specifies: ../code/
 related: 
   - ../idea.md
   - ../design/*.*
@@ -15,7 +15,7 @@ Render this quiz game idea into a working codebase:
 
 # Format
 
-The game implementation itself must consist of the following components:
+Create the following files in the `code/` folder to implement the quiz game:
 
 * `index.html` - The main HTML file that serves as the entry point for the quiz game. It should include the necessary structure and elements for the user interface.
 * `style.css` - The CSS file that defines the visual styling of the quiz game,

@@ -95,11 +95,38 @@
                 <div id="impl-links" class="session-link-container"></div>
                 <div id="code-list" class="file-list"></div>
             </section>
+             <!-- Step 5: Test -->
+             <section class="card step">
+                 <div class="step-header">
+                     <h2>⑤ Test Game</h2>
+                     <span id="badge-test" class="badge badge-pending">pending</span>
+                 </div>
+                 <p class="muted">Run the game in a headless browser and capture screenshots, console logs, network logs, and rendered HTML.</p>
+                 <div class="actions">
+                     <button id="run-test" class="btn btn-primary">🧪 Run Tests</button>
+                     <button id="view-test" class="btn btn-secondary" disabled>📂 View Artifacts</button>
+                 </div>
+                 <div id="test-links" class="session-link-container"></div>
+                 <div id="test-list" class="file-list"></div>
+             </section>
+             <!-- Step 6: Review -->
+             <section class="card step">
+                 <div class="step-header">
+                     <h2>⑥ Review Results</h2>
+                     <span id="badge-review" class="badge badge-pending">pending</span>
+                 </div>
+                 <p class="muted">Analyze test artifacts and write findings (bugs, issues, suggestions) into <code>notes.md</code>.</p>
+                 <div class="actions">
+                     <button id="run-review" class="btn btn-primary">🔍 Review Tests</button>
+                 </div>
+                 <div id="review-links" class="session-link-container"></div>
+             </section>
+
 
             <!-- Step 5: Update -->
             <section class="card step">
                 <div class="step-header">
-                    <h2>⑤ Update / Refine</h2>
+                     <h2>⑦ Update / Refine</h2>
                     <span id="badge-update" class="badge badge-pending">pending</span>
                 </div>
                 <p class="muted">Provide feedback, bug reports, or feature requests, then re-run to update the code.</p>
