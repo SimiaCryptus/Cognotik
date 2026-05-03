@@ -48,6 +48,7 @@ object SingleFixTaskTest {
     smartModel = GeminiModels.GeminiFlash_30_Preview,
     fastModel = GeminiModels.GeminiFlash_30_Preview,
     imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+    audioModel = GeminiModels.GeminiFlash_30_Preview,
   ) {
     override fun createWorkspace(): File {
       val createWorkspace = super.createWorkspace()

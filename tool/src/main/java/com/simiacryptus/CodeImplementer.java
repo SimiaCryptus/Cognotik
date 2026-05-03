@@ -69,6 +69,7 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
                     chatModel,
                     chatModel,
                     chatModel,
+                    chatModel,
                     new File(this.workspaceRoot()),
                     defaultUser
             ) {

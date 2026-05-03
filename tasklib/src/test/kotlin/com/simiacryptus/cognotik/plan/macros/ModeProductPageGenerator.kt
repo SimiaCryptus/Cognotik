@@ -54,6 +54,7 @@ object ModeProductPageGenerator {
           smartModel = GeminiModels.GeminiFlash_30_Preview,
           user = com.simiacryptus.cognotik.platform.model.defaultUser,
           imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+          audioModel = GeminiModels.GeminiFlash_30_Preview,
         ) {
           override fun createWorkspace() = root.resolve("workspaces/${testName}/test-${now()}").apply { mkdirs() }
           override fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
