@@ -25,6 +25,60 @@
     // === Usage tracking state ===
     let knownTaskSessionIds = new Set();
     let lastUsageData = null;
+    // === Render mode state ===
+    const DEFAULT_RENDER_OP = 'ops/render_op.md';
+    const VALID_RENDER_OPS = ['ops/render_op.md', 'ops/render_simple_op.md'];
+    function getSelectedRenderOp() {
+        const checked = document.querySelector('input[name="render-mode"]:checked');
+        const val = checked ? checked.value : '';
+        if (VALID_RENDER_OPS.indexOf(val) >= 0) return val;
+        return DEFAULT_RENDER_OP;
+    }
+    function loadRenderModePreference() {
+        const saved = localStorage.getItem('webappFactory_renderOp');
+        const opToUse = (saved && VALID_RENDER_OPS.indexOf(saved) >= 0) ? saved : DEFAULT_RENDER_OP;
+        const radio = document.querySelector('input[name="render-mode"][value="' + opToUse + '"]');
+        if (radio) radio.checked = true;
+        updateRenderModeUI(opToUse);
+    }
+    function updateRenderModeUI(opPath) {
+        // Update the data-op attribute on the per-step "Run" button so it
+        // uses the currently selected render mode.
+        const runBtn = document.querySelector('.btn-run[data-badge="badge-render"]');
+        if (runBtn) runBtn.dataset.op = opPath;
+    }
+    function setupRenderModeListeners() {
+        document.querySelectorAll('input[name="render-mode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    const op = this.value;
+                    localStorage.setItem('webappFactory_renderOp', op);
+                    updateRenderModeUI(op);
+                    const label = op === 'ops/render_simple_op.md' ? 'Simple Mode' : 'Full Pipeline (SubPlan)';
+                    setStatus('render-mode-status', '✓ Render mode: ' + label, 'success');
+                }
+            });
+        });
+    }
+    function getSelectedRenderOp() {
+        const checked = document.querySelector('input[name="render-mode"]:checked');
+        const val = checked ? checked.value : '';
+        if (VALID_RENDER_OPS.indexOf(val) >= 0) return val;
+        return DEFAULT_RENDER_OP;
+    }
+    function loadRenderModePreference() {
+        const saved = localStorage.getItem('webappFactory_renderOp');
+        const opToUse = (saved && VALID_RENDER_OPS.indexOf(saved) >= 0) ? saved : DEFAULT_RENDER_OP;
+        const radio = document.querySelector('input[name="render-mode"][value="' + opToUse + '"]');
+        if (radio) radio.checked = true;
+        updateRenderModeUI(opToUse);
+    }
+    function updateRenderModeUI(opPath) {
+        // Update the data-op attribute on the per-step "Run" button so it
+        // uses the currently selected render mode.
+        const runBtn = document.querySelector('.btn-run[data-badge="badge-render"]');
+        if (runBtn) runBtn.dataset.op = opPath;
+    }
 
     // === Compute the URL for the generated app's index.html ===
     const appIndexUrl = basePath + (basePath.endsWith('/') ? '' : '/') + 'code/index.html';
@@ -134,7 +188,7 @@
          };
      }
 
-    function updateLaunchLinks() {
+      function updateLaunchLinks() {
         const links = [
             document.getElementById('nav-launch-app'),
             document.getElementById('btn-launch-app-banner'),
@@ -384,13 +438,13 @@
         });
         // Also include warnings if any
         const warnings = capturedLogs.filter(e => e.level === 'warn');
-        if (warnings.length > 0) {
-            notes += '## Warnings (lower priority)\n\n';
-            warnings.forEach((w, i) => {
-                notes += `- ${w.message}\n`;
-            });
-            notes += '\n';
-        }
+          if (notesContent.trim()) {
+              notes += '## Warnings (lower priority)\n\n';
+              warnings.forEach((w, i) => {
+                  notes += `- ${w.message}\n`;
+              });
+              notes += '\n';
+          }
         notes += '## Instructions\n';
         notes += '- Fix all the errors listed above\n';
         notes += '- Make sure the app loads without any JavaScript exceptions\n';
@@ -446,6 +500,8 @@
     let activeCodeTaskSessionId = null;
     // Track whether any operation is currently in flight for code/
     let codeOperationInFlight = false;
+    // Track test op session
+    let activeTestTaskSessionId = null;
     // === File I/O helpers ===
     async function readFile(filePath) {
         const url = basePath + '/' + filePath;
@@ -1112,7 +1168,10 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             logBatch('Starting: Render Project', 'info');
             // Note: "Render Project" -> "Build Project" in UI, but op path unchanged
             setBadge('badge-render', 'running');
-            const taskId = await runDocOp('ops/render_op.md', 'code/');
+            const renderOp = getSelectedRenderOp();
+            const modeLabel = renderOp === 'ops/render_simple_op.md' ? 'Simple Mode' : 'Full Pipeline (SubPlan)';
+            logBatch('Render mode: ' + modeLabel + ' (' + renderOp + ')', 'info');
+            const taskId = await runDocOp(renderOp, 'code/');
             const cleanTaskId = taskId ? taskId.trim() : '';
             if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                 activeCodeTaskSessionId = cleanTaskId;
@@ -2032,11 +2091,261 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             knownTaskSessionIds.add(taskSessionId);
         }
     }
+    // =========================================================
+    // === Test (Selenium) artifact loading ===
+    // =========================================================
+    async function listTestArtifacts() {
+        try {
+            const url = basePath + '/code/_files.json';
+            const resp = await fetch(url);
+            if (!resp.ok) return [];
+            const data = await resp.json();
+            // Test artifacts are stored in /code/ alongside the app, prefixed with "test."
+            return (data.entries || []).filter(e =>
+                e.type === 'file' && /^test\./i.test(e.name)
+            );
+        } catch (e) {
+            return [];
+        }
+    }
+    async function loadTestArtifacts() {
+        const screenshotContainer = document.getElementById('test-screenshot-container');
+        const consoleOutput = document.getElementById('test-console-output');
+        const networkContainer = document.getElementById('test-network-container');
+        const htmlContainer = document.getElementById('test-html-container');
+        const entries = await listTestArtifacts();
+        if (entries.length === 0) {
+            return;
+        }
+        // Find artifacts by name — they're prefixed with "test."
+        const screenshot = entries.find(e => /^test\.png$/i.test(e.name));
+        const consoleLog = entries.find(e => /^test\.console\.log$/i.test(e.name));
+        const networkLog = entries.find(e => /^test\.network\.log$/i.test(e.name));
+        const htmlFile = entries.find(e => /^test\.html?$/i.test(e.name));
+        // Screenshot
+        if (screenshot && screenshotContainer) {
+            const imgUrl = basePath + '/code/' + screenshot.name + '?t=' + Date.now();
+            screenshotContainer.innerHTML = `
+                <a href="${escapeHtml(imgUrl)}" target="_blank" rel="noopener">
+                    <img src="${escapeHtml(imgUrl)}" alt="Page screenshot"
+                         style="max-width:100%; border:1px solid var(--color-border); border-radius:var(--radius); display:block;">
+                </a>
+                <p class="help-text" style="margin-top:0.5rem;">
+                    📁 <code>${escapeHtml(screenshot.name)}</code>
+                    — <a href="${escapeHtml(imgUrl)}" target="_blank" class="monitor-link">open full size</a>
+                </p>`;
+        } else if (screenshotContainer) {
+            screenshotContainer.innerHTML = '<p class="placeholder">No screenshot found.</p>';
+        }
+        // Console log
+        if (consoleLog && consoleOutput) {
+            try {
+                const content = await readFile('code/' + consoleLog.name);
+                if (content && content.trim().length > 0) {
+                    consoleOutput.innerHTML = '';
+                    const lines = content.split('\n');
+                    lines.forEach(line => {
+                        if (!line.trim()) return;
+                        let cssClass = 'console-log';
+                        const lower = line.toLowerCase();
+                        if (/\b(error|exception|severe)\b/.test(lower) || /^\[error/.test(lower)) {
+                            cssClass = 'console-error';
+                        } else if (/\b(warn|warning)\b/.test(lower) || /^\[warn/.test(lower)) {
+                            cssClass = 'console-warn';
+                        } else if (/\b(info|debug)\b/.test(lower) || /^\[info/.test(lower)) {
+                            cssClass = 'console-info';
+                        }
+                        const div = document.createElement('div');
+                        div.className = 'console-entry ' + cssClass;
+                        div.textContent = line;
+                        consoleOutput.appendChild(div);
+                    });
+                } else {
+                    consoleOutput.innerHTML = '<div class="console-entry console-info">Console log was empty.</div>';
+                }
+            } catch (e) {
+                consoleOutput.innerHTML = '<div class="console-entry console-error">Failed to load console log: ' + escapeHtml(e.message) + '</div>';
+            }
+        } else if (consoleOutput) {
+            consoleOutput.innerHTML = '<div class="console-entry console-info">No console log captured.</div>';
+        }
+        // Network log
+        if (networkLog && networkContainer) {
+            try {
+                const content = await readFile('code/' + networkLog.name);
+                if (content && content.trim().length > 0) {
+                    networkContainer.innerHTML = '<pre style="white-space:pre-wrap; font-family:\'JetBrains Mono\', \'Fira Code\', monospace; font-size:0.82rem; max-height:400px; overflow:auto;">'
+                        + escapeHtml(content) + '</pre>';
+                } else {
+                    networkContainer.innerHTML = '<pre class="placeholder">Network log was empty.</pre>';
+                }
+            } catch (e) {
+                networkContainer.innerHTML = '<pre class="placeholder" style="color:var(--color-danger);">Failed to load network log: ' + escapeHtml(e.message) + '</pre>';
+            }
+        } else if (networkContainer) {
+            networkContainer.innerHTML = '<pre class="placeholder">No network log captured.</pre>';
+        }
+        // Rendered HTML
+        if (htmlFile && htmlContainer) {
+            try {
+                const content = await readFile('code/' + htmlFile.name);
+                if (content && content.trim().length > 0) {
+                    htmlContainer.innerHTML = '<pre style="white-space:pre-wrap; font-family:\'JetBrains Mono\', \'Fira Code\', monospace; font-size:0.82rem; max-height:500px; overflow:auto;"><code>'
+                        + escapeHtml(content) + '</code></pre>';
+                } else {
+                    htmlContainer.innerHTML = '<pre class="placeholder">Rendered HTML was empty.</pre>';
+                }
+            } catch (e) {
+                htmlContainer.innerHTML = '<pre class="placeholder" style="color:var(--color-danger);">Failed to load HTML: ' + escapeHtml(e.message) + '</pre>';
+            }
+        } else if (htmlContainer) {
+            htmlContainer.innerHTML = '<pre class="placeholder">No rendered HTML captured.</pre>';
+        }
+    }
+    // Hook the test run button — augment the standard .btn-run behavior to also load artifacts
+    document.getElementById('run-test')?.addEventListener('click', async function() {
+        // Validate that there's something to test
+        const indexResp = await fetch(appIndexUrl, { method: 'HEAD' }).catch(() => null);
+        if (!indexResp || !indexResp.ok) {
+            alert('No generated webapp found. Build the project first using the Pipeline tab.');
+            return;
+        }
+        // The generic .btn-run handler also fires; in addition, we wait and load artifacts.
+        // We don't disable here because the generic handler does. We just queue artifact loading.
+        const checkAndLoad = async () => {
+            // Poll until the test target task transitions out of RUNNING
+            const maxWait = 600000;
+            const start = Date.now();
+            while (Date.now() - start < maxWait) {
+                const statusData = await fetchDocopsStatus();
+                if (statusData && statusData.tasks) {
+                    // The test op writes to code/, but we look up by the most recent task
+                    // that's running and has a sessionId we don't already know about.
+                    const found = findTaskByTarget(statusData.tasks, 'code/');
+                    if (found) {
+                        const task = found.task;
+                        if (task.sessionId) {
+                            activeTestTaskSessionId = task.sessionId;
+                            trackTaskSession(task.sessionId);
+                            updateSessionLinks('code/test', task);
+                        }
+                        if (task.status === 'COMPLETED') {
+                            await loadTestArtifacts();
+                            setStatus('test-status', '✓ Test complete — artifacts loaded', 'success');
+                            return;
+                        } else if (task.status === 'ERROR' || task.status === 'FAILED') {
+                            setStatus('test-status', '✗ Test failed', 'error');
+                            return;
+                        }
+                    }
+                }
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        };
+        setStatus('test-status', 'Test running…', '');
+        // Run polling alongside the generic handler
+        setTimeout(checkAndLoad, 500);
+    });
+    // Manual refresh of test artifacts
+    document.getElementById('btn-refresh-test-artifacts')?.addEventListener('click', async function() {
+        this.disabled = true;
+        setStatus('test-status', 'Loading artifacts…', '');
+        try {
+            await loadTestArtifacts();
+            setStatus('test-status', '✓ Artifacts refreshed', 'success');
+        } catch (e) {
+            setStatus('test-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+    // === Review Test Results: runs review_op.md to write findings to notes.md ===
+    document.getElementById('run-review')?.addEventListener('click', async function() {
+        // Verify test artifacts exist before running review
+        const artifacts = await listTestArtifacts();
+        if (artifacts.length === 0) {
+            alert('No test artifacts found. Please run the test first.');
+            return;
+        }
+        const badgeId = 'badge-review';
+        setBadge(badgeId, 'running');
+        this.disabled = true;
+        setStatus('review-status', 'Reviewing test results…', '');
+        startStatusPolling();
+        try {
+            const taskId = await runDocOp('ops/review_op.md', 'notes.md');
+            const cleanTaskId = taskId ? taskId.trim() : '';
+            if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                trackTaskSession(cleanTaskId);
+                const linkContainer = document.getElementById('review-session-link');
+                if (linkContainer) {
+                    linkContainer.innerHTML = `<div class="session-monitor-link">
+<span class="monitor-pulse">●</span>
+<span>Reviewing… </span>
+<a href="${escapeHtml(getProxyUrl(cleanTaskId))}" target="_blank" rel="noopener" class="monitor-link">
+📡 Monitor Live Session (${escapeHtml(cleanTaskId)})
+</a>
+</div>`;
+                    linkContainer.style.display = 'block';
+                }
+            }
+            await waitForTask('notes.md');
+            setBadge(badgeId, 'done');
+            setStatus('review-status', '✓ Review complete — findings written to notes.md', 'success');
+            // Update the session link to show completed state
+            if (cleanTaskId) {
+                const linkContainer = document.getElementById('review-session-link');
+                if (linkContainer) {
+                    const completedAt = new Date().toLocaleTimeString();
+                    linkContainer.innerHTML = `<div class="session-completed-link">
+<span>✅ Completed at ${escapeHtml(completedAt)} — </span>
+<a href="${escapeHtml(getProxyUrl(cleanTaskId))}" target="_blank" rel="noopener" class="monitor-link">
+📋 View Session Log (${escapeHtml(cleanTaskId)})
+</a>
+</div>`;
+                }
+            }
+            // Load the updated notes.md into the viewer and the notes editor
+            try {
+                const notesContent = await readFile('notes.md');
+                if (notesContent !== null) {
+                    const viewer = document.getElementById('viewer-review');
+                    if (viewer) {
+                        viewer.innerHTML = renderMarkdown(notesContent);
+                        viewer.classList.add('visible');
+                    }
+                    // Also populate the notes editor in the Update tab
+                    const notesEditor = document.getElementById('notes-editor');
+                    if (notesEditor) {
+                        notesEditor.value = notesContent;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load notes.md:', e);
+            }
+            // Refresh usage data
+            await refreshAllUsage();
+        } catch (e) {
+            setBadge(badgeId, 'error');
+            setStatus('review-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
 
     // Usage button handlers
     document.getElementById('btn-refresh-usage')?.addEventListener('click', refreshAllUsage);
     document.getElementById('btn-refresh-task-usage')?.addEventListener('click', refreshAllUsage);
     document.getElementById('btn-refresh-usage-tab')?.addEventListener('click', refreshAllUsage);
+    // Auto-load test artifacts when navigating to the Test section
+    document.querySelectorAll('.nav-link[data-section="section-test"]').forEach(link => {
+        link.addEventListener('click', function() {
+            // Defer slightly so the section is visible before fetches
+            setTimeout(loadTestArtifacts, 100);
+        });
+    });
+
 
     document.getElementById('btn-usage-json')?.addEventListener('click', async function() {
         if (lastUsageData) {
@@ -2057,6 +2366,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     showAppPreview();
     startStatusPolling();
      loadApiProviders();
+    setupRenderModeListeners();
+    loadRenderModePreference();
     // Delay usage refresh slightly to allow status polling to discover task sessions first
     setTimeout(refreshAllUsage, 2000);
 })();

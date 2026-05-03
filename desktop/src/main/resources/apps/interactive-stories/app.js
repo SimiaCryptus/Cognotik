@@ -128,9 +128,9 @@ async function init() {
 
         // Immersive mode toggle
         document.getElementById('toggle-immersive').addEventListener('click', toggleImmersive);
-         // Track user gestures so auto-read can fire after the first interaction
-         document.addEventListener('click', _onUserGesture, { once: true });
-         document.addEventListener('keydown', _onUserGesture, { once: true });
+        // Track user gestures so auto-read can fire after the first interaction
+        document.addEventListener('click', _onUserGesture, { once: true });
+        document.addEventListener('keydown', _onUserGesture, { once: true });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && document.body.classList.contains('immersive')) {
                 toggleImmersive();
@@ -169,28 +169,28 @@ async function init() {
             console.log('[init] auto-image toggled →', autoImageEl.checked);
             log(`Auto-image ${autoImageEl.checked ? 'enabled' : 'disabled'}.`, 'info');
         });
-         // Audio controls
-         document.getElementById('generate-audio').addEventListener('click', onGenerateAudio);
-         const autoAudioEl = document.getElementById('auto-audio');
-         autoAudioEl.checked = localStorage.getItem(AUTO_AUDIO_KEY) === 'true';
-         console.log('[init] auto-audio initial state:', autoAudioEl.checked);
-         autoAudioEl.addEventListener('change', () => {
-             localStorage.setItem(AUTO_AUDIO_KEY, autoAudioEl.checked ? 'true' : 'false');
-             console.log('[init] auto-audio toggled →', autoAudioEl.checked);
-             log(`Auto-audio ${autoAudioEl.checked ? 'enabled' : 'disabled'}.`, 'info');
-         });
-         // Highlight readalong toggle
-         const highlightEl = document.getElementById('highlight-readalong');
-         // Default to true if no saved preference exists yet
-         highlightEl.checked = localStorage.getItem(HIGHLIGHT_KEY) !== 'false';
-         console.log('[init] highlight-readalong initial state:', highlightEl.checked);
-         highlightEl.addEventListener('change', () => {
-             localStorage.setItem(HIGHLIGHT_KEY, highlightEl.checked ? 'true' : 'false');
-             console.log('[init] highlight-readalong toggled →', highlightEl.checked);
-             log(`Readalong highlighting ${highlightEl.checked ? 'enabled' : 'disabled'}.`, 'info');
-             // If highlighting was just turned off, clear any active highlight immediately.
-             if (!highlightEl.checked) clearWordHighlight();
-         });
+        // Audio controls
+        document.getElementById('generate-audio').addEventListener('click', onGenerateAudio);
+        const autoAudioEl = document.getElementById('auto-audio');
+        autoAudioEl.checked = localStorage.getItem(AUTO_AUDIO_KEY) === 'true';
+        console.log('[init] auto-audio initial state:', autoAudioEl.checked);
+        autoAudioEl.addEventListener('change', () => {
+            localStorage.setItem(AUTO_AUDIO_KEY, autoAudioEl.checked ? 'true' : 'false');
+            console.log('[init] auto-audio toggled →', autoAudioEl.checked);
+            log(`Auto-audio ${autoAudioEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+        });
+        // Highlight readalong toggle
+        const highlightEl = document.getElementById('highlight-readalong');
+        // Default to true if no saved preference exists yet
+        highlightEl.checked = localStorage.getItem(HIGHLIGHT_KEY) !== 'false';
+        console.log('[init] highlight-readalong initial state:', highlightEl.checked);
+        highlightEl.addEventListener('change', () => {
+            localStorage.setItem(HIGHLIGHT_KEY, highlightEl.checked ? 'true' : 'false');
+            console.log('[init] highlight-readalong toggled →', highlightEl.checked);
+            log(`Readalong highlighting ${highlightEl.checked ? 'enabled' : 'disabled'}.`, 'info');
+            // If highlighting was just turned off, clear any active highlight immediately.
+            if (!highlightEl.checked) clearWordHighlight();
+        });
 
 
         // Save model selections on change
@@ -484,7 +484,7 @@ async function onStartStory() {
         await refreshTree();
         await loadNode(INITIAL_NODE);
         maybeAutoGenerateImage(INITIAL_NODE);
-         maybeAutoGenerateAudio(INITIAL_NODE);
+        maybeAutoGenerateAudio(INITIAL_NODE);
     } catch (e) {
         log(`Failed to generate initial node after ${timeEnd('startStory')}: ${e.message}`, 'error');
         console.error('[onStartStory]', e);
@@ -551,7 +551,7 @@ async function onChoice(letter) {
         const newNode = `${currentNode}${letter}`;
         await loadNode(newNode);
         maybeAutoGenerateImage(newNode);
-         maybeAutoGenerateAudio(newNode);
+        maybeAutoGenerateAudio(newNode);
     } catch (e) {
         log(`Failed to generate branch ${letter.toUpperCase()} after ${timeEnd(`branch_${letter}`)}: ${e.message}`, 'error');
         console.error(`[onChoice(${letter})]`, e);
@@ -580,11 +580,11 @@ async function refreshTree() {
                 if (/^0[a-c]*$/.test(id)) allNodes.add(id);
             }
         });
-         log(`Tree refreshed in ${timeEnd('refreshTree')} — ${allNodes.size} node(s): [${Array.from(allNodes).sort().join(', ')}].`, 'info');
-         console.log('[refreshTree] Done —', allNodes.size, 'node(s):', Array.from(allNodes).sort());
+        log(`Tree refreshed in ${timeEnd('refreshTree')} — ${allNodes.size} node(s): [${Array.from(allNodes).sort().join(', ')}].`, 'info');
+        console.log('[refreshTree] Done —', allNodes.size, 'node(s):', Array.from(allNodes).sort());
         renderTree();
     } catch (e) {
-         timeEnd('refreshTree'); // ensure timer is always cleared
+        timeEnd('refreshTree'); // ensure timer is always cleared
         log(`Tree refresh failed: ${e.message}`, 'warning');
         console.warn('[refreshTree]', e);
     }
@@ -669,53 +669,53 @@ function renderTree() {
   *   * **Choice C** - Description text
   */
 function parseNodeContent(markdown) {
-     const result = { isEndState: false, choices: {}, choicePrompt: null };
-     try {
-         if (!markdown) return result;
-         // Match list items that look like choice entries.
-         // Handles both:
-         //   * **Choice A** - Description
-         //   * **A** - Description
-         //   * **Choice A:** Description
-          //   * **Choice A** - **Title** — Body text
-         const choiceLineRe = /^\s*[*-]\s+\*\*(?:Choice\s+)?([ABC])\**[:\s*-]+\s*(.+)$/gim;
-         let match;
-         while ((match = choiceLineRe.exec(markdown)) !== null) {
-             const letter = match[1].toLowerCase();
-              // Strip any leading/trailing ** artifacts left by partial markdown stripping
-              const description = match[2].trim()
-                  .replace(/^\*+/, '')           // strip leading **
-                  .replace(/\*+\s*([—–-])/, ' $1') // strip ** immediately before an em/en-dash
-                  .replace(/\*+$/, '')            // strip trailing **
-                  .trim();
-             result.choices[letter] = description;
-         }
-         // Detect end-state: no choices found AND the node contains an epitaph
-         // marker (italic line at the end) or simply has no choice list at all.
-         const hasChoices = Object.keys(result.choices).length > 0;
-         if (!hasChoices) {
-             result.isEndState = true;
-         }
-         // Extract the choice prompt heading (### …) that precedes the list, if any.
-         if (hasChoices) {
-             const promptRe = /^#{2,4}\s+(.+?)\s*$/m;
-             // Find the last heading before the first choice line
-             const firstChoiceIdx = markdown.search(/^\s*[*-]\s+\*\*(?:Choice\s+)?[ABC]/im);
-             const beforeChoices = firstChoiceIdx > 0 ? markdown.slice(0, firstChoiceIdx) : markdown;
-             const headings = [...beforeChoices.matchAll(/^#{2,4}\s+(.+?)\s*$/gm)];
-             if (headings.length > 0) {
-                 result.choicePrompt = headings[headings.length - 1][1].trim();
-             }
-         }
-         console.debug('[parseNodeContent] result:', result);
-     } catch (e) {
-         console.warn('[parseNodeContent] Parsing failed — using defaults:', e);
-         // Return safe defaults; UI will fall back to generic labels.
-         result.isEndState = false;
-         result.choices = {};
-         result.choicePrompt = null;
-     }
-     return result;
+    const result = { isEndState: false, choices: {}, choicePrompt: null };
+    try {
+        if (!markdown) return result;
+        // Match list items that look like choice entries.
+        // Handles both:
+        //   * **Choice A** - Description
+        //   * **A** - Description
+        //   * **Choice A:** Description
+        //   * **Choice A** - **Title** — Body text
+        const choiceLineRe = /^\s*[*-]\s+\*\*(?:Choice\s+)?([ABC])\**[:\s*-]+\s*(.+)$/gim;
+        let match;
+        while ((match = choiceLineRe.exec(markdown)) !== null) {
+            const letter = match[1].toLowerCase();
+            // Strip any leading/trailing ** artifacts left by partial markdown stripping
+            const description = match[2].trim()
+                .replace(/^\*+/, '')           // strip leading **
+                .replace(/\*+\s*([—–-])/, ' $1') // strip ** immediately before an em/en-dash
+                .replace(/\*+$/, '')            // strip trailing **
+                .trim();
+            result.choices[letter] = description;
+        }
+        // Detect end-state: no choices found AND the node contains an epitaph
+        // marker (italic line at the end) or simply has no choice list at all.
+        const hasChoices = Object.keys(result.choices).length > 0;
+        if (!hasChoices) {
+            result.isEndState = true;
+        }
+        // Extract the choice prompt heading (### …) that precedes the list, if any.
+        if (hasChoices) {
+            const promptRe = /^#{2,4}\s+(.+?)\s*$/m;
+            // Find the last heading before the first choice line
+            const firstChoiceIdx = markdown.search(/^\s*[*-]\s+\*\*(?:Choice\s+)?[ABC]/im);
+            const beforeChoices = firstChoiceIdx > 0 ? markdown.slice(0, firstChoiceIdx) : markdown;
+            const headings = [...beforeChoices.matchAll(/^#{2,4}\s+(.+?)\s*$/gm)];
+            if (headings.length > 0) {
+                result.choicePrompt = headings[headings.length - 1][1].trim();
+            }
+        }
+        console.debug('[parseNodeContent] result:', result);
+    } catch (e) {
+        console.warn('[parseNodeContent] Parsing failed — using defaults:', e);
+        // Return safe defaults; UI will fall back to generic labels.
+        result.isEndState = false;
+        result.choices = {};
+        result.choicePrompt = null;
+    }
+    return result;
 }
 /**
   * Apply parsed choice data to the choice-actions UI block.
@@ -725,85 +725,85 @@ function parseNodeContent(markdown) {
   *   3. Fallback   — show generic "Generate Branch X" labels.
   */
 function applyParsedChoicesToUI(nodeId, parsed) {
-     const choiceActions = document.getElementById('choice-actions');
-     const choiceButtons = document.getElementById('choice-buttons');
-     const choicePromptEl = document.querySelector('#choice-actions .choice-prompt');
-     let endPanel = document.getElementById('end-state-panel');
-     // Remove any previous end-state panel
-     if (endPanel) endPanel.remove();
-     if (parsed.isEndState) {
-         // Hide the choice buttons, show an end-state message
-         choiceActions.style.display = 'block';
-         if (choiceButtons) choiceButtons.style.display = 'none';
-         if (choicePromptEl) choicePromptEl.style.display = 'none';
-         endPanel = document.createElement('div');
-         endPanel.id = 'end-state-panel';
-         endPanel.className = 'end-state-panel';
-         endPanel.innerHTML = `
+    const choiceActions = document.getElementById('choice-actions');
+    const choiceButtons = document.getElementById('choice-buttons');
+    const choicePromptEl = document.querySelector('#choice-actions .choice-prompt');
+    let endPanel = document.getElementById('end-state-panel');
+    // Remove any previous end-state panel
+    if (endPanel) endPanel.remove();
+    if (parsed.isEndState) {
+        // Hide the choice buttons, show an end-state message
+        choiceActions.style.display = 'block';
+        if (choiceButtons) choiceButtons.style.display = 'none';
+        if (choicePromptEl) choicePromptEl.style.display = 'none';
+        endPanel = document.createElement('div');
+        endPanel.id = 'end-state-panel';
+        endPanel.className = 'end-state-panel';
+        endPanel.innerHTML = `
              <div class="end-state-icon">📜</div>
              <p class="end-state-title">The story has reached its end.</p>
              <p class="end-state-hint">Select another branch from the tree, or start a new story.</p>
          `;
-         // Insert before the session-link container
-         const nodeLinks = document.getElementById('node-links');
-         choiceActions.insertBefore(endPanel, nodeLinks || null);
-         console.log('[applyParsedChoicesToUI] End-state panel shown for node:', nodeId);
-         return;
-     }
-     // Not an end-state — show choice buttons
-     if (choiceButtons) choiceButtons.style.display = '';
-     if (choicePromptEl) {
-         choicePromptEl.style.display = '';
-         choicePromptEl.textContent = parsed.choicePrompt || 'Continue the story by choosing a path:';
-     }
-     ['a', 'b', 'c'].forEach(letter => {
-         const btn = document.querySelector(`.btn-choice[data-choice="${letter}"]`);
-         if (!btn) return;
-         const childId = `${nodeId}${letter}`;
-         const exists = allNodes.has(childId);
-         const labelEl = btn.querySelector('.choice-label');
-         const descEl = btn.querySelector('.choice-desc');
-         const storyText = parsed.choices[letter] || null;
-         if (exists) {
-              labelEl.textContent = `✓ Already explored`;
-         } else {
-              labelEl.textContent = '';
-         }
-         if (storyText) {
-              // Split into title (before em-dash) and body, render both as markdown
-              const dashIdx = storyText.search(/\s*[—–-]{1,2}\s+/);
-              let titleHtml, bodyHtml;
-              if (dashIdx > 0) {
-                  const title = storyText.slice(0, dashIdx).trim();
-                  const body = storyText.slice(dashIdx).replace(/^\s*[—–-]+\s*/, '').trim();
-                  // Wrap in ** so renderMarkdown bolds it if not already marked up
-                  const titleMd = title.startsWith('**') ? title : `**${title.replace(/\*+/g, '')}**`;
-                  titleHtml = renderMarkdown(titleMd);
-                  bodyHtml = renderMarkdown(body);
-              } else {
-                  titleHtml = '';
-                  bodyHtml = renderMarkdown(storyText);
-              }
-              // Set label to the title (bold short phrase)
-              if (titleHtml && !exists) {
-                  labelEl.innerHTML = titleHtml;
-              } else if (!exists) {
-                  labelEl.textContent = '';
-              }
-             if (descEl) {
-                  descEl.innerHTML = bodyHtml;
-                 descEl.style.display = '';
-             } else {
-                 const newDesc = document.createElement('span');
-                 newDesc.className = 'choice-desc';
-                  newDesc.innerHTML = bodyHtml;
-                 btn.appendChild(newDesc);
-             }
-         } else {
-             // Fallback: no parsed text — hide description if present
-             if (descEl) descEl.style.display = 'none';
-         }
-     });
+        // Insert before the session-link container
+        const nodeLinks = document.getElementById('node-links');
+        choiceActions.insertBefore(endPanel, nodeLinks || null);
+        console.log('[applyParsedChoicesToUI] End-state panel shown for node:', nodeId);
+        return;
+    }
+    // Not an end-state — show choice buttons
+    if (choiceButtons) choiceButtons.style.display = '';
+    if (choicePromptEl) {
+        choicePromptEl.style.display = '';
+        choicePromptEl.textContent = parsed.choicePrompt || 'Continue the story by choosing a path:';
+    }
+    ['a', 'b', 'c'].forEach(letter => {
+        const btn = document.querySelector(`.btn-choice[data-choice="${letter}"]`);
+        if (!btn) return;
+        const childId = `${nodeId}${letter}`;
+        const exists = allNodes.has(childId);
+        const labelEl = btn.querySelector('.choice-label');
+        const descEl = btn.querySelector('.choice-desc');
+        const storyText = parsed.choices[letter] || null;
+        if (exists) {
+            labelEl.textContent = `✓ Already explored`;
+        } else {
+            labelEl.textContent = '';
+        }
+        if (storyText) {
+            // Split into title (before em-dash) and body, render both as markdown
+            const dashIdx = storyText.search(/\s*[—–-]{1,2}\s+/);
+            let titleHtml, bodyHtml;
+            if (dashIdx > 0) {
+                const title = storyText.slice(0, dashIdx).trim();
+                const body = storyText.slice(dashIdx).replace(/^\s*[—–-]+\s*/, '').trim();
+                // Wrap in ** so renderMarkdown bolds it if not already marked up
+                const titleMd = title.startsWith('**') ? title : `**${title.replace(/\*+/g, '')}**`;
+                titleHtml = renderMarkdown(titleMd);
+                bodyHtml = renderMarkdown(body);
+            } else {
+                titleHtml = '';
+                bodyHtml = renderMarkdown(storyText);
+            }
+            // Set label to the title (bold short phrase)
+            if (titleHtml && !exists) {
+                labelEl.innerHTML = titleHtml;
+            } else if (!exists) {
+                labelEl.textContent = '';
+            }
+            if (descEl) {
+                descEl.innerHTML = bodyHtml;
+                descEl.style.display = '';
+            } else {
+                const newDesc = document.createElement('span');
+                newDesc.className = 'choice-desc';
+                newDesc.innerHTML = bodyHtml;
+                btn.appendChild(newDesc);
+            }
+        } else {
+            // Fallback: no parsed text — hide description if present
+            if (descEl) descEl.style.display = 'none';
+        }
+    });
 }
 
 async function loadNode(nodeId) {
@@ -823,13 +823,13 @@ async function loadNode(nodeId) {
 
     currentNode = nodeId;
     document.getElementById('current-node-path').textContent = path;
-     const nodeContentEl = document.getElementById('node-content');
-     nodeContentEl.innerHTML = renderMarkdown(content);
-      _ttsWordSpans = buildSentenceSpans(nodeContentEl);
-      _ttsOffsetIndex = buildSpanOffsetIndex(_ttsWordSpans);
-     _ttsPlainText = _ttsOffsetIndex.plainText;
-     _ttsCharOffset = 0;
-     _ttsActiveSpan = null;
+    const nodeContentEl = document.getElementById('node-content');
+    nodeContentEl.innerHTML = renderMarkdown(content);
+    _ttsWordSpans = buildSentenceSpans(nodeContentEl);
+    _ttsOffsetIndex = buildSpanOffsetIndex(_ttsWordSpans);
+    _ttsPlainText = _ttsOffsetIndex.plainText;
+    _ttsCharOffset = 0;
+    _ttsActiveSpan = null;
     document.getElementById('choice-actions').style.display = 'block';
     setBadge('badge-node', 'done');
 
@@ -838,36 +838,36 @@ async function loadNode(nodeId) {
     });
 
 
-     // Parse choices and detect end-state from markdown content
-     const parsed = parseNodeContent(content);
-     console.log(`[loadNode] Parsed node content — isEndState: ${parsed.isEndState} | choices:`, parsed.choices);
-     log(`Node "${nodeId}" parsed — isEndState: ${parsed.isEndState}, choices found: ${Object.keys(parsed.choices).length}.`, 'info');
+    // Parse choices and detect end-state from markdown content
+    const parsed = parseNodeContent(content);
+    console.log(`[loadNode] Parsed node content — isEndState: ${parsed.isEndState} | choices:`, parsed.choices);
+    log(`Node "${nodeId}" parsed — isEndState: ${parsed.isEndState}, choices found: ${Object.keys(parsed.choices).length}.`, 'info');
 
-     applyParsedChoicesToUI(nodeId, parsed);
+    applyParsedChoicesToUI(nodeId, parsed);
 
-     const existingBranches = ['a', 'b', 'c'].filter(l => allNodes.has(`${nodeId}${l}`));
-     log(`Node "${nodeId}" loaded in ${timeEnd(`loadNode_${nodeId}`)} — ${content.length} chars. Existing branches: [${existingBranches.join(', ') || 'none'}]. End-state: ${parsed.isEndState}.`, 'success');
-     console.log(`[loadNode] Node "${nodeId}" ready. Existing branches: [${existingBranches.join(', ') || 'none'}]. End-state: ${parsed.isEndState}.`);
+    const existingBranches = ['a', 'b', 'c'].filter(l => allNodes.has(`${nodeId}${l}`));
+    log(`Node "${nodeId}" loaded in ${timeEnd(`loadNode_${nodeId}`)} — ${content.length} chars. Existing branches: [${existingBranches.join(', ') || 'none'}]. End-state: ${parsed.isEndState}.`, 'success');
+    console.log(`[loadNode] Node "${nodeId}" ready. Existing branches: [${existingBranches.join(', ') || 'none'}]. End-state: ${parsed.isEndState}.`);
     console.groupEnd();
 
     // Auto-read if enabled
     stopSpeaking();
-     console.log('[loadNode] After stopSpeaking() — isSpeaking:', isSpeaking, '| speechSynthesis.speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A');
+    console.log('[loadNode] After stopSpeaking() — isSpeaking:', isSpeaking, '| speechSynthesis.speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A');
     if (document.getElementById('auto-read').checked) {
         log(`Auto-read enabled — starting speech for node "${nodeId}".`, 'info');
         console.log(`[loadNode] Auto-read enabled — triggering speech for node "${nodeId}".`);
-           // Auto-read requires a prior user gesture (browser autoplay policy).
-           // We set a flag so the next user interaction can trigger it, but we
-           // do NOT call speak() here because it will be blocked with "not-allowed"
-           // when the page loads without a prior gesture.
-           _pendingAutoRead = true;
-           _updateAutoReadIndicator(true);
-           console.log('[loadNode] Auto-read: set _pendingAutoRead=true (waiting for user gesture).');
+        // Auto-read requires a prior user gesture (browser autoplay policy).
+        // We set a flag so the next user interaction can trigger it, but we
+        // do NOT call speak() here because it will be blocked with "not-allowed"
+        // when the page loads without a prior gesture.
+        _pendingAutoRead = true;
+        _updateAutoReadIndicator(true);
+        console.log('[loadNode] Auto-read: set _pendingAutoRead=true (waiting for user gesture).');
     }
     // Load existing image (if any)
     await loadNodeImage(nodeId);
-     // Load existing audio (if any)
-     await loadNodeAudio(nodeId);
+    // Load existing audio (if any)
+    await loadNodeAudio(nodeId);
 }
 // -------------------------------------------------------------------------
 // Text-to-speech
@@ -878,75 +878,75 @@ async function loadNode(nodeId) {
   * This must be called after the markdown has been rendered into the DOM.
   */
 function buildSentenceSpans(rootEl) {
-     const spans = [];
-     // Collect all text nodes in document order, skipping script/style subtrees.
-     const walker = document.createTreeWalker(
-         rootEl,
-         NodeFilter.SHOW_TEXT,
-         {
-             acceptNode(node) {
-                 const tag = node.parentElement && node.parentElement.tagName.toUpperCase();
-                 if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
-                 return NodeFilter.FILTER_ACCEPT;
-             }
-         }
-     );
-     const textNodes = [];
-     let n;
-     while ((n = walker.nextNode())) textNodes.push(n);
-      // Collect all text content per block-level parent, then split into sentences.
-      // We group consecutive text nodes that share the same block ancestor so that
-      // sentence boundaries don't get split across sibling inline elements.
-      const BLOCK_TAGS = new Set(['P','LI','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','TD','TH','DIV','SECTION','ARTICLE']);
-      function getBlockAncestor(node) {
-          let el = node.parentElement;
-          while (el && el !== rootEl) {
-              if (BLOCK_TAGS.has(el.tagName.toUpperCase())) return el;
-              el = el.parentElement;
-          }
-          return el || rootEl;
-      }
-      // Split a string into sentence-sized tokens, preserving trailing punctuation.
-      function splitSentences(text) {
-          // Match runs ending in sentence-terminal punctuation, or the remainder.
-          const parts = [];
-          // Split on .  !  ?  followed by whitespace or end-of-string,
-          // keeping the delimiter attached to the preceding token.
-          const re = /[^.!?]*[.!?]+[\s]*/g;
-          let match;
-          let lastIdx = 0;
-          while ((match = re.exec(text)) !== null) {
-              const s = match[0];
-              if (s.trim()) parts.push(s);
-              lastIdx = re.lastIndex;
-          }
-          // Any trailing text without terminal punctuation
-          if (lastIdx < text.length) {
-              const tail = text.slice(lastIdx);
-              if (tail.trim()) parts.push(tail);
-          }
-          return parts.length ? parts : (text.trim() ? [text] : []);
-      }
+    const spans = [];
+    // Collect all text nodes in document order, skipping script/style subtrees.
+    const walker = document.createTreeWalker(
+        rootEl,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode(node) {
+                const tag = node.parentElement && node.parentElement.tagName.toUpperCase();
+                if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        }
+    );
+    const textNodes = [];
+    let n;
+    while ((n = walker.nextNode())) textNodes.push(n);
+    // Collect all text content per block-level parent, then split into sentences.
+    // We group consecutive text nodes that share the same block ancestor so that
+    // sentence boundaries don't get split across sibling inline elements.
+    const BLOCK_TAGS = new Set(['P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'TD', 'TH', 'DIV', 'SECTION', 'ARTICLE']);
+    function getBlockAncestor(node) {
+        let el = node.parentElement;
+        while (el && el !== rootEl) {
+            if (BLOCK_TAGS.has(el.tagName.toUpperCase())) return el;
+            el = el.parentElement;
+        }
+        return el || rootEl;
+    }
+    // Split a string into sentence-sized tokens, preserving trailing punctuation.
+    function splitSentences(text) {
+        // Match runs ending in sentence-terminal punctuation, or the remainder.
+        const parts = [];
+        // Split on .  !  ?  followed by whitespace or end-of-string,
+        // keeping the delimiter attached to the preceding token.
+        const re = /[^.!?]*[.!?]+[\s]*/g;
+        let match;
+        let lastIdx = 0;
+        while ((match = re.exec(text)) !== null) {
+            const s = match[0];
+            if (s.trim()) parts.push(s);
+            lastIdx = re.lastIndex;
+        }
+        // Any trailing text without terminal punctuation
+        if (lastIdx < text.length) {
+            const tail = text.slice(lastIdx);
+            if (tail.trim()) parts.push(tail);
+        }
+        return parts.length ? parts : (text.trim() ? [text] : []);
+    }
 
-     for (const textNode of textNodes) {
-         const text = textNode.nodeValue;
-         if (!text || !text.trim()) continue;
+    for (const textNode of textNodes) {
+        const text = textNode.nodeValue;
+        if (!text || !text.trim()) continue;
 
-          const sentences = splitSentences(text);
-          if (!sentences.length) continue;
+        const sentences = splitSentences(text);
+        if (!sentences.length) continue;
 
-         const frag = document.createDocumentFragment();
-          for (const sentence of sentences) {
-              const span = document.createElement('span');
-              span.className = 'tts-sentence';
-              span.textContent = sentence;
-              frag.appendChild(span);
-              spans.push(span);
-         }
-         textNode.parentNode.replaceChild(frag, textNode);
-     }
-      console.debug('[buildSentenceSpans] Built', spans.length, 'sentence spans.');
-     return spans;
+        const frag = document.createDocumentFragment();
+        for (const sentence of sentences) {
+            const span = document.createElement('span');
+            span.className = 'tts-sentence';
+            span.textContent = sentence;
+            frag.appendChild(span);
+            spans.push(span);
+        }
+        textNode.parentNode.replaceChild(frag, textNode);
+    }
+    console.debug('[buildSentenceSpans] Built', spans.length, 'sentence spans.');
+    return spans;
 }
 /**
   * Build a plain-text string from the word spans (joined by single spaces) and
@@ -959,23 +959,23 @@ function buildSentenceSpans(rootEl) {
   * already carries its own trailing whitespace).
   */
 function buildSpanOffsetIndex(spans) {
-     let plainText = '';
-     const offsets = [];
-     for (let i = 0; i < spans.length; i++) {
-         offsets.push(plainText.length);
-          // Sentence spans already include trailing whitespace from the original
-          // text, so we concatenate directly without adding extra separators.
-          plainText += spans[i].textContent;
-     }
-     console.debug('[buildSpanOffsetIndex] plainText length:', plainText.length, '| spans:', spans.length);
-     return { plainText, offsets };
+    let plainText = '';
+    const offsets = [];
+    for (let i = 0; i < spans.length; i++) {
+        offsets.push(plainText.length);
+        // Sentence spans already include trailing whitespace from the original
+        // text, so we concatenate directly without adding extra separators.
+        plainText += spans[i].textContent;
+    }
+    console.debug('[buildSpanOffsetIndex] plainText length:', plainText.length, '| spans:', spans.length);
+    return { plainText, offsets };
 }
 // Cached offset index — rebuilt whenever _ttsWordSpans changes (i.e. on node load).
 let _ttsOffsetIndex = { plainText: '', offsets: [] };
 /** Returns true when the readalong-highlight checkbox is checked. */
 function isHighlightEnabled() {
-     const el = document.getElementById('highlight-readalong');
-     return el ? el.checked : true;
+    const el = document.getElementById('highlight-readalong');
+    return el ? el.checked : true;
 }
 
 /**
@@ -987,58 +987,58 @@ function isHighlightEnabled() {
   * to the current utterance) can be mapped to the global span array.
   */
 function highlightWordAtOffset(charOffset) {
-     if (!_ttsWordSpans.length) return;
-      if (!isHighlightEnabled()) return;
-      // Binary-search the pre-built offset index for the sentence span whose
-      // range contains charOffset.
-      const { offsets } = _ttsOffsetIndex;
-      let lo = 0, hi = offsets.length - 1, spanIdx = 0;
-      while (lo <= hi) {
-          const mid = (lo + hi) >>> 1;
-          if (offsets[mid] <= charOffset) {
-              spanIdx = mid;
-              lo = mid + 1;
-          } else {
-              hi = mid - 1;
-          }
-      }
-       // Advance by one: the boundary event fires at the *start* of the word
-       // being spoken, so by the time the event arrives the previous span has
-       // already been read.  Shifting forward by one keeps the highlight in
-       // sync with the audio.
-       const advancedIdx = Math.min(spanIdx + 1, _ttsWordSpans.length - 1);
-       const found = _ttsWordSpans[advancedIdx] || null;
-     if (found === _ttsActiveSpan) return; // no change
-     if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
-     _ttsActiveSpan = found;
-     if (_ttsActiveSpan) {
-         _ttsActiveSpan.classList.add('tts-highlight');
-          // Scroll within the markdown-preview container rather than the page,
-          // so the card itself doesn't jump around.
-          scrollSpanIntoView(_ttsActiveSpan);
-     }
+    if (!_ttsWordSpans.length) return;
+    if (!isHighlightEnabled()) return;
+    // Binary-search the pre-built offset index for the sentence span whose
+    // range contains charOffset.
+    const { offsets } = _ttsOffsetIndex;
+    let lo = 0, hi = offsets.length - 1, spanIdx = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (offsets[mid] <= charOffset) {
+            spanIdx = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    // Advance by one: the boundary event fires at the *start* of the word
+    // being spoken, so by the time the event arrives the previous span has
+    // already been read.  Shifting forward by one keeps the highlight in
+    // sync with the audio.
+    const advancedIdx = Math.min(spanIdx + 1, _ttsWordSpans.length - 1);
+    const found = _ttsWordSpans[advancedIdx] || null;
+    if (found === _ttsActiveSpan) return; // no change
+    if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
+    _ttsActiveSpan = found;
+    if (_ttsActiveSpan) {
+        _ttsActiveSpan.classList.add('tts-highlight');
+        // Scroll within the markdown-preview container rather than the page,
+        // so the card itself doesn't jump around.
+        scrollSpanIntoView(_ttsActiveSpan);
+    }
 }
 /** Remove any active word highlight without stopping speech. */
 function clearWordHighlight() {
-     if (_ttsActiveSpan) {
-         _ttsActiveSpan.classList.remove('tts-highlight');
-         _ttsActiveSpan = null;
-     }
+    if (_ttsActiveSpan) {
+        _ttsActiveSpan.classList.remove('tts-highlight');
+        _ttsActiveSpan = null;
+    }
 }
 /**
   * Return the span index whose range contains `charOffset` (binary search).
   * Used to seed the timer-based fallback at the correct position.
   */
 function _spanIdxForCharOffset(charOffset) {
-      if (!_ttsOffsetIndex.offsets.length) return 0;
-      const { offsets } = _ttsOffsetIndex;
-      let lo = 0, hi = offsets.length - 1, spanIdx = 0;
-      while (lo <= hi) {
-          const mid = (lo + hi) >>> 1;
-          if (offsets[mid] <= charOffset) { spanIdx = mid; lo = mid + 1; }
-          else { hi = mid - 1; }
-      }
-      return spanIdx;
+    if (!_ttsOffsetIndex.offsets.length) return 0;
+    const { offsets } = _ttsOffsetIndex;
+    let lo = 0, hi = offsets.length - 1, spanIdx = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (offsets[mid] <= charOffset) { spanIdx = mid; lo = mid + 1; }
+        else { hi = mid - 1; }
+    }
+    return spanIdx;
 }
 /**
   * Scroll `span` into view inside its nearest scrollable ancestor
@@ -1046,35 +1046,35 @@ function _spanIdxForCharOffset(charOffset) {
   * scrollIntoView if no scrollable ancestor is found.
   */
 function scrollSpanIntoView(span) {
-     // Walk up the DOM to find the first scrollable ancestor.
-     let container = span.parentElement;
-     while (container && container !== document.body) {
-         const style = window.getComputedStyle(container);
-         const overflowY = style.overflowY;
-         if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') break;
-         container = container.parentElement;
-     }
-     if (!container || container === document.body) {
-         span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-         return;
-     }
-     const containerRect = container.getBoundingClientRect();
-     const spanRect = span.getBoundingClientRect();
-     // How far is the span from the visible edges of the container?
-     const topDelta    = spanRect.top    - containerRect.top;
-     const bottomDelta = spanRect.bottom - containerRect.bottom;
-     // Add a small margin (40 px) so the highlighted word is never right at the edge.
-     const margin = 40;
-     if (topDelta < margin) {
-         container.scrollBy({ top: topDelta - margin, behavior: 'smooth' });
-     } else if (bottomDelta > -margin) {
-         container.scrollBy({ top: bottomDelta + margin, behavior: 'smooth' });
-     }
+    // Walk up the DOM to find the first scrollable ancestor.
+    let container = span.parentElement;
+    while (container && container !== document.body) {
+        const style = window.getComputedStyle(container);
+        const overflowY = style.overflowY;
+        if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') break;
+        container = container.parentElement;
+    }
+    if (!container || container === document.body) {
+        span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const spanRect = span.getBoundingClientRect();
+    // How far is the span from the visible edges of the container?
+    const topDelta = spanRect.top - containerRect.top;
+    const bottomDelta = spanRect.bottom - containerRect.bottom;
+    // Add a small margin (40 px) so the highlighted word is never right at the edge.
+    const margin = 40;
+    if (topDelta < margin) {
+        container.scrollBy({ top: topDelta - margin, behavior: 'smooth' });
+    } else if (bottomDelta > -margin) {
+        container.scrollBy({ top: bottomDelta + margin, behavior: 'smooth' });
+    }
 }
 
 function stripMarkdown(md) {
     if (!md) return '';
-     const result = md
+    const result = md
         // Remove code blocks
         .replace(/```[\s\S]*?```/g, '')
         // Remove inline code
@@ -1096,21 +1096,21 @@ function stripMarkdown(md) {
         // Collapse extra whitespace
         .replace(/\n{3,}/g, '\n\n')
         .trim();
-     console.debug('[stripMarkdown] Input length:', md.length, '→ Output length:', result.length);
-     return result;
+    console.debug('[stripMarkdown] Input length:', md.length, '→ Output length:', result.length);
+    return result;
 }
 function speakText(markdown) {
-      console.log('[speakText] Called (legacy/manual path) — markdown length:', markdown ? markdown.length : 0, '| isSpeaking:', isSpeaking);
-      console.log('[speakText] speechSynthesis state — available:', 'speechSynthesis' in window,
-         '| speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A',
-         '| pending:', ('speechSynthesis' in window) ? window.speechSynthesis.pending : 'N/A',
-         '| paused:', ('speechSynthesis' in window) ? window.speechSynthesis.paused : 'N/A');
-      log(`speakText() called — markdown: ${markdown ? markdown.length : 0} chars, isSpeaking: ${isSpeaking}.`, 'info');
-     if (isSpeaking) {
-         console.warn('[speakText] Already speaking — ignoring duplicate call. Call stopSpeaking() first.');
-         log('speakText() called while already speaking — ignoring. Use stopSpeaking() first.', 'warning');
-         return;
-     }
+    console.log('[speakText] Called (legacy/manual path) — markdown length:', markdown ? markdown.length : 0, '| isSpeaking:', isSpeaking);
+    console.log('[speakText] speechSynthesis state — available:', 'speechSynthesis' in window,
+        '| speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A',
+        '| pending:', ('speechSynthesis' in window) ? window.speechSynthesis.pending : 'N/A',
+        '| paused:', ('speechSynthesis' in window) ? window.speechSynthesis.paused : 'N/A');
+    log(`speakText() called — markdown: ${markdown ? markdown.length : 0} chars, isSpeaking: ${isSpeaking}.`, 'info');
+    if (isSpeaking) {
+        console.warn('[speakText] Already speaking — ignoring duplicate call. Call stopSpeaking() first.');
+        log('speakText() called while already speaking — ignoring. Use stopSpeaking() first.', 'warning');
+        return;
+    }
     if (!('speechSynthesis' in window)) {
         showToast('Text-to-speech is not supported in this browser.', 'error');
         log('Speech synthesis not available in this browser.', 'error');
@@ -1131,84 +1131,84 @@ function speakText(markdown) {
     }
     try {
         window.speechSynthesis.cancel();
-         console.log('[speakText] speechSynthesis.cancel() called. State — speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending, '| paused:', window.speechSynthesis.paused);
-          // Chrome bug: speak() called too soon after cancel() is silently ignored.
-          // Use a short delay to let the cancel settle before queuing chunks.
-          setTimeout(() => doSpeakChunked(text), 100);
+        console.log('[speakText] speechSynthesis.cancel() called. State — speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending, '| paused:', window.speechSynthesis.paused);
+        // Chrome bug: speak() called too soon after cancel() is silently ignored.
+        // Use a short delay to let the cancel settle before queuing chunks.
+        setTimeout(() => doSpeakChunked(text), 100);
     } catch (e) {
         log(`Speech failed: ${e.message}`, 'error');
         console.error('[speakText]', e);
     }
 }
 // Chrome Web Speech API silently kills utterances longer than ~15 seconds.
-  // Work around this by splitting the text into sentence-sized chunks and
-  // queuing them as separate SpeechSynthesisUtterance objects.
+// Work around this by splitting the text into sentence-sized chunks and
+// queuing them as separate SpeechSynthesisUtterance objects.
 /**
   * Preferred entry-point for reading the current node aloud.
   * Uses _ttsPlainText (derived from word spans) so that boundary charIndex
   * values map exactly to span positions in _ttsOffsetIndex.
   */
 function speakSpanText() {
-     if (!_ttsPlainText) {
-         log('speakSpanText: no span plain-text available — nothing to read.', 'warning');
-         console.warn('[speakSpanText] _ttsPlainText is empty — nothing to speak.');
-         return;
-     }
-     if (isSpeaking) {
-         console.warn('[speakSpanText] Already speaking — ignoring duplicate call.');
-         return;
-     }
-     if (!('speechSynthesis' in window)) {
-         showToast('Text-to-speech is not supported in this browser.', 'error');
-         return;
-     }
-     console.log('[speakSpanText] Speaking span plain-text — length:', _ttsPlainText.length);
-     log(`speakSpanText() — ${_ttsPlainText.length} chars.`, 'info');
-     window.speechSynthesis.cancel();
-     setTimeout(() => doSpeakChunked(_ttsPlainText), 100);
+    if (!_ttsPlainText) {
+        log('speakSpanText: no span plain-text available — nothing to read.', 'warning');
+        console.warn('[speakSpanText] _ttsPlainText is empty — nothing to speak.');
+        return;
+    }
+    if (isSpeaking) {
+        console.warn('[speakSpanText] Already speaking — ignoring duplicate call.');
+        return;
+    }
+    if (!('speechSynthesis' in window)) {
+        showToast('Text-to-speech is not supported in this browser.', 'error');
+        return;
+    }
+    console.log('[speakSpanText] Speaking span plain-text — length:', _ttsPlainText.length);
+    log(`speakSpanText() — ${_ttsPlainText.length} chars.`, 'info');
+    window.speechSynthesis.cancel();
+    setTimeout(() => doSpeakChunked(_ttsPlainText), 100);
 }
 
-  function splitIntoChunks(text, maxLen = 200) {
-     const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
-     const chunks = [];
-     let current = '';
-     for (const sentence of sentences) {
-         if (current.length + sentence.length > maxLen && current.length > 0) {
-             chunks.push(current.trim());
-             current = sentence;
-         } else {
-             current += sentence;
-         }
-     }
-     if (current.trim()) chunks.push(current.trim());
-     return chunks;
+function splitIntoChunks(text, maxLen = 200) {
+    const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+    const chunks = [];
+    let current = '';
+    for (const sentence of sentences) {
+        if (current.length + sentence.length > maxLen && current.length > 0) {
+            chunks.push(current.trim());
+            current = sentence;
+        } else {
+            current += sentence;
+        }
+    }
+    if (current.trim()) chunks.push(current.trim());
+    return chunks;
 }
 // -------------------------------------------------------------------------
 // User-gesture tracking & auto-read
 // -------------------------------------------------------------------------
 function _onUserGesture() {
-     if (_hasUserGesture) return;
-     _hasUserGesture = true;
-     console.log('[_onUserGesture] First user gesture detected.');
-     if (_pendingAutoRead && !isSpeaking && currentNode) {
-         _pendingAutoRead = false;
-         _updateAutoReadIndicator(false);
-         console.log('[_onUserGesture] Firing pending auto-read for node:', currentNode);
-         log(`Auto-read: firing deferred speech for node "${currentNode}" after user gesture.`, 'info');
-         setTimeout(() => speakSpanText(), 80);
-     }
+    if (_hasUserGesture) return;
+    _hasUserGesture = true;
+    console.log('[_onUserGesture] First user gesture detected.');
+    if (_pendingAutoRead && !isSpeaking && currentNode) {
+        _pendingAutoRead = false;
+        _updateAutoReadIndicator(false);
+        console.log('[_onUserGesture] Firing pending auto-read for node:', currentNode);
+        log(`Auto-read: firing deferred speech for node "${currentNode}" after user gesture.`, 'info');
+        setTimeout(() => speakSpanText(), 80);
+    }
 }
 function _updateAutoReadIndicator(pending) {
-     const btn = document.getElementById('read-aloud');
-     const label = document.getElementById('read-aloud-label');
-     if (!btn || !label) return;
-     if (pending) {
-         label.textContent = 'Click to Read';
-         btn.title = 'Auto-read is ready — click anywhere or press a key to start';
-     } else if (!isSpeaking) {
-         label.textContent = 'Read Aloud';
-         btn.title = 'Read this node aloud';
-     }
+    const btn = document.getElementById('read-aloud');
+    const label = document.getElementById('read-aloud-label');
+    if (!btn || !label) return;
+    if (pending) {
+        label.textContent = 'Click to Read';
+        btn.title = 'Auto-read is ready — click anywhere or press a key to start';
+    } else if (!isSpeaking) {
+        label.textContent = 'Read Aloud';
+        btn.title = 'Read this node aloud';
+    }
 }
 // -------------------------------------------------------------------------
 // Timer-based word-highlight fallback
@@ -1218,184 +1218,184 @@ const TTS_WORDS_PER_MINUTE = 160;   // average speaking rate
 // Estimate ms per sentence by counting average words per sentence span.
 // We recompute this lazily each time _startTimerHighlight is called.
 function _mspSentence() {
-     if (!_ttsWordSpans.length) return 2000;
-     const totalWords = _ttsWordSpans.reduce((acc, s) => acc + (s.textContent.trim().split(/\s+/).length || 1), 0);
-     const avgWordsPerSentence = totalWords / _ttsWordSpans.length;
-     return (avgWordsPerSentence / TTS_WORDS_PER_MINUTE) * 60000;
+    if (!_ttsWordSpans.length) return 2000;
+    const totalWords = _ttsWordSpans.reduce((acc, s) => acc + (s.textContent.trim().split(/\s+/).length || 1), 0);
+    const avgWordsPerSentence = totalWords / _ttsWordSpans.length;
+    return (avgWordsPerSentence / TTS_WORDS_PER_MINUTE) * 60000;
 }
 function _startTimerHighlight(startSpanIdx) {
-     _stopTimerHighlight();
-      const msPerSentence = _mspSentence();
-     const tick = () => {
-         if (!isSpeaking) { _stopTimerHighlight(); return; }
-          if (!isHighlightEnabled()) return;
-         const elapsed = performance.now() - _ttsTimerStartTime;
-         const wordIdx = Math.min(
-                startSpanIdx + 1 + Math.floor(elapsed / msPerSentence),
-             _ttsWordSpans.length - 1
-         );
-         if (wordIdx !== _ttsTimerWordIdx) {
-             _ttsTimerWordIdx = wordIdx;
-             const span = _ttsWordSpans[wordIdx] || null;
-             if (span !== _ttsActiveSpan) {
-                 if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
-                 _ttsActiveSpan = span;
-                 if (_ttsActiveSpan) {
-                     _ttsActiveSpan.classList.add('tts-highlight');
-                     scrollSpanIntoView(_ttsActiveSpan);
-                 }
-             }
-         }
-     };
-     _ttsTimerStartTime = performance.now();
-      _ttsTimerWordIdx = startSpanIdx;
-     _ttsTimerInterval = setInterval(tick, 80);
-     console.debug('[_startTimerHighlight] Timer-based highlight started.');
+    _stopTimerHighlight();
+    const msPerSentence = _mspSentence();
+    const tick = () => {
+        if (!isSpeaking) { _stopTimerHighlight(); return; }
+        if (!isHighlightEnabled()) return;
+        const elapsed = performance.now() - _ttsTimerStartTime;
+        const wordIdx = Math.min(
+            startSpanIdx + 1 + Math.floor(elapsed / msPerSentence),
+            _ttsWordSpans.length - 1
+        );
+        if (wordIdx !== _ttsTimerWordIdx) {
+            _ttsTimerWordIdx = wordIdx;
+            const span = _ttsWordSpans[wordIdx] || null;
+            if (span !== _ttsActiveSpan) {
+                if (_ttsActiveSpan) _ttsActiveSpan.classList.remove('tts-highlight');
+                _ttsActiveSpan = span;
+                if (_ttsActiveSpan) {
+                    _ttsActiveSpan.classList.add('tts-highlight');
+                    scrollSpanIntoView(_ttsActiveSpan);
+                }
+            }
+        }
+    };
+    _ttsTimerStartTime = performance.now();
+    _ttsTimerWordIdx = startSpanIdx;
+    _ttsTimerInterval = setInterval(tick, 80);
+    console.debug('[_startTimerHighlight] Timer-based highlight started.');
 }
 function _stopTimerHighlight() {
-     if (_ttsTimerInterval != null) {
-         clearInterval(_ttsTimerInterval);
-         _ttsTimerInterval = null;
-         console.debug('[_stopTimerHighlight] Timer-based highlight stopped.');
-     }
+    if (_ttsTimerInterval != null) {
+        clearInterval(_ttsTimerInterval);
+        _ttsTimerInterval = null;
+        console.debug('[_stopTimerHighlight] Timer-based highlight stopped.');
+    }
 }
 function doSpeakChunked(text) {
-     console.log('[doSpeakChunked] state before queuing: speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
-     const voice = getSelectedVoice();
-     const chunks = splitIntoChunks(text, 200);
-     console.log(`[doSpeakChunked] Queuing ${chunks.length} chunk(s) with voice "${voice ? voice.name : 'default'}".`);
-     log(`Speaking ${chunks.length} chunk(s) with voice "${voice ? voice.name : 'browser default'}".`, 'info');
-     // Mark as speaking immediately so the button updates before onstart fires.
-     isSpeaking = true;
-     updateReadAloudButton();
-      // Compute cumulative char offsets for each chunk by walking the chunks
-      // array in order.  Because splitIntoChunks operates on the same `text`
-      // string that was used to build _ttsOffsetIndex (i.e. _ttsPlainText),
-      // these offsets map exactly to span positions in the offset index.
-      const chunkOffsets = [];
-      let runningOffset = 0;
-      for (const chunk of chunks) {
-          chunkOffsets.push(runningOffset);
-          // +1 for the space that splitIntoChunks implicitly consumes between chunks
-          runningOffset += chunk.length + 1;
-      }
-      console.debug('[doSpeakChunked] chunkOffsets (cumulative):', chunkOffsets);
-       // Track whether onboundary has ever fired for the current chunk.
-       // We give the browser a short grace period (500ms) before falling back to
-       // the timer-based highlight, so we don't start the timer unnecessarily.
-       let _boundaryFired = false;
-       let _boundaryGraceTimer = null;
-       // Span index at the start of each chunk — used to seed the timer fallback
-       // at the correct position if onboundary never fires.
-       const chunkStartSpanIdx = [];
-       for (let i = 0; i < chunks.length; i++) {
-           const spanIdx = _spanIdxForCharOffset(chunkOffsets[i]);
-           chunkStartSpanIdx.push(spanIdx);
-       }
-       console.debug('[doSpeakChunked] chunkStartSpanIdx:', chunkStartSpanIdx);
-     chunks.forEach((chunk, idx) => {
-         const utter = new SpeechSynthesisUtterance(chunk);
-         utter.rate = 1.0;
-         utter.pitch = 1.0;
-         if (voice) {
-             utter.voice = voice;
-             utter.lang = voice.lang;
-         }
-         if (idx === 0) {
-             utter.onstart = () => {
-                 isSpeaking = true;
-                 updateReadAloudButton();
-                 console.log('[doSpeakChunked] Speech started (chunk 0).');
-                 log('Speech playback started.', 'info');
-                 // Give the browser 500 ms to fire its first onboundary event.
-                 // If none arrives in that window, fall back to timer-based highlight.
-                 _boundaryFired = false;
-                 _boundaryGraceTimer = setTimeout(() => {
-                     if (!_boundaryFired && isSpeaking) {
-                         console.debug('[doSpeakChunked] No onboundary after 500ms — starting timer fallback.');
-                         _startTimerHighlight(chunkStartSpanIdx[0]);
-                     }
-                 }, 500);
-             };
-         }
-          // Word boundary highlighting
-          utter.onboundary = (e) => {
-              if (e.name !== 'word') return;
-              if (!_boundaryFired) {
-                  _boundaryFired = true;
-                  // onboundary IS supported — cancel the grace timer and stop any
-                  // timer fallback that may have already started.
-                  if (_boundaryGraceTimer != null) {
-                      clearTimeout(_boundaryGraceTimer);
-                      _boundaryGraceTimer = null;
-                  }
-                  _stopTimerHighlight();
-                  console.debug('[doSpeakChunked] onboundary fired — switching from timer to event-based highlight.');
-              }
-              const globalOffset = chunkOffsets[idx] + e.charIndex;
-              highlightWordAtOffset(globalOffset);
-          };
-         // When a chunk ends, reset the boundary-fired flag and seed the timer
-         // for the next chunk in case onboundary stops firing mid-way.
-         if (idx < chunks.length - 1) {
-             utter.onend = () => {
-                 _boundaryFired = false;
-                 _boundaryGraceTimer = setTimeout(() => {
-                     if (!_boundaryFired && isSpeaking) {
-                         console.debug(`[doSpeakChunked] No onboundary for chunk ${idx + 1} — starting timer fallback.`);
-                         _startTimerHighlight(chunkStartSpanIdx[idx + 1]);
-                     }
-                 }, 500);
-             };
-         }
-         if (idx === chunks.length - 1) {
-             utter.onend = () => {
-                 isSpeaking = false;
-                 updateReadAloudButton();
-                 _stopTimerHighlight();
-                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
-                  clearWordHighlight();
-                 log('Speech playback finished.', 'info');
-                 console.log('[doSpeakChunked] Speech ended (final chunk).');
-             };
-         }
-         utter.onerror = (e) => {
-             // Only clear isSpeaking on the last chunk or a non-interruption error.
-             if (e.error && e.error !== 'interrupted' && e.error !== 'canceled') {
-                 isSpeaking = false;
-                 updateReadAloudButton();
-                 _stopTimerHighlight();
-                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
-                  clearWordHighlight();
-                 log(`Speech error on chunk ${idx}: ${e.error}`, 'warning');
-                 console.warn(`[doSpeakChunked] Speech error on chunk ${idx}:`, e.error);
-             } else {
-                 isSpeaking = false;
-                 updateReadAloudButton();
-                 _stopTimerHighlight();
-                 if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
-                  clearWordHighlight();
-                 console.log(`[doSpeakChunked] Chunk ${idx} cancelled/interrupted (expected):`, e.error);
-             }
-         };
-         window.speechSynthesis.speak(utter);
-     });
-     console.log(`[doSpeakChunked] All ${chunks.length} chunk(s) queued. speaking:`, window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
+    console.log('[doSpeakChunked] state before queuing: speaking:', window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
+    const voice = getSelectedVoice();
+    const chunks = splitIntoChunks(text, 200);
+    console.log(`[doSpeakChunked] Queuing ${chunks.length} chunk(s) with voice "${voice ? voice.name : 'default'}".`);
+    log(`Speaking ${chunks.length} chunk(s) with voice "${voice ? voice.name : 'browser default'}".`, 'info');
+    // Mark as speaking immediately so the button updates before onstart fires.
+    isSpeaking = true;
+    updateReadAloudButton();
+    // Compute cumulative char offsets for each chunk by walking the chunks
+    // array in order.  Because splitIntoChunks operates on the same `text`
+    // string that was used to build _ttsOffsetIndex (i.e. _ttsPlainText),
+    // these offsets map exactly to span positions in the offset index.
+    const chunkOffsets = [];
+    let runningOffset = 0;
+    for (const chunk of chunks) {
+        chunkOffsets.push(runningOffset);
+        // +1 for the space that splitIntoChunks implicitly consumes between chunks
+        runningOffset += chunk.length + 1;
+    }
+    console.debug('[doSpeakChunked] chunkOffsets (cumulative):', chunkOffsets);
+    // Track whether onboundary has ever fired for the current chunk.
+    // We give the browser a short grace period (500ms) before falling back to
+    // the timer-based highlight, so we don't start the timer unnecessarily.
+    let _boundaryFired = false;
+    let _boundaryGraceTimer = null;
+    // Span index at the start of each chunk — used to seed the timer fallback
+    // at the correct position if onboundary never fires.
+    const chunkStartSpanIdx = [];
+    for (let i = 0; i < chunks.length; i++) {
+        const spanIdx = _spanIdxForCharOffset(chunkOffsets[i]);
+        chunkStartSpanIdx.push(spanIdx);
+    }
+    console.debug('[doSpeakChunked] chunkStartSpanIdx:', chunkStartSpanIdx);
+    chunks.forEach((chunk, idx) => {
+        const utter = new SpeechSynthesisUtterance(chunk);
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        if (voice) {
+            utter.voice = voice;
+            utter.lang = voice.lang;
+        }
+        if (idx === 0) {
+            utter.onstart = () => {
+                isSpeaking = true;
+                updateReadAloudButton();
+                console.log('[doSpeakChunked] Speech started (chunk 0).');
+                log('Speech playback started.', 'info');
+                // Give the browser 500 ms to fire its first onboundary event.
+                // If none arrives in that window, fall back to timer-based highlight.
+                _boundaryFired = false;
+                _boundaryGraceTimer = setTimeout(() => {
+                    if (!_boundaryFired && isSpeaking) {
+                        console.debug('[doSpeakChunked] No onboundary after 500ms — starting timer fallback.');
+                        _startTimerHighlight(chunkStartSpanIdx[0]);
+                    }
+                }, 500);
+            };
+        }
+        // Word boundary highlighting
+        utter.onboundary = (e) => {
+            if (e.name !== 'word') return;
+            if (!_boundaryFired) {
+                _boundaryFired = true;
+                // onboundary IS supported — cancel the grace timer and stop any
+                // timer fallback that may have already started.
+                if (_boundaryGraceTimer != null) {
+                    clearTimeout(_boundaryGraceTimer);
+                    _boundaryGraceTimer = null;
+                }
+                _stopTimerHighlight();
+                console.debug('[doSpeakChunked] onboundary fired — switching from timer to event-based highlight.');
+            }
+            const globalOffset = chunkOffsets[idx] + e.charIndex;
+            highlightWordAtOffset(globalOffset);
+        };
+        // When a chunk ends, reset the boundary-fired flag and seed the timer
+        // for the next chunk in case onboundary stops firing mid-way.
+        if (idx < chunks.length - 1) {
+            utter.onend = () => {
+                _boundaryFired = false;
+                _boundaryGraceTimer = setTimeout(() => {
+                    if (!_boundaryFired && isSpeaking) {
+                        console.debug(`[doSpeakChunked] No onboundary for chunk ${idx + 1} — starting timer fallback.`);
+                        _startTimerHighlight(chunkStartSpanIdx[idx + 1]);
+                    }
+                }, 500);
+            };
+        }
+        if (idx === chunks.length - 1) {
+            utter.onend = () => {
+                isSpeaking = false;
+                updateReadAloudButton();
+                _stopTimerHighlight();
+                if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                clearWordHighlight();
+                log('Speech playback finished.', 'info');
+                console.log('[doSpeakChunked] Speech ended (final chunk).');
+            };
+        }
+        utter.onerror = (e) => {
+            // Only clear isSpeaking on the last chunk or a non-interruption error.
+            if (e.error && e.error !== 'interrupted' && e.error !== 'canceled') {
+                isSpeaking = false;
+                updateReadAloudButton();
+                _stopTimerHighlight();
+                if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                clearWordHighlight();
+                log(`Speech error on chunk ${idx}: ${e.error}`, 'warning');
+                console.warn(`[doSpeakChunked] Speech error on chunk ${idx}:`, e.error);
+            } else {
+                isSpeaking = false;
+                updateReadAloudButton();
+                _stopTimerHighlight();
+                if (_boundaryGraceTimer != null) { clearTimeout(_boundaryGraceTimer); _boundaryGraceTimer = null; }
+                clearWordHighlight();
+                console.log(`[doSpeakChunked] Chunk ${idx} cancelled/interrupted (expected):`, e.error);
+            }
+        };
+        window.speechSynthesis.speak(utter);
+    });
+    console.log(`[doSpeakChunked] All ${chunks.length} chunk(s) queued. speaking:`, window.speechSynthesis.speaking, '| pending:', window.speechSynthesis.pending);
 }
 
 function stopSpeaking() {
-     console.log('[stopSpeaking] Called — isSpeaking:', isSpeaking, '| speechSynthesis.speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A');
+    console.log('[stopSpeaking] Called — isSpeaking:', isSpeaking, '| speechSynthesis.speaking:', ('speechSynthesis' in window) ? window.speechSynthesis.speaking : 'N/A');
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
     if (isSpeaking) log('Speech stopped by user or navigation.', 'info');
     if (isSpeaking) console.log('[stopSpeaking] Cancelling active speech.');
     isSpeaking = false;
-     _pendingAutoRead = false;
-     _updateAutoReadIndicator(false);
-     _stopTimerHighlight();
+    _pendingAutoRead = false;
+    _updateAutoReadIndicator(false);
+    _stopTimerHighlight();
     updateReadAloudButton();
-     clearWordHighlight();
+    clearWordHighlight();
 }
 function updateReadAloudButton() {
     const btn = document.getElementById('read-aloud');
@@ -1410,58 +1410,58 @@ function updateReadAloudButton() {
     }
 }
 async function onReadAloudToggle() {
-     console.log('[onReadAloudToggle] Called — isSpeaking:', isSpeaking, '| currentNode:', currentNode);
-     log(`Read-aloud toggle clicked — isSpeaking: ${isSpeaking}, currentNode: "${currentNode}".`, 'info');
-     // Clicking the button is itself a user gesture — record it so pending auto-read
-     // can fire and future auto-reads are allowed.
-     _hasUserGesture = true;
-     // If there's a pending auto-read, cancel it (we're about to handle it manually).
-     if (_pendingAutoRead) {
-         _pendingAutoRead = false;
-         _updateAutoReadIndicator(false);
-     }
+    console.log('[onReadAloudToggle] Called — isSpeaking:', isSpeaking, '| currentNode:', currentNode);
+    log(`Read-aloud toggle clicked — isSpeaking: ${isSpeaking}, currentNode: "${currentNode}".`, 'info');
+    // Clicking the button is itself a user gesture — record it so pending auto-read
+    // can fire and future auto-reads are allowed.
+    _hasUserGesture = true;
+    // If there's a pending auto-read, cancel it (we're about to handle it manually).
+    if (_pendingAutoRead) {
+        _pendingAutoRead = false;
+        _updateAutoReadIndicator(false);
+    }
     if (isSpeaking) {
         stopSpeaking();
         return;
     }
     if (!currentNode) {
         showToast('Select a node first.', 'warning');
-         console.warn('[onReadAloudToggle] Aborted — no current node.');
+        console.warn('[onReadAloudToggle] Aborted — no current node.');
         return;
     }
     const path = `${STORY_DIR}/${currentNode}.md`;
-     console.log('[onReadAloudToggle] Reading file:', path);
+    console.log('[onReadAloudToggle] Reading file:', path);
     const content = await readFile(basePath, path);
-     console.log('[onReadAloudToggle] readFile result — content length:', content != null ? content.length : 'null (file not found)');
-     log(`Read file "${path}" — result: ${content != null ? content.length + ' chars' : 'null'}.`, 'info');
+    console.log('[onReadAloudToggle] readFile result — content length:', content != null ? content.length : 'null (file not found)');
+    log(`Read file "${path}" — result: ${content != null ? content.length + ' chars' : 'null'}.`, 'info');
     if (content == null) {
         showToast('Could not load node content.', 'warning');
-         console.warn('[onReadAloudToggle] readFile returned null for path:', path);
+        console.warn('[onReadAloudToggle] readFile returned null for path:', path);
         return;
     }
-     // Capture the node at the time of the click; guard against navigation during the async readFile.
-     const nodeAtClick = currentNode;
-     console.log('[onReadAloudToggle] Scheduling speakText() in 150ms for node:', nodeAtClick, '(captured at click time)');
-     log(`Scheduling speakText() for node "${nodeAtClick}" (${content.length} chars) in 150ms.`, 'info');
-     setTimeout(() => {
-         if (currentNode !== nodeAtClick) {
-             console.warn(`[onReadAloudToggle] Node changed from "${nodeAtClick}" to "${currentNode}" during readFile — aborting speak.`);
-             log(`Node changed during readFile (${nodeAtClick} → ${currentNode}) — aborting speak.`, 'warning');
-             return;
-         }
-         if (isSpeaking) {
-             console.warn('[onReadAloudToggle] isSpeaking=true when setTimeout fired — duplicate speak prevented.');
-             log('Duplicate speakText() call prevented in setTimeout (isSpeaking already true).', 'warning');
-             return;
-         }
-          // Use speakSpanText so boundary offsets align with the word-span index.
-          // speakText(content) is kept as a fallback for contexts without a loaded node.
-          if (_ttsPlainText && _ttsPlainText.length > 0) {
-              speakSpanText();
-          } else {
-              speakText(content);
-          }
-     }, 150);
+    // Capture the node at the time of the click; guard against navigation during the async readFile.
+    const nodeAtClick = currentNode;
+    console.log('[onReadAloudToggle] Scheduling speakText() in 150ms for node:', nodeAtClick, '(captured at click time)');
+    log(`Scheduling speakText() for node "${nodeAtClick}" (${content.length} chars) in 150ms.`, 'info');
+    setTimeout(() => {
+        if (currentNode !== nodeAtClick) {
+            console.warn(`[onReadAloudToggle] Node changed from "${nodeAtClick}" to "${currentNode}" during readFile — aborting speak.`);
+            log(`Node changed during readFile (${nodeAtClick} → ${currentNode}) — aborting speak.`, 'warning');
+            return;
+        }
+        if (isSpeaking) {
+            console.warn('[onReadAloudToggle] isSpeaking=true when setTimeout fired — duplicate speak prevented.');
+            log('Duplicate speakText() call prevented in setTimeout (isSpeaking already true).', 'warning');
+            return;
+        }
+        // Use speakSpanText so boundary offsets align with the word-span index.
+        // speakText(content) is kept as a fallback for contexts without a loaded node.
+        if (_ttsPlainText && _ttsPlainText.length > 0) {
+            speakSpanText();
+        } else {
+            speakText(content);
+        }
+    }, 150);
 }
 // -------------------------------------------------------------------------
 // Image generation
@@ -1595,128 +1595,128 @@ async function generateImageForNode(nodeId) {
 // Audio generation
 // -------------------------------------------------------------------------
 function getAudioOpForNode(nodeId) {
-     // Initial node uses initial_audio.md, branches use choice_{a|b|c}_audio.md
-     if (nodeId === INITIAL_NODE) return 'ops/initial_audio.md';
-     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
-     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-         return `ops/choice_${lastChar}_audio.md`;
-     }
-     return null;
+    // Initial node uses initial_audio.md, branches use choice_{a|b|c}_audio.md
+    if (nodeId === INITIAL_NODE) return 'ops/initial_audio.md';
+    const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+    if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
+        return `ops/choice_${lastChar}_audio.md`;
+    }
+    return null;
 }
 async function loadNodeAudio(nodeId) {
-     const container = document.getElementById('node-audio-container');
-     const audio = document.getElementById('node-audio');
-     const statusEl = document.getElementById('node-audio-status');
-     const btn = document.getElementById('generate-audio');
-     const label = document.getElementById('generate-audio-label');
-     const audioPath = `${STORY_DIR}/${nodeId}.wav`;
-     console.log(`[loadNodeAudio] Checking for audio at "${audioPath}"…`);
-     statusEl.textContent = '';
-     statusEl.className = 'status-msg';
-     const exists = await fileExists(basePath, audioPath);
-     if (exists) {
-         // Cache-bust so newly generated audio replaces old ones
-         const url = `${basePath}/${audioPath}?t=${Date.now()}`;
-         audio.src = url;
-         container.style.display = 'block';
-         label.textContent = 'Regenerate Audio';
-         log(`Audio found for node "${nodeId}" — loaded from "${audioPath}".`, 'info');
-         console.log(`[loadNodeAudio] Audio found for node "${nodeId}" — src: ${url}`);
-     } else {
-         audio.removeAttribute('src');
-         audio.load();
-         container.style.display = 'none';
-         label.textContent = 'Generate Audio';
-         log(`No audio found for node "${nodeId}" (${audioPath}).`, 'info');
-         console.log(`[loadNodeAudio] No audio found for node "${nodeId}" at "${audioPath}".`);
-     }
-     btn.disabled = isGeneratingAudio;
+    const container = document.getElementById('node-audio-container');
+    const audio = document.getElementById('node-audio');
+    const statusEl = document.getElementById('node-audio-status');
+    const btn = document.getElementById('generate-audio');
+    const label = document.getElementById('generate-audio-label');
+    const audioPath = `${STORY_DIR}/${nodeId}.wav`;
+    console.log(`[loadNodeAudio] Checking for audio at "${audioPath}"…`);
+    statusEl.textContent = '';
+    statusEl.className = 'status-msg';
+    const exists = await fileExists(basePath, audioPath);
+    if (exists) {
+        // Cache-bust so newly generated audio replaces old ones
+        const url = `${basePath}/${audioPath}?t=${Date.now()}`;
+        audio.src = url;
+        container.style.display = 'block';
+        label.textContent = 'Regenerate Audio';
+        log(`Audio found for node "${nodeId}" — loaded from "${audioPath}".`, 'info');
+        console.log(`[loadNodeAudio] Audio found for node "${nodeId}" — src: ${url}`);
+    } else {
+        audio.removeAttribute('src');
+        audio.load();
+        container.style.display = 'none';
+        label.textContent = 'Generate Audio';
+        log(`No audio found for node "${nodeId}" (${audioPath}).`, 'info');
+        console.log(`[loadNodeAudio] No audio found for node "${nodeId}" at "${audioPath}".`);
+    }
+    btn.disabled = isGeneratingAudio;
 }
 async function onGenerateAudio() {
-     if (!currentNode) {
-         showToast('Select a node first.', 'warning');
-         log('Generate audio aborted: no current node selected.', 'warning');
-         console.warn('[onGenerateAudio] Aborted — no current node selected.');
-         return;
-     }
-     log(`User requested audio generation for node "${currentNode}".`, 'info');
-     console.log(`[onGenerateAudio] User requested audio for node "${currentNode}".`);
-     await generateAudioForNode(currentNode);
+    if (!currentNode) {
+        showToast('Select a node first.', 'warning');
+        log('Generate audio aborted: no current node selected.', 'warning');
+        console.warn('[onGenerateAudio] Aborted — no current node selected.');
+        return;
+    }
+    log(`User requested audio generation for node "${currentNode}".`, 'info');
+    console.log(`[onGenerateAudio] User requested audio for node "${currentNode}".`);
+    await generateAudioForNode(currentNode);
 }
 function maybeAutoGenerateAudio(nodeId) {
-     const autoAudioEl = document.getElementById('auto-audio');
-     if (autoAudioEl && autoAudioEl.checked) {
-         log(`Auto-audio enabled — triggering audio generation for node "${nodeId}".`, 'info');
-         console.log(`[maybeAutoGenerateAudio] Auto-audio enabled — firing for node "${nodeId}".`);
-         generateAudioForNode(nodeId).catch(err => {
-             log(`Auto audio generation failed: ${err.message}`, 'warning');
-             console.warn(`[maybeAutoGenerateAudio] Auto audio generation failed for "${nodeId}":`, err);
-         });
-     } else {
-         log(`Auto-audio disabled — skipping audio generation for node "${nodeId}".`, 'info');
-         console.log(`[maybeAutoGenerateAudio] Auto-audio disabled — skipping node "${nodeId}".`);
-     }
+    const autoAudioEl = document.getElementById('auto-audio');
+    if (autoAudioEl && autoAudioEl.checked) {
+        log(`Auto-audio enabled — triggering audio generation for node "${nodeId}".`, 'info');
+        console.log(`[maybeAutoGenerateAudio] Auto-audio enabled — firing for node "${nodeId}".`);
+        generateAudioForNode(nodeId).catch(err => {
+            log(`Auto audio generation failed: ${err.message}`, 'warning');
+            console.warn(`[maybeAutoGenerateAudio] Auto audio generation failed for "${nodeId}":`, err);
+        });
+    } else {
+        log(`Auto-audio disabled — skipping audio generation for node "${nodeId}".`, 'info');
+        console.log(`[maybeAutoGenerateAudio] Auto-audio disabled — skipping node "${nodeId}".`);
+    }
 }
 async function generateAudioForNode(nodeId) {
-     const opPath = getAudioOpForNode(nodeId);
-     if (!opPath) {
-         showToast(`No audio operation defined for node ${nodeId}.`, 'warning');
-         log(`generateAudioForNode: no op path for node "${nodeId}" — skipping.`, 'warning');
-         console.warn(`[generateAudioForNode] No op path for node "${nodeId}" — skipping.`);
-         return;
-     }
-     const target = `${STORY_DIR}/${nodeId}.wav`;
-     const btn = document.getElementById('generate-audio');
-     const statusEl = document.getElementById('node-audio-status');
-     const container = document.getElementById('node-audio-container');
-     isGeneratingAudio = true;
-     btn.disabled = true;
-     container.style.display = 'block';
-     statusEl.textContent = `Generating audio for node ${nodeId}...`;
-     statusEl.className = 'status-msg info';
-     log(`Generating audio for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
-     timeStart(`audio_${nodeId}`);
-     console.group(`[generateAudioForNode] Generating audio for node "${nodeId}"…`);
-     console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
-     try {
-         const taskId = await runDocOp(
-             sessionId,
-             opPath,
-             target,
-             getModelOverrides()
-         );
-         console.log(`[generateAudioForNode] runDocOp() returned taskId:`, taskId);
-         log(`Audio DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
-         await waitForTask(basePath, target, 600000, (tgt, info) => {
-             trackedSessions.set(tgt, info);
-             linkManager.update(tgt, info);
-             updateSessionLinks(tgt, info, getProxyUrl, 'node-links');
-             console.debug(`[generateAudioForNode] waitForTask progress — target: ${tgt} | status: ${info.status} | info:`, info);
-             log(`Audio task progress for "${tgt}": status=${info.status}.`, 'info');
-         });
-         log(`Audio generated for node "${nodeId}" in ${timeEnd(`audio_${nodeId}`)}.`, 'success');
-         console.log(`[generateAudioForNode] Audio generation complete for node "${nodeId}".`);
-         statusEl.textContent = 'Audio ready.';
-         statusEl.className = 'status-msg success';
-         if (currentNode === nodeId) {
-             await loadNodeAudio(nodeId);
-         } else {
-             log(`Audio ready for "${nodeId}" but user has navigated to "${currentNode}" — skipping reload.`, 'info');
-             console.log(`[generateAudioForNode] Audio ready for "${nodeId}" but user is now on "${currentNode}" — skipping reload.`);
-         }
-     } catch (e) {
-         log(`Audio generation failed for node "${nodeId}" after ${timeEnd(`audio_${nodeId}`)}: ${e.message}`, 'error');
-         console.error(`[generateAudioForNode(${nodeId})]`, e);
-         statusEl.textContent = `Error: ${e.message}`;
-         statusEl.className = 'status-msg error';
-         showToast(`Audio failed: ${e.message}`, 'error');
-     } finally {
-         isGeneratingAudio = false;
-         if (currentNode === nodeId) {
-             document.getElementById('generate-audio').disabled = false;
-         }
-         console.groupEnd();
-     }
+    const opPath = getAudioOpForNode(nodeId);
+    if (!opPath) {
+        showToast(`No audio operation defined for node ${nodeId}.`, 'warning');
+        log(`generateAudioForNode: no op path for node "${nodeId}" — skipping.`, 'warning');
+        console.warn(`[generateAudioForNode] No op path for node "${nodeId}" — skipping.`);
+        return;
+    }
+    const target = `${STORY_DIR}/${nodeId}.wav`;
+    const btn = document.getElementById('generate-audio');
+    const statusEl = document.getElementById('node-audio-status');
+    const container = document.getElementById('node-audio-container');
+    isGeneratingAudio = true;
+    btn.disabled = true;
+    container.style.display = 'block';
+    statusEl.textContent = `Generating audio for node ${nodeId}...`;
+    statusEl.className = 'status-msg info';
+    log(`Generating audio for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
+    timeStart(`audio_${nodeId}`);
+    console.group(`[generateAudioForNode] Generating audio for node "${nodeId}"…`);
+    console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    try {
+        const taskId = await runDocOp(
+            sessionId,
+            opPath,
+            target,
+            getModelOverrides()
+        );
+        console.log(`[generateAudioForNode] runDocOp() returned taskId:`, taskId);
+        log(`Audio DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
+        await waitForTask(basePath, target, 600000, (tgt, info) => {
+            trackedSessions.set(tgt, info);
+            linkManager.update(tgt, info);
+            updateSessionLinks(tgt, info, getProxyUrl, 'node-links');
+            console.debug(`[generateAudioForNode] waitForTask progress — target: ${tgt} | status: ${info.status} | info:`, info);
+            log(`Audio task progress for "${tgt}": status=${info.status}.`, 'info');
+        });
+        log(`Audio generated for node "${nodeId}" in ${timeEnd(`audio_${nodeId}`)}.`, 'success');
+        console.log(`[generateAudioForNode] Audio generation complete for node "${nodeId}".`);
+        statusEl.textContent = 'Audio ready.';
+        statusEl.className = 'status-msg success';
+        if (currentNode === nodeId) {
+            await loadNodeAudio(nodeId);
+        } else {
+            log(`Audio ready for "${nodeId}" but user has navigated to "${currentNode}" — skipping reload.`, 'info');
+            console.log(`[generateAudioForNode] Audio ready for "${nodeId}" but user is now on "${currentNode}" — skipping reload.`);
+        }
+    } catch (e) {
+        log(`Audio generation failed for node "${nodeId}" after ${timeEnd(`audio_${nodeId}`)}: ${e.message}`, 'error');
+        console.error(`[generateAudioForNode(${nodeId})]`, e);
+        statusEl.textContent = `Error: ${e.message}`;
+        statusEl.className = 'status-msg error';
+        showToast(`Audio failed: ${e.message}`, 'error');
+    } finally {
+        isGeneratingAudio = false;
+        if (currentNode === nodeId) {
+            document.getElementById('generate-audio').disabled = false;
+        }
+        console.groupEnd();
+    }
 }
 
 // -------------------------------------------------------------------------

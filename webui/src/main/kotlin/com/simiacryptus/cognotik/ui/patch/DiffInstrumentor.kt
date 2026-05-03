@@ -14,7 +14,8 @@ class DiffInstrumentor(
   private val processor: PatchProcessor,
   private val renderer: DiffUIRenderer,
   private val fs: FileSystem = RealFileSystem(),
-  val allowInvalid: Boolean = true
+  val allowInvalid: Boolean = true,
+  val forceChildPaths: Boolean = false
 ) {
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(DiffInstrumentor::class.java)
@@ -234,13 +235,13 @@ class DiffInstrumentor(
       filename
     }
     val directPath = root.resolve(effectiveRelativePath).normalize()
-    if (directPath.startsWith(root)) {
-      val relativePath = root.relativize(directPath).toString()
-      log.info("Treating '{}' as new file path: '{}'", filename, relativePath)
-      return relativePath
+    if (forceChildPaths && !directPath.startsWith(root)) {
+      log.warn("New file path '{}' resolves outside root '{}', rejecting", filename, root)
+      return null
     }
-    log.warn("New file path '{}' resolves outside root '{}', rejecting", filename, root)
-    return null
+    val relativePath = root.relativize(directPath).toString()
+    log.info("Treating '{}' as new file path: '{}'", filename, relativePath)
+    return relativePath
   }
 
   /**
