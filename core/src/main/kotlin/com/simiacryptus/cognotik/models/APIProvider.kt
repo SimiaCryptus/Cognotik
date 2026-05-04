@@ -65,14 +65,6 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
     throw UnsupportedOperationException("${this.name} does not support image generation functionality")
   }
 
-  open fun getChatModels(): Iterable<ChatModel> {
-    try {
-      getChatModels(SecureString(""), this.base)
-    } catch (e: Exception) {
-      log.error("Error retrieving chat models for provider ${this.name}", e)
-    }
-    return emptyList()
-  }
   open fun getEmbeddingModels() = emptyList<EmbeddingModel>()
 
   companion object {

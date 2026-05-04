@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
@@ -50,8 +51,9 @@ ${describer.describe(resultClass!!)}
         listOf(
           ModelSchema.ContentPart(
             text = question.text,
-            image_url = question.image?.let { "data:image/png;base64,${it.encodeImageToBase64()}" },
-          )
+          ).apply {
+              image = question.image
+          }
         )
       }
     )
@@ -65,7 +67,14 @@ ${describer.describe(resultClass!!)}
       var resultObj: T? = null
       for (i in 0..deserializerRetries) {
         try {
-          val responseContent = response(*messages).choices.firstOrNull()?.message?.content
+          val responseContent = model.chat(
+            ChatRequest(
+              model = model.modelType.modelId,
+              messages = messages.toList(),
+              temperature = model.temperature,
+              audio = model.audio,
+            )
+          ).choices.firstOrNull()?.message?.content
             ?: throw RuntimeException("No response")
           resultText = responseContent
           resultObj = JsonUtil.fromJson<T>(unwrap(responseContent), resultClass!!)
@@ -102,17 +111,6 @@ ${describer.describe(resultClass!!)}
       throw e
     }
 
-  override fun withModel(model: ChatInterface): ParsedImageAgent<T> = ParsedImageAgent(
-    resultClass = resultClass,
-    exampleInstance = exampleInstance,
-    prompt = prompt,
-    name = name,
-    model = model,
-    temperature = temperature,
-    deserializerRetries = deserializerRetries,
-    validation = validation,
-    describer = describer,
-  )
 
   companion object {
     private val log = LoggerFactory.getLogger(ParsedImageAgent::class.java)

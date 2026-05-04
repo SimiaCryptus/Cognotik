@@ -8,7 +8,7 @@ open class TabbedDisplay(
   val task: SessionTask,
   val tabs: MutableList<Pair<String, StringBuilder>> = mutableListOf(),
   val additionalClasses: String = "",
-  val closable: Boolean = true,
+  val closable: Boolean = false,
   val id: UUID = UUID.randomUUID(),
 ) {
 

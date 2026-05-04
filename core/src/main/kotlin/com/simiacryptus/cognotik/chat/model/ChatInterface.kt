@@ -17,7 +17,8 @@ class ChatInterface(
   private val key: SecureString,
   private val base: String,
   private val logLevel: Level,
-  private val temperature: Double,
+  val temperature: Double,
+  val audio: MutableMap<String, String> = mutableMapOf(),
   val provider: APIProvider,
   val modelType: ChatModel,
   private val workPool: ExecutorService,
@@ -30,9 +31,7 @@ class ChatInterface(
     require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
   }
 
-  fun chat(
-    messages: List<ChatMessage>,
-  ) = provider.getChatClient(
+  fun chat(chatRequest: ChatRequest): ModelSchema.ChatResponse = provider.getChatClient(
     key = key,
     base = base,
     workPool = workPool,
@@ -42,11 +41,7 @@ class ChatInterface(
   ).apply {
     onUsageListeners.add { model, usage -> onUsage(model, usage) }
   }.chat(
-    chatRequest = ChatRequest(
-      model = modelType.modelId,
-      messages = messages,
-      temperature = temperature,
-    ),
+    chatRequest = chatRequest,
     model = modelType,
     logStreams = logStreams
   )

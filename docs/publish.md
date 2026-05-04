@@ -129,5 +129,7 @@ promote_staging_repo() {
 Then deploy and promote the build with:
 ```
 MVN_CENTRAL_KEY='AQICAHidpAxjUnec2+y6zMst5ZAtSqAHG3cILsI2tm2DVIIvlAFZUxBH2ZJcW+Bzc/rHoJh/AAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHPtV625FyskyHYbqQIBEIBDtT8Ic17uo9CTG0vNOPAsocpEv35T4sDmJMS4aMmfrgEX0l701yjHIpEx4rzzrUsVDtwkS75BvRx9UxMrwJs+33tkoA=='
+git stash
 close_all_repos && ./gradlew build publish && list_repos_keys
+git stash pop
 ```

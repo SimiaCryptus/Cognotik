@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Interactive Stories</title>
     <link rel="stylesheet" href="style.css">
-     <link rel="stylesheet" href="choice-ui-additions.css">
     <script src="./utils/marked.min.js"></script>
 </head>
 <body>
@@ -29,6 +28,10 @@
              <div class="model-field">
                  <label for="image-model">Image Model</label>
                  <select id="image-model"></select>
+             </div>
+             <div class="model-field">
+                 <label for="audio-model">Audio Model</label>
+                 <select id="audio-model"></select>
              </div>
             <div class="model-field">
                 <label for="voice-select">Voice</label>
@@ -87,6 +90,12 @@
               <label class="auto-read-toggle">
                   <input type="checkbox" id="auto-image"> Auto-generate images
               </label>
+             <button id="generate-audio" class="btn btn-secondary" title="Generate narration audio for this node">
+                 🎙 <span id="generate-audio-label">Generate Audio</span>
+             </button>
+             <label class="auto-read-toggle">
+                 <input type="checkbox" id="auto-audio"> Auto-generate audio
+             </label>
               <label class="auto-read-toggle">
                   <input type="checkbox" id="highlight-readalong" checked> Highlight while reading
               </label>
@@ -94,6 +103,10 @@
          <div id="node-image-container" class="node-image-container" style="display:none;">
              <img id="node-image" class="node-image" alt="Story illustration"/>
              <div id="node-image-status" class="status-msg"></div>
+         </div>
+         <div id="node-audio-container" class="node-audio-container" style="display:none;">
+             <audio id="node-audio" class="node-audio" controls preload="metadata"></audio>
+             <div id="node-audio-status" class="status-msg"></div>
          </div>
         <div id="node-content" class="markdown-preview">
             <p class="empty-state">Select a node from the tree above.</p>

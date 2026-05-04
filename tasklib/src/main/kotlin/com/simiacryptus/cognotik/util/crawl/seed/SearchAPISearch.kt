@@ -26,14 +26,11 @@ open class SearchAPISearch(
       orchestrationConfig: OrchestrationConfig,
     ): List<SeedItem> {
       SeedMethod.log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
-      if (taskConfig?.search_query.isNullOrBlank()) {
+      if (taskConfig?.search_query.isNullOrEmpty()) {
         SeedMethod.log.error("Search query is missing for SearchAPI.io seed method")
         throw IllegalArgumentException("Search query is required when using SearchAPI.io seed method")
       }
       val client = HttpClient.newBuilder().build()
-      val query = taskConfig.search_query?.trim()
-      SeedMethod.log.debug("Using search query: $query")
-      val encodedQuery = URLEncoder.encode(query, "UTF-8")
       val resultCount = 10
       val searchLimit = 20
       SeedMethod.log.debug("Fetching user settings for SearchAPI.io")
@@ -44,31 +41,39 @@ open class SearchAPISearch(
       val apiKey = userSettings
         .apis.firstOrNull { it.provider == SearchAPI }?.key?.decrypt?.trim()
         ?: throw RuntimeException("SearchAPI.io API key is required")
-      SeedMethod.log.debug("Preparing SearchAPI.io request")
-      val uriBuilder =
-        "https://www.searchapi.io/api/v1/search?engine=$engine&q=$encodedQuery&num=$resultCount&api_key=$apiKey"
-      val request = HttpRequest.newBuilder()
-        .uri(URI.create(uriBuilder))
-        .header("User-Agent", "CognoTik-Crawler/1.0")
-        .GET()
-        .build()
-      SeedMethod.log.info("Sending request to SearchAPI.io")
-      val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-      val statusCode = response.statusCode()
-      val body = response.body()
-      if (statusCode != 200) {
-        SeedMethod.log.error("SearchAPI.io request failed with status $statusCode: $body")
-        throw RuntimeException("SearchAPI.io request failed with status $statusCode: $body")
+      val allResults = taskConfig?.search_query?.flatMap {
+        val query = it.trim()
+        SeedMethod.log.debug("Using search query: $query")
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+        SeedMethod.log.debug("Preparing SearchAPI.io request")
+        val uriBuilder =
+          "https://www.searchapi.io/api/v1/search?engine=$engine&q=$encodedQuery&num=$resultCount&api_key=$apiKey"
+        val request = HttpRequest.newBuilder()
+          .uri(URI.create(uriBuilder))
+          .header("User-Agent", "CognoTik-Crawler/1.0")
+          .GET()
+          .build()
+        SeedMethod.log.info("Sending request to SearchAPI.io")
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val statusCode = response.statusCode()
+        val body = response.body()
+        if (statusCode != 200) {
+          SeedMethod.log.error("SearchAPI.io request failed with status $statusCode: $body")
+          throw RuntimeException("SearchAPI.io request failed with status $statusCode: $body")
+        }
+        SeedMethod.log.debug("Parsing SearchAPI.io response")
+        handleResult(body, query)
+      } ?: emptyList()
+      if (allResults.isEmpty()) {
+        SeedMethod.log.warn("No search results found for query: ${taskConfig?.search_query?.toList()}")
+        return emptyList()
       }
-      SeedMethod.log.debug("Parsing SearchAPI.io response")
-      var results = handleResult(body, query!!)
       SeedMethod.log.info(
-        "Successfully retrieved ${results.size} search results, returning ${
-          results.size.coerceAtMost(searchLimit)
+        "Successfully retrieved ${allResults.size} search results, returning ${
+          allResults.size.coerceAtMost(searchLimit)
         } items"
       )
-      results = results.take(searchLimit)
-      return results.mapNotNull { result ->
+      return allResults.take(searchLimit).mapNotNull { result ->
         val link = (result["link"]
           ?: result["url"]
           ?: result["website"]

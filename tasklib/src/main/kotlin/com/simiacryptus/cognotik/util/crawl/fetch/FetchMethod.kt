@@ -1,14 +1,11 @@
 package com.simiacryptus.cognotik.util.crawl.fetch
 
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.util.EnabledStrategy
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.util.DynamicEnum
-import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
-import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod.Companion.HttpClient
 import java.io.File
 import java.util.concurrent.ExecutorService
 
@@ -43,6 +40,28 @@ class FetchMethod(
      val log = LoggerFactory.getLogger(FetchMethod::class.java)
 
      val HttpClient = register(FetchMethod("HttpClient") { task -> BasicHttpClientStrategy(task) })
+
+     /**
+      * Selenium-based fetch method.  Only active when [FetchConfig.isSeleniumEnabled] is `true`
+      * **and** the Selenium runtime classes are present on the classpath.
+      *
+      * The strategy itself guards against missing classes via [SeleniumFetchStrategy.isEnabled],
+      * so callers can safely reference this constant even when Selenium is not on the classpath –
+      * the strategy will simply report itself as disabled and the crawl pipeline will fall back
+      * to [HttpClient].
+      */
+     val Selenium = register(FetchMethod("Selenium") { task ->
+       try {
+         SeleniumFetchStrategy(task)
+       } catch (e: NoClassDefFoundError) {
+         log.warn(
+           "Selenium classes not found on classpath – falling back to BasicHttpClientStrategy. " +
+               "Add 'org.seleniumhq.selenium:selenium-java' to your runtime dependencies to enable Selenium fetching."
+         )
+         BasicHttpClientStrategy(task)
+       }
+     })
+
 
      fun register(fetchMethod: FetchMethod): FetchMethod {
        DynamicEnum.register(FetchMethod::class.java, fetchMethod)

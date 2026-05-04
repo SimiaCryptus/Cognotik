@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.util.toContentList
@@ -270,19 +271,25 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
     private fun transformContent(
         path: Path, fileContent: String, transformationMessage: String, model: ChatInterface, projectRoot: Path
     ) = run {
-        model.chat(
-            listOf(
-                ModelSchema.ChatMessage(
-                    ModelSchema.Role.system, """
-                        You will combine natural language instructions with a user provided code example to document code.
-                        """.trimIndent().toContentList(),
-                ),
-                ModelSchema.ChatMessage(
-                    ModelSchema.Role.user,
-                    "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
-                ),
-            )
-        ).choices.first().message?.content?.trim()
+      model.chat(
+        ChatRequest(
+          model = model.modelType.modelId,
+          messages = listOf(
+            ModelSchema.ChatMessage(
+              ModelSchema.Role.system,
+              """
+                            You will combine natural language instructions with a user provided code example to document code.
+                            """.trimIndent().toContentList(),
+            ),
+            ModelSchema.ChatMessage(
+              ModelSchema.Role.user,
+              "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
+            ),
+          ),
+          temperature = model.temperature,
+          audio = model.audio,
+        )
+      ).choices.first().message?.content?.trim()
     } ?: fileContent
 
     companion object {

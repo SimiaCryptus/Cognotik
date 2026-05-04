@@ -122,6 +122,7 @@
         <ul>
             <li><a class="nav-link active" data-section="section-input" href="#section-input">💡 Idea</a></li>
             <li><a class="nav-link" data-section="section-pipeline" href="#section-pipeline">⚙️ Pipeline</a></li>
+            <li><a class="nav-link" data-section="section-test" href="#section-test">🧪 Test</a></li>
             <li><a class="nav-link" data-section="section-update" href="#section-update">✏️ Update</a></li>
             <li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
             <li><a class="nav-link" data-section="section-git" href="#section-git">🔀 Git</a></li>
@@ -194,6 +195,29 @@ A simple, elegant task management web application for small teams.
                 <button class="btn btn-secondary" id="save-models">💾 Save Model Settings</button>
                 <button class="btn btn-secondary" id="refresh-models">🔄 Refresh Models</button>
                 <span class="status-msg" id="model-status"></span>
+            </div>
+        </div>
+        <div class="card">
+            <h3>🛠️ Render Mode</h3>
+            <p class="help-text">Choose how the AI should build your webapp. Both modes produce the same kind of output, but use different planning strategies under the hood.</p>
+            <div class="render-mode-options">
+                <label class="render-mode-option">
+                    <input type="radio" name="render-mode" value="ops/render_op.md" checked>
+                    <div class="render-mode-content">
+                        <strong>🏗️ Full Pipeline (SubPlan)</strong>
+                        <p class="render-mode-desc">Uses a structured sub-plan to break the build into multiple coordinated tasks. More thorough; better for complex apps. Higher token usage.</p>
+                    </div>
+                </label>
+                <label class="render-mode-option">
+                    <input type="radio" name="render-mode" value="ops/render_simple_op.md">
+                    <div class="render-mode-content">
+                        <strong>⚡ Simple Mode</strong>
+                        <p class="render-mode-desc">Generates the project in a single pass without an explicit sub-plan. Faster and cheaper; great for small or simple apps.</p>
+                    </div>
+                </label>
+            </div>
+            <div class="button-row">
+                <span class="status-msg" id="render-mode-status"></span>
             </div>
         </div>
     </section>
@@ -424,6 +448,111 @@ A simple, elegant task management web application for small teams.
                     <div class="button-row">
                         <input type="text" id="zip-custom-path" placeholder="/code" style="flex:1; padding:0.55rem 0.75rem; background:var(--color-bg); color:var(--color-text); border:1px solid var(--color-border); border-radius:6px; font-size:0.9rem; font-family:inherit;">
                         <button class="btn btn-secondary" id="btn-zip-custom">📦 Download Path</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Section: Test (Selenium Diagnostics) -->
+    <section class="section" id="section-test">
+        <h2>🧪 Test Your Webapp</h2>
+        <div class="card">
+            <h3>🤖 Headless Browser Test</h3>
+            <p class="help-text">Load your generated webapp in a Selenium-controlled headless Chrome browser and capture
+                diagnostic artifacts: a screenshot, the browser's console output, a network access log, and the
+                fully-rendered HTML. Diagnostics are captured shortly after the page-load event completes so that
+                asynchronous content has time to render.</p>
+            <div class="button-row">
+                <button class="btn btn-run" id="run-test"
+                        data-badge="badge-test"
+                        data-op="ops/test_op.md"
+                        data-output="code/test.md">▶ Run Test
+                </button>
+                <button class="btn btn-secondary" id="btn-refresh-test-artifacts">🔄 Refresh Artifacts</button>
+                <span class="step-badge" id="badge-test">pending</span>
+                <span class="status-msg" id="test-status"></span>
+            </div>
+            <div id="test-session-link" class="session-link-container" style="display:none;"></div>
+        </div>
+        <div class="card">
+            <h3>🔍 Review Test Results with AI</h3>
+            <p class="help-text">After running the test, have the AI examine the captured artifacts (screenshot, console
+                output, network log, rendered HTML) and write a summary of findings — including bugs, issues, or unexpected
+                behaviors — into your update notes. You can then run the Update operation to apply fixes.</p>
+            <div class="button-row">
+                <button class="btn btn-run" id="run-review"
+                        data-badge="badge-review"
+                        data-op="ops/review_op.md"
+                        data-output="notes.md">🔍 Review Results
+                </button>
+                <span class="step-badge" id="badge-review">pending</span>
+                <span class="status-msg" id="review-status"></span>
+            </div>
+            <div id="review-session-link" class="session-link-container" style="display:none;"></div>
+            <div class="viewer" id="viewer-review"></div>
+        </div>
+        <div class="card">
+            <h3>📸 Screenshot</h3>
+            <p class="help-text">Visual snapshot of the rendered page.</p>
+            <div id="test-screenshot-container">
+                <p class="placeholder">No screenshot yet. Run the test to capture one.</p>
+            </div>
+        </div>
+        <div class="card">
+            <h3>🖥️ Browser Console Output</h3>
+            <p class="help-text">Messages logged to the browser console during page load (errors, warnings, logs).</p>
+            <div class="console-panel">
+                <div class="console-header">
+                    <span class="console-title">console.log</span>
+                </div>
+                <div class="console-output" id="test-console-output">
+                    <div class="console-entry console-info">No console output yet.</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>🌐 Network Access Log</h3>
+            <p class="help-text">All HTTP requests made by the page during loading and rendering.</p>
+            <div id="test-network-container">
+                <pre class="placeholder" style="white-space:pre-wrap;">No network log yet.</pre>
+            </div>
+        </div>
+        <div class="card">
+            <h3>📄 Rendered HTML</h3>
+            <p class="help-text">The page's HTML after JavaScript has executed and all asynchronous content has loaded.</p>
+            <div id="test-html-container">
+                <pre class="placeholder">No rendered HTML yet.</pre>
+            </div>
+        </div>
+        <div class="card">
+            <h3>💡 About Headless Testing</h3>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <span class="tip-icon">⏱️</span>
+                    <div>
+                        <strong>Timing</strong>
+                        <p class="tip-text">Artifacts are captured a short delay (default 1 second) after the page-load event so async content can render.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🐛</span>
+                    <div>
+                        <strong>Debug Errors</strong>
+                        <p class="tip-text">Check the console output for JavaScript exceptions. You can copy these into the Update tab to ask the AI to fix them.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🌐</span>
+                    <div>
+                        <strong>Network Issues</strong>
+                        <p class="tip-text">The network log helps identify missing resources, broken links, or slow-loading assets.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">📐</span>
+                    <div>
+                        <strong>Visual Verification</strong>
+                        <p class="tip-text">The screenshot lets you see how the rendered page looks without launching a browser yourself.</p>
                     </div>
                 </div>
             </div>

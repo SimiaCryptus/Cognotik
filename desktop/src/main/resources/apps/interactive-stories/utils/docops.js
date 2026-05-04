@@ -9,7 +9,7 @@
  * @param {string} sessionId - Session ID
  * @param {string} opPath - Path to the operation document
  * @param {string} targetPath - Target path for the output
- * @param {Object} models - Model configuration (smartModel, fastModel, imageModel)
+ * @param {Object} models - Model configuration (smartModel, fastModel, imageModel, audioModel)
  * @returns {Promise<string>} Task/session ID
  */
 export async function runDocOp(sessionId, opPath, targetPath, models = {}) {
@@ -23,6 +23,7 @@ export async function runDocOp(sessionId, opPath, targetPath, models = {}) {
     if (models.smartModel) params.set('smartModel', models.smartModel);
     if (models.fastModel) params.set('fastModel', models.fastModel);
     if (models.imageModel) params.set('imageModel', models.imageModel);
+    if (models.audioModel) params.set('audioModel', models.audioModel);
 
     const url = '/docops?' + params.toString();
     const resp = await fetch(url, { method: 'POST' });

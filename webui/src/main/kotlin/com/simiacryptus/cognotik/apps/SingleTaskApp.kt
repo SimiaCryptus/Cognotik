@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -75,18 +76,23 @@ abstract class SingleTaskApp(
     val orchestrationConfig = getOrchestrationConfig(session, user)
     socketManager.newTask(cancelable = false, root = true).expandable(
       "Session Info", """
-    Session ID: `${session}`
-    
-    Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-    
-    Root: `${orchestrationConfig?.absoluteWorkingDir}`
-    
-    Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
-    
-    Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-    
-    Task Type: `${taskType.name}`
-    
+Session ID: `${session}`
+
+Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+
+Root: `${orchestrationConfig?.absoluteWorkingDir}`
+
+Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+
+Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+
+Task Type: `${taskType.name}`
+
+Task Config: 
+```json
+${taskConfig.toJson()}
+```
+
               """.renderMarkdown()
     )
     socketManager.pool.submit {

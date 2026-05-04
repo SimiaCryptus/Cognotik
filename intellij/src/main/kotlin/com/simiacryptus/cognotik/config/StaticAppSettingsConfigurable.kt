@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.config
 
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.config.ApiAudioModel
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
@@ -54,6 +55,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Image Model:"))
                         add(component.mainImageModel)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("Audio Model:"))
+                        add(component.audioModel)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Embedding Model:"))
@@ -435,6 +440,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
             settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
             settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelId }
+            settings.audioModel?.model?.let { component.audioModel.selectedItem = it }
             component.devActions.isSelected = settings.devActions
             component.temperature.text = settings.temperature.toString()
             component.embeddingModel.selectedItem = settings.embeddingModel
@@ -473,7 +479,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val smartModelName = component.smartModel.selectedItem as String?
             val imageChatModelName = component.imageChatModel.selectedItem as String?
             val imageModelName = component.mainImageModel.selectedItem as String?
-            log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName")
+            val audioModelName = component.audioModel.selectedItem as String?
+            log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName, audio: $audioModelName")
 
             val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { !it.deprecated } ?: emptyList()
@@ -493,6 +500,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val imageModel =
                 imageModels.find { model -> model.modelId == imageModelName || model.name == imageModelName }
             val imageApiData = userSettings.apis.find { it.provider == imageModel?.provider }
+            val audioChatModel =
+                chatModels.find { model -> model.modelId == audioModelName || model.name == audioModelName }
+            val audioApiData = userSettings.apis.find { it.provider == audioChatModel?.provider }
 
             settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
             settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
@@ -505,6 +515,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.suppressErrors = component.suppressErrors.isSelected
             settings.smartModel = ApiChatModel(smartChatModel, smartApiData)
             settings.imageModel = imageModel?.let { ApiImageModel(it, imageApiData) }
+            settings.audioModel = audioChatModel?.let { ApiChatModel(it, audioApiData) }
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.preferredBrowser = component.preferredBrowser.selectedItem?.toString() ?: BROWSER_INTELLIJ_BUILTIN

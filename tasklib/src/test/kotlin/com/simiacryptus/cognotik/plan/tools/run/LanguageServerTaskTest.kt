@@ -37,6 +37,7 @@ object LanguageServerTaskTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     )
 
     // Create a sample file in the harness root for the LSP to analyze
@@ -72,6 +73,7 @@ object LanguageServerTaskTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     )
 
     // Create a file with a syntax error

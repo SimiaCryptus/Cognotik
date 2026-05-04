@@ -49,6 +49,7 @@ public record DocumentationUpdater(
                 chatModel,
                 chatModel,
                 chatModel,
+                chatModel,
                 false,
                 false,
                 new File(rootDir, ".doc-processor-cache/url-cache"),

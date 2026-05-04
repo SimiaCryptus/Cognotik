@@ -150,6 +150,8 @@ open class DocProcessorAction(
           ?: throw IllegalStateException("Smart model not configured"),
         imageModel = AppSettingsState.instance.imageChatModel?.model
             ?: throw IllegalStateException("Image model not configured"),
+        audioModel = AppSettingsState.instance.audioModel?.model
+            ?: throw IllegalStateException("Audio model not configured"),
         autoFix = true,
         user = localUser,
       )
@@ -235,6 +237,7 @@ open class DocProcessorAction(
               fastModel = docProcessor.fastModel,
               smartModel = docProcessor.smartModel,
               imageModel = docProcessor.imageModel,
+              audioModel = docProcessor.audioModel,
               showMenubar = false,
               user = localUser,
             ) {

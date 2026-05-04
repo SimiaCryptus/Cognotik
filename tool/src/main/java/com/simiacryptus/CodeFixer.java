@@ -55,6 +55,7 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles, ChatM
                 chatModel,
                 chatModel,
                 chatModel,
+                chatModel,
                 new File("."),
                 0.0,
                 defaultUser

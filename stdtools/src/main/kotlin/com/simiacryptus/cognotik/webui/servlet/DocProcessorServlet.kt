@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - smartModel: (Optional) Model ID to use as the smart/primary model (e.g., "claude-3-5-sonnet-20241022")
  * - fastModel: (Optional) Model ID to use as the fast/secondary model (e.g., "claude-3-5-haiku-20241022")
  * - imageModel: (Optional) Model ID to use as the image model
+  * - audioModel: (Optional) Model ID to use as the audio model
  *
  * The servlet parses the specified markdown file for frontmatter specifications
  * and executes the resulting documentation processing tasks.
@@ -57,9 +58,11 @@ class DocProcessorServlet(
     }
     val modeName = request.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.Companion.fromName(modeName) ?: UpdateModes.PatchExisting
-    val effectiveSmartModel = resolveModel(request.getParameter("smartModel")) ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: throw IllegalArgumentException("Invalid or missing fastModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: throw IllegalArgumentException("Invalid or missing imageModel parameter. Provide a valid model ID or omit the parameter to use the default.")
+    val smartModel = resolveModel(request.getParameter("smartModel"))
+    val effectiveSmartModel = smartModel ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
+    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: effectiveSmartModel
+    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: effectiveFastModel
+     val effectiveAudioModel = resolveModel(request.getParameter("audioModel")) ?: effectiveFastModel
     try {
       val session = Session(sessionId)
       val user = authenticate(request, response) ?: return
@@ -85,7 +88,7 @@ class DocProcessorServlet(
         return
       }
       val targetPath = request.getParameter("target")
-      log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}")
+       log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}, audioModel=${effectiveAudioModel.modelId}")
       val docProcessor = DocProcessor(
         root = sessionDir,
         docsFolder = sessionDir,
@@ -93,6 +96,7 @@ class DocProcessorServlet(
         fastModel = effectiveFastModel,
         smartModel = effectiveSmartModel,
         imageModel = effectiveImageModel,
+         audioModel = effectiveAudioModel,
         autoFix = true,
         user = user,
         parentSession = Session(sessionId),

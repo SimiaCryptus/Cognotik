@@ -43,7 +43,7 @@ data class Session(
         in '0'..'9' -> true
         else -> false
       }
-    }.take(4)
+    }.take(8)
 
     fun parseSessionID(sessionID: String): Session {
       val session = Session(sessionID)
@@ -53,7 +53,7 @@ data class Session(
   }
 
   private fun validateSessionId() {
-    if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4,8}""".toRegex())) {
+    if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4,12}""".toRegex())) {
       throw IllegalArgumentException("Invalid session ID: $this")
     }
   }

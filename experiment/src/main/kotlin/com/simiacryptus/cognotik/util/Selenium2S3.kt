@@ -440,15 +440,6 @@ open class Selenium2S3(
   companion object {
     private val log = LoggerFactory.getLogger(Selenium2S3::class.java)
 
-    init {
-      Runtime.getRuntime().addShutdownHook(Thread {
-        try {
-        } catch (e: Exception) {
-          log.warn("Error closing com.simiacryptus.cognotik.webui.util.Selenium2S3", e)
-        }
-      })
-    }
-
     fun chromeDriver(headless: Boolean = true, loadImages: Boolean = !headless): ChromeDriver {
       val osname = System.getProperty("os.name")
       val chromePath = when {

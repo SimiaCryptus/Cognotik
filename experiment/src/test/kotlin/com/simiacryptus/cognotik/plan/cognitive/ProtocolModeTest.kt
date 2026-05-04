@@ -28,6 +28,7 @@ object ProtocolModeTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     ) {
       override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
         taskSettings[FileModificationTask.FileModification.name] = TaskTypeConfig(

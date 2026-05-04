@@ -482,6 +482,34 @@ body.immersive .tts-highlight {
      display: block;
      margin-top: 0.5rem;
 }
+/* Node audio */
+.node-audio-container {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      text-align: center;
+}
+.node-audio {
+      width: 100%;
+      max-width: 600px;
+      display: block;
+      margin: 0 auto;
+}
+.node-audio-container .status-msg {
+      display: block;
+      margin-top: 0.5rem;
+}
+/* Immersive mode for audio container */
+body.immersive #node-card .node-audio-container {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0 auto 1.25rem;
+      max-width: 900px;
+      width: 100%;
+}
 
 
 /* Activity log */
@@ -702,4 +730,59 @@ body.immersive #node-card .btn-choice {
 }
 body.immersive #node-card .btn-choice:hover:not(:disabled) {
      background: #ffffff;
+}
+
+/* -----------------------------------------------------------------------
+ Choice button description text
+ ----------------------------------------------------------------------- */
+.btn-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.choice-desc {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  opacity: 0.82;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: left;
+  margin-top: 0.15rem;
+}
+
+/* -----------------------------------------------------------------------
+ End-state panel
+ ----------------------------------------------------------------------- */
+.end-state-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1.5rem;
+  margin: 1rem 0;
+  border: 2px dashed var(--color-border, #555);
+  border-radius: 0.75rem;
+  background: var(--color-surface-alt, rgba(0,0,0,0.15));
+  text-align: center;
+}
+
+.end-state-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.end-state-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.end-state-hint {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  margin: 0;
 }

@@ -1,10 +1,12 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.plan.tools.file.GenerateAudioFilesTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.SeleniumFetchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
@@ -33,6 +35,8 @@ object CoreTasks : CognotikPlugin {
   override fun init() {
     // Core Task Types
     TaskType.registerTaskType(AutoFixTask.AutoFix)
+    TaskType.registerTaskType(AudioGenerationTask.GenerateAudio)
+    TaskType.registerTaskType(GenerateAudioFilesTask.GenerateAudioFiles)
     TaskType.registerTaskType(BrainstormingTask.Brainstorming)
     TaskType.registerTaskType(ComicBookGenerationTask.ComicBookGeneration)
     TaskType.registerTaskType(CreateErbTemplateTask.CreateErbTemplate)
@@ -47,6 +51,7 @@ object CoreTasks : CognotikPlugin {
     TaskType.registerTaskType(NarrativeGenerationTask.NarrativeGeneration)
     TaskType.registerTaskType(PersuasiveEssayTask.PersuasiveEssay)
     TaskType.registerTaskType(RenderErbTemplateTask.RenderErbTemplate)
+    TaskType.registerTaskType(SeleniumFetchTask.SeleniumFetch)
     TaskType.registerTaskType(SocraticDialogueTask.SocraticDialogue)
     TaskType.registerTaskType(SubPlanTask.SubPlan)
     TaskType.registerTaskType(TutorialGenerationTask.TutorialGeneration)

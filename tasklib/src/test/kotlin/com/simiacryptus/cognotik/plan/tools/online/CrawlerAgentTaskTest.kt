@@ -31,7 +31,7 @@ object CrawlerAgentTaskTest {
         processing_strategy = ProcessingStrategyType("DefaultSummarizer") { DefaultSummarizerStrategy.instance },
       ),
       executionConfig = CrawlerTaskExecutionConfigData(
-        search_query = "Kotlin programming language features",
+        search_query = listOf("Kotlin programming language features"),
         content_queries = "Identify the top 5 features of Kotlin and its primary use cases.",
         task_description = "Research and summarize Kotlin language features"
       ),
@@ -40,6 +40,7 @@ object CrawlerAgentTaskTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     ).run()
   }
 
@@ -64,6 +65,7 @@ object CrawlerAgentTaskTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     ).run()
   }
 }

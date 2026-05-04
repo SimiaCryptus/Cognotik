@@ -52,6 +52,7 @@ object GameTheoryTaskTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     ).run()
   }
 
@@ -77,6 +78,7 @@ object GameTheoryTaskTest {
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
+      audioModel = GeminiModels.GeminiFlash_30_Preview,
     ).run()
   }
 }

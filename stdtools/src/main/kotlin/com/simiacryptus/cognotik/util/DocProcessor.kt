@@ -82,9 +82,10 @@ class DocProcessor(
   val docsFolder: File,
   val updateMode: UpdateMode = UpdateModes.PatchToUpdate,
   val additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
-  val fastModel: ChatModel,
   val smartModel: ChatModel,
-  val imageModel: ChatModel,
+  val fastModel: ChatModel = smartModel,
+  val imageModel: ChatModel = fastModel,
+  val audioModel: ChatModel = imageModel,
   val serverless: Boolean = false,
   val openBrowser: Boolean = false,
   val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache"),
@@ -1043,6 +1044,7 @@ class DocProcessor(
           fastModel = fastModel,
           smartModel = smartModel,
           imageModel = imageModel,
+           audioModel = audioModel,
           showMenubar = showMenubar,
           user = user
         ) {
@@ -1211,7 +1213,7 @@ class DocProcessor(
       if (task != null) it.getChildClient(task) else it
     }
     val data = mod.data.copy()
-    return when {
+    val config = when {
       FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
         val baseCfgJson = mapOf(
           "task_type" to mod.taskType.name,
@@ -1243,7 +1245,7 @@ class DocProcessor(
         val contextMessages = buildList {
           add("Task type: ${mod.taskType.name}")
           add("Task description: ${data.task_description}")
-          data.relative_files?.forEach { text -> add("Target file: $text") }
+          data.relative_files?.forEach { text -> add("Output file: $text") }
           data.relative_related_files?.forEach { relatedFile ->
             val resolvedFile =
               if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
@@ -1266,7 +1268,8 @@ class DocProcessor(
         )
         taskConfig
       }
-    }.jsonCast(mod.taskType.executionConfigClass)
+    }
+    return config.jsonCast(mod.taskType.executionConfigClass)
   }
 
 
@@ -1509,7 +1512,7 @@ class DocProcessor(
       }
 
       !FileTaskExecutionConfig::class.java.isAssignableFrom(taskType.executionConfigClass) -> {
-        appendLine("Process the file ${target.name} according to the task type ${taskType.name}.")
+        appendLine("Produce the file ${target.name} according to the task type ${taskType.name}.")
         appendLine("Use the provided documentation and specifications as context for the processing.")
       }
 

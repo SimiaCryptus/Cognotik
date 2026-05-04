@@ -1175,3 +1175,57 @@ textarea:focus {
         font-size: 1.1rem;
     }
 }
+
+/* === Render mode selector === */
+.render-mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem;
+}
+
+.render-mode-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: var(--color-bg, #111);
+    border: 1px solid var(--color-border, #333);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.render-mode-option:hover {
+    border-color: var(--color-accent, #f5a623);
+}
+
+.render-mode-option input[type="radio"] {
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.render-mode-option:has(input[type="radio"]:checked) {
+    border-color: var(--color-accent, #f5a623);
+    background: rgba(245, 166, 35, 0.06);
+}
+
+.render-mode-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.render-mode-content strong {
+    font-size: 0.98rem;
+    color: var(--color-text, #eee);
+}
+
+.render-mode-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #888);
+    line-height: 1.4;
+}

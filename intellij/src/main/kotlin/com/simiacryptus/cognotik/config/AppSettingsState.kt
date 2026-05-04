@@ -66,6 +66,7 @@ data class AppSettingsState(
     var imageChatModel: ApiChatModel? = null,
     var transcriptionModel: String? = null,
     var imageModel: ApiImageModel? = null,
+    var audioModel: ApiChatModel? = null,
     /* Embedding Model Settings */
     var embeddingModel: EmbeddingModel? = null,
 
@@ -202,6 +203,7 @@ data class AppSettingsState(
         if (imageChatModel != other.imageChatModel) return false
         if (transcriptionModel != other.transcriptionModel) return false
         if (imageModel != other.imageModel) return false
+        if (audioModel != other.audioModel) return false
         if (embeddingModel != other.embeddingModel) return false
         if (processor != other.processor) return false
         if (awsProfile != other.awsProfile) return false
@@ -248,6 +250,7 @@ data class AppSettingsState(
         result = 31 * result + (imageChatModel?.hashCode() ?: 0)
         result = 31 * result + (transcriptionModel?.hashCode() ?: 0)
         result = 31 * result + (imageModel?.hashCode() ?: 0)
+        result = 31 * result + (audioModel?.hashCode() ?: 0)
         result = 31 * result + (embeddingModel?.hashCode() ?: 0)
         result = 31 * result + processor.hashCode()
         result = 31 * result + (awsProfile?.hashCode() ?: 0)
@@ -362,3 +365,7 @@ fun ApiImageModel.instance(): com.simiacryptus.cognotik.image.ImageClientInterfa
         ),
     )
 }
+data class ApiAudioModel(
+    val modelId: String,
+    val provider: ApiData?
+)

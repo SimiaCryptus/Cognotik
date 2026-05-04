@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.exceptions.MultiExeption
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.*
 import java.util.function.Function
 
@@ -79,7 +80,14 @@ open class ParsedAgent<T : Any>(
   private inner class ParsedResponseImpl(vararg messages: ModelSchema.ChatMessage) :
     ParsedResponse<T>(resultClass!!) {
     override val text =
-      response(*messages).choices.firstOrNull()?.message?.content
+      model.chat(
+        ChatRequest(
+          model = model.modelType.modelId,
+          messages = messages.toList(),
+          temperature = model.temperature,
+          audio = model.audio,
+        )
+      ).choices.firstOrNull()?.message?.content
         ?: throw RuntimeException("No response")
     private val _obj: T by lazy {
       if (singleStage) {
@@ -125,12 +133,17 @@ open class ParsedAgent<T : Any>(
     for (i in 0 until deserializerRetries) {
       try {
         val content = parsingChatter.chat(
-          listOf(
-            ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
-            ModelSchema.ChatMessage(
-              role = ModelSchema.Role.user,
-              content = "The user message to parse:\n\n$input".toContentList()
+          ChatRequest(
+            model = parsingChatter.modelType.modelId,
+            messages = listOf(
+              ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
+              ModelSchema.ChatMessage(
+                role = ModelSchema.Role.user,
+                content = "The user message to parse:\n\n$input".toContentList()
+              ),
             ),
+            temperature = parsingChatter.temperature,
+            audio = parsingChatter.audio,
           )
         ).choices.first().message?.content
 
@@ -209,19 +222,6 @@ open class ParsedAgent<T : Any>(
       throw e
     }
 
-  override fun withModel(model: ChatInterface): ParsedAgent<T> = ParsedAgent(
-    resultClass = resultClass,
-    prompt = prompt,
-    name = name,
-    model = model,
-    temperature = temperature,
-    parsingChatter = parsingChatter,
-    deserializerRetries = deserializerRetries,
-    validation = validation,
-    describer = describer,
-    parserPrompt = parserPrompt,
-    singleStage = singleStage,
-  )
 
   companion object {
     private val log = LoggerFactory.getLogger(ParsedAgent::class.java)
