@@ -7,6 +7,61 @@
     <link href="welcome.css" rel="stylesheet">
     <title>Cognotik</title>
      <style>
+          .api-key-banner {
+              display: none;
+              background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%);
+              color: #fff;
+              padding: 16px 24px;
+              margin: 0;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              position: relative;
+              z-index: 100;
+          }
+          .api-key-banner-content {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 16px;
+              max-width: 1400px;
+              margin: 0 auto;
+              flex-wrap: wrap;
+          }
+          .api-key-banner-message {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              flex: 1 1 auto;
+              min-width: 250px;
+          }
+          .api-key-banner-icon {
+              font-size: 1.8em;
+              line-height: 1;
+          }
+          .api-key-banner-text strong {
+              display: block;
+              font-size: 1.05em;
+              margin-bottom: 2px;
+          }
+          .api-key-banner-text span {
+              font-size: 0.9em;
+              opacity: 0.95;
+          }
+          .api-key-banner-action {
+              background: #fff;
+              color: #d9534f;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 6px;
+              font-weight: 600;
+              cursor: pointer;
+              font-size: 0.95em;
+              transition: transform 0.15s, box-shadow 0.15s;
+              flex: 0 0 auto;
+          }
+          .api-key-banner-action:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          }
          .app-card { position: relative; cursor: pointer; }
          .app-card-actions {
              display: flex;
@@ -128,6 +183,22 @@
      <span class="btn-icon">🔌</span> Plugins
 </button>
 </div>
+<!-- API Key Configuration Banner -->
+<div class="api-key-banner" id="api-key-banner" role="alert">
+     <div class="api-key-banner-content">
+         <div class="api-key-banner-message">
+             <span class="api-key-banner-icon">⚠️</span>
+             <div class="api-key-banner-text">
+                 <strong>No API keys configured</strong>
+                 <span>Configure at least one API provider to start using Cognotik's AI features.</span>
+             </div>
+         </div>
+         <button class="api-key-banner-action" id="api-key-banner-action">
+             Configure API Keys →
+         </button>
+     </div>
+</div>
+
 
 <!-- Hero Section -->
 <section class="hero">

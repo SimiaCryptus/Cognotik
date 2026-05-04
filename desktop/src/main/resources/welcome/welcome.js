@@ -61,6 +61,38 @@ const taskConfigManager = new TaskConfigManager({
 function showNotification(message, type = 'info') {
     return uiManager.showNotification(message, type);
 }
+// ===== API Key Banner =====
+function hasConfiguredApiKeys(state) {
+     if (!state || !state.apiSettings) return false;
+     const keys = state.apiSettings.apiKeys;
+     if (!keys || typeof keys !== 'object') return false;
+     // Consider it configured if there is at least one non-empty key value
+     return Object.keys(keys).some(k => {
+         const v = keys[k];
+         return v !== null && v !== undefined && String(v).trim() !== '';
+     });
+}
+function updateApiKeyBanner() {
+     const banner = document.getElementById('api-key-banner');
+     if (!banner) return;
+     if (hasConfiguredApiKeys(appState)) {
+         banner.style.display = 'none';
+     } else {
+         banner.style.display = 'block';
+     }
+}
+function setupApiKeyBanner() {
+     const actionBtn = document.getElementById('api-key-banner-action');
+     if (actionBtn) {
+         actionBtn.addEventListener('click', () => {
+             const settingsBtn = document.getElementById('user-settings-btn');
+             if (settingsBtn) {
+                 settingsBtn.click();
+             }
+         });
+     }
+}
+
 
 // ===== Main Initialization =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -76,9 +108,11 @@ document.addEventListener('DOMContentLoaded', function() {
         onSettingsSaved: () => {
             populateQuickSettingsModels(appState, availableModels);
             populateBasicChatModelSelections(appState, availableModels);
+             updateApiKeyBanner();
         }
     });
     setupPluginManagerModal();
+     setupApiKeyBanner();
     loadAppDirectory().then(() => {
         renderAppGrid();
          setupAppSearch();
@@ -105,11 +139,13 @@ loadApiProviders().then(() => {
 }).then(() => {
     modelManager.populateModelSelections();
     populateQuickSettingsModels(appState, availableModels);
+     updateApiKeyBanner();
     return loadCognitiveTypes();
 }).catch(error => {
     console.error('[init] Error during initialization:', error);
     uiManager.setupTooltips();
     loadUserSettings().then(() => {
         populateQuickSettingsModels(appState, availableModels);
+         updateApiKeyBanner();
     });
 });
