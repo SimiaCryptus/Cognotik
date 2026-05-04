@@ -13,7 +13,7 @@ import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class ChatInterface(
-  val logStreams: MutableList<BufferedOutputStream>,
+  logStreams: MutableList<BufferedOutputStream>,
   private val key: SecureString,
   private val base: String,
   private val logLevel: Level,
@@ -25,6 +25,13 @@ class ChatInterface(
   private val scheduledPool: ListeningScheduledExecutorService,
   private val onUsage: (model: LLMModel, tokens: ModelSchema.Usage) -> Unit,
 ) {
+  val logStreams: MutableList<BufferedOutputStream> = logStreams.toMutableList()
+    get() = when {
+      !ENABLE_LOGS -> mutableListOf()
+      else -> field
+    }
+
+
   init {
     //require(key != null) { "API key must be provided" }
     require(base.isNotBlank()) { "Base URL must be provided" }
@@ -60,4 +67,8 @@ class ChatInterface(
     onUsage = this.onUsage,
   )
 
+  companion object {
+    val log = org.slf4j.LoggerFactory.getLogger(ChatInterface::class.java)
+    var ENABLE_LOGS = false
+  }
 }

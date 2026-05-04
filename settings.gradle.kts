@@ -30,11 +30,12 @@ include(":desktop")
 include(":experiment")
 include(":tool")
 
-//include(":Cognotik-Plugins:auth")
-//include(":Cognotik-Plugins:jobs")
-//include(":Cognotik-Plugins:office")
-//include(":Cognotik-Plugins:home")
-//include(":Cognotik-Plugins:omni")
+include(":Cognotik-Plugins:auth")
+include(":Cognotik-Plugins:jobs")
+include(":Cognotik-Plugins:office")
+include(":Cognotik-Plugins:games")
+include(":Cognotik-Plugins:home")
+include(":Cognotik-Plugins:omni")
 
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 //    include(":android")
