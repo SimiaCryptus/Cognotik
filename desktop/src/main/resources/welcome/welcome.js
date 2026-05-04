@@ -1,12 +1,10 @@
-
-
 // Main entry point - orchestrates module initialization.
 // Module files (must be loaded before this script):
 //   htmlUtils.js, appDirectory.js, apiLoader.js, quickSettings.js,
 //   basicChat.js, userSettings.js, pluginManager.js,
 //   cognitiveMode.js, pipelineWizard.js
 
-    // Initialize sessionId globally
+// Initialize sessionId globally
 let sessionId = Utils.generateSessionId();
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -18,7 +16,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Initialize services
 const httpService = new HttpService();
-const notificationService = {showNotification};
+const notificationService = { showNotification };
 
 // Initialize app state with dependencies
 let appState = new AppState({
@@ -65,7 +63,7 @@ function showNotification(message, type = 'info') {
 }
 
 // ===== Main Initialization =====
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     setupBasicChatModal({ httpService, notificationService, sessionId });
     setupSettingsSection(notificationService);
     setupCustomPipelineModal({
@@ -83,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupPluginManagerModal();
     loadAppDirectory().then(() => {
         renderAppGrid();
+         setupAppSearch();
         setupAppCards({
             onChat: () => {
                 populateBasicChatModelSelections(appState, availableModels);
@@ -114,4 +113,3 @@ loadApiProviders().then(() => {
         populateQuickSettingsModels(appState, availableModels);
     });
 });
-

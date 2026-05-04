@@ -6,6 +6,111 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link href="welcome.css" rel="stylesheet">
     <title>Cognotik</title>
+     <style>
+         .app-card { position: relative; cursor: pointer; }
+         .app-card-actions {
+             display: flex;
+             align-items: center;
+             justify-content: space-between;
+             gap: 10px;
+             margin-top: 12px;
+             flex-wrap: wrap;
+         }
+         .app-card-launch-btn {
+             padding: 6px 14px;
+             font-size: 0.9em;
+         }
+         .app-card-readme-hint {
+             font-size: 0.8em;
+             color: #888;
+             font-style: italic;
+         }
+         .app-search-container {
+             margin-bottom: 20px;
+             display: flex;
+             align-items: center;
+             gap: 10px;
+             max-width: 500px;
+         }
+         .app-search-input {
+             flex: 1;
+             padding: 10px 14px;
+             font-size: 1em;
+             border: 1px solid #ccc;
+             border-radius: 6px;
+             outline: none;
+             transition: border-color 0.2s, box-shadow 0.2s;
+         }
+         .app-search-input:focus {
+             border-color: #007bff;
+             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+         }
+         .app-search-clear {
+             padding: 8px 12px;
+             background: transparent;
+             border: 1px solid #ccc;
+             border-radius: 6px;
+             cursor: pointer;
+             color: #666;
+             font-size: 0.9em;
+         }
+         .app-search-clear:hover {
+             background: #f5f5f5;
+         }
+         .app-search-no-results {
+             padding: 20px;
+             text-align: center;
+             color: #888;
+             font-style: italic;
+         }
+         .app-readme-modal-content {
+             max-height: 85vh;
+             overflow-y: auto;
+         }
+         .app-readme-header {
+             display: flex;
+             align-items: flex-start;
+             gap: 16px;
+             padding-bottom: 16px;
+             margin-bottom: 16px;
+             border-bottom: 1px solid #eee;
+         }
+         .app-readme-icon {
+             font-size: 3em;
+             line-height: 1;
+         }
+         .app-readme-title-block h2 { margin: 0 0 6px 0; }
+         .app-readme-description { margin: 0; color: #666; }
+         .app-readme-body {
+             line-height: 1.6;
+             padding: 8px 4px;
+         }
+         .app-readme-body h1,
+         .app-readme-body h2,
+         .app-readme-body h3 { margin-top: 1.2em; }
+         .app-readme-body pre {
+             background: #f5f5f5;
+             padding: 12px;
+             border-radius: 4px;
+             overflow-x: auto;
+         }
+         .app-readme-body code {
+             background: #f5f5f5;
+             padding: 2px 5px;
+             border-radius: 3px;
+             font-size: 0.9em;
+         }
+         .app-readme-body pre code {
+             background: transparent;
+             padding: 0;
+         }
+         .app-readme-actions {
+             margin-top: 20px;
+             padding-top: 16px;
+             border-top: 1px solid #eee;
+             justify-content: flex-end;
+         }
+     </style>
 </head>
 <body>
 
@@ -33,8 +138,16 @@
 <!-- App Grid -->
 <section class="app-grid-section">
     <h2 class="section-title">Applications</h2>
+     <div class="app-search-container">
+         <input type="text" id="app-search-input" class="app-search-input"
+                placeholder="🔍 Search applications..." autocomplete="off">
+         <button class="app-search-clear" id="app-search-clear" style="display:none;">Clear</button>
+     </div>
      <div class="app-grid" id="app-grid">
          <!-- App cards are dynamically generated from apps.json -->
+     </div>
+     <div class="app-search-no-results" id="app-search-no-results" style="display:none;">
+         No applications match your search.
      </div>
 </section>
 
@@ -402,6 +515,7 @@
     </div>
 </footer>
 
+<script src="modules/marked.min.js"></script>
 <script src="modules/constants.js"></script>
 <script src="modules/utils.js"></script>
 <script src="modules/http.js"></script>
