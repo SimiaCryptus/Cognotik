@@ -41,4 +41,5 @@ demo-cognotik-buildtool
 transcript/
 plugins/
 Cognotik-Jobs/
+.doc-processor-cache/
 

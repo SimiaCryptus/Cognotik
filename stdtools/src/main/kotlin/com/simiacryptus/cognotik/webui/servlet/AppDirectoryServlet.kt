@@ -29,7 +29,8 @@ class AppDirectoryServlet : HttpServlet() {
                     "type" to entry.type,
                     "path" to entry.path,
                     "appId" to entry.appId,
-                    "cardClass" to entry.cardClass
+                     "cardClass" to entry.cardClass,
+                     "readme" to entry.readme
                 )
             }
             resp.writer.write(gson.toJson(entries))

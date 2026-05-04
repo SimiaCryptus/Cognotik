@@ -35,6 +35,9 @@ open class ResourceApps(
             val type = object : TypeToken<List<AppJsonEntry>>() {}.type
             val entries: List<AppJsonEntry> = Gson().fromJson(json, type)
             for (entry in entries) {
+                 val readme = entry.resource_path?.let { rp ->
+                     loadReadme(rp)
+                 }
                 AppEntry.register(
                   AppEntry(
                     name = entry.id,
@@ -49,6 +52,7 @@ open class ResourceApps(
                     appId = entry.appId,
                     resource_path = entry.resource_path,
                     cardClass = entry.cardClass,
+                     readme = readme,
                     classLoader = classLoader
                   )
                 )
@@ -58,4 +62,30 @@ open class ResourceApps(
             log.error("Failed to load app directory from apps.json: ${e.message}", e)
         }
     }
+     /**
+      * Attempts to load README.md from the root of the given resource path.
+      * Returns the markdown text if found, or null otherwise.
+      */
+     private fun loadReadme(resourcePath: String): String? {
+         val normalized = resourcePath.trimEnd('/')
+         val candidates = listOf(
+             "$normalized/README.md",
+             "$normalized/readme.md",
+             "$normalized/Readme.md"
+         )
+         for (candidate in candidates) {
+             try {
+                 val stream = classLoader.getResourceAsStream(candidate)
+                 if (stream != null) {
+                     val text = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                     log.debug("Loaded README for resource path '{}' from '{}'", resourcePath, candidate)
+                     return text
+                 }
+             } catch (e: Exception) {
+                 log.debug("Failed reading {}: {}", candidate, e.message)
+             }
+         }
+         log.debug("No README.md found for resource path '{}'", resourcePath)
+         return null
+     }
 }

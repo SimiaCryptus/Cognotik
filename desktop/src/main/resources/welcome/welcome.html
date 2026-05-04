@@ -9,15 +9,6 @@
 </head>
 <body>
 
-<script src="modules/constants.js"></script>
-<script src="modules/utils.js"></script>
-<script src="modules/http.js"></script>
-<script src="modules/app-state.js"></script>
-<script src="modules/ui.js"></script>
-<script src="modules/validation.js"></script>
-<script src="modules/models.js"></script>
-<script src="modules/task-config.js"></script>
-
 <!-- Top Bar -->
 <div class="top-bar">
     <div class="logo-container">
@@ -25,25 +16,62 @@
         <span class="logo-text">Cognotik</span>
     </div>
     <div class="top-bar-spacer"></div>
-    <button class="top-bar-btn" id="user-settings-btn">
-        <span class="btn-icon">⚙️</span> Settings
-    </button>
-<button class="top-bar-btn" id="plugin-manager-btn">
-     <span class="btn-icon">🔌</span> Plugins
-</button>
+      <select class="theme-selector" id="theme-selector" aria-label="Select theme" title="Select theme">
+          <option value="auto">🖥️ Auto</option>
+          <option value="light">☀️ Light</option>
+          <option value="dark">🌙 Dark</option>
+      </select>
+     <button class="top-bar-btn" id="user-settings-btn" type="button" aria-label="Open Settings">
+         <span class="btn-icon" aria-hidden="true">⚙️</span> Settings
+     </button>
+     <button class="top-bar-btn" id="plugin-manager-btn" type="button" aria-label="Open Plugin Manager">
+         <span class="btn-icon" aria-hidden="true">🔌</span> Plugins
+     </button>
 </div>
-
-<!-- Hero Section -->
-<section class="hero">
-    <h1>Welcome to Cognotik</h1>
-    <p class="hero-subtitle">AI-powered applications for analysis, creation, and automation</p>
-</section>
+<!-- API Key Configuration Banner -->
+<div class="api-key-banner" id="api-key-banner" role="alert">
+     <div class="api-key-banner-content">
+         <div class="api-key-banner-message">
+             <span class="api-key-banner-icon" aria-hidden="true">⚠️</span>
+             <div class="api-key-banner-text">
+                 <strong>No API keys configured</strong>
+                 <span>Configure at least one API provider to start using Cognotik's AI features.</span>
+             </div>
+         </div>
+         <button class="api-key-banner-action" id="api-key-banner-action" type="button">
+             Configure API Keys →
+         </button>
+     </div>
+</div>
+<!-- Pending Authorization Banner -->
+<div class="auth-banner" id="auth-banner" role="alert">
+      <div class="auth-banner-content">
+          <div class="auth-banner-message">
+               <span class="auth-banner-icon" aria-hidden="true">🔐</span>
+              <div class="auth-banner-text">
+                  <strong id="auth-banner-title">Pending authorizations</strong>
+                  <span id="auth-banner-message">One or more plugins require authorization to function.</span>
+              </div>
+          </div>
+           <button class="auth-banner-action" id="auth-banner-action" type="button">
+              Review Authorizations →
+          </button>
+      </div>
+</div>
 
 <!-- App Grid -->
 <section class="app-grid-section">
-    <h2 class="section-title">Applications</h2>
+     <div class="app-search-container">
+          <input type="text" id="app-search-input" class="app-search-input"
+                 placeholder="🔍 Search applications..." autocomplete="off"
+                 aria-label="Search applications">
+          <button class="app-search-clear" id="app-search-clear" type="button" style="display:none;">Clear</button>
+     </div>
      <div class="app-grid" id="app-grid">
          <!-- App cards are dynamically generated from apps.json -->
+     </div>
+     <div class="app-search-no-results" id="app-search-no-results" style="display:none;">
+         No applications match your search.
      </div>
 </section>
 
@@ -411,6 +439,51 @@
     </div>
 </footer>
 
+<script src="modules/marked.min.js"></script>
+<script src="modules/constants.js"></script>
+<script src="modules/utils.js"></script>
+<script src="modules/http.js"></script>
+<script src="modules/app-state.js"></script>
+<script src="modules/ui.js"></script>
+<script src="modules/validation.js"></script>
+<script src="modules/models.js"></script>
+<script src="modules/task-config.js"></script>
+
+<script src="modules/htmlUtils.js"></script>
+<script src="modules/appDirectory.js"></script>
+<script src="modules/apiLoader.js"></script>
+<script src="modules/quickSettings.js"></script>
+<script src="modules/basicChat.js"></script>
+<script src="modules/userSettings.js"></script>
+<script src="modules/pluginManager.js"></script>
+<script src="modules/authBanner.js"></script>
+<script src="modules/cognitiveMode.js"></script>
+<script src="modules/pipelineWizard.js"></script>
+
 <script src="welcome.js"></script>
+<script>
+(function() {
+     const STORAGE_KEY = 'cognotik-theme';
+     const selector = document.getElementById('theme-selector');
+     const root = document.documentElement;
+     function applyTheme(theme) {
+         if (theme === 'auto') {
+             root.removeAttribute('data-theme');
+         } else {
+             root.setAttribute('data-theme', theme);
+         }
+     }
+     const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
+     selector.value = saved;
+     applyTheme(saved);
+     selector.addEventListener('change', function() {
+         const value = selector.value;
+         localStorage.setItem(STORAGE_KEY, value);
+         applyTheme(value);
+     });
+})();
+</script>
+
+
 </body>
 </html>

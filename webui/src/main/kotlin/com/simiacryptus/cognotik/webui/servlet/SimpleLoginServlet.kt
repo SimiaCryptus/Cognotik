@@ -296,7 +296,7 @@ class SimpleLoginServlet : HttpServlet() {
   }
 
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    val action = req.getParameter("action")
+    val action = req.getParameter("action") ?: req.getParameter("formAction")
     when (action) {
       "register" -> serveRegistrationPage(req, resp)
       else -> serveLoginPage(req, resp)
@@ -304,7 +304,7 @@ class SimpleLoginServlet : HttpServlet() {
   }
 
   override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    val action = req.getParameter("action")
+    val action = req.getParameter("action") ?: req.getParameter("formAction")
     when (action) {
       "register" -> handleRegistration(req, resp)
       "login" -> handleLogin(req, resp)

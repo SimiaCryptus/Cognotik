@@ -51,7 +51,11 @@ object CoreTasks : CognotikPlugin {
     TaskType.registerTaskType(NarrativeGenerationTask.NarrativeGeneration)
     TaskType.registerTaskType(PersuasiveEssayTask.PersuasiveEssay)
     TaskType.registerTaskType(RenderErbTemplateTask.RenderErbTemplate)
-    TaskType.registerTaskType(SeleniumFetchTask.SeleniumFetch)
+    try {
+      TaskType.registerTaskType(SeleniumFetchTask.SeleniumFetch)
+    } catch (e: NoClassDefFoundError) {
+      log.warn("SeleniumFetchTask could not be registered. Selenium dependencies not found.")
+    }
     TaskType.registerTaskType(SocraticDialogueTask.SocraticDialogue)
     TaskType.registerTaskType(SubPlanTask.SubPlan)
     TaskType.registerTaskType(TutorialGenerationTask.TutorialGeneration)
@@ -81,4 +85,6 @@ object CoreTasks : CognotikPlugin {
     )
 
   }
+
+  val log = org.slf4j.LoggerFactory.getLogger(CoreTasks::class.java)
 }

@@ -15,6 +15,7 @@ class AppEntry(
     val appId: String? = null,
     val resource_path: String?,
     val cardClass: String? = null,
+     val readme: String? = null,
     val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : DynamicEnum<AppEntry>(name) {
 
