@@ -498,7 +498,7 @@
         }
     }
 
-    function pluginManagerCheckAuthStatus(sessionId, chainName, silent) {
+function pluginManagerCheckAuthStatus(sessionId, chainName, silent) {
         fetch(`/pluginManager/?action=authStatus&sessionId=${encodeURIComponent(sessionId)}`, {
             headers: { 'Accept': 'application/json' }
         })

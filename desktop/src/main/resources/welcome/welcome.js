@@ -113,6 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     setupPluginManagerModal();
      setupApiKeyBanner();
+      if (typeof setupAuthBanner === 'function') setupAuthBanner();
+      if (typeof updateAuthBanner === 'function') {
+          updateAuthBanner();
+          // Periodically refresh the auth banner every 30 seconds
+          setInterval(() => updateAuthBanner(), 30000);
+      }
     loadAppDirectory().then(() => {
         renderAppGrid();
          setupAppSearch();
