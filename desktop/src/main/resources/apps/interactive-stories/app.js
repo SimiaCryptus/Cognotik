@@ -505,8 +505,9 @@ async function onChoice(letter) {
         return;
     }
     const target = `${STORY_DIR}/${currentNode}${letter}.md`;
-    const opPath = `ops/choice_${letter}.md`;
-    console.log(`[onChoice] letter="${letter}" | currentNode="${currentNode}" | target="${target}" | op="${opPath}"`);
+    const opPath = `ops/choice.md`;
+    const templateVars = { CHOICE: letter, CHOICE_LABEL: letter.toUpperCase() };
+    console.log(`[onChoice] letter="${letter}" | currentNode="${currentNode}" | target="${target}" | op="${opPath}" | templateVars=`, templateVars);
 
     // If node already exists, just load it
     if (await fileExists(basePath, target)) {
@@ -523,14 +524,15 @@ async function onChoice(letter) {
     log(`Generating branch ${letter.toUpperCase()} — op: ${opPath} → target: "${target}".`, 'info');
     timeStart(`branch_${letter}`);
     console.group(`[onChoice] Generating branch ${letter.toUpperCase()}…`);
-    console.log(`[onChoice] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    console.log(`[onChoice] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
 
     try {
         const taskId = await runDocOp(
             sessionId,
             opPath,
             target,
-            getModelOverrides()
+            getModelOverrides(),
+            templateVars
         );
         console.log(`[onChoice] runDocOp() returned taskId:`, taskId);
         log(`DocOp started for branch ${letter.toUpperCase()} — task: ${formatTaskId(taskId)}.`, 'info');
@@ -1467,11 +1469,12 @@ async function onReadAloudToggle() {
 // Image generation
 // -------------------------------------------------------------------------
 function getImageOpForNode(nodeId) {
-    // Initial node uses initial_image.md, branches use choice_{a|b|c}_image.md
+    // Initial node uses initial_image.md; branches use the templated choice_image.md
+    // (the CHOICE template var is supplied separately).
     if (nodeId === INITIAL_NODE) return 'ops/initial_image.md';
     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-        return `ops/choice_${lastChar}_image.md`;
+        return 'ops/choice_image.md';
     }
     return null;
 }
@@ -1537,6 +1540,11 @@ async function generateImageForNode(nodeId) {
         console.warn(`[generateImageForNode] No op path for node "${nodeId}" — skipping.`);
         return;
     }
+    // For branch nodes, the templated choice_image.md needs to know which
+    // letter (a/b/c) we're generating an image for.
+    const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+    const isBranch = nodeId !== INITIAL_NODE && (lastChar === 'a' || lastChar === 'b' || lastChar === 'c');
+    const templateVars = isBranch ? { CHOICE: lastChar } : {};
     const target = `${STORY_DIR}/${nodeId}.png`;
     const btn = document.getElementById('generate-image');
     const statusEl = document.getElementById('node-image-status');
@@ -1549,13 +1557,14 @@ async function generateImageForNode(nodeId) {
     log(`Generating image for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
     timeStart(`image_${nodeId}`);
     console.group(`[generateImageForNode] Generating image for node "${nodeId}"…`);
-    console.log(`[generateImageForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    console.log(`[generateImageForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
     try {
         const taskId = await runDocOp(
             sessionId,
             opPath,
             target,
-            getModelOverrides()
+            getModelOverrides(),
+            templateVars
         );
         console.log(`[generateImageForNode] runDocOp() returned taskId:`, taskId);
         log(`Image DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
@@ -1595,11 +1604,12 @@ async function generateImageForNode(nodeId) {
 // Audio generation
 // -------------------------------------------------------------------------
 function getAudioOpForNode(nodeId) {
-    // Initial node uses initial_audio.md, branches use choice_{a|b|c}_audio.md
+    // Initial node uses initial_audio.md; branches use the templated choice_audio.md
+    // (the CHOICE template var is supplied separately).
     if (nodeId === INITIAL_NODE) return 'ops/initial_audio.md';
     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-        return `ops/choice_${lastChar}_audio.md`;
+        return 'ops/choice_audio.md';
     }
     return null;
 }
@@ -1665,6 +1675,11 @@ async function generateAudioForNode(nodeId) {
         console.warn(`[generateAudioForNode] No op path for node "${nodeId}" — skipping.`);
         return;
     }
+    // For branch nodes, the templated choice_audio.md needs to know which
+    // letter (a/b/c) we're generating audio for.
+    const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+    const isBranch = nodeId !== INITIAL_NODE && (lastChar === 'a' || lastChar === 'b' || lastChar === 'c');
+    const templateVars = isBranch ? { CHOICE: lastChar } : {};
     const target = `${STORY_DIR}/${nodeId}.wav`;
     const btn = document.getElementById('generate-audio');
     const statusEl = document.getElementById('node-audio-status');
@@ -1677,13 +1692,14 @@ async function generateAudioForNode(nodeId) {
     log(`Generating audio for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
     timeStart(`audio_${nodeId}`);
     console.group(`[generateAudioForNode] Generating audio for node "${nodeId}"…`);
-    console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
     try {
         const taskId = await runDocOp(
             sessionId,
             opPath,
             target,
-            getModelOverrides()
+            getModelOverrides(),
+            templateVars
         );
         console.log(`[generateAudioForNode] runDocOp() returned taskId:`, taskId);
         log(`Audio DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');

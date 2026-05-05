@@ -95,6 +95,25 @@ class DocProcessorServlet(
         response.writer.write("""{"error": "Access denied: document path is outside session directory"}""")
         return
       }
+      // If the caller only wants to inspect available template variables, return them and exit early.
+      val listTemplateVarsParam = request.getParameter("listTemplateVars")
+      if (listTemplateVarsParam != null && listTemplateVarsParam.equals("true", ignoreCase = true)) {
+        val vars = DocProcessor.listTemplateVarKeys(docFile)
+        response.status = HttpServletResponse.SC_OK
+        response.contentType = "application/json"
+        response.characterEncoding = "UTF-8"
+        response.writer.write(buildString {
+          append("""{"doc": "${docPath.replace("\\", "\\\\").replace("\"", "\\\"")}"""")
+          append(""", "templateVars": {""")
+          append(vars.entries.joinToString(", ") { (k, v) ->
+            val ek = k.replace("\\", "\\\\").replace("\"", "\\\"")
+            val ev = v.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+            "\"$ek\": \"$ev\""
+          })
+          append("}}")
+        })
+        return
+      }
       val targetPath = request.getParameter("target")
        log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}, audioModel=${effectiveAudioModel.modelId}, templateVars=${templateVarOverrides.keys}")
       val docProcessor = DocProcessor(

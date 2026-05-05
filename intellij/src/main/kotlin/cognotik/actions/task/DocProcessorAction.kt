@@ -227,25 +227,7 @@ open class DocProcessorAction(
     * fail to parse are skipped with a warning.
     */
    private fun collectDeclaredTemplateVars(files: List<File>): Map<String, String> {
-     val merged = linkedMapOf<String, String>()
-     for (file in files) {
-       try {
-         if (!file.exists() || !file.isFile) continue
-         val content = file.readText()
-         if (!content.startsWith("---")) continue
-         val end = content.indexOf("---", 3)
-         if (end == -1) continue
-         val frontmatterText = content.substring(3, end).trim()
-         val frontmatter = parseFrontmatter(frontmatterText)
-         val vars = parseTemplateVars(frontmatter)
-         for ((k, v) in vars) {
-           if (k !in merged) merged[k] = v
-         }
-       } catch (e: Exception) {
-         log.warn("Failed to scan template variables from ${file.absolutePath}", e)
-       }
-     }
-     return merged
+     return DocProcessor.listTemplateVarKeys(files)
    }
 
 

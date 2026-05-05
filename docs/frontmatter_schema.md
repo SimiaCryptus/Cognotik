@@ -1,8 +1,6 @@
 ---
 documents:
-  - ../intellij/src/main/kotlin/cognotik/actions/task/DocProcessorAction.kt
-  - ../webui/src/main/kotlin/com/simiacryptus/cognotik/embed/DocProcessor.kt
-  - ../webui/src/test/kotlin/com/simiacryptus/cognotik/util/DocProcessorTest.kt
+  - [DocProcessor.kt](../stdtools/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt)
 specifies: ../site/cognotik.com/frontmatter.html
 ---
 
@@ -410,13 +408,85 @@ file is automatically used as the data source.
 
 ---
 
+### `folder`
+
+Specifies a target folder for task processing. This allows individual doc files to specify a different working
+directory for task execution. The value is a relative path from the document file's parent directory.
+The resolved path must be strictly under (or equal to) the default root directory.
+
+**Type:** `String`
+
+**Examples:**
+
+```yaml
+# Process tasks in a subdirectory
+folder: ./subproject
+```
+
+```yaml
+# Process tasks in parent directory
+folder: ../
+```
+
+**Use Case:** When a documentation file is in a subdirectory but needs to generate or modify files in a different
+location, or when processing should be scoped to a specific folder within the project.
+
+---
+
+### `template_vars`
+
+Specifies template variable declarations that can be substituted throughout the markdown document and frontmatter.
+Variables are declared with default values and can be overridden at processing time.
+
+**Type:** `Map` or `List`
+
+**Formats:**
+
+```yaml
+# Map format (preferred)
+template_vars:
+  MY_VAR: default value
+  OTHER_VAR: another default
+```
+
+**Usage in Document:**
+
+Template variables are substituted using `{{VARIABLE_NAME}}` syntax throughout both the frontmatter and markdown body:
+
+```markdown
+---
+template_vars:
+  PACKAGE_NAME: com.example
+specifies: ../src/{{PACKAGE_NAME}}/Main.kt
+---
+
+# {{PACKAGE_NAME}} Implementation
+
+This file implements {{PACKAGE_NAME}}.
+```
+
+**Variable Resolution:**
+
+1. Default values are declared in frontmatter
+2. Caller-supplied overrides (via `templateVarOverrides` parameter) take precedence
+3. Variables not declared in frontmatter but supplied by caller are still applied
+4. Unknown variables (not in the map) are left untouched for downstream processing
+
+**Use Case:** Create reusable documentation templates that can be customized with different package names, paths,
+or other variable content without duplicating the entire document.
+
+---
+
 ## Complete Example
 
 ```yaml
 ---
+template_vars:
+  API_PACKAGE: com.example.api
+  MODEL_PACKAGE: com.example.models
 specifies:
-  - ../src/api/*.kt
-  - ../src/models/*.kt
+  - ../src/{{API_PACKAGE}}/ApiLayer.kt
+  - ../src/{{MODEL_PACKAGE}}/Models.kt
 documents:
   - ../src/core/Engine.kt
 transforms:
@@ -429,6 +499,7 @@ related:
   - ../config/api-config.yaml
   - ./api-conventions.md
   - https://example.com/api-spec
+folder: ./api-module
 update_mode: PatchExisting
 task_type: FileModification
 task_config_json: ./config/api-task-config.json
@@ -501,19 +572,32 @@ This document specifies the API layer implementation...
 9. **Rebasing:** Both `DocSpec` and `ModificationTask` support rebasing from one root directory to another. This is
    used when the IntelliJ action needs to adjust paths for a different working directory. URL-based related resources
    are preserved as-is during rebasing.
+
 10. **Transitive Target Discovery:** The processor recursively discovers transitive targets in multi-stage build
     pipelines. After computing the initial set of targets, it checks if any newly-generated target files would match
     additional doc spec patterns (via transforms). If so, those hypothetical files are treated as existing and the
     expansion continues until a fixed-point is reached (no new targets are discovered) or a maximum recursion depth
     of 10 is reached. This enables proper dependency ordering for pipelines where intermediate artifacts are inputs
     to subsequent transformations.
+
 11. **Status Tracking:** The processor maintains a `docops.status.json` file in the root directory that tracks the
     status of each target generation task. Status values include `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, and
     `CANCELLED`. The status file is updated atomically (write to temp file then rename) and is thread-safe. Status
     entries include timestamps for start/completion and optional session IDs and error messages.
+
 12. **Path Normalization:** Target file paths are normalized to lowercase for case-insensitive comparison when
     aggregating specifications. This ensures that targets are grouped consistently regardless of case differences
     in paths across different doc specs.
+13. **Template Variable Substitution:** Before processing, template variables declared in frontmatter are substituted
+    throughout both the frontmatter and markdown body. Variables are declared using `template_vars`, `template_variables`,
+    `vars`, or `variables` keys and referenced using `{{VARIABLE_NAME}}` syntax. Caller-supplied overrides take
+    precedence over frontmatter defaults. Template variable declarations are removed from the final parsed frontmatter.
+14. **Dependency Sorting:** Modification tasks are sorted topologically so that tasks modifying files used by other
+    tasks are processed first. This ensures that generated files are available when needed by dependent tasks. Cycles
+    are detected and broken automatically by selecting the task with minimum remaining dependencies.
+15. **Task Status Tracking:** The processor maintains atomic status updates for each target file in `docops.status.json`.
+    Status transitions include PENDING → RUNNING → COMPLETED/FAILED/CANCELLED. Status entries include session IDs,
+    timestamps, and error messages for debugging and monitoring.
 
 ## Data Structures
 
@@ -530,6 +614,7 @@ The frontmatter is parsed into a `DocSpec` containing:
 | `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`) |
 | `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)            |
 | `updateMode`     | `String?`             | Per-doc update mode override (nullable, falls back to global `updateMode`) |
+| `targetFolder`   | `String?`             | Target folder for task processing (nullable, relative to doc file parent)  |
 | `content`        | `String`              | The markdown body (after frontmatter)                                      |
 | `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                     |
 
@@ -558,6 +643,7 @@ Represents the configuration for a single modification task:
 |-----------------------|---------------------|----------------------------------------------------------|
 | `root`                | `File`              | The root directory for path resolution                   |
 | `files`               | `List<String>?`     | Target file paths (absolute)                             |
+| `main_file`           | `File?`             | Primary target file (absolute)                           |
 | `related_files`       | `List<String>?`     | Related/context file paths (absolute)                    |
 | `task_description`    | `String`            | Generated or custom task description                     |
 | `data`                | `Map<String, Any>?` | Structured data from data_file or JSON source (nullable) |
@@ -570,15 +656,15 @@ Represents the configuration for a single modification task:
 
 ### ModificationTask
 
-Represents a complete modification task ready for execution:
-
-| Field                | Type                     | Description                                        |
-|----------------------|--------------------------|----------------------------------------------------|
-| `data`               | `ModificationTaskConfig` | Task configuration                                 |
-| `message`            | `(File) -> String`       | Function generating message content given root dir |
-| `patchProcessor`     | `PatchProcessors`        | Patch processing strategy (default: Fuzzy)         |
-| `shouldDeleteTarget` | `Boolean`                | Whether to delete the target file (default: false) |
-| `taskType`           | `TaskType<*, *>`         | The resolved task type (default: FileModification) |
+### ModificationTask
+ Represents a complete modification task ready for execution:
+ | Field                | Type                     | Description                                        |
+ |----------------------|--------------------------|----------------------------------------------------|
+ | `data`               | `ModificationTaskConfig` | Task configuration                                 |
+ | `message`            | `(File) -> String`       | Function generating message content given root dir |
+ | `patchProcessor`     | `PatchProcessors`        | Patch processing strategy (default: Fuzzy)         |
+ | `shouldDeleteTarget` | `Boolean`                | Whether to delete the target file (default: false) |
+ | `taskType`           | `TaskType<*, *>`         | The resolved task type (default: FileModification) |
 
 **Computed Properties:**
 
@@ -616,16 +702,16 @@ Represents a documentation update specification:
 | `supportingFiles` | `List<File>` | Source files that provide context                     |
 
 ### TaskStatusEntry
-
-Represents the status of a single target generation task in `docops.status.json`:
-| Field | Type | Description |
-|---------------|---------------|------------------------------------------------|
-| `target`      | `String`      | The target file path |
-| `status`      | `TaskStatus`  | Current status (PENDING/RUNNING/COMPLETED/FAILED/CANCELLED) |
-| `sessionId`   | `String?`     | Associated session ID (nullable)               |
-| `startedAt`   | `String?`     | ISO timestamp when task started (nullable)     |
-| `completedAt` | `String?`     | ISO timestamp when task completed (nullable)   |
-| `error`       | `String?`     | Error message if failed (nullable)             |
+### TaskStatusEntry
+ Represents the status of a single target generation task in `docops.status.json`:
+ | Field | Type | Description |
+ |---------------|---------------|------------------------------------------------|
+ | `target`      | `String`      | The target file path |
+ | `status`      | `TaskStatus`  | Current status (PENDING/RUNNING/COMPLETED/FAILED/CANCELLED) |
+ | `sessionId`   | `String?`     | Associated session ID (nullable)               |
+ | `startedAt`   | `String?`     | ISO timestamp when task started (nullable)     |
+ | `completedAt` | `String?`     | ISO timestamp when task completed (nullable)   |
+ | `error`       | `String?`     | Error message if failed (nullable)             |
 
 ### DocOpsStatus
 

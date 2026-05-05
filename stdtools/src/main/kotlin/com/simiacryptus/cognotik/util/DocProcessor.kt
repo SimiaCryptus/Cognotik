@@ -17,6 +17,9 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.TEMPLATE_VAR_KEYS
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.extractPathFromMarkdownLink
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -401,8 +404,8 @@ class DocProcessor(
     val main_file: File? = null,
     val related_files: List<File>? = null,
     val task_description: String = "",
-    val data: Map<String, Any>? = null,
     val taskConfigOverrides: Map<String, Any>? = null,
+    val doc_files: List<File>,
   ) {
     val relative_files: List<String>?
       get() = main_file?.let { listOf(it) }?.map { main_file ->
@@ -420,6 +423,16 @@ class DocProcessor(
         } catch (_: IllegalArgumentException) {
           // File is outside root, return absolute path
           filePath.canonicalFile.absolutePath
+        }
+      }
+
+    val relative_doc_files: List<String>
+      get() = doc_files.map { docFile ->
+        try {
+          docFile.canonicalFile.relativeTo(root.canonicalFile).toString()
+        } catch (_: IllegalArgumentException) {
+          // File is outside root, return absolute path
+          docFile.canonicalFile.absolutePath
         }
       }
 
@@ -665,6 +678,7 @@ class DocProcessor(
       return ModificationTask(
         data = ModificationTaskConfig(
           main_file = targetFileObj.absoluteFile,
+          doc_files = specs.map { it.docFile.absoluteFile }.distinct(),
           related_files = relatedFiles.map { file ->
             file.canonicalFile.absoluteFile
           }.distinct(),
@@ -678,29 +692,6 @@ class DocProcessor(
           ),
           root = effectiveRoot,
           taskConfigOverrides = resolveTaskConfigJson(specs, transforms, documents, generates),
-          data = this.run {
-            // First check for explicit data_file in frontmatter
-            val explicitDataFile = specs.firstNotNullOfOrNull { spec ->
-              (spec.frontmatter["data_file"] as? String)?.let { dataPath ->
-                spec.docFile.parentFile.resolve(dataPath).absolutePath
-              }
-            }
-            // If no explicit data_file, check if we have a transform with a JSON source file
-            val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
-              transforms.firstOrNull {
-                it.sourceFile.extension.equals("json", ignoreCase = true)
-              }?.sourceFile?.absolutePath
-            } else null
-            (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
-              val dataFile = File(dataFilePath)
-              if (dataFile.exists()) {
-                JsonUtil.fromJson(dataFile.readText(), Map::class.java) as Map<String, Any>
-              } else {
-                log.warn("Data file not found: $dataFilePath")
-                null
-              }
-            }
-          }
         ),
         message = { root: File ->
           buildString {
@@ -834,32 +825,40 @@ class DocProcessor(
     transforms: List<TransformMatch>,
     documents: List<DocumentMatch>,
     generates: List<GenerateMatch>
-  ): List<File> = (specs.flatMap { spec ->
-    listOf(spec.docFile) +
-        spec.related.flatMap { relatedPath ->
-          resolveRelatedResources(spec.docFile.parentFile, relatedPath)
-        } +
-        additionalContext(spec, targetFile).map { File(it) }
-  } + transforms.flatMap { match ->
-    listOf(match.spec.docFile, match.sourceFile) +
-        match.spec.related.flatMap { relatedPath ->
-          resolveRelatedResources(match.spec.docFile.parentFile, relatedPath)
-        } +
-        additionalContext(match.spec, targetFile).map { File(it) }
-  } + documents.flatMap { docMatch ->
-    docMatch.supportingFiles +
-        docMatch.docSpec.related.flatMap { relatedPath ->
-          resolveRelatedResources(docMatch.docSpec.docFile.parentFile, relatedPath)
-        } +
-        additionalContext(docMatch.docSpec, targetFile).map { File(it) }
-  } + generates.flatMap { genMatch ->
-    listOf(genMatch.spec.docFile) +
-        genMatch.inputFiles +
-        genMatch.spec.related.flatMap { relatedPath ->
-          resolveRelatedResources(genMatch.spec.docFile.parentFile, relatedPath)
-        } +
-        additionalContext(genMatch.spec, targetFile).map { File(it) }
-  }).distinct()
+  ): List<File> {
+    val distinct = (specs.flatMap { spec ->
+      // listOf(spec.docFile) +
+      spec.related.flatMap { relatedPath ->
+        resolveRelatedResources(spec.docFile.parentFile, relatedPath)
+      } +
+          additionalContext(spec, targetFile).map { File(it) }
+    } + transforms.flatMap { match ->
+      listOf(
+        //match.spec.docFile,
+        match.sourceFile
+      ) + match.spec.related.flatMap { relatedPath ->
+        resolveRelatedResources(
+          match.spec.docFile.parentFile,
+          relatedPath
+        )
+      } + additionalContext(match.spec, targetFile).map { File(it) }
+    } + documents.flatMap { docMatch ->
+      docMatch.supportingFiles + docMatch.docSpec.related.flatMap { relatedPath ->
+        resolveRelatedResources(
+          docMatch.docSpec.docFile.parentFile,
+          relatedPath
+        )
+      } + additionalContext(docMatch.docSpec, targetFile).map { File(it) }
+    } + generates.flatMap { genMatch ->
+      //listOf(genMatch.spec.docFile) +
+      genMatch.inputFiles +
+          genMatch.spec.related.flatMap { relatedPath ->
+            resolveRelatedResources(genMatch.spec.docFile.parentFile, relatedPath)
+          } +
+          additionalContext(genMatch.spec, targetFile).map { File(it) }
+    }).distinct()
+    return distinct
+  }
 
   fun transformMatches(docSpecs: List<DocSpec>): Map<String, List<TransformMatch>> {
     val transformMatches = docSpecs
@@ -1283,6 +1282,36 @@ class DocProcessor(
         )
         taskConfig
       }
+    }.jsonCast<MutableMap<String, Any>>()
+    config["related_files"] = (config["related_files"] ?: emptyList<String>()).let {
+      when {
+        it is List<*> -> it.filterIsInstance<String>()
+        else -> emptyList()
+      }
+    }
+    config["task_description"] = buildString {
+      appendLine(data.task_description ?: "")
+      ((config["doc_files"] as? List<*> ?: emptyList<String>()).firstOrNull() as? String)?.let { docFile ->
+        (root.resolve(docFile).readText().trim().trimIndent().let { docContent ->
+          if (docContent.startsWith("---")) {
+            // If the doc content has frontmatter, try to strip it for a cleaner description
+            val endOfFrontmatter = docContent.indexOf("\n---\n")
+            if (endOfFrontmatter != -1) {
+              (docContent.substring(endOfFrontmatter + 5).trim())
+            } else {
+              (docContent)
+            }
+          } else {
+            (docContent)
+          }
+        }.ifBlank { null }?.let {
+          if (templateVarOverrides.isNotEmpty()) {
+            applyTemplateSubstitutions(it, templateVarOverrides)
+          } else {
+            it
+          }
+        })?.let { append(it) }
+      }
     }
     return config.jsonCast(mod.taskType.executionConfigClass)
   }
@@ -1583,12 +1612,95 @@ class DocProcessor(
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessor::class.java)
+
+    /**
+     * Regex matching a markdown link of the form `[label](target)`. The
+     * label may be empty and the target is captured in group 1. Whitespace
+     * around the target is tolerated.
+     */
+    private val MARKDOWN_LINK_REGEX = Regex("""^\s*\[[^\]]*]\(\s*([^)\s]+)\s*\)\s*$""")
+
+    /**
+     * Extract the target path from a string that may be either a plain path
+     * or a markdown link of the form `[label](path)`. Returns the original
+     * string trimmed if no markdown link is detected.
+     */
+    fun extractPathFromMarkdownLink(value: String): String {
+      val match = MARKDOWN_LINK_REGEX.matchEntire(value) ?: return value.trim()
+      return match.groupValues[1].trim()
+    }
+
+    /**
+     * Apply [extractPathFromMarkdownLink] to every element of a list.
+     */
+    fun extractPathsFromMarkdownLinks(values: List<String>): List<String> =
+      values.map { extractPathFromMarkdownLink(it) }
      /**
       * Frontmatter keys recognized as template variable declarations.
       * These keys are stripped from the frontmatter before re-parsing the
       * substituted YAML, so they never appear as ordinary fields.
       */
      val TEMPLATE_VAR_KEYS = setOf("template_vars", "template_variables", "vars", "variables")
+
+    /**
+     * List the template variable keys (and their declared default values)
+     * available in a given markdown document with frontmatter.
+     *
+     * Reads the file, extracts the YAML frontmatter (if present), and
+     * returns the parsed template variable declarations from any of the
+     * recognized [TEMPLATE_VAR_KEYS]. Returns an empty map if the file
+     * does not exist, has no frontmatter, or declares no template
+     * variables.
+     *
+     * @param file The markdown file to scan.
+     * @return Ordered map of variable name -> default value (possibly empty).
+     */
+    fun listTemplateVarKeys(file: File): Map<String, String> {
+      if (!file.exists() || !file.isFile) {
+        log.debug("listTemplateVarKeys: file does not exist or is not a file: ${file.absolutePath}")
+        return emptyMap()
+      }
+      val content = try {
+        file.readText()
+      } catch (e: Exception) {
+        log.warn("listTemplateVarKeys: failed to read file: ${file.absolutePath}", e)
+        return emptyMap()
+      }
+      if (!content.startsWith("---")) return emptyMap()
+      val end = content.indexOf("---", 3)
+      if (end == -1) return emptyMap()
+      val frontmatterText = content.substring(3, end).trim()
+      return try {
+        val frontmatter = parseFrontmatter(frontmatterText)
+        parseTemplateVars(frontmatter)
+      } catch (e: Exception) {
+        log.warn("listTemplateVarKeys: failed to parse frontmatter for ${file.absolutePath}", e)
+        emptyMap()
+      }
+    }
+
+    /**
+     * Convenience overload that returns just the variable names (keys),
+     * preserving declaration order.
+     */
+    fun listTemplateVarKeyNames(file: File): List<String> =
+      listTemplateVarKeys(file).keys.toList()
+
+    /**
+     * Aggregate template variable declarations across multiple markdown
+     * files. When the same variable is declared in multiple files with
+     * different defaults, the first encountered default wins.
+     */
+    fun listTemplateVarKeys(files: Iterable<File>): Map<String, String> {
+      val merged = linkedMapOf<String, String>()
+      for (file in files) {
+        val vars = listTemplateVarKeys(file)
+        for ((k, v) in vars) {
+          if (k !in merged) merged[k] = v
+        }
+      }
+      return merged
+    }
      /**
       * Parse template variable declarations from frontmatter.
       *
@@ -1840,8 +1952,8 @@ class DocProcessor(
         val parts = str.split("->").map { it.trim() }
         if (parts.size == 2) {
           TransformSpec(
-            sourcePattern = parts[0],
-            destinationPattern = parts[1]
+            sourcePattern = extractPathFromMarkdownLink(parts[0]),
+            destinationPattern = extractPathFromMarkdownLink(parts[1])
           )
         } else {
           log.warn("Invalid transform format: $str (expected 'pattern -> destination')")
@@ -1857,8 +1969,8 @@ class DocProcessor(
      */
     fun parseDocuments(frontmatter: Map<String, Any>): List<String> {
       return when (val value = frontmatter["documents"]) {
-        is String -> listOf(value)
-        is List<*> -> value.filterIsInstance<String>()
+        is String -> listOf(extractPathFromMarkdownLink(value))
+        is List<*> -> extractPathsFromMarkdownLinks(value.filterIsInstance<String>())
         else -> emptyList()
       }
     }
@@ -1869,8 +1981,8 @@ class DocProcessor(
      */
     fun parseRelated(frontmatter: Map<String, Any>): List<String> {
       return when (val value = frontmatter["related"]) {
-        is String -> listOf(value)
-        is List<*> -> value.filterIsInstance<String>()
+        is String -> listOf(extractPathFromMarkdownLink(value))
+        is List<*> -> extractPathsFromMarkdownLinks(value.filterIsInstance<String>())
         else -> emptyList()
       }
     }
@@ -1906,10 +2018,10 @@ class DocProcessor(
      * Parse a single generate spec from a map
      */
     private fun parseGenerateSpec(map: Map<*, *>): GenerateSpec? {
-      val output = map["output"] as? String ?: return null
+      val output = (map["output"] as? String)?.let { extractPathFromMarkdownLink(it) } ?: return null
       val inputs = when (val inputsValue = map["inputs"]) {
-        is String -> listOf(inputsValue)
-        is List<*> -> inputsValue.filterIsInstance<String>()
+        is String -> listOf(extractPathFromMarkdownLink(inputsValue))
+        is List<*> -> extractPathsFromMarkdownLinks(inputsValue.filterIsInstance<String>())
         else -> emptyList()
       }
       if (inputs.isEmpty()) {
@@ -1924,8 +2036,8 @@ class DocProcessor(
      */
     fun parseSpecifies(frontmatter: Map<String, Any>): List<String> {
       return when (val value = frontmatter["specifies"]) {
-        is String -> listOf(value)
-        is List<*> -> value.filterIsInstance<String>()
+        is String -> listOf(extractPathFromMarkdownLink(value))
+        is List<*> -> extractPathsFromMarkdownLinks(value.filterIsInstance<String>())
         else -> emptyList()
       }
     }
