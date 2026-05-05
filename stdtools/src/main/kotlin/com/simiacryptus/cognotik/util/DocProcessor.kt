@@ -405,7 +405,7 @@ class DocProcessor(
     val related_files: List<File>? = null,
     val task_description: String = "",
     val taskConfigOverrides: Map<String, Any>? = null,
-    val doc_files: List<File>,
+    val doc_files: List<File> = emptyList(),
   ) {
     val relative_files: List<String>?
       get() = main_file?.let { listOf(it) }?.map { main_file ->

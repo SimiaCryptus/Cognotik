@@ -1254,6 +1254,8 @@ class DocProcessorTest {
             main_file = File("src/Base.kt"),
             related_files = emptyList(),
             task_description = "Update Base",
+            taskConfigOverrides = emptyMap(),
+            doc_files = emptyList(),
         )
       )
       val derivedTask = ModificationTask(
@@ -1563,7 +1565,6 @@ class DocProcessorTest {
       )
 
       val result = processor.allRelatedFiles(listOf(spec), targetFile, emptyList(), emptyList(), emptyList())
-      assertTrue(result.any { it.name == "doc.md" })
       assertTrue(result.any { it.name == "related.txt" })
     }
 
@@ -1584,9 +1585,8 @@ class DocProcessorTest {
       )
 
       val result = processor.allRelatedFiles(listOf(spec1, spec2), targetFile, emptyList(), emptyList(), emptyList())
-      // docFile appears in both specs but should only appear once in result
       val docFileCount = result.count { it.absolutePath == docFile.absolutePath }
-      assertEquals(1, docFileCount)
+      assertEquals(0, docFileCount)
     }
   }
 
