@@ -31,6 +31,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - imageModel: (Optional) Model ID to use as the image model
   * - audioModel: (Optional) Model ID to use as the audio model
  *
+  * Template variable overrides:
+  * Any query parameter prefixed with "var." will be treated as a template
+  * variable override. For example, "var.PROJECT_NAME=Foo" supplies the value
+  * "Foo" for the {{PROJECT_NAME}} placeholder. Overrides take precedence over
+  * frontmatter-declared defaults (template_vars / template_variables / vars /
+  * variables) and are also applied for variables not declared in frontmatter.
+  *
  * The servlet parses the specified markdown file for frontmatter specifications
  * and executes the resulting documentation processing tasks.
  */
@@ -63,6 +70,7 @@ class DocProcessorServlet(
     val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: effectiveSmartModel
     val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: effectiveFastModel
      val effectiveAudioModel = resolveModel(request.getParameter("audioModel")) ?: effectiveFastModel
+     val templateVarOverrides = extractTemplateVarOverrides(request)
     try {
       val session = Session(sessionId)
       val user = authenticate(request, response) ?: return
@@ -88,7 +96,7 @@ class DocProcessorServlet(
         return
       }
       val targetPath = request.getParameter("target")
-       log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}, audioModel=${effectiveAudioModel.modelId}")
+       log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}, audioModel=${effectiveAudioModel.modelId}, templateVars=${templateVarOverrides.keys}")
       val docProcessor = DocProcessor(
         root = sessionDir,
         docsFolder = sessionDir,
@@ -100,6 +108,7 @@ class DocProcessorServlet(
         autoFix = true,
         user = user,
         parentSession = Session(sessionId),
+         templateVarOverrides = templateVarOverrides,
       )
       val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
       if (docSpec == null) {
@@ -183,6 +192,31 @@ class DocProcessorServlet(
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessorServlet::class.java)
+     /**
+      * Prefix used on query parameters to identify template variable overrides.
+      * Example: "var.PROJECT_NAME=Foo" -> overrides {{PROJECT_NAME}} with "Foo".
+      */
+     private const val TEMPLATE_VAR_PARAM_PREFIX = "var."
+     /**
+      * Extract template variable overrides from request query parameters.
+      * Any parameter whose name begins with [TEMPLATE_VAR_PARAM_PREFIX] is
+      * treated as an override. The portion of the parameter name after the
+      * prefix is the template variable name. Empty names are ignored. If a
+      * parameter has multiple values, the first non-null value is used.
+      */
+     private fun extractTemplateVarOverrides(request: HttpServletRequest): Map<String, String> {
+       val result = linkedMapOf<String, String>()
+       val paramNames = request.parameterNames ?: return result
+       while (paramNames.hasMoreElements()) {
+         val name = paramNames.nextElement() ?: continue
+         if (!name.startsWith(TEMPLATE_VAR_PARAM_PREFIX)) continue
+         val varName = name.substring(TEMPLATE_VAR_PARAM_PREFIX.length).trim()
+         if (varName.isEmpty()) continue
+         val value = request.getParameterValues(name)?.firstOrNull { it != null } ?: continue
+         result[varName] = value
+       }
+       return result
+     }
 
     /**
      * Resolves a model ID string to a ChatModel instance.

@@ -25,6 +25,8 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseTemplateVars
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -139,6 +141,29 @@ open class DocProcessorAction(
     }
 
     Thread {
+       // Discover template variables declared in any selected markdown file's
+       // frontmatter so the user can override them before processing.
+       val declaredTemplateVars: Map<String, String> = collectDeclaredTemplateVars(selectedFiles)
+       val templateVarOverrides: Map<String, String> = if (declaredTemplateVars.isNotEmpty()) {
+         val future = CompletableFuture<Map<String, String>?>()
+         ApplicationManager.getApplication().invokeAndWait {
+           val dialog = TemplateVarsDialog(project, declaredTemplateVars)
+           if (dialog.showAndGet()) {
+             future.complete(dialog.getValues())
+           } else {
+             future.complete(null)
+           }
+         }
+         val result = future.get()
+         if (result == null) {
+           // User cancelled the template variable dialog -> abort entire action.
+           return@Thread
+         }
+         result
+       } else {
+         emptyMap()
+       }
+
 
       val docProcessor = DocProcessor(
         root = root,
@@ -154,6 +179,7 @@ open class DocProcessorAction(
             ?: throw IllegalStateException("Audio model not configured"),
         autoFix = true,
         user = localUser,
+         templateVarOverrides = templateVarOverrides,
       )
       val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
       if (allTasks.isEmpty()) {
@@ -193,6 +219,35 @@ open class DocProcessorAction(
     }.start()
 
   }
+   /**
+    * Scan the given markdown files for frontmatter-declared template variables
+    * and return a merged map of name -> default value. When the same variable
+    * is declared in multiple files with different defaults, the first
+    * encountered default wins (subsequent occurrences are ignored). Files that
+    * fail to parse are skipped with a warning.
+    */
+   private fun collectDeclaredTemplateVars(files: List<File>): Map<String, String> {
+     val merged = linkedMapOf<String, String>()
+     for (file in files) {
+       try {
+         if (!file.exists() || !file.isFile) continue
+         val content = file.readText()
+         if (!content.startsWith("---")) continue
+         val end = content.indexOf("---", 3)
+         if (end == -1) continue
+         val frontmatterText = content.substring(3, end).trim()
+         val frontmatter = parseFrontmatter(frontmatterText)
+         val vars = parseTemplateVars(frontmatter)
+         for ((k, v) in vars) {
+           if (k !in merged) merged[k] = v
+         }
+       } catch (e: Exception) {
+         log.warn("Failed to scan template variables from ${file.absolutePath}", e)
+       }
+     }
+     return merged
+   }
+
 
   private fun run(
     indicator: ProgressIndicator,
@@ -611,14 +666,14 @@ open class DocProcessorAction(
         row {
           text(
             """
-                        Tasks are generated from markdown frontmatter:
-                        <ul>
-                        <li><b>specifies:</b> Files that should be updated based on the documentation</li>
-                        <li><b>documents:</b> Documentation files to update based on source files</li>
-                        <li><b>transforms:</b> Source-to-destination file transformations</li>
-                    <li><b>generates:</b> Single output file from multiple input patterns</li>
-                        </ul>
-                    """.trimIndent()
+            Tasks are generated from markdown frontmatter:
+            <ul>
+            <li><b>specifies:</b> Files that should be updated based on the documentation</li>
+            <li><b>documents:</b> Documentation files to update based on source files</li>
+            <li><b>transforms:</b> Source-to-destination file transformations</li>
+            <li><b>generates:</b> Single output file from multiple input patterns</li>
+            </ul>
+            """.trimIndent()
           )
         }
       }
@@ -636,6 +691,45 @@ open class DocProcessorAction(
       override fun toString(): String = "$displayName - $description"
     }
   }
+   /**
+    * Simple dialog presenting one text field per declared template variable.
+    * Pre-fills each field with the default declared in frontmatter. Returns
+    * the (possibly edited) values keyed by variable name.
+    */
+   class TemplateVarsDialog(
+     project: Project?,
+     private val declared: Map<String, String>
+   ) : DialogWrapper(project) {
+     private val fields: Map<String, JBTextField> = declared.mapValues { (_, default) ->
+       JBTextField(default).apply {
+         columns = 40
+       }
+     }
+     init {
+       title = "Template Variables"
+       init()
+     }
+     override fun createCenterPanel(): JComponent = panel {
+       row {
+         label(
+           "Provide values for the template variables declared in the selected markdown file(s). " +
+               "Values will replace {{VAR_NAME}} placeholders in frontmatter and body."
+         )
+       }
+       for ((name, field) in fields) {
+         row(name) {
+           cell(field).align(Align.FILL)
+         }
+       }
+     }
+     fun getValues(): Map<String, String> {
+       val result = linkedMapOf<String, String>()
+       for ((name, field) in fields) {
+         result[name] = field.text ?: ""
+       }
+       return result
+     }
+   }
 }
 
 /**

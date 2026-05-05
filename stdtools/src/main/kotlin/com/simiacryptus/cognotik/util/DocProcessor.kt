@@ -92,6 +92,16 @@ class DocProcessor(
   val autoFix: Boolean,
   val user: User,
   val parentSession: Session? = null,
+   /**
+    * Optional caller-provided template variable overrides. Values here take
+    * precedence over defaults declared in a markdown file's frontmatter
+    * (`template_vars`, `template_variables`, `vars`, or `variables`).
+    *
+    * Variables not declared in frontmatter but supplied here are still
+    * applied to both the body and the (stripped) frontmatter prior to
+    * re-parsing.
+    */
+   val templateVarOverrides: Map<String, String> = emptyMap(),
 ) {
   private val statusFile = File(root, "docops.status.json")
 
@@ -1044,7 +1054,7 @@ class DocProcessor(
           fastModel = fastModel,
           smartModel = smartModel,
           imageModel = imageModel,
-           audioModel = audioModel,
+          audioModel = audioModel,
           showMenubar = showMenubar,
           user = user
         ) {
@@ -1173,7 +1183,12 @@ class DocProcessor(
         },
         onError = { error: Throwable ->
           log.warn("Task failed for target '$targetKey' with error: ${error.message}", error)
-          updateTaskStatus(targetKey, TaskStatus.FAILED, error = error.message ?: error.javaClass.simpleName, sessionId = null)
+          updateTaskStatus(
+            targetKey,
+            TaskStatus.FAILED,
+            error = error.message ?: error.javaClass.simpleName,
+            sessionId = null
+          )
         }
       ) { session ->
         if (cancelFlag.get()) {
@@ -1363,7 +1378,37 @@ class DocProcessor(
     }
     val frontmatterText = content.substring(3, endOfFrontmatter).trim()
     // Parse YAML frontmatter (supports simple key: value and lists)
-    val frontmatter = parseFrontmatter(frontmatterText)
+     val rawFrontmatter = parseFrontmatter(frontmatterText)
+     // Extract template variables (with defaults) and apply substitutions to
+     // both the remaining frontmatter and the markdown body. Template variable
+     // declarations themselves are removed from the resulting frontmatter.
+      val declaredTemplateVars = parseTemplateVars(rawFrontmatter)
+      // Merge: caller-supplied overrides take precedence over frontmatter defaults.
+      // Overrides not declared in frontmatter are still applied.
+      val templateVars = if (templateVarOverrides.isEmpty()) {
+        declaredTemplateVars
+      } else {
+        val merged = linkedMapOf<String, String>()
+        merged.putAll(declaredTemplateVars)
+        templateVarOverrides.forEach { (k, v) -> merged[k] = v }
+        merged
+      }
+     val frontmatter = if (templateVars.isNotEmpty()) {
+       val stripped = rawFrontmatter.filterKeys { it !in TEMPLATE_VAR_KEYS }
+       val substitutedFrontmatterText = applyTemplateSubstitutions(
+         renderFrontmatterToYaml(stripped),
+         templateVars
+       )
+       parseFrontmatter(substitutedFrontmatterText)
+     } else {
+       rawFrontmatter
+     }
+     val bodyText = content.substring(endOfFrontmatter + 3).trim()
+     val substitutedBody = if (templateVars.isNotEmpty()) {
+       applyTemplateSubstitutions(bodyText, templateVars)
+     } else {
+       bodyText
+     }
     val specifies = parseSpecifies(frontmatter)
     val documents = parseDocuments(frontmatter)
     val transforms = parseTransforms(frontmatter)
@@ -1380,7 +1425,7 @@ class DocProcessor(
       transforms = transforms,
       generates = generates,
       related = parseRelated(frontmatter),
-      content = content.substring(endOfFrontmatter + 3).trim(),
+       content = substitutedBody,
       frontmatter = frontmatter,
       taskType = parseTaskType(frontmatter),
       taskConfigJson = parseTaskConfigJson(frontmatter),
@@ -1538,6 +1583,132 @@ class DocProcessor(
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessor::class.java)
+     /**
+      * Frontmatter keys recognized as template variable declarations.
+      * These keys are stripped from the frontmatter before re-parsing the
+      * substituted YAML, so they never appear as ordinary fields.
+      */
+     val TEMPLATE_VAR_KEYS = setOf("template_vars", "template_variables", "vars", "variables")
+     /**
+      * Parse template variable declarations from frontmatter.
+      *
+      * Supported formats under any of the recognized keys
+      * ([TEMPLATE_VAR_KEYS]):
+      *
+      *  - Map form (preferred):
+      *      template_vars:
+      *        MY_VAR: default value
+      *        OTHER: another default
+      *
+      *  - List form (each item is "KEY: default" or "KEY=default"):
+      *      template_vars:
+      *        - MY_VAR: default value
+      *        - OTHER=another default
+      *
+      * Note: Because [parseFrontmatter] currently produces map values as raw
+      * strings or lists of strings, the map form may be received as a list of
+      * "KEY: value" strings (one per indented line). Both representations are
+      * accepted here.
+      *
+      * @return Map of variable name -> default string value. Empty if none.
+      */
+     fun parseTemplateVars(frontmatter: Map<String, Any>): Map<String, String> {
+       val result = linkedMapOf<String, String>()
+       for (key in TEMPLATE_VAR_KEYS) {
+         val value = frontmatter[key] ?: continue
+         when (value) {
+           is Map<*, *> -> {
+             value.forEach { (k, v) ->
+               if (k != null) result[k.toString()] = v?.toString() ?: ""
+             }
+           }
+           is List<*> -> {
+             value.filterIsInstance<String>().forEach { entry ->
+               val trimmed = entry.trim()
+               val sepIdx = trimmed.indexOfAny(charArrayOf(':', '='))
+               if (sepIdx > 0) {
+                 val k = trimmed.substring(0, sepIdx).trim()
+                 val v = trimmed.substring(sepIdx + 1).trim()
+                 if (k.isNotEmpty()) result[k] = v
+               } else if (trimmed.isNotEmpty()) {
+                 // Bare name with no default -> empty string default
+                 result[trimmed] = ""
+               }
+             }
+           }
+           is String -> {
+             // Single inline declaration "KEY: default" or "KEY=default"
+             val trimmed = value.trim()
+             val sepIdx = trimmed.indexOfAny(charArrayOf(':', '='))
+             if (sepIdx > 0) {
+               val k = trimmed.substring(0, sepIdx).trim()
+               val v = trimmed.substring(sepIdx + 1).trim()
+               if (k.isNotEmpty()) result[k] = v
+             }
+           }
+           else -> {
+             log.warn("Unsupported template variables value type for key '$key': ${value.javaClass.name}")
+           }
+         }
+       }
+       return result
+     }
+     /**
+      * Replace every occurrence of `{{KEY}}` in [text] with the corresponding
+      * value from [vars]. Whitespace inside the braces is tolerated (e.g.
+      * `{{ KEY }}`). Unknown variables are left untouched so that downstream
+      * stages can either substitute them or surface them as-is.
+      */
+     fun applyTemplateSubstitutions(text: String, vars: Map<String, String>): String {
+       if (vars.isEmpty()) return text
+       val pattern = Regex("""\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*}}""")
+       return pattern.replace(text) { match ->
+         val name = match.groupValues[1]
+         val replacement = vars[name]
+         if (replacement != null) {
+           // Use Regex.escapeReplacement to avoid $ / \ being interpreted
+           Regex.escapeReplacement(replacement)
+         } else {
+           match.value
+         }
+       }
+     }
+     /**
+      * Render a parsed frontmatter map back to a YAML-ish string that
+      * [parseFrontmatter] can re-parse. Only the value shapes produced by
+      * [parseFrontmatter] are supported (String and List<String>). Other
+      * types are converted via toString().
+      *
+      * This is intentionally minimal: it exists solely to allow template
+      * substitution to be applied to frontmatter values and then re-parsed.
+      */
+     fun renderFrontmatterToYaml(frontmatter: Map<String, Any>): String {
+       val sb = StringBuilder()
+       for ((key, value) in frontmatter) {
+         when (value) {
+           is List<*> -> {
+             sb.append(key).append(":\n")
+             for (item in value) {
+               sb.append("  - ").append(item?.toString() ?: "").append('\n')
+             }
+           }
+           is Map<*, *> -> {
+             // parseFrontmatter doesn't currently emit nested maps, but
+             // handle it defensively by flattening to "key: value" lines.
+             sb.append(key).append(":\n")
+             for ((k, v) in value) {
+               sb.append("  ").append(k?.toString() ?: "").append(": ")
+                 .append(v?.toString() ?: "").append('\n')
+             }
+           }
+           else -> {
+             sb.append(key).append(": ").append(value.toString()).append('\n')
+           }
+         }
+       }
+       return sb.toString()
+     }
+
 
     /**
      * Check if a pattern contains glob wildcards
@@ -1900,7 +2071,7 @@ fun ChatModel.asApiChatModel(
   val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
   val name = provider?.name
   if (name == null) {
-      throw IllegalStateException("Provider not specified for model $modelId")
+    throw IllegalStateException("Provider not specified for model $modelId")
   }
   val secureString = (userSettings.apis.find { it.provider?.name == name }?.key
     ?: throw IllegalStateException("API key for model provider $name not found in user settings"))
