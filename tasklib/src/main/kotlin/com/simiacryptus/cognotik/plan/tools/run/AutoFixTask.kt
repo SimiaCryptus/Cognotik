@@ -78,7 +78,7 @@ class AutoFixTask(
   )
 
   data class CommandWithWorkingDir(
-    @Description("The command to be executed as a list of strings. The first element is the executable, followed by arguments.")
+    @Description("The command to be executed as a list of strings. The first element is the executable, followed by arguments. DO NOT USE PIPE OR REDIRECTION SYNTAX, AS THIS IS NOT INTERPRETED BY A SHELL. For example, to run `ls -la`, specify `['ls', '-la']`.")
     var command: MutableList<String> = ArrayList(),
     @Description("The relative path of the working directory for this command, relative to the project root. Null means the project root.")
     var working_dir: String? = null
@@ -87,7 +87,26 @@ class AutoFixTask(
       if (command.isEmpty()) {
         return "command must not be empty"
       }
+      command.map { it.trim() }.forEach {
+        when {
+          it.startsWith("<") -> return "Piping and redirection syntax is not supported. Found: $it"
+          it.startsWith(">") -> return "Piping and redirection syntax is not supported. Found: $it"
+          it.startsWith("|") -> return "Piping and redirection syntax is not supported. Found: $it"
+        }
+      }
       return null
+    }
+
+    fun filteredCommand(): List<String> {
+      return command.map { it.trim() }.filter {
+        when {
+          it.startsWith("<") -> false
+          it.startsWith(">") -> false
+          it.startsWith("|") -> false
+          it.isBlank() -> false
+          else -> true
+        }
+      }
     }
   }
 
@@ -124,14 +143,14 @@ class AutoFixTask(
             transcript?.write("## Self-Healing Task Execution\n\n".toByteArray())
             transcript?.write("### Commands\n".toByteArray())
             executionConfig?.commands?.forEachIndexed { index, cmd ->
-              transcript?.write("${index + 1}. `${cmd.command.joinToString(" ")}` in `${cmd.working_dir ?: orchestrationConfig.workingDir ?: agent.root}`\n".toByteArray())
+              transcript?.write("${index + 1}. `${cmd.filteredCommand().joinToString(" ")}` in `${cmd.working_dir ?: orchestrationConfig.workingDir ?: agent.root}`\n".toByteArray())
             }
             transcript?.write("\n".toByteArray())
             CmdPatchApp(
               root = agent.root,
               settings = PatchApp.Settings(
                 commands = executionConfig?.commands?.map { commandWithDir ->
-                  val alias = commandWithDir.command.firstOrNull()
+                  val alias = commandWithDir.filteredCommand().firstOrNull()
                   val toolExecutable = if (alias != null) {
                     val tools =
                       ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
@@ -152,7 +171,7 @@ class AutoFixTask(
                       File(alias).exists() -> File(alias).absoluteFile
                       else -> null
                     } ?: throw IllegalArgumentException("Command not found: $alias"),
-                    arguments = commandWithDir.command.drop(1).joinToString(" "),
+                    arguments = commandWithDir.filteredCommand().drop(1).joinToString(" "),
                     workingDirectory = ((commandWithDir.working_dir
                       ?: orchestrationConfig.workingDir)?.let { agent.root.toFile().resolve(it) }
                       ?: agent.root.toFile()).apply { mkdirs() },
