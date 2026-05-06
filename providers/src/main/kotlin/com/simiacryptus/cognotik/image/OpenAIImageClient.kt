@@ -47,7 +47,7 @@ open class OpenAIImageClient(
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
     log.info("Sending POST request to URL: $url with payload: $json")
-    apiProvider.authorize(request, key, apiBase)
+    request.addHeader("Authorization", "Bearer ${key}")
     request.entity = StringEntity(json, Charsets.UTF_8, false)
     return post(request)
   }
@@ -61,7 +61,7 @@ open class OpenAIImageClient(
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
     log.debug("Sending GET request to URL: $url")
-    apiProvider.authorize(request, key, apiBase)
+    request.addHeader("Authorization", "Bearer ${key}")
     return EntityUtils.toString(client.execute(request).entity)
   }
   override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse {
@@ -70,7 +70,7 @@ open class OpenAIImageClient(
       val httpRequest = HttpPost(url)
       httpRequest.addHeader("Accept", "application/json")
       httpRequest.addHeader("Content-Type", "application/json")
-      provider.authorize(httpRequest, key, apiBase)
+      httpRequest.addHeader("Authorization", "Bearer ${key}")
       val requestBody = Gson().toJson(request)
       httpRequest.entity = StringEntity(requestBody, Charsets.UTF_8, false)
       val response = post(httpRequest)

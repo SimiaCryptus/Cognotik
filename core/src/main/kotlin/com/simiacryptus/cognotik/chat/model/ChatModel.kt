@@ -1,15 +1,5 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.models.APIProvider
@@ -21,9 +11,7 @@ import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-@JsonDeserialize(using = ChatModelsDeserializer::class)
-@JsonSerialize(using = ChatModelsSerializer::class)
-open class ChatModel(
+class ChatModel(
   val name: String = "",
   modelId: String = name,
   maxTotalTokens: Int = -1,
@@ -42,7 +30,7 @@ open class ChatModel(
 ) {
   override fun toString() = modelId
 
-  override fun pricing(usage: Usage): Double {
+  fun pricing(usage: Usage): Double {
     val promptCost = usage.prompt_tokens * inputTokenPricePerK
     val completionCost = usage.completion_tokens * outputTokenPricePerK
     val estimatedUnaccountedCost =
@@ -78,49 +66,5 @@ open class ChatModel(
 
   companion object {
     val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
-    var values: Map<String, ChatModel> = emptyMap()
-  }
-}
-
-class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
-  override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
-    gen.writeStartObject()
-    gen.writeStringField("name", value.name)
-    gen.writeStringField("modelName", value.modelId)
-    gen.writeNumberField("maxTotalTokens", value.maxTotalTokens)
-    gen.writeNumberField("maxOutTokens", value.maxOutTokens)
-    value.provider?.let { gen.writeStringField("provider", it.name) }
-    gen.writeNumberField("inputTokenPricePerK", value.inputTokenPricePerK)
-    gen.writeNumberField("outputTokenPricePerK", value.outputTokenPricePerK)
-    gen.writeEndObject()
-  }
-}
-
-class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = when (p.currentToken) {
-    JsonToken.START_OBJECT -> {
-      // Handle object format
-      val node = p.readValueAsTree<JsonNode>()
-      val name = node.get("name")?.asText() ?: ""
-      val modelName = node.get("modelName")?.asText() ?: name
-      val maxTotalTokens = node.get("maxTotalTokens")?.asInt() ?: -1
-      val maxOutTokens = node.get("maxOutTokens")?.asInt() ?: maxTotalTokens
-      val providerName = node.get("provider")?.asText()
-      val provider = providerName?.let { APIProvider.valueOf(it) }
-      val inputTokenPricePerK = node.get("inputTokenPricePerK")?.asDouble() ?: 0.0
-      val outputTokenPricePerK = node.get("outputTokenPricePerK")?.asDouble() ?: inputTokenPricePerK
-
-      ChatModel(
-        name = name,
-        modelId = modelName,
-        maxTotalTokens = maxTotalTokens,
-        maxOutTokens = maxOutTokens,
-        provider = provider,
-        inputTokenPricePerK = inputTokenPricePerK,
-        outputTokenPricePerK = outputTokenPricePerK
-      )
-    }
-
-    else -> throw IllegalArgumentException("ChatModel must be deserialized from an object")
   }
 }

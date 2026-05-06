@@ -5,12 +5,11 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
   import com.simiacryptus.cognotik.chat.model.AnthropicModels
   import com.simiacryptus.cognotik.chat.model.ChatModel
   import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-  import com.simiacryptus.cognotik.models.APIProvider
-  import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.LLMModel
   import com.simiacryptus.cognotik.models.ModelSchema
   import com.simiacryptus.cognotik.util.JsonUtil
   import com.simiacryptus.cognotik.util.SecureString
-  import org.apache.hc.core5.http.HttpRequest
+import org.apache.hc.core5.http.HttpRequest
   import org.slf4j.event.Level
   import java.io.BufferedOutputStream
   import java.net.URLEncoder
@@ -24,7 +23,7 @@ class AnthropicChatClient(
   logLevel: Level,
   logStreams: MutableList<BufferedOutputStream>,
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.Anthropic,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -33,10 +32,7 @@ class AnthropicChatClient(
   logStreams = logStreams,
   scheduledPool = scheduledPool
 ) {
-  override fun authorize(
-    request: HttpRequest,
-    apiProvider: APIProvider
-  ) {
+  override fun authorize(request: HttpRequest) {
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
     request.addHeader("x-api-key", apiKey.decrypt)
@@ -105,7 +101,8 @@ class AnthropicChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<BufferedOutputStream>
+    logStreams: MutableList<BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -202,7 +199,7 @@ class AnthropicChatClient(
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(anthropicChatRequest)
       val rawResponse =
-        post("${apiBase}/messages", json, CoreProviders.Anthropic)
+        post("${apiBase}/messages", json)
       checkError(rawResponse)
       val responseJson = try {
         require(rawResponse.isNotBlank()) { "Response cannot be blank" }
@@ -254,10 +251,9 @@ class AnthropicChatClient(
         ModelSchema.ChatResponse::class.java
       )
       if (response.usage != null) {
-        onUsage(
+        usageHandler?.invoke(
           model,
           response.usage?.copy(cost = model.pricing(response.usage!!))!!,
-          logStreams = logStreams
         )
       }
       response

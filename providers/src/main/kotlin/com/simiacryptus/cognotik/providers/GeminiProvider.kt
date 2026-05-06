@@ -17,12 +17,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class GeminiProvider : APIProvider("Gemini", "https://generativelanguage.googleapis.com") {
-  override fun authorize(
-    request: HttpRequest,
-    key: String,
-    apiBase: String
-  ) {
-  }
 
   override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
     key = key,

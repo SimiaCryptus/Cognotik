@@ -48,8 +48,4 @@ package com.simiacryptus.cognotik.providers
             return emptyList()
         }
 
-        override fun authorize(request: HttpRequest, key: String, apiBase: String) {
-            // ElevenLabs uses xi-api-key header instead of Bearer token
-            request.addHeader("xi-api-key", key)
-        }
     }

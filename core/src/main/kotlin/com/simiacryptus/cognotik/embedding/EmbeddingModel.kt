@@ -40,7 +40,7 @@ open class EmbeddingModel(
   private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
   override fun toString() = modelId
 
-  override fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
+  fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
     .also { log.info("Calculated pricing for model: $modelId with prompt tokens: ${usage.prompt_tokens}, price: $it") }
 
   fun instance(

@@ -369,7 +369,6 @@ class SimpleLoginServlet : HttpServlet() {
   }
 
   private fun initializeSystem(user: User) {
-    ChatModel.values = user.userSettings().models()
   }
 
   private fun handleRegistration(req: HttpServletRequest, resp: HttpServletResponse) {

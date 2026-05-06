@@ -39,10 +39,6 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
   open fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> = emptyList()
   open fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> = emptyList()
 
-  open fun authorize(request: HttpRequest, key: String, apiBase: String) {
-    request.addHeader("Authorization", "Bearer ${key}")
-  }
-
   open fun getEmbeddingClient(
     key: SecureString,
     base: String,

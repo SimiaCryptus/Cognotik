@@ -3,10 +3,9 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
@@ -39,7 +38,7 @@ class MistralChatClient(
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   apiBase: String,
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.Mistral,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -48,20 +47,20 @@ class MistralChatClient(
   logStreams = logStreams,
   scheduledPool = scheduledPool
 ) {
+
   override fun authorize(
     request: HttpRequest,
-    apiProvider: APIProvider
   ) {
     request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
     request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
     request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
-    require(null == budget || budget!!.toDouble() > 0.0) { "Budget Exceeded" }
   }
 
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>
+    logStreams: MutableList<java.io.BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     log.info("Starting Mistral chat with model: ${model.modelId}")
     return withPerformanceLogging {
@@ -70,19 +69,15 @@ class MistralChatClient(
         .writeValueAsString(mistralRequest)
 
       val result =
-        post("${apiBase}/chat/completions", json, CoreProviders.Mistral)
+        post("${apiBase}/chat/completions", json)
       checkError(result)
       val response = JsonUtil.objectMapper().readValue(
         result,
         ModelSchema.ChatResponse::class.java
       )
 
-      if (response.usage != null && model is ChatModel) {
-        onUsage(
-          model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
-          logStreams = logStreams
-        )
+      if (response.usage != null) {
+        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
       }
 
       response

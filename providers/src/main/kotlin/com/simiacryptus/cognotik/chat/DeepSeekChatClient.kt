@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
@@ -20,7 +20,7 @@ class DeepSeekChatClient(
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.DeepSeek,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -31,7 +31,6 @@ class DeepSeekChatClient(
 ) {
   override fun authorize(
     request: HttpRequest,
-    apiProvider: APIProvider
   ) {
     request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
     request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
@@ -41,16 +40,17 @@ class DeepSeekChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>
+    logStreams: MutableList<java.io.BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     val deepSeekRequest = toDeepSeek(chatRequest)
     val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
       .writeValueAsString(deepSeekRequest)
-    val result = post("$apiBase/chat/completions", json, CoreProviders.DeepSeek)
+    val result = post("$apiBase/chat/completions", json)
     checkError(result)
     val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
     if (response.usage != null && model is ChatModel) {
-      onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
+      usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
     }
     return response
   }

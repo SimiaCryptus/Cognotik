@@ -4,7 +4,6 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.OpenAIModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -19,16 +18,16 @@ class OpenAIChatClient(
   apiBase: String,
   workPool: ExecutorService,
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.OpenAI,
   apiKey = apiKey,
   apiBase = apiBase,
   workPool = workPool,
   scheduledPool = scheduledPool
 ) {
+
   override fun authorize(
     request: HttpRequest,
-    apiProvider: APIProvider
   ) {
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
@@ -38,7 +37,8 @@ class OpenAIChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>
+    logStreams: MutableList<java.io.BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -47,19 +47,15 @@ class OpenAIChatClient(
         .writeValueAsString(chatRequest)
 
       val rawResponse =
-        post("${apiBase}/chat/completions", json, CoreProviders.OpenAI)
+        post("${apiBase}/chat/completions", json)
       checkError(rawResponse)
       val response = JsonUtil.objectMapper().readValue(
         rawResponse,
         ModelSchema.ChatResponse::class.java
       )
 
-      if (response.usage != null && model is ChatModel) {
-        onUsage(
-          model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
-          logStreams = logStreams
-        )
+      if (response.usage != null) {
+        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
       }
 
       response

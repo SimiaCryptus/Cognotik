@@ -8,6 +8,8 @@ import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UpdateModes
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -65,11 +67,13 @@ class DocProcessorServlet(
     }
     val modeName = request.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.Companion.fromName(modeName) ?: UpdateModes.PatchExisting
-    val smartModel = resolveModel(request.getParameter("smartModel"))
+    val user = authenticate(request, response) ?: return
+    val models = user.userSettings().models()
+    val smartModel = resolveModel(request.getParameter("smartModel"), models)
     val effectiveSmartModel = smartModel ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: effectiveSmartModel
-    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: effectiveFastModel
-     val effectiveAudioModel = resolveModel(request.getParameter("audioModel")) ?: effectiveFastModel
+    val effectiveFastModel = resolveModel(request.getParameter("fastModel"), models) ?: effectiveSmartModel
+    val effectiveImageModel = resolveModel(request.getParameter("imageModel"), models) ?: effectiveFastModel
+     val effectiveAudioModel = resolveModel(request.getParameter("audioModel"), models) ?: effectiveFastModel
      val templateVarOverrides = extractTemplateVarOverrides(request)
     try {
       val session = Session(sessionId)
@@ -243,16 +247,13 @@ class DocProcessorServlet(
      * then falls back to creating a generic LLMModel if not found.
      * Returns null if the input is null or blank.
      */
-    private fun resolveModel(modelId: String?): ChatModel? {
+    private fun resolveModel(
+      modelId: String?, models: Map<String, ChatModel>
+                             ): ChatModel? {
       if (modelId.isNullOrBlank()) return null
-      // Look up in registered ChatModel values
-      val values = ChatModel.values
-      values.values.find { it.modelId == modelId }?.let { return it }
-      // Fall back: create a generic ChatModel wrapper
+      models.values.find { it.modelId == modelId }?.let { return it }
       log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
-      return object : ChatModel(modelId = modelId, provider = null) {
-        override fun toString() = modelId
-      }
+      return ChatModel(modelId = modelId, provider = null)
     }
 
   }

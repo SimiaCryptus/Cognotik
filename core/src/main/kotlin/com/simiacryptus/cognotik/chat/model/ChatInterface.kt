@@ -31,13 +31,6 @@ class ChatInterface(
       else -> field
     }
 
-
-  init {
-    //require(key != null) { "API key must be provided" }
-    require(base.isNotBlank()) { "Base URL must be provided" }
-    require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
-  }
-
   fun chat(chatRequest: ChatRequest): ModelSchema.ChatResponse = provider.getChatClient(
     key = key,
     base = base,
@@ -45,12 +38,11 @@ class ChatInterface(
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-  ).apply {
-    onUsageListeners.add { model, usage -> onUsage(model, usage) }
-  }.chat(
+  ).chat(
     chatRequest = chatRequest,
     model = modelType,
-    logStreams = logStreams
+    logStreams = logStreams,
+    usageHandler = { model, usage -> onUsage(model, usage) }
   )
 
   @JsonIgnore

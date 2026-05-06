@@ -31,23 +31,9 @@ abstract class HttpClientManager(
   val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   val workPool: ExecutorService,
   val scheduledPool: ListeningScheduledExecutorService,
-  val onUsageListeners: MutableList<(model: LLMModel, tokens: ModelSchema.Usage) -> Unit> = mutableListOf(),
 ) {
   @Suppress("unused")
   val createdBy = Thread.currentThread().stackTrace
-
-  /**
-   * Called when API usage occurs to track tokens and costs
-   * @param model The model that was used
-   * @param tokens Usage information including token counts and cost
-   */
-  open fun onUsage(
-    model: LLMModel,
-    tokens: ModelSchema.Usage,
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
-  ) {
-    onUsageListeners.forEach { it(model, tokens) }
-  }
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(HttpClientManager::class.java)
