@@ -253,8 +253,7 @@ class ApiProviderServlet : HttpServlet() {
               provider.getChatModels(
                 key = apiConfig.key,
                 baseUrl = apiConfig.apiBase
-                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
-              ).filter { !it.deprecated }
+              )?.filter { !it.deprecated } ?: emptyList()
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -283,8 +282,7 @@ class ApiProviderServlet : HttpServlet() {
               provider.getChatModels(
                 key = apiConfig.key,
                 baseUrl = apiConfig.apiBase
-                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
-              ).filter { !it.deprecated }
+              )?.filter { !it.deprecated } ?: emptyList()
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()

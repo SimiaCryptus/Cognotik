@@ -13,15 +13,6 @@ import java.util.concurrent.Executors
 
 class MistralProvider : APIProvider("Mistral", "https://api.mistral.ai/v1") {
 
-  override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-    key = key,
-    base = baseUrl,
-    workPool = MoreExecutors.newDirectExecutorService(),
-    scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-    logLevel = Level.DEBUG,
-    logStreams = mutableListOf()
-  ).getModels() ?: MistralModels.values.values.toList()
-
   override fun getChatClient(
     key: SecureString,
     base: String,

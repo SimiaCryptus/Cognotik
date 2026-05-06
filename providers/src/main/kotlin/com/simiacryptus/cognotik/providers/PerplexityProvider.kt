@@ -13,15 +13,6 @@ import java.util.concurrent.Executors
 
 class PerplexityProvider : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
-  override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-    key = key,
-    base = baseUrl,
-    workPool = MoreExecutors.newDirectExecutorService(),
-    scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-    logLevel = Level.DEBUG,
-    logStreams = mutableListOf()
-  ).getModels() ?: PerplexityModels.values.values.toList()
-
   override fun getChatClient(
     key: SecureString,
     base: String,

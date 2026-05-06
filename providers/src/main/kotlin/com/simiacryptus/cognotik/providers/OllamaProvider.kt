@@ -14,14 +14,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class OllamaProvider : APIProvider("Ollama", "http://localhost:11434") {
-  override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-    key = key,
-    base = baseUrl,
-    workPool = MoreExecutors.newDirectExecutorService(),
-    scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-    logLevel = Level.DEBUG,
-    logStreams = mutableListOf()
-  ).getModels() ?: emptyList()
 
   override fun getChatClient(
     key: SecureString,

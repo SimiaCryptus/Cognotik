@@ -39,10 +39,6 @@ package com.simiacryptus.cognotik.providers
             )
         }
 
-        override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> {
-            return ElevenLabsModels.values.values.toList()
-        }
-
         override fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> {
             // ElevenLabs supports speech-to-text via Scribe model
             return emptyList()

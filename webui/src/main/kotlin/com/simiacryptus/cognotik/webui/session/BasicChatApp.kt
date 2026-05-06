@@ -52,7 +52,7 @@ class BasicChatApp(
       val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
       val chatModel = userSettings.apis
         .filter { it.provider != null && it.key != null && it.baseUrl != null }
-        .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) }
+        .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
         .firstOrNull { it.modelId == model }
       return if (chatModel != null) {
         val api = userSettings.apis.find {
