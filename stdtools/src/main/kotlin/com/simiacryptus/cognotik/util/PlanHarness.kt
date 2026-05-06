@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.APIProvider

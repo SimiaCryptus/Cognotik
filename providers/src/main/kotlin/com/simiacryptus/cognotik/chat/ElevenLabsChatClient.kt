@@ -57,7 +57,7 @@ package com.simiacryptus.cognotik.chat
          */
         private val defaultVoiceId = "21m00Tcm4TlvDq8ikWAM"
 
-        override fun getModels(): List<ChatModel>? {
+        override fun getModels(): List<ChatModel> {
             return com.simiacryptus.cognotik.chat.model.ElevenLabsModels.values.values.toList()
         }
 

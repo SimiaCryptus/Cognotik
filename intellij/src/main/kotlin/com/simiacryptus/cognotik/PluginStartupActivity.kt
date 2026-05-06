@@ -5,7 +5,7 @@ import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import com.simiacryptus.cognotik.chat.model.ChatInterface.Companion.ENABLE_LOGS
+import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser

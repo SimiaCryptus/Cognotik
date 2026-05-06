@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.agents
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 
 abstract class BaseAgent<I, R>(

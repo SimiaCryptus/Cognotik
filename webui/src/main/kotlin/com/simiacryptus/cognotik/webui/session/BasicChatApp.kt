@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage

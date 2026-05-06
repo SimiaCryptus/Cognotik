@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
@@ -700,10 +701,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
 
   private fun createAdversarialAgent(
-    vector: String,
-    adversaryCapability: String,
-    generateExploits: Boolean,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+      vector: String,
+      adversaryCapability: String,
+      generateExploits: Boolean,
+      api: ChatInterface,
   ): ParsedAgent<VulnerabilityList> {
     val capabilityDescription = when (adversaryCapability.lowercase()) {
       "basic" -> "You have basic technical skills and use common tools and techniques."
@@ -744,7 +745,7 @@ Consider unconventional attack paths and second-order effects.$exploitWarning
     )
   }
 
-  private fun createMitigationAgent(api: com.simiacryptus.cognotik.chat.model.ChatInterface): ChatAgent {
+  private fun createMitigationAgent(api: ChatInterface): ChatAgent {
     return ChatAgent(
       prompt = """
 You are a security architect specializing in defensive strategies and risk mitigation.

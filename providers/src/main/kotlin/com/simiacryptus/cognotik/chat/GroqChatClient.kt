@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.GroqModels
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -71,7 +72,7 @@ class GroqChatClient(
     val data: List<GroqModel>
   )
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     modelsCache[apiBase]?.let { cachedModels ->
       //log.debug("Returning cached models for apiBase: $apiBase")
@@ -85,28 +86,29 @@ class GroqChatClient(
       log.debug("Groq models response: $result")
       val response = JsonUtil.objectMapper().readValue(result, GroqModelsResponse::class.java)
       val models = response.data.filter { it.active }.mapNotNull { groqModel ->
-        // Try to find existing ChatModel definition first
-        (getModels()?.find { it.modelId == groqModel.id }
-          ?: run {
-            // Create a basic ChatModel for unknown models
-            log.debug("Creating basic ChatModel for unknown Groq model: ${groqModel.id}")
-            ChatModel(
-              name = groqModel.id,
-              modelId = groqModel.id,
-              maxTotalTokens = groqModel.context_window,
-              maxOutTokens = minOf(groqModel.context_window, 8192), // Conservative default
-              provider = CoreProviders.Groq,
-              inputTokenPricePerK = 0.0, // Unknown pricing
-              outputTokenPricePerK = 0.0 // Unknown pricing
-            )
-          }) as ChatModel?
+        val knownModels = GroqModels.values.values
+          .filter { it.modelId == groqModel.id }
+        if (knownModels.isNotEmpty()) {
+          knownModels.first()
+        } else if (groqModel.id.startsWith("groq") || groqModel.id.startsWith("o1") || groqModel.id.startsWith("o3")) {
+          ChatModel(
+            name = groqModel.id,
+            modelId = groqModel.id,
+            provider = CoreProviders.Groq,
+            maxTotalTokens = groqModel.context_window,
+            inputTokenPricePerK = 0.0, // Groq doesn't publicly list token pricing as of now
+            outputTokenPricePerK = 0.0
+          )
+        } else {
+          null
+        }
       }
       // Cache the result
       modelsCache[apiBase] = models
       models
     } catch (e: Exception) {
       log.warn("Failed to fetch models from Groq API: ${e.message}")
-      null
+      emptyList()
     }
   }
 

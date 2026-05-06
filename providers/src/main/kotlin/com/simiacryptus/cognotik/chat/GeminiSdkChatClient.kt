@@ -87,7 +87,7 @@ class GeminiSdkChatClient(
     }
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     modelsCache[apiBase]?.let {
       log.debug("Returning cached models list for apiBase={} ({} models)", apiBase, it.size)
@@ -141,7 +141,7 @@ class GeminiSdkChatClient(
       log.info("Cached {} Gemini models for apiBase={}", it.size, apiBase)
       modelsCache[apiBase] = it
     }
-    return models
+    return models ?: emptyList()
   }
 
   override fun chat(

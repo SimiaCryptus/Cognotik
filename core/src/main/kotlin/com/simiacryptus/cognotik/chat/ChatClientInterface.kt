@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService
 interface ChatClientInterface {
   val logStreams: MutableList<BufferedOutputStream>
   val workPool: ExecutorService
-  fun getModels(): List<ChatModel>? = null
+  fun getModels(): List<ChatModel> = emptyList()
 
   /**
    * Sends a chat request to the configured model and returns the response

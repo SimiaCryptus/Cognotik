@@ -74,7 +74,7 @@ class AwsChatClient(
       .build()
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     val cacheKey = "${awsAuth.region}:${awsAuth.profile}"
     modelsCache[cacheKey]?.let {

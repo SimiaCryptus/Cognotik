@@ -39,7 +39,7 @@ class AnthropicChatClient(
     request.addHeader("anthropic-version", "2023-06-01")
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     modelsCache[apiBase]?.let { return it }
 
@@ -69,7 +69,7 @@ class AnthropicChatClient(
       models
     } catch (e: Exception) {
       log.error("Failed to fetch Anthropic models", e)
-      null
+      emptyList()
     }
   }
 

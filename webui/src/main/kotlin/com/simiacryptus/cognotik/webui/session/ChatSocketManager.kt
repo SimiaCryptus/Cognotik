@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.ApplicationServices

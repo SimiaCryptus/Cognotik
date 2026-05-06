@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.agents
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.DescriptorUtil
 import com.simiacryptus.cognotik.describe.TypeDescriber

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors

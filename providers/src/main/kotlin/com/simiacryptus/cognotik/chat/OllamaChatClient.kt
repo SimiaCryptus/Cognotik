@@ -139,7 +139,7 @@ class OllamaChatClient(
     }
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     return try {
       val rawResponse = get("${apiBase}/api/tags")
       val modelsResponse = JsonUtil.objectMapper().readValue(rawResponse, OllamaModelsResponse::class.java)
@@ -157,7 +157,7 @@ class OllamaChatClient(
       }
     } catch (e: Exception) {
       log(Level.WARN, "Failed to fetch Ollama models: ${e.message}", logStreams)
-      null
+      emptyList()
     }
   }
 

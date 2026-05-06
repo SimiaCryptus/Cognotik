@@ -29,20 +29,13 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
   abstract fun getChatClient(
     key: SecureString,
     base: String = this.base,
-    workPool: ExecutorService,
+    workPool: ExecutorService = MoreExecutors.newDirectExecutorService(),
     logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
   ): ChatClientInterface
 
-  open fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-    key = key,
-    base = baseUrl,
-    workPool = MoreExecutors.newDirectExecutorService(),
-    scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-    logLevel = Level.DEBUG,
-    logStreams = mutableListOf()
-  ).getModels()
+  open fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(key = key, base = baseUrl).getModels()
 
   open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
 

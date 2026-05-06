@@ -68,7 +68,7 @@ class OpenAIChatClient(
     require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     modelsCache[apiBase]?.let { return it }
     return try {
       val modelsResponse = fetchModels()
@@ -94,7 +94,7 @@ class OpenAIChatClient(
       models
     } catch (e: Exception) {
       log.error("Failed to fetch OpenAI models", e)
-      null
+      emptyList()
     }
   }
 

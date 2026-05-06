@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.chat.model
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
