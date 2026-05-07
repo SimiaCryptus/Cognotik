@@ -348,19 +348,7 @@
         <h2>Welcome Back</h2>
         <p class="subtitle">Sign in to your account to continue</p>
         <!--ERROR_BLOCK-->
-        <form id="loginForm" name="loginForm" method="POST" action="/login/" autocomplete="on">
-            <input type="hidden" name="formAction" value="login">
-            <!--TARGET_HIDDEN_FIELD-->
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" autocomplete="username webauthn" placeholder="Enter your username" required autofocus>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" autocomplete="current-password webauthn" placeholder="Enter your password" required>
-            </div>
-            <button type="submit" name="login" value="Sign In">Sign In</button>
-        </form>
+        <!--LOGIN_METHODS-->
         <div class="links">
             <a href="<!--REGISTER_LINK-->">Don't have an account? <strong>Create one</strong></a>
         </div>

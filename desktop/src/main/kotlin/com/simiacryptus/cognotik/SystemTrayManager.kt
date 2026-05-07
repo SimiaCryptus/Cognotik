@@ -111,6 +111,27 @@ class SystemTrayManager(
         }
     }
 
+    fun updateStatus(isAlive: Boolean) {
+        SwingUtilities.invokeLater {
+            try {
+                trayIcon?.let { icon ->
+                    val statusText = when {
+                        isAlive -> "Running"
+                        else -> "Idle"
+                    }
+                    val newText = "Cognotik ${currentVersion} - $statusText"
+                    if (icon.toolTip != newText) {
+                        log.info("Updating system tray status: $newText")
+                        icon.toolTip = newText
+                    }
+                }
+            } catch (e: Exception) {
+                log.error("Failed to update system tray status: ${e.message}", e)
+            }
+        }
+    }
+
+
     fun remove() {
         SwingUtilities.invokeLater {
             try {

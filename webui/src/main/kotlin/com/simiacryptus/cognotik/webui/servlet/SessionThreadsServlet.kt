@@ -2,24 +2,24 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.RecordingThreadFactory
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class SessionThreadsServlet : HttpServlet() {
-  override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-    response.contentType = "text/html"
-    response.status = HttpServletResponse.SC_OK
-    if (request.parameterMap.containsKey("sessionId")) {
-      val session = Session(request.getParameter("sessionId"))
-      val user = authenticate(request, response) ?: return
-      val pool = threadPoolManager.getPool(session, user)
+    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+        response.contentType = "text/html"
+        response.status = HttpServletResponse.SC_OK
+        if (request.parameterMap.containsKey("sessionId")) {
+            val session = Session(request.getParameter("sessionId"))
+            val user = authenticate(request, response) ?: return
+            val pool = threadPoolManager.getPool(session, user)
 
 
-      response.writer.write(
-        """
+            response.writer.write(
+                """
             <html>
             <head>
                 <title>Session Threads</title>
@@ -91,26 +91,26 @@ class SessionThreadsServlet : HttpServlet() {
             </div>
             <div class='pool-threads'>
             <h1>Thread Stacks</h1>
-            """.trimIndent() + (pool.threadFactory as RecordingThreadFactory).threads.filter { it.isAlive }
-          .joinToString("<br/>") { thread ->
-            """
+            """.trimIndent() + (pool.threadFactory as ThreadPoolManager.RecordingThreadFactory).threads.filter { it.isAlive }
+                    .joinToString("<br/>") { thread ->
+                        """
             <div class='thread'>
             <div class='thread-name'>${thread.name}</div>
             <div class='stack-trace'>${
-              thread.stackTrace.joinToString(separator = "\n")
-              { stackTraceElement -> "<div class='stack-element'>$stackTraceElement</div>" }
-            }</div>
+                            thread.stackTrace.joinToString(separator = "\n")
+                            { stackTraceElement -> "<div class='stack-element'>$stackTraceElement</div>" }
+                        }</div>
             </div>
             """.trimIndent()
-          } + """
+                    } + """
             </div>
             </body>
             </html>
             """.trimIndent()
-      )
-    } else {
-      response.status = HttpServletResponse.SC_BAD_REQUEST
-      response.writer.write("Session ID is required")
+            )
+        } else {
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.writer.write("Session ID is required")
+        }
     }
-  }
 }
