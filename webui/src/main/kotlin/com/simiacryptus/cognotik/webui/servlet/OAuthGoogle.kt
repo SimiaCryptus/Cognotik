@@ -93,8 +93,8 @@ open class OAuthGoogle(
           id = userInfo.id,
           email = userInfo.email,
           name = userInfo.name,
-          picture = userInfo.picture,
-          credential = credential,
+//          picture = userInfo.picture,
+//          credential = credential,
         )
         val sessionID = UUID.randomUUID().toString()
         ApplicationServices.authenticationManager.putUser(accessToken = sessionID, user = user)

@@ -7,8 +7,6 @@ data class User(
   @get:JsonProperty("email") val email: String,
   @get:JsonProperty("name") val name: String? = null,
   @get:JsonProperty("id") val id: String? = null,
-  @get:JsonProperty("picture") val picture: String? = null,
-  @get:JsonIgnore val credential: Any? = null,
 ) {
   override fun toString() = email
 

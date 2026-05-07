@@ -20,6 +20,8 @@ interface AuthenticationInterface {
    */
   fun getUser(accessToken: String?): User
 
+  fun getAccessToken(user: User): String?
+
   /**
    * Stores or updates a user session with the given access token.
    *

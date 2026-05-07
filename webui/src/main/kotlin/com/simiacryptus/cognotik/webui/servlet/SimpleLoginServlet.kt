@@ -2,13 +2,12 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
-import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
+import com.simiacryptus.cognotik.util.SecureString
+import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -43,6 +42,8 @@ class SimpleLoginServlet : HttpServlet() {
 
     companion object {
         private val log = LoggerFactory.getLogger(SimpleLoginServlet::class.java)
+
+        var SESSION_ENVELOPE_KEY_SEED: String = UUID.randomUUID().toString() + System.currentTimeMillis().toString()
         private const val LOGIN_TEMPLATE_RESOURCE = "login.html"
         private const val REGISTER_TEMPLATE_RESOURCE = "register.html"
         private const val DEBOUNCE_INTERVAL_MS = 30_000L // 30 seconds between registration attempts per IP/username
@@ -66,11 +67,15 @@ class SimpleLoginServlet : HttpServlet() {
                 require(keyBytes.size == 32) { "SESSION_ENVELOPE_KEY must be 32 bytes (Base64-encoded)" }
                 SecretKeySpec(keyBytes, "AES")
             } else {
-                val keyBytes = ByteArray(32)
-                secureRandom.nextBytes(keyBytes)
+                val keyBytes: ByteArray = hashData(SESSION_ENVELOPE_KEY_SEED).take(32).toByteArray()
                 log.info("Generated ephemeral session envelope key (tokens will not survive restart)")
                 SecretKeySpec(keyBytes, "AES")
             }
+        }
+
+        fun hashData(data: String) : ByteArray {
+            val digest = MessageDigest.getInstance("SHA-256")
+            return digest.digest(data.toByteArray(Charsets.UTF_8))
         }
 
         fun hashPassword(password: String): String {
@@ -376,7 +381,11 @@ class SimpleLoginServlet : HttpServlet() {
         }
 
         try {
-            val user = User(email = username, name = username, id = username, picture = null)
+            val user = User(
+                email = username,
+                name = username,
+                id = username,
+            )
             val fileServices = ApplicationServices.fileApplicationServices()
             val settings = fileServices.userSettingsManager.getUserSettings(user)
 
@@ -396,7 +405,7 @@ class SimpleLoginServlet : HttpServlet() {
             val accessToken = createSessionToken(username, inputHash)
             ApplicationServices.authenticationManager.putUser(accessToken, user)
 
-            val cookie = jakarta.servlet.http.Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
+            val cookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
             cookie.path = "/"
             cookie.maxAge = 60 * 60 * 24 * 7 // 7 days
             cookie.isHttpOnly = true
@@ -433,16 +442,14 @@ class SimpleLoginServlet : HttpServlet() {
            if (!token.isNullOrBlank()) {
                try {
                    val user = ApplicationServices.authenticationManager.getUser(token)
-                   ApplicationServices.authenticationManager.logout(token, user ?: User(
-                       email = "", name = "", id = "", picture = null
-                   ))
+                   ApplicationServices.authenticationManager.logout(token, user)
                    log.info("User logged out: {}", user?.email ?: "<unknown>")
                } catch (e: Exception) {
                    log.warn("Error removing user from authentication manager during logout", e)
                }
            }
            // Clear the auth cookie on the client by sending a cookie with maxAge=0
-           val clearCookie = jakarta.servlet.http.Cookie(AuthenticationInterface.AUTH_COOKIE, "")
+           val clearCookie = Cookie(AuthenticationInterface.AUTH_COOKIE, "")
            clearCookie.path = "/"
            clearCookie.maxAge = 0
            clearCookie.isHttpOnly = true
@@ -485,7 +492,11 @@ class SimpleLoginServlet : HttpServlet() {
         }
 
         try {
-            val user = User(email = username, name = username, id = username, picture = null)
+            val user = User(
+                email = username,
+                name = username,
+                id = username
+            )
             val fileServices = ApplicationServices.fileApplicationServices()
             val existingSettings = fileServices.userSettingsManager.getUserSettings(user)
 
@@ -533,7 +544,7 @@ class SimpleLoginServlet : HttpServlet() {
             val accessToken = createSessionToken(username, passwordHash)
             ApplicationServices.authenticationManager.putUser(accessToken, user)
 
-            val cookie = jakarta.servlet.http.Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
+            val cookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
             cookie.path = "/"
             cookie.maxAge = 60 * 60 * 24 * 7 // 7 days
             cookie.isHttpOnly = true

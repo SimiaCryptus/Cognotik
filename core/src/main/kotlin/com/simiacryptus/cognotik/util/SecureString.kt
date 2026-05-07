@@ -10,7 +10,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 class SecureString {
-  private val data: ByteArray
+  val data: ByteArray
 
   private constructor(data: ByteArray) {
     this.data = data

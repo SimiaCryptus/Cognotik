@@ -8,7 +8,6 @@ import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.FileValidators
@@ -143,10 +142,8 @@ class PluginStartupActivity : ProjectActivity {
             ) = true
         }
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-          override fun getUser(accessToken: String?): User {
-            val localUser: User = localUser
-            return localUser
-          }
+            override fun getUser(accessToken: String?) = AppSettingsState.localUser
+            override fun getAccessToken(user: User) = "local-token"
             override fun putUser(accessToken: String, user: User) = user
             override fun logout(accessToken: String, user: User) {}
         }

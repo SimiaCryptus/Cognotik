@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.util.crawl.seed
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ServiceProviders.Google
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask

@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.apps.SinglePlanApp
-import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices

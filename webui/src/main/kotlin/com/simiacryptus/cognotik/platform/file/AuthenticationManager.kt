@@ -13,6 +13,10 @@ open class AuthenticationManager : AuthenticationInterface {
       throw RuntimeException("User not found for access token")
   }
 
+  override fun getAccessToken(user: User): String? {
+    return users.entries.firstOrNull { it.value == user }?.key
+  }
+
   override fun putUser(accessToken: String, user: User): User {
     users[accessToken] = user
     return user

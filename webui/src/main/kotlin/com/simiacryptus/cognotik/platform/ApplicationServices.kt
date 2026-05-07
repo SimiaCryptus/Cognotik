@@ -14,68 +14,76 @@ import java.io.File
 
 object ApplicationServices {
 
-  @JvmStatic
-   var pluginManager: PluginManagerInterface = PluginManager()
-     set(value) {
-       require(!isLocked) { "ApplicationServices is locked" }
-       field = value
-     }
+    @JvmStatic
+    var pluginManager: PluginManagerInterface = PluginManager()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
 
-   @JvmStatic
-  var authorizationManager: AuthorizationInterface = AuthorizationManager()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
+    @JvmStatic
+    var authorizationManager: AuthorizationInterface = AuthorizationManager()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
 
-  @JvmStatic
-  var authenticationManager: AuthenticationInterface = AuthenticationManager()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
+    @JvmStatic
+    var authenticationManager: AuthenticationInterface = AuthenticationManager()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
 
-  @JvmStatic
-  var threadPoolManager: ThreadPoolManager =
-    ThreadPoolManager()
-    private set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
+    @JvmStatic
+    var threadPoolManager: ThreadPoolManager =
+        ThreadPoolManager()
+        private set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
 
-  @JvmStatic
-  var cloud: CloudPlatformInterface? =
-    AwsPlatform.get()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
+    @JvmStatic
+    var cloud: CloudPlatformInterface? =
+        AwsPlatform.get()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
 
-  @JvmStatic
-  private val fileApplicationServicesCache = mutableMapOf<File, FileApplicationServices>()
+    @JvmStatic
+    private val fileApplicationServicesCache = mutableMapOf<File, FileApplicationServices>()
 
-  @JvmStatic
-  fun fileApplicationServices(rootDir: File = ApplicationServicesConfig.dataStorageRoot) =
-    fileApplicationServicesCache.getOrPut(rootDir) { FileApplicationServices(rootDir) }
+    @JvmStatic
+    fun fileApplicationServices(root: File = ApplicationServicesConfig.dataStorageRoot) = fileApplicationServices.invoke(root)
+
+    @JvmStatic
+    var fileApplicationServices: (File) -> FileApplicationServices =
+        { rootDir -> fileApplicationServicesCache.getOrPut(rootDir) { FileApplicationServices(rootDir) } }
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
 
 }
 
 open class FileApplicationServices(val rootDir: File?) {
-  open val dataStorageFactory: DataStorage by lazy {
-    DataStorage(
-      dataDir = rootDir?.resolve("data") ?: throw IllegalStateException("Data storage root not configured"),
-      metadataStorage = metadataStorageFactory
-    )
-  }
-  open val metadataStorageFactory: HSQLMetadataStorage by lazy { HSQLMetadataStorage(rootDir?.resolve("metadatadb")) }
-  open val usageManager: UsageInterface by lazy { HSQLUsageManager(rootDir?.resolve("usagedb")) }
-  open val userSettingsManager: UserSettingsInterface by lazy {
-    UserSettingsManager(
-      rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured")
-    )
-  }
+    open val dataStorageFactory: DataStorage by lazy {
+        DataStorage(
+            dataDir = rootDir?.resolve("data") ?: throw IllegalStateException("Data storage root not configured"),
+            metadataStorage = metadataStorageFactory
+        )
+    }
+    open val metadataStorageFactory: HSQLMetadataStorage by lazy { HSQLMetadataStorage(rootDir?.resolve("metadatadb")) }
+    open val usageManager: UsageInterface by lazy { HSQLUsageManager(rootDir?.resolve("usagedb")) }
+    open val userSettingsManager: UserSettingsInterface by lazy {
+        UserSettingsManager(
+            rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured")
+        )
+    }
 }
 
-fun ChatModel.instance(user: User)  = ApiChatModel(model = this,
-  provider = ApplicationServices.fileApplicationServices().userSettingsManager
-    .getUserSettings(user).apis.find { it.provider == this.provider })
+fun ChatModel.instance(user: User) = ApiChatModel(
+    model = this,
+    provider = ApplicationServices.fileApplicationServices().userSettingsManager
+        .getUserSettings(user).apis.find { it.provider == this.provider })

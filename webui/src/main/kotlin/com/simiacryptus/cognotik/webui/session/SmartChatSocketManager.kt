@@ -22,31 +22,31 @@ import java.io.OutputStream
  * 2. Query elevation from fast model to smart model for complex queries
  */
 open class SmartChatSocketManager(
-  session: Session,
-  useExpansionSyntax: Boolean = true,
-  smartModel: ChatInterface,
-  fastModel: ChatInterface,
-  userInterfacePrompt: String = "",
-  override val systemPrompt: String,
-  temperature: Double = 0.3,
-  applicationClass: Class<out ChatServer>,
-  storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
-  override val fastTopicParsing: Boolean = true,
-  retriable: Boolean = true,
-  budget: Double,
-  /**
+    session: Session,
+    useExpansionSyntax: Boolean = true,
+    smartModel: ChatInterface,
+    fastModel: ChatInterface,
+    userInterfacePrompt: String = "",
+    override val systemPrompt: String,
+    temperature: Double = 0.3,
+    applicationClass: Class<out ChatServer>,
+    storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+    override val fastTopicParsing: Boolean = true,
+    retriable: Boolean = true,
+    budget: Double,
+    /**
    * Maximum number of tokens in conversation history before summarization is triggered
    */
   private val maxHistoryTokens: Int = 4000,
-  /**
+    /**
    * Target number of tokens after summarization
    */
   private val targetSummaryTokens: Int = 1000,
-  /**
+    /**
    * Number of recent messages to preserve without summarization
    */
   private val preserveRecentMessages: Int = 4,
-  owner: User,
+    owner: User,
   ) : ChatSocketManager(
   session = session,
   useExpansionSyntax = useExpansionSyntax,

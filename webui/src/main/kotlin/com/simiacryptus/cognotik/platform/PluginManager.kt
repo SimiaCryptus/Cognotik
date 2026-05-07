@@ -7,10 +7,12 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.Thread.sleep
 import java.net.URLClassLoader
 import java.util.ServiceLoader
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 
 /**
  * Manages loading and initialization of plugin JARs.
@@ -55,9 +57,12 @@ class PluginManager(
 
 
   init {
-    log.info("PluginManager initialized", RuntimeException("PluginManager init stack trace"))
-    root.mkdirs()
-    restorePlugins()
+    Thread {
+      sleep(1000)
+      log.info("PluginManager initialized", RuntimeException("PluginManager init stack trace"))
+      root.mkdirs()
+      restorePlugins()
+    }.start()
   }
 
   override fun publish(topic: String, data: Any?) {

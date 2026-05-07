@@ -8,10 +8,10 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
 abstract class ApplicationSocketManager(
-  session: Session,
-  owner: User,
-  dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
-  applicationClass: Class<*>,
+    session: Session,
+    owner: User,
+    dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+    applicationClass: Class<*>,
 ) : SocketManager(
   sessionId = session,
   dataStorage = dataStorage,
