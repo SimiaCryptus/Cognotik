@@ -62,7 +62,7 @@ class IllustrateDocumentAction : BaseAction() {
                 val taskConfig = dialog.getTaskConfig()
                 val orchestrationConfig = dialog.getOrchestrationConfig()
                 val session = Session.newGlobalID()
-                DataStorage.sessionPaths[session] = root
+                DataStorage.userPaths[session] = root
                 UITools.runAsync(e.project, "Initializing Document Illustration Task", true) { progress ->
                     initializeTask(progress, orchestrationConfig, taskConfig, session)
                 }

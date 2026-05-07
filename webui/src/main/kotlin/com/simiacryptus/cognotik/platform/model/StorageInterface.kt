@@ -42,7 +42,7 @@ interface StorageInterface {
    * @return The File object representing the session directory
    */
 
-  fun getSessionDir(
+  fun getUserDir(
     user: User?,
     session: Session
   ): File
@@ -60,7 +60,7 @@ interface StorageInterface {
    * @throws IllegalArgumentException if the session ID format is invalid
    */
 
-  fun getDataDir(
+  fun getSystemDir(
     user: User?,
     session: Session
   ): File

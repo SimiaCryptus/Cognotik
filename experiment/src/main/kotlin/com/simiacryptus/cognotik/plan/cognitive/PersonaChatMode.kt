@@ -273,7 +273,7 @@ open class PersonaChatMode(
           session = session,
           dataStorage = ui.dataStorage!!,
           root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-            ?: ui.dataStorage.getSessionDir(user, session).toPath()
+            ?: ui.dataStorage.getUserDir(user, session).toPath()
             ?: File(".").toPath()),
         messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
         task = this,

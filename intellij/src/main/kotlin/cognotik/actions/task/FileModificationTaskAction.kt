@@ -77,7 +77,7 @@ class FileModificationTaskAction : BaseAction() {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
 
-        DataStorage.sessionPaths[session] = root
+        DataStorage.userPaths[session] = root
 
         progress.text = "Starting server..."
         setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)

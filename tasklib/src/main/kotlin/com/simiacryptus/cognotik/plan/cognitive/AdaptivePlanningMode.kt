@@ -5,8 +5,6 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -91,7 +89,7 @@ open class AdaptivePlanningMode(
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
         log.debug("Created plan coordinator")

@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -9,7 +8,6 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.instance
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
@@ -82,9 +80,9 @@ Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
 
 Root: `${orchestrationConfig?.absoluteWorkingDir}`
 
-Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+Session Location: `${dataStorage.getUserDir(user, session).absolutePath}`
 
-Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+Data Location: `${dataStorage.getSystemDir(user, session).absolutePath}`
 
 Task Type: `${taskType.name}`
 
@@ -128,8 +126,8 @@ ${taskConfig.toJson()}
   ) {
     try {
       val orchestrationConfig = settings?.apply {
-        if (null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let {
-          DataStorage.sessionPaths[session] = File(it)
+        if (null == DataStorage.userPaths[session]) absoluteWorkingDir?.let {
+          DataStorage.userPaths[session] = File(it)
         }
       } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
@@ -147,7 +145,7 @@ ${taskConfig.toJson()}
           session = session,
           dataStorage = ui.dataStorage,
           root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-            ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
+            ?: ui.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
         ),
         messages = listOf(message),
         task = task,

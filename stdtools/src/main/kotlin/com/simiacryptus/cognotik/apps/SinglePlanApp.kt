@@ -111,9 +111,9 @@ Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
 
 Root: `${settings?.absoluteWorkingDir}`
 
-Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+Session Location: `${dataStorage.getUserDir(user, session).absolutePath}`
 
-Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+Data Location: `${dataStorage.getSystemDir(user, session).absolutePath}`
 
 Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
 
@@ -138,8 +138,8 @@ ${settings?.toJson()}
         log.error("Error retrieving orchestration config, using default", e)
         null
       }?.apply {
-        if (null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let {
-          DataStorage.sessionPaths[session] = File(it)
+        if (null == DataStorage.userPaths[session]) absoluteWorkingDir?.let {
+          DataStorage.userPaths[session] = File(it)
         }
       } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 

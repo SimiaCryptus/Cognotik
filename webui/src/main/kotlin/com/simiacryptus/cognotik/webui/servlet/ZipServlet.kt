@@ -22,7 +22,7 @@ class ZipServlet(val dataStorage: StorageInterface) : HttpServlet() {
       val session = Session(sessionParam)
       val path = request.parameterMap["path"]?.find { it.isNotBlank() } ?: "/"
       val user = authenticate(request, response) ?: return
-      val sessionDir = dataStorage.getSessionDir(user, session)
+      val sessionDir = dataStorage.getUserDir(user, session)
       val file = File(sessionDir, path)
       if (!file.exists()) {
         response.status = HttpServletResponse.SC_NOT_FOUND

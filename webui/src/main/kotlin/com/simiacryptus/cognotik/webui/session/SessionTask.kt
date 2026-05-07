@@ -79,7 +79,7 @@ open class SessionTask(
 
     log.debug("Saving file at path: {}", relativePath)
 
-    ui.dataStorage?.getSessionDir(ui.owner, ui.sessionId)?.let { dir ->
+    ui.dataStorage?.getUserDir(ui.owner, ui.sessionId)?.let { dir ->
       if (!dir.exists() && !dir.mkdirs()) {
         throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
       }

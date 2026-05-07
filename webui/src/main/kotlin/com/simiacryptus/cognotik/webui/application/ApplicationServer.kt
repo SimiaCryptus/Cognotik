@@ -197,7 +197,7 @@ abstract class ApplicationServer(
   ): File {
     logger.debug("Getting settings file for session: {} user: {}", session, userId.email)
     val settingsFile =
-      dataStorage.getDataDir(userId, session).resolve("settings.json")
+      dataStorage.getSystemDir(userId, session).resolve("settings.json")
         .apply { parentFile.mkdirs() }
     logger.debug("Settings file resolved to: {}", settingsFile.absolutePath)
     return settingsFile

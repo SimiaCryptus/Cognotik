@@ -78,7 +78,7 @@ class DocProcessorServlet(
     try {
       val session = Session(sessionId)
       val user = authenticate(request, response) ?: return
-      val sessionDir = dataStorage.getSessionDir(user, session)
+      val sessionDir = dataStorage.getUserDir(user, session)
       if (!sessionDir.exists() || !sessionDir.isDirectory) {
         response.status = HttpServletResponse.SC_NOT_FOUND
         response.contentType = "application/json"

@@ -68,6 +68,19 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
 
   companion object {
 
+    val NULL: APIProvider = object : APIProvider("NULL", "") {
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ): ChatClientInterface {
+        throw UnsupportedOperationException("NULL provider does not support chat functionality")
+      }
+    }
+
     @JvmStatic
     fun valueOf(name: String): APIProvider = valueOf(APIProvider::class.java, name)
 

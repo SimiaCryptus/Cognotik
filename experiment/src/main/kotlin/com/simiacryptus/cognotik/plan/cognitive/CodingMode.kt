@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
@@ -65,7 +64,7 @@ open class CodingMode(
               session = session,
               dataStorage = task.ui.dataStorage,
               root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                ?: task.ui.dataStorage.getUserDir(user, session).toPath()
                 ?: File(".").toPath()
             ),
             messages = listOf(message),

@@ -27,7 +27,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val filename = "test.json"
 
         log.debug("Attempting to read JSON file: {}", filename)
-        val settingsFile = File(storage.getSessionDir(user, session), filename)
+        val settingsFile = File(storage.getUserDir(user, session), filename)
         val result = if (!settingsFile.exists()) null else {
             JsonUtil.objectMapper().readValue(settingsFile, Any::class.java) as Any
         }
@@ -53,14 +53,14 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
     }
 
     @Test
-    fun testGetSessionDir() {
+    fun testGetUserDir() {
         log.info("Starting testGetSessionDir")
 
         val user = User(email = "test@example.com")
         val session = Session("G-20230101-1234")
 
         log.debug("Getting session directory for user: {} and session: {}", user.email, session)
-        val sessionDir = storage.getSessionDir(user, session)
+        val sessionDir = storage.getUserDir(user, session)
 
         log.info("Asserting session directory is of type File")
         assertTrue(sessionDir is File, "Expected File type for session directory")

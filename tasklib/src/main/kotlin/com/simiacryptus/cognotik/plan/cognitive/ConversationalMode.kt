@@ -7,8 +7,6 @@ import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.instance
@@ -286,7 +284,7 @@ open class ConversationalMode(
           session = session,
           dataStorage = ui.dataStorage!!,
           root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-            ?: ui.dataStorage.getSessionDir(user, session).toPath()
+            ?: ui.dataStorage.getUserDir(user, session).toPath()
             ?: File(".").toPath()),
         messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
         task = this,

@@ -74,7 +74,7 @@ open class WaterfallMode(
         session = session,
         dataStorage = task.ui.dataStorage,
         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-          ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+          ?: task.ui.dataStorage.getUserDir(user, session).toPath()
           ?: File(".").toPath(),
         transcriptStream = transcriptStream
       )

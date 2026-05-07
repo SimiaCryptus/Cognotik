@@ -62,7 +62,19 @@ class ChatInterface(
   )
 
   companion object {
-    val log = LoggerFactory.getLogger(ChatInterface::class.java)
+      val NULL: ChatInterface = ChatInterface(
+        logStreams = mutableListOf(),
+        key = SecureString(""),
+        base = "",
+        logLevel = Level.INFO,
+        temperature = 0.0,
+        provider = APIProvider.NULL,
+        modelType = ChatModel(),
+        workPool = java.util.concurrent.Executors.newCachedThreadPool(),
+        scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newScheduledThreadPool(4)),
+        onUsage = { _, _ -> },
+      )
+      val log = LoggerFactory.getLogger(ChatInterface::class.java)
     var ENABLE_LOGS = false
   }
 }

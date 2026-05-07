@@ -54,7 +54,7 @@ class MultiStepPatchAction : BaseAction() {
                 val session = Session.newGlobalID()
                 val selectedFile = e.getSelectedFolder()
                 if (null != selectedFile) {
-                    DataStorage.sessionPaths[session] = selectedFile.toFile
+                    DataStorage.userPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,

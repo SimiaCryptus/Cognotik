@@ -373,8 +373,8 @@ open class UnifiedHarness(
   ): File {
     val tempDirectory = createTempDirectory(name)
     log.info("Running task in workspace: ${tempDirectory.absolutePath}")
-    DataStorage.sessionPaths[session] = tempDirectory
-    if (redirectData) DataStorage.dataPaths[session] = tempDirectory
+    DataStorage.userPaths[session] = tempDirectory
+    if (redirectData) DataStorage.systemPaths[session] = tempDirectory
     return workspace ?: tempDirectory
   }
 

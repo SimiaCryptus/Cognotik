@@ -1,11 +1,13 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
 class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : ApplicationServer(
@@ -36,8 +38,15 @@ class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : App
   }
 
   override fun newSession(user: User, session: Session) =
-    agents[session] ?: chats[session]?.newSession(user, session)
-    ?: throw IllegalStateException("No agent found for session $session")
+      agents[session] ?: chats[session]?.newSession(user, session) ?: ChatSocketManager(
+        session = session,
+        smartModel = ChatInterface.NULL,
+        fastModel = ChatInterface.NULL,
+        systemPrompt = "",
+        applicationClass = this::class.java,
+        budget = 0.0,
+        owner = user
+      )
 
   companion object {
     fun setParentSession(child: Session, parent: Session) {

@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -86,7 +85,7 @@ open class CouncilMode(
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
 

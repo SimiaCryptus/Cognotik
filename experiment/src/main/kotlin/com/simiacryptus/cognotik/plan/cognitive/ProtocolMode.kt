@@ -62,7 +62,7 @@ open class ProtocolMode(
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         } ?: throw IllegalStateException("Coordinator could not be initialized")
 

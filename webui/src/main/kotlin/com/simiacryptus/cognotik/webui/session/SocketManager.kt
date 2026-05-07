@@ -38,7 +38,7 @@ abstract class SocketManager(
   fun resolveSystemFile(relativePath: String): File? {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-    return dataStorage?.getDataDir(
+    return dataStorage?.getSystemDir(
       owner,
       sessionId
     )?.let { dir ->
@@ -61,10 +61,10 @@ abstract class SocketManager(
     require(!relativePath.contains("..")) {
       "Invalid file path: path traversal not allowed"
     }
-    return dataStorage?.getSessionDir(
+    return dataStorage.getUserDir(
       owner,
       sessionId
-    )?.let { dir ->
+    ).let { dir ->
       val resolve = if (dir.exists()) {
         dir.resolve(relativePath).apply { parentFile.mkdirs() }
       } else {

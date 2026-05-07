@@ -141,7 +141,7 @@ open class HierarchicalPlanningMode(
       dataStorage = task.ui.dataStorage
         ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
       root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getSessionDir(
+        ?: task.ui.dataStorage?.getUserDir(
           user,
           session
         )?.toPath() ?: File(".").toPath())
@@ -1243,7 +1243,7 @@ open class HierarchicalPlanningMode(
   )
 
   private fun getStateFile(task: SessionTask) =
-    File(task.ui.dataStorage.getSessionDir(user, session), "planning_state.json")
+    File(task.ui.dataStorage.getUserDir(user, session), "planning_state.json")
 
   private fun saveState(task: SessionTask) {
     try {
