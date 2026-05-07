@@ -71,7 +71,10 @@ class DocOpsApp(
     val newSession = super.newSession(user, session)!!
     val sessionRoot = newSession.resolveUserFile(".")!!
     val isExistingSession = sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true && sessionRoot.listFiles()?.size!! > 2
-    val currentSettings = getSettings(session, user, Settings::class.java) ?: throw IllegalStateException("Failed to load settings for session: $session")
+    val currentSettings = getSettings(session, user, Settings::class.java)
+    if (currentSettings == null) {
+        throw IllegalStateException("Failed to load settings for session: $session")
+    }
     if (isExistingSession && !currentSettings.overwriteOnRestart) {
       LoggerFactory.getLogger(DocOpsApp::class.java)
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
