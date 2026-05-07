@@ -66,6 +66,7 @@ class ChatModel(
   )
 
   companion object {
+    val NULL: ChatModel = ChatModel(name = "NULL", modelId = "NULL", maxTotalTokens = -1, inputTokenPricePerK = 0.0, outputTokenPricePerK = 0.0)
     val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
   }
 }

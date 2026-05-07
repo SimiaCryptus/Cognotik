@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 
 val globalID = Session.newGlobalID()
-val model = AnthropicModels.Claude35Haiku
 
 open class CognotikApps(
     localName: String, publicName: String, port: Int
@@ -316,8 +315,6 @@ open class CognotikApps(
             ChildWebApp(
                 entry.path, DocOpsApp(
                     root = File("."),
-                    model = model,
-                    fastModel = model,
                     appId = entry.appId ?: entry.id,
                     classLoader = entry.classLoader,
                     resourcePath = entry.resource_path ?: ("apps/" + (entry.appId ?: entry.id))

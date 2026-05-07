@@ -42,12 +42,6 @@ private val TEXT_EXTENSIONS = setOf(
  * */
 class DocOpsApp(
   root: File,
-  val model: ChatModel,
-  val fastModel: ChatModel,
-  val settings: Settings = Settings(
-    model = model,
-    fastModel = fastModel,
-  ),
   appId: String,
   applicationName: String = appId,
   val resourcePath : String,
@@ -61,8 +55,8 @@ class DocOpsApp(
   override val inputCnt get() = 0
 
   data class Settings(
-    val model: ChatModel,
-    val fastModel: ChatModel,
+    val model: ChatModel? = null,
+    val fastModel: ChatModel? = null,
     val temperature: Double = 0.3,
     val budget: Double = 2.0,
     val overwriteOnRestart: Boolean = OVERWRITE,
@@ -71,16 +65,13 @@ class DocOpsApp(
   override val settingsClass: Class<*> get() = Settings::class.java
 
   @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> initSettings(session: Session, user: User): T = Settings(
-    model = model,
-    fastModel = fastModel,
-  ) as T
+  override fun <T : Any> initSettings(session: Session, user: User): T = Settings() as T
 
   override fun newSession(user: User, session: Session): SocketManager {
     val newSession = super.newSession(user, session)!!
     val sessionRoot = newSession.resolveUserFile(".")!!
     val isExistingSession = sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true && sessionRoot.listFiles()?.size!! > 2
-    val currentSettings = getSettings(session, user, Settings::class.java) ?: settings
+    val currentSettings = getSettings(session, user, Settings::class.java) ?: throw IllegalStateException("Failed to load settings for session: $session")
     if (isExistingSession && !currentSettings.overwriteOnRestart) {
       LoggerFactory.getLogger(DocOpsApp::class.java)
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
