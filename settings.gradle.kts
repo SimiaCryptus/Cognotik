@@ -33,6 +33,7 @@ include(":tool")
 //include(":Cognotik-Plugins:auth")
 //include(":Cognotik-Plugins:jobs")
 //include(":Cognotik-Plugins:office")
+//include(":Cognotik-Plugins:games")
 //include(":Cognotik-Plugins:home")
 //include(":Cognotik-Plugins:omni")
 

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
@@ -210,7 +210,7 @@ fun String.instance(user: User): ApiChatModel? {
   val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
   val chatModel = userSettings.apis
     .filter { it.provider != null && it.key != null && it.baseUrl != null }
-    .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) }
+    .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
     .firstOrNull { it.modelId == this }
   val toApiChatModel = chatModel?.toApiChatModel(user)
   return toApiChatModel

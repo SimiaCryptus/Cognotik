@@ -51,6 +51,7 @@ console.log('[app] Parsed session URL — basePath:', basePath, '| sessionId:', 
 // Persistent state
 const linkManager = createSessionLinkManager(getProxyUrl);
 const trackedSessions = new Map();   // target -> taskInfo (kept for life of page)
+const lastTaskStatus = new Map();    // target -> last seen status (for transition detection)
 let currentNode = null;              // currently displayed node id (e.g. "0", "0a")
 let allNodes = new Set();            // every story node we know about
 let logger = null;
@@ -58,6 +59,7 @@ let statusPoller = null;
 let isSpeaking = false;
 let isGeneratingImage = false;
 let isGeneratingAudio = false;
+let _pendingAudioAutoPlay = new Set(); // node IDs whose audio should auto-play once loaded
 let _pendingAutoRead = false;        // true when auto-read is queued but waiting for a user gesture
 let _hasUserGesture = false;         // true once the user has interacted with the page
 let _ttsTimerInterval = null;        // setInterval handle for timer-based word highlight fallback
@@ -208,10 +210,10 @@ async function init() {
         });
 
         // Start global status poller
-        statusPoller = createStatusPoller(basePath, onStatusUpdate, 4000);
+         statusPoller = createStatusPoller(basePath, onStatusUpdate, 2000);
         statusPoller.start();
-        log('Status poller started (interval: 4s).', 'info');
-        console.log('[init] Status poller started — interval: 4000ms.');
+         log('Status poller started (interval: 2s).', 'info');
+         console.log('[init] Status poller started — interval: 2000ms.');
 
         // If initial node already exists, load it
         console.log('[init] Checking for existing initial node at', `${STORY_DIR}/${INITIAL_NODE}.md`);
@@ -505,8 +507,9 @@ async function onChoice(letter) {
         return;
     }
     const target = `${STORY_DIR}/${currentNode}${letter}.md`;
-    const opPath = `ops/choice_${letter}.md`;
-    console.log(`[onChoice] letter="${letter}" | currentNode="${currentNode}" | target="${target}" | op="${opPath}"`);
+    const opPath = `ops/choice.md`;
+    const templateVars = { CHOICE: letter, CHOICE_LABEL: letter.toUpperCase() };
+    console.log(`[onChoice] letter="${letter}" | currentNode="${currentNode}" | target="${target}" | op="${opPath}" | templateVars=`, templateVars);
 
     // If node already exists, just load it
     if (await fileExists(basePath, target)) {
@@ -523,14 +526,15 @@ async function onChoice(letter) {
     log(`Generating branch ${letter.toUpperCase()} — op: ${opPath} → target: "${target}".`, 'info');
     timeStart(`branch_${letter}`);
     console.group(`[onChoice] Generating branch ${letter.toUpperCase()}…`);
-    console.log(`[onChoice] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    console.log(`[onChoice] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
 
     try {
         const taskId = await runDocOp(
             sessionId,
             opPath,
             target,
-            getModelOverrides()
+            getModelOverrides(),
+            templateVars
         );
         console.log(`[onChoice] runDocOp() returned taskId:`, taskId);
         log(`DocOp started for branch ${letter.toUpperCase()} — task: ${formatTaskId(taskId)}.`, 'info');
@@ -571,10 +575,15 @@ async function refreshTree() {
     try {
         log(`Refreshing story tree from "${STORY_DIR}/"…`, 'info');
         timeStart('refreshTree');
-        const files = await listFiles(basePath, STORY_DIR);
+       // Note: do NOT append a cache-busting query string here — listFiles
+       // treats the second arg as a directory path, not a URL, so "story?t=…"
+       // would be interpreted as a literal (non-existent) directory name.
+       const files = await listFiles(basePath, STORY_DIR);
+       console.log('[refreshTree] listFiles returned:', files);
         allNodes = new Set();
         (files || []).forEach(f => {
-            const name = (f && (f.name || f.path)) ? (f.name || f.path).split('/').pop() : null;
+           const raw = typeof f === 'string' ? f : (f && (f.name || f.path));
+           const name = raw ? raw.split('/').pop() : null;
             if (name && /\.md$/.test(name) && !name.startsWith('_')) {
                 const id = name.replace(/\.md$/, '');
                 if (/^0[a-c]*$/.test(id)) allNodes.add(id);
@@ -811,7 +820,16 @@ async function loadNode(nodeId) {
     log(`Loading node "${nodeId}" from "${path}"…`, 'info');
     timeStart(`loadNode_${nodeId}`);
     console.group(`[loadNode] Loading node "${nodeId}" from "${path}"…`);
-    const content = await readFile(basePath, path);
+    // Cache-bust to ensure freshly generated content is loaded (browsers/proxies
+    // may otherwise return a stale cached copy of the markdown file).
+     // Retry once after a short delay in case the file isn't yet readable
+     // (e.g. just-completed task, propagation delay through HTTP cache).
+     let content = await readFile(basePath, `${path}?t=${Date.now()}`);
+     if (content == null) {
+         console.log(`[loadNode] First read returned null — retrying after 250ms…`);
+         await new Promise(r => setTimeout(r, 250));
+         content = await readFile(basePath, `${path}?t=${Date.now()}`);
+     }
     if (content == null) {
         showToast(`Node ${nodeId} not available yet.`, 'warning');
         log(`Node "${nodeId}" could not be read — file may not exist yet.`, 'warning');
@@ -1190,6 +1208,26 @@ function _onUserGesture() {
     if (_hasUserGesture) return;
     _hasUserGesture = true;
     console.log('[_onUserGesture] First user gesture detected.');
+     // If we have pending narration audio waiting to auto-play, try it now.
+     if (_pendingAudioAutoPlay.size > 0 && currentNode && _pendingAudioAutoPlay.has(currentNode)) {
+         const audio = document.getElementById('node-audio');
+         if (audio && audio.src) {
+             _pendingAudioAutoPlay.delete(currentNode);
+             _pendingAutoRead = false;
+             _updateAutoReadIndicator(false);
+             stopSpeaking();
+             const p = audio.play();
+             if (p && typeof p.then === 'function') {
+                 p.then(() => {
+                     log(`Auto-playing deferred narration audio for node "${currentNode}".`, 'info');
+                     console.log(`[_onUserGesture] Deferred audio auto-play started for "${currentNode}".`);
+                 }).catch(err => {
+                     console.warn(`[_onUserGesture] Deferred audio auto-play failed:`, err);
+                 });
+             }
+             return;
+         }
+     }
     if (_pendingAutoRead && !isSpeaking && currentNode) {
         _pendingAutoRead = false;
         _updateAutoReadIndicator(false);
@@ -1431,7 +1469,7 @@ async function onReadAloudToggle() {
     }
     const path = `${STORY_DIR}/${currentNode}.md`;
     console.log('[onReadAloudToggle] Reading file:', path);
-    const content = await readFile(basePath, path);
+    const content = await readFile(basePath, `${path}?t=${Date.now()}`);
     console.log('[onReadAloudToggle] readFile result — content length:', content != null ? content.length : 'null (file not found)');
     log(`Read file "${path}" — result: ${content != null ? content.length + ' chars' : 'null'}.`, 'info');
     if (content == null) {
@@ -1467,11 +1505,12 @@ async function onReadAloudToggle() {
 // Image generation
 // -------------------------------------------------------------------------
 function getImageOpForNode(nodeId) {
-    // Initial node uses initial_image.md, branches use choice_{a|b|c}_image.md
+    // Initial node uses initial_image.md; branches use the templated choice_image.md
+    // (the CHOICE template var is supplied separately).
     if (nodeId === INITIAL_NODE) return 'ops/initial_image.md';
     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-        return `ops/choice_${lastChar}_image.md`;
+        return 'ops/choice_image.md';
     }
     return null;
 }
@@ -1485,10 +1524,14 @@ async function loadNodeImage(nodeId) {
     console.log(`[loadNodeImage] Checking for image at "${imgPath}"…`);
     statusEl.textContent = '';
     statusEl.className = 'status-msg';
-    const exists = await fileExists(basePath, imgPath);
+     // Use the bare path for fileExists (the query string can confuse path-based
+     // existence checks).  We rely on cache-busting only on the <img> src.
+     const exists = await fileExists(basePath, imgPath);
     if (exists) {
         // Cache-bust so newly generated images replace old ones
         const url = `${basePath}/${imgPath}?t=${Date.now()}`;
+         // Force reload even if browser cached the previous version
+         img.removeAttribute('src');
         img.src = url;
         container.style.display = 'block';
         label.textContent = 'Regenerate Image';
@@ -1537,6 +1580,11 @@ async function generateImageForNode(nodeId) {
         console.warn(`[generateImageForNode] No op path for node "${nodeId}" — skipping.`);
         return;
     }
+    // For branch nodes, the templated choice_image.md needs to know which
+    // letter (a/b/c) we're generating an image for.
+    const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+    const isBranch = nodeId !== INITIAL_NODE && (lastChar === 'a' || lastChar === 'b' || lastChar === 'c');
+    const templateVars = isBranch ? { CHOICE: lastChar } : {};
     const target = `${STORY_DIR}/${nodeId}.png`;
     const btn = document.getElementById('generate-image');
     const statusEl = document.getElementById('node-image-status');
@@ -1549,13 +1597,14 @@ async function generateImageForNode(nodeId) {
     log(`Generating image for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
     timeStart(`image_${nodeId}`);
     console.group(`[generateImageForNode] Generating image for node "${nodeId}"…`);
-    console.log(`[generateImageForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    console.log(`[generateImageForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
     try {
         const taskId = await runDocOp(
             sessionId,
             opPath,
             target,
-            getModelOverrides()
+            getModelOverrides(),
+            templateVars
         );
         console.log(`[generateImageForNode] runDocOp() returned taskId:`, taskId);
         log(`Image DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
@@ -1595,11 +1644,12 @@ async function generateImageForNode(nodeId) {
 // Audio generation
 // -------------------------------------------------------------------------
 function getAudioOpForNode(nodeId) {
-    // Initial node uses initial_audio.md, branches use choice_{a|b|c}_audio.md
+    // Initial node uses initial_audio.md; branches use the templated choice_audio.md
+    // (the CHOICE template var is supplied separately).
     if (nodeId === INITIAL_NODE) return 'ops/initial_audio.md';
     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-        return `ops/choice_${lastChar}_audio.md`;
+        return 'ops/choice_audio.md';
     }
     return null;
 }
@@ -1613,15 +1663,61 @@ async function loadNodeAudio(nodeId) {
     console.log(`[loadNodeAudio] Checking for audio at "${audioPath}"…`);
     statusEl.textContent = '';
     statusEl.className = 'status-msg';
-    const exists = await fileExists(basePath, audioPath);
+     // Use the bare path for fileExists (the query string can confuse path-based
+     // existence checks).  We rely on cache-busting only on the <audio> src.
+     const exists = await fileExists(basePath, audioPath);
     if (exists) {
         // Cache-bust so newly generated audio replaces old ones
         const url = `${basePath}/${audioPath}?t=${Date.now()}`;
+         // Force reload of the audio element even if the browser cached the previous version
+         audio.pause();
+         audio.removeAttribute('src');
         audio.src = url;
+         audio.load();
         container.style.display = 'block';
         label.textContent = 'Regenerate Audio';
         log(`Audio found for node "${nodeId}" — loaded from "${audioPath}".`, 'info');
         console.log(`[loadNodeAudio] Audio found for node "${nodeId}" — src: ${url}`);
+         // Determine whether to auto-play this audio:
+         //  - auto-read checkbox is enabled, AND
+         //  - either this audio was just generated (in _pendingAudioAutoPlay)
+         //    OR a pending auto-read is waiting (so we use audio instead of TTS)
+         const autoReadEl = document.getElementById('auto-read');
+         const autoReadEnabled = autoReadEl && autoReadEl.checked;
+         const wasJustGenerated = _pendingAudioAutoPlay.has(nodeId);
+         if (wasJustGenerated) _pendingAudioAutoPlay.delete(nodeId);
+         if (autoReadEnabled && (wasJustGenerated || _pendingAutoRead)) {
+             // Audio narration takes precedence over browser TTS — stop any speech.
+             stopSpeaking();
+             _pendingAutoRead = false;
+             _updateAutoReadIndicator(false);
+             // Attempt to play. Browsers may block autoplay without a prior
+             // user gesture; if so, log a warning but don't crash.
+             const tryPlay = () => {
+                 const p = audio.play();
+                 if (p && typeof p.then === 'function') {
+                     p.then(() => {
+                         log(`Auto-playing narration audio for node "${nodeId}".`, 'info');
+                         console.log(`[loadNodeAudio] Auto-play started for node "${nodeId}".`);
+                     }).catch(err => {
+                         log(`Auto-play blocked for node "${nodeId}": ${err.message}. Click play to start.`, 'warning');
+                         console.warn(`[loadNodeAudio] Auto-play blocked for "${nodeId}":`, err);
+                         // Re-arm pending auto-read so a user gesture can trigger playback.
+                         if (!_hasUserGesture) {
+                             _pendingAudioAutoPlay.add(nodeId);
+                             _pendingAutoRead = true;
+                             _updateAutoReadIndicator(true);
+                         }
+                     });
+                 }
+             };
+             // Wait until the audio is ready enough to play
+             if (audio.readyState >= 2) {
+                 tryPlay();
+             } else {
+                 audio.addEventListener('canplay', tryPlay, { once: true });
+             }
+         }
     } else {
         audio.removeAttribute('src');
         audio.load();
@@ -1641,6 +1737,10 @@ async function onGenerateAudio() {
     }
     log(`User requested audio generation for node "${currentNode}".`, 'info');
     console.log(`[onGenerateAudio] User requested audio for node "${currentNode}".`);
+     // Mark this node so the audio auto-plays when generation completes
+     // (button click counts as a user gesture, so autoplay should be allowed).
+     _hasUserGesture = true;
+     _pendingAudioAutoPlay.add(currentNode);
     await generateAudioForNode(currentNode);
 }
 function maybeAutoGenerateAudio(nodeId) {
@@ -1648,6 +1748,9 @@ function maybeAutoGenerateAudio(nodeId) {
     if (autoAudioEl && autoAudioEl.checked) {
         log(`Auto-audio enabled — triggering audio generation for node "${nodeId}".`, 'info');
         console.log(`[maybeAutoGenerateAudio] Auto-audio enabled — firing for node "${nodeId}".`);
+         // Mark this node so the audio auto-plays when generation completes
+         // (subject to auto-read being enabled and a user gesture having occurred).
+         _pendingAudioAutoPlay.add(nodeId);
         generateAudioForNode(nodeId).catch(err => {
             log(`Auto audio generation failed: ${err.message}`, 'warning');
             console.warn(`[maybeAutoGenerateAudio] Auto audio generation failed for "${nodeId}":`, err);
@@ -1665,6 +1768,11 @@ async function generateAudioForNode(nodeId) {
         console.warn(`[generateAudioForNode] No op path for node "${nodeId}" — skipping.`);
         return;
     }
+    // For branch nodes, the templated choice_audio.md needs to know which
+    // letter (a/b/c) we're generating audio for.
+    const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
+    const isBranch = nodeId !== INITIAL_NODE && (lastChar === 'a' || lastChar === 'b' || lastChar === 'c');
+    const templateVars = isBranch ? { CHOICE: lastChar } : {};
     const target = `${STORY_DIR}/${nodeId}.wav`;
     const btn = document.getElementById('generate-audio');
     const statusEl = document.getElementById('node-audio-status');
@@ -1677,13 +1785,14 @@ async function generateAudioForNode(nodeId) {
     log(`Generating audio for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
     timeStart(`audio_${nodeId}`);
     console.group(`[generateAudioForNode] Generating audio for node "${nodeId}"…`);
-    console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides());
+    console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
     try {
         const taskId = await runDocOp(
             sessionId,
             opPath,
             target,
-            getModelOverrides()
+            getModelOverrides(),
+            templateVars
         );
         console.log(`[generateAudioForNode] runDocOp() returned taskId:`, taskId);
         log(`Audio DocOp started for node "${nodeId}" — task: ${formatTaskId(taskId)}.`, 'info');
@@ -1733,12 +1842,21 @@ function onStatusUpdate(target, taskInfo) {
             ? 'stylesheet-links'
             : 'node-links';
     updateSessionLinks(target, taskInfo, getProxyUrl, containerId);
+    // Only react to status *transitions*, not every poll cycle. Without this,
+    // a task that has been COMPLETED for a long time keeps re-triggering
+    // refreshes every 2 seconds, causing the UI to flicker constantly.
+    const previousStatus = lastTaskStatus.get(target);
+    lastTaskStatus.set(target, taskInfo.status);
+    if (previousStatus === taskInfo.status) {
+        return;
+    }
 
-    // Auto-refresh tree when a new node completes
+
+    // Auto-refresh tree and reload assets when a task completes
     if (taskInfo.status === 'COMPLETED' && target.startsWith(`${STORY_DIR}/`)) {
-        log(`Poller: task for "${target}" completed — refreshing tree.`, 'info');
-        console.log(`[onStatusUpdate] Task COMPLETED for "${target}" — triggering tree refresh.`);
-        refreshTree();
+        log(`Poller: task for "${target}" completed — refreshing tree and assets.`, 'info');
+        console.log(`[onStatusUpdate] Task COMPLETED for "${target}" — triggering refresh.`);
+        _handleCompletedAsset(target);
     } else if (taskInfo.status === 'COMPLETED' && target === 'style.css') {
         log(`Poller: stylesheet update completed.`, 'info');
         console.log('[onStatusUpdate] Stylesheet task COMPLETED.');
@@ -1747,6 +1865,70 @@ function onStatusUpdate(target, taskInfo) {
     } else if (taskInfo.status === 'FAILED') {
         log(`Poller: task for "${target}" FAILED — ${taskInfo.error || 'no details'}.`, 'error');
         console.error(`[onStatusUpdate] Task FAILED for "${target}":`, taskInfo.error || taskInfo);
+    }
+}
+/**
+  * Handle a completed asset task by:
+  *   - Refreshing the story tree (for new markdown nodes)
+  *   - Reloading the current node's content/image/audio if the completed
+  *     task targets the node the user is currently viewing.
+  *
+  * Uses a small de-duplication map so we don't reload the same asset twice
+  * if the poller and waitForTask both report COMPLETED in quick succession.
+  */
+// target -> { timestamp, taskId } — dedup only when same task fires repeatedly,
+// not when a brand-new regeneration completes for the same target.
+const _recentlyHandled = new Map();
+function _handleCompletedAsset(target) {
+    const now = Date.now();
+     const last = _recentlyHandled.get(target) || 0;
+     // Short dedup window (1.2s) — long enough to suppress poller+waitForTask
+     // firing back-to-back, short enough that user-triggered regenerations
+     // aren't swallowed.
+     if (now - last < 1200) {
+         console.debug(`[_handleCompletedAsset] Skipping duplicate handling of "${target}" (last: ${now - last}ms ago).`);
+        return;
+    }
+    _recentlyHandled.set(target, now);
+    // Garbage-collect old entries
+    if (_recentlyHandled.size > 50) {
+        for (const [k, v] of _recentlyHandled.entries()) {
+            if (now - v > 60000) _recentlyHandled.delete(k);
+        }
+    }
+    // Match: story/<id>.md  |  story/<id>.png  |  story/<id>.wav
+    const m = target.match(/^story\/([0a-c]+)\.(md|png|wav)$/);
+    if (!m) return;
+    const nodeId = m[1];
+    const ext = m[2];
+    // Always refresh the tree when a new markdown node lands
+    if (ext === 'md') {
+        refreshTree().catch(err => console.warn('[_handleCompletedAsset] refreshTree failed:', err));
+    }
+    // If the user is currently viewing this node, reload the relevant asset.
+    if (currentNode === nodeId) {
+        console.log(`[_handleCompletedAsset] Reloading ${ext} for currently-viewed node "${nodeId}".`);
+        if (ext === 'md') {
+            // Reload node content (will re-render choices, parse end-state, etc.)
+            loadNode(nodeId).catch(err => console.warn('[_handleCompletedAsset] loadNode failed:', err));
+        } else if (ext === 'png') {
+            loadNodeImage(nodeId).catch(err => console.warn('[_handleCompletedAsset] loadNodeImage failed:', err));
+        } else if (ext === 'wav') {
+            loadNodeAudio(nodeId).catch(err => console.warn('[_handleCompletedAsset] loadNodeAudio failed:', err));
+        }
+    } else if (ext === 'md') {
+        // Not currently viewing this node, but a child of the current node may
+        // have just been created — re-render the choice buttons to show the
+        // "Already explored" indicator. The tree refresh above handles the
+        // sidebar; we also need to re-apply choice UI.
+         // (allNodes is updated inside refreshTree, so we await it before re-rendering.)
+         if (currentNode && nodeId.startsWith(currentNode) && nodeId.length === currentNode.length + 1) {
+             console.log(`[_handleCompletedAsset] New child "${nodeId}" of current node "${currentNode}" — refreshing choice UI.`);
+             // Wait for the tree refresh (started above) to complete, then re-load.
+             refreshTree()
+                 .then(() => loadNode(currentNode))
+                 .catch(err => console.warn('[_handleCompletedAsset] loadNode (parent) failed:', err));
+         }
     }
 }
 

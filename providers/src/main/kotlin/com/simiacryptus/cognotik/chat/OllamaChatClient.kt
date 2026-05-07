@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -23,7 +22,7 @@ class OllamaChatClient(
   scheduledPool: ListeningScheduledExecutorService,
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.Ollama,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -35,7 +34,6 @@ class OllamaChatClient(
 
   override fun authorize(
     request: HttpRequest,
-    apiProvider: APIProvider
   ) {
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
@@ -45,7 +43,8 @@ class OllamaChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>
+    logStreams: MutableList<java.io.BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -82,7 +81,7 @@ class OllamaChatClient(
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(ollamaRequest)
 
-      val rawResponse = post("${apiBase}/api/chat", json, CoreProviders.Ollama)
+      val rawResponse = post("${apiBase}/api/chat", json)
 
       // Check if response is an error by trying to parse it as JSON
       // Ollama returns plain text errors or JSON responses
@@ -131,8 +130,8 @@ class OllamaChatClient(
         )
       )
 
-      if (response.usage != null && model is ChatModel) {
-        onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
+      if (response.usage != null) {
+        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
       }
 
 
@@ -140,7 +139,7 @@ class OllamaChatClient(
     }
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     return try {
       val rawResponse = get("${apiBase}/api/tags")
       val modelsResponse = JsonUtil.objectMapper().readValue(rawResponse, OllamaModelsResponse::class.java)
@@ -158,7 +157,7 @@ class OllamaChatClient(
       }
     } catch (e: Exception) {
       log(Level.WARN, "Failed to fetch Ollama models: ${e.message}", logStreams)
-      null
+      emptyList()
     }
   }
 

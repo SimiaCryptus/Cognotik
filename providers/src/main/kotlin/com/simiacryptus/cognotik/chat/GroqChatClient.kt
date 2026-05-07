@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.GroqModels
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
@@ -23,7 +23,7 @@ class GroqChatClient(
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   apiBase: String,
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.Groq,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -32,6 +32,7 @@ class GroqChatClient(
   logStreams = logStreams,
   scheduledPool = scheduledPool
 ) {
+
   companion object {
     private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GroqChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
@@ -71,7 +72,7 @@ class GroqChatClient(
     val data: List<GroqModel>
   )
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     modelsCache[apiBase]?.let { cachedModels ->
       //log.debug("Returning cached models for apiBase: $apiBase")
@@ -85,45 +86,45 @@ class GroqChatClient(
       log.debug("Groq models response: $result")
       val response = JsonUtil.objectMapper().readValue(result, GroqModelsResponse::class.java)
       val models = response.data.filter { it.active }.mapNotNull { groqModel ->
-        // Try to find existing ChatModel definition first
-        (ChatModel.values.values.find { it.modelId == groqModel.id }
-          ?: run {
-            // Create a basic ChatModel for unknown models
-            log.debug("Creating basic ChatModel for unknown Groq model: ${groqModel.id}")
-            ChatModel(
-              name = groqModel.id,
-              modelId = groqModel.id,
-              maxTotalTokens = groqModel.context_window,
-              maxOutTokens = minOf(groqModel.context_window, 8192), // Conservative default
-              provider = CoreProviders.Groq,
-              inputTokenPricePerK = 0.0, // Unknown pricing
-              outputTokenPricePerK = 0.0 // Unknown pricing
-            )
-          }) as ChatModel?
+        val knownModels = GroqModels.values.values
+          .filter { it.modelId == groqModel.id }
+        if (knownModels.isNotEmpty()) {
+          knownModels.first()
+        } else if (groqModel.id.startsWith("groq") || groqModel.id.startsWith("o1") || groqModel.id.startsWith("o3")) {
+          ChatModel(
+            name = groqModel.id,
+            modelId = groqModel.id,
+            provider = CoreProviders.Groq,
+            maxTotalTokens = groqModel.context_window,
+            inputTokenPricePerK = 0.0, // Groq doesn't publicly list token pricing as of now
+            outputTokenPricePerK = 0.0
+          )
+        } else {
+          null
+        }
       }
       // Cache the result
       modelsCache[apiBase] = models
       models
     } catch (e: Exception) {
       log.warn("Failed to fetch models from Groq API: ${e.message}")
-      null
+      emptyList()
     }
   }
 
   override fun authorize(
     request: HttpRequest,
-    apiProvider: APIProvider
   ) {
     request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
     request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
     request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
-    require(null == budget || budget!!.toDouble() > 0.0) { "Budget Exceeded" }
   }
 
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<BufferedOutputStream>
+    logStreams: MutableList<BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     log.info("Starting Groq chat with model: ${model.modelId}")
     return withPerformanceLogging {
@@ -131,19 +132,15 @@ class GroqChatClient(
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(groqRequest)
       val result =
-        post("${apiBase}/openai/chat/completions", json, CoreProviders.Groq)
+        post("${apiBase}/openai/chat/completions", json)
       checkError(result)
       val response = JsonUtil.objectMapper().readValue(
         result,
         ModelSchema.ChatResponse::class.java
       )
 
-      if (response.usage != null && model is ChatModel) {
-        onUsage(
-          model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
-          logStreams = logStreams
-        )
+      if (response.usage != null) {
+        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
       }
 
       response

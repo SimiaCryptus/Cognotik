@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.session
 
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*

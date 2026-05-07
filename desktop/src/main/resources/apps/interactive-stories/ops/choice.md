@@ -1,10 +1,14 @@
 ---
-transforms: ../story/([^./]+)\.md -> ../story/$1c.md
+template_vars:
+  CHOICE: a
+  CHOICE_LABEL: A
+transforms: ../story/([^./]+)\.md -> ../story/$1{{CHOICE}}.md
 related:
   - ../story/world_facts.md
 ---
 
-You have chosen option C. This path will lead you to a different branch of the story, where you will encounter new characters, settings, and challenges.
+You have chosen option {{CHOICE_LABEL}}. This path will lead you to a different branch of the story, where you will encounter new
+characters, settings, and challenges.
 
 Write the next node of the story based on this choice, introducing new elements and advancing the plot in a compelling
 way.
@@ -63,12 +67,14 @@ close with a final line or epitaph that gives the ending its identity.
 Output format:
 
 FILE: story node (the transformed output file)
+
 ```markdown
 # Node Title
 
 Node content goes here.
 
 <!-- If continuing: -->
+
 ### What shall we do?
 
 * **Choice A** - Option A description

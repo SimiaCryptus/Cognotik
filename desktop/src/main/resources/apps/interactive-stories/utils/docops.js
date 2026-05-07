@@ -10,9 +10,11 @@
  * @param {string} opPath - Path to the operation document
  * @param {string} targetPath - Target path for the output
  * @param {Object} models - Model configuration (smartModel, fastModel, imageModel, audioModel)
+  * @param {Object} [templateVars] - Template variable overrides (e.g. { PROJECT_NAME: 'Foo' }
+  *                                  becomes &var.PROJECT_NAME=Foo, replacing {{PROJECT_NAME}} in the doc)
  * @returns {Promise<string>} Task/session ID
  */
-export async function runDocOp(sessionId, opPath, targetPath, models = {}) {
+export async function runDocOp(sessionId, opPath, targetPath, models = {}, templateVars = {}) {
     const params = new URLSearchParams({
         sessionId: sessionId,
         doc: opPath,
@@ -24,6 +26,23 @@ export async function runDocOp(sessionId, opPath, targetPath, models = {}) {
     if (models.fastModel) params.set('fastModel', models.fastModel);
     if (models.imageModel) params.set('imageModel', models.imageModel);
     if (models.audioModel) params.set('audioModel', models.audioModel);
+     // Add template variable overrides as var.<NAME>=<VALUE>
+     // e.g. { PROJECT_NAME: 'Foo' } -> &var.PROJECT_NAME=Foo
+     // Server-side substitutes {{PROJECT_NAME}} in the op document with "Foo".
+     if (templateVars && typeof templateVars === 'object') {
+         for (const [key, value] of Object.entries(templateVars)) {
+             if (key == null || value == null) continue;
+             const k = String(key).trim();
+             if (!k) continue;
+             // Only allow safe variable name characters to avoid query-string surprises.
+             if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) {
+                 console.warn('[runDocOp] Skipping invalid template var name:', k);
+                 continue;
+             }
+             params.set(`var.${k}`, String(value));
+         }
+     }
+
 
     const url = '/docops?' + params.toString();
     const resp = await fetch(url, { method: 'POST' });

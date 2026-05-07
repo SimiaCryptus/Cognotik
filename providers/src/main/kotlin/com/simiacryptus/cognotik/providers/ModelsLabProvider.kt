@@ -13,15 +13,6 @@ import java.util.concurrent.Executors
 
 class ModelsLabProvider : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
-  override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-    key = key,
-    base = baseUrl,
-    workPool = MoreExecutors.newDirectExecutorService(),
-    scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-    logLevel = Level.DEBUG,
-    logStreams = mutableListOf()
-  ).getModels() ?: ModelsLabModels.values.values.toList()
-
   override fun getChatClient(
     key: SecureString,
     base: String,

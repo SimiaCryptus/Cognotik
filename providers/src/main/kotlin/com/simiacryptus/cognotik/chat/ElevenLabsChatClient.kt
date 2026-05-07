@@ -3,11 +3,14 @@ package com.simiacryptus.cognotik.chat
     import com.fasterxml.jackson.databind.ObjectMapper
     import com.fasterxml.jackson.module.kotlin.registerKotlinModule
     import com.google.common.util.concurrent.ListeningScheduledExecutorService
+    import com.simiacryptus.cognotik.CoreProviders
     import com.simiacryptus.cognotik.chat.model.ChatModel
     import com.simiacryptus.cognotik.models.APIProvider
+    import com.simiacryptus.cognotik.models.LLMModel
     import com.simiacryptus.cognotik.models.ModelSchema
     import com.simiacryptus.cognotik.util.LoggerFactory
     import com.simiacryptus.cognotik.util.SecureString
+    import org.apache.hc.client5.http.classic.methods.HttpGet
     import org.apache.hc.client5.http.classic.methods.HttpPost
     import org.apache.hc.client5.http.impl.classic.HttpClients
     import org.apache.hc.core5.http.ContentType
@@ -29,18 +32,21 @@ package com.simiacryptus.cognotik.chat
      * assistant's response.
      */
     class ElevenLabsChatClient(
-        private val apiKey: SecureString,
-        private val apiBase: String,
+        apiKey: SecureString,
+        apiBase: String,
         workPool: ExecutorService,
         logLevel: Level = Level.DEBUG,
         logStreams: MutableList<BufferedOutputStream>,
         scheduledPool: ListeningScheduledExecutorService
     ) : ChatClientBase(
+        provider = CoreProviders.ElevenLabs,
+        apiKey = apiKey,
+        apiBase = apiBase,
         workPool = workPool,
         logLevel = logLevel,
         logStreams = logStreams,
         scheduledPool = scheduledPool
-    ), ChatClientInterface {
+    ) {
 
         private val mapper = ObjectMapper().registerKotlinModule()
 
@@ -51,14 +57,15 @@ package com.simiacryptus.cognotik.chat
          */
         private val defaultVoiceId = "21m00Tcm4TlvDq8ikWAM"
 
-        override fun getModels(): List<ChatModel>? {
+        override fun getModels(): List<ChatModel> {
             return com.simiacryptus.cognotik.chat.model.ElevenLabsModels.values.values.toList()
         }
 
         override fun chat(
             chatRequest: ModelSchema.ChatRequest,
             model: ChatModel,
-            logStreams: MutableList<BufferedOutputStream>
+            logStreams: MutableList<BufferedOutputStream>,
+            usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
         ): ModelSchema.ChatResponse {
             val requestId = UUID.randomUUID().toString()
             val startTime = System.currentTimeMillis()
@@ -143,7 +150,7 @@ package com.simiacryptus.cognotik.chat
             )
 
             try {
-                onUsage(model, usage.copy(cost = model.pricing(usage)), logStreams = logStreams)
+                usageHandler?.invoke(model, usage.copy(cost = model.pricing(usage)),)
             } catch (e: Exception) {
                 log.warn("Request {}: failed to record usage: {}", requestId, e.message)
             }
@@ -160,7 +167,7 @@ package com.simiacryptus.cognotik.chat
             )
         }
 
-        override fun authorize(request: HttpRequest, apiProvider: APIProvider) {
+        override fun authorize(request: HttpRequest) {
             request.addHeader("xi-api-key", apiKey.decrypt)
         }
 

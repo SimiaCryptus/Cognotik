@@ -4,8 +4,6 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
@@ -23,35 +21,10 @@ import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutorService
 
-abstract class SingleProviderChatClient(
-  protected val provider: APIProvider,
-  val apiKey: SecureString,
-  val apiBase: String = provider.base,
-  workPool: ExecutorService,
-  logLevel: Level = Level.DEBUG,
-  logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-  scheduledPool: ListeningScheduledExecutorService,
-) : ChatClientBase(
-  workPool = workPool,
-  logLevel = logLevel,
-  logStreams = logStreams,
-  scheduledPool = scheduledPool
-) {
-  protected fun get(url: String) = client.execute(HttpGet(url).let {
-    provider.authorize(
-      request = it,
-      key = apiKey.decrypt!!,
-      apiBase = apiBase
-    )
-    it
-  }).use { response ->
-    val responseBody = response.entity?.content?.bufferedReader()?.readText() ?: ""
-    log(Level.DEBUG, "GET $url -> ${response.code}: $responseBody", logStreams)
-    responseBody
-  }
-}
-
 abstract class ChatClientBase(
+  protected val provider: APIProvider,
+  val apiKey: SecureString = SecureString(""), // Default to empty, but should be provided by subclasses
+  val apiBase: String = provider.base,
   workPool: ExecutorService,
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
@@ -60,15 +33,23 @@ abstract class ChatClientBase(
   logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), ChatClientInterface {
 
+  protected fun get(url: String) = client.execute(HttpGet(url).let {
+    authorize(it)
+    it
+  }).use { response ->
+    val responseBody = response.entity?.content?.bufferedReader()?.readText() ?: ""
+    log(Level.DEBUG, "GET $url -> ${response.code}: $responseBody", logStreams)
+    responseBody
+  }
+
+
   var session: Any? = null
   var user: Any? = null
-  override var budget: Number? = null
 
   @Throws(IOException::class, InterruptedException::class)
   fun post(
     url: String,
     json: String,
-    apiProvider: APIProvider,
     requestID: String = UUID.randomUUID().toString(),
     logStreams: MutableList<BufferedOutputStream> = this.logStreams
   ): String {
@@ -76,7 +57,7 @@ abstract class ChatClientBase(
     val request = HttpPost(url)
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
-    authorize(request, apiProvider)
+    authorize(request)
     request.entity = StringEntity(json, Charsets.UTF_8, false)
     return post(request, requestID = requestID, logStreams = logStreams)
   }
@@ -86,8 +67,9 @@ abstract class ChatClientBase(
     require(json.isNotBlank()) { "JSON payload cannot be blank" }
     require(url.startsWith("http")) { "URL must be a valid HTTP/HTTPS URL: $url" }
   }
-
-  abstract fun authorize(request: HttpRequest, apiProvider: APIProvider)
+  protected open fun authorize(request: HttpRequest) {
+    // Default implementation does nothing, subclasses can override to add headers or other auth
+  }
 
   fun post(
     request: HttpPost,
@@ -149,28 +131,6 @@ abstract class ChatClientBase(
     } else {
       throw IOException("Empty response entity")
     }
-  }
-
-  override fun onUsage(
-    model: LLMModel,
-    tokens: Usage,
-    logStreams: MutableList<BufferedOutputStream>
-  ) {
-    log(
-      Level.DEBUG,
-      "Usage recorded for session: %s, user: %s, model: %s, tokens: %s".format(session, user, model, tokens),
-      logStreams
-    )
-    budget?.let { currentBudget ->
-      val cost = tokens.cost ?: 0.0
-      budget = (currentBudget.toDouble() - cost).coerceAtLeast(0.0)
-      if (budget!!.toDouble() <= 0.0) {
-        log(Level.WARN, "Budget exhausted for session: $session, user: $user", logStreams)
-      } else {
-        log(Level.DEBUG, "Remaining budget for session: $session, user: $user is $budget", logStreams)
-      }
-    }
-    super.onUsage(model, tokens, logStreams)
   }
 
   companion object {

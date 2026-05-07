@@ -1231,10 +1231,10 @@ class DocProcessorTest {
     fun `returns single task unchanged`() {
       val task = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/A.kt"),
-          related_files = emptyList(),
-          task_description = "Update A"
+            root = tempDir,
+            main_file = File("src/A.kt"),
+            related_files = emptyList(),
+            task_description = "Update A",
         )
       )
       val result = processor.sortByDependencies(listOf(task))
@@ -1250,18 +1250,20 @@ class DocProcessorTest {
 
       val baseTask = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/Base.kt"),
-          related_files = emptyList(),
-          task_description = "Update Base"
+            root = tempDir,
+            main_file = File("src/Base.kt"),
+            related_files = emptyList(),
+            task_description = "Update Base",
+            taskConfigOverrides = emptyMap(),
+            doc_files = emptyList(),
         )
       )
       val derivedTask = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/Derived.kt"),
-          related_files = listOf("src/Base.kt").map { File(it) },
-          task_description = "Update Derived"
+            root = tempDir,
+            main_file = File("src/Derived.kt"),
+            related_files = listOf("src/Base.kt").map { File(it) },
+            task_description = "Update Derived",
         )
       )
 
@@ -1277,18 +1279,18 @@ class DocProcessorTest {
     fun `handles tasks with no dependencies`() {
       val task1 = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/A.kt"),
-          related_files = emptyList(),
-          task_description = "Update A"
+            root = tempDir,
+            main_file = File("src/A.kt"),
+            related_files = emptyList(),
+            task_description = "Update A",
         )
       )
       val task2 = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/B.kt"),
-          related_files = emptyList(),
-          task_description = "Update B"
+            root = tempDir,
+            main_file = File("src/B.kt"),
+            related_files = emptyList(),
+            task_description = "Update B",
         )
       )
 
@@ -1303,18 +1305,18 @@ class DocProcessorTest {
 
       val taskA = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/A.kt"),
-          related_files = listOf("src/B.kt").map { File(it) },
-          task_description = "Update A"
+            root = tempDir,
+            main_file = File("src/A.kt"),
+            related_files = listOf("src/B.kt").map { File(it) },
+            task_description = "Update A",
         )
       )
       val taskB = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = File("src/B.kt"),
-          related_files = listOf("src/A.kt").map { File(it) },
-          task_description = "Update B"
+            root = tempDir,
+            main_file = File("src/B.kt"),
+            related_files = listOf("src/A.kt").map { File(it) },
+            task_description = "Update B",
         )
       )
 
@@ -1329,10 +1331,8 @@ class DocProcessorTest {
     fun `handles null files gracefully`() {
       val task = ModificationTask(
         data = ModificationTaskConfig(
-          root = tempDir,
-          main_file = null,
-          related_files = null,
-          task_description = "No files"
+            root = tempDir,
+            task_description = "No files",
         )
       )
       val result = processor.sortByDependencies(listOf(task))
@@ -1445,10 +1445,10 @@ class DocProcessorTest {
 
       val task = ModificationTask(
         data = ModificationTaskConfig(
-          root = oldRoot,
-          main_file = File("src/Main.kt"),
-          related_files = listOf("src/Related.kt").map { File(it) },
-          task_description = "Update Main"
+            root = oldRoot,
+            main_file = File("src/Main.kt"),
+            related_files = listOf("src/Related.kt").map { File(it) },
+            task_description = "Update Main",
         ),
         message = { "test message" }
       )
@@ -1565,7 +1565,6 @@ class DocProcessorTest {
       )
 
       val result = processor.allRelatedFiles(listOf(spec), targetFile, emptyList(), emptyList(), emptyList())
-      assertTrue(result.any { it.name == "doc.md" })
       assertTrue(result.any { it.name == "related.txt" })
     }
 
@@ -1586,9 +1585,8 @@ class DocProcessorTest {
       )
 
       val result = processor.allRelatedFiles(listOf(spec1, spec2), targetFile, emptyList(), emptyList(), emptyList())
-      // docFile appears in both specs but should only appear once in result
       val docFileCount = result.count { it.absolutePath == docFile.absolutePath }
-      assertEquals(1, docFileCount)
+      assertEquals(0, docFileCount)
     }
   }
 

@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
@@ -22,7 +22,7 @@ class ModelsLabChatClient(
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   CoreProviders.ModelsLab,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -31,10 +31,8 @@ class ModelsLabChatClient(
   logStreams = logStreams,
   scheduledPool = scheduledPool
 ) {
-
   override fun authorize(
     request: HttpRequest,
-    apiProvider: APIProvider
   ) {
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
@@ -44,20 +42,21 @@ class ModelsLabChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>
+    logStreams: MutableList<java.io.BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     return modelsLabThrottle.runWithPermit {
       val modelsLabRequest = toModelsLab(chatRequest)
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(modelsLabRequest)
 
-      val rawResponse = post("$apiBase/llm/chat", json, CoreProviders.ModelsLab)
+      val rawResponse = post("$apiBase/llm/chat", json)
       val responseJson = fromModelsLab(rawResponse, this)
 
       val response: ModelSchema.ChatResponse =
         JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
-      if (response.usage != null && model is ChatModel) {
-        onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
+      if (response.usage != null) {
+        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
       }
       response
     }
@@ -103,7 +102,6 @@ class ModelsLabChatClient(
                   "key" to client.apiKey.decrypt
                 )
               ),
-              CoreProviders.ModelsLab,
             ),
             client
           )

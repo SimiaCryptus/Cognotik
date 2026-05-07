@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -422,14 +423,14 @@ class ChainOfThoughtTask(
   }
 
   private fun generateReasoningStep(
-    task: SessionTask,
-    question: String,
-    priorSteps: List<ReasoningStep>,
-    priorContext: String,
-    contextFiles: String,
-    stepNumber: Int,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
-    validationFeedback: StepValidation? = null
+      task: SessionTask,
+      question: String,
+      priorSteps: List<ReasoningStep>,
+      priorContext: String,
+      contextFiles: String,
+      stepNumber: Int,
+      api: ChatInterface,
+      validationFeedback: StepValidation? = null
   ): ReasoningStep {
     val prompt = buildString {
       append("You are performing step-by-step reasoning to solve a complex problem.\n\n")
@@ -506,7 +507,7 @@ class ChainOfThoughtTask(
     task: SessionTask,
     step: ReasoningStep,
     priorSteps: List<ReasoningStep>,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): StepValidation {
     val prompt = buildString {
       append("You are validating a reasoning step for logical consistency and correctness.\n\n")
@@ -554,7 +555,7 @@ class ChainOfThoughtTask(
     task: SessionTask,
     reasoningChain: List<ReasoningStep>,
     originalProblem: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): String {
     val prompt = buildString {
       append("Summarize the complete reasoning chain and provide a final answer.\n\n")

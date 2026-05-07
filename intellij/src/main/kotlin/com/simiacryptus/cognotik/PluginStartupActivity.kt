@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
         CoreProviders.init()
         CoreTasks.init()

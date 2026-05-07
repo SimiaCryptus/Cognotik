@@ -110,7 +110,6 @@ class UserSettingsServlet : HttpServlet() {
       reconstructedSettings
     )
     response.sendRedirect("/")
-    ChatModel.values = user.userSettings().models() // Force refresh of model list for the user after settings update
   }
 
   companion object

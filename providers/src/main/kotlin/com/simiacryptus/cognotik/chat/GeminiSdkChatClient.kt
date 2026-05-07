@@ -10,10 +10,12 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import okio.ByteString.Companion.decodeBase64
+import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -27,7 +29,7 @@ import kotlin.jvm.optionals.getOrNull
  */
 class GeminiSdkChatClient(
   apiKey: SecureString,
-  val apiBase: String = CoreProviders.Gemini.base,
+  apiBase: String = CoreProviders.Gemini.base,
   workPool: ExecutorService,
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream>,
@@ -36,11 +38,14 @@ class GeminiSdkChatClient(
   private val project: String? = null,
   private val location: String? = null,
 ) : ChatClientBase(
+  provider = CoreProviders.Gemini,
+  apiKey = apiKey,
+  apiBase = apiBase,
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
-), ChatClientInterface {
+  scheduledPool = scheduledPool,
+) {
 
   private val client: Client = buildClient(apiKey, useVertexAI, project, location)
 
@@ -82,7 +87,7 @@ class GeminiSdkChatClient(
     }
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     modelsCache[apiBase]?.let {
       log.debug("Returning cached models list for apiBase={} ({} models)", apiBase, it.size)
@@ -136,13 +141,14 @@ class GeminiSdkChatClient(
       log.info("Cached {} Gemini models for apiBase={}", it.size, apiBase)
       modelsCache[apiBase] = it
     }
-    return models
+    return models ?: emptyList()
   }
 
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<BufferedOutputStream>
+    logStreams: MutableList<BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     val requestID = UUID.randomUUID().toString()
     val startTime = System.currentTimeMillis()
@@ -221,11 +227,7 @@ class GeminiSdkChatClient(
       }
       if (chatResponse.usage != null) {
         try {
-          onUsage(
-            model,
-            chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,
-            logStreams = logStreams
-          )
+          usageHandler?.invoke(model, chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,)
         } catch (e: Exception) {
           log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }
@@ -773,8 +775,8 @@ class GeminiSdkChatClient(
     )
   }
 
-  override fun authorize(request: HttpRequest, apiProvider: APIProvider) {
-    log.error("authorize() called on GeminiSdkChatClient but is not implemented (provider={})", apiProvider)
+  override fun authorize(request: HttpRequest) {
+    log.error("authorize() called on GeminiSdkChatClient but is not implemented (provider={})", provider)
     TODO("Not yet implemented")
   }
 

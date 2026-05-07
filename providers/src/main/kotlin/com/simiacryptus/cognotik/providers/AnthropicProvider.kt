@@ -6,30 +6,12 @@ import com.simiacryptus.cognotik.chat.AnthropicChatClient
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.util.SecureString
-import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class AnthropicProvider : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
-  override fun authorize(
-    request: HttpRequest,
-    key: String,
-    apiBase: String
-  ) {
-    request.addHeader("x-api-key", key)
-    request.addHeader("anthropic-version", "2023-06-01")
-  }
-
-  override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-    key = key,
-    base = baseUrl,
-    workPool = MoreExecutors.newDirectExecutorService(),
-    scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-    logLevel = Level.DEBUG,
-    logStreams = mutableListOf()
-  ).getModels() ?: AnthropicModels.values.values.toList()
 
   override fun getChatClient(
     key: SecureString,

@@ -46,7 +46,7 @@ open class TranscriptionClient(
       val url = "${apiBase}/audio/transcriptions"
       val request = HttpPost(url)
       request.addHeader("Accept", "application/json")
-      provider.authorize(request, key, apiBase)
+      request.addHeader("Authorization", "Bearer ${key}")
       val entity = MultipartEntityBuilder.create()
       entity.setMode(HttpMultipartMode.EXTENDED)
       entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")

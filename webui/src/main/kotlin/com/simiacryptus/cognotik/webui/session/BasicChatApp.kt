@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
@@ -52,7 +52,7 @@ class BasicChatApp(
       val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
       val chatModel = userSettings.apis
         .filter { it.provider != null && it.key != null && it.baseUrl != null }
-        .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) }
+        .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
         .firstOrNull { it.modelId == model }
       return if (chatModel != null) {
         val api = userSettings.apis.find {

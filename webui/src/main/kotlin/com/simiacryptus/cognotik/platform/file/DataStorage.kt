@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
 import java.io.File
 import java.util.*
 
@@ -32,7 +33,7 @@ open class DataStorage(
     getMessageIds(user, session).forEach { messageId ->
       val file = File(messageDir, "$messageId.json")
       if (file.exists()) {
-        val message = JsonUtil.objectMapper().readValue(file, String::class.java)
+        val message = JsonUtil.objectMapper().readValue(file, SecureString::class.java)?.decrypt ?: ""
         messages[messageId] = message
       }
     }
@@ -140,7 +141,7 @@ open class DataStorage(
       file.parentFile.mkdirs()
       addMessageID(user, session, messageId)
     }
-    JsonUtil.objectMapper().writeValue(file, value)
+    JsonUtil.objectMapper().writeValue(file, SecureString(value))
   }
 
   protected open fun addMessageID(

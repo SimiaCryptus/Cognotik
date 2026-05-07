@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
+import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
@@ -34,7 +35,7 @@ class AwsChatClient(
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+) : ChatClientBase(
   provider = CoreProviders.AWS,
   apiKey = apiKey,
   apiBase = apiBase,
@@ -43,6 +44,11 @@ class AwsChatClient(
   logStreams = logStreams,
   scheduledPool = scheduledPool
 ) {
+
+  override fun authorize(get: HttpRequest) {
+    get.addHeader("Authorization", "Bearer ${apiKey.decrypt}")
+  }
+
   private val awsAuth: AWSAuth by lazy {
     JsonUtil.fromJson(apiKey.decrypt!!, AWSAuth::class.java)
   }
@@ -68,7 +74,7 @@ class AwsChatClient(
       .build()
   }
 
-  override fun getModels(): List<ChatModel>? {
+  override fun getModels(): List<ChatModel> {
     // Check cache first
     val cacheKey = "${awsAuth.region}:${awsAuth.profile}"
     modelsCache[cacheKey]?.let {
@@ -278,16 +284,11 @@ class AwsChatClient(
     )
   }
 
-  override fun authorize(
-    request: HttpRequest, apiProvider: APIProvider
-  ) {
-    log.debug("authorize() called but AWS Bedrock uses SDK authentication, not HTTP headers - skipping")
-  }
-
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<BufferedOutputStream>
+    logStreams: MutableList<BufferedOutputStream>,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
 
@@ -330,10 +331,9 @@ class AwsChatClient(
 
       if (response.usage != null) {
         log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
-        onUsage(
+        usageHandler?.invoke(
           model,
           response.usage?.copy(cost = model.pricing(response.usage!!))!!,
-          logStreams = logStreams
         )
       }
 

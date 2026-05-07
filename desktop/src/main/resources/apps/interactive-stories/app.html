@@ -25,14 +25,14 @@
                 <label for="fast-model">Fast Model</label>
                 <select id="fast-model"></select>
             </div>
-             <div class="model-field">
-                 <label for="image-model">Image Model</label>
-                 <select id="image-model"></select>
-             </div>
-             <div class="model-field">
-                 <label for="audio-model">Audio Model</label>
-                 <select id="audio-model"></select>
-             </div>
+            <div class="model-field">
+                <label for="image-model">Image Model</label>
+                <select id="image-model"></select>
+            </div>
+            <div class="model-field">
+                <label for="audio-model">Audio Model</label>
+                <select id="audio-model"></select>
+            </div>
             <div class="model-field">
                 <label for="voice-select">Voice</label>
                 <select id="voice-select"></select>
@@ -75,45 +75,45 @@
         <div class="step-header">
             <span class="step-badge pending" id="badge-node">3</span>
             <h2>Current Node: <code id="current-node-path">—</code></h2>
-             <button id="toggle-immersive" class="btn btn-icon" title="Toggle immersive mode">⛶</button>
+            <button id="toggle-immersive" class="btn btn-icon" title="Toggle immersive mode">⛶</button>
         </div>
-         <div class="node-toolbar">
-             <button id="read-aloud" class="btn btn-secondary" title="Read this node aloud">
-                 🔊 <span id="read-aloud-label">Read Aloud</span>
-             </button>
-             <label class="auto-read-toggle">
-                 <input type="checkbox" id="auto-read"> Auto-read on load
-             </label>
-              <button id="generate-image" class="btn btn-secondary" title="Generate image for this node">
-                  🖼 <span id="generate-image-label">Generate Image</span>
-              </button>
-              <label class="auto-read-toggle">
-                  <input type="checkbox" id="auto-image"> Auto-generate images
-              </label>
-             <button id="generate-audio" class="btn btn-secondary" title="Generate narration audio for this node">
-                 🎙 <span id="generate-audio-label">Generate Audio</span>
-             </button>
-             <label class="auto-read-toggle">
-                 <input type="checkbox" id="auto-audio"> Auto-generate audio
-             </label>
-              <label class="auto-read-toggle">
-                  <input type="checkbox" id="highlight-readalong" checked> Highlight while reading
-              </label>
-         </div>
-         <div id="node-image-container" class="node-image-container" style="display:none;">
-             <img id="node-image" class="node-image" alt="Story illustration"/>
-             <div id="node-image-status" class="status-msg"></div>
-         </div>
-         <div id="node-audio-container" class="node-audio-container" style="display:none;">
-             <audio id="node-audio" class="node-audio" controls preload="metadata"></audio>
-             <div id="node-audio-status" class="status-msg"></div>
-         </div>
+        <div class="node-toolbar">
+            <button id="read-aloud" class="btn btn-secondary" title="Read this node aloud">
+                🔊 <span id="read-aloud-label">Read Aloud</span>
+            </button>
+            <label class="auto-read-toggle">
+                <input type="checkbox" id="auto-read"> Auto-read on load
+            </label>
+            <button id="generate-image" class="btn btn-secondary" title="Generate image for this node">
+                🖼 <span id="generate-image-label">Generate Image</span>
+            </button>
+            <label class="auto-read-toggle">
+                <input type="checkbox" id="auto-image"> Auto-generate images
+            </label>
+            <button id="generate-audio" class="btn btn-secondary" title="Generate narration audio for this node">
+                🎙 <span id="generate-audio-label">Generate Audio</span>
+            </button>
+            <label class="auto-read-toggle">
+                <input type="checkbox" id="auto-audio"> Auto-generate audio
+            </label>
+            <label class="auto-read-toggle">
+                <input type="checkbox" id="highlight-readalong" checked> Highlight while reading
+            </label>
+        </div>
+        <div id="node-image-container" class="node-image-container" style="display:none;">
+            <img id="node-image" class="node-image" alt="Story illustration"/>
+            <div id="node-image-status" class="status-msg"></div>
+        </div>
+        <div id="node-audio-container" class="node-audio-container" style="display:none;">
+            <audio id="node-audio" class="node-audio" controls preload="metadata"></audio>
+            <div id="node-audio-status" class="status-msg"></div>
+        </div>
         <div id="node-content" class="markdown-preview">
             <p class="empty-state">Select a node from the tree above.</p>
         </div>
         <div class="choice-actions" id="choice-actions" style="display:none;">
             <p class="choice-prompt">Continue the story by choosing a path:</p>
-             <div class="choice-buttons" id="choice-buttons">
+            <div class="choice-buttons" id="choice-buttons">
                 <button class="btn btn-choice btn-choice-a" data-choice="a">
                     <span class="choice-letter">A</span>
                     <span class="choice-label"></span>
@@ -143,21 +143,22 @@
         </div>
         <div id="activity-log" class="activity-log"></div>
     </section>
-     <!-- Update Stylesheet -->
-     <section class="card">
-         <div class="step-header">
-             <span class="step-badge pending" id="badge-stylesheet">4</span>
-             <h2>🎨 Update Stylesheet</h2>
-         </div>
-         <p class="step-help">Describe a visual change or new component to style, then apply it to <code>style.css</code>.</p>
-         <textarea id="stylesheet-instructions" rows="5"
-                   placeholder="e.g. Add a glowing border to the active tree node, or make the choice buttons larger on mobile…"></textarea>
-         <div class="actions">
-             <button id="update-stylesheet" class="btn btn-primary">🖌 Update Stylesheet</button>
-             <span id="stylesheet-status" class="status-msg"></span>
-         </div>
-         <div class="session-link-container" id="stylesheet-links"></div>
-     </section>
+    <!-- Update Stylesheet -->
+    <section class="card">
+        <div class="step-header">
+            <span class="step-badge pending" id="badge-stylesheet">4</span>
+            <h2>🎨 Update Stylesheet</h2>
+        </div>
+        <p class="step-help">Describe a visual change or new component to style, then apply it to <code>style.css</code>.
+        </p>
+        <textarea id="stylesheet-instructions" rows="5"
+                  placeholder="e.g. Add a glowing border to the active tree node, or make the choice buttons larger on mobile…"></textarea>
+        <div class="actions">
+            <button id="update-stylesheet" class="btn btn-primary">🖌 Update Stylesheet</button>
+            <span id="stylesheet-status" class="status-msg"></span>
+        </div>
+        <div class="session-link-container" id="stylesheet-links"></div>
+    </section>
 </main>
 
 <script type="module" src="app.js"></script>

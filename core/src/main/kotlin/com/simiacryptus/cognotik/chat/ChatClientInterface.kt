@@ -7,11 +7,9 @@ import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 interface ChatClientInterface {
-  var budget: Number?
   val logStreams: MutableList<BufferedOutputStream>
   val workPool: ExecutorService
-  val onUsageListeners: MutableList<(model: LLMModel, tokens: ModelSchema.Usage) -> Unit>
-  fun getModels(): List<ChatModel>? = null
+  fun getModels(): List<ChatModel> = emptyList()
 
   /**
    * Sends a chat request to the configured model and returns the response
@@ -25,14 +23,8 @@ interface ChatClientInterface {
   fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams
+    logStreams: MutableList<BufferedOutputStream> = this.logStreams,
+    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)? = null
   ): ModelSchema.ChatResponse
-
-  /**
-   * Moderates the given text for policy violations
-   * @param text The text to moderate
-   * @throws ModerationException if the text violates policies
-   */
-  fun moderate(text: String) {}
 
 }

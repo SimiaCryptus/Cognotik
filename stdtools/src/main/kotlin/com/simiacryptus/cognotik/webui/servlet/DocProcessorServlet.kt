@@ -8,6 +8,8 @@ import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UpdateModes
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -31,6 +33,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - imageModel: (Optional) Model ID to use as the image model
   * - audioModel: (Optional) Model ID to use as the audio model
  *
+  * Template variable overrides:
+  * Any query parameter prefixed with "var." will be treated as a template
+  * variable override. For example, "var.PROJECT_NAME=Foo" supplies the value
+  * "Foo" for the {{PROJECT_NAME}} placeholder. Overrides take precedence over
+  * frontmatter-declared defaults (template_vars / template_variables / vars /
+  * variables) and are also applied for variables not declared in frontmatter.
+  *
  * The servlet parses the specified markdown file for frontmatter specifications
  * and executes the resulting documentation processing tasks.
  */
@@ -58,11 +67,14 @@ class DocProcessorServlet(
     }
     val modeName = request.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.Companion.fromName(modeName) ?: UpdateModes.PatchExisting
-    val smartModel = resolveModel(request.getParameter("smartModel"))
+    val user = authenticate(request, response) ?: return
+    val models = user.userSettings().models()
+    val smartModel = resolveModel(request.getParameter("smartModel"), models)
     val effectiveSmartModel = smartModel ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
-    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: effectiveSmartModel
-    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: effectiveFastModel
-     val effectiveAudioModel = resolveModel(request.getParameter("audioModel")) ?: effectiveFastModel
+    val effectiveFastModel = resolveModel(request.getParameter("fastModel"), models) ?: effectiveSmartModel
+    val effectiveImageModel = resolveModel(request.getParameter("imageModel"), models) ?: effectiveFastModel
+     val effectiveAudioModel = resolveModel(request.getParameter("audioModel"), models) ?: effectiveFastModel
+     val templateVarOverrides = extractTemplateVarOverrides(request)
     try {
       val session = Session(sessionId)
       val user = authenticate(request, response) ?: return
@@ -87,8 +99,27 @@ class DocProcessorServlet(
         response.writer.write("""{"error": "Access denied: document path is outside session directory"}""")
         return
       }
+      // If the caller only wants to inspect available template variables, return them and exit early.
+      val listTemplateVarsParam = request.getParameter("listTemplateVars")
+      if (listTemplateVarsParam != null && listTemplateVarsParam.equals("true", ignoreCase = true)) {
+        val vars = DocProcessor.listTemplateVarKeys(docFile)
+        response.status = HttpServletResponse.SC_OK
+        response.contentType = "application/json"
+        response.characterEncoding = "UTF-8"
+        response.writer.write(buildString {
+          append("""{"doc": "${docPath.replace("\\", "\\\\").replace("\"", "\\\"")}"""")
+          append(""", "templateVars": {""")
+          append(vars.entries.joinToString(", ") { (k, v) ->
+            val ek = k.replace("\\", "\\\\").replace("\"", "\\\"")
+            val ev = v.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+            "\"$ek\": \"$ev\""
+          })
+          append("}}")
+        })
+        return
+      }
       val targetPath = request.getParameter("target")
-       log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}, audioModel=${effectiveAudioModel.modelId}")
+       log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}, audioModel=${effectiveAudioModel.modelId}, templateVars=${templateVarOverrides.keys}")
       val docProcessor = DocProcessor(
         root = sessionDir,
         docsFolder = sessionDir,
@@ -100,6 +131,7 @@ class DocProcessorServlet(
         autoFix = true,
         user = user,
         parentSession = Session(sessionId),
+         templateVarOverrides = templateVarOverrides,
       )
       val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
       if (docSpec == null) {
@@ -183,6 +215,31 @@ class DocProcessorServlet(
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessorServlet::class.java)
+     /**
+      * Prefix used on query parameters to identify template variable overrides.
+      * Example: "var.PROJECT_NAME=Foo" -> overrides {{PROJECT_NAME}} with "Foo".
+      */
+     private const val TEMPLATE_VAR_PARAM_PREFIX = "var."
+     /**
+      * Extract template variable overrides from request query parameters.
+      * Any parameter whose name begins with [TEMPLATE_VAR_PARAM_PREFIX] is
+      * treated as an override. The portion of the parameter name after the
+      * prefix is the template variable name. Empty names are ignored. If a
+      * parameter has multiple values, the first non-null value is used.
+      */
+     private fun extractTemplateVarOverrides(request: HttpServletRequest): Map<String, String> {
+       val result = linkedMapOf<String, String>()
+       val paramNames = request.parameterNames ?: return result
+       while (paramNames.hasMoreElements()) {
+         val name = paramNames.nextElement() ?: continue
+         if (!name.startsWith(TEMPLATE_VAR_PARAM_PREFIX)) continue
+         val varName = name.substring(TEMPLATE_VAR_PARAM_PREFIX.length).trim()
+         if (varName.isEmpty()) continue
+         val value = request.getParameterValues(name)?.firstOrNull { it != null } ?: continue
+         result[varName] = value
+       }
+       return result
+     }
 
     /**
      * Resolves a model ID string to a ChatModel instance.
@@ -190,16 +247,13 @@ class DocProcessorServlet(
      * then falls back to creating a generic LLMModel if not found.
      * Returns null if the input is null or blank.
      */
-    private fun resolveModel(modelId: String?): ChatModel? {
+    private fun resolveModel(
+      modelId: String?, models: Map<String, ChatModel>
+                             ): ChatModel? {
       if (modelId.isNullOrBlank()) return null
-      // Look up in registered ChatModel values
-      val values = ChatModel.values
-      values.values.find { it.modelId == modelId }?.let { return it }
-      // Fall back: create a generic ChatModel wrapper
+      models.values.find { it.modelId == modelId }?.let { return it }
       log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
-      return object : ChatModel(modelId = modelId, provider = null) {
-        override fun toString() = modelId
-      }
+      return ChatModel(modelId = modelId, provider = null)
     }
 
   }

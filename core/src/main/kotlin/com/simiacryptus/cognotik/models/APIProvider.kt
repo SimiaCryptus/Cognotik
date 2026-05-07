@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.models
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
@@ -17,6 +18,7 @@ import org.slf4j.Logger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 
@@ -27,21 +29,18 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
   abstract fun getChatClient(
     key: SecureString,
     base: String = this.base,
-    workPool: ExecutorService,
+    workPool: ExecutorService = MoreExecutors.newDirectExecutorService(),
     logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
   ): ChatClientInterface
 
-  open fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
+  open fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(key = key, base = baseUrl).getModels()
+
   open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
 
   open fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> = emptyList()
   open fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> = emptyList()
-
-  open fun authorize(request: HttpRequest, key: String, apiBase: String) {
-    request.addHeader("Authorization", "Bearer ${key}")
-  }
 
   open fun getEmbeddingClient(
     key: SecureString,

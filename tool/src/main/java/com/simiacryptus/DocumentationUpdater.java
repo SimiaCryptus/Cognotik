@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.util.UpdateModes;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import static com.simiacryptus.cognotik.platform.model.UserKt.defaultUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.configureEnvironmentalKeys;
@@ -55,7 +56,8 @@ public record DocumentationUpdater(
                 new File(rootDir, ".doc-processor-cache/url-cache"),
                 true,
                 defaultUser,
-                null
+                null,
+                Collections.emptyMap()
         ).run();
     }
 }
