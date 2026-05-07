@@ -6,14 +6,9 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.*
-import com.simiacryptus.cognotik.chat.model.*
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.*
-import com.simiacryptus.cognotik.models.ServiceProviders.Github
-import com.simiacryptus.cognotik.models.ServiceProviders.Google
-import com.simiacryptus.cognotik.models.ServiceProviders.SearchAPI
 import com.simiacryptus.cognotik.util.*
-import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.Logger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -28,14 +23,17 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
 
   abstract fun getChatClient(
     key: SecureString,
-    base: String = this.base,
     workPool: ExecutorService = MoreExecutors.newDirectExecutorService(),
     logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
+      Executors.newScheduledThreadPool(
+        1
+      )
+    )
   ): ChatClientInterface
 
-  open fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(key = key, base = baseUrl).getModels()
+  open fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(key = key).getModels()
 
   open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
 
@@ -71,7 +69,6 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
     val NULL: APIProvider = object : APIProvider("NULL", "") {
       override fun getChatClient(
         key: SecureString,
-        base: String,
         workPool: ExecutorService,
         logLevel: Level,
         logStreams: MutableList<BufferedOutputStream>,

@@ -247,7 +247,7 @@ open class UnifiedHarness(
     ) {
       override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
 
-      override fun initOrchestrationConfig(session: Session, user: User) = initSettings(session)
+      override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
       override fun onTaskComplete(result: String, task: SessionTask) {
         log.info("Task completed successfully")

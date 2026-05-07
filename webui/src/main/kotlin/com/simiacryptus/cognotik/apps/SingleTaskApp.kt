@@ -107,11 +107,6 @@ ${taskConfig.toJson()}
   open fun getOrchestrationConfig(
     session: Session,
     user: User
-  ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java) ?: initOrchestrationConfig(session, user)
-
-  open fun initOrchestrationConfig(
-    session: Session,
-    user: User
   ): OrchestrationConfig = initSettings(session, user)
 
   protected open fun onTaskComplete(result: String, task: SessionTask) {}

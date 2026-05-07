@@ -76,6 +76,7 @@ FileModification - Modify existing files or create new files
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    this.orchestrationConfig = orchestrationConfig
     val defaultFile = getDefaultFile()
     val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
     val chatInterface = (typeConfig.model?.instance(orchestrationConfig.user) ?: defaultSmart).getChildClient(task)

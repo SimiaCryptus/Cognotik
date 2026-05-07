@@ -39,12 +39,11 @@ class ChatInterface(
   )
 
     private fun getChatClient(): ChatClientInterface = provider.getChatClient(
-    key = key,
-    base = base,
-    workPool = workPool,
-    logLevel = logLevel,
-    logStreams = logStreams,
-    scheduledPool = scheduledPool,
+        key = key,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool,
   )
 
   @JsonIgnore
