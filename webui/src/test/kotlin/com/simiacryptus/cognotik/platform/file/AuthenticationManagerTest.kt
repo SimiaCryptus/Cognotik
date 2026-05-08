@@ -39,7 +39,13 @@ abstract class AuthenticationInterfaceTest(
         assertNotNull(user)
         assertEquals(newUser, user)
     }
-
+/*
+*
+loving the new user and return the user`() {
+        val returnedUser = authInterface.putUser(validAccessToken, newUser)
+        assertEquals(newUser, returnedUser)
+*
+* */
     @Test
     fun `logout should remove the user associated with the access token`() {
         authInterface.putUser(validAccessToken, newUser)
