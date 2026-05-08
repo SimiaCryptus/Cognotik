@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory
 
 class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : ApplicationServer(
   applicationName = appname,
@@ -49,12 +50,46 @@ class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : App
       )
 
   companion object {
+     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
+
     fun setParentSession(child: Session, parent: Session) {
       ApplicationServices.fileApplicationServices().usageManager.setParentSession(child, parent)
     }
-
+    var OWNER_ID = "localhost:12345"
     val metadataStorage by lazy { ApplicationServices.fileApplicationServices().metadataStorageFactory }
-    val agents = mutableMapOf<Session, SocketManager>()
-    val chats = mutableMapOf<Session, ChatServer>()
+
+     private fun registerSessionOwner(session: Session) {
+       try {
+         metadataStorage.setSessionOwner(session, OWNER_ID)
+       } catch (e: Exception) {
+         log.warn("Failed to register session owner for session: $session", e)
+       }
+     }
+
+     val agents: MutableMap<Session, SocketManager> = object : java.util.concurrent.ConcurrentHashMap<Session, SocketManager>() {
+       override fun put(key: Session, value: SocketManager): SocketManager? {
+         registerSessionOwner(key)
+         return super.put(key, value)
+       }
+
+       override fun putIfAbsent(key: Session, value: SocketManager): SocketManager? {
+         val result = super.putIfAbsent(key, value)
+         if (result == null) registerSessionOwner(key)
+         return result
+       }
+     }
+
+     val chats: MutableMap<Session, ChatServer> = object : java.util.concurrent.ConcurrentHashMap<Session, ChatServer>() {
+       override fun put(key: Session, value: ChatServer): ChatServer? {
+         registerSessionOwner(key)
+         return super.put(key, value)
+       }
+
+       override fun putIfAbsent(key: Session, value: ChatServer): ChatServer? {
+         val result = super.putIfAbsent(key, value)
+         if (result == null) registerSessionOwner(key)
+         return result
+       }
+     }
   }
 }

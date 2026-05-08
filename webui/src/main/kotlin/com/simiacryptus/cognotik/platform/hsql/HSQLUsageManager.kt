@@ -24,7 +24,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
     val url = if (null == root) {
       "jdbc:hsqldb:mem:usage"
     } else {
-      "jdbc:hsqldb:file:${root.absolutePath};shutdown=true;hsqldb.lock_file=false"
+      "jdbc:hsqldb:file:${root.absolutePath};shutdown=true"
     }
     val connection = DriverManager.getConnection(url, "SA", "")
     log.debug("Database connection established: {}", connection)

@@ -87,6 +87,25 @@ interface MetadataStorageInterface {
   fun listSessions(path: String): List<String>
 
   /**
+    * Retrieves the owner ID associated with a session.
+    *
+    * The owner ID typically identifies the entity (e.g., host, server instance, or user)
+    * that created or is responsible for the session.
+    *
+    * @param session The session object containing the session ID
+    * @return The owner ID if set, or null if the session has no recorded owner
+    */
+   fun getSessionOwner(session: Session): String?
+   /**
+    * Sets or updates the owner ID for a session.
+    *
+    * This method records which entity owns or is responsible for the given session.
+    *
+    * @param session The session object containing the session ID
+    * @param ownerId The owner identifier to associate with the session
+    */
+   fun setSessionOwner(session: Session, ownerId: String)
+   /**
    * Deletes all metadata associated with a session.
    *
    * This method removes all stored information for the specified session,

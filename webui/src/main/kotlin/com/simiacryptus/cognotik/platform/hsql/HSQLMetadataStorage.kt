@@ -1,8 +1,11 @@
 package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.hsql.HSQLMetadataStorage.Companion.serviceUrl
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import org.hsqldb.server.Server
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.sql.Connection
@@ -19,12 +22,29 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
 
   private val connection: Connection by lazy {
     Class.forName("org.hsqldb.jdbc.JDBCDriver")
-    val url = if (null == root) {
-      "jdbc:hsqldb:mem:metadata"
+    val url: String
+    val username: String
+    val password: String
+    val remoteUrl = serviceUrl
+    if (remoteUrl != null) {
+      /* Client mode: connect to an externally-running HSQL server */
+      log.info("Connecting to external HSQL service at: {}", remoteUrl)
+      url = remoteUrl
+      username = serviceUser
+      password = servicePassword
     } else {
-      "jdbc:hsqldb:file:${root.absolutePath};shutdown=true;hsqldb.lock_file=false"
+      /* Server mode: start an embedded HSQL server and connect to it locally */
+      val server = ensureServerStarted(root)
+      url = if (null == root) {
+        "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${IN_MEMORY_DB_NAME}"
+      } else {
+        "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${FILE_DB_NAME}"
+      }
+      username = "SA"
+      password = ""
+      log.info("Connecting to embedded HSQL server at: {}", url)
     }
-    val connection = DriverManager.getConnection(url, "SA", "")
+    val connection = DriverManager.getConnection(url, username, password)
     createSchema(connection)
     connection
   }
@@ -174,6 +194,41 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
     log.info("Found ${sessions.size} sessions for path: $path")
     return sessions
   }
+   override fun getSessionOwner(session: Session): String? {
+     log.debug("Fetching session owner for session: {}", session)
+     val statement = connection.prepareStatement(
+       "SELECT value FROM metadata WHERE session_id = ? AND key = 'owner_id'"
+     )
+     statement.setString(1, session.sessionId)
+     val resultSet = statement.executeQuery()
+     return if (resultSet.next()) {
+       val ownerId = resultSet.getString("value")
+       log.debug("Retrieved session owner: {} for session: {}", ownerId, session)
+       ownerId
+     } else {
+       log.debug("No owner found for session: {}", session)
+       null
+     }
+   }
+   override fun setSessionOwner(session: Session, ownerId: String) {
+     log.debug("Setting session owner for session: {} to {}", session, ownerId)
+     val statement = connection.prepareStatement(
+       """
+             MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
+             ON metadata.session_id = vals.session_id AND metadata.user_email = vals.user_email AND metadata.key = vals.key
+             WHEN MATCHED THEN UPDATE SET metadata.value = vals.value, metadata.timestamp = vals.timestamp
+             WHEN NOT MATCHED THEN INSERT VALUES vals.session_id, vals.user_email, vals.key, vals.value, vals.timestamp
+             """
+     )
+     statement.setString(1, session.sessionId)
+     statement.setString(2, "")
+     statement.setString(3, "owner_id")
+     statement.setString(4, ownerId)
+     statement.setTimestamp(5, Timestamp(System.currentTimeMillis()))
+     statement.executeUpdate()
+     log.info("Session owner set to $ownerId for session: ${session}")
+   }
+
 
   override fun deleteSession(user: User?, session: Session) {
     log.debug("Deleting session: {}, user: {}", session, user?.email)
@@ -188,6 +243,75 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
 
   companion object {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * Optional fully-qualified JDBC URL to a remote HSQL service.
+     * Example: "jdbc:hsqldb:hsql://my-host:9001/metadata"
+     * If non-null, the storage operates in CLIENT mode and connects to this URL
+     * instead of starting an embedded HSQL server.
+     */
+    @JvmStatic
+    var serviceUrl: String? = null
+
+    /** Username used when connecting in CLIENT mode (see [serviceUrl]). */
+    @JvmStatic
+    var serviceUser: String = "SA"
+
+    /** Password used when connecting in CLIENT mode (see [serviceUrl]). */
+    @JvmStatic
+    var servicePassword: String = ""
+
+    /** Host/interface the embedded HSQL server binds to (server mode). */
+    @JvmStatic
+    var serverHost: String = "localhost"
+
+    /** Port the embedded HSQL server listens on (server mode). 0 = pick automatically. */
+    @JvmStatic
+    var serverPort: Int = 9001
+
+    fun getLocalServiceUrl(root: File = ApplicationServicesConfig.dataStorageRoot.resolve("metadatadb")): String {
+      val server = ensureServerStarted(root)
+      return "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${if (null == root) IN_MEMORY_DB_NAME else FILE_DB_NAME}"
+    }
+
+    private const val IN_MEMORY_DB_NAME = "metadata"
+    private const val FILE_DB_NAME = "metadata"
+
+    @Volatile
+    private var embeddedServer: Server? = null
+
+    @Synchronized
+    private fun ensureServerStarted(root: File?): Server {
+      embeddedServer?.let { return it }
+      val server = Server()
+      server.setSilent(true)
+      server.setLogWriter(null)
+      server.setErrWriter(null)
+      server.setAddress(serverHost)
+      server.port = serverPort
+      if (null == root) {
+        server.setDatabaseName(0, IN_MEMORY_DB_NAME)
+        server.setDatabasePath(0, "mem:$IN_MEMORY_DB_NAME")
+      } else {
+        server.setDatabaseName(0, FILE_DB_NAME)
+        server.setDatabasePath(0, "file:${File(root, FILE_DB_NAME).absolutePath};shutdown=true")
+      }
+      server.start()
+      log.info(
+        "Started embedded HSQL server on {}:{} (db={})",
+        serverHost, server.port, server.getDatabaseName(0, true)
+      )
+      Runtime.getRuntime().addShutdownHook(Thread {
+        try {
+          server.shutdown()
+          log.info("Embedded HSQL server stopped")
+        } catch (e: Exception) {
+          log.warn("Error shutting down embedded HSQL server", e)
+        }
+      })
+      embeddedServer = server
+      return server
+    }
   }
 
 }
