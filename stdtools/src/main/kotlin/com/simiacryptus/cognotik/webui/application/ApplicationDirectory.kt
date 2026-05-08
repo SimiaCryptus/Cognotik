@@ -95,7 +95,7 @@ abstract class ApplicationDirectory(
   open val pluginManagerServlet: HttpServlet = PluginManagerServlet()
     .also { log.debug("Initialized PluginManagerServlet") }
 
-  protected open val docopsServlet by lazy { DocProcessorServlet() }
+  protected open val docopsServlet: HttpServlet by lazy { DocProcessorServlet() }
 
   open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
     .also { log.debug("Initialized CognitiveConfigServlet") }

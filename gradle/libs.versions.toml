@@ -80,6 +80,7 @@ jetty-webapp = { group = "org.eclipse.jetty", name = "jetty-webapp", version.ref
 jetty-websocket-servlet = { group = "org.eclipse.jetty.websocket", name = "websocket-servlet", version.ref = "jetty" }
 jetty-websocket-server = { group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version.ref = "jetty" }
 jetty-websocket-client = { group = "org.eclipse.jetty.websocket", name = "websocket-jetty-client", version.ref = "jetty" }
+jetty-proxy = { group = "org.eclipse.jetty", name = "jetty-proxy", version.ref = "jetty" }
 jetty-servlet = { group = "org.eclipse.jetty", name = "jetty-servlet", version.ref = "jetty" }
 jetty-annotations = { group = "org.eclipse.jetty", name = "jetty-annotations", version.ref = "jetty" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
