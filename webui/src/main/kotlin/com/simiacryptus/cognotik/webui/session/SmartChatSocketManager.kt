@@ -9,11 +9,11 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.OutputStream
 
 /**

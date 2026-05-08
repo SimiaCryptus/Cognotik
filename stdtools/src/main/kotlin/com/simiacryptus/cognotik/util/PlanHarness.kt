@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlin.random.Random
@@ -143,7 +144,7 @@ open class PlanHarness(
       require(CodeRuntimes.values().isNotEmpty())
     }
 
-    private val log = LoggerFactory.getLogger(PlanHarness::class.java)
+    private val log = getLogger(PlanHarness::class.java)
     fun now(): String? = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
     var fix: (Exception) -> Unit = { e ->
       log.error("Error during task execution", e)

@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.EnabledStrategy
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 data class SeedItem(
   val link: String,

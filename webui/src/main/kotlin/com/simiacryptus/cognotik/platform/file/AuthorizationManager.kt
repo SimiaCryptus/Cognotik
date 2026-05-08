@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import org.slf4j.LoggerFactory.getLogger
 import java.util.*
 
 open class AuthorizationManager : AuthorizationInterface {
@@ -93,6 +94,6 @@ open class AuthorizationManager : AuthorizationInterface {
   }
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AuthorizationManager::class.java)
+    private val log = getLogger(AuthorizationManager::class.java)
   }
 }

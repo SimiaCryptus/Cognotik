@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.simiacryptus.cognotik.SystemTrayManager.Companion.confirm
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.BorderLayout.*
 import java.awt.Desktop

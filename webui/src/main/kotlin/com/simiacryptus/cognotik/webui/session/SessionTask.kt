@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.util.*
@@ -325,7 +326,7 @@ Stack Trace:
   }
 
   companion object {
-    val log = LoggerFactory.getLogger(SessionTask::class.java)
+    val log = getLogger(SessionTask::class.java)
 
     const val spinner =
       """<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>"""

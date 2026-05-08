@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.net.URI
@@ -202,6 +203,6 @@ open class ModifyFilesAction(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
+        private val log = getLogger(ModifyFilesAction::class.java)
     }
 }

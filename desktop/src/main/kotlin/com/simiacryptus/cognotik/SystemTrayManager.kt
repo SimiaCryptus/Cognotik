@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik
 import com.simiacryptus.cognotik.DaemonClient.createRandomSessionDir
 import com.simiacryptus.cognotik.UpdateManager.currentVersion
 import com.simiacryptus.cognotik.UpdateManager.latestVersion
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.ImageTranscoder
+import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent

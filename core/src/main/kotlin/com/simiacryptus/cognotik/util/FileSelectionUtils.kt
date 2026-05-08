@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.docs.isDocumentFile
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
@@ -11,7 +12,7 @@ import kotlin.io.path.name
 private const val MAX_TEXT_SIZE = 1024 * 1024
 
 object FileSelectionUtils {
-  val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
+  val log = getLogger(FileSelectionUtils::class.java)
 
   fun getAvailableFiles(
     path: Path,

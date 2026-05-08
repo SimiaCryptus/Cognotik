@@ -3,10 +3,12 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -19,6 +21,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONReader
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONWriter
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 
 

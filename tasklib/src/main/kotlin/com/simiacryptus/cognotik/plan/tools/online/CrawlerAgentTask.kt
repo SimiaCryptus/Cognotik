@@ -24,6 +24,7 @@ import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.util.crawl.seed.SeedMethod
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -1830,7 +1831,7 @@ class CrawlerAgentTask(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
+    private val log = getLogger(CrawlerAgentTask::class.java)
     private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
     private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
 

@@ -11,10 +11,13 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.ErbTemplateEngine
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.jsonCast
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 
 class RenderErbTemplateTask(
   orchestrationConfig: OrchestrationConfig,
@@ -282,7 +285,7 @@ All required (non-optional) fields must be populated with appropriate values ext
   override fun getOutputFile(extension: String) = null
 
   companion object {
-    private val log = LoggerFactory.getLogger(RenderErbTemplateTask::class.java)
+      private val log = getLogger(RenderErbTemplateTask::class.java)
 
     @JvmStatic
     val RenderErbTemplate = TaskType(

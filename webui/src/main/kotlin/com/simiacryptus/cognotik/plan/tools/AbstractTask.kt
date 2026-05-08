@@ -7,9 +7,13 @@ import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
@@ -168,7 +172,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(AbstractTask::class.java)
+        val log = getLogger(AbstractTask::class.java)
         private fun now(): String? = SimpleDateFormat("yyyyMMddHHmmss").format(Date())
     }
 }

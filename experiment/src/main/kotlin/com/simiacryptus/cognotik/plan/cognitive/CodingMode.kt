@@ -21,6 +21,7 @@ import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Type
@@ -214,6 +215,6 @@ open class CodingMode(
   override fun contextData(): List<String> = emptyList()
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodingMode::class.java)
+    private val log = getLogger(CodingMode::class.java)
   }
 }

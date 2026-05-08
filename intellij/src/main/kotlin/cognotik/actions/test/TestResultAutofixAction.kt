@@ -18,18 +18,18 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 
 class TestResultAutofixAction : BaseAction() {
     companion object {
-        private val log = LoggerFactory.getLogger(TestResultAutofixAction::class.java)
+        private val log = getLogger(TestResultAutofixAction::class.java)
         val tripleTilde = "`" + "``"
 
 

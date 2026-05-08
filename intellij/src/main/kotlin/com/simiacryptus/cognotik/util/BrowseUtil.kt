@@ -11,6 +11,7 @@ import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.Url
 import com.simiacryptus.cognotik.SettingsWidgetFactory.SettingsWidget
 import com.simiacryptus.cognotik.config.AppSettingsState
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.Desktop
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -186,6 +187,6 @@ object BrowseUtil {
         }
     }
 
-    val log = LoggerFactory.getLogger(BrowseUtil::class.java)
+    val log = getLogger(BrowseUtil::class.java)
 
 }

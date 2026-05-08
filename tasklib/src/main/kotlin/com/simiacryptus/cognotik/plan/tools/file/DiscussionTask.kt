@@ -8,8 +8,6 @@ import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -21,6 +19,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -233,7 +232,7 @@ class DiscussionTask(
     }
 
   companion object {
-    private val log = LoggerFactory.getLogger(DiscussionTask::class.java)
+      private val log = getLogger(DiscussionTask::class.java)
 
     @JvmStatic
     val Discussion = TaskType(

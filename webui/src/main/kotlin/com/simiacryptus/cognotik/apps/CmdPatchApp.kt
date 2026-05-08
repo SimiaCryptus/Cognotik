@@ -3,9 +3,13 @@ package com.simiacryptus.cognotik.apps
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
@@ -28,7 +32,7 @@ class CmdPatchApp(
 ) {
 
   companion object {
-    private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)
+    private val log = getLogger(CmdPatchApp::class.java)
 
     fun truncate(output: String, kb: Int = 32): String {
       var returnVal = output

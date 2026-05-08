@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.log
 import com.simiacryptus.cognotik.webui.chat.ChatServer
@@ -25,6 +24,7 @@ import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URLEncoder

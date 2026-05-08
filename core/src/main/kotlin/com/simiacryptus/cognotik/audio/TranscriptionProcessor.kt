@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.audio
 
 import com.simiacryptus.cognotik.TranscriptionClient
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.util.*
 
 open class TranscriptionProcessor(

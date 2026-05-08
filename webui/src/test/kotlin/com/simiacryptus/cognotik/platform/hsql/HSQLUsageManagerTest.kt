@@ -6,12 +6,11 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import kotlin.collections.get
+import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
 abstract class UsageTest(private val impl: UsageInterface) {

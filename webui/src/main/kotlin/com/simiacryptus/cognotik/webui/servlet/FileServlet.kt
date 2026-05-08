@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileRequestHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileUploadHandler
@@ -17,6 +16,7 @@ import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import java.io.File
 
 @MultipartConfig(

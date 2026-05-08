@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.*
 import com.simiacryptus.cognotik.diff.PatchProcessor.Companion.TRIPLE_TILDE
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.commons.text.similarity.LevenshteinDistance
+import org.slf4j.LoggerFactory
 import kotlin.math.floor
 import kotlin.math.max
 

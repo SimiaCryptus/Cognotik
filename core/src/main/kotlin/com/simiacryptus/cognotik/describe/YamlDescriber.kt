@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.describe.DescriptorUtil.isArray
 import com.simiacryptus.cognotik.describe.DescriptorUtil.resolveGenericType
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.EnabledStrategy
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.lang.reflect.*
 import java.util.*
 import kotlin.reflect.*

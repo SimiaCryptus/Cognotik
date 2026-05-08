@@ -5,14 +5,21 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.FileSystems
@@ -1267,7 +1274,7 @@ class InteractiveStoryTask(
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
+      private val log: Logger = getLogger(InteractiveStoryTask::class.java)
 
     @JvmStatic
     val InteractiveStory = TaskType(

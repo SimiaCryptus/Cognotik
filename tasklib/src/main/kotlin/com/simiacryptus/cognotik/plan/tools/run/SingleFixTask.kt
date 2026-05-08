@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
@@ -26,7 +27,7 @@ class SingleFixTask(
   orchestrationConfig: OrchestrationConfig, planTask: SingleFixTaskExecutionConfigData?
 ) : AbstractTask<SingleFixTask.SingleFixTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
   companion object {
-    private val log = LoggerFactory.getLogger(SingleFixTask::class.java)
+    private val log = getLogger(SingleFixTask::class.java)
 
     @JvmStatic
     val SingleFix = TaskType(

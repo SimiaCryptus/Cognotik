@@ -8,8 +8,12 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.util.regex.Pattern
@@ -376,7 +380,7 @@ FileSearch - Search for patterns in files and provide results with context
 
 
   companion object {
-    private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
+    private val log = getLogger(FileSearchTask::class.java)
 
     @JvmStatic
     val FileSearch = TaskType(

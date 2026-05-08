@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -102,7 +103,7 @@ abstract class FileContextAction<T : Any>(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(FileContextAction::class.java)
+        private val log = getLogger(FileContextAction::class.java)
 
         fun open(project: Project, outputPath: Path) {
             log.info("Opening file: $outputPath")

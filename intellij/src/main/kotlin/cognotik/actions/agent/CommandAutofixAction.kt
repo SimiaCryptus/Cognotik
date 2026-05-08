@@ -27,6 +27,7 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
@@ -169,7 +170,7 @@ class CommandAutofixAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CommandAutofixAction::class.java)
+        private val log = getLogger(CommandAutofixAction::class.java)
         private const val MAX_RECENT_ARGUMENTS = 10
         private const val MAX_RECENT_DIRS = 10
         private const val TEXT_AREA_ROWS = 6

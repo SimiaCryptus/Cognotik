@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.servlet.util.FileChannelCache
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import java.io.File
 
 object FileDeleteHandler {

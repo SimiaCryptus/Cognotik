@@ -3,9 +3,10 @@ package com.simiacryptus.cognotik.util
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Entities
+import org.slf4j.LoggerFactory.getLogger
 
 object HtmlSimplifier {
-  private val log = LoggerFactory.getLogger(HtmlSimplifier::class.java)
+  private val log = getLogger(HtmlSimplifier::class.java)
 
   /** Elements that can execute scripts or load external content */
   private val SCRIPT_ELEMENTS = setOf(

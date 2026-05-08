@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.*

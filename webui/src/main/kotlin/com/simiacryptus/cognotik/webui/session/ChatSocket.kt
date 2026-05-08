@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.websocket.api.Session
 import org.eclipse.jetty.websocket.api.WebSocketAdapter
+import org.slf4j.LoggerFactory
 
 class ChatSocket(
   private val sessionState: SocketManager,

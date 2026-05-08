@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
@@ -222,7 +223,7 @@ ${e.message}
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(Discussable::class.java)
+    private val log = getLogger(Discussable::class.java)
   }
 }
 

@@ -5,7 +5,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledThreadPoolExecutor
 
 class ThreadPoolManager {

@@ -4,8 +4,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.EnabledStrategy
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod.Companion.HttpClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.util.concurrent.ExecutorService
 
@@ -37,7 +41,7 @@ class FetchMethod(
    override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = strategyFactory(task)
 
    companion object {
-     val log = LoggerFactory.getLogger(FetchMethod::class.java)
+     val log = getLogger(FetchMethod::class.java)
 
      val HttpClient = register(FetchMethod("HttpClient") { task -> BasicHttpClientStrategy(task) })
 

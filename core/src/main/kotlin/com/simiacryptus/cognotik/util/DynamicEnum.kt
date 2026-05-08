@@ -6,10 +6,11 @@ import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import org.slf4j.LoggerFactory.getLogger
 
 open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
   companion object {
-    private val log = LoggerFactory.getLogger(DynamicEnum::class.java)
+    private val log = getLogger(DynamicEnum::class.java)
     private val registries = mutableMapOf<Class<*>, MutableList<Pair<String, DynamicEnum<*>>>>()
 
     internal fun <T> getRegistry(clazz: Class<T>): MutableList<Pair<String, T>> {
@@ -59,7 +60,7 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
 abstract class DynamicEnumSerializer<T : DynamicEnum<T>>(
   private val clazz: Class<T>
 ) : StdSerializer<T>(clazz) {
-  private val log = LoggerFactory.getLogger(DynamicEnumSerializer::class.java)
+  private val log = getLogger(javaClass)
   override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) {
     log.debug("Serializing value: {} for class: {}", value.name, clazz.name)
     DynamicEnum.getRegistry(clazz).find { it.second == value }?.first?.let { gen.writeString(it) }
@@ -69,7 +70,7 @@ abstract class DynamicEnumSerializer<T : DynamicEnum<T>>(
 abstract class DynamicEnumDeserializer<T : DynamicEnum<T>>(
   private val clazz: Class<T>
 ) : JsonDeserializer<T>() {
-  private val log = LoggerFactory.getLogger(DynamicEnumDeserializer::class.java)
+  private val log = getLogger(javaClass)
   override fun deserialize(p: JsonParser, ctxt: DeserializationContext): T {
     val values = DynamicEnum.getRegistry(clazz).toMap()
     return when (val node = p.codec.readTree<JsonNode>(p)) {

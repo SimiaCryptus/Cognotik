@@ -9,14 +9,12 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import okio.ByteString.Companion.decodeBase64
-import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.*

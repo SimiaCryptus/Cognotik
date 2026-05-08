@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.util
 
+import org.slf4j.LoggerFactory.getLogger
+
 open class EventDispatcher {
   companion object {
-    private val log = LoggerFactory.getLogger(EventDispatcher::class.java)
+    private val log = getLogger(EventDispatcher::class.java)
   }
 
   private val listeners = mutableListOf<() -> Unit>()

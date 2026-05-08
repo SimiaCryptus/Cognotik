@@ -1,8 +1,7 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 object AWSModels {
   private val log = LoggerFactory.getLogger(AWSModels::class.java)

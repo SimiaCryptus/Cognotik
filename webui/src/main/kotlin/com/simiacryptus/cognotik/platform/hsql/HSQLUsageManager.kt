@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -204,6 +204,6 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(HSQLUsageManager::class.java)
+      private val log = LoggerFactory.getLogger(HSQLUsageManager::class.java)
   }
 }

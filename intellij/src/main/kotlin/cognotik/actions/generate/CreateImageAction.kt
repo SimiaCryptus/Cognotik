@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageGenerationAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.io.ByteArrayOutputStream
@@ -203,6 +204,6 @@ class CreateImageAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CreateImageAction::class.java)
+        private val log = getLogger(CreateImageAction::class.java)
     }
 }

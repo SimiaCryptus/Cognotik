@@ -2,15 +2,16 @@ package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GroqModels
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ConcurrentHashMap
@@ -34,7 +35,7 @@ class GroqChatClient(
 ) {
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GroqChatClient::class.java)
+    private val log = getLogger(GroqChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
     const val HEADER_CONTENT_TYPE = "Content-Type"

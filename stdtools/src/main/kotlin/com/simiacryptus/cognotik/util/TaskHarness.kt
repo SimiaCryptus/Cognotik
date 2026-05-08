@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlin.random.Random
@@ -104,7 +105,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(TaskHarness::class.java)
+    private val log = getLogger(TaskHarness::class.java)
     var fix: (Exception) -> Unit = { e ->
       log.error("Error during task execution", e)
     }

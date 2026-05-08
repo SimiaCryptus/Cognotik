@@ -9,7 +9,6 @@ import com.google.api.services.oauth2.Oauth2
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
@@ -18,6 +17,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.LoggerFactory
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.UnsupportedEncodingException

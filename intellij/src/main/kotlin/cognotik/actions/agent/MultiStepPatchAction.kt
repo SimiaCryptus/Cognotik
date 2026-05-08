@@ -30,6 +30,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -285,7 +286,7 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiStepPatchAction::class.java)
+        private val log = getLogger(MultiStepPatchAction::class.java)
         val root: File get() = File(AppSettingsState.Companion.pluginHome, "code_chat")
 
         data class TaskList(

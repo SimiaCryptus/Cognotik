@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util.mcp
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
 /**

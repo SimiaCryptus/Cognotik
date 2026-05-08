@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIP
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -194,7 +195,7 @@ class ReadDocumentsTask(
     }
 
   companion object {
-    private val log = LoggerFactory.getLogger(ReadDocumentsTask::class.java)
+    private val log = getLogger(ReadDocumentsTask::class.java)
 
     @JvmStatic
     val ReadDocuments = TaskType(

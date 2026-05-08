@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.SmartChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path
@@ -174,6 +175,6 @@ class SmartCodeChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SmartCodeChatAction::class.java)
+        private val log = getLogger(SmartCodeChatAction::class.java)
     }
 }

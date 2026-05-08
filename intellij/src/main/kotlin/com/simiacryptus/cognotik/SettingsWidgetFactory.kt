@@ -16,8 +16,6 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
-import com.simiacryptus.cognotik.models.ToolProvider
-import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -26,6 +24,7 @@ import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import icons.MyIcons
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.*
 import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
@@ -40,7 +39,7 @@ import javax.swing.tree.TreeSelectionModel
 
 class SettingsWidgetFactory : StatusBarWidgetFactory {
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(SettingsWidgetFactory::class.java)
+        private val log = getLogger(SettingsWidgetFactory::class.java)
     }
 
     class SettingsWidget : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {

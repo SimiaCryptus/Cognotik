@@ -6,6 +6,7 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
 import org.apache.commons.text.StringEscapeUtils
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Files
 import java.util.*
 
@@ -232,7 +233,7 @@ object MarkdownUtil {
     return options
   }
 
-  private val log = LoggerFactory.getLogger(MarkdownUtil::class.java)
+  private val log = getLogger(MarkdownUtil::class.java)
 }
 
 

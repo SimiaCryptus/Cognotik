@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import org.slf4j.LoggerFactory.getLogger
 import kotlin.reflect.full.memberProperties
 
 interface ValidatedObject {
@@ -11,7 +12,7 @@ interface ValidatedObject {
   )
 
   companion object {
-    private val log = LoggerFactory.getLogger(ValidatedObject::class.java)
+    private val log = getLogger(ValidatedObject::class.java)
 
     fun validateFields(obj: Any): String? {
       log.debug("Starting validation for object: ${obj.javaClass.name}")

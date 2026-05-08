@@ -7,9 +7,9 @@ import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.OutputStream
 import java.net.URLDecoder

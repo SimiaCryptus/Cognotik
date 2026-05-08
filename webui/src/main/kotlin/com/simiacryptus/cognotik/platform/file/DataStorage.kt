@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 

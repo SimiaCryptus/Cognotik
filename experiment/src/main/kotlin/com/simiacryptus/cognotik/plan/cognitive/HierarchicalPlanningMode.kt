@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.*
@@ -1293,7 +1294,7 @@ open class HierarchicalPlanningMode(
   companion object {
     val inputCnt = 1
 
-    private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
+    private val log = getLogger(HierarchicalPlanningMode::class.java)
 
     // ThreadLocal to track visited nodes during rendering to prevent infinite recursion
     private val renderingInProgress = ThreadLocal.withInitial { mutableSetOf<String>() }

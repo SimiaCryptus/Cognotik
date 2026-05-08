@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet.render
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.markdownToHtml
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
 

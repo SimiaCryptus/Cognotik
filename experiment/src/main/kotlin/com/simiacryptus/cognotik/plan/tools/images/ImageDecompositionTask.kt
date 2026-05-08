@@ -10,15 +10,16 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
+import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
-import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -469,7 +470,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(ImageDecompositionTask::class.java)
+    private val log: Logger = getLogger(ImageDecompositionTask::class.java)
 
     @JvmStatic
     val ImageDecomposition = TaskType(

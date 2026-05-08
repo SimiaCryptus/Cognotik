@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
@@ -20,6 +19,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.Semaphore

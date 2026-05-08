@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -39,7 +40,7 @@ class CustomFileSetPatchServer(
     showMenubar = false,
 ), AutoCloseable {
     companion object {
-        private val log = LoggerFactory.getLogger(CustomFileSetPatchServer::class.java)
+        private val log = getLogger(CustomFileSetPatchServer::class.java)
         private const val TASK_TIMEOUT_MINUTES = 30L
         private const val MAX_FILE_SIZE_MB = 10
         private const val MAX_CONTEXT_LENGTH = 100_000

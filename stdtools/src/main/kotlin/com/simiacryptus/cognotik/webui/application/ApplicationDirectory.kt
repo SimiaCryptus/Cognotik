@@ -3,33 +3,13 @@ package com.simiacryptus.cognotik.webui.application
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.chat.ChatServer
-import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
-import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
-import com.simiacryptus.cognotik.webui.servlet.AppDirectoryServlet
-import com.simiacryptus.cognotik.webui.servlet.CognitiveConfigServlet
-import com.simiacryptus.cognotik.webui.servlet.CorsFilter
-import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
-import com.simiacryptus.cognotik.webui.servlet.LogoutServlet
-import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.cognotik.webui.servlet.OAuthGoogle
-import com.simiacryptus.cognotik.webui.servlet.LoginServlet
-import com.simiacryptus.cognotik.webui.servlet.TaskConfigServlet
-import com.simiacryptus.cognotik.webui.servlet.UsageServlet
-import com.simiacryptus.cognotik.webui.servlet.UserInfoServlet
-import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
-import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
-import com.simiacryptus.cognotik.webui.servlet.PluginManagerServlet
+import com.simiacryptus.cognotik.webui.servlet.*
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.Servlet
 import jakarta.servlet.http.HttpServlet
-import org.eclipse.jetty.server.ForwardedRequestCustomizer
-import org.eclipse.jetty.server.HttpConfiguration
-import org.eclipse.jetty.server.HttpConnectionFactory
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
@@ -39,8 +19,9 @@ import org.eclipse.jetty.util.resource.ResourceCollection
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
+import org.slf4j.LoggerFactory
 import java.net.URL
-import java.util.EnumSet
+import java.util.*
 import kotlin.system.exitProcess
 
 abstract class ApplicationDirectory(

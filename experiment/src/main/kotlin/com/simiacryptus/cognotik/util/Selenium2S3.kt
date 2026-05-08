@@ -19,6 +19,7 @@ import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.remote.RemoteWebDriver
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.net.URI
 import java.net.URL
@@ -438,7 +439,7 @@ open class Selenium2S3(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(Selenium2S3::class.java)
+      private val log = getLogger(Selenium2S3::class.java)
 
     fun chromeDriver(headless: Boolean = true, loadImages: Boolean = !headless): ChromeDriver {
       val osname = System.getProperty("os.name")

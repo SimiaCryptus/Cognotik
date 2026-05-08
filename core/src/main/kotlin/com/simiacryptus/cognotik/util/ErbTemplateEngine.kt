@@ -7,6 +7,7 @@ import com.google.gson.JsonPrimitive
 import groovy.lang.Binding
 import groovy.lang.GroovyShell
 import groovy.lang.Script
+import org.slf4j.LoggerFactory.getLogger
 
 class ErbTemplateEngine {
   private val preamblePattern = Regex("""^---\s*\n<%#\s*\n(.*?)\n%>\s*\n---\s*\n?""", RegexOption.DOT_MATCHES_ALL)
@@ -1126,6 +1127,6 @@ class ErbTemplateEngine {
     RuntimeException("Template validation failed:\n${errors.joinToString("\n") { "  - $it" }}")
 
   companion object {
-    private val log = LoggerFactory.getLogger(ErbTemplateEngine::class.java)
+    private val log = getLogger(ErbTemplateEngine::class.java)
   }
 }

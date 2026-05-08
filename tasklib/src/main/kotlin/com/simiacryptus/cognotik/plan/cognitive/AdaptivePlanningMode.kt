@@ -14,10 +14,10 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
@@ -50,7 +50,7 @@ open class AdaptivePlanningMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
+  private val log = getLogger(AdaptivePlanningMode::class.java)
   private val currentUserMessage = AtomicReference<String?>(null)
   private val executionRecords = mutableListOf<ExecutionRecord>()
   private val reasoningState = AtomicReference<Any?>(null)

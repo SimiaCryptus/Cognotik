@@ -21,6 +21,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path
@@ -175,7 +176,7 @@ class MultiCodeChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiCodeChatAction::class.java)
+        private val log = getLogger(MultiCodeChatAction::class.java)
 
         fun getFiles(
             virtualFiles: Array<out VirtualFile>?,

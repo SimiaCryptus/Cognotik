@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.text
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Identifies and abbreviates repeated subsequences in text while preserving uniqueness.

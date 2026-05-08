@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.DefaultServlet
@@ -15,6 +14,7 @@ import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.JettyServerUpgradeRequest
 import org.eclipse.jetty.websocket.server.JettyWebSocketServlet
 import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 

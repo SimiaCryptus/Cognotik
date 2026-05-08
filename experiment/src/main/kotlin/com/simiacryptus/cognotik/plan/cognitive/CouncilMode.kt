@@ -12,10 +12,14 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.util.*
@@ -44,7 +48,7 @@ open class CouncilMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(CouncilMode::class.java)
+  private val log = getLogger(CouncilMode::class.java)
   private val currentUserMessage = AtomicReference<String?>(null)
   private val executionRecords = mutableListOf<AdaptivePlanningMode.ExecutionRecord>()
   private val reasoningStates = mutableMapOf<String, Any>()

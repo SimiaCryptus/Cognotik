@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 
 class AppDirectoryServlet : HttpServlet() {
 

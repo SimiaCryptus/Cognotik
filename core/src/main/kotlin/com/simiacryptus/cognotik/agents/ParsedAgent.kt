@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.exceptions.MultiExeption
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.*
+import org.slf4j.LoggerFactory.getLogger
 import java.util.function.Function
 
 open class ParsedAgent<T : Any>(
@@ -224,7 +225,7 @@ open class ParsedAgent<T : Any>(
 
 
   companion object {
-    private val log = LoggerFactory.getLogger(ParsedAgent::class.java)
+    private val log = getLogger(ParsedAgent::class.java)
   }
 
 }

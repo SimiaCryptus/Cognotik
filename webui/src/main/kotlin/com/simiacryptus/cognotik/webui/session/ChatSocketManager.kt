@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -457,7 +458,7 @@ open class ChatSocketManager(
   open fun renderResponse(response: String, task: SessionTask) = """<div>${response.renderMarkdown(true)}</div>"""
 
   companion object {
-    private val log = LoggerFactory.getLogger(ChatSocketManager::class.java)
+    private val log = getLogger(ChatSocketManager::class.java)
   }
 }
 

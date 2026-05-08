@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
+import org.slf4j.LoggerFactory
 
 open class ParsedImageAgent<T : Any>(
   var resultClass: Class<T>? = null,

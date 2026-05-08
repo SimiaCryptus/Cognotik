@@ -22,8 +22,8 @@ import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.BrowseUtil
+import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*

@@ -14,10 +14,10 @@ import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor.*
 

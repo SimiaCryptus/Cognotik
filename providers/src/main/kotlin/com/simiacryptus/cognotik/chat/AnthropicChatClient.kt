@@ -10,7 +10,8 @@ import com.simiacryptus.cognotik.models.LLMModel
   import com.simiacryptus.cognotik.util.JsonUtil
   import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
-  import org.slf4j.event.Level
+import org.slf4j.LoggerFactory.getLogger
+import org.slf4j.event.Level
   import java.io.BufferedOutputStream
   import java.net.URLEncoder
   import java.util.concurrent.ConcurrentHashMap
@@ -268,7 +269,7 @@ class AnthropicChatClient(
 
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AnthropicChatClient::class.java)
+    private val log = getLogger(AnthropicChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
     data class AnthropicChatRequest(

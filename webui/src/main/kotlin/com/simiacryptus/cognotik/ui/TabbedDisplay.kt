@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.util.*
 
 open class TabbedDisplay(
@@ -126,7 +127,7 @@ open class TabbedDisplay(
   }
 
   companion object {
-    val log = LoggerFactory.getLogger(TabbedDisplay::class.java)
+    val log = getLogger(TabbedDisplay::class.java)
 
     fun displayMapInTabs(
       map: Map<String, String>,

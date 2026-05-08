@@ -24,6 +24,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.OutputStream
@@ -199,7 +200,7 @@ class ImageChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ImageChatAction::class.java)
+        private val log = getLogger(ImageChatAction::class.java)
 
         fun getFiles(
             virtualFiles: Array<out VirtualFile>?,

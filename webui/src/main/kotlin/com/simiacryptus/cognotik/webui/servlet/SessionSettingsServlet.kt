@@ -2,13 +2,13 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.getCookie
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import java.io.IOException
 
 class SessionSettingsServlet(

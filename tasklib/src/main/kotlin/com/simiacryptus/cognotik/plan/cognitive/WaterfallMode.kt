@@ -15,9 +15,9 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
@@ -43,7 +43,7 @@ open class WaterfallMode(
   ) : CognitiveModeConfig(type = CoreTasks.Waterfall)
 
 
-  private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
+  private val log = getLogger(WaterfallMode::class.java)
   private var transcriptStream: FileOutputStream? = null
 
   override fun initialize(task: SessionTask) {

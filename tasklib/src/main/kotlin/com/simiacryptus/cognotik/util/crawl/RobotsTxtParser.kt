@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util.crawl
 
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest

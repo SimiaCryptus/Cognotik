@@ -3,18 +3,20 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 
 class TableCompilationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -370,7 +372,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(TableCompilationTask::class.java)
+      private val log: Logger = getLogger(TableCompilationTask::class.java)
 
     @JvmStatic
     val TableCompilation = TaskType(

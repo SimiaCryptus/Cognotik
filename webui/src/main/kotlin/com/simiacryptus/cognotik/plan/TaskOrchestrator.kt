@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isBinaryFile
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path
@@ -275,7 +276,7 @@ class TaskOrchestrator(
   )
 
   companion object {
-    private val log = LoggerFactory.getLogger(TaskOrchestrator::class.java)
+    private val log = getLogger(TaskOrchestrator::class.java)
   }
 }
 

@@ -16,11 +16,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
@@ -28,6 +24,7 @@ import com.simiacryptus.cognotik.webui.session.ServerlessSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.server.Server
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.Desktop
 import java.io.File
 import java.io.OutputStream
@@ -396,7 +393,7 @@ open class UnifiedHarness(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(UnifiedHarness::class.java)
+    private val log = getLogger(UnifiedHarness::class.java)
     fun time(): String {
       val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
       return sdf.format(System.currentTimeMillis())

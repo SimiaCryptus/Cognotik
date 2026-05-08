@@ -8,13 +8,17 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
-import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -43,7 +47,7 @@ abstract class PatchApp(
   )
 
   companion object {
-    private val log = LoggerFactory.getLogger(PatchApp::class.java)
+    private val log = getLogger(PatchApp::class.java)
     const val tripleTilde = "`" + "``"
   }
 

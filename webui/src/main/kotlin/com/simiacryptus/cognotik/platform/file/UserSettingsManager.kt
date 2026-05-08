@@ -4,9 +4,9 @@ import com.google.gson.GsonBuilder
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
-import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 
 open class UserSettingsManager(val root: File) : UserSettingsInterface {
@@ -68,7 +68,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
   }
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(UserSettingsManager::class.java)
+      private val log = getLogger(UserSettingsManager::class.java)
 
     fun merge_gson(prevJson: String, newJson: String): String {
       val prev: com.google.gson.JsonObject = GsonBuilder().create().fromJson(prevJson, com.google.gson.JsonObject::class.java)

@@ -21,8 +21,8 @@ import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean

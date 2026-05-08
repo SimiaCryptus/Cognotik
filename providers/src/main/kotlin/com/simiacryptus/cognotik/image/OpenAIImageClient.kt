@@ -2,19 +2,19 @@ package com.simiacryptus.cognotik.image
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
+import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException

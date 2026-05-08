@@ -12,9 +12,9 @@ import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -30,7 +30,7 @@ open class ProtocolMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(ProtocolMode::class.java)
+  private val log = getLogger(ProtocolMode::class.java)
   private var isRunning = false
   private val history = mutableListOf<String>()
 

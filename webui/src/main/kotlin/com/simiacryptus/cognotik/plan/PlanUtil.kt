@@ -3,9 +3,8 @@ package com.simiacryptus.cognotik.plan
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.renderMarkdown
-import java.util.*
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
 object PlanUtil {

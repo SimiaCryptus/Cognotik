@@ -4,13 +4,20 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -509,7 +516,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)
+    private val log: Logger = getLogger(AbstractionLadderTask::class.java)
 
     @JvmStatic
     val AbstractionLadder = TaskType(

@@ -2,8 +2,11 @@ package cognotik.actions.task
 
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.progress.ProgressIndicator
@@ -16,12 +19,9 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.util.ErbTemplateEngine
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UITools
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.intellij.openapi.application.invokeLater
 import com.simiacryptus.cognotik.util.getSelectedFiles
+import org.slf4j.LoggerFactory
 import java.io.File
 import javax.swing.JComponent
 

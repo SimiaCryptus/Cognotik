@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.image
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 class ImageModel(
   val name: String,

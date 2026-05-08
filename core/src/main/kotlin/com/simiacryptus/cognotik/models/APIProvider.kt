@@ -5,17 +5,22 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.audio.AudioModels
-import com.simiacryptus.cognotik.chat.*
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.image.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.image.ImageClientInterface
+import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
+private val log: Logger = getLogger(APIProvider::class.java)
 
 @JsonDeserialize(using = APIProviderDeserializer::class)
 @JsonSerialize(using = APIProviderSerializer::class)

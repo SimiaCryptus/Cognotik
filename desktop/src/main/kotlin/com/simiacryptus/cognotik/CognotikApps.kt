@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.encrypt
@@ -21,6 +20,7 @@ import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.LoggerFactory
 import java.awt.SystemTray
 import java.io.BufferedWriter
 import java.io.File

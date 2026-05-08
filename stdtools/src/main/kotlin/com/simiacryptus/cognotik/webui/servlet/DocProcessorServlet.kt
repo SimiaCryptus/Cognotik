@@ -5,14 +5,15 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.DocProcessor
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UpdateModes
 import com.simiacryptus.cognotik.webui.application.authenticate
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
+import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet.Companion.TEMPLATE_VAR_PARAM_PREFIX
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
