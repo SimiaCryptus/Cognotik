@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
 import com.simiacryptus.cognotik.webui.servlet.LogoutServlet
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.servlet.OAuthGoogle
-import com.simiacryptus.cognotik.webui.servlet.SimpleLoginServlet
+import com.simiacryptus.cognotik.webui.servlet.LoginServlet
 import com.simiacryptus.cognotik.webui.servlet.TaskConfigServlet
 import com.simiacryptus.cognotik.webui.servlet.UsageServlet
 import com.simiacryptus.cognotik.webui.servlet.UserInfoServlet
@@ -88,7 +88,7 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized ApiKeyServlet") }
   open val taskConfigServlet: HttpServlet = TaskConfigServlet()
     .also { log.debug("Initialized TaskConfigServlet") }
-  open val simpleLoginServlet: HttpServlet = SimpleLoginServlet()
+  open val loginServlet: HttpServlet = LoginServlet()
     .also { log.debug("Initialized SimpleLoginServlet") }
   open val appDirectoryServlet: HttpServlet = AppDirectoryServlet()
     .also { log.debug("Initialized AppDirectoryServlet") }
@@ -180,7 +180,7 @@ abstract class ApplicationDirectory(
        log.debug("Configuring pluginManager context with admin authentication")
        authenticatedWebsite()?.configure(it, true) ?: it
      },
-   newWebAppContext("/login", simpleLoginServlet).also {
+   newWebAppContext("/login", loginServlet).also {
      log.debug("Configuring login context")
    },
     newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).let {

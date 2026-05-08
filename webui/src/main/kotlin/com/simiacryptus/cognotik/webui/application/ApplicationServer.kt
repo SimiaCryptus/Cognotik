@@ -302,7 +302,7 @@ fun authenticate(
         val userSettings =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
         try {
-            SimpleLoginServlet.verifySessionToken(request.getCookie() ?: "", userSettings.passwordHash!!)
+            LoginServlet.verifySessionToken(request.getCookie() ?: "", userSettings.passwordHash!!)
         } catch (e: Exception) {
             log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
             return null

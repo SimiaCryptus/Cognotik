@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.SecureString
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -28,7 +27,7 @@ import javax.swing.JFrame
 import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 
-class SimpleLoginServlet : HttpServlet() {
+class LoginServlet : HttpServlet() {
 
     /** Touch all built-in methods so their `init` blocks run. */
     fun ensureRegistered() {
@@ -41,7 +40,7 @@ class SimpleLoginServlet : HttpServlet() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SimpleLoginServlet::class.java)
+        private val log = LoggerFactory.getLogger(LoginServlet::class.java)
 
         var SESSION_ENVELOPE_KEY_SEED: String = UUID.randomUUID().toString() + System.currentTimeMillis().toString()
         private const val LOGIN_TEMPLATE_RESOURCE = "login.html"
@@ -302,7 +301,7 @@ class SimpleLoginServlet : HttpServlet() {
          * replaced by the servlet when serving pages.
          */
         private fun loadTemplate(resourceName: String): String {
-            val stream = SimpleLoginServlet::class.java.getResourceAsStream(resourceName)
+            val stream = LoginServlet::class.java.getResourceAsStream(resourceName)
                 ?: throw IllegalStateException("Template resource not found: $resourceName")
             return stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
         }
