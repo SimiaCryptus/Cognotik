@@ -86,7 +86,7 @@ abstract class ChatServer(
       }
     }
   private val newSessionServlet by lazy { NewSessionServlet() }
-  private val webSocketHandler by lazy { WebSocketHandler() }
+  open val webSocketHandler : JettyWebSocketServlet by lazy { WebSocketHandler() }
   private val defaultServlet by lazy { DefaultServlet() }
 
   open fun configure(webAppContext: WebAppContext) {

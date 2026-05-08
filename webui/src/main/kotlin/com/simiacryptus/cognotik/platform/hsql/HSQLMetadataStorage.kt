@@ -12,6 +12,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
 
@@ -20,50 +21,10 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
     log.info("Initializing UserSettingsManager with root directory: {}", root)
   }
 
-  private val connection: Connection by lazy {
-    Class.forName("org.hsqldb.jdbc.JDBCDriver")
-    val url: String
-    val username: String
-    val password: String
-    val remoteUrl = serviceUrl
-    if (remoteUrl != null) {
-      /* Client mode: connect to an externally-running HSQL server */
-      log.info("Connecting to external HSQL service at: {}", remoteUrl)
-      url = remoteUrl
-      username = serviceUser
-      password = servicePassword
-    } else {
-      /* Server mode: start an embedded HSQL server and connect to it locally */
-      val server = ensureServerStarted(root)
-      url = if (null == root) {
-        "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${IN_MEMORY_DB_NAME}"
-      } else {
-        "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${FILE_DB_NAME}"
-      }
-      username = "SA"
-      password = ""
-      log.info("Connecting to embedded HSQL server at: {}", url)
-    }
-    val connection = DriverManager.getConnection(url, username, password)
-    createSchema(connection)
-    connection
-  }
 
-  private fun createSchema(connection: Connection) {
-    log.debug("Attempting to create database schema if not exists")
-    connection.createStatement().executeUpdate(
-      """
-            CREATE TABLE IF NOT EXISTS metadata (
-                session_id VARCHAR(255),
-                user_email VARCHAR(255),
-                key VARCHAR(255),
-                value LONGVARCHAR,
-                timestamp TIMESTAMP,
-                PRIMARY KEY (session_id, user_email, key)
-            )
-            """
-    )
-  }
+   private val connection: Connection get() = getConn(root)
+
+   private val root: File? = root
 
   override fun getSessionName(user: User?, session: Session): String {
     log.debug("Fetching session name for session: {}, user: {}", session, user?.email)
@@ -279,6 +240,88 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
 
     @Volatile
     private var embeddedServer: Server? = null
+     @Volatile
+     private var driverLoaded: Boolean = false
+     /**
+      * Cached connections keyed by JDBC URL. Ensures we don't open multiple
+      * connections (and don't run schema creation more than once) for the
+      * same logical database.
+      */
+     private val connections = ConcurrentHashMap<String, Connection>()
+     /**
+      * Tracks JDBC URLs for which schema creation has already been performed,
+      * so concurrent/repeated callers don't redundantly issue DDL.
+      */
+     private val schemasInitialized = ConcurrentHashMap.newKeySet<String>()
+     /**
+      * Static accessor: lazily starts the embedded DB (if needed) and returns
+      * a shared [Connection]. Schema creation is deduplicated per JDBC URL.
+      */
+     @JvmStatic
+     @JvmOverloads
+     fun getConn(root: File? = null): Connection {
+       if (!driverLoaded) {
+         synchronized(this) {
+           if (!driverLoaded) {
+             Class.forName("org.hsqldb.jdbc.JDBCDriver")
+             driverLoaded = true
+           }
+         }
+       }
+       val url: String
+       val username: String
+       val password: String
+       val remoteUrl = serviceUrl
+       if (remoteUrl != null) {
+         log.info("Connecting to external HSQL service at: {}", remoteUrl)
+         url = remoteUrl
+         username = serviceUser
+         password = servicePassword
+       } else {
+         val server = ensureServerStarted(root)
+         url = if (null == root) {
+           "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${IN_MEMORY_DB_NAME}"
+         } else {
+           "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${FILE_DB_NAME}"
+         }
+         username = "SA"
+         password = ""
+       }
+       val existing = connections[url]
+       if (existing != null && !existing.isClosed) return existing
+       return synchronized(connections) {
+         val again = connections[url]
+         if (again != null && !again.isClosed) {
+           again
+         } else {
+           log.info("Opening HSQL connection to: {}", url)
+           val conn = DriverManager.getConnection(url, username, password)
+           ensureSchema(url, conn)
+           connections[url] = conn
+           conn
+         }
+       }
+     }
+     private fun ensureSchema(url: String, connection: Connection) {
+       if (schemasInitialized.contains(url)) return
+       synchronized(schemasInitialized) {
+         if (schemasInitialized.contains(url)) return
+         log.debug("Creating database schema if not exists for {}", url)
+         connection.createStatement().executeUpdate(
+           """
+                 CREATE TABLE IF NOT EXISTS metadata (
+                     session_id VARCHAR(255),
+                     user_email VARCHAR(255),
+                     key VARCHAR(255),
+                     value LONGVARCHAR,
+                     timestamp TIMESTAMP,
+                     PRIMARY KEY (session_id, user_email, key)
+                 )
+                 """
+         )
+         schemasInitialized.add(url)
+       }
+     }
 
     @Synchronized
     private fun ensureServerStarted(root: File?): Server {
