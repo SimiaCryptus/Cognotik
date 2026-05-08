@@ -6,10 +6,10 @@ import java.nio.file.attribute.PosixFilePermission
 
 plugins {
     `java-library`
-    alias(libs.plugins.shadow)
-    war
     application
-     `maven-publish`
+    war
+    alias(libs.plugins.shadow)
+    `maven-publish`
      signing
 }
 
