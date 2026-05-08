@@ -12,7 +12,6 @@ abstract class AuthorizationInterfaceTest(
         email = "newuser@example.com",
         name = "Jane Smith",
         id = "2",
-        picture = "http://example.com/newpicture.jpg"
     )
 
     @Test
