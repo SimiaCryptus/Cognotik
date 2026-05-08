@@ -301,13 +301,19 @@ fun authenticate(
     if (null != claimedUser) {
         val userSettings =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
+        val token = request.getCookie() ?: ""
         try {
-            LoginServlet.verifySessionToken(request.getCookie() ?: "", userSettings.passwordHash!!)
+            LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
         } catch (e: Exception) {
             log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
             return null
         }?.let {
-            log.debug("Session token valid for user: {}", claimedUser.email)
+            if(authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
+                authenticationManager.putUser(token, claimedUser)
+                log.debug("Session token stored for user: {}", claimedUser.email)
+            } else {
+                log.debug("Session token valid for user: {}", claimedUser.email)
+            }
             return claimedUser
         } ?: run {
             log.debug("No valid session token found for user: {}", claimedUser.email)
@@ -346,7 +352,9 @@ fun HttpURLConnection.getCookies(): Map<String, String?> = getRequestProperty("C
 } ?: emptyMap()
 
 fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
-    setCookies(getCookies() + cookies)
+    val prevCookies = getCookies()
+    val newCookies = prevCookies + cookies
+    setCookies(newCookies)
 }
 
 fun User.getAuthCookies(): Map<String, String?> = mapOf(
