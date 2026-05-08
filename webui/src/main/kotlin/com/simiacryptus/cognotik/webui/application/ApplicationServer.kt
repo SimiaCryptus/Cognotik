@@ -328,11 +328,29 @@ fun authenticate(
     }
 }
 
-fun User.authenticate(request: HttpURLConnection) {
-    request.setRequestProperty(
-        "Cookie", mapOf(
-            AuthenticationInterface.AUTH_COOKIE to authenticationManager.getAccessToken(this),
-            "USER" to name,
-            "EMAIL" to email
-        ).entries.joinToString("; ") { "${it.key}=${it.value}" })
+fun HttpURLConnection.setCookies(cookies: Map<String, String?>) {
+    setRequestProperty("Cookie", cookies.entries.joinToString("; ") { "${it.key}=${it.value}" })
 }
+
+fun HttpURLConnection.getCookies(): Map<String, String?> = getRequestProperty("Cookie")?.let { cookieHeader ->
+    return cookieHeader.split(";").mapNotNull { cookie ->
+        val parts = cookie.trim().split("=", limit = 2)
+        if (parts.size == 2) {
+            val name = parts[0].trim()
+            val value = parts[1].trim()
+            name to value
+        } else {
+            null
+        }
+    }.toMap()
+} ?: emptyMap()
+
+fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
+    setCookies(getCookies() + cookies)
+}
+
+fun User.getAuthCookies(): Map<String, String?> = mapOf(
+    AuthenticationInterface.AUTH_COOKIE to authenticationManager.getAccessToken(this),
+    "USER" to name,
+    "EMAIL" to email
+)
