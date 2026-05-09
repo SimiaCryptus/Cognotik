@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
+import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -16,17 +17,24 @@ import java.util.concurrent.atomic.AtomicLong
 
 interface UsageInterface {
   /**
-   * Retrieves a summary of AI model usage for a specific user.
+   * Retrieves a summary of AI model usage for a specific user within a required date range.
+   *
+   * User-scoped queries are required to be date-bounded for performance and privacy
+   * reasons. The range is inclusive of [from] and exclusive of [to].
    *
    * @param user The user whose usage summary is to be retrieved
+   * @param from Inclusive start date (UTC day)
+   * @param to   Exclusive end date (UTC day)
    * @return A map where keys are model names and values are [ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model the user has used
    */
 
-  fun getUserUsageSummary(user: User): Map<String, ModelSchema.Usage>
+   fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage>
 
   /**
    * Retrieves a summary of AI model usage for a specific session.
+   *
+   * Session-scoped queries are not bounded by date.
    *
    * @param session The session whose usage summary is to be retrieved
    * @return A map where keys are model names and values are [ModelSchema.Usage] objects
@@ -54,6 +62,56 @@ interface UsageInterface {
    */
   fun clear()
   fun setParentSession(child: Session, parent: Session)
+   /**
+    * Returns the available budget (in cost units, e.g. USD) for a user.
+    *
+    * Available budget = sum(credits) - sum(cost-to-date).
+    *
+    * Implementations must provide real-time speed and accuracy. Typically backed
+    * by a cached running total updated atomically on each [incrementUsage] and
+    * [creditUser] call.
+    *
+    * @param user The user whose available budget is to be retrieved
+    * @return The available budget as a Double; may be negative if the user is overdrawn
+    */
+   fun getAvailableBudget(user: User): Double
+
+   /**
+    * Adds credits to a user's budget with an optional comment and metadata.
+    *
+    * This is recorded as a ledger entry and atomically applied to the cached
+    * available budget for the user.
+    *
+    * @param user The user receiving the credit
+    * @param amount The amount to credit (positive to add, negative to debit/adjust)
+    * @param comment Free-form comment describing the reason for the credit
+    * @param metadata Optional structured metadata stored alongside the entry
+    * @return The new available budget after applying the credit
+    */
+   fun creditUser(
+     user: User,
+     amount: Double,
+     comment: String? = null,
+     metadata: Map<String, String>? = null
+   ): Double
+   /**
+    * Retrieves daily usage time-series for a specific user within a required date range.
+    *
+    * @param user The user whose daily usage is to be retrieved
+    * @param from Inclusive start date (UTC day)
+    * @param to   Exclusive end date (UTC day)
+    * @return A list of [DailyUsage] entries, one per (day, model) with non-zero usage,
+    *         ordered by ascending day
+    */
+   fun getUserDailyUsage(user: User, from: LocalDate, to: LocalDate): List<DailyUsage>
+   /**
+    * Represents a single day's usage for a (user, model) pair.
+    */
+   data class DailyUsage(
+     val day: LocalDate,
+     val model: String,
+     val usage: ModelSchema.Usage
+   )
 
   /**
    * Represents a unique key for identifying usage records.

@@ -13,12 +13,18 @@ import com.simiacryptus.cognotik.util.PluginManager
 import java.io.File
 
 object ApplicationServices {
+    @JvmStatic
+    var _pluginManager: PluginManagerInterface? = null
 
     @JvmStatic
-    var pluginManager: PluginManagerInterface = PluginManager()
+    var pluginManager: PluginManagerInterface
+        get() {
+            if(_pluginManager == null) { _pluginManager = PluginManager() }
+            return _pluginManager!!
+        }
         set(value) {
             require(!isLocked) { "ApplicationServices is locked" }
-            field = value
+            _pluginManager = value
         }
 
     @JvmStatic

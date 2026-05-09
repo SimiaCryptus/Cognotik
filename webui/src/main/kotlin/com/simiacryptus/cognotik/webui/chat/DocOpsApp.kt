@@ -8,23 +8,13 @@ import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.InputStream
 import java.net.JarURLConnection
 import java.net.URI
 import java.net.URL
 import java.net.URLClassLoader
 import java.net.URLDecoder
 import java.util.jar.JarFile
-private val TEXT_EXTENSIONS = setOf(
-   "txt", "md", "html", "htm", "css", "js", "json", "xml", "yaml", "yml",
-   "csv", "tsv", "svg", "sh", "bat", "cmd", "ps1", "py", "rb", "pl",
-   "java", "kt", "kts", "groovy", "scala", "c", "cpp", "h", "hpp",
-   "ts", "tsx", "jsx", "vue", "scss", "sass", "less", "sql", "graphql",
-   "properties", "cfg", "conf", "ini", "toml", "env", "gitignore",
-   "dockerfile", "makefile", "gradle", "sbt", "rs", "go", "swift",
-   "r", "lua", "php", "asp", "jsp", "erb", "ejs", "hbs", "mustache",
-   "log", "tex", "rst", "adoc", "asciidoc", "mjs", "cjs"
-)
-
 
 /**
  *
@@ -41,11 +31,11 @@ private val TEXT_EXTENSIONS = setOf(
  *
  * */
 class DocOpsApp(
-  root: File,
-  appId: String,
-  applicationName: String = appId,
-  val resourcePath : String,
-  val classLoader: ClassLoader = this.javaClass.classLoader,
+    root: File,
+    appId: String,
+    applicationName: String = appId,
+    val resourcePath : String,
+    val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : ApplicationServer(
   applicationName = applicationName,
   path = "/$appId",
@@ -55,11 +45,11 @@ class DocOpsApp(
   override val inputCnt get() = 0
 
   data class Settings(
-    val model: ChatModel? = null,
-    val fastModel: ChatModel? = null,
-    val temperature: Double = 0.3,
-    val budget: Double = 2.0,
-    val overwriteOnRestart: Boolean = OVERWRITE,
+      val model: ChatModel? = null,
+      val fastModel: ChatModel? = null,
+      val temperature: Double = 0.3,
+      val budget: Double = 2.0,
+      val overwriteOnRestart: Boolean = OVERWRITE,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
@@ -243,7 +233,7 @@ class DocOpsApp(
        "license", "readme", "changelog", "authors", "contributors"
      )
    }
-   private fun copyWithLineEndingNormalization(input: java.io.InputStream, targetFile: File) {
+   private fun copyWithLineEndingNormalization(input: InputStream, targetFile: File) {
      if (isTextFile(targetFile.name)) {
        val content = input.readBytes().toString(Charsets.UTF_8)
        val normalized = content.replace("\r\n", "\n")
@@ -268,5 +258,17 @@ class DocOpsApp(
 
   companion object {
     var OVERWRITE: Boolean = false
+
+    private val TEXT_EXTENSIONS = setOf(
+      "txt", "md", "html", "htm", "css", "js", "json", "xml", "yaml", "yml",
+      "csv", "tsv", "svg", "sh", "bat", "cmd", "ps1", "py", "rb", "pl",
+      "java", "kt", "kts", "groovy", "scala", "c", "cpp", "h", "hpp",
+      "ts", "tsx", "jsx", "vue", "scss", "sass", "less", "sql", "graphql",
+      "properties", "cfg", "conf", "ini", "toml", "env", "gitignore",
+      "dockerfile", "makefile", "gradle", "sbt", "rs", "go", "swift",
+      "r", "lua", "php", "asp", "jsp", "erb", "ejs", "hbs", "mustache",
+      "log", "tex", "rst", "adoc", "asciidoc", "mjs", "cjs"
+    )
+
   }
 }

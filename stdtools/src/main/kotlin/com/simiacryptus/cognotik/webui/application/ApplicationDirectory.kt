@@ -73,8 +73,8 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized SimpleLoginServlet") }
   open val appDirectoryServlet: HttpServlet = AppDirectoryServlet()
     .also { log.debug("Initialized AppDirectoryServlet") }
-  open val pluginManagerServlet: HttpServlet = PluginManagerServlet()
-    .also { log.debug("Initialized PluginManagerServlet") }
+  open val pluginManagerServlet: HttpServlet? by lazy { PluginManagerServlet().also { log.debug("Initialized PluginManagerServlet") } }
+
 
   protected open val docopsServlet: HttpServlet by lazy { DocProcessorServlet() }
 
@@ -157,10 +157,12 @@ abstract class ApplicationDirectory(
       log.debug("Configuring appDirectory context")
       authenticatedWebsite()?.configure(it, false) ?: it
     },
-     newWebAppContext("/pluginManager", pluginManagerServlet).let {
-       log.debug("Configuring pluginManager context with admin authentication")
-       authenticatedWebsite()?.configure(it, true) ?: it
-     },
+    pluginManagerServlet?.let { pluginManagerServlet ->
+      newWebAppContext("/pluginManager", pluginManagerServlet).let {
+        log.debug("Configuring pluginManager context with admin authentication")
+        authenticatedWebsite()?.configure(it, true) ?: it
+      }
+    },
    newWebAppContext("/login", loginServlet).also {
      log.debug("Configuring login context")
    },

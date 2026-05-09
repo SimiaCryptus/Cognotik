@@ -11,9 +11,11 @@ import com.simiacryptus.cognotik.util.BrowseUtil
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Font
 import java.awt.event.ActionEvent
 import java.net.URI
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.swing.AbstractAction
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -29,7 +31,11 @@ class UsageTable(
     val columnNames = arrayOf("Model", "Prompt", "Completion", "Cost")
 
     val rowData by lazy {
-      val usageData = usage.getUserUsageSummary(AppSettingsState.localUser).map { entry ->
+      val usageData = usage.getUserUsageSummary(
+          AppSettingsState.localUser,
+          from = Date().toInstant().minusSeconds(TimeUnit.DAYS.toSeconds(30)).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
+          to = Date().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+      ).map { entry ->
             listOf(
                 entry.key,
                 entry.value.prompt_tokens.toString(),
@@ -118,7 +124,7 @@ class UsageTable(
             ): Component {
                 val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
                 if (row == table?.model?.rowCount?.minus(1)) {
-                    font = font.deriveFont(font.style or java.awt.Font.BOLD)
+                    font = font.deriveFont(font.style or Font.BOLD)
                 }
                 return c
             }
