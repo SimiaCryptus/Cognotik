@@ -306,12 +306,15 @@ fun authenticate(
         val userSettings =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
         val token = request.getCookie() ?: ""
-        try {
-            LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+        val verified = try {
+            if (userSettings.passwordHash != null) {
+                LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+            } else null
         } catch (e: Exception) {
             log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
-            return null
-        }?.let {
+            null
+        }
+        if (verified != null) {
             if(authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
                 authenticationManager.putUser(token, claimedUser)
                 log.debug("Session token stored for user: {}", claimedUser.email)
@@ -319,12 +322,16 @@ fun authenticate(
                 log.debug("Session token valid for user: {}", claimedUser.email)
             }
             return claimedUser
-        } ?: run {
+        } else {
             log.debug("No valid session token found for user: {}", claimedUser.email)
         }
     }
     try {
-        return authenticationManager.getUser(request.getCookie())
+        val user = authenticationManager.getUser(request.getCookie())
+        if (user == null) {
+            throw RuntimeException("No user found for token")
+        }
+        return user
     } catch (e: RuntimeException) {
         log.debug(e.message)
         response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
@@ -353,12 +360,15 @@ fun authenticate(
         val userSettings =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
         val token = request.getCookie() ?: ""
-        try {
-            LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+        val verified = try {
+            if (userSettings.passwordHash != null) {
+                LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+            } else null
         } catch (e: Exception) {
             log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
-            return null
-        }?.let {
+            null
+        }
+        if (verified != null) {
             if(authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
                 authenticationManager.putUser(token, claimedUser)
                 log.debug("Session token stored for user: {}", claimedUser.email)
@@ -366,7 +376,7 @@ fun authenticate(
                 log.debug("Session token valid for user: {}", claimedUser.email)
             }
             return claimedUser
-        } ?: run {
+        } else {
             log.debug("No valid session token found for user: {}", claimedUser.email)
         }
     }
