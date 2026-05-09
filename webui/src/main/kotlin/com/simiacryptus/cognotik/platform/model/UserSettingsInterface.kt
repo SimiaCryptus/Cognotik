@@ -115,7 +115,12 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
       } else {
         mutableMapOf()
       }
-      return UserSettings(apis, tools, etc, passwordHash)
+      return UserSettings(
+        apis = apis,
+        tools = tools,
+        etc = etc,
+        passwordHash = passwordHash
+      )
     }
     // Handle legacy format (apiKeys, apiBase, localTools)
     val apiKeys = if (node.has("apiKeys")) {
@@ -134,7 +139,11 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
     } else {
       emptyMap()
     }
-    return UserSettings(toApiList(apiKeys, apiBase), discoverAllToolsFromPath().toMutableList(), passwordHash = passwordHash)
+    return UserSettings(
+      toApiList(apiKeys, apiBase),
+      discoverAllToolsFromPath().toMutableList(),
+      passwordHash = passwordHash
+    )
   }
 }
 

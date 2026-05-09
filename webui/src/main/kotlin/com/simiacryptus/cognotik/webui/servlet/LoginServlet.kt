@@ -557,12 +557,6 @@ class LoginServlet : HttpServlet() {
                 id = username
             )
             val fileServices = ApplicationServices.fileApplicationServices()
-            val existingSettings = fileServices.userSettingsManager.getUserSettings(user)
-
-            if (existingSettings.passwordHash != null) {
-                serveRegistrationPage(req, resp, error = "User already exists. Please login instead.", target = target)
-                return
-            }
             // Debounce registration attempts by IP + username
             val throttleKey = "${req.remoteAddr}:$username"
             if (isThrottled(throttleKey)) {
@@ -593,6 +587,11 @@ class LoginServlet : HttpServlet() {
                 return
             }
 
+            val existingSettings = fileServices.userSettingsManager.getUserSettings(user)
+            if (existingSettings.passwordHash != null) {
+                serveRegistrationPage(req, resp, error = "User already exists. Please login instead.", target = target)
+                return
+            }
             val newSettings = existingSettings.copy(passwordHash = hashPassword(password))
             fileServices.userSettingsManager.updateUserSettings(user, newSettings)
 
