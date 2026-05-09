@@ -1,6 +1,8 @@
-package com.simiacryptus.cognotik
+package com.simiacryptus.cognotik.desktop
 
-import com.simiacryptus.cognotik.UpdateManager.checkUpdate
+import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.CoreTasks
+import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
@@ -16,9 +18,12 @@ import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
+import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import jakarta.servlet.DispatcherType
+import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
+import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.awt.SystemTray
@@ -45,7 +50,7 @@ open class CognotikApps(
     internal var systemTrayManager: SystemTrayManager? = null
     private var socketServer: ServerSocket? = null
     private var socketThread: Thread? = null
-    private val runningServer = AtomicReference<org.eclipse.jetty.server.Server?>(null)
+    private val runningServer = AtomicReference<Server?>(null)
 
     companion object {
         private val log = LoggerFactory.getLogger(CognotikApps::class.java.name)
@@ -268,7 +273,7 @@ open class CognotikApps(
         port: Int,
         host: String,
         vararg webAppContexts: WebAppContext
-    ): org.eclipse.jetty.server.Server {
+    ): Server {
         val srv = super.start(port, host, *webAppContexts)
         runningServer.set(srv)
         return srv
@@ -375,8 +380,8 @@ open class CognotikApps(
                 // which are unavailable in shadow jar environments.
                 ctx.setConfigurationClasses(emptyArray())
                 ctx.addFilter(
-                    org.eclipse.jetty.servlet.FilterHolder(
-                        com.simiacryptus.cognotik.webui.servlet.CorsFilter()
+                    FilterHolder(
+                        CorsFilter()
                     ),
                     "/*",
                     EnumSet.of(DispatcherType.REQUEST)

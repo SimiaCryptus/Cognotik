@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.cognotik.desktop.CognotikApps
 import java.awt.Desktop
 
 class PluginDesktopDemo(localName: String, publicName: String, port: Int) : CognotikApps(localName, publicName, port) {

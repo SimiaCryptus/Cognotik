@@ -27,26 +27,26 @@ repositories {
     }
 }
 application {
-    mainClass.set("com.simiacryptus.cognotik.CognotikApps")
+    mainClass.set("com.simiacryptus.cognotik.desktop.CognotikApps")
 }
 tasks.register<JavaExec>("runDaemonClient") {
     group = "application"
     description = "Runs the DaemonClient main class"
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("com.simiacryptus.cognotik.DaemonClient")
+    mainClass.set("com.simiacryptus.cognotik.desktop.DaemonClient")
 }
 tasks.register<JavaExec>("runCognotikApps") {
     group = "application"
     description = "Runs the CognotikApps main class"
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("com.simiacryptus.cognotik.CognotikApps")
+    mainClass.set("com.simiacryptus.cognotik.desktop.CognotikApps")
 }
 tasks.register<JavaExec>("runCognotikAppsFromJar") {
      group = "application"
      description = "Runs the CognotikApps main class from the shadow (fat) JAR, to test packaged resource handling"
      dependsOn("shadowJar")
      classpath = files(tasks.named<ShadowJar>("shadowJar").get().archiveFile)
-     mainClass.set("com.simiacryptus.cognotik.CognotikApps")
+     mainClass.set("com.simiacryptus.cognotik.desktop.CognotikApps")
 }
 
 
@@ -132,7 +132,7 @@ tasks.war {
     isZip64 = true
     manifest {
         attributes(
-            "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
+            "Main-Class" to "com.simiacryptus.cognotik.desktop.DaemonClient"
         )
     }
 }
@@ -144,7 +144,7 @@ tasks.withType<ShadowJar> {
     exclude("org/slf4j/impl/**")
     manifest {
         attributes(
-            "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
+            "Main-Class" to "com.simiacryptus.cognotik.desktop.DaemonClient"
         )
     }
 }
@@ -229,7 +229,7 @@ tasks.register("packageDmg", JPackageTask::class) {
                 "--input", inputDir.path,
                 "--main-jar", shadowJarName,
                 "--icon", iconFile.path,
-                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
+                "--main-class", "com.simiacryptus.cognotik.desktop.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
                 "--name", "Cognotik",
                 "--app-version", "${project.version}",
@@ -285,7 +285,7 @@ tasks.register("packageMsi", JPackageTask::class) {
                 "--type", "msi",
                 "--input", inputDir.path,
                 "--main-jar", shadowJarName,
-                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
+                "--main-class", "com.simiacryptus.cognotik.desktop.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
                 "--name", "Cognotik",
                 "--app-version", project.version.toString().replace("-", "."),
@@ -336,7 +336,7 @@ tasks.register("createAppImage", JPackageTask::class) {
                 "--type", "app-image",
                 "--input", inputDir.path,
                 "--main-jar", shadowJarName,
-                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
+                "--main-class", "com.simiacryptus.cognotik.desktop.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage/linux-image").get().asFile.path,
                 "--name", "Cognotik",
                 "--app-version", "${project.version}",

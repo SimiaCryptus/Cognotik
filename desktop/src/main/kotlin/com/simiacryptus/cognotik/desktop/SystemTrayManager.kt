@@ -1,8 +1,7 @@
-package com.simiacryptus.cognotik
+package com.simiacryptus.cognotik.desktop
 
-import com.simiacryptus.cognotik.DaemonClient.createRandomSessionDir
-import com.simiacryptus.cognotik.UpdateManager.currentVersion
-import com.simiacryptus.cognotik.UpdateManager.latestVersion
+import com.simiacryptus.cognotik.desktop.UpdateManager.currentVersion
+import com.simiacryptus.cognotik.desktop.UpdateManager.latestVersion
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.ImageTranscoder
@@ -166,7 +165,7 @@ class SystemTrayManager(
 
         fun openInBrowser(host: String, port: Int) {
             try {
-                val sessionDir = createRandomSessionDir()
+                val sessionDir = DaemonClient.createRandomSessionDir()
                 val domainName =
                     "http://${if (host == "0.0.0.0") "localhost" else host}:${port}"
                 val url = "$domainName/#${sessionDir.urlEncode()}"

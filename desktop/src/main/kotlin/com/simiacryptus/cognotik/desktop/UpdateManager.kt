@@ -1,8 +1,7 @@
-package com.simiacryptus.cognotik
+package com.simiacryptus.cognotik.desktop
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import com.simiacryptus.cognotik.SystemTrayManager.Companion.confirm
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
@@ -19,6 +18,7 @@ import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.*
@@ -80,7 +80,7 @@ object UpdateManager {
             val progressBarHolder = arrayOfNulls<JProgressBar>(1)
 
             // Ensure dialog creation and showing happens on the EDT
-            val semaphore = java.util.concurrent.Semaphore(0)
+            val semaphore = Semaphore(0)
             SwingUtilities.invokeLater {
                 val panel = JPanel(BorderLayout(10, 10)).apply {
                     this.border = createEmptyBorder(10, 10, 10, 10)
@@ -529,7 +529,7 @@ object UpdateManager {
 
     fun checkUpdate() {
         if (latestVersion.greaterThan(currentVersion)) {
-            confirm("Update to ${latestVersion.version}?") {
+            SystemTrayManager.Companion.confirm("Update to ${latestVersion.version}?") {
                 Thread {
                     try {
                         doUpdate()

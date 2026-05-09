@@ -71,19 +71,19 @@ abstract class DynamicEnumDeserializer<T : DynamicEnum<T>>(
   private val clazz: Class<T>
 ) : JsonDeserializer<T>() {
   private val log = getLogger(javaClass)
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): T {
+  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): T? {
     val values = DynamicEnum.getRegistry(clazz).toMap()
     return when (val node = p.codec.readTree<JsonNode>(p)) {
       is TextNode -> values[node.asText()]
         ?: run {
           log.error("Unknown enum constant: {}", node.asText())
-          throw JsonMappingException(p, "Unknown enum constant: " + node.asText())
+          null
         }
 
       is ObjectNode -> values[node.get("name")?.asText()]
         ?: run {
           log.error("Unknown enum constant: {}", node.toPrettyString())
-          throw JsonMappingException(p, "Unknown enum constant: " + node.toPrettyString())
+          null
         }
 
       else -> throw JsonMappingException(p, "Unexpected JSON value type: ${node.nodeType}")

@@ -242,7 +242,7 @@ class CodeRuntimesSerializer : DynamicEnumSerializer<CodeRuntimes>(CodeRuntimes:
 class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRuntimes::class.java) {
   override fun deserialize(
     p: JsonParser, ctxt: DeserializationContext
-  ): CodeRuntimes {
+  ): CodeRuntimes? {
     return super.deserialize(p, ctxt)
   }
 }
