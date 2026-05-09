@@ -243,7 +243,7 @@ abstract class ApplicationServer(
     private fun getFilter(): FilterHolder = FilterHolder { request, response, chain ->
         val requestPath = (request as HttpServletRequest).requestURI
         logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
-        val user = authenticate(request, response as HttpServletResponse) ?: return@FilterHolder
+        val user = authenticate(request, response as HttpServletResponse) ?: throw IllegalStateException("Authentication failed")
         logger.debug("Authenticated user: {} for request: {}", user.email, requestPath)
         val canRead = authorizationManager.isAuthorized(
             applicationClass = this@ApplicationServer.javaClass,
@@ -324,8 +324,7 @@ fun authenticate(
         }
     }
     try {
-        val user = authenticationManager.getUser(request.getCookie())
-        return user
+        return authenticationManager.getUser(request.getCookie())
     } catch (e: RuntimeException) {
         log.debug(e.message)
         response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
@@ -373,6 +372,9 @@ fun authenticate(
     }
     try {
         val user = authenticationManager.getUser(request.getCookie())
+        if (user == null) {
+            throw RuntimeException("No user found for token")
+        }
         return user
     } catch (e: RuntimeException) {
         log.debug(e.message)

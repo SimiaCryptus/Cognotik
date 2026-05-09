@@ -14,7 +14,7 @@ class SessionThreadsServlet : HttpServlet() {
         response.status = HttpServletResponse.SC_OK
         if (request.parameterMap.containsKey("sessionId")) {
             val session = Session(request.getParameter("sessionId"))
-            val user = authenticate(request, response) ?: return
+            val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
             val pool = threadPoolManager.getPool(session, user)
 
 

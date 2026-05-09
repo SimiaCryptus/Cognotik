@@ -31,6 +31,9 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     val pathSegments = parsePath(pathInfo ?: "/")
     val session = Session(parsePath(pathInfo ?: "/").first())
     val user = ApplicationServices.authenticationManager.getUser(request.getCookie())
+    if (user == null) {
+      throw RuntimeException("No user found for token")
+    }
     onSession(session,user)
     val sessionDir = dataStorage.getUserDir(user, session)
     val dataDir = dataStorage.getSystemDir(user, session)
@@ -83,7 +86,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     try {
       val pathSegments = parsePath(pathInfo)
       val session = Session(pathSegments.first())
-      val user = authenticate(request, response) ?: return
+      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       onSession(session,user)
       val sessionDir = dataStorage.getUserDir(user, session)
       // Extract the git API action from the path
@@ -117,7 +120,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     try {
       val pathSegments = parsePath(pathInfo)
       val session = Session(pathSegments.first())
-      val user = authenticate(request, response) ?: return
+      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       onSession(session,user)
       val sessionDir = dataStorage.getUserDir(user, session)
       val gitApiIndex = pathSegments.indexOf(".git")
@@ -483,6 +486,9 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     val pathInfo = request.pathInfo ?: request.servletPath
     val session = Session(parsePath(pathInfo ?: "/").first())
     val user = ApplicationServices.authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
+    if (user == null) {
+      throw RuntimeException("No user found for token")
+    }
     onSession(session,user)
     val sessionPair = listContents(dataStorage.getUserDir(user, session), request)
     val dataPair = listContents(dataStorage.getSystemDir(user, session), request)

@@ -68,7 +68,7 @@ class DocProcessorServlet(
     }
     val modeName = request.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.Companion.fromName(modeName) ?: UpdateModes.PatchExisting
-    val user = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     val models = user.userSettings().models()
     val smartModel = resolveModel(request.getParameter("smartModel"), models)
     val effectiveSmartModel = smartModel ?: throw IllegalArgumentException("Invalid or missing smartModel parameter. Provide a valid model ID or omit the parameter to use the default.")
@@ -78,7 +78,7 @@ class DocProcessorServlet(
      val templateVarOverrides = extractTemplateVarOverrides(request)
     try {
       val session = Session(sessionId)
-      val user = authenticate(request, response) ?: return
+      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       val sessionDir = dataStorage.getUserDir(user, session)
       if (!sessionDir.exists() || !sessionDir.isDirectory) {
         response.status = HttpServletResponse.SC_NOT_FOUND

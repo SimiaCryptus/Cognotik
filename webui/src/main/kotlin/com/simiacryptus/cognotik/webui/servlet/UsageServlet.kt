@@ -31,7 +31,7 @@ class UsageServlet : HttpServlet() {
                 scopeLabel = "Session: ${session.sessionId}"
             )
         } else {
-            val userinfo = authenticate(request, response) ?: return
+            val userinfo = authenticate(request, response) ?: throw RuntimeException("Authentication failed")
             val (from, to) = parseDateRange(request)
             val usage = usageManager.getUserUsageSummary(userinfo, from, to)
             val daily = try {

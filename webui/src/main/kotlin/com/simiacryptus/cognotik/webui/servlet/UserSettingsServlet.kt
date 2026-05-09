@@ -15,7 +15,7 @@ private const val mask = "********"
 class UserSettingsServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_OK
-    val userinfo = authenticate(request, response) ?: return
+    val userinfo = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(userinfo)
@@ -81,7 +81,7 @@ class UserSettingsServlet : HttpServlet() {
   }
 
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
-    val user = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
     val userSettingsManager = ApplicationServices.fileApplicationServices().userSettingsManager
     val prevSettings =

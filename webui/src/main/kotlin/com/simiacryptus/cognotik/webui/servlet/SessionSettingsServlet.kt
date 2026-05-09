@@ -29,7 +29,7 @@ class SessionSettingsServlet(
         logger.debug("Processing request for session: $sessionId")
         val session = Session(sessionId)
         val cookie = request.getCookie()
-        val user = authenticate(request, response) ?: return
+        val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         logger.debug("User identified: ${user?.id ?: "anonymous"}")
 
         try {
@@ -107,7 +107,7 @@ class SessionSettingsServlet(
 
           val settings = JsonUtil.fromJson<Any>(settingsJson, settingsClass)
           val cookie = request.getCookie()
-          val user = authenticate(request, response) ?: return
+          val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
           logger.debug("User identified for settings update: ${user?.id ?: "anonymous"}")
 
           val settingsFile = server.getSettingsFile(session, user)

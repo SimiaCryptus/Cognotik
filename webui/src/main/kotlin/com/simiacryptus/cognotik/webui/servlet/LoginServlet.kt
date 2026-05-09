@@ -488,6 +488,9 @@ class LoginServlet : HttpServlet() {
            if (!token.isNullOrBlank()) {
                try {
                    val user = ApplicationServices.authenticationManager.getUser(token)
+                   if (user == null) {
+                       throw RuntimeException("No user found for token")
+                   }
                    ApplicationServices.authenticationManager.logout(token, user)
                    log.info("User logged out: {}", user?.email ?: "<unknown>")
                } catch (e: Exception) {
@@ -590,14 +593,12 @@ class LoginServlet : HttpServlet() {
                 return
             }
 
-
-            val passwordHash = hashPassword(password)
-            val newSettings = existingSettings.copy(passwordHash = passwordHash)
+            val newSettings = existingSettings.copy(passwordHash = hashPassword(password))
             fileServices.userSettingsManager.updateUserSettings(user, newSettings)
 
             log.info("User registered successfully: {}", username)
 
-            val accessToken = createSessionToken(username, passwordHash)
+            val accessToken = createSessionToken(username, hashPassword(password))
             ApplicationServices.authenticationManager.putUser(accessToken, user)
 
             val cookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)

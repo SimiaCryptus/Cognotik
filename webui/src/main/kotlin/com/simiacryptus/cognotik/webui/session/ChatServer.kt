@@ -51,6 +51,9 @@ abstract class ChatServer(
             val sessionManager = sessions.computeIfAbsent(session) { s ->
               val user =
                 authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
+              if (user == null) {
+                throw RuntimeException("No user found for token")
+              }
               trafficLog.debug(
                 "Creating new session manager for session: {}, user: {}",
                 s,

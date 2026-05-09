@@ -611,7 +611,7 @@ abstract class SocketManager(
       return ApplicationServices.authenticationManager.getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
-          ?.value)
+          ?.value) ?: throw RuntimeException("No user found for token")
     }
   }
 }
