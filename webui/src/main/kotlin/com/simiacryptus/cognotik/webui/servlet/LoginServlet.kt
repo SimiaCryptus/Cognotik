@@ -43,6 +43,8 @@ class LoginServlet : HttpServlet() {
         private val log = LoggerFactory.getLogger(LoginServlet::class.java)
 
         var SESSION_ENVELOPE_KEY_SEED: String = UUID.randomUUID().toString() + System.currentTimeMillis().toString()
+
+        var IS_LOCAL_AUTH_ENABLED: Boolean = System.getenv("LOCAL_AUTH_ENABLED")?.toBoolean() ?: true
         private const val LOGIN_TEMPLATE_RESOURCE = "login.html"
         private const val REGISTER_TEMPLATE_RESOURCE = "register.html"
         private const val DEBOUNCE_INTERVAL_MS = 30_000L // 30 seconds between registration attempts per IP/username
@@ -315,7 +317,14 @@ class LoginServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val action = req.getParameter("action") ?: req.getParameter("formAction")
         when (action) {
-            "register" -> serveRegistrationPage(req, resp)
+            "register" -> {
+                if (!IS_LOCAL_AUTH_ENABLED) {
+                    log.warn("Registration attempt while local auth is disabled")
+                    serveLoginPage(req, resp, error = "Local authentication is disabled.")
+                    return
+                }
+                serveRegistrationPage(req, resp)
+            }
            "logout" -> handleLogout(req, resp)
             else -> serveLoginPage(req, resp)
         }
@@ -324,7 +333,14 @@ class LoginServlet : HttpServlet() {
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val action = req.getParameter("action") ?: req.getParameter("formAction")
         when (action) {
-            "register" -> handleRegistration(req, resp)
+            "register" -> {
+                if (!IS_LOCAL_AUTH_ENABLED) {
+                    log.warn("Registration POST attempt while local auth is disabled")
+                    serveLoginPage(req, resp, error = "Local authentication is disabled.")
+                    return
+                }
+                handleRegistration(req, resp)
+            }
             "login" -> dispatchLogin(req, resp)
            "logout" -> handleLogout(req, resp)
             else -> {
@@ -348,6 +364,17 @@ class LoginServlet : HttpServlet() {
                 null
             }
             if (method != null) {
+                // If local auth is disabled, block the built-in username/password method
+                if (!IS_LOCAL_AUTH_ENABLED && method == UsernamePasswordLoginMethod) {
+                    log.warn("Username/password login attempt while local auth is disabled")
+                    serveLoginPage(
+                        req,
+                        resp,
+                        error = "Local authentication is disabled.",
+                        target = req.getParameter("target")
+                    )
+                    return
+                }
                 try {
                     val handled = method.handleLogin(req, resp)
                     if (handled) return
@@ -363,12 +390,32 @@ class LoginServlet : HttpServlet() {
                 }
             }
         }
-        // Fall back to legacy username/password handling.
+        // Fall back to legacy username/password handling (only if local auth is enabled).
+        if (!IS_LOCAL_AUTH_ENABLED) {
+            log.warn("Legacy login fallback blocked because local auth is disabled")
+            serveLoginPage(
+                req,
+                resp,
+                error = "Local authentication is disabled.",
+                target = req.getParameter("target")
+            )
+            return
+        }
         handleLogin(req, resp)
     }
 
 
     private fun handleLogin(req: HttpServletRequest, resp: HttpServletResponse) {
+        if (!IS_LOCAL_AUTH_ENABLED) {
+            log.warn("handleLogin invoked while local auth is disabled")
+            serveLoginPage(
+                req,
+                resp,
+                error = "Local authentication is disabled.",
+                target = req.getParameter("target")
+            )
+            return
+        }
         val username = req.getParameter("username")?.trim()
         val password = req.getParameter("password")
         val target = req.getParameter("target")
@@ -470,6 +517,16 @@ class LoginServlet : HttpServlet() {
 
 
     private fun handleRegistration(req: HttpServletRequest, resp: HttpServletResponse) {
+        if (!IS_LOCAL_AUTH_ENABLED) {
+            log.warn("handleRegistration invoked while local auth is disabled")
+            serveLoginPage(
+                req,
+                resp,
+                error = "Local authentication is disabled.",
+                target = req.getParameter("target")
+            )
+            return
+        }
         val username = req.getParameter("username")?.trim()
         val password = req.getParameter("password")
         val confirmPassword = req.getParameter("confirmPassword")
@@ -577,9 +634,19 @@ class LoginServlet : HttpServlet() {
         val errorBlock = if (error != null) """<div class="error">${escapeHtml(error)}</div>""" else ""
         // Render all registered login methods. If multiple are registered, render them
         // separated by visual dividers.
-        val methods = LoginMethod.values()
+        val allMethods = LoginMethod.values()
+        // If local auth is disabled, exclude the built-in username/password method
+        val methods = if (!IS_LOCAL_AUTH_ENABLED) {
+            allMethods.filter { it != UsernamePasswordLoginMethod }.toTypedArray()
+        } else {
+            allMethods.toTypedArray()
+        }
         val methodsHtml = if (methods.isEmpty()) {
-            """<div class="error">No login methods are registered.</div>"""
+            if (!IS_LOCAL_AUTH_ENABLED) {
+                """<div class="error">Local authentication is disabled and no other login methods are available.</div>"""
+            } else {
+                """<div class="error">No login methods are registered.</div>"""
+            }
         } else {
             methods.joinToString(separator = """<div class="divider"><span>or</span></div>""") { method ->
                 try {
@@ -595,6 +662,15 @@ class LoginServlet : HttpServlet() {
             .replace("<!--ERROR_BLOCK-->", errorBlock)
             .replace("<!--LOGIN_METHODS-->", methodsHtml)
             .replace("<!--REGISTER_LINK-->", registerLink)
+            // Hide the "Create one" link when local auth (registration) is disabled
+            .let { rendered ->
+                if (!IS_LOCAL_AUTH_ENABLED) {
+                    rendered.replace(
+                        Regex("""<div class="links">[\s\S]*?</div>"""),
+                        ""
+                    )
+                } else rendered
+            }
 
         resp.contentType = "text/html"
         resp.characterEncoding = "UTF-8"
