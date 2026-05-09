@@ -23,6 +23,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
+import org.eclipse.jetty.websocket.server.JettyServerUpgradeResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -211,40 +212,12 @@ abstract class ApplicationServer(
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
-        webAppContext.addFilter(
-            FilterHolder { request, response, chain ->
-                val requestPath = (request as HttpServletRequest).requestURI
-                logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
-                val user = authenticate(request, response as HttpServletResponse) ?: return@FilterHolder
-                logger.debug("Authenticated user: {} for request: {}", user.email, requestPath)
-                val canRead = authorizationManager.isAuthorized(
-                    applicationClass = this@ApplicationServer.javaClass,
-                    user = user,
-                    operationType = OperationType.Read
-                )
-                logger.debug(
-                    "Authorization check result: {} for user: {} on path: {}",
-                    canRead,
-                    user.email,
-                    requestPath
-                )
-                if (canRead) {
-                    logger.debug("Access granted for request: {}", requestPath)
-                    chain?.doFilter(request, response)
-                } else {
-                    logger.warn(
-                        "Access denied for user: {} on path: {} in application: {}",
-                        user.email,
-                        requestPath,
-                        applicationName
-                    )
-                    response.writer?.write("Access Denied")
-                    (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
-                }
-            }, "/*", null
-        )
-        logger.debug("Adding servlets for application: {}", applicationName)
+        webAppContext.addFilter(getFilter(), "/*", null)
+        configure_appServlets(webAppContext)
+    }
 
+    protected open fun configure_appServlets(webAppContext: WebAppContext) {
+        logger.debug("Adding servlets for application: {}", applicationName)
         webAppContext.addServlet(appInfoServlet, "/appInfo")
         logger.debug("Added appInfo servlet")
         webAppContext.addServlet(userInfo, "/userInfo")
@@ -265,6 +238,37 @@ abstract class ApplicationServer(
         logger.debug("Added deleteSession servlet")
         webAppContext.addServlet(cancelSessionServlet, "/cancel")
         logger.debug("Added cancelSession servlet")
+    }
+
+    private fun getFilter(): FilterHolder = FilterHolder { request, response, chain ->
+        val requestPath = (request as HttpServletRequest).requestURI
+        logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
+        val user = authenticate(request, response as HttpServletResponse) ?: return@FilterHolder
+        logger.debug("Authenticated user: {} for request: {}", user.email, requestPath)
+        val canRead = authorizationManager.isAuthorized(
+            applicationClass = this@ApplicationServer.javaClass,
+            user = user,
+            operationType = OperationType.Read
+        )
+        logger.debug(
+            "Authorization check result: {} for user: {} on path: {}",
+            canRead,
+            user.email,
+            requestPath
+        )
+        if (canRead) {
+            logger.debug("Access granted for request: {}", requestPath)
+            chain?.doFilter(request, response)
+        } else {
+            logger.warn(
+                "Access denied for user: {} on path: {} in application: {}",
+                user.email,
+                requestPath,
+                applicationName
+            )
+            response.writer?.write("Access Denied")
+            (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
+        }
     }
 
     companion object {
@@ -325,6 +329,54 @@ fun authenticate(
     } catch (e: RuntimeException) {
         log.debug(e.message)
         response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+        val originalRequest = request.requestURL.toString()
+        val queryString = request.queryString
+        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+        response.setHeader("Location", "/login/?target=$encodedTarget")
+        return null
+    }
+}
+
+fun authenticate(
+    request: HttpServletRequest,
+    response: JettyServerUpgradeResponse
+): User? {
+    val claimedUser = request.getCookie("USER")?.let { username ->
+        val email = request.getCookie("EMAIL") ?: ""
+        User(
+            name = username,
+            email = email,
+            id = email
+        )
+    }
+    if (null != claimedUser) {
+        val userSettings =
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
+        val token = request.getCookie() ?: ""
+        try {
+            LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+        } catch (e: Exception) {
+            log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
+            return null
+        }?.let {
+            if(authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
+                authenticationManager.putUser(token, claimedUser)
+                log.debug("Session token stored for user: {}", claimedUser.email)
+            } else {
+                log.debug("Session token valid for user: {}", claimedUser.email)
+            }
+            return claimedUser
+        } ?: run {
+            log.debug("No valid session token found for user: {}", claimedUser.email)
+        }
+    }
+    try {
+        val user = authenticationManager.getUser(request.getCookie())
+        return user
+    } catch (e: RuntimeException) {
+        log.debug(e.message)
+        response.statusCode = HttpServletResponse.SC_TEMPORARY_REDIRECT
         val originalRequest = request.requestURL.toString()
         val queryString = request.queryString
         val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest

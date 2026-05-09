@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 
-class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : ApplicationServer(
+open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : ApplicationServer(
   applicationName = appname,
   path = path,
   showMenubar = false,

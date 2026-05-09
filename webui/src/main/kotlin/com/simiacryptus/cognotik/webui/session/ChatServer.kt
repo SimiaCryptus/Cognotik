@@ -87,14 +87,26 @@ abstract class ChatServer(
     }
   private val newSessionServlet by lazy { NewSessionServlet() }
   open val webSocketHandler : JettyWebSocketServlet by lazy { WebSocketHandler() }
-  private val defaultServlet by lazy { DefaultServlet() }
+  val defaultServlet by lazy { DefaultServlet() }
 
   open fun configure(webAppContext: WebAppContext) {
     trafficLog.info("Configuring web app context for ${javaClass.simpleName}")
-    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
-    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
-    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
+    configure_home(webAppContext)
+    configure_ws(webAppContext)
+    configure_newSession(webAppContext)
     trafficLog.debug("Servlets registered: default(/), ws(/ws), newSession(/newSession)")
+  }
+
+  protected open fun configure_home(webAppContext: WebAppContext) {
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
+  }
+
+  protected open fun configure_newSession(webAppContext: WebAppContext) {
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
+  }
+
+  protected open fun configure_ws(webAppContext: WebAppContext) {
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
   }
 
   companion object {

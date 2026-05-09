@@ -104,7 +104,7 @@ interface MetadataStorageInterface {
     * @param session The session object containing the session ID
     * @param ownerId The owner identifier to associate with the session
     */
-   fun setSessionOwner(session: Session, ownerId: String)
+   fun setSessionOwner(session: Session, ownerId: String?)
    /**
    * Deletes all metadata associated with a session.
    *

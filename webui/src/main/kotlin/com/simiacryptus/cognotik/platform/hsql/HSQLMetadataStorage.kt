@@ -171,7 +171,7 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
        null
      }
    }
-   override fun setSessionOwner(session: Session, ownerId: String) {
+   override fun setSessionOwner(session: Session, ownerId: String?) {
      log.debug("Setting session owner for session: {} to {}", session, ownerId)
      val statement = connection.prepareStatement(
        """
