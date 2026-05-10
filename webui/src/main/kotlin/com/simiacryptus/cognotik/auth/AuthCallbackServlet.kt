@@ -33,8 +33,13 @@ class AuthCallbackServlet : HttpServlet() {
 
             val params = parseQuery(query)
 
-            // Determine session id: prefer path info, fall back to "state" query param
-            val sessionId = extractSessionId(pathInfo) ?: params["state"]
+            // Determine session id: prefer path info, fall back to "state" query param.
+            // We also separately track the "state" parameter, which (if present and
+            // corresponds to a registered web-flow session) indicates this callback
+            // belongs to a browser-initiated login that needs to be redirected to
+            // the /login/ finalization endpoint.
+            val stateParam = params["state"]
+            val sessionId = extractSessionId(pathInfo) ?: stateParam
 
             if (sessionId.isNullOrBlank()) {
                 log.warn("Auth callback received without session id")
@@ -50,7 +55,9 @@ class AuthCallbackServlet : HttpServlet() {
             }
 
             val pending = pendingRequests.remove(sessionId)
-            if (pending == null) {
+            val webFlow = webFlowSessions.remove(sessionId)
+            val webMethodName = webFlow?.loginMethodName
+            if (pending == null && webFlow == null) {
                 log.warn("Auth callback received for unknown or expired session: {}", sessionId)
                 writeResponse(
                     resp,
@@ -66,22 +73,62 @@ class AuthCallbackServlet : HttpServlet() {
             val token = params["token"]
             if (token != null) {
                 log.debug("Auth callback received valid token for session={} (length={})", sessionId, token.length)
-                pending.complete(token)
-                writeResponse(
-                    resp,
-                    HttpServletResponse.SC_OK,
-                    successHtml()
-                )
+                pending?.complete(token)
+                if (webMethodName != null) {
+                    val finalizationUrl = try {
+                        buildLoginFinalizationUrl(webMethodName, token, sessionId)
+                    } catch (e: Exception) {
+                        log.error("Failed to build login finalization URL for session={}", sessionId, e)
+                        null
+                    }
+                    if (finalizationUrl != null) {
+                        log.debug("Redirecting browser to login finalization URL for session={}", sessionId)
+                        resp.setHeader("Cache-Control", "no-store, no-cache")
+                        resp.sendRedirect(finalizationUrl)
+                        return
+                    } else {
+                        // Fall back to static success page if we can't build the URL.
+                        writeResponse(resp, HttpServletResponse.SC_OK, successHtml())
+                    }
+                } else {
+                    writeResponse(
+                        resp,
+                        HttpServletResponse.SC_OK,
+                        successHtml()
+                    )
+                }
             } else {
                 val error = params["error"] ?: "Unknown error"
                 val errorDescription = params["error_description"] ?: ""
                 log.warn("Auth callback received error for session={}: {} - {}", sessionId, error, errorDescription)
-                pending.complete(null)
-                writeResponse(
-                    resp,
-                    HttpServletResponse.SC_BAD_REQUEST,
-                    errorHtml(error, errorDescription)
-                )
+                pending?.complete(null)
+                if (webMethodName != null) {
+                    // For web flows, redirect back to /login/ with the error so that
+                    // the existing handleLogin() code path can render an error page.
+                    val finalizationUrl = try {
+                        buildLoginFinalizationErrorUrl(webMethodName, error, errorDescription, sessionId)
+                    } catch (e: Exception) {
+                        log.error("Failed to build login finalization error URL for session={}", sessionId, e)
+                        null
+                    }
+                    if (finalizationUrl != null) {
+                        resp.setHeader("Cache-Control", "no-store, no-cache")
+                        resp.sendRedirect(finalizationUrl)
+                        return
+                    } else {
+                        writeResponse(
+                            resp,
+                            HttpServletResponse.SC_BAD_REQUEST,
+                            errorHtml(error, errorDescription)
+                        )
+                    }
+                } else {
+                    writeResponse(
+                        resp,
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        errorHtml(error, errorDescription)
+                    )
+                }
             }
         } catch (e: Exception) {
             log.error("Unexpected error handling auth callback", e)
@@ -149,11 +196,78 @@ class AuthCallbackServlet : HttpServlet() {
         .replace("<", "&lt;").replace(">", "&gt;")
         .replace("\"", "&quot;").replace("'", "&#x27;")
 
+    /**
+     * Builds the login finalization URL by reflectively invoking
+     * OAuthLoginMethod.buildLoginFinalizationUrl(loginMethodName, token, sessionId).
+     * Reflection is used to avoid a hard compile-time dependency cycle with
+     * the login package; if the method is unavailable we fall back to a
+     * sensible default path.
+     */
+    private fun buildLoginFinalizationUrl(loginMethodName: String, token: String, sessionId: String): String {
+        try {
+            val cls = Class.forName("com.simiacryptus.cognotik.auth.OAuthLoginMethod")
+            // Try companion-style static method first
+            val method = cls.declaredMethods.firstOrNull {
+                it.name == "buildLoginFinalizationUrl" && it.parameterCount == 3
+            }
+            if (method != null) {
+                method.isAccessible = true
+                val result = method.invoke(null, loginMethodName, token, sessionId)
+                if (result is String) return result
+            }
+            // Try Companion object
+            val companionField = cls.getDeclaredField("Companion")
+            companionField.isAccessible = true
+            val companion = companionField.get(null)
+            val companionMethod = companion.javaClass.declaredMethods.firstOrNull {
+                it.name == "buildLoginFinalizationUrl" && it.parameterCount == 3
+            }
+            if (companionMethod != null) {
+                companionMethod.isAccessible = true
+                val result = companionMethod.invoke(companion, loginMethodName, token, sessionId)
+                if (result is String) return result
+            }
+        } catch (e: Throwable) {
+            log.debug("Reflective lookup of OAuthLoginMethod.buildLoginFinalizationUrl failed: {}", e.message)
+        }
+        // Fallback: construct URL matching the documented contract.
+        val encodedToken = java.net.URLEncoder.encode(token, "UTF-8")
+        val encodedMethod = java.net.URLEncoder.encode(loginMethodName, "UTF-8")
+        val encodedSession = java.net.URLEncoder.encode(sessionId, "UTF-8")
+        return "/login/?formAction=login&loginMethod=$encodedMethod&token=$encodedToken&state=$encodedSession"
+    }
+
+    private fun buildLoginFinalizationErrorUrl(
+        loginMethodName: String,
+        error: String,
+        errorDescription: String,
+        sessionId: String
+    ): String {
+        val encodedMethod = java.net.URLEncoder.encode(loginMethodName, "UTF-8")
+        val encodedError = java.net.URLEncoder.encode(error, "UTF-8")
+        val encodedDesc = java.net.URLEncoder.encode(errorDescription, "UTF-8")
+        val encodedSession = java.net.URLEncoder.encode(sessionId, "UTF-8")
+        return "/login/?formAction=login&loginMethod=$encodedMethod&error=$encodedError" +
+                "&error_description=$encodedDesc&state=$encodedSession"
+    }
+
+
     companion object {
         private val log = LoggerFactory.getLogger(AuthCallbackServlet::class.java)
 
         /** Registry of pending authentication requests keyed by session id. */
         private val pendingRequests = ConcurrentHashMap<String, CompletableFuture<String?>>()
+
+        /**
+         * Registry of web-flow sessions keyed by session id. Presence of an entry
+         * indicates that the OAuth callback for this session id should redirect
+         * the user's browser to the /login/ finalization endpoint instead of
+         * (or in addition to) rendering the static success page.
+         */
+        private val webFlowSessions = ConcurrentHashMap<String, WebFlowEntry>()
+
+        private data class WebFlowEntry(val loginMethodName: String)
+
 
         /**
          * The base URL where this servlet is mounted (e.g. "http://127.0.0.1:8080/auth/callback").
@@ -173,11 +287,37 @@ class AuthCallbackServlet : HttpServlet() {
         }
 
         /**
+         * Registers a new web-flow auth request. The callback handler will redirect
+         * the user's browser to the login finalization URL on success rather than
+         * rendering the static success page. An optional [future] may also be
+         * supplied for callers that still want to observe completion locally.
+         */
+        fun registerWebFlow(
+            loginMethodName: String,
+            future: CompletableFuture<String?>? = null
+        ): String {
+            val sessionId = UUID.randomUUID().toString()
+            if (future != null) pendingRequests[sessionId] = future
+            webFlowSessions[sessionId] = WebFlowEntry(loginMethodName)
+            return sessionId
+        }
+
+        /**
+         * Marks an already-registered session as a web flow (so it will redirect
+         * to the /login/ finalization URL on success).
+         */
+        fun markAsWebFlow(sessionId: String, loginMethodName: String) {
+            webFlowSessions[sessionId] = WebFlowEntry(loginMethodName)
+        }
+
+
+        /**
          * Cancels and removes a pending request (e.g. on timeout).
          */
         fun cancelPending(sessionId: String) {
             val future = pendingRequests.remove(sessionId)
             future?.cancel(true)
+            webFlowSessions.remove(sessionId)
         }
 
         /**

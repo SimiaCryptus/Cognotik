@@ -95,7 +95,7 @@ class LoginServlet : HttpServlet() {
             }
         }
 
-        fun hashData(data: String) : ByteArray {
+        fun hashData(data: String): ByteArray {
             return try {
                 val digest = MessageDigest.getInstance("SHA-256")
                 digest.digest(data.toByteArray(Charsets.UTF_8))
@@ -263,7 +263,12 @@ class LoginServlet : HttpServlet() {
                     return null
                 }
                 if (age > maxAgeMs) {
-                    log.debug("Session token expired for user: {} (age={}ms, max={}ms)", envelope.username, age, maxAgeMs)
+                    log.debug(
+                        "Session token expired for user: {} (age={}ms, max={}ms)",
+                        envelope.username,
+                        age,
+                        maxAgeMs
+                    )
                     return null
                 }
                 // Re-derive the salted hash-of-hash and compare
@@ -295,7 +300,12 @@ class LoginServlet : HttpServlet() {
                 val now = System.currentTimeMillis()
                 val lastAttempt = registrationAttempts[key]
                 if (lastAttempt != null && (now - lastAttempt) < DEBOUNCE_INTERVAL_MS) {
-                    log.debug("Throttling registration for key '{}' (elapsed: {}ms < {}ms)", key, now - lastAttempt, DEBOUNCE_INTERVAL_MS)
+                    log.debug(
+                        "Throttling registration for key '{}' (elapsed: {}ms < {}ms)",
+                        key,
+                        now - lastAttempt,
+                        DEBOUNCE_INTERVAL_MS
+                    )
                     return true
                 }
                 registrationAttempts[key] = now
@@ -429,6 +439,14 @@ class LoginServlet : HttpServlet() {
         try {
             val action = req.getParameter("action") ?: req.getParameter("formAction")
             log.debug("doGet action='{}' from remote='{}'", action, req.remoteAddr)
+            // If the user is already authenticated, redirect them away from the login flow
+            // regardless of which action was requested (login, register, or default).
+            if (action != "logout" && isAlreadyAuthenticated(req)) {
+                val redirectUrl = resolveRedirectTarget(req.getParameter("target"))
+                log.debug("User already authenticated, redirecting to '{}'", redirectUrl)
+                resp.sendRedirect(redirectUrl)
+                return
+            }
             when (action) {
                 "register" -> {
                     if (!IS_LOCAL_AUTH_ENABLED) {
@@ -438,7 +456,9 @@ class LoginServlet : HttpServlet() {
                     }
                     serveRegistrationPage(req, resp)
                 }
-               "logout" -> handleLogout(req, resp)
+
+                "logout" -> handleLogout(req, resp)
+                 "login" -> dispatchLogin(req, resp)
                 else -> serveLoginPage(req, resp)
             }
         } catch (e: Exception) {
@@ -456,17 +476,28 @@ class LoginServlet : HttpServlet() {
         try {
             val action = req.getParameter("action") ?: req.getParameter("formAction")
             log.debug("doPost action='{}' from remote='{}'", action, req.remoteAddr)
+            // If the user is already authenticated, redirect them away from login/register flows.
+            if (action != "logout" && isAlreadyAuthenticated(req)) {
+                val redirectUrl = resolveRedirectTarget(req.getParameter("target"))
+                log.debug("User already authenticated on POST, redirecting to '{}'", redirectUrl)
+                resp.sendRedirect(redirectUrl)
+                return
+            }
             when (action) {
                 "register" -> {
                     if (!IS_LOCAL_AUTH_ENABLED) {
-                        log.warn("Registration POST attempt while local auth is disabled from remote: {}", req.remoteAddr)
+                        log.warn(
+                            "Registration POST attempt while local auth is disabled from remote: {}",
+                            req.remoteAddr
+                        )
                         serveLoginPage(req, resp, error = "Local authentication is disabled.")
                         return
                     }
                     handleRegistration(req, resp)
                 }
+
                 "login" -> dispatchLogin(req, resp)
-               "logout" -> handleLogout(req, resp)
+                "logout" -> handleLogout(req, resp)
                 else -> {
                     log.debug("Unknown POST action '{}', redirecting to /login/", action)
                     resp.sendRedirect("/login/")
@@ -504,7 +535,10 @@ class LoginServlet : HttpServlet() {
             if (method != null) {
                 // If local auth is disabled, block the built-in username/password method
                 if (!IS_LOCAL_AUTH_ENABLED && method == UsernamePasswordLoginMethod) {
-                    log.warn("Username/password login attempt while local auth is disabled from remote: {}", req.remoteAddr)
+                    log.warn(
+                        "Username/password login attempt while local auth is disabled from remote: {}",
+                        req.remoteAddr
+                    )
                     serveLoginPage(
                         req,
                         resp,
@@ -518,7 +552,7 @@ class LoginServlet : HttpServlet() {
                     val handled = method.handleLogin(req, resp)
                     if (handled) {
                         log.debug("Login method '{}' handled the request", method.name)
-                            return
+                        return
                     } else {
                         log.debug("Login method '{}' did not handle the request, falling back", method.name)
                     }
@@ -566,8 +600,10 @@ class LoginServlet : HttpServlet() {
         log.debug("handleLogin username='{}' from remote='{}'", username, req.remoteAddr)
 
         if (username.isNullOrBlank() || password.isNullOrBlank()) {
-            log.warn("Login attempt with missing credentials from remote: {} (username blank: {}, password blank: {})",
-                req.remoteAddr, username.isNullOrBlank(), password.isNullOrBlank())
+            log.warn(
+                "Login attempt with missing credentials from remote: {} (username blank: {}, password blank: {})",
+                req.remoteAddr, username.isNullOrBlank(), password.isNullOrBlank()
+            )
             serveLoginPage(req, resp, error = "Username and password are required.", target = target)
             return
         }
@@ -646,58 +682,94 @@ class LoginServlet : HttpServlet() {
 
     private fun initializeSystem(user: User) {
     }
-   /**
-    * Handles logout by clearing the auth cookie, removing the session token from the
-    * authentication manager, and redirecting to the login page (or an optional target).
-    */
-   private fun handleLogout(req: HttpServletRequest, resp: HttpServletResponse) {
-       val target = req.getParameter("target")
-       log.debug("handleLogout target='{}' from remote='{}'", target, req.remoteAddr)
-       try {
-           // Find the auth cookie (if any) and remove the corresponding user mapping
-           val authCookie = req.cookies?.firstOrNull { it.name == AuthenticationInterface.AUTH_COOKIE }
-           val token = authCookie?.value
-           if (!token.isNullOrBlank()) {
-               try {
-                   val user = ApplicationServices.authenticationManager.getUser(token)
-                   if (user == null) {
-                       log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
-                   } else {
-                       try {
-                           ApplicationServices.authenticationManager.logout(token, user)
-                           log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
-                       } catch (e: Exception) {
-                           log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
-                       }
-                   }
-               } catch (e: Exception) {
-                   log.warn("Error removing user from authentication manager during logout", e)
-               }
-           } else {
-               log.debug("Logout requested but no auth cookie present from remote: {}", req.remoteAddr)
-           }
-           // Clear the auth cookie on the client by sending a cookie with maxAge=0
-           val clearCookie = Cookie(AuthenticationInterface.AUTH_COOKIE, "")
-           clearCookie.path = "/"
-           clearCookie.maxAge = 0
-           clearCookie.isHttpOnly = true
-           resp.addCookie(clearCookie)
-       } catch (e: Exception) {
-           log.error("Error during logout from remote: {}", req.remoteAddr, e)
-       }
-       val redirectUrl = if (!target.isNullOrBlank()) {
-           try {
-               val decoded = URLDecoder.decode(target, "UTF-8")
-               val encoded = URLEncoder.encode(decoded, "UTF-8")
-               "/login/?target=$encoded"
-           } catch (e: Exception) {
-               log.warn("Failed to decode/encode logout target '{}', defaulting to /login/", target, e)
-               "/login/"
-           }
-       } else "/login/"
-       log.debug("Redirecting logout to '{}'", redirectUrl)
-       resp.sendRedirect(redirectUrl)
-   }
+
+    /**
+     * Checks whether the request carries a valid auth cookie that resolves to a known user.
+     */
+    private fun isAlreadyAuthenticated(req: HttpServletRequest): Boolean {
+        return try {
+            val authCookie = req.cookies?.firstOrNull { it.name == AuthenticationInterface.AUTH_COOKIE }
+            val token = authCookie?.value
+            if (token.isNullOrBlank()) return false
+            val user = try {
+                ApplicationServices.authenticationManager.getUser(token)
+            } catch (e: Exception) {
+                log.debug("Error checking existing authentication", e)
+                null
+            }
+            user != null
+        } catch (e: Exception) {
+            log.debug("Error inspecting auth cookie", e)
+            false
+        }
+    }
+
+    /**
+     * Resolves the redirect target. If [target] is non-blank, attempt to URL-decode it.
+     * Falls back to "/" (the homepage) on any failure or if [target] is blank/null.
+     */
+    private fun resolveRedirectTarget(target: String?): String {
+        if (target.isNullOrBlank()) return "/"
+        return try {
+            URLDecoder.decode(target, "UTF-8")
+        } catch (e: Exception) {
+            log.warn("Failed to decode redirect target '{}', defaulting to /", target, e)
+            "/"
+        }
+    }
+
+    /**
+     * Handles logout by clearing the auth cookie, removing the session token from the
+     * authentication manager, and redirecting to the login page (or an optional target).
+     */
+    private fun handleLogout(req: HttpServletRequest, resp: HttpServletResponse) {
+        val target = req.getParameter("target")
+        log.debug("handleLogout target='{}' from remote='{}'", target, req.remoteAddr)
+        try {
+            // Find the auth cookie (if any) and remove the corresponding user mapping
+            val authCookie = req.cookies?.firstOrNull { it.name == AuthenticationInterface.AUTH_COOKIE }
+            val token = authCookie?.value
+            if (!token.isNullOrBlank()) {
+                try {
+                    val user = ApplicationServices.authenticationManager.getUser(token)
+                    if (user == null) {
+                        log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
+                    } else {
+                        try {
+                            ApplicationServices.authenticationManager.logout(token, user)
+                            log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
+                        } catch (e: Exception) {
+                            log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
+                        }
+                    }
+                } catch (e: Exception) {
+                    log.warn("Error removing user from authentication manager during logout", e)
+                }
+            } else {
+                log.debug("Logout requested but no auth cookie present from remote: {}", req.remoteAddr)
+            }
+            // Clear the auth cookie on the client by sending a cookie with maxAge=0
+            val clearCookie = Cookie(AuthenticationInterface.AUTH_COOKIE, "")
+            clearCookie.path = "/"
+            clearCookie.maxAge = 0
+            clearCookie.isHttpOnly = true
+            resp.addCookie(clearCookie)
+        } catch (e: Exception) {
+            log.error("Error during logout from remote: {}", req.remoteAddr, e)
+        }
+        val redirectUrl = if (!target.isNullOrBlank()) {
+            try {
+                val decoded = URLDecoder.decode(target, "UTF-8")
+                val encoded = URLEncoder.encode(decoded, "UTF-8")
+                "/login/?target=$encoded"
+            } catch (e: Exception) {
+                log.warn("Failed to decode/encode logout target '{}', defaulting to /login/", target, e)
+                "/login/"
+            }
+        } else "/login/"
+        log.debug("Redirecting logout to '{}'", redirectUrl)
+        resp.sendRedirect(redirectUrl)
+    }
 
 
     private fun handleRegistration(req: HttpServletRequest, resp: HttpServletResponse) {
@@ -718,8 +790,10 @@ class LoginServlet : HttpServlet() {
         log.debug("handleRegistration username='{}' from remote='{}'", username, req.remoteAddr)
 
         if (username.isNullOrBlank() || password.isNullOrBlank() || confirmPassword.isNullOrBlank()) {
-            log.debug("Registration missing fields (username blank: {}, password blank: {}, confirm blank: {})",
-                username.isNullOrBlank(), password.isNullOrBlank(), confirmPassword.isNullOrBlank())
+            log.debug(
+                "Registration missing fields (username blank: {}, password blank: {}, confirm blank: {})",
+                username.isNullOrBlank(), password.isNullOrBlank(), confirmPassword.isNullOrBlank()
+            )
             serveRegistrationPage(req, resp, error = "All fields are required.", target = target)
             return
         }
@@ -765,8 +839,10 @@ class LoginServlet : HttpServlet() {
             val approved = try {
                 confirmRegistrationViaDialog(username, req.remoteAddr)
             } catch (e: Exception) {
-                log.error("Failed to show registration confirmation dialog for user: {} from remote: {}",
-                    username, req.remoteAddr, e)
+                log.error(
+                    "Failed to show registration confirmation dialog for user: {} from remote: {}",
+                    username, req.remoteAddr, e
+                )
                 false
             }
             if (!approved) {
@@ -842,6 +918,22 @@ class LoginServlet : HttpServlet() {
     ) {
         try {
             val effectiveTarget = target ?: req.getParameter("target")
+            // If the user is already authenticated, skip the login form and redirect them
+            // to either the requested target or the homepage. This applies regardless of
+            // whether an error message would otherwise be shown.
+            try {
+                if (isAlreadyAuthenticated(req)) {
+                    val redirectUrl = resolveRedirectTarget(effectiveTarget)
+                    log.debug(
+                        "User already authenticated, redirecting to '{}' instead of showing login form",
+                        redirectUrl
+                    )
+                    resp.sendRedirect(redirectUrl)
+                    return
+                }
+            } catch (e: Exception) {
+                log.debug("Error during pre-login authentication check", e)
+            }
             val targetParam = if (!effectiveTarget.isNullOrBlank()) effectiveTarget else null
             val encodedTarget = targetParam?.let {
                 try {
@@ -918,6 +1010,20 @@ class LoginServlet : HttpServlet() {
     ) {
         try {
             val effectiveTarget = target ?: req.getParameter("target")
+            // If the user is already authenticated, redirect rather than showing the registration form.
+            try {
+                if (isAlreadyAuthenticated(req)) {
+                    val redirectUrl = resolveRedirectTarget(effectiveTarget)
+                    log.debug(
+                        "User already authenticated, redirecting to '{}' instead of showing registration form",
+                        redirectUrl
+                    )
+                    resp.sendRedirect(redirectUrl)
+                    return
+                }
+            } catch (e: Exception) {
+                log.debug("Error during pre-registration authentication check", e)
+            }
             val targetParam = if (!effectiveTarget.isNullOrBlank()) effectiveTarget else null
             val encodedTarget = targetParam?.let {
                 try {
