@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.OutputInterceptor
+import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.webui.chat.ChatServer
@@ -75,6 +76,8 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized AppDirectoryServlet") }
   open val pluginManagerServlet: HttpServlet? by lazy { PluginManagerServlet().also { log.debug("Initialized PluginManagerServlet") } }
 
+  open val authCallbackServlet by lazy { AuthCallbackServlet() }
+
 
   protected open val docopsServlet: HttpServlet by lazy { DocProcessorServlet() }
 
@@ -124,6 +127,7 @@ abstract class ApplicationDirectory(
 
   open fun webAppContexts() = listOfNotNull(
     run { log.debug("Creating web app contexts"); null },
+    newWebAppContext( "/auth/callback/*", authCallbackServlet),
     newWebAppContext("/logout", logoutServlet),
     newWebAppContext("/userInfo", userInfoServlet).let {
       log.debug("Configuring userInfo context with authentication")
