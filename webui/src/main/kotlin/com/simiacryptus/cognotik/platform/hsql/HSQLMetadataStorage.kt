@@ -210,33 +210,65 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
      * Example: "jdbc:hsqldb:hsql://my-host:9001/metadata"
      * If non-null, the storage operates in CLIENT mode and connects to this URL
      * instead of starting an embedded HSQL server.
+     *
+     * System property: `cognotik.hsql.metadata.serviceUrl`
      */
     @JvmStatic
-    var serviceUrl: String? = null
+    var serviceUrl: String? = System.getProperty("cognotik.hsql.metadata.serviceUrl")
 
-    /** Username used when connecting in CLIENT mode (see [serviceUrl]). */
+    /**
+     * Username used when connecting in CLIENT mode (see [serviceUrl]).
+     *
+     * System property: `cognotik.hsql.metadata.serviceUser` (default: `SA`)
+     */
     @JvmStatic
-    var serviceUser: String = "SA"
+    var serviceUser: String = System.getProperty("cognotik.hsql.metadata.serviceUser", "SA")
 
-    /** Password used when connecting in CLIENT mode (see [serviceUrl]). */
+    /**
+     * Password used when connecting in CLIENT mode (see [serviceUrl]).
+     *
+     * System property: `cognotik.hsql.metadata.servicePassword` (default: empty string)
+     */
     @JvmStatic
-    var servicePassword: String = ""
+    var servicePassword: String = System.getProperty("cognotik.hsql.metadata.servicePassword", "")
 
-    /** Host/interface the embedded HSQL server binds to (server mode). */
+    /**
+     * Host/interface the embedded HSQL server binds to (server mode).
+     *
+     * System property: `cognotik.hsql.metadata.serverHost` (default: `localhost`)
+     */
     @JvmStatic
-    var serverHost: String = "localhost"
+    var serverHost: String = System.getProperty("cognotik.hsql.metadata.serverHost", "localhost")
 
-    /** Port the embedded HSQL server listens on (server mode). 0 = pick automatically. */
+    /**
+     * Port the embedded HSQL server listens on (server mode). 0 = pick automatically.
+     *
+     * System property: `cognotik.hsql.metadata.serverPort` (default: `9001`)
+     */
     @JvmStatic
-    var serverPort: Int = 9001
+    var serverPort: Int = System.getProperty("cognotik.hsql.metadata.serverPort", "9001").toInt()
+
+    /**
+     * Whether the embedded HSQL server runs silently (no console logging).
+     *
+     * System property: `cognotik.hsql.metadata.serverSilent` (default: `true`)
+     */
+    @JvmStatic
+    var serverSilent: Boolean = System.getProperty("cognotik.hsql.metadata.serverSilent", "true").toBoolean()
+
+    /**
+     * Optional override for the database name (both in-memory and file modes).
+     *
+     * System property: `cognotik.hsql.metadata.dbName` (default: `metadata`)
+     */
+    @JvmStatic
+    var dbName: String = System.getProperty("cognotik.hsql.metadata.dbName", "metadata")
 
     fun getLocalServiceUrl(root: File = ApplicationServicesConfig.dataStorageRoot.resolve("metadatadb")): String {
       val server = ensureServerStarted(root)
-      return "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${if (null == root) IN_MEMORY_DB_NAME else FILE_DB_NAME}"
+      return "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${dbName}"
     }
 
-    private const val IN_MEMORY_DB_NAME = "metadata"
-    private const val FILE_DB_NAME = "metadata"
 
     @Volatile
     private var embeddedServer: Server? = null
@@ -279,11 +311,7 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
          password = servicePassword
        } else {
          val server = ensureServerStarted(root)
-         url = if (null == root) {
-           "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${IN_MEMORY_DB_NAME}"
-         } else {
-           "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${FILE_DB_NAME}"
-         }
+         url = "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${dbName}"
          username = "SA"
          password = ""
        }
@@ -327,17 +355,19 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
     private fun ensureServerStarted(root: File?): Server {
       embeddedServer?.let { return it }
       val server = Server()
-      server.setSilent(true)
-      server.setLogWriter(null)
-      server.setErrWriter(null)
+      server.setSilent(serverSilent)
+      if (serverSilent) {
+        server.setLogWriter(null)
+        server.setErrWriter(null)
+      }
       server.setAddress(serverHost)
       server.port = serverPort
       if (null == root) {
-        server.setDatabaseName(0, IN_MEMORY_DB_NAME)
-        server.setDatabasePath(0, "mem:$IN_MEMORY_DB_NAME")
+        server.setDatabaseName(0, dbName)
+        server.setDatabasePath(0, "mem:$dbName")
       } else {
-        server.setDatabaseName(0, FILE_DB_NAME)
-        server.setDatabasePath(0, "file:${File(root, FILE_DB_NAME).absolutePath};shutdown=true")
+        server.setDatabaseName(0, dbName)
+        server.setDatabasePath(0, "file:${File(root, dbName).absolutePath};shutdown=true")
       }
       server.start()
       log.info(
