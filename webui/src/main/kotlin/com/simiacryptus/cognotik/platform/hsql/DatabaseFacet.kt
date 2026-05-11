@@ -11,57 +11,59 @@ import java.util.concurrent.ConcurrentHashMap
 
 class DatabaseFacet(
     private val name: String,
-     private val schemaSql: List<String> = emptyList(),
-     private val schemaSqlProvider: ((String) -> List<String>)? = null,
+    private val schema: ((String) -> List<String>) = { emptyList() },
 ) {
-     @Volatile
-     private var embeddedServer: Server? = null
-     private val serverLock = Any()
-     @Volatile
-     private var actualPort: Int = -1
+    @Volatile
+    private var embeddedServer: Server? = null
+    private val serverLock = Any()
 
-
-    fun getLocalServiceUrl(root: File): String {
-        val server = ensureServerStarted(root)
-        return "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName}"
-    }
+    @Volatile
+    private var actualPort: Int = -1
 
     fun getConnection(root: File? = null): Connection {
         ensureDriverLoaded()
         val url: String
         val username: String
         val password: String
-        val remoteUrl = serviceUrl
+        val remoteUrl = serviceUrl?.ifBlank { null }
         if (remoteUrl != null) {
             log.info("Connecting to external HSQL $name service at: {}", remoteUrl)
             url = remoteUrl
             username = serviceUser
-            password = servicePassword
+            password = filterPassword(servicePassword)
         } else {
-            val server = ensureServerStarted(root)
+            ensureServerStarted(root)
             url = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName}"
             username = "SA"
             password = ""
         }
-         val existing = connections[url]
-         if (existing != null && isUsable(existing)) return existing
-         return synchronized(connections) {
-             val again = connections[url]
-             if (again != null && isUsable(again)) {
-                 again
-             } else {
-                 if (again != null) {
-                     try { again.close() } catch (_: Exception) {}
-                     connections.remove(url)
-                 }
-                 log.info("Opening HSQL $name connection to: {}", url)
-                 val conn = openConnectionWithRetry(url, username, password)
-                 ensureSchema(url, conn)
-                 connections[url] = conn
-                 conn
-             }
-         }
+        val cacheKey = url + "|" + name
+        val existing = connections[cacheKey]
+        return if (existing != null && isUsable(existing)) {
+            log.info("Reusing existing $name connection to: {}", cacheKey)
+            existing
+        } else synchronized(connections) {
+                val again = connections[cacheKey]
+                if (again != null && isUsable(again)) {
+                    log.info("Reusing existing $name connection to: {}", cacheKey)
+                    again
+                } else {
+                    if (again != null) {
+                        try {
+                            again.close()
+                        } catch (_: Exception) {
+                        }
+                        connections.remove(cacheKey)
+                    }
+                    log.info("Opening HSQL $name connection to: {}", cacheKey)
+                    val conn = openConnectionWithRetry(url, username, password)
+                    ensureSchema(url, conn)
+                    connections[cacheKey] = conn
+                    conn
+                }
+            }
     }
+
     private fun isUsable(conn: Connection): Boolean {
         return try {
             !conn.isClosed && conn.isValid(1)
@@ -69,6 +71,7 @@ class DatabaseFacet(
             false
         }
     }
+
     private fun openConnectionWithRetry(url: String, username: String, password: String): Connection {
         var lastError: Exception? = null
         for (attempt in 1..5) {
@@ -76,8 +79,11 @@ class DatabaseFacet(
                 return DriverManager.getConnection(url, username, password)
             } catch (e: Exception) {
                 lastError = e
-                log.warn("HSQL $name connection attempt $attempt to $url failed: ${e.message}")
-                try { Thread.sleep(50L * attempt) } catch (_: InterruptedException) {}
+                log.warn("JDBC $name connection attempt $attempt to $url failed: ${e.message}")
+                try {
+                    Thread.sleep(50L * attempt)
+                } catch (_: InterruptedException) {
+                }
             }
         }
         throw lastError ?: RuntimeException("Failed to open HSQL connection to $url")
@@ -115,9 +121,13 @@ class DatabaseFacet(
                 try {
                     if (!isUsable(conn)) {
                         connections.entries.removeIf { it.value === conn }
-                        try { conn.close() } catch (_: Exception) {}
+                        try {
+                            conn.close()
+                        } catch (_: Exception) {
+                        }
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
             }
         }
     }
@@ -129,36 +139,60 @@ class DatabaseFacet(
      */
     fun <T> withConnection(root: File? = null, block: (Connection) -> T): T {
         val conn = getConnection(root)
-        return synchronized(conn) { block(conn) }
+        return try {
+            synchronized(conn) { block(conn) }
+        } catch (e: Exception) {
+            // PostgreSQL may leave the connection in an aborted state after
+            // certain errors; if so, drop it from the cache so the next
+            // caller gets a fresh connection.
+            try {
+                if (!isUsable(conn)) {
+                    connections.entries.removeIf { it.value === conn }
+                    try {
+                        conn.close()
+                    } catch (_: Exception) {
+                    }
+                }
+            } catch (_: Exception) {
+            }
+            log.warn("Error during $name connection operation: ${e.message}")
+            throw e
+        }
     }
 
 
     private fun ensureSchema(url: String, connection: Connection) {
-        if (schemasInitialized.contains(url)) return
+        val schemaKey = url + "|" + name
+        if (schemasInitialized.contains(schemaKey)) {
+            log.debug("$name database schema already initialized for {}", schemaKey)
+            return
+        }
         synchronized(schemasInitialized) {
-            if (schemasInitialized.contains(url)) return
-            log.debug("Creating $name database schema if not exists for {}", url)
-             val isPostgres = url.startsWith("jdbc:postgresql:")
-             val ddls = schemaSqlProvider?.invoke(dbProvider) ?: schemaSql
-            connection.createStatement().use { stmt ->
-                 for (ddl in ddls) {
-                     stmt.executeUpdate(translateDdl(ddl, isPostgres))
-                }
+            if (schemasInitialized.contains(schemaKey)) {
+                log.debug("$name database schema already initialized for {}", schemaKey)
+                return
             }
-            schemasInitialized.add(url)
+            log.info("Creating $name database schema if not exists for {}", schemaKey)
+            val ddls = schema.invoke(dbProvider)
+            if (ddls.isEmpty()) {
+                log.info("No $name schema DDL statements provided, skipping initialization")
+            } else {
+                connection.createStatement().use { stmt ->
+                    log.info("Executing {} $name schema DDL statements for {}", ddls.size, url)
+                    for (ddl in ddls) {
+                        log.info("Executing $name schema DDL: {}", ddl.trim().replace("\n", " "))
+                        try {
+                            stmt.executeUpdate(ddl)
+                        } catch (e: Exception) {
+                            log.warn("Failed to execute $name schema DDL statement: ${e.message}")
+                        }
+                    }
+                }
+                log.info("Completed $name database schema initialization for {}", schemaKey)
+            }
+            schemasInitialized.add(schemaKey)
         }
     }
-     /**
-      * Translate HSQL-flavored DDL to be portable across PostgreSQL.
-      * Currently handles type substitutions; expand as needed.
-      */
-     private fun translateDdl(ddl: String, isPostgres: Boolean): String {
-         if (!isPostgres) return ddl
-         return ddl
-             .replace(Regex("(?i)\\bLONGVARCHAR\\b"), "TEXT")
-             .replace(Regex("(?i)\\bVARCHAR_IGNORECASE\\b"), "TEXT")
-             .replace(Regex("(?i)\\bDATETIME\\b"), "TIMESTAMP")
-     }
 
     private fun ensureServerStarted(root: File?): Server {
         embeddedServer?.let { return it }
@@ -171,14 +205,14 @@ class DatabaseFacet(
                 server.setErrWriter(null)
             }
             server.setAddress(serverHost)
-             // Pick a free ephemeral port ourselves. HSQL's Server.setPort(0)
-             // does not auto-assign a free port like java.net.ServerSocket(0)
-             // does, so we need to allocate one explicitly. This avoids
-             // collisions when multiple facets run their own embedded
-             // servers in the same JVM (e.g. during tests).
-             val freePort = ServerSocket(0).use { it.localPort }
-             server.port = freePort
-             actualPort = freePort
+            // Pick a free ephemeral port ourselves. HSQL's Server.setPort(0)
+            // does not auto-assign a free port like java.net.ServerSocket(0)
+            // does, so we need to allocate one explicitly. This avoids
+            // collisions when multiple facets run their own embedded
+            // servers in the same JVM (e.g. during tests).
+            val freePort = ServerSocket(0).use { it.localPort }
+            server.port = freePort
+            actualPort = freePort
             if (null == root) {
                 server.setDatabaseName(0, dbName)
                 server.setDatabasePath(0, "mem:$dbName")
@@ -191,24 +225,27 @@ class DatabaseFacet(
                 "Started embedded HSQL $name server on {}:{} (db={})",
                 serverHost, actualPort, server.getDatabaseName(0, true)
             )
-             // Open and retain a keep-alive connection so the in-memory database
-             // alias is not disposed between client connections. HSQL will dispose
-             // a mem: database once its last connection closes, which causes
-             // "database alias does not exist" errors for subsequent clients.
-             try {
-                 val keepAliveUrl = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName}"
-                 val keepAlive = DriverManager.getConnection(keepAliveUrl, "SA", "")
-                 keepAliveConnections[keepAliveUrl] = keepAlive
-                 log.debug("Opened keep-alive HSQL $name connection to {}", keepAliveUrl)
-             } catch (e: Exception) {
-                 log.warn("Failed to open keep-alive HSQL $name connection", e)
-             }
+            // Open and retain a keep-alive connection so the in-memory database
+            // alias is not disposed between client connections. HSQL will dispose
+            // a mem: database once its last connection closes, which causes
+            // "database alias does not exist" errors for subsequent clients.
+            try {
+                val keepAliveUrl = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName}"
+                val keepAlive = DriverManager.getConnection(keepAliveUrl, "SA", "")
+                keepAliveConnections[keepAliveUrl] = keepAlive
+                log.debug("Opened keep-alive HSQL $name connection to {}", keepAliveUrl)
+            } catch (e: Exception) {
+                log.warn("Failed to open keep-alive HSQL $name connection", e)
+            }
             Runtime.getRuntime().addShutdownHook(Thread {
                 try {
-                     keepAliveConnections.values.forEach { c ->
-                         try { c.close() } catch (_: Exception) {}
-                     }
-                     keepAliveConnections.clear()
+                    keepAliveConnections.values.forEach { c ->
+                        try {
+                            c.close()
+                        } catch (_: Exception) {
+                        }
+                    }
+                    keepAliveConnections.clear()
                     server.shutdown()
                     log.info("Embedded HSQL $name server stopped")
                 } catch (e: Exception) {
@@ -235,11 +272,11 @@ class DatabaseFacet(
     companion object {
         private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
 
-        var serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
-        var serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
-        var servicePassword: String = System.getProperty("cognotik.db.servicePassword", "")
-        var serverHost: String = System.getProperty("cognotik.db.serverHost") ?: "localhost"
-        var serverSilent: Boolean = System.getProperty("cognotik.db.serverSilent", "true").toBoolean()
+        val serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
+        val serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
+        val servicePassword: String = System.getProperty("cognotik.db.servicePassword", "")
+        val serverHost: String = System.getProperty("cognotik.db.serverHost") ?: "localhost"
+        val serverSilent: Boolean = System.getProperty("cognotik.db.serverSilent", "true").toBoolean()
 
         @Volatile
         private var driverLoaded: Boolean = false
@@ -247,6 +284,7 @@ class DatabaseFacet(
 
         /** Cached connections keyed by JDBC URL across all facets. */
         private val connections = ConcurrentHashMap<String, Connection>()
+
         /** Keep-alive connections retained for embedded mem: databases. */
         private val keepAliveConnections = ConcurrentHashMap<String, Connection>()
 
@@ -283,5 +321,6 @@ class DatabaseFacet(
             }
         }
 
+        var filterPassword: (String) -> String = { it }
     }
 }

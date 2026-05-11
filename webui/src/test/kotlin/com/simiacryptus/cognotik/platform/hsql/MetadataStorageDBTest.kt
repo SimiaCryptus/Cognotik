@@ -36,7 +36,7 @@ package com.simiacryptus.cognotik.platform.hsql
              storage = MetadataStorageDB(null)
              // Clean DB between tests to ensure isolation
              try {
-                 MetadataStorageDB.getConn(null).use { conn ->
+                 MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
                      conn.createStatement().use { stmt ->
                          stmt.execute("DELETE FROM metadata")
                      }
@@ -49,7 +49,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @AfterEach
         fun tearDown() {
             try {
-                 MetadataStorageDB.getConn(null).use { conn ->
+                MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM metadata")
                     }
@@ -235,7 +235,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `listSessions should return sessions matching path`() {
-            MetadataStorageDB.getConn(null).use { conn ->
+            MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
                 conn.prepareStatement(
                     "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
@@ -261,7 +261,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `listSessions should not return sessions with different paths`() {
-            MetadataStorageDB.getConn(null).use { conn ->
+            MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
                 conn.prepareStatement(
                     "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
@@ -356,27 +356,10 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `getConn should return a valid connection`() {
-            MetadataStorageDB.getConn(null).use { conn ->
+            MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
                 assertNotNull(conn)
                 assertFalse(conn.isClosed)
             }
         }
 
-        @Test
-        fun `getLocalServiceUrl should return non-empty url`() {
-            // getLocalServiceUrl requires a non-null root because it provisions a
-            // file-backed embedded server. Use a temporary directory that is
-            // cleaned up immediately after.
-            val tmp = File(
-                System.getProperty("java.io.tmpdir"),
-                "hsql-metadata-url-${UUID.randomUUID()}"
-            ).also { it.mkdirs() }
-            try {
-                val url = MetadataStorageDB.getLocalServiceUrl(tmp)
-                assertNotNull(url)
-                assertTrue(url.isNotEmpty())
-            } finally {
-                tmp.deleteRecursively()
-            }
-        }
     }

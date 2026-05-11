@@ -42,8 +42,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
             log.debug("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelId)
         } catch (e: Exception) {
             log.error(
-                "Error incrementing usage for session={}, user={}, model={}",
-                session, user.email, model.modelId, e
+                "Error incrementing usage for session={}, user={}, model={}", session, user.email, model.modelId, e
             )
         }
     }
@@ -113,6 +112,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                     VALUES (?, ?)
                     ON CONFLICT (child_session_id, parent_session_id) DO NOTHING
                     """
+
                 else -> """
                     MERGE INTO session_parents
                     USING (VALUES(CAST(? AS VARCHAR(255)), CAST(? AS VARCHAR(255)))) AS vals(c, p)
@@ -141,10 +141,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
     }
 
     override fun creditUser(
-        user: User,
-        amount: Double,
-        comment: String?,
-        metadata: Map<String, String>?
+        user: User, amount: Double, comment: String?, metadata: Map<String, String>?
     ): Double {
         require(user.email.isNotEmpty()) { "User email is required for crediting" }
         log.info("Crediting user {} amount={} comment={}", user.email, amount, comment)
@@ -168,9 +165,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
     }
 
     override fun getUserDailyUsage(
-        user: User,
-        from: LocalDate,
-        to: LocalDate
+        user: User, from: LocalDate, to: LocalDate
     ): List<UsageInterface.DailyUsage> {
         require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
         return facet.withConnection(root) { conn ->
@@ -191,9 +186,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                         val day = rs.getDate(1).toLocalDate()
                         val model = rs.getString(2)
                         val usage = ModelSchema.Usage(
-                            prompt_tokens = rs.getLong(3),
-                            completion_tokens = rs.getLong(4),
-                            cost = rs.getDouble(5)
+                            prompt_tokens = rs.getLong(3), completion_tokens = rs.getLong(4), cost = rs.getDouble(5)
                         )
                         out.add(UsageInterface.DailyUsage(day, model, usage))
                     }
@@ -226,14 +219,13 @@ class UsageDB(private val root: File? = null) : UsageInterface {
     }
 
     private fun saveUsageValues(
-        conn: Connection,
-        usageKey: UsageInterface.UsageKey,
-        usageValues: UsageInterface.UsageValues,
-        ts: Timestamp
+        conn: Connection, usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues, ts: Timestamp
     ) {
         log.debug(
             "Saving usage values for session: {}, user: {}, model: {}",
-            usageKey.session, usageKey.user?.email, usageKey.model.modelId
+            usageKey.session,
+            usageKey.user?.email,
+            usageKey.model.modelId
         )
         conn.prepareStatement(
             """
@@ -253,20 +245,17 @@ class UsageDB(private val root: File? = null) : UsageInterface {
     }
 
     private fun upsertDailyUsage(
-        conn: Connection,
-        usageKey: UsageInterface.UsageKey,
-        usageValues: UsageInterface.UsageValues,
-        day: LocalDate
+        conn: Connection, usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues, day: LocalDate
     ) {
         val userId = usageKey.user?.email ?: ""
         val model = usageKey.model.modelId
         val sqlDay = SqlDate.valueOf(day)
-         val pTokens = usageValues.inputTokens.get()
-         val cTokens = usageValues.outputTokens.get()
-         val cost = usageValues.cost.get()
-         if (facet.dbProvider == "postgresql") {
-             conn.prepareStatement(
-                 """
+        val pTokens = usageValues.inputTokens.get()
+        val cTokens = usageValues.outputTokens.get()
+        val cost = usageValues.cost.get()
+        if (facet.dbProvider == "postgresql") {
+            conn.prepareStatement(
+                """
                      INSERT INTO usage_daily (user_id, day, model, prompt_tokens, completion_tokens, cost)
                      VALUES (?, ?, ?, ?, ?, ?)
                      ON CONFLICT (user_id, day, model) DO UPDATE
@@ -274,83 +263,83 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                          completion_tokens = usage_daily.completion_tokens + EXCLUDED.completion_tokens,
                          cost = usage_daily.cost + EXCLUDED.cost
                      """
-             ).use { stmt ->
-                 stmt.setString(1, userId)
-                 stmt.setDate(2, sqlDay)
-                 stmt.setString(3, model)
-                 stmt.setLong(4, pTokens)
-                 stmt.setLong(5, cTokens)
-                 stmt.setDouble(6, cost)
-                 stmt.executeUpdate()
-             }
-             return
-         }
-         val updated = conn.prepareStatement(
-             """
+            ).use { stmt ->
+                stmt.setString(1, userId)
+                stmt.setDate(2, sqlDay)
+                stmt.setString(3, model)
+                stmt.setLong(4, pTokens)
+                stmt.setLong(5, cTokens)
+                stmt.setDouble(6, cost)
+                stmt.executeUpdate()
+            }
+            return
+        }
+        val updated = conn.prepareStatement(
+            """
                  UPDATE usage_daily
                  SET prompt_tokens = prompt_tokens + ?,
                      completion_tokens = completion_tokens + ?,
                      cost = cost + ?
                  WHERE user_id = ? AND day = ? AND model = ?
                  """
-         ).use { stmt ->
-             stmt.setLong(1, pTokens)
-             stmt.setLong(2, cTokens)
-             stmt.setDouble(3, cost)
-             stmt.setString(4, userId)
-             stmt.setDate(5, sqlDay)
-             stmt.setString(6, model)
-             stmt.executeUpdate()
-         }
-         if (updated == 0) {
-             conn.prepareStatement(
-                 """
+        ).use { stmt ->
+            stmt.setLong(1, pTokens)
+            stmt.setLong(2, cTokens)
+            stmt.setDouble(3, cost)
+            stmt.setString(4, userId)
+            stmt.setDate(5, sqlDay)
+            stmt.setString(6, model)
+            stmt.executeUpdate()
+        }
+        if (updated == 0) {
+            conn.prepareStatement(
+                """
                      INSERT INTO usage_daily (user_id, day, model, prompt_tokens, completion_tokens, cost)
                      VALUES (?, ?, ?, ?, ?, ?)
                      """
-             ).use { stmt ->
-                 stmt.setString(1, userId)
-                 stmt.setDate(2, sqlDay)
-                 stmt.setString(3, model)
-                 stmt.setLong(4, pTokens)
-                 stmt.setLong(5, cTokens)
-                 stmt.setDouble(6, cost)
-                 stmt.executeUpdate()
-             }
-         }
+            ).use { stmt ->
+                stmt.setString(1, userId)
+                stmt.setDate(2, sqlDay)
+                stmt.setString(3, model)
+                stmt.setLong(4, pTokens)
+                stmt.setLong(5, cTokens)
+                stmt.setDouble(6, cost)
+                stmt.executeUpdate()
+            }
+        }
     }
 
     private fun applyBudgetDelta(conn: Connection, userId: String, delta: Double) {
-         if (facet.dbProvider == "postgresql") {
-             conn.prepareStatement(
-                 """
+        if (facet.dbProvider == "postgresql") {
+            conn.prepareStatement(
+                """
                      INSERT INTO user_budget (user_id, available) VALUES (?, ?)
                      ON CONFLICT (user_id) DO UPDATE
                      SET available = user_budget.available + EXCLUDED.available
                      """
-             ).use { stmt ->
-                 stmt.setString(1, userId)
-                 stmt.setDouble(2, delta)
-                 stmt.executeUpdate()
-             }
-             return
-         }
-         val updated = conn.prepareStatement(
-             "UPDATE user_budget SET available = available + ? WHERE user_id = ?"
-         ).use { stmt ->
-             stmt.setDouble(1, delta)
-             stmt.setString(2, userId)
-             stmt.executeUpdate()
-         }
-         if (updated == 0) {
-             conn.prepareStatement(
-                 "INSERT INTO user_budget (user_id, available) VALUES (?, ?)"
-             ).use { stmt ->
-                 stmt.setString(1, userId)
-                 stmt.setDouble(2, delta)
-                 stmt.executeUpdate()
-             }
-         }
+            ).use { stmt ->
+                stmt.setString(1, userId)
+                stmt.setDouble(2, delta)
+                stmt.executeUpdate()
+            }
+            return
+        }
+        val updated = conn.prepareStatement(
+            "UPDATE user_budget SET available = available + ? WHERE user_id = ?"
+        ).use { stmt ->
+            stmt.setDouble(1, delta)
+            stmt.setString(2, userId)
+            stmt.executeUpdate()
+        }
+        if (updated == 0) {
+            conn.prepareStatement(
+                "INSERT INTO user_budget (user_id, available) VALUES (?, ?)"
+            ).use { stmt ->
+                stmt.setString(1, userId)
+                stmt.setDouble(2, delta)
+                stmt.executeUpdate()
+            }
+        }
     }
 
     private fun encodeMetadata(metadata: Map<String, String>?): String {
@@ -388,9 +377,9 @@ class UsageDB(private val root: File? = null) : UsageInterface {
          * - Uses CREATE INDEX IF NOT EXISTS (supported by HSQL and PostgreSQL 9.5+).
          */
         internal val facet = DatabaseFacet(
-            name = "usage",
-            schemaSql = listOf(
-                """
+            name = "usage", schema = {
+                listOf(
+                    """
                     CREATE TABLE IF NOT EXISTS usage (
                         id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
                         session_id VARCHAR(255),
@@ -402,17 +391,17 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                         datetime TIMESTAMP
                     )
                     """,
-                "CREATE INDEX IF NOT EXISTS idx_usage_session ON usage(session_id)",
-                "CREATE INDEX IF NOT EXISTS idx_usage_user_dt ON usage(user_id, datetime)",
-                """
+                    "CREATE INDEX IF NOT EXISTS idx_usage_session ON usage(session_id)",
+                    "CREATE INDEX IF NOT EXISTS idx_usage_user_dt ON usage(user_id, datetime)",
+                    """
                     CREATE TABLE IF NOT EXISTS session_parents (
                         child_session_id VARCHAR(255),
                         parent_session_id VARCHAR(255),
                         PRIMARY KEY (child_session_id, parent_session_id)
                     )
                     """,
-                "CREATE INDEX IF NOT EXISTS idx_session_parents_parent ON session_parents(parent_session_id)",
-                """
+                    "CREATE INDEX IF NOT EXISTS idx_session_parents_parent ON session_parents(parent_session_id)",
+                    """
                     CREATE TABLE IF NOT EXISTS usage_daily (
                         user_id VARCHAR(255),
                         day DATE,
@@ -423,8 +412,8 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                         PRIMARY KEY (user_id, day, model)
                     )
                     """,
-                "CREATE INDEX IF NOT EXISTS idx_usage_daily_user_day ON usage_daily(user_id, day)",
-                """
+                    "CREATE INDEX IF NOT EXISTS idx_usage_daily_user_day ON usage_daily(user_id, day)",
+                    """
                     CREATE TABLE IF NOT EXISTS user_credits (
                         id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
                         user_id VARCHAR(255),
@@ -434,15 +423,15 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                         datetime TIMESTAMP
                     )
                     """,
-                "CREATE INDEX IF NOT EXISTS idx_user_credits_user ON user_credits(user_id, datetime)",
-                """
+                    "CREATE INDEX IF NOT EXISTS idx_user_credits_user ON user_credits(user_id, datetime)",
+                    """
                     CREATE TABLE IF NOT EXISTS user_budget (
                         user_id VARCHAR(255) PRIMARY KEY,
                         available DOUBLE PRECISION DEFAULT 0
                     )
                     """
-            )
-        )
+                )
+            })
 
         @JvmStatic
         @JvmOverloads

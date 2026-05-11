@@ -1,12 +1,10 @@
 package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.sql.Connection
 import java.sql.Timestamp
 import java.sql.Types
 import java.util.*
@@ -186,7 +184,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
         internal val facet = DatabaseFacet(
             name = "metadata",
-             schemaSqlProvider = { provider ->
+             schema = { provider ->
                  val valueType = when (provider) {
                      "postgresql" -> "TEXT"
                      else -> "LONGVARCHAR"
@@ -206,12 +204,5 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
              }
         )
 
-        fun getLocalServiceUrl(
-            root: File = ApplicationServicesConfig.dataStorageRoot.resolve("metadatadb")
-        ): String = facet.getLocalServiceUrl(root)
-
-        @JvmStatic
-        @JvmOverloads
-        fun getConn(root: File? = null): Connection = facet.getConnection(root)
     }
 }

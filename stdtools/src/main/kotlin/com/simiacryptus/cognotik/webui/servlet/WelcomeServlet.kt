@@ -15,26 +15,21 @@ import java.nio.file.NoSuchFileException
 
 open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServlet() {
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.debug("Received GET request for path: ${req?.servletPath}")
     val path = req?.servletPath ?: "/"
     when {
       path == "/" || path == "/index.html" -> {
-        log.info("Serving static welcome page for path: $path")
         serveStaticPage(resp)
       }
 
       path == "/user" -> {
-        log.info("Serving user info for path: $path")
         serveUserInfo(req!!, resp!!)
       }
 
       path == "/apps" -> {
-        log.debug("Serving app list for path: $path")
         serveAppList(req!!, resp)
       }
 
       else -> {
-        log.debug("Serving resource for path: $path")
         serveResource(req, resp, path)
       }
     }
@@ -57,13 +52,10 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   }
 
   private fun serveStaticPage(resp: HttpServletResponse?) {
-    log.debug("Starting to serve static welcome page")
     resp?.contentType = "text/html"
     val inputStream = this::class.java.getResourceAsStream("/welcome/welcome.html")
     if (inputStream != null) {
-      log.debug("Successfully loaded welcome.html resource")
       inputStream.copyTo(resp?.outputStream!!)
-      log.debug("Successfully served static welcome page")
     } else {
       log.error("Failed to load welcome.html resource")
       resp?.sendError(500, "Welcome page not found")
@@ -71,14 +63,11 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   }
 
   private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
-    log.debug("Starting to serve user info")
     val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
-    log.debug("Retrieved user: ${user?.email ?: "anonymous"}")
     val mapper = jacksonObjectMapper()
     response.contentType = "application/json"
     try {
       mapper.writeValue(response.outputStream, user)
-      log.debug("Successfully served user info for user: ${user?.email ?: "anonymous"}")
     } catch (e: Exception) {
       log.error("Error serving user info for user: ${user?.email ?: "anonymous"}", e)
       response.sendError(500, "Error retrieving user information")
@@ -86,10 +75,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   }
 
   private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
-    log.debug("Starting to serve app list")
     val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
-    log.debug("Retrieved user for app list: ${user?.email ?: "anonymous"}")
-    log.debug("Total child web apps available: ${parent.childWebApps.size}")
     val authorizedApps = parent.childWebApps.filter {
       val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(it.server.javaClass, user, AuthorizationInterface.OperationType.Read)
       log.debug("App ${it.server.applicationName} authorization for user ${user?.email ?: "anonymous"}: $isAuthorized")

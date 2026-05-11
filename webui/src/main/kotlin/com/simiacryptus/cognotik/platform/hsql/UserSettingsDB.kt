@@ -140,15 +140,16 @@ open class UserSettingsDB(private val root: File? = null) : UserSettingsInterfac
 
         internal val facet = DatabaseFacet(
             name = "user_settings",
-            schemaSql = listOf(
-                """
+            schema = {
+                listOf(
+                    """
                     CREATE TABLE IF NOT EXISTS user_settings (
                         user_key VARCHAR(255) PRIMARY KEY,
                         settings_json LONGVARCHAR,
                         timestamp TIMESTAMP
                     )
                     """
-            )
-        )
+                )
+            }        )
     }
 }
