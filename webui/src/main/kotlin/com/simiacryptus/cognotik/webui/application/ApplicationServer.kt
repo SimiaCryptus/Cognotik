@@ -308,7 +308,17 @@ fun authenticate(
         val token = request.getCookie() ?: ""
         val verified = try {
             if (userSettings.passwordHash != null) {
-                LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+                val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash)
+                when (result) {
+                    is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
+                    is LoginServlet.Companion.SessionVerificationResult.Failure -> {
+                        log.debug(
+                            "Session token verification failed for user: {} - {} ({})",
+                            claimedUser.email, result.error, result.reason
+                        )
+                        null
+                    }
+                }
             } else null
         } catch (e: Exception) {
             log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
@@ -328,9 +338,6 @@ fun authenticate(
     }
     try {
         val user = authenticationManager.getUser(request.getCookie())
-        if (user == null) {
-            throw RuntimeException("No user found for token")
-        }
         return user
     } catch (e: RuntimeException) {
         log.debug(e.message)
@@ -362,7 +369,17 @@ fun authenticate(
         val token = request.getCookie() ?: ""
         val verified = try {
             if (userSettings.passwordHash != null) {
-                LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+                val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash!!)
+                when (result) {
+                    is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
+                    is LoginServlet.Companion.SessionVerificationResult.Failure -> {
+                        log.debug(
+                            "Session token verification failed for user: {} - {} ({})",
+                            claimedUser.email, result.error, result.reason
+                        )
+                        null
+                    }
+                }
             } else null
         } catch (e: Exception) {
             log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
@@ -381,11 +398,7 @@ fun authenticate(
         }
     }
     try {
-        val user = authenticationManager.getUser(request.getCookie())
-        if (user == null) {
-            throw RuntimeException("No user found for token")
-        }
-        return user
+        return authenticationManager.getUser(request.getCookie())
     } catch (e: RuntimeException) {
         log.debug(e.message)
         response.statusCode = HttpServletResponse.SC_TEMPORARY_REDIRECT

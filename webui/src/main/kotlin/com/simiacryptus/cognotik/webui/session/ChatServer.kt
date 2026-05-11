@@ -52,7 +52,7 @@ abstract class ChatServer(
               val user =
                 authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
               if (user == null) {
-                throw RuntimeException("No user found for token")
+                throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
               }
               trafficLog.debug(
                 "Creating new session manager for session: {}, user: {}",

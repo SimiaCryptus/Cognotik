@@ -237,30 +237,39 @@ class LoginServlet : HttpServlet() {
          * @param token the encrypted session token
          * @param passwordHash the SHA-256 hash of the user's password (as stored in settings)
          * @param maxAgeMs optional maximum token age in milliseconds (default: 7 days)
-         * @return the [SessionEnvelope] if valid, or null if verification fails
+         * @return a [SessionVerificationResult] describing success (with envelope) or the reason for failure
          */
         fun verifySessionToken(
             token: String, passwordHash: String, maxAgeMs: Long = 7L * 24 * 60 * 60 * 1000
-        ): SessionEnvelope? {
+        ): SessionVerificationResult {
             return try {
                 if (token.isBlank()) {
                     log.debug("verifySessionToken called with blank token")
-                    return null
+                    return SessionVerificationResult.Failure(SessionVerificationError.BLANK_TOKEN, "Token is blank")
                 }
                 if (passwordHash.isBlank()) {
                     log.debug("verifySessionToken called with blank passwordHash")
-                    return null
+                    return SessionVerificationResult.Failure(
+                        SessionVerificationError.BLANK_PASSWORD_HASH,
+                        "Password hash is blank"
+                    )
                 }
                 val envelope = decryptSessionToken(token)
                 if (envelope == null) {
                     log.debug("Session token could not be decrypted")
-                    return null
+                    return SessionVerificationResult.Failure(
+                        SessionVerificationError.DECRYPTION_FAILED,
+                        "Session token could not be decrypted or parsed"
+                    )
                 }
                 // Check expiration
                 val age = System.currentTimeMillis() - envelope.created
                 if (age < 0) {
                     log.warn("Session token has future creation time for user: {} (age={}ms)", envelope.username, age)
-                    return null
+                    return SessionVerificationResult.Failure(
+                        SessionVerificationError.FUTURE_CREATION_TIME,
+                        "Session token has a future creation time (age=${age}ms)"
+                    )
                 }
                 if (age > maxAgeMs) {
                     log.debug(
@@ -269,19 +278,28 @@ class LoginServlet : HttpServlet() {
                         age,
                         maxAgeMs
                     )
-                    return null
+                    return SessionVerificationResult.Failure(
+                        SessionVerificationError.EXPIRED,
+                        "Session token expired (age=${age}ms, max=${maxAgeMs}ms)"
+                    )
                 }
                 // Re-derive the salted hash-of-hash and compare
                 val expectedHohash = saltedHashOfHash(passwordHash, envelope.salt)
                 if (expectedHohash != envelope.hohash) {
                     log.warn("Session token hohash mismatch for user: {}", envelope.username)
-                    return null
+                    return SessionVerificationResult.Failure(
+                        SessionVerificationError.HOHASH_MISMATCH,
+                        "Session token hash-of-hash does not match expected value for user '${envelope.username}'"
+                    )
                 }
                 log.debug("Session token verified successfully for user: {}", envelope.username)
-                envelope
+                SessionVerificationResult.Success(envelope)
             } catch (e: Exception) {
                 log.error("Unexpected error verifying session token", e)
-                return null
+                return SessionVerificationResult.Failure(
+                    SessionVerificationError.UNEXPECTED_ERROR,
+                    "Unexpected error verifying session token: ${e.message ?: e.javaClass.simpleName}"
+                )
             }
         }
 
@@ -291,6 +309,30 @@ class LoginServlet : HttpServlet() {
         data class SessionEnvelope(
             val username: String, val hohash: String, val salt: String, val created: Long, val nonce: Long
         )
+        /**
+         * Enumeration of possible reasons a session token verification can fail.
+         */
+        enum class SessionVerificationError {
+            BLANK_TOKEN,
+            BLANK_PASSWORD_HASH,
+            DECRYPTION_FAILED,
+            FUTURE_CREATION_TIME,
+            EXPIRED,
+            HOHASH_MISMATCH,
+            UNEXPECTED_ERROR
+        }
+        /**
+         * Sealed result type for session token verification. On success, contains the
+         * decoded [SessionEnvelope]. On failure, contains an [SessionVerificationError]
+         * code and a human-readable reason.
+         */
+        sealed class SessionVerificationResult {
+            data class Success(val envelope: SessionEnvelope) : SessionVerificationResult()
+            data class Failure(val error: SessionVerificationError, val reason: String) : SessionVerificationResult()
+            /** Convenience accessor: returns the envelope if successful, otherwise null. */
+            val envelopeOrNull: SessionEnvelope?
+                get() = (this as? Success)?.envelope
+        }
 
         /**
          * Returns true if the registration attempt should be throttled (debounced).

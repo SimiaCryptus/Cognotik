@@ -487,7 +487,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     val session = Session(parsePath(pathInfo ?: "/").first())
     val user = ApplicationServices.authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
     if (user == null) {
-      throw RuntimeException("No user found for token")
+      throw RuntimeException("Could not find user for token")
     }
     onSession(session,user)
     val sessionPair = listContents(dataStorage.getUserDir(user, session), request)

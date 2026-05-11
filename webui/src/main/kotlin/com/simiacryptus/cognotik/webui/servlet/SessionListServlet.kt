@@ -18,6 +18,9 @@ class SessionListServlet(
     response.contentType = "text/html"
     response.status = HttpServletResponse.SC_OK
     val user = authenticate(request, response)
+      if (user == null) {
+          throw RuntimeException("User must be authenticated to view sessions")
+      }
     val sessions = dataStorage.listSessions(user, request.contextPath)
     val sessionRows = sessions.joinToString("") { session ->
       val sessionName = dataStorage.getSessionName(user, session)
