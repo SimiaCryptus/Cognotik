@@ -230,4 +230,5 @@ abstract class UsageTest(private val impl: UsageInterface) {
 }
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class HSQLUsageManagerTest : UsageTest(HSQLUsageManager())
+// Pass null root => use in-memory ephemeral HSQL database (mem:<dbName>).
+class HSQLUsageManagerTest : UsageTest(HSQLUsageManager(null))
