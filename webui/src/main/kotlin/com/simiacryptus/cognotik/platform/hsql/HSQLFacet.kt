@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-import org.hsqldb.server.Server
-import org.slf4j.Logger
+import org.hsqldb.Server
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.sql.Connection
@@ -14,31 +13,21 @@ import java.util.concurrent.ConcurrentHashMap
  * Each "facet" (metadata, usage, user settings, ...) is a logically separate
  * database identified by [dbName]. A facet either:
  *   - connects to an external HSQL server (when [serviceUrl] is non-null), or
- *   - lazily starts an embedded HSQL [Server] bound to [serverHost]:[serverPort].
+ *   - lazily starts an embedded HSQL [org.hsqldb.server.Server] bound to [serverHost]:[serverPort].
  *
  * Responsibilities centralized here:
  *   - JDBC driver loading (once per JVM)
- *   - Embedded server lifecycle (one [Server] per facet)
- *   - Connection caching keyed by JDBC URL
+ *   - Embedded server lifecycle (one [org.hsqldb.server.Server] per facet)
+ *   - Connection caching keyed by JDBC URL (one shared Connection per URL;
+ *     callers must synchronize externally if they need transactional isolation
+ *     across multiple statements -- see [withTransaction]).
  *   - Schema initialization deduplication per JDBC URL
  */
 class HSQLFacet(
     private val name: String,
     private val schemaSql: List<String>,
 ) {
-    val log: Logger = LoggerFactory.getLogger("HSQLFacet[$name]")
 
-    var serviceUrl: String? = System.getProperty("cognotik.hsql.$name.serviceUrl")
-    var serviceUser: String = System.getProperty("cognotik.hsql.$name.serviceUser", "SA")
-    var servicePassword: String = System.getProperty("cognotik.hsql.$name.servicePassword", "")
-    var serverHost: String = System.getProperty("cognotik.hsql.$name.serverHost", "localhost")
-    var serverPort: Int = System.getProperty("cognotik.hsql.$name.serverPort", defaultPort(name).toString()).toInt()
-    var serverSilent: Boolean = System.getProperty("cognotik.hsql.$name.serverSilent", "true").toBoolean()
-    var dbName: String = System.getProperty("cognotik.hsql.$name.dbName", name)
-
-    @Volatile
-    private var embeddedServer: Server? = null
-    private val serverLock = Any()
 
     fun getLocalServiceUrl(root: File): String {
         val server = ensureServerStarted(root)
@@ -78,14 +67,56 @@ class HSQLFacet(
         }
     }
 
+    /**
+     * Acquire an exclusive lock on the underlying connection while [block] runs.
+     * Use this for multi-statement transactions on the shared connection so that
+     * autoCommit toggling does not race with other threads.
+     */
+    fun <T> withTransaction(root: File? = null, block: (Connection) -> T): T {
+        val conn = getConnection(root)
+        synchronized(conn) {
+            val prevAutoCommit = conn.autoCommit
+            try {
+                conn.autoCommit = false
+                val result = block(conn)
+                conn.commit()
+                return result
+            } catch (e: Exception) {
+                try {
+                    conn.rollback()
+                } catch (rb: Exception) {
+                    log.warn("Rollback failed for $name", rb)
+                }
+                throw e
+            } finally {
+                try {
+                    conn.autoCommit = prevAutoCommit
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    /**
+     * Acquire a lock on the shared connection for the duration of [block].
+     * Use for single-statement operations that still need to be serialized
+     * against [withTransaction] callers.
+     */
+    fun <T> withConnection(root: File? = null, block: (Connection) -> T): T {
+        val conn = getConnection(root)
+        return synchronized(conn) { block(conn) }
+    }
+
+
     private fun ensureSchema(url: String, connection: Connection) {
         if (schemasInitialized.contains(url)) return
         synchronized(schemasInitialized) {
             if (schemasInitialized.contains(url)) return
             log.debug("Creating $name database schema if not exists for {}", url)
-            val stmt = connection.createStatement()
-            for (ddl in schemaSql) {
-                stmt.executeUpdate(ddl)
+            connection.createStatement().use { stmt ->
+                for (ddl in schemaSql) {
+                    stmt.executeUpdate(ddl)
+                }
             }
             schemasInitialized.add(url)
         }
@@ -128,8 +159,21 @@ class HSQLFacet(
         }
     }
 
+    var dbName: String = System.getProperty("cognotik.hsql.dbName", name)
+
     companion object {
         private val log = LoggerFactory.getLogger(HSQLFacet::class.java)
+
+        @Volatile
+        private var embeddedServer: Server? = null
+        private val serverLock = Any()
+
+        var serviceUrl: String? = System.getProperty("cognotik.hsql.serviceUrl")
+        var serviceUser: String = System.getProperty("cognotik.hsql.serviceUser", "SA")
+        var servicePassword: String = System.getProperty("cognotik.hsql.servicePassword", "")
+        var serverHost: String = System.getProperty("cognotik.hsql.serverHost", "localhost")
+        var serverPort: Int = System.getProperty("cognotik.hsql.serverPort")?.toInt() ?: 9010
+        var serverSilent: Boolean = System.getProperty("cognotik.hsql.serverSilent", "true").toBoolean()
 
         @Volatile
         private var driverLoaded: Boolean = false
@@ -151,19 +195,5 @@ class HSQLFacet(
             }
         }
 
-        private fun defaultPort(name: String): Int = when (name) {
-            "metadata" -> 9001
-            "usage" -> 9002
-            else -> 0
-        }
-    }
-}
-
-/**
- * Utility helpers shared by HSQL storage implementations.
- */
-internal object HSQLUtils {
-    fun ensureRoot(root: File?) {
-        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
     }
 }

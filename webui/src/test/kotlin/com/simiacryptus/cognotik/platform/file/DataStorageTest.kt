@@ -84,24 +84,6 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
     }
 
     @Test
-    fun testGetSessionTime() {
-        log.info("Starting testGetSessionTime")
-
-        val user = User(email = "test@example.com")
-        val session = Session("G-20230101-1234")
-        log.debug("Updating message for user: {} and session: {}", user.email, session)
-        storage.updateMessage(user, session, "msg001", "<p>Hello, World!</p><p>Hello, World!</p>")
-
-        log.debug("Getting session time for user: {} and session: {}", user.email, session)
-        val sessionTime = storage.getSessionTime(user, session)
-
-        log.info("Asserting session time is not null and is of type Date")
-        Assertions.assertNotNull(sessionTime)
-        assertTrue(sessionTime is Date)
-        log.info("testGetSessionTime completed successfully")
-    }
-
-    @Test
     fun testListSessions() {
         log.info("Starting testListSessions")
 

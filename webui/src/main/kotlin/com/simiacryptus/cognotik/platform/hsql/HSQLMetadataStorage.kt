@@ -8,85 +8,83 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.sql.Connection
 import java.sql.Timestamp
+import java.sql.Types
 import java.util.*
 
 class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
 
     init {
-        HSQLUtils.ensureRoot(root)
-        log.info("Initializing UserSettingsManager with root directory: {}", root)
+        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing HSQLMetadataStorage with root directory: {}", root)
     }
 
     private val root: File? = root
-    private val connection: Connection get() = getConn(root)
 
     override fun getSessionName(user: User?, session: Session): String {
         log.debug("Fetching session name for session: {}, user: {}", session, user?.email)
-        val statement = connection.prepareStatement(
-            "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'name'"
-        )
-        statement.setString(1, session.sessionId)
-        statement.setString(2, user?.email ?: "")
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            val name = resultSet.getString("value")
-            log.debug("Retrieved session name: {} for session: {}", name, session)
-            name
-        } else {
-            session.sessionId
+        return facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'name'"
+            ).use { stmt ->
+                stmt.setString(1, session.sessionId)
+                stmt.setString(2, user?.email ?: "")
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) rs.getString("value") else session.sessionId
+                }
+            }
         }
     }
 
     override fun setSessionName(user: User?, session: Session, name: String) {
         log.debug("Setting session name for session: {}, user: {} to {}", session, user?.email, name)
         upsertMetadata(session.sessionId, user?.email ?: "", "name", name)
-        log.info("Session name set successfully for session: ${session}")
+        log.info("Session name set successfully for session: {}", session)
     }
 
     override fun getMessageIds(user: User?, session: Session): List<String> {
         log.debug("Fetching message IDs for session: {}, user: {}", session, user?.email)
-        val statement = connection.prepareStatement(
-            "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'message_ids'"
-        )
-        statement.setString(1, session.sessionId)
-        statement.setString(2, user?.email ?: "")
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            val ids = resultSet.getString("value").split(",")
-            log.debug("Retrieved {} message IDs for session: {}", ids.size, session)
-            ids
-        } else {
-            log.debug("No message IDs found for session: {}", session)
-            emptyList()
+        return facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'message_ids'"
+            ).use { stmt ->
+                stmt.setString(1, session.sessionId)
+                stmt.setString(2, user?.email ?: "")
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) {
+                        val raw = rs.getString("value")
+                        if (raw.isNullOrEmpty()) emptyList()
+                        else raw.split(",").filter { it.isNotEmpty() }
+                    } else emptyList()
+                }
+            }
         }
     }
 
     override fun setMessageIds(user: User?, session: Session, ids: List<String>) {
-        log.debug("Setting message IDs for session: {}, user: {} to {}", session, user?.email, ids)
+        log.debug("Setting {} message IDs for session: {}, user: {}", ids.size, session, user?.email)
         upsertMetadata(session.sessionId, user?.email ?: "", "message_ids", ids.joinToString(","))
-        log.debug("Set {} message IDs for session: {}", ids.size, session)
     }
 
     override fun getSessionTime(user: User?, session: Session): Date? {
         log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
-        val statement = connection.prepareStatement(
-            "SELECT value, timestamp FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'session_time'"
-        )
-        statement.setString(1, session.sessionId)
-        statement.setString(2, user?.email ?: "")
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            val time = resultSet.getString("value")
-            try {
-                Date(time.toLong()).also {
-                    log.debug("Retrieved session time: {} for session: {}", it, session)
+        return facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                "SELECT value, timestamp FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'session_time'"
+            ).use { stmt ->
+                stmt.setString(1, session.sessionId)
+                stmt.setString(2, user?.email ?: "")
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) {
+                        val time = rs.getString("value")
+                        try {
+                            Date(time.toLong())
+                        } catch (e: NumberFormatException) {
+                            log.warn("Invalid session time value: {} for session: {}", time, session)
+                            rs.getTimestamp("timestamp")
+                        }
+                    } else null
                 }
-            } catch (e: NumberFormatException) {
-                log.warn("Invalid session time value: $time, falling back to timestamp for session: ${session}")
-                resultSet.getTimestamp("timestamp")
             }
-        } else {
-            Date()
         }
     }
 
@@ -99,56 +97,55 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
             time.time.toString(),
             Timestamp(time.time)
         )
-        log.info("Session time set to $time for session: ${session}")
     }
 
     override fun listSessions(path: String): List<String> {
-        log.debug("Listing sessions for path: $path")
-        val statement = connection.prepareStatement(
-            "SELECT DISTINCT session_id FROM metadata WHERE value = ? AND key = 'path'"
-        )
-        statement.setString(1, path)
-        val resultSet = statement.executeQuery()
-        val sessions = mutableListOf<String>()
-        while (resultSet.next()) {
-            sessions.add(resultSet.getString("session_id"))
-        }
-        log.info("Found ${sessions.size} sessions for path: $path")
-        return sessions
+        log.debug("Listing sessions for path: {}", path)
+        return facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                "SELECT DISTINCT session_id FROM metadata WHERE value = ? AND key = 'path'"
+            ).use { stmt ->
+                stmt.setString(1, path)
+                stmt.executeQuery().use { rs ->
+                    val sessions = mutableListOf<String>()
+                    while (rs.next()) sessions.add(rs.getString("session_id"))
+                    sessions
+                }
+            }
+        }.also { log.info("Found {} sessions for path: {}", it.size, path) }
     }
 
     override fun getSessionOwner(session: Session): String? {
         log.debug("Fetching session owner for session: {}", session)
-        val statement = connection.prepareStatement(
-            "SELECT value FROM metadata WHERE session_id = ? AND key = 'owner_id'"
-        )
-        statement.setString(1, session.sessionId)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            val ownerId = resultSet.getString("value")
-            log.debug("Retrieved session owner: {} for session: {}", ownerId, session)
-            ownerId
-        } else {
-            log.debug("No owner found for session: {}", session)
-            null
+        return facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                "SELECT value FROM metadata WHERE session_id = ? AND key = 'owner_id'"
+            ).use { stmt ->
+                stmt.setString(1, session.sessionId)
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) rs.getString("value") else null
+                }
+            }
         }
     }
 
     override fun setSessionOwner(session: Session, ownerId: String?) {
         log.debug("Setting session owner for session: {} to {}", session, ownerId)
         upsertMetadata(session.sessionId, "", "owner_id", ownerId)
-        log.info("Session owner set to $ownerId for session: ${session}")
     }
 
     override fun deleteSession(user: User?, session: Session) {
         log.debug("Deleting session: {}, user: {}", session, user?.email)
-        val statement = connection.prepareStatement(
-            "DELETE FROM metadata WHERE session_id = ? AND user_email = ?"
-        )
-        statement.setString(1, session.sessionId)
-        statement.setString(2, user?.email ?: "")
-        statement.executeUpdate()
-        log.info("Deleted session: ${session} for user: ${user?.email ?: "anonymous"}")
+        facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                "DELETE FROM metadata WHERE session_id = ? AND user_email = ?"
+            ).use { stmt ->
+                stmt.setString(1, session.sessionId)
+                stmt.setString(2, user?.email ?: "")
+                stmt.executeUpdate()
+            }
+        }
+        log.info("Deleted session: {} for user: {}", session, user?.email ?: "anonymous")
     }
 
     private fun upsertMetadata(
@@ -158,20 +155,23 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
         value: String?,
         timestamp: Timestamp = Timestamp(System.currentTimeMillis())
     ) {
-        val statement = connection.prepareStatement(
-            """
-            MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
-            ON metadata.session_id = vals.session_id AND metadata.user_email = vals.user_email AND metadata.key = vals.key
-            WHEN MATCHED THEN UPDATE SET metadata.value = vals.value, metadata.timestamp = vals.timestamp
-            WHEN NOT MATCHED THEN INSERT VALUES vals.session_id, vals.user_email, vals.key, vals.value, vals.timestamp
-            """
-        )
-        statement.setString(1, sessionId)
-        statement.setString(2, userEmail)
-        statement.setString(3, key)
-        statement.setString(4, value)
-        statement.setTimestamp(5, timestamp)
-        statement.executeUpdate()
+        facet.withConnection(root) { conn ->
+            conn.prepareStatement(
+                """
+                    MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
+                    ON metadata.session_id = vals.session_id AND metadata.user_email = vals.user_email AND metadata.key = vals.key
+                    WHEN MATCHED THEN UPDATE SET metadata.value = vals.value, metadata.timestamp = vals.timestamp
+                    WHEN NOT MATCHED THEN INSERT VALUES vals.session_id, vals.user_email, vals.key, vals.value, vals.timestamp
+                    """
+            ).use { stmt ->
+                stmt.setString(1, sessionId)
+                stmt.setString(2, userEmail)
+                stmt.setString(3, key)
+                if (value == null) stmt.setNull(4, Types.LONGVARCHAR) else stmt.setString(4, value)
+                stmt.setTimestamp(5, timestamp)
+                stmt.executeUpdate()
+            }
+        }
     }
 
     companion object {
@@ -181,67 +181,17 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
             name = "metadata",
             schemaSql = listOf(
                 """
-                CREATE TABLE IF NOT EXISTS metadata (
-                    session_id VARCHAR(255),
-                    user_email VARCHAR(255),
-                    key VARCHAR(255),
-                    value LONGVARCHAR,
-                    timestamp TIMESTAMP,
-                    PRIMARY KEY (session_id, user_email, key)
-                )
-                """
+                    CREATE TABLE IF NOT EXISTS metadata (
+                        session_id VARCHAR(255),
+                        user_email VARCHAR(255),
+                        key VARCHAR(255),
+                        value LONGVARCHAR,
+                        timestamp TIMESTAMP,
+                        PRIMARY KEY (session_id, user_email, key)
+                    )
+                    """
             )
         )
-
-        // ---- Backwards-compatible static configuration surface ----
-        @JvmStatic
-        var serviceUrl: String?
-            get() = facet.serviceUrl
-            set(value) {
-                facet.serviceUrl = value
-            }
-
-        @JvmStatic
-        var serviceUser: String
-            get() = facet.serviceUser
-            set(value) {
-                facet.serviceUser = value
-            }
-
-        @JvmStatic
-        var servicePassword: String
-            get() = facet.servicePassword
-            set(value) {
-                facet.servicePassword = value
-            }
-
-        @JvmStatic
-        var serverHost: String
-            get() = facet.serverHost
-            set(value) {
-                facet.serverHost = value
-            }
-
-        @JvmStatic
-        var serverPort: Int
-            get() = facet.serverPort
-            set(value) {
-                facet.serverPort = value
-            }
-
-        @JvmStatic
-        var serverSilent: Boolean
-            get() = facet.serverSilent
-            set(value) {
-                facet.serverSilent = value
-            }
-
-        @JvmStatic
-        var dbName: String
-            get() = facet.dbName
-            set(value) {
-                facet.dbName = value
-            }
 
         fun getLocalServiceUrl(
             root: File = ApplicationServicesConfig.dataStorageRoot.resolve("metadatadb")
