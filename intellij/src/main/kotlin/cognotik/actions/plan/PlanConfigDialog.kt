@@ -332,7 +332,7 @@ open class PlanConfigDialog(
 
     private fun getVisibleModels(): List<ChatModel> =
       ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
-            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
+            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                 model.provider == apiData.provider && model.modelId.isNotBlank() && isVisible(model)
             }?.filter { !it.deprecated } ?: listOf()
         }.distinctBy { it.modelId }.sortedBy { "${it.provider?.name} - ${it.modelId}" }

@@ -287,7 +287,7 @@ class FileModificationTaskAction : BaseAction() {
 
         private fun getVisibleModels() =
           ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                     model.provider == apiData.provider && model.modelId?.isNotBlank() == true && PlanConfigDialog.isVisible(
                         model
                     )

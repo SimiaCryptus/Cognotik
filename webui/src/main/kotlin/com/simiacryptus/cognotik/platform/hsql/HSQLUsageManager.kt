@@ -6,28 +6,24 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import org.hsqldb.server.Server
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.sql.Connection
-import java.sql.Date as SqlDate
-import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.util.concurrent.ConcurrentHashMap
+import java.sql.Date as SqlDate
 
 class HSQLUsageManager(root: File? = null) : UsageInterface {
 
     init {
-        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
+        HSQLUtils.ensureRoot(root)
         log.info("Initializing HSQLUsageManager with root directory: {}", root)
     }
 
     private val root: File? = root
-
     private val connection: Connection get() = getConn(root)
 
     override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
@@ -207,10 +203,6 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         return out
     }
 
-    /**
-     * Collects all descendant session IDs for a given session (including itself),
-     * by traversing the parent->child relationship in reverse (i.e. finding all children).
-     */
     private fun collectSessionIds(sessionId: String): Set<String> {
         val visited = mutableSetOf<String>()
         val queue = ArrayDeque<String>()
@@ -233,7 +225,6 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         }
         return visited
     }
-
 
     private fun saveUsageValues(
         conn: Connection,
@@ -263,10 +254,6 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         statement.executeUpdate()
     }
 
-    /**
-     * Upserts a (user_id, day, model) row into the daily aggregation table,
-     * adding the supplied tokens/cost to any existing values.
-     */
     private fun upsertDailyUsage(
         conn: Connection,
         usageKey: UsageInterface.UsageKey,
@@ -308,16 +295,11 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
             try {
                 insert.executeUpdate()
             } catch (e: Exception) {
-                /* Race: another thread inserted; retry update. */
                 update.executeUpdate()
             }
         }
     }
 
-    /**
-     * Atomically applies a delta to the user's cached available budget.
-     * Positive deltas are credits; negative deltas are usage costs.
-     */
     private fun applyBudgetDelta(conn: Connection, userId: String, delta: Double) {
         val update = conn.prepareStatement(
             "UPDATE user_budget SET available = available + ? WHERE user_id = ?"
@@ -373,166 +355,29 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
     companion object {
         private val log = LoggerFactory.getLogger(HSQLUsageManager::class.java)
 
-        /**
-         * Optional fully-qualified JDBC URL to a remote HSQL service.
-         * Example: "jdbc:hsqldb:hsql://my-host:9001/usage"
-         * If non-null, the storage operates in CLIENT mode and connects to this URL
-         * instead of starting an embedded HSQL server.
-         *
-         * System property: `cognotik.hsql.usage.serviceUrl`
-         */
-        @JvmStatic
-        var serviceUrl: String? = System.getProperty("cognotik.hsql.usage.serviceUrl")
-
-        /**
-         * Username used when connecting in CLIENT mode (see [serviceUrl]).
-         *
-         * System property: `cognotik.hsql.usage.serviceUser` (default: `SA`)
-         */
-        @JvmStatic
-        var serviceUser: String = System.getProperty("cognotik.hsql.usage.serviceUser", "SA")
-
-        /**
-         * Password used when connecting in CLIENT mode (see [serviceUrl]).
-         *
-         * System property: `cognotik.hsql.usage.servicePassword` (default: empty string)
-         */
-        @JvmStatic
-        var servicePassword: String = System.getProperty("cognotik.hsql.usage.servicePassword", "")
-
-        /**
-         * Host/interface the embedded HSQL server binds to (server mode).
-         *
-         * System property: `cognotik.hsql.usage.serverHost` (default: `localhost`)
-         */
-        @JvmStatic
-        var serverHost: String = System.getProperty("cognotik.hsql.usage.serverHost", "localhost")
-
-        /**
-         * Port the embedded HSQL server listens on (server mode). 0 = pick automatically.
-         *
-         * System property: `cognotik.hsql.usage.serverPort` (default: `9002`)
-         */
-        @JvmStatic
-        var serverPort: Int = System.getProperty("cognotik.hsql.usage.serverPort", "9002").toInt()
-
-        /**
-         * Whether the embedded HSQL server runs silently (no console logging).
-         *
-         * System property: `cognotik.hsql.usage.serverSilent` (default: `true`)
-         */
-        @JvmStatic
-        var serverSilent: Boolean = System.getProperty("cognotik.hsql.usage.serverSilent", "true").toBoolean()
-
-        /**
-         * Optional override for the database name (both in-memory and file modes).
-         *
-         * System property: `cognotik.hsql.usage.dbName` (default: `usage`)
-         */
-        @JvmStatic
-        var dbName: String = System.getProperty("cognotik.hsql.usage.dbName", "usage")
-
-        fun getLocalServiceUrl(root: File = ApplicationServicesConfig.dataStorageRoot.resolve("usagedb")): String {
-            val server = ensureServerStarted(root)
-            return "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${dbName}"
-        }
-
-
-        @Volatile
-        private var embeddedServer: Server? = null
-
-        @Volatile
-        private var driverLoaded: Boolean = false
-
-        /**
-         * Cached connections keyed by JDBC URL. Ensures we don't open multiple
-         * connections (and don't run schema creation more than once) for the
-         * same logical database.
-         */
-        private val connections = ConcurrentHashMap<String, Connection>()
-
-        /**
-         * Tracks JDBC URLs for which schema creation has already been performed,
-         * so concurrent/repeated callers don't redundantly issue DDL.
-         */
-        private val schemasInitialized = ConcurrentHashMap.newKeySet<String>()
-
-        /**
-         * Static accessor: lazily starts the embedded DB (if needed) and returns
-         * a shared [Connection]. Schema creation is deduplicated per JDBC URL.
-         */
-        @JvmStatic
-        @JvmOverloads
-        fun getConn(root: File? = null): Connection {
-            if (!driverLoaded) {
-                synchronized(this) {
-                    if (!driverLoaded) {
-                        Class.forName("org.hsqldb.jdbc.JDBCDriver")
-                        driverLoaded = true
-                    }
-                }
-            }
-            val url: String
-            val username: String
-            val password: String
-            val remoteUrl = serviceUrl
-            if (remoteUrl != null) {
-                log.info("Connecting to external HSQL usage service at: {}", remoteUrl)
-                url = remoteUrl
-                username = serviceUser
-                password = servicePassword
-            } else {
-                val server = ensureServerStarted(root)
-                    url = "jdbc:hsqldb:hsql://${serverHost}:${server.port}/${dbName}"
-                username = "SA"
-                password = ""
-            }
-            val existing = connections[url]
-            if (existing != null && !existing.isClosed) return existing
-            return synchronized(connections) {
-                val again = connections[url]
-                if (again != null && !again.isClosed) {
-                    again
-                } else {
-                    log.info("Opening HSQL usage connection to: {}", url)
-                    val conn = DriverManager.getConnection(url, username, password)
-                    ensureSchema(url, conn)
-                    connections[url] = conn
-                    conn
-                }
-            }
-        }
-
-        private fun ensureSchema(url: String, connection: Connection) {
-            if (schemasInitialized.contains(url)) return
-            synchronized(schemasInitialized) {
-                if (schemasInitialized.contains(url)) return
-                log.debug("Creating usage database schema if not exists for {}", url)
-                connection.createStatement().executeUpdate(
-                    """
-             CREATE TABLE IF NOT EXISTS usage (
-                 session_id VARCHAR(255),
-                 user_id VARCHAR(255),
-                 model VARCHAR(255),
-                prompt_tokens BIGINT,
-                completion_tokens BIGINT,
-                 cost DOUBLE,
-                datetime TIMESTAMP,
-                PRIMARY KEY (session_id, user_id, model, prompt_tokens, completion_tokens, cost, datetime)
-                 )
-              """
+        internal val facet = HSQLFacet(
+            name = "usage",
+            schemaSql = listOf(
+                """
+                CREATE TABLE IF NOT EXISTS usage (
+                    session_id VARCHAR(255),
+                    user_id VARCHAR(255),
+                    model VARCHAR(255),
+                    prompt_tokens BIGINT,
+                    completion_tokens BIGINT,
+                    cost DOUBLE,
+                    datetime TIMESTAMP,
+                    PRIMARY KEY (session_id, user_id, model, prompt_tokens, completion_tokens, cost, datetime)
                 )
-                connection.createStatement().executeUpdate(
-                    """
-              CREATE TABLE IF NOT EXISTS session_parents (
-                  child_session_id VARCHAR(255),
-                  parent_session_id VARCHAR(255),
-                  PRIMARY KEY (child_session_id, parent_session_id)
-                  )
-               """
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS session_parents (
+                    child_session_id VARCHAR(255),
+                    parent_session_id VARCHAR(255),
+                    PRIMARY KEY (child_session_id, parent_session_id)
                 )
-                connection.createStatement().executeUpdate(
-                    """
+                """,
+                """
                 CREATE TABLE IF NOT EXISTS usage_daily (
                     user_id VARCHAR(255),
                     day DATE,
@@ -542,13 +387,9 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
                     cost DOUBLE DEFAULT 0,
                     PRIMARY KEY (user_id, day, model)
                 )
+                """,
+                "CREATE INDEX IF NOT EXISTS idx_usage_daily_user_day ON usage_daily(user_id, day)",
                 """
-                )
-                connection.createStatement().executeUpdate(
-                    "CREATE INDEX IF NOT EXISTS idx_usage_daily_user_day ON usage_daily(user_id, day)"
-                )
-                connection.createStatement().executeUpdate(
-                    """
                 CREATE TABLE IF NOT EXISTS user_credits (
                     id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
                     user_id VARCHAR(255),
@@ -557,56 +398,73 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
                     metadata VARCHAR(4096),
                     datetime TIMESTAMP
                 )
+                """,
+                "CREATE INDEX IF NOT EXISTS idx_user_credits_user ON user_credits(user_id, datetime)",
                 """
-                )
-                connection.createStatement().executeUpdate(
-                    "CREATE INDEX IF NOT EXISTS idx_user_credits_user ON user_credits(user_id, datetime)"
-                )
-                connection.createStatement().executeUpdate(
-                    """
                 CREATE TABLE IF NOT EXISTS user_budget (
                     user_id VARCHAR(255) PRIMARY KEY,
                     available DOUBLE DEFAULT 0
                 )
                 """
-                )
-                schemasInitialized.add(url)
-            }
-        }
-
-        @Synchronized
-        private fun ensureServerStarted(root: File?): Server {
-            embeddedServer?.let { return it }
-            val server = Server()
-            server.setSilent(serverSilent)
-            if (serverSilent) {
-                server.setLogWriter(null)
-                server.setErrWriter(null)
-            }
-            server.setAddress(serverHost)
-            server.port = serverPort
-            if (null == root) {
-                server.setDatabaseName(0, dbName)
-                server.setDatabasePath(0, "mem:$dbName")
-            } else {
-                server.setDatabaseName(0, dbName)
-                server.setDatabasePath(0, "file:${File(root, dbName).absolutePath};shutdown=true")
-            }
-            server.start()
-            log.info(
-                "Started embedded HSQL usage server on {}:{} (db={})",
-                serverHost, server.port, server.getDatabaseName(0, true)
             )
-            Runtime.getRuntime().addShutdownHook(Thread {
-                try {
-                    server.shutdown()
-                    log.info("Embedded HSQL usage server stopped")
-                } catch (e: Exception) {
-                    log.warn("Error shutting down embedded HSQL usage server", e)
-                }
-            })
-            embeddedServer = server
-            return server
-        }
+        )
+
+        // ---- Backwards-compatible static configuration surface ----
+        @JvmStatic
+        var serviceUrl: String?
+            get() = facet.serviceUrl
+            set(value) {
+                facet.serviceUrl = value
+            }
+
+        @JvmStatic
+        var serviceUser: String
+            get() = facet.serviceUser
+            set(value) {
+                facet.serviceUser = value
+            }
+
+        @JvmStatic
+        var servicePassword: String
+            get() = facet.servicePassword
+            set(value) {
+                facet.servicePassword = value
+            }
+
+        @JvmStatic
+        var serverHost: String
+            get() = facet.serverHost
+            set(value) {
+                facet.serverHost = value
+            }
+
+        @JvmStatic
+        var serverPort: Int
+            get() = facet.serverPort
+            set(value) {
+                facet.serverPort = value
+            }
+
+        @JvmStatic
+        var serverSilent: Boolean
+            get() = facet.serverSilent
+            set(value) {
+                facet.serverSilent = value
+            }
+
+        @JvmStatic
+        var dbName: String
+            get() = facet.dbName
+            set(value) {
+                facet.dbName = value
+            }
+
+        fun getLocalServiceUrl(
+            root: File = ApplicationServicesConfig.dataStorageRoot.resolve("usagedb")
+        ): String = facet.getLocalServiceUrl(root)
+
+        @JvmStatic
+        @JvmOverloads
+        fun getConn(root: File? = null): Connection = facet.getConnection(root)
     }
 }

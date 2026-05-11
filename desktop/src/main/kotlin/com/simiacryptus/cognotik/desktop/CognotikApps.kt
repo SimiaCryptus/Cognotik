@@ -530,7 +530,7 @@ fun String?.urlEncode(): String {
         URLEncoder.encode(it, Charsets.UTF_8.name())
             .replace("+", "%20")
             .replace("%7E", "~")
-    } ?: ""
+    }
 }
 
 fun ApiChatModel.instance(

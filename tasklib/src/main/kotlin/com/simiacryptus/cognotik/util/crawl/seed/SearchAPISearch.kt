@@ -65,7 +65,7 @@ open class SearchAPISearch(
         handleResult(body, query)
       } ?: emptyList()
       if (allResults.isEmpty()) {
-        SeedMethod.log.warn("No search results found for query: ${taskConfig?.search_query?.toList()}")
+        SeedMethod.log.warn("No search results found for query: ${taskConfig.search_query?.toList()}")
         return emptyList()
       }
       SeedMethod.log.info(

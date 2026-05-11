@@ -28,7 +28,7 @@ abstract class SocketManager(
 ) {
   private val messageStates = Collections.synchronizedMap(
     try {
-      dataStorage?.getMessages(owner, sessionId) ?: LinkedHashMap()
+        dataStorage.getMessages(owner, sessionId)
     } catch (e: Exception) {
       log.error("Failed to load messages from storage for session: {}, using empty map", sessionId, e)
       LinkedHashMap()
@@ -38,10 +38,10 @@ abstract class SocketManager(
   fun resolveSystemFile(relativePath: String): File? {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-    return dataStorage?.getSystemDir(
+    return dataStorage.getSystemDir(
       owner,
       sessionId
-    )?.let { dir ->
+    ).let { dir ->
       if (!dir.exists() && !dir.mkdirs()) {
         throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
       }
@@ -56,7 +56,7 @@ abstract class SocketManager(
     }
   }
 
-  fun resolveUserFile(relativePath: String): File? {
+  fun resolveUserFile(relativePath: String): File {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     require(!relativePath.contains("..")) {
       "Invalid file path: path traversal not allowed"
@@ -103,7 +103,7 @@ abstract class SocketManager(
       "Removing socket: {} (id: {}), user: {}",
       socket,
       System.identityHashCode(socket),
-      socket.user?.name ?: "anonymous"
+      socket.user.name ?: "anonymous"
     )
 
     try {
@@ -126,7 +126,7 @@ abstract class SocketManager(
       "Adding socket: {} (id: {}), user: {}, remote: {}",
       socket,
       System.identityHashCode(socket),
-      user?.name ?: "anonymous",
+      user.name ?: "anonymous",
       session.remoteAddress
     )
 
@@ -138,7 +138,7 @@ abstract class SocketManager(
     ) {
       log.warn(
         "Unauthorized access attempt from user: {}, remote: {}",
-        user?.name ?: "anonymous",
+        user.name ?: "anonymous",
         session.remoteAddress
       )
       throw IllegalArgumentException("Unauthorized")
@@ -148,7 +148,7 @@ abstract class SocketManager(
       sockets[socket] = session
       sendQueues[socket] = ConcurrentLinkedDeque()
     } catch (e: Exception) {
-      log.error("Error adding socket for user: {}", user?.name ?: "anonymous", e)
+      log.error("Error adding socket for user: {}", user.name ?: "anonymous", e)
       throw e
     }
     trafficLog.debug("Socket added, active connections: {}", sockets.size)

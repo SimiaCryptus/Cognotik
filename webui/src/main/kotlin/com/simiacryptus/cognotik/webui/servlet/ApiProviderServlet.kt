@@ -282,7 +282,7 @@ class ApiProviderServlet : HttpServlet() {
               provider.getChatModels(
                 key = apiConfig.key,
                 baseUrl = apiConfig.apiBase
-              )?.filter { !it.deprecated } ?: emptyList()
+              ).filter { !it.deprecated } ?: emptyList()
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -291,8 +291,7 @@ class ApiProviderServlet : HttpServlet() {
             providers.add(
               ProviderInfo(
                 name = provider.name,
-                baseUrl = apiConfig.apiBase
-                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
+                baseUrl = apiConfig.apiBase,
                 models = models.map { model ->
                   ModelInfo(
                     name = model.modelId,
@@ -303,8 +302,7 @@ class ApiProviderServlet : HttpServlet() {
                 supportsEmbedding = try {
                   provider.getEmbeddingClient(
                     key = apiConfig.key,
-                    base = apiConfig.apiBase
-                      ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
+                    base = apiConfig.apiBase,
                     workPool = MoreExecutors.newDirectExecutorService(),
                     scheduledPool = MoreExecutors.listeningDecorator(
                       Executors.newScheduledThreadPool(1)

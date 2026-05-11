@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.simiacryptus.cognotik.interpreter
 
 import com.fasterxml.jackson.core.JsonParser
