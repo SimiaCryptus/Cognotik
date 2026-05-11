@@ -57,20 +57,20 @@ Each facet either:
 - **Embeds** an `org.hsqldb.server.Server` instance bound to a configurable
   host/port, with storage in memory (`mem:`) or on disk (`file:`), depending on
   whether a root directory is provided; or
-- **Connects** to an external HSQL server when `cognotik.hsql.serviceUrl` is set.
+- **Connects** to an external HSQL server when `cognotik.db.serviceUrl` is set.
 ## Configuration
 
 All facets honor the following JVM system properties:
 
 | Property                        | Default        | Description                                             |
 |---------------------------------|----------------|---------------------------------------------------------|
-| `cognotik.hsql.serviceUrl`      | _(unset)_      | If set, use this external JDBC URL instead of embedded. |
-| `cognotik.hsql.serviceUser`     | `SA`           | Username for external HSQL service.                     |
-| `cognotik.hsql.servicePassword` | _(empty)_      | Password for external HSQL service.                     |
-| `cognotik.hsql.serverHost`      | `localhost`    | Bind address for embedded server.                       |
-| `cognotik.hsql.serverPort`      | `9010`         | Bind port for embedded server.                          |
-| `cognotik.hsql.serverSilent`    | `true`         | Suppress HSQL server log output.                        |
-| `cognotik.hsql.dbName`          | _(facet name)_ | Override the database name (rarely needed).             |
+| `cognotik.db.serviceUrl`      | _(unset)_      | If set, use this external JDBC URL instead of embedded. |
+| `cognotik.db.serviceUser`     | `SA`           | Username for external HSQL service.                     |
+| `cognotik.db.servicePassword` | _(empty)_      | Password for external HSQL service.                     |
+| `cognotik.db.serverHost`      | `localhost`    | Bind address for embedded server.                       |
+| `cognotik.db.serverPort`      | `9010`         | Bind port for embedded server.                          |
+| `cognotik.db.serverSilent`    | `true`         | Suppress HSQL server log output.                        |
+| `cognotik.db.dbName`          | _(facet name)_ | Override the database name (rarely needed).             |
 
 ### Embedded vs. External
 
@@ -78,7 +78,7 @@ All facets honor the following JVM system properties:
   `getConnection()` or `getLocalServiceUrl()` starts an embedded `Server`. If a
   `root: File` is passed, the database is persisted at
   `<root>/<dbName>;shutdown=true`; otherwise it lives in memory (`mem:<dbName>`).
-- **External:** Set `-Dcognotik.hsql.serviceUrl=jdbc:hsqldb:hsql://host:port/dbname`
+- **External:** Set `-Dcognotik.db.serviceUrl=jdbc:hsqldb:hsql://host:port/dbname`
   to connect to an externally managed HSQL server. Credentials come from
   `serviceUser` / `servicePassword`.
 

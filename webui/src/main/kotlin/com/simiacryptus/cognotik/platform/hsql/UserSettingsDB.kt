@@ -14,9 +14,9 @@ import java.util.concurrent.ConcurrentHashMap
  * HSQL-backed implementation of [UserSettingsInterface].
  *
  * Settings are stored as a single JSON blob per user in the `user_settings`
- * table, managed by its own [HSQLFacet] (separate logical DB from metadata).
+ * table, managed by its own [DatabaseFacet] (separate logical DB from metadata).
  */
-open class HSQLUserSettingsManager(private val root: File? = null) : UserSettingsInterface {
+open class UserSettingsDB(private val root: File? = null) : UserSettingsInterface {
 
     init {
         require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
@@ -79,21 +79,52 @@ open class HSQLUserSettingsManager(private val root: File? = null) : UserSetting
 
     private fun writeToDb(user: User, settings: UserSettings) {
         facet.withConnection(root) { conn ->
-            conn.prepareStatement(
-                """
-                    MERGE INTO user_settings USING (VALUES(?, ?, ?)) AS vals(user_key, settings_json, timestamp)
-                    ON user_settings.user_key = vals.user_key
-                    WHEN MATCHED THEN UPDATE SET user_settings.settings_json = vals.settings_json, user_settings.timestamp = vals.timestamp
-                    WHEN NOT MATCHED THEN INSERT VALUES vals.user_key, vals.settings_json, vals.timestamp
-                    """
-            ).use { stmt ->
-                stmt.setString(1, userKey(user))
-                stmt.setString(2, settings.toJson())
-                stmt.setTimestamp(3, Timestamp(System.currentTimeMillis()))
-                stmt.executeUpdate()
-            }
+             upsertUserSettings(conn, userKey(user), settings.toJson(), Timestamp(System.currentTimeMillis()))
         }
     }
+     /**
+      * Portable upsert that works on both HSQL and PostgreSQL.
+      * Performs an UPDATE first; if no rows are affected, performs an INSERT.
+      * This avoids vendor-specific MERGE/ON CONFLICT syntax differences.
+      */
+     private fun upsertUserSettings(
+         conn: java.sql.Connection,
+         key: String,
+         json: String,
+         ts: Timestamp
+     ) {
+         val updated = conn.prepareStatement(
+             "UPDATE user_settings SET settings_json = ?, timestamp = ? WHERE user_key = ?"
+         ).use { stmt ->
+             stmt.setString(1, json)
+             stmt.setTimestamp(2, ts)
+             stmt.setString(3, key)
+             stmt.executeUpdate()
+         }
+         if (updated == 0) {
+             try {
+                 conn.prepareStatement(
+                     "INSERT INTO user_settings (user_key, settings_json, timestamp) VALUES (?, ?, ?)"
+                 ).use { stmt ->
+                     stmt.setString(1, key)
+                     stmt.setString(2, json)
+                     stmt.setTimestamp(3, ts)
+                     stmt.executeUpdate()
+                 }
+             } catch (e: java.sql.SQLException) {
+                 // Race condition: another writer inserted between our UPDATE and INSERT.
+                 // Retry the UPDATE once.
+                 conn.prepareStatement(
+                     "UPDATE user_settings SET settings_json = ?, timestamp = ? WHERE user_key = ?"
+                 ).use { stmt ->
+                     stmt.setString(1, json)
+                     stmt.setTimestamp(2, ts)
+                     stmt.setString(3, key)
+                     stmt.executeUpdate()
+                 }
+             }
+         }
+     }
 
     private fun userKey(user: User): String {
         val email = try {
@@ -105,9 +136,9 @@ open class HSQLUserSettingsManager(private val root: File? = null) : UserSetting
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(HSQLUserSettingsManager::class.java)
+        private val log = LoggerFactory.getLogger(UserSettingsDB::class.java)
 
-        internal val facet = HSQLFacet(
+        internal val facet = DatabaseFacet(
             name = "user_settings",
             schemaSql = listOf(
                 """

@@ -8,31 +8,12 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Common HSQL plumbing shared by all HSQL-backed storage facets.
- *
- * Each "facet" (metadata, usage, user settings, ...) is a logically separate
- * database identified by [dbName]. A facet either:
- *   - connects to an external HSQL server (when [serviceUrl] is non-null), or
- *   - lazily starts an embedded HSQL [org.hsqldb.server.Server] bound to [serverHost]:[serverPort].
- *
- * Responsibilities centralized here:
- *   - JDBC driver loading (once per JVM)
- *   - Embedded server lifecycle (one [org.hsqldb.server.Server] per facet)
- *   - Connection caching keyed by JDBC URL (one shared Connection per URL;
- *     callers must synchronize externally if they need transactional isolation
- *     across multiple statements -- see [withTransaction]).
- *   - Schema initialization deduplication per JDBC URL
- */
-class HSQLFacet(
+
+class DatabaseFacet(
     private val name: String,
-    private val schemaSql: List<String>,
+     private val schemaSql: List<String> = emptyList(),
+     private val schemaSqlProvider: ((String) -> List<String>)? = null,
 ) {
-     /** Per-facet embedded server. Each facet needs its own server because
-      *  HSQL [org.hsqldb.server.Server] database aliases must be registered
-      *  before [org.hsqldb.server.Server.start] is called -- so multiple
-      *  facets cannot share a single embedded server unless they are all
-      *  configured up front. */
      @Volatile
      private var embeddedServer: Server? = null
      private val serverLock = Any()
@@ -128,6 +109,15 @@ class HSQLFacet(
                     conn.autoCommit = prevAutoCommit
                 } catch (_: Exception) {
                 }
+                // PostgreSQL may leave the connection in an aborted state after
+                // certain errors; if so, drop it from the cache so the next
+                // caller gets a fresh connection.
+                try {
+                    if (!isUsable(conn)) {
+                        connections.entries.removeIf { it.value === conn }
+                        try { conn.close() } catch (_: Exception) {}
+                    }
+                } catch (_: Exception) {}
             }
         }
     }
@@ -148,14 +138,27 @@ class HSQLFacet(
         synchronized(schemasInitialized) {
             if (schemasInitialized.contains(url)) return
             log.debug("Creating $name database schema if not exists for {}", url)
+             val isPostgres = url.startsWith("jdbc:postgresql:")
+             val ddls = schemaSqlProvider?.invoke(dbProvider) ?: schemaSql
             connection.createStatement().use { stmt ->
-                for (ddl in schemaSql) {
-                    stmt.executeUpdate(ddl)
+                 for (ddl in ddls) {
+                     stmt.executeUpdate(translateDdl(ddl, isPostgres))
                 }
             }
             schemasInitialized.add(url)
         }
     }
+     /**
+      * Translate HSQL-flavored DDL to be portable across PostgreSQL.
+      * Currently handles type substitutions; expand as needed.
+      */
+     private fun translateDdl(ddl: String, isPostgres: Boolean): String {
+         if (!isPostgres) return ddl
+         return ddl
+             .replace(Regex("(?i)\\bLONGVARCHAR\\b"), "TEXT")
+             .replace(Regex("(?i)\\bVARCHAR_IGNORECASE\\b"), "TEXT")
+             .replace(Regex("(?i)\\bDATETIME\\b"), "TIMESTAMP")
+     }
 
     private fun ensureServerStarted(root: File?): Server {
         embeddedServer?.let { return it }
@@ -217,18 +220,26 @@ class HSQLFacet(
         }
     }
 
-    var dbName: String = System.getProperty("cognotik.hsql.dbName", name)
+    var dbName: String = System.getProperty("cognotik.db.dbName", name)
+
+    val dbProvider: String
+        get() = serviceUrl.let {
+            when {
+                null == it -> "hsql"
+                it.startsWith("jdbc:postgresql:") -> "postgresql"
+                it.startsWith("jdbc:hsqldb:") -> "hsql"
+                else -> throw IllegalStateException("Unsupported JDBC URL scheme for serviceUrl: $it")
+            }
+        }
 
     companion object {
-        private val log = LoggerFactory.getLogger(HSQLFacet::class.java)
+        private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
 
-
-        var serviceUrl: String? = System.getProperty("cognotik.hsql.serviceUrl")
-        var serviceUser: String = System.getProperty("cognotik.hsql.serviceUser", "SA")
-        var servicePassword: String = System.getProperty("cognotik.hsql.servicePassword", "")
-        var serverHost: String = System.getProperty("cognotik.hsql.serverHost", "localhost")
-        var serverPort: Int = System.getProperty("cognotik.hsql.serverPort")?.toInt() ?: 9010
-        var serverSilent: Boolean = System.getProperty("cognotik.hsql.serverSilent", "true").toBoolean()
+        var serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
+        var serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
+        var servicePassword: String = System.getProperty("cognotik.db.servicePassword", "")
+        var serverHost: String = System.getProperty("cognotik.db.serverHost") ?: "localhost"
+        var serverSilent: Boolean = System.getProperty("cognotik.db.serverSilent", "true").toBoolean()
 
         @Volatile
         private var driverLoaded: Boolean = false
@@ -246,7 +257,27 @@ class HSQLFacet(
             if (driverLoaded) return
             synchronized(driverLock) {
                 if (!driverLoaded) {
+                    // Always load the HSQL driver for embedded mode.
                     Class.forName("org.hsqldb.jdbc.JDBCDriver")
+                    // If a remote service URL is configured, also try to load the
+                    // appropriate driver based on the URL scheme.
+                    val remoteUrl = serviceUrl
+                    if (remoteUrl != null) {
+                        val driverClass = when {
+                            remoteUrl.startsWith("jdbc:postgresql:") -> "org.postgresql.Driver"
+                            remoteUrl.startsWith("jdbc:mysql:") -> "com.mysql.cj.jdbc.Driver"
+                            remoteUrl.startsWith("jdbc:hsqldb:") -> "org.hsqldb.jdbc.JDBCDriver"
+                            else -> null
+                        }
+                        if (driverClass != null) {
+                            try {
+                                Class.forName(driverClass)
+                                log.info("Loaded JDBC driver: {}", driverClass)
+                            } catch (e: ClassNotFoundException) {
+                                log.warn("JDBC driver $driverClass not on classpath; remote DB connections may fail", e)
+                            }
+                        }
+                    }
                     driverLoaded = true
                 }
             }

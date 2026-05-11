@@ -11,7 +11,7 @@ import java.sql.Timestamp
 import java.sql.Types
 import java.util.*
 
-class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
+class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
     init {
         require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
@@ -156,18 +156,25 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
         timestamp: Timestamp = Timestamp(System.currentTimeMillis())
     ) {
         facet.withConnection(root) { conn ->
-            conn.prepareStatement(
-                """
-                    MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
-                    ON metadata.session_id = vals.session_id AND metadata.user_email = vals.user_email AND metadata.key = vals.key
-                    WHEN MATCHED THEN UPDATE SET metadata.value = vals.value, metadata.timestamp = vals.timestamp
-                    WHEN NOT MATCHED THEN INSERT VALUES vals.session_id, vals.user_email, vals.key, vals.value, vals.timestamp
-                    """
-            ).use { stmt ->
+             val sql = when (facet.dbProvider) {
+                 "postgresql" -> """
+                     INSERT INTO metadata (session_id, user_email, key, value, timestamp)
+                     VALUES (?, ?, ?, ?, ?)
+                     ON CONFLICT (session_id, user_email, key)
+                     DO UPDATE SET value = EXCLUDED.value, timestamp = EXCLUDED.timestamp
+                     """.trimIndent()
+                 else -> """
+                     MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
+                     ON metadata.session_id = vals.session_id AND metadata.user_email = vals.user_email AND metadata.key = vals.key
+                     WHEN MATCHED THEN UPDATE SET metadata.value = vals.value, metadata.timestamp = vals.timestamp
+                     WHEN NOT MATCHED THEN INSERT VALUES vals.session_id, vals.user_email, vals.key, vals.value, vals.timestamp
+                     """.trimIndent()
+             }
+             conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, sessionId)
                 stmt.setString(2, userEmail)
                 stmt.setString(3, key)
-                if (value == null) stmt.setNull(4, Types.LONGVARCHAR) else stmt.setString(4, value)
+                 if (value == null) stmt.setNull(4, Types.VARCHAR) else stmt.setString(4, value)
                 stmt.setTimestamp(5, timestamp)
                 stmt.executeUpdate()
             }
@@ -175,22 +182,28 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(HSQLMetadataStorage::class.java)
+        private val log = LoggerFactory.getLogger(MetadataStorageDB::class.java)
 
-        internal val facet = HSQLFacet(
+        internal val facet = DatabaseFacet(
             name = "metadata",
-            schemaSql = listOf(
-                """
-                    CREATE TABLE IF NOT EXISTS metadata (
-                        session_id VARCHAR(255),
-                        user_email VARCHAR(255),
-                        key VARCHAR(255),
-                        value LONGVARCHAR,
-                        timestamp TIMESTAMP,
-                        PRIMARY KEY (session_id, user_email, key)
-                    )
-                    """
-            )
+             schemaSqlProvider = { provider ->
+                 val valueType = when (provider) {
+                     "postgresql" -> "TEXT"
+                     else -> "LONGVARCHAR"
+                 }
+                 listOf(
+                     """
+                     CREATE TABLE IF NOT EXISTS metadata (
+                         session_id VARCHAR(255),
+                         user_email VARCHAR(255),
+                         key VARCHAR(255),
+                         value $valueType,
+                         timestamp TIMESTAMP,
+                         PRIMARY KEY (session_id, user_email, key)
+                     )
+                     """.trimIndent()
+                 )
+             }
         )
 
         fun getLocalServiceUrl(

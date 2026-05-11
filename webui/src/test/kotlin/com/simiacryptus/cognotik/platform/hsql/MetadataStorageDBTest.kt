@@ -10,10 +10,10 @@ package com.simiacryptus.cognotik.platform.hsql
     import java.io.File
     import java.util.*
 
-    class HSQLMetadataStorageTest {
+    class MetadataStorageDBTest {
 
 
-        private lateinit var storage: HSQLMetadataStorage
+        private lateinit var storage: MetadataStorageDB
 
         private val testUser = User(
             id = "user-123",
@@ -33,10 +33,10 @@ package com.simiacryptus.cognotik.platform.hsql
         @BeforeEach
         fun setUp() {
              // Use null root => in-memory ephemeral HSQL database (mem:<dbName>).
-             storage = HSQLMetadataStorage(null)
+             storage = MetadataStorageDB(null)
              // Clean DB between tests to ensure isolation
              try {
-                 HSQLMetadataStorage.getConn(null).use { conn ->
+                 MetadataStorageDB.getConn(null).use { conn ->
                      conn.createStatement().use { stmt ->
                          stmt.execute("DELETE FROM metadata")
                      }
@@ -49,7 +49,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @AfterEach
         fun tearDown() {
             try {
-                 HSQLMetadataStorage.getConn(null).use { conn ->
+                 MetadataStorageDB.getConn(null).use { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM metadata")
                     }
@@ -70,7 +70,7 @@ package com.simiacryptus.cognotik.platform.hsql
              )
              assertFalse(newDir.exists())
              try {
-                 HSQLMetadataStorage(newDir)
+                 MetadataStorageDB(newDir)
                  assertTrue(newDir.exists())
              } finally {
                  newDir.deleteRecursively()
@@ -80,7 +80,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @Test
         fun `init should accept null root`() {
             assertDoesNotThrow {
-                HSQLMetadataStorage(null)
+                MetadataStorageDB(null)
             }
         }
 
@@ -235,7 +235,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `listSessions should return sessions matching path`() {
-            HSQLMetadataStorage.getConn(null).use { conn ->
+            MetadataStorageDB.getConn(null).use { conn ->
                 conn.prepareStatement(
                     "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
@@ -261,7 +261,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `listSessions should not return sessions with different paths`() {
-            HSQLMetadataStorage.getConn(null).use { conn ->
+            MetadataStorageDB.getConn(null).use { conn ->
                 conn.prepareStatement(
                     "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
@@ -356,7 +356,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `getConn should return a valid connection`() {
-            HSQLMetadataStorage.getConn(null).use { conn ->
+            MetadataStorageDB.getConn(null).use { conn ->
                 assertNotNull(conn)
                 assertFalse(conn.isClosed)
             }
@@ -372,7 +372,7 @@ package com.simiacryptus.cognotik.platform.hsql
                 "hsql-metadata-url-${UUID.randomUUID()}"
             ).also { it.mkdirs() }
             try {
-                val url = HSQLMetadataStorage.getLocalServiceUrl(tmp)
+                val url = MetadataStorageDB.getLocalServiceUrl(tmp)
                 assertNotNull(url)
                 assertTrue(url.isNotEmpty())
             } finally {

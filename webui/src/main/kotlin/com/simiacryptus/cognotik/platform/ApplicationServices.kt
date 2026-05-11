@@ -4,9 +4,9 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.file.AuthenticationManager
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.hsql.HSQLMetadataStorage
-import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
-import com.simiacryptus.cognotik.platform.hsql.HSQLUserSettingsManager
+import com.simiacryptus.cognotik.platform.hsql.MetadataStorageDB
+import com.simiacryptus.cognotik.platform.hsql.UsageDB
+import com.simiacryptus.cognotik.platform.hsql.UserSettingsDB
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.util.PluginManager
@@ -75,9 +75,9 @@ object ApplicationServices {
 
 open class FileApplicationServices(val rootDir: File) {
     open val dataStorageFactory: DataStorage by lazy { DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = metadataStorageFactory) }
-    open val metadataStorageFactory: HSQLMetadataStorage by lazy { HSQLMetadataStorage(rootDir.resolve("metadatadb")) }
-    open val usageManager: UsageInterface by lazy { HSQLUsageManager(rootDir.resolve("usagedb")) }
-    open val userSettingsManager: UserSettingsInterface by lazy { HSQLUserSettingsManager(rootDir.resolve("user_settings")) }
+    open val metadataStorageFactory: MetadataStorageDB by lazy { MetadataStorageDB(rootDir.resolve("metadatadb")) }
+    open val usageManager: UsageInterface by lazy { UsageDB(rootDir.resolve("usagedb")) }
+    open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsDB(rootDir.resolve("user_settings")) }
 }
 
 fun ChatModel.instance(user: User) = ApiChatModel(

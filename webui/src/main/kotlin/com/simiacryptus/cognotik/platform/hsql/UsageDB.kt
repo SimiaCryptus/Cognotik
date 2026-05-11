@@ -16,7 +16,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.sql.Date as SqlDate
 
-class HSQLUsageManager(private val root: File? = null) : UsageInterface {
+class UsageDB(private val root: File? = null) : UsageInterface {
 
     init {
         require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
@@ -107,14 +107,20 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
     override fun setParentSession(child: Session, parent: Session) {
         log.info("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
         facet.withConnection(root) { conn ->
-            conn.prepareStatement(
-                """
-                  MERGE INTO session_parents
-                  USING (VALUES(CAST(? AS VARCHAR(255)), CAST(? AS VARCHAR(255)))) AS vals(c, p)
-                  ON session_parents.child_session_id = vals.c AND session_parents.parent_session_id = vals.p
-                  WHEN NOT MATCHED THEN INSERT (child_session_id, parent_session_id) VALUES (vals.c, vals.p)
-                  """
-            ).use { stmt ->
+            val sql = when (facet.dbProvider) {
+                "postgresql" -> """
+                    INSERT INTO session_parents (child_session_id, parent_session_id)
+                    VALUES (?, ?)
+                    ON CONFLICT (child_session_id, parent_session_id) DO NOTHING
+                    """
+                else -> """
+                    MERGE INTO session_parents
+                    USING (VALUES(CAST(? AS VARCHAR(255)), CAST(? AS VARCHAR(255)))) AS vals(c, p)
+                    ON session_parents.child_session_id = vals.c AND session_parents.parent_session_id = vals.p
+                    WHEN NOT MATCHED THEN INSERT (child_session_id, parent_session_id) VALUES (vals.c, vals.p)
+                    """
+            }
+            conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, child.sessionId)
                 stmt.setString(2, parent.sessionId)
                 stmt.executeUpdate()
@@ -231,8 +237,8 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
         )
         conn.prepareStatement(
             """
-                INSERT INTO usage (id, session_id, user_id, model, prompt_tokens, completion_tokens, cost, datetime)
-                VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO usage (session_id, user_id, model, prompt_tokens, completion_tokens, cost, datetime)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """
         ).use { stmt ->
             stmt.setString(1, usageKey.session.sessionId)
@@ -258,6 +264,27 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
          val pTokens = usageValues.inputTokens.get()
          val cTokens = usageValues.outputTokens.get()
          val cost = usageValues.cost.get()
+         if (facet.dbProvider == "postgresql") {
+             conn.prepareStatement(
+                 """
+                     INSERT INTO usage_daily (user_id, day, model, prompt_tokens, completion_tokens, cost)
+                     VALUES (?, ?, ?, ?, ?, ?)
+                     ON CONFLICT (user_id, day, model) DO UPDATE
+                     SET prompt_tokens = usage_daily.prompt_tokens + EXCLUDED.prompt_tokens,
+                         completion_tokens = usage_daily.completion_tokens + EXCLUDED.completion_tokens,
+                         cost = usage_daily.cost + EXCLUDED.cost
+                     """
+             ).use { stmt ->
+                 stmt.setString(1, userId)
+                 stmt.setDate(2, sqlDay)
+                 stmt.setString(3, model)
+                 stmt.setLong(4, pTokens)
+                 stmt.setLong(5, cTokens)
+                 stmt.setDouble(6, cost)
+                 stmt.executeUpdate()
+             }
+             return
+         }
          val updated = conn.prepareStatement(
              """
                  UPDATE usage_daily
@@ -294,6 +321,20 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
     }
 
     private fun applyBudgetDelta(conn: Connection, userId: String, delta: Double) {
+         if (facet.dbProvider == "postgresql") {
+             conn.prepareStatement(
+                 """
+                     INSERT INTO user_budget (user_id, available) VALUES (?, ?)
+                     ON CONFLICT (user_id) DO UPDATE
+                     SET available = user_budget.available + EXCLUDED.available
+                     """
+             ).use { stmt ->
+                 stmt.setString(1, userId)
+                 stmt.setDouble(2, delta)
+                 stmt.executeUpdate()
+             }
+             return
+         }
          val updated = conn.prepareStatement(
              "UPDATE user_budget SET available = available + ? WHERE user_id = ?"
          ).use { stmt ->
@@ -336,9 +377,17 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(HSQLUsageManager::class.java)
+        private val log = LoggerFactory.getLogger(UsageDB::class.java)
 
-        internal val facet = HSQLFacet(
+        /**
+         * Schema DDL designed to be compatible across HSQL and PostgreSQL.
+         * - Uses DOUBLE PRECISION (standard SQL) instead of HSQL's DOUBLE alias.
+         *   HSQL accepts DOUBLE PRECISION as well.
+         * - Uses BIGINT/INTEGER GENERATED BY DEFAULT AS IDENTITY (SQL standard,
+         *   supported by HSQL and PostgreSQL 10+).
+         * - Uses CREATE INDEX IF NOT EXISTS (supported by HSQL and PostgreSQL 9.5+).
+         */
+        internal val facet = DatabaseFacet(
             name = "usage",
             schemaSql = listOf(
                 """
@@ -349,7 +398,7 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
                         model VARCHAR(255),
                         prompt_tokens BIGINT,
                         completion_tokens BIGINT,
-                        cost DOUBLE,
+                        cost DOUBLE PRECISION,
                         datetime TIMESTAMP
                     )
                     """,
@@ -370,7 +419,7 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
                         model VARCHAR(255),
                         prompt_tokens BIGINT DEFAULT 0,
                         completion_tokens BIGINT DEFAULT 0,
-                        cost DOUBLE DEFAULT 0,
+                        cost DOUBLE PRECISION DEFAULT 0,
                         PRIMARY KEY (user_id, day, model)
                     )
                     """,
@@ -379,7 +428,7 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
                     CREATE TABLE IF NOT EXISTS user_credits (
                         id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
                         user_id VARCHAR(255),
-                        amount DOUBLE,
+                        amount DOUBLE PRECISION,
                         comment VARCHAR(1024),
                         metadata VARCHAR(4096),
                         datetime TIMESTAMP
@@ -389,7 +438,7 @@ class HSQLUsageManager(private val root: File? = null) : UsageInterface {
                 """
                     CREATE TABLE IF NOT EXISTS user_budget (
                         user_id VARCHAR(255) PRIMARY KEY,
-                        available DOUBLE DEFAULT 0
+                        available DOUBLE PRECISION DEFAULT 0
                     )
                     """
             )
