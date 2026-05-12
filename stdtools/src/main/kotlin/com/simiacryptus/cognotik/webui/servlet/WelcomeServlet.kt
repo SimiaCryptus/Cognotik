@@ -36,7 +36,6 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   }
 
   override fun doPost(req: HttpServletRequest?, resp: HttpServletResponse?) {
-    log.debug("Received POST request for URI: ${req?.requestURI}")
     val requestURI = req?.requestURI ?: "/"
     when {
       requestURI.startsWith("/userSettings") -> {
@@ -69,7 +68,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     try {
       mapper.writeValue(response.outputStream, user)
     } catch (e: Exception) {
-      log.error("Error serving user info for user: ${user?.email ?: "anonymous"}", e)
+      log.error("Error serving user info for user: ${user?.email ?: "anonymous"}: ${e.message}")
       response.sendError(500, "Error retrieving user information")
     }
   }
@@ -78,14 +77,11 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     val authorizedApps = parent.childWebApps.filter {
       val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(it.server.javaClass, user, AuthorizationInterface.OperationType.Read)
-      log.debug("App ${it.server.applicationName} authorization for user ${user?.email ?: "anonymous"}: $isAuthorized")
       isAuthorized
     }.map {
       val canRead = ApplicationServices.authorizationManager.isAuthorized(it.server.javaClass, user, AuthorizationInterface.OperationType.Read)
       val canWrite = ApplicationServices.authorizationManager.isAuthorized(it.server.javaClass, user, AuthorizationInterface.OperationType.Write)
       val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(it.server.javaClass, user, AuthorizationInterface.OperationType.Public)
-      log.debug("App ${it.server.applicationName} permissions - Read: $canRead, Write: $canWrite, Public: $canWritePublic")
-
       mapOf(
         "path" to it.path,
         "thumbnail" to it.thumbnail,
@@ -104,7 +100,6 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     try {
       valueAsString = mapper.writeValueAsString(authorizedApps)
       response?.outputStream?.write(valueAsString.toByteArray())
-      log.debug("Successfully served app list")
     } catch (e: Exception) {
       log.error("Error serving app list: $valueAsString", e)
       response?.sendError(500, "Error retrieving application list")
@@ -112,7 +107,6 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   }
 
   private fun serveResource(req: HttpServletRequest?, resp: HttpServletResponse?, requestURI: String) {
-    log.debug("Starting to serve resource: $requestURI")
     when {
       requestURI.startsWith("/userInfo") -> {
         log.info("Delegating to userInfoServlet for URI: $requestURI")
@@ -122,20 +116,17 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
       else -> try {
         resp ?: throw IllegalStateException("Response is null")
         resp.contentType = MimeTypes.getDefaultMimeByExtension(requestURI.split("/").last())
-        log.debug("Serving resource: $requestURI as ${resp.contentType}")
         val inputStream = parent.welcomeResources.addPath(requestURI)?.inputStream
         if (inputStream != null) {
           inputStream.copyTo(resp.outputStream!!)
-          log.debug("Successfully served resource: $requestURI")
         } else {
           log.warn("Resource not found: $requestURI")
           resp.sendError(404)
         }
       } catch (e: NoSuchFileException) {
-        log.warn("Resource not found: $requestURI", e)
+        log.warn("Resource not found: $requestURI: ${e.message}")
         resp?.sendError(404)
       } catch (e: Exception) {
-        log.debug("Error serving resource: $requestURI", e)
         resp?.sendError(500, "Error serving resource")
       }
     }

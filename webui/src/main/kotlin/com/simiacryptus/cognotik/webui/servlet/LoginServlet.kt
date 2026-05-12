@@ -73,22 +73,8 @@ class LoginServlet : HttpServlet() {
          */
         private val envelopeKey: SecretKey by lazy {
             try {
-                val envKey = System.getenv("SESSION_ENVELOPE_KEY")
-                if (!envKey.isNullOrBlank()) {
-                    log.info("Using SESSION_ENVELOPE_KEY from environment for session token encryption")
-                    val keyBytes = try {
-                        Base64.getDecoder().decode(envKey)
-                    } catch (e: IllegalArgumentException) {
-                        log.error("SESSION_ENVELOPE_KEY is not valid Base64", e)
-                        throw IllegalStateException("SESSION_ENVELOPE_KEY must be valid Base64", e)
-                    }
-                    require(keyBytes.size == 32) { "SESSION_ENVELOPE_KEY must be 32 bytes (Base64-encoded), got ${keyBytes.size} bytes" }
-                    SecretKeySpec(keyBytes, "AES")
-                } else {
-                    val keyBytes: ByteArray = hashData(SESSION_ENVELOPE_KEY_SEED).take(32).toByteArray()
-                    log.warn("No SESSION_ENVELOPE_KEY set; generated ephemeral session envelope key (tokens will not survive restart)")
-                    SecretKeySpec(keyBytes, "AES")
-                }
+                val keyBytes: ByteArray = hashData(SESSION_ENVELOPE_KEY_SEED).take(32).toByteArray()
+                SecretKeySpec(keyBytes, "AES")
             } catch (e: Exception) {
                 log.error("Failed to initialize session envelope key", e)
                 throw e
