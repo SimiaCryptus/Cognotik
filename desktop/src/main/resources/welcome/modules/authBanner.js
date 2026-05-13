@@ -11,6 +11,9 @@
     };
 
     function setupAuthBanner() {
+       if (typeof isLocalhost === 'function' && !isLocalhost()) {
+           return;
+       }
         const actionBtn = document.getElementById('auth-banner-action');
         if (actionBtn) {
             actionBtn.addEventListener('click', onAuthBannerAction);
@@ -20,6 +23,10 @@
     function updateAuthBanner() {
         const banner = document.getElementById('auth-banner');
         if (!banner) return;
+       if (typeof isLocalhost === 'function' && !isLocalhost()) {
+           banner.style.display = 'none';
+           return;
+       }
         fetch('/pluginManager/?action=authChains', { headers: { 'Accept': 'application/json' } })
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);

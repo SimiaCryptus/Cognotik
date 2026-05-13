@@ -61,7 +61,7 @@
             }).then(response => {
                 if (response) {
                     modal.style.display = 'none';
-                    window.location.href = `/chat/#${chatSessionId}`;
+                    window.location.href = `/chat/?session=${chatSessionId}`;
                 }
             }).catch(error => {
                 console.error('[BasicChat] Error saving chat settings:', error);

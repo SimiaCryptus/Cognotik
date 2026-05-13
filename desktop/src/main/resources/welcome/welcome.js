@@ -193,8 +193,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof setupAuthBanner === 'function') setupAuthBanner();
     if (typeof updateAuthBanner === 'function') {
         updateAuthBanner();
-        // Periodically refresh the auth banner every 30 seconds
-        setInterval(() => updateAuthBanner(), 30000);
+       // Periodically refresh the auth banner every 30 seconds (localhost only)
+       if (isLocalhost()) {
+           setInterval(() => updateAuthBanner(), 30000);
+       }
     }
     loadAppDirectory().then(() => {
         renderAppGrid();
