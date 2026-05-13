@@ -5,8 +5,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -39,6 +39,7 @@ class MistralChatClient(
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   apiBase: String,
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.Mistral,
   apiKey = apiKey,
@@ -46,7 +47,8 @@ class MistralChatClient(
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   override fun authorize(
@@ -61,7 +63,7 @@ class MistralChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<java.io.BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     log.info("Starting Mistral chat with model: ${model.modelId}")
     return withPerformanceLogging {
@@ -78,7 +80,7 @@ class MistralChatClient(
       )
 
       if (response.usage != null) {
-        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
+        usageHandler.onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
       }
 
       response

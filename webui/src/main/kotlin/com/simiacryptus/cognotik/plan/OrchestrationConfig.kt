@@ -196,11 +196,11 @@ class OrchestrationConfig(
     )
 
     @JsonIgnore
-    var instanceFn: ((ApiChatModel, User) -> ChatInterface)? = null
+    var instanceFn: ((ApiChatModel, User) -> ChatInterface) = { _,_->throw IllegalStateException("Instance function not set") }
 
     @JsonIgnore
     fun ApiChatModel.instance(user: User) =
-      instanceFn?.let { it(this, user) } ?: throw IllegalStateException("Instance function not set")
+        instanceFn(this, user)
   }
 
   /**

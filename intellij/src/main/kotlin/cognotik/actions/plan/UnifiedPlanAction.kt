@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -70,7 +70,7 @@ open class UnifiedPlanAction(
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         progress.text = "Processing files..."
         setupChatSession(
             session,

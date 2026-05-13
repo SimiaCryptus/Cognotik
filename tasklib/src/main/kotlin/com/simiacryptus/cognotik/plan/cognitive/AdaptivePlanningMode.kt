@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown

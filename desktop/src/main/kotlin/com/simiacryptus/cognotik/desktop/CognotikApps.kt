@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -313,8 +313,7 @@ open class CognotikApps(
         }
 
     private fun buildChildWebApps(): List<ChildWebApp> {
-        OrchestrationConfig.instanceFn =
-            { m, u -> m.instance(user = u) ?: throw IllegalStateException("Model or provider not set") }
+        OrchestrationConfig.instanceFn = { m, u -> m.instance(user = u) ?: throw IllegalStateException("Model or provider not set") }
         val apps = AppEntry.values()
         val docopsApps = apps.filter { it.type == "docops" }.map { entry ->
             ChildWebApp(
@@ -553,6 +552,7 @@ fun ApiChatModel.instance(
     workPool = service,
     temperature = temperature,
     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
+    session = session,
     onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
             session,

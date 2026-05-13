@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.model
 
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import java.io.File
 import java.util.*
 

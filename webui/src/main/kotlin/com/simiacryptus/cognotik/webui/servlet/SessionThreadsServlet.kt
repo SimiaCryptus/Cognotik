@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet

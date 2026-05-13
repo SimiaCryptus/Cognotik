@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-    import com.simiacryptus.cognotik.platform.Session
+    import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
     import org.junit.jupiter.api.AfterEach
     import org.junit.jupiter.api.Assertions.*

@@ -4,7 +4,7 @@ package com.simiacryptus.cognotik.webui.servlet
     import com.google.gson.GsonBuilder
     import com.simiacryptus.cognotik.models.ModelSchema
     import com.simiacryptus.cognotik.platform.ApplicationServices
-    import com.simiacryptus.cognotik.platform.Session
+    import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.UsageInterface
     import com.simiacryptus.cognotik.webui.application.authenticate
     import jakarta.servlet.http.HttpServlet

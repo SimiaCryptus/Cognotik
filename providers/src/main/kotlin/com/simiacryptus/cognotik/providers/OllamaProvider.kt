@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -18,14 +19,16 @@ class OllamaProvider : APIProvider("Ollama", "http://localhost:11434") {
       workPool: ExecutorService,
       logLevel: Level,
       logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService
+      scheduledPool: ListeningScheduledExecutorService,
+      session: Session
   ) = OllamaChatClient(
     apiKey = key,
     apiBase = base,
     workPool = workPool,
     scheduledPool = scheduledPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    session = session,
   )
 
   override fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> {

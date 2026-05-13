@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.platform.hsql
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.junit.jupiter.api.Assertions
@@ -34,7 +34,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
     fun `incrementUsage should increment usage for session`() {
         log.debug("Starting test: incrementUsage should increment usage for session")
         val model = model
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         val usage = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
@@ -57,7 +57,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
     fun `getUserUsageSummary should return correct usage summary`() {
         log.debug("Starting test: getUserUsageSummary should return correct usage summary")
         val model = model
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         val usage = ModelSchema.Usage(
             prompt_tokens = 15,
             completion_tokens = 25,
@@ -73,7 +73,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
     fun `clear should reset all usage data`() {
         log.debug("Starting test: clear should reset all usage data")
         val model = model
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         val usage = ModelSchema.Usage(
             prompt_tokens = 20,
             completion_tokens = 30,
@@ -97,7 +97,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
             override val modelId get() = "test-model-2"
             override val provider: APIProvider? get() = null
         }
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         val usage1 = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
@@ -124,7 +124,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
     fun `incrementUsage should accumulate usage for the same model`() {
         log.debug("Starting test: incrementUsage should accumulate usage for the same model")
         val model = model
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         val usage1 = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
@@ -153,7 +153,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
     @Test
     fun `getSessionUsageSummary should return empty map for unknown session`() {
         log.debug("Starting test: getSessionUsageSummary should return empty map for unknown session")
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         log.info("Retrieving usage summary for unknown session {}", session)
         val usageSummary = impl.getSessionUsageSummary(session)
         Assertions.assertTrue(usageSummary.isEmpty())
@@ -175,8 +175,8 @@ abstract class UsageTest(private val impl: UsageInterface) {
     @Test
     fun `getSessionUsageSummary should include child session usage`() {
         log.debug("Starting test: getSessionUsageSummary should include child session usage")
-        val parentSession = Session.newGlobalID()
-        val childSession = Session.newGlobalID()
+        val parentSession = Session.newUserID()
+        val childSession = Session.newUserID()
         val parentUsage = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
@@ -207,9 +207,9 @@ abstract class UsageTest(private val impl: UsageInterface) {
     @Test
     fun `getSessionUsageSummary should include deeply nested child session usage`() {
         log.debug("Starting test: getSessionUsageSummary should include deeply nested child session usage")
-        val grandparentSession = Session.newGlobalID()
-        val parentSession = Session.newGlobalID()
-        val childSession = Session.newGlobalID()
+        val grandparentSession = Session.newUserID()
+        val parentSession = Session.newUserID()
+        val childSession = Session.newUserID()
         val grandparentUsage = ModelSchema.Usage(prompt_tokens = 1, completion_tokens = 2, cost = 3.0)
         val parentUsage = ModelSchema.Usage(prompt_tokens = 4, completion_tokens = 5, cost = 6.0)
         val childUsage = ModelSchema.Usage(prompt_tokens = 7, completion_tokens = 8, cost = 9.0)

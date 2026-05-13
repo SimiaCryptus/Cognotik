@@ -1,8 +1,8 @@
-package com.simiacryptus.cognotik.platform
+package com.simiacryptus.cognotik.platform.model
 
 import java.nio.ByteBuffer
 import java.time.LocalDate
-import java.util.*
+import java.util.Base64
 import kotlin.random.Random
 
 data class Session(
@@ -17,7 +17,7 @@ data class Session(
 
   companion object {
     fun long64(): String {
-      val src = ByteBuffer.allocate(8).putLong(Random.nextLong()).array()
+      val src = ByteBuffer.allocate(8).putLong(Random.Default.nextLong()).array()
       return Base64.getEncoder().encodeToString(src)
         .toString().replace("=", "").replace("/", ".").replace("+", "-")
     }

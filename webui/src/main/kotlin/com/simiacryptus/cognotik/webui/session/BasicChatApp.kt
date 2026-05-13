@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -63,6 +63,7 @@ class BasicChatApp(
           workPool = threadPoolManager.getPool(session, user),
           temperature = settings.temperature,
           scheduledPool = threadPoolManager.getScheduledPool(session, user),
+          session = session,
           onUsage = { model: LLMModel, usage : Usage ->
             fileApplicationServices().usageManager.incrementUsage(
               session,

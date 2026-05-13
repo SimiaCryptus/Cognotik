@@ -11,7 +11,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.InMemoryFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -45,7 +45,7 @@ class DiffChatAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         try {
             val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             val language = ComputerLanguage.getComputerLanguage(e)?.name ?: ""
             val document = editor.document
             val filename = FileDocumentManager.getInstance().getFile(document)?.name ?: return

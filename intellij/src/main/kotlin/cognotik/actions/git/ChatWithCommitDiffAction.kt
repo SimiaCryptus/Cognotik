@@ -15,7 +15,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -57,7 +57,7 @@ class ChatWithCommitDiffAction : BaseAction(
     }
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",

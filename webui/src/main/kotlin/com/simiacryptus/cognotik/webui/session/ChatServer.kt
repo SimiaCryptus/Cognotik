@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User

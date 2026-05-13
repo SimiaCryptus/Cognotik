@@ -26,7 +26,7 @@ import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
@@ -300,7 +300,7 @@ data class AppSettingsState(
             onSettingsLoadedListeners.forEach { it() }
         }
 
-        val currentSession = Session.Companion.newGlobalID()
+        val currentSession = Session.Companion.newUserID()
       val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, AppSettingsState.localUser)
         val pluginHome: File by lazy {
             run {
@@ -333,6 +333,7 @@ fun ApiChatModel.instance(): ChatInterface? {
             AppSettingsState.currentSession,
           AppSettingsState.localUser
         ),
+        session = AppSettingsState.currentSession,
         onUsage = { model, usage ->
             usageManager.incrementUsage(
                 AppSettingsState.currentSession,

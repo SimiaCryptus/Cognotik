@@ -116,7 +116,7 @@ This is typically done in an Action handler (like `FileModificationTaskAction.kt
 Generate a unique ID and define where the data for this session lives.
 
 ```kotlin
-val session = Session.newGlobalID()
+val session = Session.newUserID()
 val projectRoot = File("/path/to/project")
 
 // Map the session to a physical directory on disk

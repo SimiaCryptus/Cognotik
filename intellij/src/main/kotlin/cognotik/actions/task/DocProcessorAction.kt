@@ -23,7 +23,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseTemplateVars

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -33,6 +34,7 @@ class AwsChatClient(
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   provider = CoreProviders.AWS,
   apiKey = apiKey,
@@ -40,7 +42,8 @@ class AwsChatClient(
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   override fun authorize(get: HttpRequest) {
@@ -286,7 +289,7 @@ class AwsChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
 
@@ -329,9 +332,9 @@ class AwsChatClient(
 
       if (response.usage != null) {
         log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
-        usageHandler?.invoke(
+        usageHandler.onUsage(
           model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!
         )
       }
 

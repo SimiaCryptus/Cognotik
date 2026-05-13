@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.chat.model.OpenAIModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -19,12 +20,14 @@ class OpenAIChatClient(
   apiBase: String,
   workPool: ExecutorService,
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.OpenAI,
   apiKey = apiKey,
   apiBase = apiBase,
   workPool = workPool,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   override fun authorize(
@@ -39,7 +42,7 @@ class OpenAIChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<java.io.BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -56,7 +59,7 @@ class OpenAIChatClient(
       )
 
       if (response.usage != null) {
-        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
+        usageHandler.onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
       }
 
       response

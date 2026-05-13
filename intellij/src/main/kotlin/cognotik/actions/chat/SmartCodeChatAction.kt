@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
@@ -46,7 +46,7 @@ class SmartCodeChatAction : BaseAction() {
             UITools.runAsync(event.project, "Initializing Smart Code Chat", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Setting up smart code chat session..."
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,

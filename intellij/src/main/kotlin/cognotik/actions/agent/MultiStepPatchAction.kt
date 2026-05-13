@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
@@ -52,7 +52,7 @@ class MultiStepPatchAction : BaseAction() {
         UITools.runAsync(project, "Initializing Auto Dev Assistant", true) { progress ->
             progress.isIndeterminate = true
             try {
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 val selectedFile = e.getSelectedFolder()
                 if (null != selectedFile) {
                     DataStorage.userPaths[session] = selectedFile.toFile

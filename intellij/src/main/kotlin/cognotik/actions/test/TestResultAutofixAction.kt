@@ -9,7 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -125,7 +125,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.metadataStorage.setSessionName(
             null,
             session,

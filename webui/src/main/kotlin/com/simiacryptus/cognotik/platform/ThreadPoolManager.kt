@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.platform
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import org.slf4j.LoggerFactory
@@ -13,24 +14,24 @@ class ThreadPoolManager {
   fun threadFactory(session: Session, user: User?): RecordingThreadFactory = RecordingThreadFactory(session, user)
 
   fun getPool(
-    session: Session,
-    user: User,
+      session: Session,
+      user: User,
   ) = poolCache.getOrPut(SessionKey(session, user)) {
     log.debug("Creating thread pool for session: {}, user: {}", session, user)
     createPool(session, user)
   }
 
   fun getScheduledPool(
-    session: Session,
-    user: User,
+      session: Session,
+      user: User,
   ) = scheduledPoolCache.getOrPut(SessionKey(session, user)) {
     log.debug("Creating scheduled pool for session: {}", session)
     createScheduledPool(session, user)
   }
 
   fun isAlive(
-    session: Session? = null,
-    user: User? = null,
+      session: Session? = null,
+      user: User? = null,
   ): Boolean {
     val matchingFactories = mutableListOf<RecordingThreadFactory>()
 
@@ -77,8 +78,8 @@ class ThreadPoolManager {
   }
 
   class RecordingThreadFactory(
-    val session: Session,
-    val user: User?
+      val session: Session,
+      val user: User?
   ) : ImmediateExecutorService.ThreadFactoryTrackerInterface() {
     private val inner =
       ThreadFactoryBuilder().setNameFormat("Session $session; User $user; #%d").setDaemon(true).build()

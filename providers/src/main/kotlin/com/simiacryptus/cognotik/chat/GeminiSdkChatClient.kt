@@ -9,8 +9,8 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
@@ -35,6 +35,7 @@ class GeminiSdkChatClient(
   private val useVertexAI: Boolean = false,
   private val project: String? = null,
   private val location: String? = null,
+  session: Session,
 ) : ChatClientBase(
   provider = CoreProviders.Gemini,
   apiKey = apiKey,
@@ -43,6 +44,7 @@ class GeminiSdkChatClient(
   logLevel = logLevel,
   logStreams = logStreams,
   scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   private val client: Client = buildClient(apiKey, useVertexAI, project, location)
@@ -146,7 +148,7 @@ class GeminiSdkChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     val requestID = UUID.randomUUID().toString()
     val startTime = System.currentTimeMillis()
@@ -225,7 +227,7 @@ class GeminiSdkChatClient(
       }
       if (chatResponse.usage != null) {
         try {
-          usageHandler?.invoke(model, chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,)
+          usageHandler.onUsage(model, chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!)
         } catch (e: Exception) {
           log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }

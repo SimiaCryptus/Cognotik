@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageClientInterface
 import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -35,10 +36,12 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
       Executors.newScheduledThreadPool(
         1
       )
-    )
+    ),
+    session: Session
   ): ChatClientInterface
 
-  open fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(key = key).getModels()
+  open fun getChatModels(key: SecureString, baseUrl: String) =
+    getChatClient(key = key, session = Session.newUserID()).getModels()
 
   open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
 
@@ -77,7 +80,8 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
         workPool: ExecutorService,
         logLevel: Level,
         logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService
+        scheduledPool: ListeningScheduledExecutorService,
+        session: Session
       ): ChatClientInterface {
         throw UnsupportedOperationException("NULL provider does not support chat functionality")
       }

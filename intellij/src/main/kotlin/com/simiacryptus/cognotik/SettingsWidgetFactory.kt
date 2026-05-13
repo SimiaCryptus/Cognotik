@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.BrowseUtil

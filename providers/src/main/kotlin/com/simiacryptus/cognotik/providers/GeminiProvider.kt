@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.image.GeminiImageModels
 import com.simiacryptus.cognotik.image.ImageClientInterface
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -19,14 +20,16 @@ class GeminiProvider : APIProvider("Gemini", "https://generativelanguage.googlea
       workPool: ExecutorService,
       logLevel: Level,
       logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService
+      scheduledPool: ListeningScheduledExecutorService,
+      session: Session
   ) = GeminiSdkChatClient(
     apiKey = key,
     apiBase = base,
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams,
-    scheduledPool = scheduledPool
+    scheduledPool = scheduledPool,
+    session = session,
   )
 
   override fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> {

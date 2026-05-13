@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.GroqChatClient
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -16,14 +17,16 @@ class GroqProvider : APIProvider("Groq", "https://api.groq.com/openai/v1") {
       workPool: ExecutorService,
       logLevel: Level,
       logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService
+      scheduledPool: ListeningScheduledExecutorService,
+      session: Session
   ) = GroqChatClient(
     apiKey = key,
     apiBase = base,
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams,
-    scheduledPool = scheduledPool
+    scheduledPool = scheduledPool,
+      session = session,
   )
 
   override fun getTranscriptionModels(

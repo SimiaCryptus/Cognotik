@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler

@@ -3,11 +3,12 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -22,6 +23,7 @@ class OllamaChatClient(
   scheduledPool: ListeningScheduledExecutorService,
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.Ollama,
   apiKey = apiKey,
@@ -29,7 +31,8 @@ class OllamaChatClient(
   workPool = workPool,
   scheduledPool = scheduledPool,
   logLevel = logLevel,
-  logStreams = logStreams
+  logStreams = logStreams,
+  session = session,
 ) {
 
   override fun authorize(
@@ -44,7 +47,7 @@ class OllamaChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<java.io.BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -131,7 +134,7 @@ class OllamaChatClient(
       )
 
       if (response.usage != null) {
-        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
+        usageHandler.onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
       }
 
 

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.toJson
@@ -25,7 +25,6 @@ class UsageDB(private val root: File? = null) : UsageInterface {
 
     override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
         try {
-            log.debug("Incrementing usage for session: {}, user: {}, model: {}", session, user.email, model.modelId)
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
             usageValues.addAndGet(tokens)
@@ -39,7 +38,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                     applyBudgetDelta(conn, user.email, -cost)
                 }
             }
-            log.debug("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelId)
+            log.info("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelId)
         } catch (e: Exception) {
             log.error(
                 "Error incrementing usage for session={}, user={}, model={}", session, user.email, model.modelId, e

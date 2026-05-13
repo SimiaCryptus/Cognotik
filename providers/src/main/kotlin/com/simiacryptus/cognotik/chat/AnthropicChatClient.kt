@@ -7,7 +7,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
   import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
   import com.simiacryptus.cognotik.models.ModelSchema
-  import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.util.JsonUtil
   import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory.getLogger
@@ -24,6 +25,7 @@ class AnthropicChatClient(
   logLevel: Level,
   logStreams: MutableList<BufferedOutputStream>,
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.Anthropic,
   apiKey = apiKey,
@@ -31,7 +33,8 @@ class AnthropicChatClient(
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
   override fun authorize(request: HttpRequest) {
     request.addHeader("Content-Type", "application/json")
@@ -103,7 +106,7 @@ class AnthropicChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -252,9 +255,9 @@ class AnthropicChatClient(
         ModelSchema.ChatResponse::class.java
       )
       if (response.usage != null) {
-        usageHandler?.invoke(
+        usageHandler.onUsage(
           model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!
         )
       }
       response

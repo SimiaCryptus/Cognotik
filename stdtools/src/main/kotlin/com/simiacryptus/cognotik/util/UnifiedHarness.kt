@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.*
@@ -52,6 +52,7 @@ open class UnifiedHarness(
         throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}")
       })!!,
       base = api.apiBase,
+      session = session,
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session = session,
@@ -102,11 +103,11 @@ open class UnifiedHarness(
     }
   }
 
-  var session = Session.newGlobalID()
+  var session = Session.newUserID()
     private set
 
   fun resetSession() {
-    session = Session.newGlobalID()
+    session = Session.newUserID()
   }
 
   open fun runPlan(

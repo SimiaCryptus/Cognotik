@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.models
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.DynamicEnum.Companion.register
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
@@ -17,7 +18,8 @@ object ServiceProviders {
         workPool: ExecutorService,
         logLevel: Level,
         logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService
+        scheduledPool: ListeningScheduledExecutorService,
+        session: Session
     ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
   }
 
@@ -29,7 +31,8 @@ object ServiceProviders {
         workPool: ExecutorService,
         logLevel: Level,
         logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService
+        scheduledPool: ListeningScheduledExecutorService,
+        session: Session
     ) = throw UnsupportedOperationException("Google Search API does not support chat functionality")
   }
 
@@ -41,7 +44,8 @@ object ServiceProviders {
         workPool: ExecutorService,
         logLevel: Level,
         logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService
+        scheduledPool: ListeningScheduledExecutorService,
+        session: Session
     ) = throw UnsupportedOperationException("Github API does not support chat functionality")
   }
 

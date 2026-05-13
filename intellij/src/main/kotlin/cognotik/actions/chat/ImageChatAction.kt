@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ContentPart
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
@@ -53,7 +53,7 @@ class ImageChatAction : BaseAction() {
             UITools.runAsync(event.project, "Initializing Chat", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Setting up chat session..."
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,

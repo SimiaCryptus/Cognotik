@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -126,7 +126,7 @@ class CommandAutofixAction : BaseAction() {
                     fastModel = AppSettingsState.instance.fastChatClient.getChildClient(),
                     processor = AppSettingsState.instance.processor
                 )
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",

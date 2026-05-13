@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
@@ -22,13 +23,14 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 
 abstract class ChatClientBase(
-  protected val provider: APIProvider,
-  val apiKey: SecureString = SecureString(""), // Default to empty, but should be provided by subclasses
-  val apiBase: String = provider.base,
-  workPool: ExecutorService,
-  logLevel: Level = Level.DEBUG,
-  logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-  scheduledPool: ListeningScheduledExecutorService,
+    protected val provider: APIProvider,
+    val apiKey: SecureString = SecureString(""), // Default to empty, but should be provided by subclasses
+    val apiBase: String = provider.base,
+    workPool: ExecutorService,
+    logLevel: Level = Level.DEBUG,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
+    override val session: Session
 ) : HttpClientManager(
   logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), ChatClientInterface {
@@ -43,7 +45,6 @@ abstract class ChatClientBase(
   }
 
 
-  var session: Any? = null
   var user: Any? = null
 
   @Throws(IOException::class, InterruptedException::class)

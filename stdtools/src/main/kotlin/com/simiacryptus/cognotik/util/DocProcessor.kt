@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.TEMPLATE_VAR_KEYS
@@ -1251,7 +1251,7 @@ class DocProcessor(
         val newRoot = data.main_file?.parentFile ?: root
         val data = data.copy(root = newRoot)
         val orchestrationConfig = harness.createSettings(
-          session = Session.newGlobalID(),
+          session = Session.newUserID(),
           autoFix = true,
           typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
           workingDir = newRoot.toString(),

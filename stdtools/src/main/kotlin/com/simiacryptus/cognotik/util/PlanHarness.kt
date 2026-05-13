@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory.getLogger
@@ -28,6 +28,7 @@ open class PlanHarness(
     model.instance(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
       base = api.apiBase ?: throw IllegalArgumentException("No API base found for provider: ${model.provider?.name}"),
+      session = session,
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session = session,
@@ -124,6 +125,7 @@ open class PlanHarness(
         key = api?.key
           ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
         base = api.apiBase,
+        session = session,
         onUsage = { model, usage ->
           ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
             session = session,

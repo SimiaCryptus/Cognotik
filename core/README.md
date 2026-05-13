@@ -99,7 +99,7 @@ println(result.result.resultValue)
 
 ```kotlin
 
-val session = Session.newGlobalID()
+val session = Session.newUserID()
 
 val dataStorage = ApplicationServices.dataStorageFactory(dataStorageRoot)
 val sessionDir = dataStorage.getSessionDir(user, session)

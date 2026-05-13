@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.providers
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.MistralChatClient
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -15,13 +16,15 @@ class MistralProvider : APIProvider("Mistral", "https://api.mistral.ai/v1") {
       workPool: ExecutorService,
       logLevel: Level,
       logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService
+      scheduledPool: ListeningScheduledExecutorService,
+      session: Session
   ) = MistralChatClient(
     apiKey = key,
     apiBase = base,
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams,
-    scheduledPool = scheduledPool
+    scheduledPool = scheduledPool,
+      session = session,
   )
 }

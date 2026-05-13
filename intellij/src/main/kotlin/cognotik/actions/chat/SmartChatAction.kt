@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
@@ -38,7 +38,7 @@ class SmartChatAction : BaseAction() {
                 progress.isIndeterminate = true
                 progress.text = "Setting up smart chat session..."
 
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,

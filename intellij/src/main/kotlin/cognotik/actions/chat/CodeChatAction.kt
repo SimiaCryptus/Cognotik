@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.LanguageUtils
@@ -22,7 +22,7 @@ class CodeChatAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         val language = LanguageUtils.getComputerLanguage(e)?.name ?: ""
         val filename = FileDocumentManager.getInstance().getFile(editor.document)?.name ?: return
         SessionProxyServer.agents[session] = CodeChatSocketManager(
