@@ -51,7 +51,14 @@ function newSessionId() {
      };
      const [messages, setMessages] = useState<Message[]>([]);
 
-     const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || newSessionId());
+     const [sessionId] = useState(() => {
+         if (propSessionId) return propSessionId;
+         const queryParams = new URLSearchParams(window.location.search);
+         const querySessionId = queryParams.get('session');
+         if (querySessionId) return querySessionId;
+         if (window.location.hash.slice(1)) return window.location.hash.slice(1);
+         return newSessionId();
+     });
      const dispatch = useDispatch();
      const ws = useWebSocket(sessionId);
      const appConfig = useSelector((state: RootState) => state.config);

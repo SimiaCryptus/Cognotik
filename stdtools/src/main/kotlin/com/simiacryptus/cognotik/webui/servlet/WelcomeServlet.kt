@@ -15,31 +15,28 @@ import java.nio.file.NoSuchFileException
 
 open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServlet() {
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    val path = req?.servletPath ?: "/"
-    when {
-      path == "/" || path == "/index.html" -> {
-        val user = authenticate(req, resp)
-        if (null == user) {
-          log.info("Serving login.html page to anonymous user")
-          serveLoginPage(resp)
-        } else {
-          log.info("Serving welcome page to authenticated user: ${user.email}")
-          serveStaticPage(resp)
-        }
+    val path = req.servletPath ?: "/"
+      when (path) {
+          "/", "/index.html" -> {
+              val user = authenticate(req, resp)
+              if (null == user) {
+                  log.info("Serving login.html page to anonymous user")
+                  serveLoginPage(resp)
+              } else {
+                  log.info("Serving welcome page to authenticated user: ${user.email}")
+                  serveStaticPage(resp)
+              }
+          }
+          "/user" -> {
+              serveUserInfo(req, resp)
+          }
+          "/apps" -> {
+              serveAppList(req, resp)
+          }
+          else -> {
+              serveResource(req, resp, path)
+          }
       }
-
-      path == "/user" -> {
-        serveUserInfo(req!!, resp!!)
-      }
-
-      path == "/apps" -> {
-        serveAppList(req!!, resp)
-      }
-
-      else -> {
-        serveResource(req, resp, path)
-      }
-    }
   }
 
   override fun doPost(req: HttpServletRequest?, resp: HttpServletResponse?) {
@@ -113,14 +110,14 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     log.info("Serving ${authorizedApps.size} authorized apps for user: ${user?.email ?: "anonymous"}")
     val mapper = jacksonObjectMapper()
     mapper.enable(SerializationFeature.INDENT_OUTPUT)
-    response?.contentType = "application/json"
+    response.contentType = "application/json"
     lateinit var valueAsString: String
     try {
       valueAsString = mapper.writeValueAsString(authorizedApps)
-      response?.outputStream?.write(valueAsString.toByteArray())
+      response.outputStream?.write(valueAsString.toByteArray())
     } catch (e: Exception) {
       log.error("Error serving app list: $valueAsString", e)
-      response?.sendError(500, "Error retrieving application list")
+      response.sendError(500, "Error retrieving application list")
     }
   }
 
@@ -151,7 +148,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   }
 
   companion object {
-    val log = LoggerFactory.getLogger(WelcomeServlet::class.java)
+    private val log = LoggerFactory.getLogger(WelcomeServlet::class.java)
   }
 
 }

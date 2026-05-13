@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class User(
   @get:JsonProperty("email") val email: String,
-  @get:JsonProperty("name") val name: String? = null,
-  @get:JsonProperty("id") val id: String? = null,
+  @get:JsonProperty("name") val name: String = email,
+  @get:JsonProperty("id") val id: String = email,
 ) {
   override fun toString() = email
 
