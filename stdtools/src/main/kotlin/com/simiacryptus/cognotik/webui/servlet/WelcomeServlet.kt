@@ -18,7 +18,14 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     val path = req?.servletPath ?: "/"
     when {
       path == "/" || path == "/index.html" -> {
-        serveStaticPage(resp)
+        val user = authenticate(req, resp)
+        if (null == user) {
+          log.info("Serving login.html page to anonymous user")
+          serveLoginPage(resp)
+        } else {
+          log.info("Serving welcome page to authenticated user: ${user.email}")
+          serveStaticPage(resp)
+        }
       }
 
       path == "/user" -> {
@@ -53,6 +60,17 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
   private fun serveStaticPage(resp: HttpServletResponse?) {
     resp?.contentType = "text/html"
     val inputStream = this::class.java.getResourceAsStream("/welcome/welcome.html")
+    if (inputStream != null) {
+      inputStream.copyTo(resp?.outputStream!!)
+    } else {
+      log.error("Failed to load welcome.html resource")
+      resp?.sendError(500, "Welcome page not found")
+    }
+  }
+
+  private fun serveLoginPage(resp: HttpServletResponse?) {
+    resp?.contentType = "text/html"
+    val inputStream = this::class.java.getResourceAsStream("/welcome/login.html")
     if (inputStream != null) {
       inputStream.copyTo(resp?.outputStream!!)
     } else {

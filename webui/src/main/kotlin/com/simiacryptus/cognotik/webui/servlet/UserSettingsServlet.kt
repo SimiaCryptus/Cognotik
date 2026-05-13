@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.encrypt
+import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -15,10 +16,10 @@ private const val mask = "********"
 class UserSettingsServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_OK
-    val userinfo = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
-        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(userinfo)
+        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
       val visibleSettings = UserSettings(
         apis = settings.apis.map { apiData ->
           ApiData(
@@ -32,7 +33,9 @@ class UserSettingsServlet : HttpServlet() {
           )//.validate()
         }.toMutableList(),
         tools = settings.tools.toMutableList(),
-        etc = settings.etc.toMutableMap()
+        etc = settings.etc.toMutableMap(),
+      ).jsonCast<Map<String,Any>>() + mapOf(
+        "user" to user
       )
       val json = JsonUtil.toJson(visibleSettings)
       val acceptHeader = request.getHeader("Accept") ?: ""

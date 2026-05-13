@@ -16,66 +16,70 @@
         <span class="logo-text">Cognotik</span>
     </div>
     <div class="top-bar-spacer"></div>
-      <select class="theme-selector" id="theme-selector" aria-label="Select theme" title="Select theme">
-          <option value="auto">🖥️ Auto</option>
-          <option value="light">☀️ Light</option>
-          <option value="dark">🌙 Dark</option>
-      </select>
-     <button class="top-bar-btn" id="user-settings-btn" type="button" aria-label="Open Settings">
-         <span class="btn-icon" aria-hidden="true">⚙️</span> Settings
+    <select class="theme-selector" id="theme-selector" aria-label="Select theme" title="Select theme">
+        <option value="auto">🖥️ Auto</option>
+        <option value="light">☀️ Light</option>
+        <option value="dark">🌙 Dark</option>
+    </select>
+    <button class="top-bar-btn" id="user-settings-btn" type="button" aria-label="Open Settings">
+        <span class="btn-icon" aria-hidden="true">⚙️</span> Settings
+    </button>
+    <button class="top-bar-btn" id="plugin-manager-btn" type="button" aria-label="Open Plugin Manager">
+        <span class="btn-icon" aria-hidden="true">🔌</span> Plugins
+    </button>
+     <button class="top-bar-btn" id="usage-btn" type="button" aria-label="Open Usage">
+         <span class="btn-icon" aria-hidden="true">📊</span> Usage
      </button>
-     <button class="top-bar-btn" id="plugin-manager-btn" type="button" aria-label="Open Plugin Manager">
-         <span class="btn-icon" aria-hidden="true">🔌</span> Plugins
-     </button>
-     <a class="top-bar-btn" id="logout-btn" href="/login/?action=logout" role="button" aria-label="Logout">
-         <span class="btn-icon" aria-hidden="true">🚪</span> Logout
-     </a>
+    <button class="top-bar-btn" id="logout-btn" role="button" aria-label="Logout"
+            onclick="fetch('/login/?action=logout', {method: 'POST'}).then(() => location.reload())">
+        <span class="btn-icon" aria-hidden="true">🚪</span> Logout
+    </button>
 </div>
 <!-- API Key Configuration Banner -->
 <div class="api-key-banner" id="api-key-banner" role="alert">
-     <div class="api-key-banner-content">
-         <div class="api-key-banner-message">
-             <span class="api-key-banner-icon" aria-hidden="true">⚠️</span>
-             <div class="api-key-banner-text">
-                 <strong>No API keys configured</strong>
-                 <span>Configure at least one API provider to start using Cognotik's AI features.</span>
-             </div>
-         </div>
-         <button class="api-key-banner-action" id="api-key-banner-action" type="button">
-             Configure API Keys →
-         </button>
-     </div>
+    <div class="api-key-banner-content">
+        <div class="api-key-banner-message">
+            <span class="api-key-banner-icon" aria-hidden="true">⚠️</span>
+            <div class="api-key-banner-text">
+                <strong>No API keys configured</strong>
+                <span>Configure at least one API provider to start using Cognotik's AI features.</span>
+            </div>
+        </div>
+        <button class="api-key-banner-action" id="api-key-banner-action" type="button">
+            Configure API Keys →
+        </button>
+    </div>
 </div>
 <!-- Pending Authorization Banner -->
 <div class="auth-banner" id="auth-banner" role="alert">
-      <div class="auth-banner-content">
-          <div class="auth-banner-message">
-               <span class="auth-banner-icon" aria-hidden="true">🔐</span>
-              <div class="auth-banner-text">
-                  <strong id="auth-banner-title">Pending authorizations</strong>
-                  <span id="auth-banner-message">One or more plugins require authorization to function.</span>
-              </div>
-          </div>
-           <button class="auth-banner-action" id="auth-banner-action" type="button">
-              Review Authorizations →
-          </button>
-      </div>
+    <div class="auth-banner-content">
+        <div class="auth-banner-message">
+            <span class="auth-banner-icon" aria-hidden="true">🔐</span>
+            <div class="auth-banner-text">
+                <strong id="auth-banner-title">Pending authorizations</strong>
+                <span id="auth-banner-message">One or more plugins require authorization to function.</span>
+            </div>
+        </div>
+        <button class="auth-banner-action" id="auth-banner-action" type="button">
+            Review Authorizations →
+        </button>
+    </div>
 </div>
 
 <!-- App Grid -->
 <section class="app-grid-section">
-     <div class="app-search-container">
-          <input type="text" id="app-search-input" class="app-search-input"
-                 placeholder="🔍 Search applications..." autocomplete="off"
-                 aria-label="Search applications">
-          <button class="app-search-clear" id="app-search-clear" type="button" style="display:none;">Clear</button>
-     </div>
-     <div class="app-grid" id="app-grid">
-         <!-- App cards are dynamically generated from apps.json -->
-     </div>
-     <div class="app-search-no-results" id="app-search-no-results" style="display:none;">
-         No applications match your search.
-     </div>
+    <div class="app-search-container">
+        <input type="text" id="app-search-input" class="app-search-input"
+               placeholder="🔍 Search applications..." autocomplete="off"
+               aria-label="Search applications">
+        <button class="app-search-clear" id="app-search-clear" type="button" style="display:none;">Clear</button>
+    </div>
+    <div class="app-grid" id="app-grid">
+        <!-- App cards are dynamically generated from apps.json -->
+    </div>
+    <div class="app-search-no-results" id="app-search-no-results" style="display:none;">
+        No applications match your search.
+    </div>
 </section>
 
 <!-- Settings Section (collapsible) -->
@@ -160,89 +164,93 @@
 
 <!-- Plugin Manager Modal -->
 <div class="modal" id="plugin-manager-modal">
-     <div class="modal-content modal-content-wide">
-         <span class="close" id="close-plugin-manager-modal">&times;</span>
-         <h3>🔌 Plugin Manager</h3>
-         <div id="plugin-manager-message" style="display:none;"></div>
-         <div class="settings-tabs">
-             <button class="tab-button active" data-plugin-tab="loaded-plugins">Loaded Plugins</button>
-             <button class="tab-button" data-plugin-tab="available-jars">Available JARs</button>
-             <button class="tab-button" data-plugin-tab="upload-plugin">Upload Plugin</button>
-             <button class="tab-button" data-plugin-tab="load-by-path">Load by Path</button>
-         <button class="tab-button" data-plugin-tab="auth-chains">Authorization</button>
-         </div>
-         <!-- Loaded Plugins Tab -->
-         <div class="tab-content active" id="loaded-plugins-tab">
-             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                 <p style="margin:0; color:#666;">Currently active plugins loaded into the runtime.</p>
-                 <button class="button secondary" id="refresh-loaded-plugins">↻ Refresh</button>
-             </div>
-             <div id="loaded-plugins-content"><em>Loading…</em></div>
-         </div>
-         <!-- Available JARs Tab -->
-         <div class="tab-content" id="available-jars-tab">
-             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                 <p style="margin:0; color:#666;">JAR files found in the server's plugin directory.</p>
-                 <div style="display:flex; gap:8px;">
-                     <button class="button secondary" id="scan-plugin-directory">↻ Scan Directory</button>
-                     <button class="button" id="load-all-plugins">Load All</button>
-                 </div>
-             </div>
-             <div id="available-jars-content"><em>Click "Scan Directory" to list available JARs…</em></div>
-         </div>
-         <!-- Upload Plugin Tab -->
-         <div class="tab-content" id="upload-plugin-tab">
-             <p style="color:#666;">Upload a JAR file to the server's plugin directory.</p>
-             <div class="form-group">
-                 <label for="plugin-jar-file">Select JAR file:</label>
-                 <input type="file" id="plugin-jar-file" accept=".jar" style="width:100%;">
-             </div>
-             <div class="form-group">
-                 <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
-                     <input type="checkbox" id="plugin-auto-load">
-                     Auto-load after upload
-                 </label>
-             </div>
-             <div class="button-group" style="justify-content:flex-end;">
-                 <button class="button" id="upload-plugin-btn">Upload Plugin</button>
-             </div>
-             <div id="upload-progress" style="display:none; margin-top:12px;">
-                 <div class="spinner" style="width:24px;height:24px;border-width:3px;display:inline-block;vertical-align:middle;"></div>
-                 <span style="margin-left:8px;">Uploading…</span>
-             </div>
-         </div>
-         <!-- Load by Path Tab -->
-         <div class="tab-content" id="load-by-path-tab">
-             <p style="color:#666;">Load a plugin JAR by specifying its path on the server.</p>
-             <div class="form-group">
-                 <label for="plugin-jar-path">JAR path (relative to plugin directory or absolute):</label>
-                 <input type="text" id="plugin-jar-path" placeholder="myplugin.jar">
-             </div>
-             <div class="form-group">
-                 <label for="plugin-entry-point">Entry point class (optional):</label>
-                 <input type="text" id="plugin-entry-point" placeholder="com.example.MyPlugin">
-             </div>
-             <div class="button-group" style="justify-content:flex-end;">
-                 <button class="button" id="load-plugin-by-path-btn">Load Plugin</button>
-             </div>
-         </div>
-         <!-- Authorization Chains Tab -->
-         <div class="tab-content" id="auth-chains-tab">
-             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                 <p style="margin:0; color:#666;">Manage plugin authorization flows (e.g., OAuth, API key setup).</p>
-                 <button class="button secondary" id="refresh-auth-chains">↻ Refresh</button>
-             </div>
-             <div id="auth-chains-content"><em>Loading…</em></div>
-             <div id="auth-status-panel" style="display:none; margin-top:16px; padding:14px; border:1px solid #ddd; border-radius:6px; background:#f8f9fa;">
-                 <h4 style="margin-top:0;">Authorization Progress</h4>
-                 <div id="auth-progress-bar" style="background:#e9ecef; border-radius:4px; height:8px; margin-bottom:8px;">
-                     <div id="auth-progress-fill" style="background:#007bff; border-radius:4px; height:8px; width:0%; transition:width 0.3s;"></div>
-                 </div>
-                 <p id="auth-status-text" style="margin:0; color:#666; font-size:0.9em;"></p>
-                 <div id="auth-action-area" style="margin-top:12px;"></div>
-             </div>
-         </div>
-     </div>
+    <div class="modal-content modal-content-wide">
+        <span class="close" id="close-plugin-manager-modal">&times;</span>
+        <h3>🔌 Plugin Manager</h3>
+        <div id="plugin-manager-message" style="display:none;"></div>
+        <div class="settings-tabs">
+            <button class="tab-button active" data-plugin-tab="loaded-plugins">Loaded Plugins</button>
+            <button class="tab-button" data-plugin-tab="available-jars">Available JARs</button>
+            <button class="tab-button" data-plugin-tab="upload-plugin">Upload Plugin</button>
+            <button class="tab-button" data-plugin-tab="load-by-path">Load by Path</button>
+            <button class="tab-button" data-plugin-tab="auth-chains">Authorization</button>
+        </div>
+        <!-- Loaded Plugins Tab -->
+        <div class="tab-content active" id="loaded-plugins-tab">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <p style="margin:0; color:#666;">Currently active plugins loaded into the runtime.</p>
+                <button class="button secondary" id="refresh-loaded-plugins">↻ Refresh</button>
+            </div>
+            <div id="loaded-plugins-content"><em>Loading…</em></div>
+        </div>
+        <!-- Available JARs Tab -->
+        <div class="tab-content" id="available-jars-tab">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <p style="margin:0; color:#666;">JAR files found in the server's plugin directory.</p>
+                <div style="display:flex; gap:8px;">
+                    <button class="button secondary" id="scan-plugin-directory">↻ Scan Directory</button>
+                    <button class="button" id="load-all-plugins">Load All</button>
+                </div>
+            </div>
+            <div id="available-jars-content"><em>Click "Scan Directory" to list available JARs…</em></div>
+        </div>
+        <!-- Upload Plugin Tab -->
+        <div class="tab-content" id="upload-plugin-tab">
+            <p style="color:#666;">Upload a JAR file to the server's plugin directory.</p>
+            <div class="form-group">
+                <label for="plugin-jar-file">Select JAR file:</label>
+                <input type="file" id="plugin-jar-file" accept=".jar" style="width:100%;">
+            </div>
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
+                    <input type="checkbox" id="plugin-auto-load">
+                    Auto-load after upload
+                </label>
+            </div>
+            <div class="button-group" style="justify-content:flex-end;">
+                <button class="button" id="upload-plugin-btn">Upload Plugin</button>
+            </div>
+            <div id="upload-progress" style="display:none; margin-top:12px;">
+                <div class="spinner"
+                     style="width:24px;height:24px;border-width:3px;display:inline-block;vertical-align:middle;"></div>
+                <span style="margin-left:8px;">Uploading…</span>
+            </div>
+        </div>
+        <!-- Load by Path Tab -->
+        <div class="tab-content" id="load-by-path-tab">
+            <p style="color:#666;">Load a plugin JAR by specifying its path on the server.</p>
+            <div class="form-group">
+                <label for="plugin-jar-path">JAR path (relative to plugin directory or absolute):</label>
+                <input type="text" id="plugin-jar-path" placeholder="myplugin.jar">
+            </div>
+            <div class="form-group">
+                <label for="plugin-entry-point">Entry point class (optional):</label>
+                <input type="text" id="plugin-entry-point" placeholder="com.example.MyPlugin">
+            </div>
+            <div class="button-group" style="justify-content:flex-end;">
+                <button class="button" id="load-plugin-by-path-btn">Load Plugin</button>
+            </div>
+        </div>
+        <!-- Authorization Chains Tab -->
+        <div class="tab-content" id="auth-chains-tab">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <p style="margin:0; color:#666;">Manage plugin authorization flows (e.g., OAuth, API key setup).</p>
+                <button class="button secondary" id="refresh-auth-chains">↻ Refresh</button>
+            </div>
+            <div id="auth-chains-content"><em>Loading…</em></div>
+            <div id="auth-status-panel"
+                 style="display:none; margin-top:16px; padding:14px; border:1px solid #ddd; border-radius:6px; background:#f8f9fa;">
+                <h4 style="margin-top:0;">Authorization Progress</h4>
+                <div id="auth-progress-bar"
+                     style="background:#e9ecef; border-radius:4px; height:8px; margin-bottom:8px;">
+                    <div id="auth-progress-fill"
+                         style="background:#007bff; border-radius:4px; height:8px; width:0%; transition:width 0.3s;"></div>
+                </div>
+                <p id="auth-status-text" style="margin:0; color:#666; font-size:0.9em;"></p>
+                <div id="auth-action-area" style="margin-top:12px;"></div>
+            </div>
+        </div>
+    </div>
 </div>
 <!-- User Settings Modal -->
 <div class="modal" id="user-settings-modal">
@@ -441,6 +449,16 @@
         <p>Cognotik &copy; 2026 SimiaCryptus Software</p>
     </div>
 </footer>
+<!-- Usage Modal -->
+<div class="modal" id="usage-modal">
+     <div class="modal-content modal-content-wide" style="height: 85vh; display: flex; flex-direction: column;">
+         <span class="close" id="close-usage-modal">&times;</span>
+         <h3>📊 Usage</h3>
+         <iframe id="usage-iframe" src="about:blank"
+                 style="flex: 1; width: 100%; border: 1px solid #ddd; border-radius: 4px; background: #fff;"
+                 title="Usage"></iframe>
+     </div>
+</div>
 
 <script src="modules/marked.min.js"></script>
 <script src="modules/constants.js"></script>
@@ -465,26 +483,26 @@
 
 <script src="welcome.js"></script>
 <script>
-(function() {
-     const STORAGE_KEY = 'cognotik-theme';
-     const selector = document.getElementById('theme-selector');
-     const root = document.documentElement;
-     function applyTheme(theme) {
-         if (theme === 'auto') {
-             root.removeAttribute('data-theme');
-         } else {
-             root.setAttribute('data-theme', theme);
+    (function() {
+         const STORAGE_KEY = 'cognotik-theme';
+         const selector = document.getElementById('theme-selector');
+         const root = document.documentElement;
+         function applyTheme(theme) {
+             if (theme === 'auto') {
+                 root.removeAttribute('data-theme');
+             } else {
+                 root.setAttribute('data-theme', theme);
+             }
          }
-     }
-     const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
-     selector.value = saved;
-     applyTheme(saved);
-     selector.addEventListener('change', function() {
-         const value = selector.value;
-         localStorage.setItem(STORAGE_KEY, value);
-         applyTheme(value);
-     });
-})();
+         const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
+         selector.value = saved;
+         applyTheme(saved);
+         selector.addEventListener('change', function() {
+             const value = selector.value;
+             localStorage.setItem(STORAGE_KEY, value);
+             applyTheme(value);
+         });
+    })();
 </script>
 
 

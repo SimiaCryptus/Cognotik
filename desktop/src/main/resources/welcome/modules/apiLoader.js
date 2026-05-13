@@ -1,4 +1,3 @@
-
 // ===== API Loading =====
 let apiProviders = [];
 let availableModels = {};
@@ -61,6 +60,9 @@ function loadUserSettings(httpService, appState) {
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
+               if (settings.user) {
+                   appState.userInfo = settings.user;
+               }
                 if (settings.apis && Array.isArray(settings.apis)) {
                     const apiKeys = {};
                     const apiBase = {};
@@ -76,7 +78,8 @@ function loadUserSettings(httpService, appState) {
                         apiKeys: apiKeys,
                         apiBase: apiBase,
                         localTools: settings.tools || [],
-                        configuredApis: settings.apis
+                       configuredApis: settings.apis,
+                       user: settings.user || null
                     };
                 } else {
                     appState.apiSettings = settings;

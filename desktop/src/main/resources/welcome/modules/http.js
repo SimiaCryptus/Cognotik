@@ -32,7 +32,8 @@ class HttpService {
                         apiKeys: {},
                         apiBase: {},
                         localTools: parsed.tools || [],
-                        configuredApis: parsed.apis || []
+                        configuredApis: parsed.apis || [],
+                        user: parsed.user || null
                     };
                     // Convert apis array to apiKeys object
                     if (Array.isArray(parsed.apis)) {

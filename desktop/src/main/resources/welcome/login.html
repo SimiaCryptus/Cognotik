@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8"/>
+        <link href="/favicon.svg" rel="icon"/>
+        <meta content="width=device-width, initial-scale=1.0" name="viewport">
+        <link href="welcome.css" rel="stylesheet">
+        <title>Cognotik - Sign In</title>
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+            .login-splash {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 40px 20px;
+            }
+            .login-splash .logo {
+                width: 96px;
+                height: 96px;
+                margin-bottom: 20px;
+            }
+            .login-splash h1 {
+                font-size: 2.5em;
+                margin: 0 0 10px 0;
+            }
+            .login-splash p {
+                font-size: 1.1em;
+                margin: 0 0 30px 0;
+                opacity: 0.8;
+            }
+            .login-splash .spinner {
+                margin-bottom: 20px;
+            }
+            .login-fallback {
+                margin-top: 20px;
+                font-size: 0.95em;
+            }
+        </style>
+    </head>
+    <body>
+
+    <div class="login-splash">
+        <img alt="Cognotik Logo" class="logo" src="logo.svg">
+        <h1>Cognotik</h1>
+        <p>Redirecting you to sign in…</p>
+        <div class="spinner" role="status" aria-label="Loading"></div>
+        <div class="login-fallback">
+            If you are not redirected automatically,
+            <a id="login-link" href="/login/">click here to sign in</a>.
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <img alt="Cognotik Logo" class="footer-logo" height="24" src="logo.svg" width="24">
+            <p>Cognotik &copy; 2026 SimiaCryptus Software</p>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var STORAGE_KEY = 'cognotik-theme';
+            var root = document.documentElement;
+            var saved = localStorage.getItem(STORAGE_KEY) || 'auto';
+            if (saved !== 'auto') {
+                root.setAttribute('data-theme', saved);
+            }
+        })();
+        (function () {
+            var target = '/login/';
+            setTimeout(function () {
+                window.location.replace(target);
+            }, 1200);
+        })();
+    </script>
+
+    </body>
+    </html>
