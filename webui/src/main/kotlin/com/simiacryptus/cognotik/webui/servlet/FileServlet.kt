@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
+   import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
 import com.simiacryptus.cognotik.webui.servlet.handler.FileRequestHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileUploadHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
@@ -34,6 +35,12 @@ abstract class FileServlet : HttpServlet() {
       val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
       val dir = getDir(req)
       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
+         if (file != null && FileAccessControl.isHidden(dir, file)) {
+           log.debug("Path is hidden, returning 404: ${file.absolutePath}")
+           resp.status = HttpServletResponse.SC_NOT_FOUND
+           resp.writer.write("File not found")
+           return
+         }
       when {
         file != null && file.name == "_files.json" && !file.exists() -> {
           serveVirtualFilesJson(file, resp)
@@ -72,6 +79,10 @@ abstract class FileServlet : HttpServlet() {
        val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
        val dir = getDir(req)
        val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
+          if (file != null && FileAccessControl.isHidden(dir, file)) {
+            resp.status = HttpServletResponse.SC_NOT_FOUND
+            return
+          }
        when {
          file != null && file.name == "_files.json" && !file.exists() -> {
            val parentDir = file.parentFile
@@ -151,7 +162,13 @@ abstract class FileServlet : HttpServlet() {
       val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
       val dir = getDir(req)
       val targetDir = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
-      FileUploadHandler.handleUpload(req, resp, targetDir)
+         if (targetDir != null && FileAccessControl.isHidden(dir, targetDir)) {
+           log.warn("Refusing POST to hidden path: ${targetDir.absolutePath}")
+           resp.status = HttpServletResponse.SC_NOT_FOUND
+           resp.writer.write("File not found")
+           return
+         }
+         FileUploadHandler.handleUpload(req, resp, targetDir, dir)
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in POST request: ${e.message}")
       resp.status = HttpServletResponse.SC_BAD_REQUEST
@@ -163,19 +180,19 @@ abstract class FileServlet : HttpServlet() {
     }
   }
 
-  override fun doPut(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("Received PUT request for path: ${req.pathInfo ?: req.servletPath}")
-    try {
-      val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
-      val dir = getDir(req)
-      if (dir == null) {
-        log.warn("Base directory is null for PUT request")
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.writer.write("Invalid base directory")
-        return
-      }
-      FileUploadHandler.handlePut(req, resp, dir, pathSegments)
-    } catch (e: IllegalArgumentException) {
+      override fun doPut(req: HttpServletRequest, resp: HttpServletResponse) {
+        log.info("Received PUT request for path: ${req.pathInfo ?: req.servletPath}")
+        try {
+          val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
+          val dir = getDir(req)
+          if (dir == null) {
+            log.warn("Base directory is null for PUT request")
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.writer.write("Invalid base directory")
+            return
+          }
+          FileUploadHandler.handlePut(req, resp, dir, pathSegments)
+        } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in PUT request: ${e.message}")
       resp.status = HttpServletResponse.SC_BAD_REQUEST
       resp.writer.write("Invalid path: ${e.message}")
@@ -197,7 +214,13 @@ abstract class FileServlet : HttpServlet() {
         return
       }
       val targetFile = File(dir, pathSegments.drop(1).joinToString("/"))
-      FileDeleteHandler.handleDelete(resp, targetFile)
+         if (FileAccessControl.isHidden(dir, targetFile)) {
+           log.warn("Refusing DELETE on hidden path: ${targetFile.absolutePath}")
+           resp.status = HttpServletResponse.SC_NOT_FOUND
+           resp.writer.write("File not found")
+           return
+         }
+         FileDeleteHandler.handleDelete(resp, targetFile, dir)
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in DELETE request: ${e.message}")
       resp.status = HttpServletResponse.SC_BAD_REQUEST
@@ -293,7 +316,11 @@ abstract class FileServlet : HttpServlet() {
   }
 
   open fun listContents(file: File?, req: HttpServletRequest): Pair<String, String> {
-    val files = file?.listFiles()?.filter { it.isFile }?.sortedBy { it.name }?.joinToString("") {
+       val baseDir = getDir(req)
+       val files = file?.listFiles()
+         ?.filter { it.isFile }
+         ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
+         ?.sortedBy { it.name }?.joinToString("") {
       val fileName = it.name
       val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
       val htmlLink = if (fileName.endsWith(".md")) {
@@ -305,7 +332,10 @@ abstract class FileServlet : HttpServlet() {
       val fileActions = getFileActions(it, req)
       """<li style="display: flex; align-items: center;">$baseLink$htmlLink$fileActions</li>"""
     } ?: ""
-    val folders = file?.listFiles()?.filter { !it.isFile }?.sortedBy { it.name }?.joinToString("") {
+       val folders = file?.listFiles()
+         ?.filter { !it.isFile }
+         ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
+         ?.sortedBy { it.name }?.joinToString("") {
       val folderActions = getFolderActions(it, req)
       """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions</li>"""
     } ?: ""

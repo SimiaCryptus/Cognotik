@@ -12,13 +12,26 @@ import java.nio.file.StandardCopyOption
 
 object FileUploadHandler {
   private val log = LoggerFactory.getLogger(FileUploadHandler::class.java)
-  fun handleUpload(req: HttpServletRequest, resp: HttpServletResponse, targetDir: File?) {
-    if (targetDir == null || !targetDir.exists() || !targetDir.isDirectory) {
+     fun handleUpload(
+       req: HttpServletRequest,
+       resp: HttpServletResponse,
+       targetDir: File?,
+       baseDir: File? = null,
+     ) {
+       if (targetDir == null || !targetDir.exists() || !targetDir.isDirectory ||
+           FileAccessControl.isHidden(baseDir, targetDir)) {
       log.warn("Target directory does not exist or is not a directory: ${targetDir?.absolutePath}")
       resp.status = HttpServletResponse.SC_BAD_REQUEST
       resp.writer.write("Invalid target directory")
       return
     }
+       if (FileAccessControl.isReadOnly(baseDir, targetDir)) {
+         log.warn("Refusing upload to read-only directory: ${targetDir.absolutePath}")
+         resp.status = HttpServletResponse.SC_FORBIDDEN
+         resp.contentType = "application/json"
+         resp.writer.write("""{"success": false, "message": "Target directory is read-only"}""")
+         return
+       }
     val filePart: Part? = req.getPart("file")
     if (filePart == null) {
       log.warn("No file part found in upload request")
@@ -40,6 +53,19 @@ object FileUploadHandler {
       return
     }
     val targetFile = File(targetDir, fileName)
+       if (FileAccessControl.isHidden(baseDir, targetFile)) {
+         log.warn("Refusing upload to hidden path: ${targetFile.absolutePath}")
+         resp.status = HttpServletResponse.SC_FORBIDDEN
+         resp.writer.write("Invalid filename")
+         return
+       }
+       if (FileAccessControl.isReadOnly(baseDir, targetFile)) {
+         log.warn("Refusing upload to read-only path: ${targetFile.absolutePath}")
+         resp.status = HttpServletResponse.SC_FORBIDDEN
+         resp.contentType = "application/json"
+         resp.writer.write("""{"success": false, "message": "Target file is read-only"}""")
+         return
+       }
     if (targetFile.exists()) {
       log.warn("File already exists, overwriting not allowed: ${targetFile.absolutePath}")
       resp.status = HttpServletResponse.SC_CONFLICT
@@ -57,6 +83,19 @@ object FileUploadHandler {
 
   fun handlePut(req: HttpServletRequest, resp: HttpServletResponse, baseDir: File, pathSegments: List<String>) {
     val targetFile = File(baseDir, pathSegments.drop(1).joinToString("/"))
+       if (FileAccessControl.isHidden(baseDir, targetFile)) {
+         log.warn("Refusing PUT to hidden path: ${targetFile.absolutePath}")
+         resp.status = HttpServletResponse.SC_NOT_FOUND
+         resp.writer.write("File not found")
+         return
+       }
+       if (FileAccessControl.isReadOnly(baseDir, targetFile)) {
+         log.warn("Refusing PUT to read-only path: ${targetFile.absolutePath}")
+         resp.status = HttpServletResponse.SC_FORBIDDEN
+         resp.contentType = "application/json"
+         resp.writer.write("""{"success": false, "message": "File is read-only"}""")
+         return
+       }
     if (targetFile.exists() && targetFile.isDirectory) {
       log.warn("Cannot PUT to a directory: ${targetFile.absolutePath}")
       resp.status = HttpServletResponse.SC_BAD_REQUEST
