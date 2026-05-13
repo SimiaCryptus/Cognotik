@@ -20,10 +20,10 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
           "/", "/index.html" -> {
               val user = authenticate(req, resp)
               if (null == user) {
-                  log.info("Serving login.html page to anonymous user")
+                  //log.info("Serving login.html page to anonymous user")
                   serveLoginPage(resp)
               } else {
-                  log.info("Serving welcome page to authenticated user: ${user.email}")
+                  //log.info("Serving welcome page to authenticated user: ${user.email}")
                   serveStaticPage(resp)
               }
           }

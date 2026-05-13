@@ -27,7 +27,7 @@ class DatabaseFacet(
         val password: String
         val remoteUrl = serviceUrl?.ifBlank { null }
         if (remoteUrl != null) {
-            log.info("Connecting to external HSQL $name service at: {}", remoteUrl)
+            log.debug("Connecting to external HSQL $name service at: {}", remoteUrl)
             url = remoteUrl
             username = serviceUser
             password = filterPassword(servicePassword)
@@ -40,28 +40,28 @@ class DatabaseFacet(
         val cacheKey = url + "|" + name
         val existing = connections[cacheKey]
         return if (existing != null && isUsable(existing)) {
-            log.info("Reusing existing $name connection to: {}", cacheKey)
+            log.debug("Reusing existing $name connection to: {}", cacheKey)
             existing
         } else synchronized(connections) {
-                val again = connections[cacheKey]
-                if (again != null && isUsable(again)) {
-                    log.info("Reusing existing $name connection to: {}", cacheKey)
-                    again
-                } else {
-                    if (again != null) {
-                        try {
-                            again.close()
-                        } catch (_: Exception) {
-                        }
-                        connections.remove(cacheKey)
+            val again = connections[cacheKey]
+            if (again != null && isUsable(again)) {
+                log.debug("Reusing existing $name connection to: {}", cacheKey)
+                again
+            } else {
+                if (again != null) {
+                    try {
+                        again.close()
+                    } catch (_: Exception) {
                     }
-                    log.info("Opening HSQL $name connection to: {}", cacheKey)
-                    val conn = openConnectionWithRetry(url, username, password)
-                    ensureSchema(url, conn)
-                    connections[cacheKey] = conn
-                    conn
+                    connections.remove(cacheKey)
                 }
+                log.debug("Opening HSQL $name connection to: {}", cacheKey)
+                val conn = openConnectionWithRetry(url, username, password)
+                ensureSchema(url, conn)
+                connections[cacheKey] = conn
+                conn
             }
+        }
     }
 
     private fun isUsable(conn: Connection): Boolean {
