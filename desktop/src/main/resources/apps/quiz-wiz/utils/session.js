@@ -31,7 +31,7 @@ export function parseSessionUrl() {
   * @returns {string} Proxy URL
   */
 export function getProxyUrl(id) {
-        return '/proxy/#' + id;
+        return '/proxy/?session=' + id;
   }
 
 /**

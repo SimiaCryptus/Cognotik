@@ -16,7 +16,7 @@
     }
 
 var proxyBase = '/proxy/';
-    function getProxyUrl(id) { return proxyBase + '#' + id; }
+    function getProxyUrl(id) { return proxyBase + '?session=' + id; }
      // === Available Models ===
      var availableModels = {};
      // === Child Session IDs (for usage tracking) ===

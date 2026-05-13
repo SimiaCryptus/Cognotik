@@ -175,7 +175,7 @@
     }
 
     const proxyBase = '/proxy/';
-    function getProxyUrl(id) { return proxyBase + '#' + id; }
+    function getProxyUrl(id) { return proxyBase + '?session=' + id; }
     // ========================================================================
     // Viewer State (declared early so all handlers can access)
     // ========================================================================
@@ -420,7 +420,7 @@
                 '</div>';
             container.style.display = 'block';
         } else if (status === 'ERROR' || status === 'FAILED') {
-            var proxyUrl3 = taskSessionId ? getProxyUrl(taskSessionId) : '#';
+            var proxyUrl3 = taskSessionId ? getProxyUrl(taskSessionId) : '?session=';
             container.innerHTML =
                 '<div class="session-error-link">' +
                 '<span>❌ Failed — </span>' +

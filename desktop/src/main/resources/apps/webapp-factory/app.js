@@ -598,7 +598,7 @@
         }
     }
     function getProxyUrl(taskSessionId) {
-        return proxyBase + '#' + taskSessionId;
+        return proxyBase + '?session=' + taskSessionId;
     }
     function updateTaskStatusUI(target, taskInfo) {
         const status = taskInfo.status;
