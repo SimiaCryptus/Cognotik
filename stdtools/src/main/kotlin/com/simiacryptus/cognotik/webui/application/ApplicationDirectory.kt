@@ -127,7 +127,7 @@ abstract class ApplicationDirectory(
 
   open fun webAppContexts() = listOfNotNull(
     run { log.debug("Creating web app contexts"); null },
-    newWebAppContext( "/auth/callback/*", authCallbackServlet),
+    newWebAppContext( "/auth/*", authCallbackServlet),
     newWebAppContext("/logout", logoutServlet),
     newWebAppContext("/userInfo", userInfoServlet).let {
       log.debug("Configuring userInfo context with authentication")
