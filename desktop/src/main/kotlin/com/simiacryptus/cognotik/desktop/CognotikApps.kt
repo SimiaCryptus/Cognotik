@@ -2,14 +2,12 @@ package com.simiacryptus.cognotik.desktop
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.apps.SinglePlanApp
-import com.simiacryptus.cognotik.auth.AuthCallbackServlet
+import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -20,7 +18,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
-import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
@@ -280,9 +277,6 @@ open class CognotikApps(
         return srv
     }
 
-    override fun authenticatedWebsite() = object : OAuthBase("") {
-        override fun configure(context: WebAppContext, addFilter: Boolean) = context
-    }
 
     override fun setupPlatform() {
         super.setupPlatform()

@@ -100,6 +100,7 @@ aws-kms = { group = "software.amazon.awssdk", name = "kms", version.ref = "aws" 
 aws-secretsmanager = { group = "software.amazon.awssdk", name = "secretsmanager", version.ref = "aws" }
 aws-ecs = { group = "software.amazon.awssdk", name = "ecs", version.ref = "aws" }
 aws-ec2 = { group = "software.amazon.awssdk", name = "ec2", version.ref = "aws" }
+aws-efs = { group = "software.amazon.awssdk", name = "efs", version.ref = "aws" }
 commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpclient5" }

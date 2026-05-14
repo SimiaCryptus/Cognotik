@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.String
 
@@ -23,6 +24,9 @@ class BasicChatApp(
   path = root.absolutePath,
   root = root
 ) {
+  companion object {
+    private val log = LoggerFactory.getLogger(BasicChatApp::class.java)
+  }
   override val stickyInput: Boolean
     get() = true
   override val inputCnt get() = 0

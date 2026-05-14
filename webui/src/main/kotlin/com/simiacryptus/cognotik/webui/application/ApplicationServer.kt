@@ -212,8 +212,7 @@ abstract class ApplicationServer(
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
-        val filter = getFilter()
-        webAppContext.addFilter(filter, "/*", null)
+        webAppContext.addFilter(getFilter(ApplicationServer::class.java), "/*", null)
         configure_appServlets(webAppContext)
     }
 
@@ -241,59 +240,63 @@ abstract class ApplicationServer(
         logger.debug("Added cancelSession servlet")
     }
 
-    private fun getFilter(): FilterHolder = FilterHolder { request, response, chain ->
-        val requestPath = (request as HttpServletRequest).requestURI
-        val servletPath = request.servletPath
-        logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
-        val user = authenticate(request, response as HttpServletResponse)
-        val email = if (user == null && servletPath != "/fileIndex") {
-            logger.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
-            response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-            val originalRequest = request.requestURL.toString()
-            val queryString = request.queryString
-            val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-            val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-            response.setHeader("Location", "/login/?target=$encodedTarget")
-            return@FilterHolder
-        } else {
-            val email = user?.email ?: "anonymous"
-            logger.debug("Authenticated user: {} for request: {}", email, requestPath)
-            email
-        }
-        val canRead = authorizationManager.isAuthorized(
-            applicationClass = this@ApplicationServer.javaClass,
-            user = user,
-            operationType = OperationType.Read
-        )
-        logger.debug(
-            "Authorization check result: {} for user: {} on path: {}",
-            canRead,
-            email,
-            requestPath
-        )
-        if (canRead) {
-            logger.debug("Access granted for request: {}", requestPath)
-            chain?.doFilter(request, response)
-        } else {
-            logger.warn(
-                "Access denied for user: {} on path: {} in application: {}",
-                user?.email,
-                requestPath,
-                applicationName
-            )
-            response.writer?.write("Access Denied")
-            (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
-        }
-    }
+    protected open fun getFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
+        authFilter(applicationClass)
 
     companion object {
 
         @JvmStatic
-        val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
         val appInfoMap = mutableMapOf<Session, AppInfoData>()
     }
 
+}
+
+private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
+
+fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = FilterHolder { request, response, chain ->
+    val requestPath = (request as HttpServletRequest).requestURI
+    val servletPath = request.servletPath
+    log.debug("Processing request: {}", requestPath)
+    val user = authenticate(request, response as HttpServletResponse)
+    val email = if (user == null && servletPath != "/fileIndex") {
+        log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
+        response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+        val originalRequest = request.requestURL.toString()
+        val queryString = request.queryString
+        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+        response.setHeader("Location", "/login/?target=$encodedTarget")
+        return@FilterHolder
+    } else {
+        val email = user?.email ?: "anonymous"
+        log.debug("Authenticated user: {} for request: {}", email, requestPath)
+        email
+    }
+    val canRead = authorizationManager.isAuthorized(
+        applicationClass = applicationClass,
+        user = user,
+        operationType = OperationType.Read
+    )
+    log.info(
+        "Authorization check result: {} for user: {} on path: {}",
+        canRead,
+        email,
+        requestPath
+    )
+    if (canRead) {
+        log.info("Access granted for request: {}", requestPath)
+        chain?.doFilter(request, response)
+    } else {
+        log.warn(
+            "Access denied for user: {} on path: {}",
+            user?.email,
+            requestPath
+        )
+        response.writer?.write("Access Denied")
+        (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
+    }
 }
 
 fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
