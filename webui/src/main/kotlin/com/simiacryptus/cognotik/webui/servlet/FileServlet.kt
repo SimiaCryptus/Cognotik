@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.core.internal.waiters.ResponseOrException.response
 import java.io.File
 
 @MultipartConfig(
@@ -27,71 +28,71 @@ import java.io.File
 )
 abstract class FileServlet : HttpServlet() {
 
-  abstract fun getDir(req: HttpServletRequest): File?
+  abstract fun getDir(request: HttpServletRequest, response: HttpServletResponse): File?
 
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.debug("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
+  override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    log.debug("Received GET request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
-      val dir = getDir(req)
+      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val dir = getDir(request, response)
       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
          if (file != null && FileAccessControl.isHidden(dir, file)) {
            log.debug("Path is hidden, returning 404: ${file.absolutePath}")
-           resp.status = HttpServletResponse.SC_NOT_FOUND
-           resp.writer.write("File not found")
+           response.status = HttpServletResponse.SC_NOT_FOUND
+           response.writer.write("File not found")
            return
          }
       when {
         file != null && file.name == "_files.json" && !file.exists() -> {
-          serveVirtualFilesJson(file, resp)
+          serveVirtualFilesJson(file, response)
         }
 
         file != null && !file.exists() -> {
-          serveNonExistentFile(file, resp)
+          serveNonExistentFile(file, response)
         }
 
         file != null && file.isFile -> {
-          FileRequestHandler.serveFile(file, req, resp)
+          FileRequestHandler.serveFile(file, request, response)
         }
 
-        req.pathInfo?.endsWith("/") == false -> {
-          log.info("Redirecting to directory path: ${req.requestURI + "/"}")
-          resp.sendRedirect(req.requestURI + "/")
+        request.pathInfo?.endsWith("/") == false -> {
+          log.info("Redirecting to directory path: ${request.requestURI + "/"}")
+          response.sendRedirect(request.requestURI + "/")
         }
 
         else -> {
-          serveDirectoryListing(file, req, resp, pathSegments)
+          serveDirectoryListing(file, request, response, pathSegments)
         }
       }
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in GET request: ${e.message}")
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Invalid path: ${e.message}")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("Invalid path: ${e.message}")
     } catch (e: Exception) {
       log.error("Error handling GET request", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.writer.write("Internal server error: ${e.message}")
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.writer.write("Internal server error: ${e.message}")
     }
   }
-   override fun doHead(req: HttpServletRequest, resp: HttpServletResponse) {
-     log.debug("Received HEAD request for path: ${req.pathInfo ?: req.servletPath}")
+   override fun doHead(request: HttpServletRequest, response: HttpServletResponse) {
+     log.debug("Received HEAD request for path: ${request.pathInfo ?: request.servletPath}")
      try {
-       val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
-       val dir = getDir(req)
+       val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+       val dir = getDir(request, response)
        val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
           if (file != null && FileAccessControl.isHidden(dir, file)) {
-            resp.status = HttpServletResponse.SC_NOT_FOUND
+            response.status = HttpServletResponse.SC_NOT_FOUND
             return
           }
        when {
          file != null && file.name == "_files.json" && !file.exists() -> {
            val parentDir = file.parentFile
            if (parentDir != null && parentDir.exists() && parentDir.isDirectory) {
-             resp.contentType = "application/json"
-             resp.characterEncoding = "UTF-8"
-             resp.status = HttpServletResponse.SC_OK
+             response.contentType = "application/json"
+             response.characterEncoding = "UTF-8"
+             response.status = HttpServletResponse.SC_OK
            } else {
-             resp.status = HttpServletResponse.SC_NOT_FOUND
+             response.status = HttpServletResponse.SC_NOT_FOUND
            }
          }
          file != null && !file.exists() -> {
@@ -103,132 +104,132 @@ abstract class FileServlet : HttpServlet() {
                if (mdFile.exists() && mdFile.isFile) {
                  when (extension) {
                    "txt" -> {
-                     resp.contentType = "text/plain"
-                     resp.characterEncoding = "UTF-8"
-                     resp.status = HttpServletResponse.SC_OK
+                     response.contentType = "text/plain"
+                     response.characterEncoding = "UTF-8"
+                     response.status = HttpServletResponse.SC_OK
                    }
                    "pdf" -> {
-                     resp.contentType = "application/pdf"
-                     resp.status = HttpServletResponse.SC_OK
+                     response.contentType = "application/pdf"
+                     response.status = HttpServletResponse.SC_OK
                    }
                    else -> {
-                     resp.contentType = "text/html"
-                     resp.characterEncoding = "UTF-8"
-                     resp.status = HttpServletResponse.SC_OK
+                     response.contentType = "text/html"
+                     response.characterEncoding = "UTF-8"
+                     response.status = HttpServletResponse.SC_OK
                    }
                  }
                } else {
-                 resp.status = HttpServletResponse.SC_NOT_FOUND
+                 response.status = HttpServletResponse.SC_NOT_FOUND
                }
              }
              else -> {
-               resp.status = HttpServletResponse.SC_NOT_FOUND
+               response.status = HttpServletResponse.SC_NOT_FOUND
              }
            }
          }
          file != null && file.isFile -> {
-           resp.contentType = MimeTypeResolver.getMimeType(file.name)
-           resp.setContentLengthLong(file.length())
-           resp.status = HttpServletResponse.SC_OK
+           response.contentType = MimeTypeResolver.getMimeType(file.name)
+           response.setContentLengthLong(file.length())
+           response.status = HttpServletResponse.SC_OK
          }
-         req.pathInfo?.endsWith("/") == false -> {
-           resp.setHeader("Location", req.requestURI + "/")
-           resp.status = HttpServletResponse.SC_MOVED_PERMANENTLY
+         request.pathInfo?.endsWith("/") == false -> {
+           response.setHeader("Location", request.requestURI + "/")
+           response.status = HttpServletResponse.SC_MOVED_PERMANENTLY
          }
          else -> {
-           resp.contentType = "text/html"
-           resp.characterEncoding = "UTF-8"
-           resp.status = HttpServletResponse.SC_OK
+           response.contentType = "text/html"
+           response.characterEncoding = "UTF-8"
+           response.status = HttpServletResponse.SC_OK
          }
        }
      } catch (e: IllegalArgumentException) {
        log.warn("Invalid path in HEAD request: ${e.message}")
-       resp.status = HttpServletResponse.SC_BAD_REQUEST
+       response.status = HttpServletResponse.SC_BAD_REQUEST
      } catch (e: Exception) {
        log.error("Error handling HEAD request", e)
-       resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+       response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
      }
    }
 
 
-  override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.debug("Received POST request for path: ${req.pathInfo ?: req.servletPath}")
+  override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    log.debug("Received POST request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val gitAction = req.getParameter("gitAction")
-      if (gitAction != null && isGitEnabled(req)) {
-        GitOperationHandler.handleGitOperation(req, resp, getGitRoot(req))
+      val gitAction = request.getParameter("gitAction")
+      if (gitAction != null && isGitEnabled(request)) {
+        GitOperationHandler.handleGitOperation(request, response, getGitRoot(request, response))
         return
       }
-      val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
-      val dir = getDir(req)
+      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val dir = getDir(request, response)
       val targetDir = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
          if (targetDir != null && FileAccessControl.isHidden(dir, targetDir)) {
            log.warn("Refusing POST to hidden path: ${targetDir.absolutePath}")
-           resp.status = HttpServletResponse.SC_NOT_FOUND
-           resp.writer.write("File not found")
+           response.status = HttpServletResponse.SC_NOT_FOUND
+           response.writer.write("File not found")
            return
          }
-         FileUploadHandler.handleUpload(req, resp, targetDir, dir)
+         FileUploadHandler.handleUpload(request, response, targetDir, dir)
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in POST request: ${e.message}")
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Invalid path: ${e.message}")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("Invalid path: ${e.message}")
     } catch (e: Exception) {
       log.error("Error during file upload", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.writer.write("Error uploading file: ${e.message}")
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.writer.write("Error uploading file: ${e.message}")
     }
   }
 
-      override fun doPut(req: HttpServletRequest, resp: HttpServletResponse) {
-        log.info("Received PUT request for path: ${req.pathInfo ?: req.servletPath}")
+      override fun doPut(request: HttpServletRequest, response: HttpServletResponse) {
+        log.info("Received PUT request for path: ${request.pathInfo ?: request.servletPath}")
         try {
-          val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
-          val dir = getDir(req)
+          val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+          val dir = getDir(request, response)
           if (dir == null) {
             log.warn("Base directory is null for PUT request")
-            resp.status = HttpServletResponse.SC_BAD_REQUEST
-            resp.writer.write("Invalid base directory")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.writer.write("Invalid base directory")
             return
           }
-          FileUploadHandler.handlePut(req, resp, dir, pathSegments)
+          FileUploadHandler.handlePut(request, response, dir, pathSegments)
         } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in PUT request: ${e.message}")
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Invalid path: ${e.message}")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("Invalid path: ${e.message}")
     } catch (e: Exception) {
       log.error("Error during file PUT", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.writer.write("Error writing file: ${e.message}")
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.writer.write("Error writing file: ${e.message}")
     }
   }
 
-  override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("Received DELETE request for path: ${req.pathInfo ?: req.servletPath}")
+  override fun doDelete(request: HttpServletRequest, response: HttpServletResponse) {
+    log.info("Received DELETE request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
-      val dir = getDir(req)
+      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val dir = getDir(request, response)
       if (dir == null) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.writer.write("Invalid base directory")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.writer.write("Invalid base directory")
         return
       }
       val targetFile = File(dir, pathSegments.drop(1).joinToString("/"))
          if (FileAccessControl.isHidden(dir, targetFile)) {
            log.warn("Refusing DELETE on hidden path: ${targetFile.absolutePath}")
-           resp.status = HttpServletResponse.SC_NOT_FOUND
-           resp.writer.write("File not found")
+           response.status = HttpServletResponse.SC_NOT_FOUND
+           response.writer.write("File not found")
            return
          }
-         FileDeleteHandler.handleDelete(resp, targetFile, dir)
+         FileDeleteHandler.handleDelete(response, targetFile, dir)
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in DELETE request: ${e.message}")
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Invalid path: ${e.message}")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("Invalid path: ${e.message}")
     } catch (e: Exception) {
       log.error("Error during file DELETE", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.writer.write("Error deleting file: ${e.message}")
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.writer.write("Error deleting file: ${e.message}")
     }
   }
 
@@ -281,19 +282,19 @@ abstract class FileServlet : HttpServlet() {
   }
 
   private fun serveDirectoryListing(
-    file: File?, req: HttpServletRequest, resp: HttpServletResponse, pathSegments: List<String>
+    file: File?, request: HttpServletRequest, response: HttpServletResponse, pathSegments: List<String>
   ) {
-    resp.contentType = "text/html"
-    resp.characterEncoding = "UTF-8"
-    resp.status = HttpServletResponse.SC_OK
+    response.contentType = "text/html"
+    response.characterEncoding = "UTF-8"
+    response.status = HttpServletResponse.SC_OK
     val currentPathString = pathSegments.drop(1).joinToString("/")
     val servletPathBase =
-      req.contextPath + req.servletPath.removeSuffix("/*").removeSuffix("/") + "/" + req.pathInfo.split("/")
+      request.contextPath + request.servletPath.removeSuffix("/*").removeSuffix("/") + "/" + request.pathInfo.split("/")
         .firstOrNull { it.isNotBlank() }
 
-    val (files, folders) = listContents(file, req)
-    val gitEnabled = isGitEnabled(req)
-    val gitRoot = if (gitEnabled) getGitRoot(req) else null
+    val (files, folders) = listContents(file, request, response)
+    val gitEnabled = isGitEnabled(request)
+    val gitRoot = if (gitEnabled) getGitRoot(request, response) else null
     val isRepo = GitOperationHandler.isGitRepository(gitRoot)
     val gitSection = if (gitEnabled) GitHtml.buildGitSection(gitRoot, isRepo) else ""
     val gitStyles = if (gitEnabled) GitStyles.getGitStyles() else ""
@@ -303,20 +304,20 @@ abstract class FileServlet : HttpServlet() {
     val model = DirectoryPageModel(
       currentPath = currentPathString,
       servletBaseHref = servletPathBase,
-      zipLink = getZipLink(req, currentPathString),
+      zipLink = getZipLink(request, currentPathString),
       folders = folders,
       files = files,
-      toolbarActions = getToolbarActions(req, currentPathString) + gitToolbar,
-      additionalSections = gitSection + getAdditionalSections(file, req, currentPathString),
+      toolbarActions = getToolbarActions(request, currentPathString) + gitToolbar,
+      additionalSections = gitSection + getAdditionalSections(file, request, currentPathString),
       additionalStyles = getAdditionalStyles() + gitStyles,
       additionalScripts = getAdditionalScripts() + gitScripts,
       actualFilePath = file?.absolutePath ?: ""
     )
-    resp.writer.write(DirectoryListingRenderer.renderDirectoryPage(model))
+    response.writer.write(DirectoryListingRenderer.renderDirectoryPage(model))
   }
 
-  open fun listContents(file: File?, req: HttpServletRequest): Pair<String, String> {
-       val baseDir = getDir(req)
+  open fun listContents(file: File?, request: HttpServletRequest, response: HttpServletResponse): Pair<String, String> {
+       val baseDir = getDir(request, response)
        val files = file?.listFiles()
          ?.filter { it.isFile }
          ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
@@ -329,14 +330,14 @@ abstract class FileServlet : HttpServlet() {
       } else {
         ""
       }
-      val fileActions = getFileActions(it, req)
+      val fileActions = getFileActions(it, request)
       """<li style="display: flex; align-items: center;">$baseLink$htmlLink$fileActions</li>"""
     } ?: ""
        val folders = file?.listFiles()
          ?.filter { !it.isFile }
          ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
          ?.sortedBy { it.name }?.joinToString("") {
-      val folderActions = getFolderActions(it, req)
+      val folderActions = getFolderActions(it, request)
       """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions</li>"""
     } ?: ""
     return Pair(files, folders)
@@ -387,7 +388,7 @@ abstract class FileServlet : HttpServlet() {
    * Returns the root directory for Git operations (the repository root).
    * By default, returns the result of getDir(req).
    */
-  open fun getGitRoot(req: HttpServletRequest): File? = getDir(req)
+  open fun getGitRoot(req: HttpServletRequest, response: HttpServletResponse): File? = getDir(req, response)
 
   /**
    * Override to provide a ZIP download link for the current directory.

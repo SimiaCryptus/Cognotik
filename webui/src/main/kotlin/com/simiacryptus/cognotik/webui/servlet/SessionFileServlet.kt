@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.net.URLEncoder
 
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024 * 2, // 2MB
@@ -26,9 +27,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
         private val log = LoggerFactory.getLogger(SessionFileServlet::class.java)
     }
 
-    override fun getDir(request: HttpServletRequest): File? {
-
-
+    override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File? {
         return try {
             val pathInfo = request.pathInfo ?: request.servletPath
             log.debug("getDir called with pathInfo: $pathInfo")
@@ -42,8 +41,14 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
             val cookie = request.getCookie()
             val user = ApplicationServices.authenticationManager.getUser(cookie)
             if (user == null && !session.isGlobal()) {
-                log.warn("No user found for token (cookie present: ${cookie != null}) for session ${session.sessionId}")
-                throw RuntimeException("No user found for token")
+                log.warn("No user found for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
+                response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+                val originalRequest = request.requestURL.toString()
+                val queryString = request.queryString
+                val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+                val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+                response.setHeader("Location", "/login/?target=$encodedTarget")
+                return null
             }
             log.debug("Authenticated user: ${user?.email} for session ${session.sessionId}")
             try {
@@ -95,44 +100,54 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
         }
     }
 
-    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val pathInfo = req.pathInfo ?: req.servletPath ?: "/"
-        log.debug("doGet: pathInfo=$pathInfo, remoteAddr=${req.remoteAddr}")
+    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+        val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
+        log.debug("doGet: pathInfo=$pathInfo, remoteAddr=${request.remoteAddr}")
         try {
             // Handle git API endpoints
             if (pathInfo.contains("/.git/api/")) {
                 log.debug("Routing to git API GET handler for path: $pathInfo")
-                handleGitApiGet(req, resp, pathInfo)
+                handleGitApiGet(request, response, pathInfo)
                 return
             }
-            super.doGet(req, resp)
+            // Pre-flight auth check: if getDir would redirect to login, honor that and stop
+            // before super.doGet attempts to call listContents (which would throw).
+            if (!isAuthenticatedForSession(request, response)) {
+                log.debug("doGet: not authenticated, redirect already issued by isAuthenticatedForSession")
+                return
+            }
+            super.doGet(request, response)
         } catch (e: Exception) {
             log.error("Error in doGet for path: $pathInfo", e)
-            if (!resp.isCommitted) {
-                resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-                resp.contentType = "application/json"
-                resp.writer.write("""{"error": "Request failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
+            if (!response.isCommitted) {
+                response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                response.contentType = "application/json"
+                response.writer.write("""{"error": "Request failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
             }
         }
     }
 
-    override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val pathInfo = req.pathInfo ?: req.servletPath ?: "/"
-        log.debug("doPost: pathInfo=$pathInfo, remoteAddr=${req.remoteAddr}")
+    override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+        val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
+        log.debug("doPost: pathInfo=$pathInfo, remoteAddr=${request.remoteAddr}")
         try {
             // Handle git API endpoints
             if (pathInfo.contains("/.git/api/")) {
                 log.debug("Routing to git API POST handler for path: $pathInfo")
-                handleGitApiPost(req, resp, pathInfo)
+                handleGitApiPost(request, response, pathInfo)
                 return
             }
-            super.doPost(req, resp)
+            if (!isAuthenticatedForSession(request, response)) {
+                log.debug("doPost: not authenticated, redirect already issued by isAuthenticatedForSession")
+                return
+            }
+            super.doPost(request, response)
         } catch (e: Exception) {
             log.error("Error in doPost for path: $pathInfo", e)
-            if (!resp.isCommitted) {
-                resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-                resp.contentType = "application/json"
-                resp.writer.write("""{"error": "Request failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
+            if (!response.isCommitted) {
+                response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                response.contentType = "application/json"
+                response.writer.write("""{"error": "Request failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
             }
         }
     }
@@ -742,11 +757,11 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     }
 
 
-    override fun listContents(file: File?, request: HttpServletRequest): Pair<String, String> {
+    override fun listContents(file: File?, request: HttpServletRequest, response: HttpServletResponse): Pair<String, String> {
         return try {
             file?.let {
                 log.debug("listContents: delegating to super for ${it.absolutePath}")
-                return super.listContents(it, request)
+                return super.listContents(it, request, response)
             }
             val pathInfo = request.pathInfo ?: request.servletPath
             log.debug("listContents: pathInfo=$pathInfo")
@@ -758,19 +773,27 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
             val session = Session(pathSegments.first())
             val cookie = request.getCookie(AuthenticationInterface.AUTH_COOKIE)
             val user = ApplicationServices.authenticationManager.getUser(cookie)
-            if (user == null) {
-                log.warn("listContents: could not find user for token (cookie present: ${cookie != null}) for session ${session.sessionId}")
-                throw RuntimeException("Could not find user for token")
+            if (user == null && !session.isGlobal()) {
+                log.warn("listContents: could not find user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
+                if (!response.isCommitted) {
+                    response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+                    val originalRequest = request.requestURL.toString()
+                    val queryString = request.queryString
+                    val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+                    val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+                    response.setHeader("Location", "/login/?target=$encodedTarget")
+                }
+                return Pair("", "")
             }
-            log.debug("listContents: user=${user.email}, session=${session.sessionId}")
+            log.debug("listContents: user=${user?.email}, session=${session.sessionId}")
             try {
                 onSession(session, user)
             } catch (e: Exception) {
                 log.error("Error in onSession callback during listContents", e)
                 throw e
             }
-            val sessionPair = listContents(dataStorage.getUserDir(user, session), request)
-            val dataPair = listContents(dataStorage.getSystemDir(user, session), request)
+            val sessionPair = listContents(dataStorage.getUserDir(user, session), request, response)
+            val dataPair = listContents(dataStorage.getSystemDir(user, session), request, response)
             Pair(sessionPair.first + dataPair.first, sessionPair.second + dataPair.second)
         } catch (e: RuntimeException) {
             throw e
@@ -782,5 +805,41 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
 
     open fun onSession(session: Session, user: User?) {
 
+    }
+    /**
+     * Returns true if the request is authenticated (or the session is global so no auth required).
+     * If not authenticated, writes a 307 redirect to the login page and returns false.
+     * The caller should return immediately after a false result.
+     */
+    private fun isAuthenticatedForSession(request: HttpServletRequest, response: HttpServletResponse): Boolean {
+        return try {
+            val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
+            val pathSegments = parsePath(pathInfo)
+            if (pathSegments.isEmpty()) {
+                // Let downstream handle invalid paths
+                return true
+            }
+            val session = Session(pathSegments.first())
+            val cookie = request.getCookie()
+            val user = ApplicationServices.authenticationManager.getUser(cookie)
+            if (user == null && !session.isGlobal()) {
+                log.warn("isAuthenticatedForSession: no user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
+                if (!response.isCommitted) {
+                    response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+                    val originalRequest = request.requestURL.toString()
+                    val queryString = request.queryString
+                    val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+                    val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+                    response.setHeader("Location", "/login/?target=$encodedTarget")
+                }
+                false
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            log.error("Error during pre-flight auth check", e)
+            // Fall through to normal processing; downstream will handle errors
+            true
+        }
     }
 }

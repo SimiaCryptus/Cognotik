@@ -310,7 +310,7 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
 
 fun authenticate(
     request: HttpServletRequest,
-    response: HttpServletResponse
+    response: HttpServletResponse?
 ): User? {
     val claimedUser = request.getCookie("USER")?.let { username ->
         val email = request.getCookie("EMAIL") ?: ""
@@ -359,12 +359,14 @@ fun authenticate(
         return user
     } catch (e: RuntimeException) {
         log.debug(e.message)
-        response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-        val originalRequest = request.requestURL.toString()
-        val queryString = request.queryString
-        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-        response.setHeader("Location", "/login/?target=$encodedTarget")
+        if(null != response) {
+            response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+            val originalRequest = request.requestURL.toString()
+            val queryString = request.queryString
+            val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+            val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+            response.setHeader("Location", "/login/?target=$encodedTarget")
+        }
         return null
     }
 }
