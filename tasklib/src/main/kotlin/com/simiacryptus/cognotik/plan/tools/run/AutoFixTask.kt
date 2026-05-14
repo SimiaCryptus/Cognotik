@@ -15,13 +15,13 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.resolveTool
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
-import kotlin.io.path.exists
 
 class AutoFixTask(
   orchestrationConfig: OrchestrationConfig, planTask: AutoFixTaskExecutionConfigData?
@@ -165,12 +165,8 @@ class AutoFixTask(
                     }
                   } else null
                   PatchApp.CommandSettings(
-                    executable = toolExecutable ?: when {
-                      alias.isNullOrBlank() -> null
-                      root.resolve(alias).exists() -> root.resolve(alias).toFile().absoluteFile
-                      File(alias).exists() -> File(alias).absoluteFile
-                      else -> null
-                    } ?: throw IllegalArgumentException("Command not found: $alias"),
+                    executable = toolExecutable ?: alias?.resolveTool(this.root)
+                    ?: throw IllegalArgumentException("Command not found: $alias"),
                     arguments = commandWithDir.filteredCommand().drop(1).joinToString(" "),
                     workingDirectory = ((commandWithDir.working_dir
                       ?: orchestrationConfig.workingDir)?.let { agent.root.toFile().resolve(it) }
@@ -267,6 +263,7 @@ class AutoFixTask(
     }
     task.complete()
   }
+
 }
 
 private fun String.truncateMiddle(maxLen: Int): String {
@@ -274,3 +271,4 @@ private fun String.truncateMiddle(maxLen: Int): String {
   val partLen = maxLen / 2 - 3
   return this.take(partLen) + "\n...\n" + this.takeLast(partLen)
 }
+

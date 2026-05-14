@@ -7,7 +7,10 @@ import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 import kotlin.math.pow
 
@@ -257,14 +260,16 @@ open class AudioProcessingAgent(
                 defaultVoice
             )
             // Nothing to render - fall back to a single call with the original messages.
-            this.model.audio["voice"] = defaultVoice
+            // IMPORTANT: do not mutate the shared model.audio map (concurrency hazard);
+            // use a per-call copy with the default voice applied.
+            val singleCallAudioConfig = LinkedHashMap(model.audio).apply { put("voice", defaultVoice) }
             return try {
                 val choices = model.chat(
                     ChatRequest(
                         model = model.modelType.modelId,
                         messages = messages.toList(),
                         temperature = 0.0,
-                        audio = model.audio,
+                        audio = singleCallAudioConfig,
                         modalities = listOf("audio"),
                     )
                 ).choices
@@ -302,9 +307,14 @@ open class AudioProcessingAgent(
             }
         }
 
-        // Render in parallel.
-        val pool = Executors.newFixedThreadPool(parallelism.coerceAtLeast(1))
-        val timeoutScheduler = Executors.newScheduledThreadPool(parallelism.coerceAtLeast(1))
+        // Render in parallel. Use daemon threads with descriptive names so a stuck
+        // pool cannot prevent JVM shutdown and is easy to identify in thread dumps.
+        val poolSize = parallelism.coerceAtLeast(1)
+        val pool = Executors.newFixedThreadPool(poolSize, namedDaemonThreadFactory("audio-render"))
+        val timeoutScheduler = Executors.newScheduledThreadPool(
+            poolSize.coerceAtMost(2),
+            namedDaemonThreadFactory("audio-render-watchdog")
+        )
         val overallStart = System.currentTimeMillis()
         try {
             log.info("Submitting {} segments for parallel rendering...", parsed.size)
@@ -324,12 +334,16 @@ open class AudioProcessingAgent(
                     }
                 }
             }
+            // Apply a global deadline so the total wall-clock cannot grow to N * renderTimeoutMinutes.
+            val globalDeadlineNanos = System.nanoTime() +
+                    TimeUnit.MINUTES.toNanos(renderTimeoutMinutes)
             val results = futures.mapIndexed { index, future ->
                 try {
-                    future.get(renderTimeoutMinutes, TimeUnit.MINUTES)
+                    val remainingNanos = (globalDeadlineNanos - System.nanoTime()).coerceAtLeast(0L)
+                    future.get(remainingNanos, TimeUnit.NANOSECONDS)
                 } catch (e: java.util.concurrent.TimeoutException) {
                     log.error(
-                        "Segment {} of {} timed out after {} minute(s); cancelling and substituting empty result.",
+                        "Segment {} of {} exceeded global render deadline ({} minute(s)); cancelling and substituting empty result.",
                         index + 1,
                         parsed.size,
                         renderTimeoutMinutes,
@@ -367,8 +381,9 @@ open class AudioProcessingAgent(
             pool.shutdown()
             timeoutScheduler.shutdown()
             try {
-                if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    log.warn("Thread pool did not terminate within 5 seconds; forcing shutdown.")
+                // Allow in-flight HTTP calls a reasonable window to drain before forcing.
+                if (!pool.awaitTermination(30, TimeUnit.SECONDS)) {
+                    log.warn("Thread pool did not terminate within 30 seconds; forcing shutdown.")
                     pool.shutdownNow()
                 }
                 if (!timeoutScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -411,23 +426,30 @@ open class AudioProcessingAgent(
         for (attempt in 1..totalAttempts) {
             val attemptThread = Thread.currentThread()
             // Schedule a watchdog that interrupts this thread if the attempt exceeds the timeout.
+            // Use an "armed" flag so that a watchdog that has already begun executing cannot
+            // interrupt the worker after we have moved on to the next attempt (or returned).
+            val armed = AtomicBoolean(true)
             val watchdog = timeoutScheduler.schedule(
                 {
-                    log.warn(
-                        "Segment {} of {} attempt {}/{} exceeded timeout of {} minute(s); interrupting.",
-                        index + 1,
-                        total,
-                        attempt,
-                        totalAttempts,
-                        segmentTimeoutMinutes
-                    )
-                    attemptThread.interrupt()
+                    if (armed.compareAndSet(true, false)) {
+                        log.warn(
+                            "Segment {} of {} attempt {}/{} exceeded timeout of {} minute(s); interrupting.",
+                            index + 1,
+                            total,
+                            attempt,
+                            totalAttempts,
+                            segmentTimeoutMinutes
+                        )
+                        attemptThread.interrupt()
+                    }
                 }, segmentTimeoutMinutes, TimeUnit.MINUTES
             )
             try {
                 val result = renderSegment(messages, segment, index, total)
+                // Disarm BEFORE cancelling so a watchdog already in flight will see the flag.
+                armed.set(false)
                 watchdog.cancel(false)
-                // Clear any stale interrupt flag set after a successful return.
+                // Clear any stale interrupt flag set just before disarm took effect.
                 Thread.interrupted()
                 if (attempt > 1) {
                     log.info(
@@ -436,6 +458,7 @@ open class AudioProcessingAgent(
                 }
                 return result
             } catch (e: Throwable) {
+                armed.set(false)
                 watchdog.cancel(false)
                 val interrupted = Thread.interrupted() || e is InterruptedException
                 lastError = e
@@ -494,6 +517,9 @@ open class AudioProcessingAgent(
         index: Int,
         total: Int,
     ): Pair<String, AudioSegment?> {
+        // Snapshot the (potentially shared/mutable) audio config once for this call to
+        // avoid concurrent reads of model.audio across threads.
+        val audioSnapshot = LinkedHashMap(model.audio)
         // Handle planned silence segments without invoking the audio model.
         segment.silenceSeconds?.let { seconds ->
             log.info(
@@ -501,10 +527,10 @@ open class AudioProcessingAgent(
             )
             val silenceAudio = try {
                 // Match the audio model's configured output format/parameters where possible.
-                val format = (model.audio["format"] as? String) ?: "wav"
-                val sampleRate = (model.audio["sample_rate"] as? Number)?.toInt() ?: 24000
-                val channels = (model.audio["channels"] as? Number)?.toInt() ?: 1
-                val bitsPerSample = (model.audio["bits_per_sample"] as? Number)?.toInt() ?: 16
+                val format = (audioSnapshot["format"] as? String) ?: "wav"
+                val sampleRate = (audioSnapshot["sample_rate"] as? Number)?.toInt() ?: 24000
+                val channels = (audioSnapshot["channels"] as? Number)?.toInt() ?: 1
+                val bitsPerSample = (audioSnapshot["bits_per_sample"] as? Number)?.toInt() ?: 16
                 AudioSegment.silence(
                     durationSeconds = seconds,
                     format = format,
@@ -520,8 +546,8 @@ open class AudioProcessingAgent(
         }
 
         val voice = resolveVoice(segment.voice)
-        // Audio config map is mutated per-call; copy to avoid cross-thread interference.
-        val audioConfig = LinkedHashMap(model.audio).apply { put("voice", voice) }
+        // Audio config map is mutated per-call; use snapshot to avoid cross-thread interference.
+        val audioConfig = audioSnapshot.apply { put("voice", voice) }
         val scrubbedText = scrubText(segment.text)
         if (scrubbedText != segment.text) {
             log.debug(
@@ -600,32 +626,36 @@ open class AudioProcessingAgent(
      */
     protected open fun scrubText(input: String): String {
         if (input.isEmpty()) return input
+        // Short-circuit if nothing is enabled.
+        if (!scrubBracketedDirectives && !scrubFormatting && !scrubPunctuation
+            && !scrubNonAllowedPatterns && !scrubCapitalization
+        ) return input
         var text = input
         if (scrubBracketedDirectives) {
             // Remove any [..] bracketed directive (non-greedy, no nested brackets).
-            text = text.replace(Regex("""\[[^\[\]]*]"""), " ")
+            text = text.replace(BRACKETED_DIRECTIVE_RE, " ")
         }
         if (scrubFormatting) {
             // Compact lines
             text = text.lines().map { it.trim() }.joinToString(" ")
             // Compact whitespace
-            text = text.replace(Regex("""\s{2,}"""), " ")
+            text = text.replace(MULTI_WHITESPACE_RE, " ")
         }
         if (scrubPunctuation) {
             // Unicode punctuation property; covers most punctuation across scripts.
-            text = text.replace(Regex("""\p{P}+"""), " ")
+            text = text.replace(PUNCT_RE, " ")
         }
         if (scrubNonAllowedPatterns) {
-            // Remove any xml-like tags that may have been returned by the model, as well as any remaining non-letter, non-whitespace characters.
-            text = text.replace(Regex("""<[^>]+>"""), " ")
-            // Keep only letters (any script) and whitespace.
-            text = text.replace(Regex("""[^\p{L}\p{P}\s]+"""), " ")
+            // Remove any xml-like tags that may have been returned by the model.
+            text = text.replace(XML_TAG_RE, " ")
+            // Keep only letters (any script), punctuation, and whitespace.
+            text = text.replace(NON_ALLOWED_RE, " ")
         }
         if (scrubCapitalization) {
             text = text.lowercase()
         }
         // Collapse runs of whitespace and trim.
-        text = text.replace(Regex("""\s+"""), " ").trim()
+        text = text.replace(WHITESPACE_RE, " ").trim()
         return text
     }
 
@@ -675,10 +705,7 @@ open class AudioProcessingAgent(
     protected open fun parseSegment(raw: String): ParsedSegment {
         val trimmed = raw.trim()
         // Silence directive: e.g. [silence:1.5] or [silence: 0.75 ]
-        val silenceDirective = Regex(
-            """^\s*\[silence\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*\]\s*""", RegexOption.IGNORE_CASE
-        )
-        val silenceMatch = silenceDirective.find(trimmed)
+        val silenceMatch = SILENCE_DIRECTIVE_RE.find(trimmed)
         if (silenceMatch != null) {
             val seconds = silenceMatch.groupValues[1].toDoubleOrNull()
             if (seconds != null && seconds >= 0.0) {
@@ -688,8 +715,7 @@ open class AudioProcessingAgent(
             }
         }
         // Match a leading voice directive on its own (possibly followed by text on the same line).
-        val directive = Regex("""^\s*\[voice\s*:\s*([A-Za-z0-9][A-Za-z0-9_\- ]*)\s*\]\s*""", RegexOption.IGNORE_CASE)
-        val match = directive.find(trimmed)
+        val match = VOICE_DIRECTIVE_RE.find(trimmed)
         return if (match != null) {
             val voice = match.groupValues[1].trim()
             val remaining = trimmed.removeRange(match.range).trim()
@@ -705,7 +731,7 @@ open class AudioProcessingAgent(
      */
     protected open fun splitScript(script: String): List<String> {
         if (script.isBlank()) return listOf(script)
-        return script.split(Regex("(?m)^\\s*---\\s*$")).map { it.trim() }.filter { it.isNotBlank() }
+        return script.split(SEGMENT_DELIM_RE).map { it.trim() }.filter { it.isNotBlank() }
             .ifEmpty { listOf(script) }
     }
 
@@ -760,6 +786,27 @@ open class AudioProcessingAgent(
 
     companion object {
         private val log = org.slf4j.LoggerFactory.getLogger(AudioProcessingAgent::class.java)
+
+        // Hoisted, precompiled regexes — Regex objects are thread-safe and immutable.
+        private val BRACKETED_DIRECTIVE_RE = Regex("""\[[^\[\]]*]""")
+        private val MULTI_WHITESPACE_RE = Regex("""\s{2,}""")
+        private val WHITESPACE_RE = Regex("""\s+""")
+        private val PUNCT_RE = Regex("""\p{P}+""")
+        private val XML_TAG_RE = Regex("""<[^>]+>""")
+        private val NON_ALLOWED_RE = Regex("""[^\p{L}\p{P}\s]+""")
+        private val SILENCE_DIRECTIVE_RE = Regex(
+            """^\s*\[silence\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*\]\s*""", RegexOption.IGNORE_CASE
+        )
+        private val VOICE_DIRECTIVE_RE = Regex(
+            """^\s*\[voice\s*:\s*([A-Za-z0-9][A-Za-z0-9_\- ]*)\s*\]\s*""", RegexOption.IGNORE_CASE
+        )
+        private val SEGMENT_DELIM_RE = Regex("(?m)^\\s*---\\s*$")
+        private fun namedDaemonThreadFactory(prefix: String): ThreadFactory {
+            val counter = AtomicInteger(0)
+            return ThreadFactory { r ->
+                Thread(r, "$prefix-${counter.incrementAndGet()}").apply { isDaemon = true }
+            }
+        }
 
         /**
          * Default voice catalog: voice id -> description. Descriptions are best-effort

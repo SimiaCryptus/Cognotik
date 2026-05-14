@@ -4,10 +4,10 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
-import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -63,9 +63,9 @@ abstract class ApplicationServer(
     protected open val fileIndex by lazy {
         ServletHolder("fileIndex", object : SessionFileServlet(dataStorage) {
             val sessions = mutableSetOf<Session>()
-            override fun onSession(session: Session, user: User) {
+            override fun onSession(session: Session, user: User?) {
                 super.onSession(session, user)
-                if (sessions.add(session)) {
+                if (user != null && sessions.add(session)) {
                     this@ApplicationServer.newSession(user = user, session = session)
                 }
             }
@@ -212,7 +212,8 @@ abstract class ApplicationServer(
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
-        webAppContext.addFilter(getFilter(), "/*", null)
+        val filter = getFilter()
+        webAppContext.addFilter(filter, "/*", null)
         configure_appServlets(webAppContext)
     }
 
@@ -242,9 +243,23 @@ abstract class ApplicationServer(
 
     private fun getFilter(): FilterHolder = FilterHolder { request, response, chain ->
         val requestPath = (request as HttpServletRequest).requestURI
+        val servletPath = request.servletPath
         logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
-        val user = authenticate(request, response as HttpServletResponse) ?: throw IllegalStateException("Authentication failed")
-        logger.debug("Authenticated user: {} for request: {}", user.email, requestPath)
+        val user = authenticate(request, response as HttpServletResponse)
+        val email = if (user == null && servletPath != "/fileIndex") {
+            logger.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
+            response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+            val originalRequest = request.requestURL.toString()
+            val queryString = request.queryString
+            val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+            val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+            response.setHeader("Location", "/login/?target=$encodedTarget")
+            return@FilterHolder
+        } else {
+            val email = user?.email ?: "anonymous"
+            logger.debug("Authenticated user: {} for request: {}", email, requestPath)
+            email
+        }
         val canRead = authorizationManager.isAuthorized(
             applicationClass = this@ApplicationServer.javaClass,
             user = user,
@@ -253,7 +268,7 @@ abstract class ApplicationServer(
         logger.debug(
             "Authorization check result: {} for user: {} on path: {}",
             canRead,
-            user.email,
+            email,
             requestPath
         )
         if (canRead) {
@@ -262,7 +277,7 @@ abstract class ApplicationServer(
         } else {
             logger.warn(
                 "Access denied for user: {} on path: {} in application: {}",
-                user.email,
+                user?.email,
                 requestPath,
                 applicationName
             )
