@@ -173,7 +173,7 @@ function launchApp(appId) {
     } else if (app.type === 'docops') {
         const docopsSessionId = Utils.generateSessionId();
         console.log(`[launchApp] Launching ${app.id} with session:`, docopsSessionId);
-        window.location.href = `${app.path}/fileIndex/${docopsSessionId}/app.html`;
+        window.location.href = `${app.path}/`;
     } else if (app.type === 'pipeline') {
         appLaunchHandlers.onPipeline();
     }

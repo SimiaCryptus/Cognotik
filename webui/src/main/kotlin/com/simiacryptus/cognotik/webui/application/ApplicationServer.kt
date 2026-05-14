@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.log
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -213,10 +212,6 @@ abstract class ApplicationServer(
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
         webAppContext.addFilter(getFilter(ApplicationServer::class.java), "/*", null)
-        configure_appServlets(webAppContext)
-    }
-
-    protected open fun configure_appServlets(webAppContext: WebAppContext) {
         logger.debug("Adding servlets for application: {}", applicationName)
         webAppContext.addServlet(appInfoServlet, "/appInfo")
         logger.debug("Added appInfo servlet")
@@ -279,14 +274,14 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
         user = user,
         operationType = OperationType.Read
     )
-    log.info(
+    log.debug(
         "Authorization check result: {} for user: {} on path: {}",
         canRead,
         email,
         requestPath
     )
     if (canRead) {
-        log.info("Access granted for request: {}", requestPath)
+        log.debug("Access granted for request: {}", requestPath)
         chain?.doFilter(request, response)
     } else {
         log.warn(

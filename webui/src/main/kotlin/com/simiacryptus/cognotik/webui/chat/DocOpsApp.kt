@@ -1,19 +1,22 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.eclipse.jetty.servlet.ServletHolder
+import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
-import java.net.JarURLConnection
-import java.net.URI
-import java.net.URL
-import java.net.URLClassLoader
-import java.net.URLDecoder
+import java.net.*
+import java.util.*
 import java.util.jar.JarFile
 
 /**
@@ -44,6 +47,10 @@ class DocOpsApp(
   override val stickyInput: Boolean get() = true
   override val inputCnt get() = 0
 
+  private val metadataStorage by lazy {
+    ApplicationServices.fileApplicationServices().metadataStorageFactory
+  }
+
   data class Settings(
       val model: ChatModel? = null,
       val fastModel: ChatModel? = null,
@@ -70,6 +77,9 @@ class DocOpsApp(
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
       return newSession
     }
+    metadataStorage.setSessionOwner(session, user.id)
+    metadataStorage.setSessionName(user, session, applicationName + " @ " + Date())
+    metadataStorage.setSessionTime(user, session, Date())
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
@@ -99,6 +109,16 @@ class DocOpsApp(
     val resourceUrl = classLoader.getResource(resourcePath)
       ?: return extractResourcesFromClassLoaderUrls(resourcePath, targetDir)
     return extractFromUrl(resourceUrl, resourcePath, targetDir)
+  }
+
+  override fun configure(webAppContext: WebAppContext) {
+    super.configure(webAppContext)
+    webAppContext.addServlet(
+      ServletHolder("redirect", object : HttpServlet() {
+      override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        resp.sendRedirect("${req.contextPath}/fileIndex/${req.getParameter("sessionId") ?: Session.newUserID()}/app.html")
+      }
+    }), "/*")
   }
 
   private fun extractFromUrl(resourceUrl: URL, resourcePath: String, targetDir: File): Boolean {
@@ -255,8 +275,8 @@ class DocOpsApp(
      }
    }
 
-
   companion object {
+    val log = LoggerFactory.getLogger(DocOpsApp::class.java)
     var OVERWRITE: Boolean = false
 
     private val TEXT_EXTENSIONS = setOf(

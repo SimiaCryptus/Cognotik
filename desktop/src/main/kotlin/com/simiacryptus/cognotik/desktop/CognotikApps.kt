@@ -66,7 +66,7 @@ open class CognotikApps(
                 log.info("Parsing server options...")
                 var port = 12891
                 var host = "localhost"
-                var publicName = "apps.simiacrypt.us"
+                var publicName = "hosted.cognotik.com"
                 var i = 0
                 while (i < args.size) {
                     when (args[i]) {
@@ -177,7 +177,7 @@ open class CognotikApps(
         private data class ServerOptions(
             val port: Int = 12891,
             val host: String = "localhost",
-            val publicName: String = "apps.simiacrypt.us"
+            val publicName: String = "hosted.cognotik.com"
         )
 
     }
