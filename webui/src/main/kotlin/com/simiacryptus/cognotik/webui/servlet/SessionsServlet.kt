@@ -281,7 +281,7 @@ class SessionsServlet : HttpServlet() {
 
         private const val JS = """
                 function navigateTo(path) {
-                    if (path) window.location.href = path;
+                   if (path) window.open(path, '_blank');
                 }
                 function toggleDetails(id) {
                     var row = document.getElementById('details-' + id);
