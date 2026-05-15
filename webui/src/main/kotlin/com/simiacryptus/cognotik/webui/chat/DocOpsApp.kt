@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.chat
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
@@ -77,9 +78,13 @@ class DocOpsApp(
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
       return newSession
     }
-    metadataStorage.setSessionOwner(session, user.id)
-    metadataStorage.setSessionName(user, session, applicationName + " @ " + Date())
-    metadataStorage.setSessionTime(user, session, Date())
+    metadataStorage.setSessionMetadata(user, session, SessionMetadata(
+      id = session,
+      name = applicationName,
+      path = "/${applicationName}/fileIndex/${session.sessionId}/app.html",
+      sessionTime = Date(),
+      ownerId = user.id
+    ))
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")

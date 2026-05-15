@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.util.Base64
 import kotlin.random.Random
 
-data class Session(
+open class Session(
   val sessionId: String
 ) {
   init {
@@ -16,6 +16,11 @@ data class Session(
   fun isGlobal(): Boolean = sessionId.startsWith("G-")
 
   companion object {
+    val NULL = object : Session("") {
+      override fun validateSessionId() {
+        // No validation for NULL session
+      }
+    }
     fun long64(): String {
       val src = ByteBuffer.allocate(8).putLong(Random.Default.nextLong()).array()
       return Base64.getEncoder().encodeToString(src)
@@ -52,7 +57,7 @@ data class Session(
     }
   }
 
-  private fun validateSessionId() {
+  internal open fun validateSessionId() {
     if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4,12}""".toRegex())) {
       throw IllegalArgumentException("Invalid session ID: $this")
     }
