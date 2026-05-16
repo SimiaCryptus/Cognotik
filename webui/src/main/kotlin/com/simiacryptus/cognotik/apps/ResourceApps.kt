@@ -53,7 +53,9 @@ open class ResourceApps(
                         resource_path = entry.path,
                         cardClass = entry.cardClass,
                         readme = readme,
-                        classLoader = classLoader
+                        classLoader = classLoader,
+                        category = entry.category,
+                        tags = entry.tags,
                     )
                 )
             }
