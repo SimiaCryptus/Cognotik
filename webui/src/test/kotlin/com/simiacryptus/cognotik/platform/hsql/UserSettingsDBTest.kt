@@ -31,10 +31,10 @@ package com.simiacryptus.cognotik.platform.hsql
         @BeforeEach
         fun setUp() {
             // Use null root => in-memory ephemeral HSQL database (mem:<dbName>).
-            manager = UserSettingsDB(null)
+            manager = UserSettingsDB()
             // Clean DB between tests to ensure isolation.
             try {
-                UserSettingsDB.facet.withConnection(null) { conn ->
+                UserSettingsDB.facet.withConnection() { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM user_settings")
                     }
@@ -47,7 +47,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @AfterEach
         fun tearDown() {
             try {
-                UserSettingsDB.facet.withConnection(null) { conn ->
+                UserSettingsDB.facet.withConnection() { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM user_settings")
                     }
@@ -96,7 +96,7 @@ package com.simiacryptus.cognotik.platform.hsql
             // Create a new manager pointing to the same in-memory DB. The DB is
             // backed by the static HSQLFacet, so the data persists for the JVM
             // lifetime within the in-memory store.
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(testUser)
             assertEquals("value", retrieved.apis.firstOrNull { it.name == "key" }?.baseUrl)
         }
@@ -115,7 +115,7 @@ package com.simiacryptus.cognotik.platform.hsql
             manager.updateUserSettings(testUser, update)
 
             // Need fresh manager to bypass cache
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(testUser)
             assertEquals(originalHash, retrieved.passwordHash)
             assertEquals("b", retrieved.apis.firstOrNull { it.name == "a" }?.baseUrl)
@@ -130,7 +130,7 @@ package com.simiacryptus.cognotik.platform.hsql
             val update = UserSettings(passwordHash = "")
             manager.updateUserSettings(testUser, update)
 
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(testUser)
             assertEquals(originalHash, retrieved.passwordHash)
         }
@@ -144,7 +144,7 @@ package com.simiacryptus.cognotik.platform.hsql
             val update = UserSettings(passwordHash = newHash)
             manager.updateUserSettings(testUser, update)
 
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(testUser)
             assertEquals(newHash, retrieved.passwordHash)
         }
@@ -173,7 +173,7 @@ package com.simiacryptus.cognotik.platform.hsql
             manager.updateUserSettings(testUser, settings)
             manager.updateUserSettings(testUser, settings)
 
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(testUser)
             assertEquals("v", retrieved.apis.firstOrNull { it.name == "k" }?.baseUrl)
         }
@@ -188,7 +188,7 @@ package com.simiacryptus.cognotik.platform.hsql
             val settings = UserSettings(apis = mutableListOf(apiData("x", "y")))
             manager.updateUserSettings(userBlankEmail, settings)
 
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(userBlankEmail)
             assertEquals("y", retrieved.apis.firstOrNull { it.name == "x" }?.baseUrl)
         }
@@ -247,7 +247,7 @@ package com.simiacryptus.cognotik.platform.hsql
             assertTrue(latch.await(30, TimeUnit.SECONDS))
             executor.shutdown()
 
-            val manager2 = UserSettingsDB(null)
+            val manager2 = UserSettingsDB()
             val retrieved = manager2.getUserSettings(testUser)
             // The final value should be one of the writes (0..threadCount-1)
             val idx = retrieved.apis.firstOrNull { it.name == "idx" }?.baseUrl?.toIntOrNull()
@@ -263,7 +263,7 @@ package com.simiacryptus.cognotik.platform.hsql
             )
             assertFalse(newRoot.exists())
             try {
-                val mgr = UserSettingsDB(newRoot)
+                val mgr = UserSettingsDB()
                 assertTrue(newRoot.exists())
                 assertNotNull(mgr)
             } finally {
@@ -274,7 +274,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @Test
         fun `constructor accepts null root`() {
             // Should not throw
-            val mgr = UserSettingsDB(null)
+            val mgr = UserSettingsDB()
             assertNotNull(mgr)
         }
 

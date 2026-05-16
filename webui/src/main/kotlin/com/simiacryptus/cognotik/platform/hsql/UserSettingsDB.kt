@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.sql.Timestamp
 import java.util.concurrent.ConcurrentHashMap
 
@@ -16,12 +15,8 @@ import java.util.concurrent.ConcurrentHashMap
  * Settings are stored as a single JSON blob per user in the `user_settings`
  * table, managed by its own [DatabaseFacet] (separate logical DB from metadata).
  */
-open class UserSettingsDB(private val root: File? = null) : UserSettingsInterface {
+open class UserSettingsDB : UserSettingsInterface {
 
-    init {
-        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
-        log.info("Initializing HSQLUserSettingsManager with root directory: {}", root)
-    }
 
     private val cache = ConcurrentHashMap<User, UserSettings>()
 
@@ -57,7 +52,7 @@ open class UserSettingsDB(private val root: File? = null) : UserSettingsInterfac
     }
 
     private fun loadFromDb(user: User): UserSettings? {
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection() { conn ->
             conn.prepareStatement(
                 "SELECT settings_json FROM user_settings WHERE user_key = ?"
             ).use { stmt ->
@@ -78,7 +73,7 @@ open class UserSettingsDB(private val root: File? = null) : UserSettingsInterfac
     }
 
     private fun writeToDb(user: User, settings: UserSettings) {
-        facet.withConnection(root) { conn ->
+        facet.withConnection() { conn ->
              upsertUserSettings(conn, userKey(user), settings.toJson(), Timestamp(System.currentTimeMillis()))
         }
     }

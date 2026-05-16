@@ -13,14 +13,9 @@ class DatabaseFacet(
     private val name: String,
     private val schema: ((String) -> List<String>) = { emptyList() },
 ) {
-    @Volatile
-    private var embeddedServer: Server? = null
-    private val serverLock = Any()
 
-    @Volatile
-    private var actualPort: Int = -1
 
-    fun getConnection(root: File? = null): Connection {
+    fun getConnection(): Connection {
         ensureDriverLoaded()
         val url: String
         val username: String
@@ -32,8 +27,9 @@ class DatabaseFacet(
             username = serviceUser
             password = filterPassword(servicePassword)
         } else {
-            ensureServerStarted(root)
-            url = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName}"
+            registerDatabase(name, dbName ?: "default", root)
+            startSharedServer()
+            url = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName ?: "default"}"
             username = "SA"
             password = ""
         }
@@ -94,8 +90,8 @@ class DatabaseFacet(
      * Use this for multi-statement transactions on the shared connection so that
      * autoCommit toggling does not race with other threads.
      */
-    fun <T> withTransaction(root: File? = null, block: (Connection) -> T): T {
-        val conn = getConnection(root)
+    fun <T> withTransaction(block: (Connection) -> T): T {
+        val conn = getConnection()
         synchronized(conn) {
             val prevAutoCommit = conn.autoCommit
             try {
@@ -137,8 +133,8 @@ class DatabaseFacet(
      * Use for single-statement operations that still need to be serialized
      * against [withTransaction] callers.
      */
-    fun <T> withConnection(root: File? = null, block: (Connection) -> T): T {
-        val conn = getConnection(root)
+    fun <T> withConnection(block: (Connection) -> T): T {
+        val conn = getConnection()
         return try {
             synchronized(conn) { block(conn) }
         } catch (e: Exception) {
@@ -194,71 +190,6 @@ class DatabaseFacet(
         }
     }
 
-    private fun ensureServerStarted(root: File?): Server {
-        embeddedServer?.let { return it }
-        synchronized(serverLock) {
-            embeddedServer?.let { return it }
-            val server = Server()
-            server.setSilent(serverSilent)
-            if (serverSilent) {
-                server.setLogWriter(null)
-                server.setErrWriter(null)
-            }
-            server.setAddress(serverHost)
-            // Pick a free ephemeral port ourselves. HSQL's Server.setPort(0)
-            // does not auto-assign a free port like java.net.ServerSocket(0)
-            // does, so we need to allocate one explicitly. This avoids
-            // collisions when multiple facets run their own embedded
-            // servers in the same JVM (e.g. during tests).
-            val freePort = ServerSocket(0).use { it.localPort }
-            server.port = freePort
-            actualPort = freePort
-            if (null == root) {
-                server.setDatabaseName(0, dbName)
-                server.setDatabasePath(0, "mem:$dbName")
-            } else {
-                server.setDatabaseName(0, dbName)
-                server.setDatabasePath(0, "file:${File(root, dbName).absolutePath};shutdown=true")
-            }
-            server.start()
-            log.info(
-                "Started embedded HSQL $name server on {}:{} (db={})",
-                serverHost, actualPort, server.getDatabaseName(0, true)
-            )
-            // Open and retain a keep-alive connection so the in-memory database
-            // alias is not disposed between client connections. HSQL will dispose
-            // a mem: database once its last connection closes, which causes
-            // "database alias does not exist" errors for subsequent clients.
-            try {
-                val keepAliveUrl = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${dbName}"
-                val keepAlive = DriverManager.getConnection(keepAliveUrl, "SA", "")
-                keepAliveConnections[keepAliveUrl] = keepAlive
-                log.debug("Opened keep-alive HSQL $name connection to {}", keepAliveUrl)
-            } catch (e: Exception) {
-                log.warn("Failed to open keep-alive HSQL $name connection", e)
-            }
-            Runtime.getRuntime().addShutdownHook(Thread {
-                try {
-                    keepAliveConnections.values.forEach { c ->
-                        try {
-                            c.close()
-                        } catch (_: Exception) {
-                        }
-                    }
-                    keepAliveConnections.clear()
-                    server.shutdown()
-                    log.info("Embedded HSQL $name server stopped")
-                } catch (e: Exception) {
-                    log.warn("Error shutting down embedded HSQL $name server", e)
-                }
-            })
-            embeddedServer = server
-            return server
-        }
-    }
-
-    var dbName: String = System.getProperty("cognotik.db.dbName", name)
-
     val dbProvider: String
         get() = serviceUrl.let {
             when {
@@ -272,11 +203,17 @@ class DatabaseFacet(
     companion object {
         private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
 
+        var root = System.getProperty("cognotik.db.root") ?: File(
+            System.getProperty(
+                "user.home",
+                "."
+            )
+        ).resolve(".cognotik").absolutePath
+        val dbName = System.getProperty("cognotik.db.dbName")
         val serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
         val serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
         val servicePassword: String = System.getProperty("cognotik.db.servicePassword", "")
         val serverHost: String = System.getProperty("cognotik.db.serverHost") ?: "localhost"
-        val serverSilent: Boolean = System.getProperty("cognotik.db.serverSilent", "true").toBoolean()
 
         @Volatile
         private var driverLoaded: Boolean = false
@@ -290,6 +227,256 @@ class DatabaseFacet(
 
         /** JDBC URLs whose schema DDL has already executed. */
         private val schemasInitialized = ConcurrentHashMap.newKeySet<String>()
+
+        // ----- Shared embedded HSQL server (one per JVM) -----
+        private val serverLock = Any()
+
+        @Volatile
+        private var embeddedServer: Server? = null
+
+        @Volatile
+        private var actualPort: Int = -1
+
+        /**
+         * Databases registered for hosting on the shared server.
+         * Keyed by dbName -> database path (e.g. "mem:foo" or "file:/abs/path;shutdown=true").
+         * Order of insertion is preserved for stable index assignment.
+         */
+        private val registeredDatabases = java.util.LinkedHashMap<String, String>()
+        private fun registerDatabase(facetName: String, dbName: String, root: String?) {
+            val path = if (root == null) {
+                "mem:$dbName"
+            } else {
+                // Note: do NOT append ";shutdown=true" here. That property is for
+                // in-process JDBC connection URLs; when used as a server database
+                // path it causes the database to shut down as soon as the last
+                // client disconnects, which races with server startup and leaves
+                // the server in the SHUTDOWN state (16) instead of ONLINE (1).
+                "file:${File(root, dbName).absolutePath}"
+            }
+            synchronized(serverLock) {
+                val existing = registeredDatabases[dbName]
+                if (existing == null) {
+                    if (embeddedServer != null) {
+                        // The shared server is already running. HSQL does not
+                        // support adding databases to a running server in a
+                        // clean way, so we must restart it to include the
+                        // newly registered database.
+                        log.info(
+                            "Registering new HSQL database '{}' for facet '{}'; restarting shared server to include it",
+                            dbName, facetName
+                        )
+                        registeredDatabases[dbName] = path
+                        restartSharedServerLocked()
+                    } else {
+                        registeredDatabases[dbName] = path
+                    }
+                } else if (existing != path) {
+                    // Conflict resolution: prefer file-backed storage over mem,
+                    // since file storage is durable and is what the user most
+                    // likely intended once a root directory becomes available.
+                    val existingIsMem = existing.startsWith("mem:")
+                    val requestedIsMem = path.startsWith("mem:")
+                    when {
+                        existingIsMem && !requestedIsMem -> {
+                            log.warn(
+                                "HSQL database '{}' was previously registered as '{}' but facet '{}' now requests '{}'; upgrading to file-backed storage and restarting shared server",
+                                dbName, existing, facetName, path
+                            )
+                            registeredDatabases[dbName] = path
+                            if (embeddedServer != null) {
+                                restartSharedServerLocked()
+                            }
+                        }
+
+                        !existingIsMem && requestedIsMem -> {
+                            // Existing file-backed registration is preferred;
+                            // ignore the in-memory request and reuse the
+                            // already-registered file path.
+                            log.warn(
+                                "HSQL database '{}' is already registered with file-backed path '{}'; ignoring in-memory request '{}' from facet '{}'",
+                                dbName, existing, path, facetName
+                            )
+                        }
+
+                        else -> {
+                            throw IllegalStateException(
+                                "HSQL database '$dbName' is already registered with path '$existing' but facet '$facetName' requested '$path'"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun startSharedServer(): Server {
+            embeddedServer?.let { return it }
+            synchronized(serverLock) {
+                embeddedServer?.let { return it }
+                val server = startServerLocked()
+                embeddedServer = server
+                installShutdownHookOnce()
+                return server
+            }
+        }
+
+        private fun restartSharedServerLocked() {
+            // Caller must hold serverLock.
+            val old = embeddedServer
+            if (old != null) {
+                // Close keep-alive connections so the server can shut down cleanly.
+                keepAliveConnections.values.forEach { c ->
+                    try {
+                        c.close()
+                    } catch (_: Exception) {
+                    }
+                }
+                keepAliveConnections.clear()
+                // Drop cached client connections that point at the old server;
+                // they will be re-established against the new server on next use.
+                connections.entries.removeIf { (_, conn) ->
+                    try {
+                        conn.close()
+                    } catch (_: Exception) {
+                    }
+                    true
+                }
+                try {
+                    old.shutdown()
+                } catch (e: Exception) {
+                    log.warn("Error shutting down shared HSQL server during restart", e)
+                }
+                embeddedServer = null
+                actualPort = -1
+            }
+            embeddedServer = startServerLocked()
+        }
+
+        private fun startServerLocked(): Server {
+            // Caller must hold serverLock.
+            if (registeredDatabases.isEmpty()) {
+                throw IllegalStateException("Cannot start shared HSQL server: no databases registered")
+            }
+            // Try multiple times in case the chosen ephemeral port is taken between
+            // our probe and HSQL's bind (common when multiple application instances
+            // are racing for the same port range).
+            var server: Server? = null
+            var lastError: Exception? = null
+            var chosenPort = -1
+            for (attempt in 1..10) {
+                val candidate = Server()
+                // Keep the server's own logging enabled until we have successfully
+                // started at least once, so that startup failures surface clearly.
+                candidate.setSilent(false)
+                candidate.setAddress(serverHost)
+                // Pick a free ephemeral port ourselves. HSQL's Server.setPort(0)
+                // does not auto-assign a free port like java.net.ServerSocket(0)
+                // does, so we need to allocate one explicitly.
+                val freePort = ServerSocket(0).use { it.localPort }
+                candidate.port = freePort
+                // Register every database on the same server.
+                registeredDatabases.entries.forEachIndexed { index, (db, path) ->
+                    candidate.setDatabaseName(index, db)
+                    candidate.setDatabasePath(index, path)
+                }
+                try {
+                    candidate.start()
+                    // Server.start() is asynchronous; wait until it reaches the
+                    // ONLINE state (or fails) before proceeding.
+                    val deadline = System.currentTimeMillis() + 15_000
+                    // States: 1=ONLINE, 4=OPENING, 8=CLOSING, 16=SHUTDOWN
+                    while (candidate.state != 1 && candidate.state != 16
+                        && System.currentTimeMillis() < deadline
+                    ) {
+                        Thread.sleep(50)
+                    }
+                    if (candidate.state != 1) {
+                        val cause = candidate.serverError
+                        val stateName = when (candidate.state) {
+                            1 -> "ONLINE"
+                            4 -> "OPENING"
+                            8 -> "CLOSING"
+                            16 -> "SHUTDOWN"
+                            else -> "UNKNOWN"
+                        }
+                        throw cause ?: RuntimeException(
+                            "Shared HSQL server did not reach ONLINE state on port $freePort " +
+                                    "(state=${candidate.state}/$stateName). Registered databases: $registeredDatabases"
+                        )
+                    }
+                    // Verify we can actually connect locally before declaring success.
+                    val firstDb = registeredDatabases.keys.first()
+                    val probeUrl = "jdbc:hsqldb:hsql://${serverHost}:${freePort}/${firstDb}"
+                    DriverManager.getConnection(probeUrl, "SA", "").close()
+                    server = candidate
+                    chosenPort = freePort
+                    break
+                } catch (e: Exception) {
+                    lastError = e
+                    log.warn(
+                        "Shared HSQL server start attempt $attempt on port $freePort failed: ${e.message}",
+                        e
+                    )
+                    try {
+                        candidate.shutdown()
+                    } catch (_: Exception) {
+                    }
+                    try {
+                        Thread.sleep(100L * attempt)
+                    } catch (_: InterruptedException) {
+                    }
+                }
+            }
+            if (server == null) {
+                throw lastError ?: RuntimeException("Failed to start shared embedded HSQL server")
+            }
+            actualPort = chosenPort
+            log.info(
+                "Started shared embedded HSQL server on {}:{} hosting databases: {}",
+                serverHost, actualPort, registeredDatabases.keys
+            )
+            // Open and retain a keep-alive connection per database so each
+            // in-memory alias is not disposed between client connections. HSQL
+            // disposes a mem: database once its last connection closes, which
+            // causes "database alias does not exist" errors for subsequent
+            // clients.
+            for (db in registeredDatabases.keys) {
+                try {
+                    val keepAliveUrl = "jdbc:hsqldb:hsql://${serverHost}:${actualPort}/${db}"
+                    val keepAlive = DriverManager.getConnection(keepAliveUrl, "SA", "")
+                    keepAliveConnections[keepAliveUrl] = keepAlive
+                    log.debug("Opened keep-alive HSQL connection to {}", keepAliveUrl)
+                } catch (e: Exception) {
+                    log.warn("Failed to open keep-alive HSQL connection for database '$db'", e)
+                }
+            }
+            return server
+        }
+
+        @Volatile
+        private var shutdownHookInstalled: Boolean = false
+        private fun installShutdownHookOnce() {
+            if (shutdownHookInstalled) return
+            synchronized(serverLock) {
+                if (shutdownHookInstalled) return
+                Runtime.getRuntime().addShutdownHook(Thread {
+                    try {
+                        keepAliveConnections.values.forEach { c ->
+                            try {
+                                c.close()
+                            } catch (_: Exception) {
+                            }
+                        }
+                        keepAliveConnections.clear()
+                        embeddedServer?.shutdown()
+                        log.info("Shared embedded HSQL server stopped")
+                    } catch (e: Exception) {
+                        log.warn("Error shutting down shared embedded HSQL server", e)
+                    }
+                })
+                shutdownHookInstalled = true
+            }
+        }
 
         private fun ensureDriverLoaded() {
             if (driverLoaded) return

@@ -33,10 +33,10 @@ package com.simiacryptus.cognotik.platform.hsql
         @BeforeEach
         fun setUp() {
              // Use null root => in-memory ephemeral HSQL database (mem:<dbName>).
-             storage = MetadataStorageDB(null)
+             storage = MetadataStorageDB()
              // Clean DB between tests to ensure isolation
              try {
-                 MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
+                 MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                      conn.createStatement().use { stmt ->
                          stmt.execute("DELETE FROM metadata")
                      }
@@ -49,7 +49,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @AfterEach
         fun tearDown() {
             try {
-                MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
+                MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM metadata")
                     }
@@ -70,7 +70,7 @@ package com.simiacryptus.cognotik.platform.hsql
              )
              assertFalse(newDir.exists())
              try {
-                 MetadataStorageDB(newDir)
+                 MetadataStorageDB()
                  assertTrue(newDir.exists())
              } finally {
                  newDir.deleteRecursively()
@@ -80,7 +80,7 @@ package com.simiacryptus.cognotik.platform.hsql
         @Test
         fun `init should accept null root`() {
             assertDoesNotThrow {
-                MetadataStorageDB(null)
+                MetadataStorageDB()
             }
         }
 
@@ -235,7 +235,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `listSessions should return sessions matching path`() {
-            MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
+            MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                 conn.prepareStatement(
                     "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
@@ -261,7 +261,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `listSessions should not return sessions with different paths`() {
-            MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
+            MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                 conn.prepareStatement(
                     "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
@@ -356,7 +356,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
         @Test
         fun `getConn should return a valid connection`() {
-            MetadataStorageDB.Companion.facet.getConnection(null).use { conn ->
+            MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                 assertNotNull(conn)
                 assertFalse(conn.isClosed)
             }

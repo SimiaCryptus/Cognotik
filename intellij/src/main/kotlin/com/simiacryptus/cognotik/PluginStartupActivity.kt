@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
@@ -15,6 +16,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -22,6 +24,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import jdk.internal.util.StaticProperty.userHome
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
@@ -29,13 +32,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
         CoreProviders.init()
         CoreTasks.init()
         ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
-        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
 
         System.getProperty("cognotik.config")?.let { configFile ->
             try {

@@ -52,29 +52,42 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var patchProcessorList: JBList<PatchProcessor>? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
-        private fun getSmartModelTree(): Tree {
+        private fun getSmartModelTree(settings: UserSettings): Tree {
             if (smartModelTree == null) {
-                smartModelTree = createModelTree("Smart Model", AppSettingsState.instance.smartModel)
+                smartModelTree = createModelTree(
+                    "Smart Model", AppSettingsState.instance.smartModel, settings, DefaultMutableTreeNode("Smart Model")
+                )
             }
             return smartModelTree!!
         }
+        val settings: UserSettings get() = ApplicationServices.fileApplicationServices(
+                AppSettingsState.pluginHome
+            ).userSettingsManager.getUserSettings(
+                localUser
+            )
 
-        private fun getFastModelTree(): Tree {
+        private fun getFastModelTree(settings: UserSettings): Tree {
             if (fastModelTree == null) {
-                fastModelTree = createModelTree("Fast Model", AppSettingsState.instance.fastModel)
+                fastModelTree = createModelTree(
+                    "Fast Model", AppSettingsState.instance.fastModel, settings, DefaultMutableTreeNode("Fast Model")
+                )
             }
             return fastModelTree!!
         }
 
-        private fun getImageChatModelTree(): Tree {
+        private fun getImageChatModelTree(settings: UserSettings): Tree {
             if (imageChatModelTree == null) {
-                imageChatModelTree = createModelTree("Image Chat Model", AppSettingsState.instance.imageChatModel)
+                imageChatModelTree = createModelTree(
+                    "Image Chat Model", AppSettingsState.instance.imageChatModel, settings, DefaultMutableTreeNode("Image Chat Model")
+                )
             }
             return imageChatModelTree!!
         }
-        private fun getAudioModelTree(): Tree {
+        private fun getAudioModelTree(settings: UserSettings): Tree {
             if (audioModelTree == null) {
-                audioModelTree = createModelTree("Audio Model", AppSettingsState.instance.audioModel)
+                audioModelTree = createModelTree(
+                    "Audio Model", AppSettingsState.instance.audioModel, settings, DefaultMutableTreeNode("Audio Model")
+                )
             }
             return audioModelTree!!
         }
@@ -124,15 +137,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             audioModelTree = null
         }
 
-        private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
-            val root = DefaultMutableTreeNode(title)
-
-            val rootDir = AppSettingsState.pluginHome
-            val userSettings =
-              ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings(
-                localUser
-              )
-            val pairs = userSettings.apis.flatMap { apiData ->
+        private fun createModelTree(
+            title: String, selectedModel: ApiChatModel?, settings: UserSettings, root: DefaultMutableTreeNode
+        ): Tree {
+            val pairs = settings.apis.flatMap { apiData ->
                 try {
                     (apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")) ?: listOf())
                         .filter { !it.deprecated }.map { model -> apiData.provider?.name!! to model }
@@ -142,7 +150,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 }
             }
             val providers = pairs
-                .filter { userSettings.isVisible(it) }
+                .filter { settings.isVisible(it) }
                 .sortedBy { "${it.second.provider?.name} - ${it.second.name}" }
                 .groupBy { it.second.provider }
 
@@ -182,7 +190,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
-                    val apis = userSettings.apis
+                    val apis = settings.apis
                     val apiData = apis.find { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.find { modelName == it.name } != null
@@ -415,41 +423,43 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     statusBar?.updateWidget(ID())
                     // Recreate model trees when settings are loaded
                     recreateModelTrees()
+                    val settings = this@SettingsWidget.settings
                     SwingUtilities.invokeLater {
                         AppSettingsState.instance.smartModel?.model.let { model ->
-                            setSelectedModel(getSmartModelTree(), model?.name ?: "")
+                            setSelectedModel(getSmartModelTree(settings), model?.name ?: "")
                         }
                         AppSettingsState.instance.fastModel?.model.let { model ->
-                            setSelectedModel(getFastModelTree(), model?.name ?: "")
+                            setSelectedModel(getFastModelTree(settings), model?.name ?: "")
                         }
                         AppSettingsState.instance.imageChatModel?.model.let { model ->
-                            setSelectedModel(getImageChatModelTree(), model?.name ?: "")
+                            setSelectedModel(getImageChatModelTree(settings), model?.name ?: "")
                         }
                         AppSettingsState.instance.audioModel?.model.let { model ->
-                            setSelectedModel(getAudioModelTree(), model?.name ?: "")
+                            setSelectedModel(getAudioModelTree(settings), model?.name ?: "")
                         }
                     }
                 }.start()
             }
             Thread {
+                val settings = this@SettingsWidget.settings
                 AppSettingsState.instance.smartModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getSmartModelTree(), model?.name ?: "")
+                        setSelectedModel(getSmartModelTree(settings), model?.name ?: "")
                     }
                 }
                 AppSettingsState.instance.fastModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getFastModelTree(), model?.name ?: "")
+                        setSelectedModel(getFastModelTree(settings), model?.name ?: "")
                     }
                 }
                 AppSettingsState.instance.imageChatModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getImageChatModelTree(), model?.name ?: "")
+                        setSelectedModel(getImageChatModelTree(settings), model?.name ?: "")
                     }
                 }
                 AppSettingsState.instance.audioModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getAudioModelTree(), model?.name ?: "")
+                        setSelectedModel(getAudioModelTree(settings), model?.name ?: "")
                     }
                 }
             }.start()
@@ -505,14 +515,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tabbedPane.accessibleContext.accessibleDescription = getMessage("tabs.description")
 
             val smartModelPanel = JPanel(BorderLayout())
-            smartModelPanel.add(JScrollPane(getSmartModelTree()), BorderLayout.CENTER)
+            val settings = this@SettingsWidget.settings
+            smartModelPanel.add(JScrollPane(getSmartModelTree(settings)), BorderLayout.CENTER)
 
             val fastModelPanel = JPanel(BorderLayout())
-            fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
+            fastModelPanel.add(JScrollPane(getFastModelTree(settings)), BorderLayout.CENTER)
             val imageChatModelPanel = JPanel(BorderLayout())
-            imageChatModelPanel.add(JScrollPane(getImageChatModelTree()), BorderLayout.CENTER)
+            imageChatModelPanel.add(JScrollPane(getImageChatModelTree(settings)), BorderLayout.CENTER)
             val audioModelPanel = JPanel(BorderLayout())
-            audioModelPanel.add(JScrollPane(getAudioModelTree()), BorderLayout.CENTER)
+            audioModelPanel.add(JScrollPane(getAudioModelTree(settings)), BorderLayout.CENTER)
             val patchProcessorPanel = JPanel(BorderLayout())
             patchProcessorPanel.add(JScrollPane(getPatchProcessorList()), BorderLayout.CENTER)
 

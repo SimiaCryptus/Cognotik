@@ -1,79 +1,93 @@
 # 🧙 System Wizard
 
-A wizard-style app that lets you describe a goal in plain language, then generates and iteratively fixes a shell script to accomplish it — all through an interactive web UI.
+**Describe what you want your computer to do — the wizard writes and runs the script for you.**
 
-## Overview
+System Wizard turns plain-language goals into working shell scripts, automatically fixes any errors, and shows you the results — no coding required.
 
-System Wizard provides a three-stage pipeline:
+---
 
-1. **Define a Goal** — Describe what you want to accomplish in natural language.
-2. **Generate Script** — AI reads your goal and writes a shell script to achieve it.
-3. **Run & Auto-Fix** — The script is executed, and any errors are automatically fixed in a loop until it succeeds.
+## What Can It Do?
 
-You can run each stage individually or execute the entire pipeline in one click.
+Ever wished you could just *tell* your computer what to do? System Wizard makes that possible. Simply describe your goal in everyday language, and the AI will:
 
-## Structure
+- **Write a shell script** tailored to your exact goal
+- **Run it automatically** on your system
+- **Fix any errors** it encounters — on its own, without you lifting a finger
+- **Show you the results** in a clean, easy-to-read format
 
-```
-sys-wizard/
-├── app.html              # Main application UI
-├── app.js                # Application logic (navigation, file I/O, pipeline orchestration)
-├── style.css             # Dark-themed responsive styles
-├── marked.min.js         # Markdown rendering library
-├── goal.md               # User-defined objective (created at runtime)
-├── code/
-│   ├── script.sh         # Generated shell script (created by code_op)
-│   └── fix_log.md        # Execution & auto-fix log (created by run_op)
-└── ops/
-    ├── code_op.md        # Operation: generate script from goal
-    └── run_op.md         # Operation: run script with auto-fix
-```
+Whether you want to clean up Docker containers, analyze log files, back up important folders, or gather system information, System Wizard handles the technical details so you don't have to.
 
-## Operations
+---
 
-### code_op
+## How to Use It
 
-- **Input:** `goal.md`
-- **Output:** `code/script.sh`
-- Reads the goal and generates a shell script that implements it.
+### Step 1 — Describe Your Goal
+Open the **Goal** tab and type what you want to accomplish. Be as specific as you like — the more detail you provide, the better the result.
 
-### run_op
+> **Example:** *"Find all log files in /var/log older than 30 days, compress them, and save a summary to /tmp/log-cleanup.txt"*
 
-- **Input:** `code/script.sh`
-- **Output:** `code/fix_log.md`
-- Executes the generated shell script and automatically fixes any errors encountered. Uses the `AutoFix` task type to iteratively run and repair the script until it succeeds. May also modify `code/script.sh` during the fix cycle.
+Not sure where to start? Click one of the **example prompts** (Docker cleanup, log analysis, backup, system info) to get going instantly.
 
-## UI Sections
+### Step 2 — Run the Pipeline
+Click **▶ Run Entire Pipeline** and let the wizard do its thing. You'll see a live progress log as it:
+1. Saves your goal
+2. Generates a shell script
+3. Runs the script and automatically fixes any issues
 
-### 📋 Goal
-A text editor where you describe your objective in plain language. The goal is saved to `goal.md`.
+### Step 3 — Review Your Results
+Switch to the **Results** tab to see:
+- The final shell script that was generated
+- A full execution log showing what happened (and any fixes that were made)
+- Your original goal for reference
 
-### ⚙️ Pipeline
-- **Pipeline Overview** — Visual diagram showing the status of each stage (Ready, Running, Done, Error).
-- **Step 1: Generate Shell Script** — Triggers `code_op` and displays the generated script.
-- **Step 2: Run & Auto-Fix** — Triggers `run_op`, shows the execution log and final script.
-- **Run Entire Pipeline** — Saves the goal, generates the script, and runs it with auto-fix in sequence. Includes a live batch log with links to monitor running sessions.
+You can **copy** or **download** the script directly from the Results tab.
 
-### 📊 Results
-Tabbed view of all outputs:
-- **Script** — The generated (and possibly auto-fixed) shell script with copy-to-clipboard support.
-- **Execution Log** — The full run and fix log rendered as Markdown.
-- **Goal** — The original goal for reference.
+---
 
-## Features
+## Tabs at a Glance
 
-- **Session monitoring** — While operations are running, live links are provided to monitor the AI session in real time via the proxy endpoint.
-- **Status polling** — The UI polls `docops.status.json` to track task progress and update badges and stage indicators automatically.
-- **Auto-save** — The goal is automatically saved before any operation runs.
-- **Responsive design** — Works on desktop and mobile with a dark theme.
-- **Markdown rendering** — Logs and goals are rendered as formatted Markdown; scripts are displayed with syntax-appropriate formatting.
+| Tab | What it's for |
+|---|---|
+| 📋 **Goal** | Describe what you want to accomplish |
+| ⚙️ **Pipeline** | Generate, review, and run your script step by step |
+| 📊 **Results** | View the final script and execution output |
+| 💰 **Usage** | See how many AI tokens were used and estimated cost |
+| 🔧 **Settings** | Choose which AI models to use |
 
-## Usage
+---
 
-1. Open the app in your browser.
-2. On the **Goal** tab, describe what you want the script to do.
-3. Either:
-   - Use the **Pipeline** tab to run each step individually, or
-   - Click **▶ Run Entire Pipeline** to execute everything in one click.
-4. View results on the **Results** tab, or monitor live sessions via the provided links.
-5. Copy the final script to your clipboard from the Results tab.
+## Tips for Great Results
+
+- **Be specific** — mention file paths, service names, or exact commands when you know them
+- **Describe the output** — say where you want results saved or how they should be displayed
+- **Add safety notes** — if you want a dry run or don't want anything deleted, say so
+- **One goal at a time** — complex multi-step tasks work best as a single, clear goal
+- **Already have a script?** — Switch to *Paste / Edit* mode in the Pipeline tab to use your own script and skip AI generation entirely
+
+---
+
+## Advanced: Running Steps Individually
+
+Prefer more control? The **Pipeline** tab lets you run each step on its own:
+
+1. **Generate** — Have the AI write the script, then review it before running
+2. **Run & Fix** — Execute the script (and auto-fix errors) only when you're ready
+
+You can also **paste or edit your own script** and use the auto-fix feature without AI generation.
+
+---
+
+## Keeping an Eye on Costs
+
+The **Usage** tab shows a real-time breakdown of AI token usage and estimated costs for your session — broken down by model. Use a faster, cheaper model for the *Fast Model* setting to keep costs low, and reserve a more powerful model for script generation.
+
+---
+
+## Settings
+
+Before running the pipeline for the first time, visit the **Settings** tab to choose your AI models:
+
+- **Smart Model** — Used to write your script (pick something capable, like GPT-4o or Claude Sonnet)
+- **Fast Model** — Used for quick fixes and parsing (a smaller, faster model works great here)
+
+Your choices are saved in your browser and reused automatically next time.

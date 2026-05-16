@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -16,12 +15,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.sql.Date as SqlDate
 
-class UsageDB(private val root: File? = null) : UsageInterface {
-
-    init {
-        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
-        log.info("Initializing HSQLUsageManager with root directory: {}", root)
-    }
+class UsageDB : UsageInterface {
 
     override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
         try {
@@ -30,7 +24,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
             usageValues.addAndGet(tokens)
             val now = Instant.now()
             val day = LocalDate.ofInstant(now, ZoneOffset.UTC)
-            facet.withTransaction(root) { conn ->
+            facet.withTransaction { conn ->
                 saveUsageValues(conn, usageKey, usageValues, Timestamp.from(now))
                 upsertDailyUsage(conn, usageKey, usageValues, day)
                 val cost = usageValues.cost.get()
@@ -49,7 +43,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
     override fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage> {
         require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
         log.info("Get user usage summary user={} from={} to={} (to exclusive)", user.email, from, to)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection { conn ->
             conn.prepareStatement(
                 """
                     SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
@@ -68,7 +62,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
 
     override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> {
         log.info("Getting session usage summary for session: {}", session)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection { conn ->
             val allSessionIds = collectSessionIds(conn, session.sessionId)
             log.debug("Collected session IDs (including children): {}", allSessionIds)
             if (allSessionIds.isEmpty()) return@withConnection emptyMap<String, ModelSchema.Usage>()
@@ -91,7 +85,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
 
     override fun clear() {
         log.debug("Clearing all usage data")
-        facet.withTransaction(root) { conn ->
+        facet.withTransaction { conn ->
             conn.createStatement().use { stmt ->
                 stmt.executeUpdate("DELETE FROM usage")
                 stmt.executeUpdate("DELETE FROM usage_daily")
@@ -104,7 +98,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
 
     override fun setParentSession(child: Session, parent: Session) {
         log.info("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
-        facet.withConnection(root) { conn ->
+        facet.withConnection { conn ->
             val sql = when (facet.dbProvider) {
                 "postgresql" -> """
                     INSERT INTO session_parents (child_session_id, parent_session_id)
@@ -129,7 +123,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
 
     override fun getAvailableBudget(user: User): Double {
         if (user.email.isEmpty()) return 0.0
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection { conn ->
             conn.prepareStatement("SELECT available FROM user_budget WHERE user_id = ?").use { stmt ->
                 stmt.setString(1, user.email)
                 stmt.executeQuery().use { rs ->
@@ -144,7 +138,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
     ): Double {
         require(user.email.isNotEmpty()) { "User email is required for crediting" }
         log.info("Crediting user {} amount={} comment={}", user.email, amount, comment)
-        facet.withTransaction(root) { conn ->
+        facet.withTransaction { conn ->
             conn.prepareStatement(
                 """
                     INSERT INTO user_credits (user_id, amount, comment, metadata, datetime)
@@ -167,7 +161,7 @@ class UsageDB(private val root: File? = null) : UsageInterface {
         user: User, from: LocalDate, to: LocalDate
     ): List<UsageInterface.DailyUsage> {
         require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection { conn ->
             conn.prepareStatement(
                 """
                     SELECT day, model, prompt_tokens, completion_tokens, cost
@@ -432,8 +426,5 @@ class UsageDB(private val root: File? = null) : UsageInterface {
                 )
             })
 
-        @JvmStatic
-        @JvmOverloads
-        fun getConn(root: File? = null): Connection = facet.getConnection(root)
     }
 }

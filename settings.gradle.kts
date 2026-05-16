@@ -30,19 +30,42 @@ include(":desktop")
 include(":experiment")
 include(":tool")
 
-//include(":Cognotik-Plugins:shared")
-//include(":Cognotik-Plugins:jobs")
-//include(":Cognotik-Plugins:office")
-//include(":Cognotik-Plugins:games")
-//include(":Cognotik-Plugins:home")
-//include(":Cognotik-Plugins:omni")
-//include(":Cognotik-Plugins:controller")
-//include(":Cognotik-Plugins:worker")
-//include(":Cognotik-Plugins:proxy-providers")
-//include(":Cognotik-Plugins:proxy")
-
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 //    include(":android")
 }
 include(":intellij")
+
+
+
 //include(":demo")
+// Include modules from sibling ../Cognotik-Plugins directory
+// (Windows doesn't reliably support symlinks, so we map projectDir explicitly)
+val cognotikPluginsDir = file("../Cognotik-Plugins")
+if (cognotikPluginsDir.isDirectory) {
+    val pluginModules = listOf(
+        "shared",
+        "jobs",
+        "office",
+        "games",
+        "home",
+        "omni",
+        "controller",
+        "worker",
+        "proxy-providers",
+        "proxy"
+    )
+     // Create the parent container project and point it at the external directory
+     // so Gradle doesn't try to use the non-existent <root>/Cognotik-Plugins path.
+     include(":Cognotik-Plugins")
+     project(":Cognotik-Plugins").projectDir = cognotikPluginsDir
+    for (module in pluginModules) {
+        val moduleDir = cognotikPluginsDir.resolve(module)
+        if (moduleDir.isDirectory) {
+            val path = ":Cognotik-Plugins:$module"
+            include(path)
+            project(path).projectDir = moduleDir
+        } else {
+            logger.warn("Skipping $module: directory not found at ${moduleDir.absolutePath}")
+        }
+    }
+}

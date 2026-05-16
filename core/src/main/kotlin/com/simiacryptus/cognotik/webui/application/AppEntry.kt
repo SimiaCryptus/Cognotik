@@ -14,8 +14,10 @@ class AppEntry(
     val path: String = "/$name",
     val appId: String? = null,
     val resource_path: String?,
+    val category: String? = null,
+    val tags: List<String> = emptyList(),
     val cardClass: String? = null,
-     val readme: String? = null,
+    val readme: String? = null,
     val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : DynamicEnum<AppEntry>(name) {
 

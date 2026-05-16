@@ -290,6 +290,27 @@ object DirectoryListingRenderer {
 |        .filesystem-path summary:hover {
 |            color: #6c757d;
 |        }
+|        .delete-link {
+|            margin-left: 0.5rem;
+|            font-size: 0.85rem;
+|            color: #dc3545;
+|            text-decoration: none;
+|            padding: 0.2rem 0.5rem;
+|            border-radius: 0.2rem;
+|            cursor: pointer;
+|            background: none;
+|            border: 1px solid transparent;
+|            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+|        }
+|        .delete-link:hover {
+|            background-color: #f8d7da;
+|            color: #842029;
+|            border-color: #f5c2c7;
+|        }
+|        .delete-link:disabled {
+|            opacity: 0.5;
+|            cursor: not-allowed;
+|        }
         $additionalStyles
     </style>
 |    <script>
@@ -392,6 +413,43 @@ object DirectoryListingRenderer {
 |            const messageDiv = document.getElementById('upload-message');
 |            messageDiv.textContent = message;
 |            messageDiv.className = 'upload-message ' + type;
+|        }
+|        async function deleteItem(event, itemName, isFolder) {
+|            event.preventDefault();
+|            event.stopPropagation();
+|            const itemType = isFolder ? 'folder' : 'file';
+|            if (!confirm('Are you sure you want to delete this ' + itemType + ': "' + itemName + '"?' + (isFolder ? '\n\nThis will delete the folder and all its contents.' : ''))) {
+|                return;
+|            }
+|            const button = event.currentTarget;
+|            button.disabled = true;
+|            const originalText = button.textContent;
+|            button.textContent = 'Deleting...';
+|            try {
+|                const targetUrl = new URL(itemName + (isFolder ? '/' : ''), window.location.href).href;
+|                const response = await fetch(targetUrl, {
+|                    method: 'DELETE'
+|                });
+|                if (response.ok) {
+|                    const listItem = button.closest('li');
+|                    if (listItem) {
+|                        listItem.style.transition = 'opacity 0.3s ease';
+|                        listItem.style.opacity = '0';
+|                        setTimeout(() => window.location.reload(), 300);
+|                    } else {
+|                        window.location.reload();
+|                    }
+|                } else {
+|                    const text = await response.text();
+|                    alert('Failed to delete ' + itemType + ': ' + (text || response.statusText));
+|                    button.disabled = false;
+|                    button.textContent = originalText;
+|                }
+|            } catch (error) {
+|                alert('Error deleting ' + itemType + ': ' + error.message);
+|                button.disabled = false;
+|                button.textContent = originalText;
+|            }
 |        }
 |    $additionalScripts
 |    </script>

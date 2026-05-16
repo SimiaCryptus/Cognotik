@@ -75,9 +75,9 @@ object ApplicationServices {
 
 open class FileApplicationServices(val rootDir: File) {
     open val dataStorageFactory: DataStorage by lazy { DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = metadataStorageFactory) }
-    open val metadataStorageFactory: MetadataStorageDB by lazy { MetadataStorageDB(rootDir.resolve("metadatadb")) }
-    open val usageManager: UsageInterface by lazy { UsageDB(rootDir.resolve("usagedb")) }
-    open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsDB(rootDir.resolve("user_settings")) }
+    open val metadataStorageFactory: MetadataStorageDB by lazy { MetadataStorageDB() }
+    open val usageManager: UsageInterface by lazy { UsageDB() }
+    open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsDB() }
 }
 
 fun ChatModel.instance(user: User) = ApiChatModel(

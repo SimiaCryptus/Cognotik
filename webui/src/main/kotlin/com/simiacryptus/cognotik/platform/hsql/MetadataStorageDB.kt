@@ -4,23 +4,15 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.sql.Timestamp
 import java.sql.Types
 import java.util.*
 
-class MetadataStorageDB(root: File?) : MetadataStorageInterface {
-
-    init {
-        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
-        log.info("Initializing HSQLMetadataStorage with root directory: {}", root)
-    }
-
-    private val root: File? = root
+class MetadataStorageDB : MetadataStorageInterface {
 
     override fun getSessionName(user: User?, session: Session): String {
         log.debug("Fetching session name for session: {}, user: {}", session, user?.email)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection() { conn ->
             conn.prepareStatement(
                 "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'name'"
             ).use { stmt ->
@@ -41,7 +33,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
     override fun getMessageIds(user: User?, session: Session): List<String> {
         log.debug("Fetching message IDs for session: {}, user: {}", session, user?.email)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection() { conn ->
             conn.prepareStatement(
                 "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'message_ids'"
             ).use { stmt ->
@@ -65,7 +57,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
     override fun getSessionTime(user: User?, session: Session): Date? {
         log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection() { conn ->
             conn.prepareStatement(
                 "SELECT value, timestamp FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'session_time'"
             ).use { stmt ->
@@ -99,7 +91,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
     override fun listSessions(path: String): List<String> {
         log.debug("Listing sessions for path: {}", path)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection() { conn ->
             conn.prepareStatement(
                 "SELECT DISTINCT session_id FROM metadata WHERE value = ? AND key = 'path'"
             ).use { stmt ->
@@ -115,7 +107,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
     override fun getSessionOwner(session: Session): String? {
         log.debug("Fetching session owner for session: {}", session)
-        return facet.withConnection(root) { conn ->
+        return facet.withConnection() { conn ->
             conn.prepareStatement(
                 "SELECT value FROM metadata WHERE session_id = ? AND key = 'owner_id'"
             ).use { stmt ->
@@ -134,7 +126,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
 
     override fun deleteSession(user: User?, session: Session) {
         log.debug("Deleting session: {}, user: {}", session, user?.email)
-        facet.withConnection(root) { conn ->
+        facet.withConnection() { conn ->
             conn.prepareStatement(
                 "DELETE FROM metadata WHERE session_id = ? AND user_email = ?"
             ).use { stmt ->
@@ -153,7 +145,7 @@ class MetadataStorageDB(root: File?) : MetadataStorageInterface {
         value: String?,
         timestamp: Timestamp = Timestamp(System.currentTimeMillis())
     ) {
-        facet.withConnection(root) { conn ->
+        facet.withConnection() { conn ->
              val sql = when (facet.dbProvider) {
                  "postgresql" -> """
                      INSERT INTO metadata (session_id, user_email, key, value, timestamp)

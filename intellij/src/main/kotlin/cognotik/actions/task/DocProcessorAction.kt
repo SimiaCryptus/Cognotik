@@ -170,12 +170,18 @@ open class DocProcessorAction(
         docsFolder = root,
         updateMode = mode,
         fastModel = AppSettingsState.instance.fastModel?.model
+          ?: AppSettingsState.instance.smartModel?.model
           ?: throw IllegalStateException("Fast model not configured"),
         smartModel = AppSettingsState.instance.smartModel?.model
+          ?: AppSettingsState.instance.fastModel?.model
           ?: throw IllegalStateException("Smart model not configured"),
         imageModel = AppSettingsState.instance.imageChatModel?.model
+            ?: AppSettingsState.instance.fastModel?.model
+            ?: AppSettingsState.instance.smartModel?.model
             ?: throw IllegalStateException("Image model not configured"),
         audioModel = AppSettingsState.instance.audioModel?.model
+            ?: AppSettingsState.instance.fastModel?.model
+            ?: AppSettingsState.instance.smartModel?.model
             ?: throw IllegalStateException("Audio model not configured"),
         autoFix = true,
         user = localUser,

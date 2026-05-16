@@ -1,185 +1,151 @@
 # 🧠 Quiz Wiz
 
-**AI-powered quiz game generator pipeline**
+**Turn any idea into a playable quiz game — no coding required.**
 
-Quiz Wiz is a DocOps-driven application that turns a plain-English quiz idea into a fully working, playable web-based
-quiz game. It orchestrates a multi-step AI pipeline that designs, populates, implements, and refines a quiz game
-codebase — all from a single browser UI.
-
----
-
-## ✨ What It Does
-
-Starting from a one-paragraph description of a quiz, Quiz Wiz will:
-
-1. **Capture** your quiz idea.
-2. **Design** the data schemas and game flow.
-3. **Generate** a JSON file of quiz questions, answers, and explanations.
-4. **Implement** a working web app codebase that plays the quiz.
-5. **Refine** the result iteratively based on your feedback notes.
-
-Each step is powered by a configurable AI model and produces real artifacts you can browse, download, and play.
+Quiz Wiz uses the power of AI to take a simple description of a quiz topic and transform it into a fully working,
+browser-based quiz game. Just describe what you want, click a few buttons, and watch your quiz come to life.
 
 ---
 
-## 🗺️ Pipeline Overview
+## ✨ What Can Quiz Wiz Do For You?
 
-| Step | Name            | Op File              | Output Folder | Model |
-|------|-----------------|----------------------|---------------|-------|
-| ①    | Quiz Idea       | *(user input)*       | `idea.md`     | —     |
-| ②    | Design          | `ops/design_op.md`   | `design/`     | smart |
-| ③    | Game Data       | `ops/gamedata_op.md` | `gamedata/`   | fast  |
-| ④    | Implementation  | `ops/impl_op.md`     | `code/`       | smart |
-| ⑤    | Update / Refine | `ops/update_op.md`   | `code/`       | smart |
+Ever wanted to create a fun quiz for your team, classroom, event, or just for laughs — but didn't know where to start?
+Quiz Wiz handles everything:
 
-### Step Details
+- 🎯 **Designs** the structure and rules of your quiz automatically
+- 📝 **Writes** all the questions, answers, and explanations for you
+- 🎮 **Builds** a polished, playable web app — ready to share
+- 🧪 **Tests** the game to catch any issues before you do
+- 🔍 **Reviews** the results and flags anything that needs fixing
+- ♻️ **Refines** the game based on your feedback, as many times as you like
 
-- **② Design** — Produces `question_data_schema.ts`, `result_schema.ts`, and `game_flow.md` describing the data
-  structures and gameplay flow.
-- **③ Game Data** — Writes a uniquely-named `.json` file under `gamedata/` containing all quiz questions,
-  multiple-choice answers, and explanations.
-- **④ Implementation** — Renders the design docs and game data into a modular, maintainable web codebase under `code/`.
-  Reads game data from `../gamedata` and writes user results back to `../results/`.
-- **⑤ Update** — Reads `notes.md` (your feedback / bug reports / feature requests) plus the existing `code/` files and
-  applies the requested changes while preserving untouched functionality.
+No design skills. No coding. No fuss.
 
 ---
 
-## 🖥️ The UI
+## 🗺️ How It Works — The Six Steps
 
-Quiz Wiz presents each pipeline stage as a card in a single-page app (`app.html` + `app.js`):
+Quiz Wiz walks you through a simple pipeline, one step at a time. Each step builds on the last.
 
-- **⚙️ AI Models** — Pick a *Smart* model (design / code) and a *Fast* model (game data / edits). Selections are
-  persisted in `localStorage` under the `quizWhiz` prefix.
-- **① Quiz Idea** — A textarea editor for `idea.md` with save support.
-- **② Design** — Run the design step, view generated files, and preview `game_flow.md` inline as rendered Markdown.
-- **③ Game Data** — Generate quiz JSON and browse the resulting files.
-- **④ Implement Game Code** — Build the playable codebase. When an `index.html` is produced, the **▶️ Open Game** button
-  becomes active.
-- **⑤ Update / Refine** — Save feedback into `notes.md` and re-run to apply changes.
-- **📡 Active Sessions** — Live status of every DocOps task started during the page-load, with monitor links.
-- **📜 Activity Log** — A scrolling log of every UI action, success, warning, and error.
-
-Status badges (`pending` → `running` → `done` / `error`) appear on each step and update automatically via background
-polling.
+| Step | What Happens |
+|------|-------------|
+| **① Quiz Idea** | You describe your quiz in plain English |
+| **② Design** | AI designs the structure and game flow |
+| **③ Game Data** | AI writes all the questions and answers |
+| **④ Build Code** | AI assembles a working, playable web app |
+| **⑤ Test** | The game is automatically run and checked |
+| **⑥ Review** | AI reads the test results and notes any issues |
+| **⑦ Update** | You give feedback; AI applies your changes |
 
 ---
 
-## 📁 Project Layout
+## 🚀 Getting Started
+
+1. **Open Quiz Wiz** using your session link.
+2. **Choose your AI models** at the top — the defaults work great if you're not sure.
+3. **Write your quiz idea** in the *Quiz Idea* box. A sentence or two is enough to get started!
+4. Hit **💾 Save Idea**, then work through each step by clicking the button in each card.
+5. When the **▶️ Open Game** button lights up, your quiz is ready to play!
+
+That's it. The whole process typically takes just a few minutes.
+
+---
+
+## 💡 Writing a Great Quiz Idea
+
+The more detail you give, the better your quiz will be. Try to mention:
+
+- **The topic** — What is the quiz about?
+- **Who it's for** — Kids? Trivia buffs? Work colleagues?
+- **How hard** — Easy, medium, hard, or a mix?
+- **How many questions** — 5, 10, 20?
+- **The style** — Multiple choice? True/false?
+- **Any extras** — Timers, themes, fun facts after each answer?
+
+### Example ideas that work well:
+
+> *"A 10-question multiple-choice quiz about classic 1980s arcade games, aimed at casual gamers. Include fun trivia and
+> explanations for each answer."*
+
+> *"A 15-question true/false quiz about world geography for middle school students. Medium difficulty, with a fun fact
+> after each question."*
+
+> *"A 20-question pub-style trivia quiz covering movies, music, and sport from the 1990s. Hard difficulty, mixed
+> question styles."*
+
+---
+
+## ♻️ Refining Your Quiz
+
+Not quite right? No problem. Quiz Wiz makes it easy to tweak your game:
+
+1. Write your feedback in the **Update / Refine** box at the bottom of the page.
+2. Click **💾 Save Notes**, then **♻️ Apply Updates**.
+3. Your game will be rebuilt with your changes applied.
+
+You can do this as many times as you like. Be as specific as you want — the more clearly you describe what to change,
+the better the result.
+
+### Example feedback notes:
 
 ```
-quiz-wiz/
-├── app.html              # Main UI
-├── app.js                # UI logic, pipeline orchestration
-├── style.css             # Styling
-├── README.md             # This file
-├── utils/                # Shared client utilities (session, models, fileIO, docops, ui)
-└── ops/                  # DocOps step definitions
-    ├── design_op.md
-    ├── gamedata_op.md
-    ├── impl_op.md
-    └── update_op.md
-```
-
-At runtime, a session folder also contains:
-
-```
-<session>/
-├── idea.md               # Your quiz idea
-├── notes.md              # Your update / refinement notes
-├── design/               # Generated schemas + game flow doc
-├── gamedata/             # Generated quiz JSON files
-├── code/                 # Generated playable web app
-└── results/              # User quiz results (written by the game)
-```
-
----
-
-## 🚀 Quick Start
-
-1. Open the Quiz Wiz app in a valid session URL (the session ID is parsed from the URL).
-2. Pick your **Smart** and **Fast** models.
-3. Write your quiz idea in **Step ①** and click **💾 Save Idea**.
-4. Click **🎨 Generate Design** in **Step ②** and wait for the badge to turn green.
-5. Click **📚 Generate Quiz Data** in **Step ③**.
-6. Click **🛠️ Build Code** in **Step ④**, then **▶️ Open Game** when it appears.
-7. Try the game. If you want changes, write them in **Step ⑤**, save the notes, and click **♻️ Apply Updates**.
-
-Repeat step 7 as many times as needed.
-
----
-
-## 💡 Idea Prompt Tips
-
-A good `idea.md` typically describes:
-
-- **Topic(s)** — what the quiz is about.
-- **Audience** — casual, expert, kids, etc.
-- **Difficulty** — easy / medium / hard, or a mix.
-- **Number of questions**.
-- **Question style** — multiple choice, true/false, etc.
-- **Special rules** — timers, scoring, hints, themes, accessibility needs.
-
-Example:
-
-> A 10-question multiple-choice quiz about classic 1980s arcade games, aimed at casual gamers. Include fun trivia and
-> explanations for each answer.
-
----
-
-## 🔄 Update Notes Tips
-
-`notes.md` should be a concise, actionable list. The update op preserves anything you don't mention, so be specific
-about what to change. Example:
-
-```
-- Fix scoring bug on the last question
-- Add a 20-second timer per question
-- Use a darker color theme
-- Show an explanation after each answer is submitted
+- The timer feels too short — give players 30 seconds per question instead of 15
+- Add a progress bar so players can see how far through the quiz they are
+- Use a dark colour theme
+- Show the correct answer and an explanation after each question
+- Fix the final score screen — it's not showing the total correctly
 ```
 
 ---
 
-## 🔧 Technical Notes
+## 🖥️ Reading the Screen
 
-- **Session bootstrap** — `parseSessionUrl()` extracts `basePath` and `sessionId` from the current URL; the app refuses
-  to start without them.
-- **DocOps execution** — Each step calls `runDocOp(sessionId, opFile, target, modelOverrides)` and then
-  `waitForTask(...)` (10-minute timeout) while a `createStatusPoller` keeps badges and the Active Sessions panel in
-  sync.
-- **Model overrides** — Both `smartModel` and `fastModel` are sent on every run; the servlet selects the appropriate one
-  based on the op definition.
-- **Pre-flight checks** — Steps ②–④ require `idea.md`; step ⑤ requires `notes.md`. Missing prerequisites trigger a toast
-  and abort the run.
-- **Auto-refresh** — File listings for `design/`, `gamedata/`, and `code/` refresh every 15 seconds so the UI stays
-  current across reloads.
-- **Markdown preview** — `game_flow.md` is rendered inline using a vendored `marked.min.js`.
+The Quiz Wiz interface is made up of simple cards, one per step. Here's what to look for:
+
+- **Status badges** — Each step shows a coloured badge: `pending` (not started), `running` (in progress), `done`
+  (finished), or `error` (something went wrong).
+- **▶️ Open Game** — Appears and becomes clickable once your game has been built successfully.
+- **📂 View Files** — Browse the files generated at each step.
+- **📡 Active Sessions** — Shows live progress for any AI tasks currently running.
+- **📜 Activity Log** — A running record of everything that's happened, useful if something goes wrong.
 
 ---
 
-## 🧩 Extending Quiz Wiz
+## 🤔 Frequently Asked Questions
 
-- **Add a new step** — Drop a new `ops/<name>_op.md` file with appropriate front-matter (`folder:`, `related:`), then
-  add a matching entry to the `STEPS` map in `app.js` and a corresponding card in `app.html`.
-- **Change output formats** — Edit the relevant op file under `ops/` to adjust schemas, file names, or behavioral
-  instructions.
-- **Theme the UI** — All visual styling lives in `style.css`.
+**Do I need to know how to code?**
+Not at all. Quiz Wiz handles all the technical work. You just describe what you want in plain English.
+
+**How long does each step take?**
+Most steps complete in under a minute. The Build step may take a little longer for complex quizzes.
+
+**Can I share my quiz with others?**
+Yes! Once built, your quiz runs in any modern web browser. Use the **▶️ Open Game** link to play it, and share that
+link with anyone you like.
+
+**What if a step fails?**
+Check the **📜 Activity Log** for details. You can usually just try running the step again. If the problem persists,
+check the **📡 Active Sessions** panel for a monitor link to see exactly what happened.
+
+**Can I change the quiz topic completely?**
+Yes — update your idea in Step ① and re-run the pipeline from Step ② onwards.
+
+**Will my changes in the Update step break anything?**
+Quiz Wiz is designed to apply only the changes you ask for, leaving everything else untouched. If something does break,
+just describe the issue in the Update box and run it again.
 
 ---
 
 ## ⚠️ Troubleshooting
 
-- **"Could not determine session from URL"** — Open the app via its proper session URL.
-- **Step badge stuck on `running`** — Check the **📡 Active Sessions** panel for a monitor link, and the **📜 Activity Log
-  ** for errors.
-- **No "Open Game" button** — The implementation step did not produce an `index.html`. Inspect `code/` and use the
-  Update step to ask for one.
-- **Models not loading** — A failure to load AI providers is logged in the Activity Log; verify the backend
-  `/api/providers` endpoint is reachable.
+| Problem | What to do |
+|---------|-----------|
+| *"Could not determine session from URL"* | Make sure you're opening the app via its proper session link |
+| A step badge is stuck on `running` | Check the **📡 Active Sessions** panel and the **📜 Activity Log** |
+| The **▶️ Open Game** button isn't appearing | The Build step may not have finished — check the Activity Log and try again |
+| The quiz doesn't look right | Use the **⑦ Update / Refine** step to describe what needs fixing |
+| Models not loading | Check your internet connection and try refreshing the page |
 
 ---
 
-## 📜 License
-
-Part of the larger DocOps apps suite. See the parent repository for licensing details.
+*Quiz Wiz is part of the DocOps apps suite.*
