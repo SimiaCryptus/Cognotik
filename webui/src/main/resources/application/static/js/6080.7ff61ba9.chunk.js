@@ -1,2 +1,0 @@
-"use strict";(globalThis.webpackChunkskyenet_ui=globalThis.webpackChunkskyenet_ui||[]).push([[6080],{6080(e,s,u){u.r(s),u.d(s,{default:()=>k});const k={}}}]);
-//# sourceMappingURL=6080.7ff61ba9.chunk.js.map

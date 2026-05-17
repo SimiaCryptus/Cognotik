@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunkskyenet_ui=globalThis.webpackChunkskyenet_ui||[]).push([[1972],{1972(e,s,i){i.d(s,{createPieServices:()=>a.f});var a=i(4960);i(6472)}}]);
