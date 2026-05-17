@@ -47,17 +47,16 @@ abstract class LoginMethod(
 
     companion object {
         @JvmStatic
-        fun register(method: LoginMethod) = DynamicEnum.register(LoginMethod::class.java, method)
+        fun register(method: LoginMethod) = register(LoginMethod::class.java, method)
 
         @JvmStatic
-        fun unregister(name: String) = DynamicEnum.unregister(LoginMethod::class.java, name)
+        fun unregister(name: String) = unregister(LoginMethod::class.java, name)
 
         @JvmStatic
-        fun valueOf(name: String): LoginMethod =
-            DynamicEnum.valueOf(LoginMethod::class.java, name)
+        fun valueOf(name: String): LoginMethod = valueOf(LoginMethod::class.java, name)
 
         @JvmStatic
-        fun values(): List<LoginMethod> = DynamicEnum.values(LoginMethod::class.java)
+        fun values(): List<LoginMethod> = values(LoginMethod::class.java)
     }
 }
 
