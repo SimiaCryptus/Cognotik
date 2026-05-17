@@ -97,6 +97,7 @@ aws-bedrock = { group = "software.amazon.awssdk", name = "bedrock", version.ref 
 aws-bedrockruntime = { group = "software.amazon.awssdk", name = "bedrockruntime", version.ref = "aws" }
 aws-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "aws" }
 aws-kms = { group = "software.amazon.awssdk", name = "kms", version.ref = "aws" }
+aws-cloudwatch = { group = "software.amazon.awssdk", name = "cloudwatch", version.ref = "aws" }
 aws-secretsmanager = { group = "software.amazon.awssdk", name = "secretsmanager", version.ref = "aws" }
 aws-ecs = { group = "software.amazon.awssdk", name = "ecs", version.ref = "aws" }
 aws-ec2 = { group = "software.amazon.awssdk", name = "ec2", version.ref = "aws" }
