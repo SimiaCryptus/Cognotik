@@ -19,9 +19,9 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
   override val inputCnt = 0
   override val stickyInput = false
   override fun appInfo(session: Session, user: User): Map<String, Any> {
-    val chat = chats[session]
     val appInfoData = appInfoMap[session]
-    return (appInfoData ?: chat?.let { chatServer ->
+    if (appInfoData != null) return appInfoData.toMap()
+    val infoData = chats[session]?.let { chatServer ->
       AppInfoData(
         applicationName = chatServer.applicationName,
         inputCnt = chatServer.inputCnt,
@@ -29,25 +29,32 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
         loadImages = false,
         showMenubar = showMenubar,
       )
-    } ?: AppInfoData(
+    }
+    if (infoData != null) return infoData.toMap()
+    return AppInfoData(
       applicationName = applicationName,
       inputCnt = 0,
       stickyInput = false,
       loadImages = false,
       showMenubar = showMenubar,
-    )).toMap()
+    ).toMap()
   }
 
-  override fun newSession(user: User, session: Session) =
-      agents[session] ?: chats[session]?.newSession(user, session) ?: ChatSocketManager(
-        session = session,
-        smartModel = ChatInterface.NULL,
-        fastModel = ChatInterface.NULL,
-        systemPrompt = "",
-        applicationClass = this::class.java,
-        budget = 0.0,
-        owner = user
+  override fun newSession(user: User, session: Session): SocketManager? {
+    var manager = agents[session]
+    if (manager != null) return manager
+    manager = chats[session]?.newSession(user, session)
+    if (manager != null) return manager
+    return ChatSocketManager(
+      session = session,
+      smartModel = ChatInterface.NULL,
+      fastModel = ChatInterface.NULL,
+      systemPrompt = "",
+      applicationClass = this::class.java,
+      budget = 0.0,
+      owner = user
       )
+  }
 
   companion object {
      private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)

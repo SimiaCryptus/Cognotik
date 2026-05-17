@@ -8,6 +8,8 @@ import kotlin.random.Random
 open class Session(
   val sessionId: String
 ) {
+
+
   init {
     validateSessionId()
   }
@@ -61,5 +63,18 @@ open class Session(
     if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4,12}""".toRegex())) {
       throw IllegalArgumentException("Invalid session ID: $this")
     }
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Session) return false
+
+    if (sessionId != other.sessionId) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return sessionId.hashCode()
   }
 }
