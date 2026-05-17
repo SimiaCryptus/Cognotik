@@ -172,7 +172,7 @@ open class DocOpsApp(
     val globalSession = session.toGlobal()
     val globalRoot = dataStorage.getUserDir(user, globalSession)
     try {
-      copyFileWithLineEndingNormalization(sessionRoot, globalRoot)
+      copyRecursively(sessionRoot, globalRoot)
       response.sendRedirect("${request.contextPath}/fileIndex/${globalSession.sessionId}/app.html")
     } catch (e: Exception) {
       LoggerFactory.getLogger(DocOpsApp::class.java)
@@ -183,6 +183,22 @@ open class DocOpsApp(
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to share session: ${e.message}")
     }
   }
+
+  protected fun copyRecursively(source: File, destination: File) {
+    try {
+      if (source.isDirectory) {
+        destination.mkdirs()
+        source.listFiles()?.forEach { child ->
+          copyRecursively(child, File(destination, child.name))
+        }
+      } else {
+        copyFileWithLineEndingNormalization(source, destination)
+      }
+    } catch (e: Exception) {
+      log.error("Failed to copy file from ${source.absolutePath} to ${destination.absolutePath}: ${e.message}", e)
+    }
+  }
+
   private fun extractFromUrl(resourceUrl: URL, resourcePath: String, targetDir: File): Boolean {
     val decodedUrl = URLDecoder.decode(resourceUrl.toString(), "UTF-8")
     if (decodedUrl.startsWith("jar:")) {
