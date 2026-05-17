@@ -165,6 +165,14 @@ function renderAppGrid() {
              card.href = appUrl;
             card.className = 'app-card' + (app.cardClass ? ' ' + app.cardClass : '');
             card.id = app.id;
+             // Apply per-app background image if provided
+             if (app.hasBackground && app.backgroundUrl) {
+                 const bgUrl = getAppAssetUrl(app.backgroundUrl);
+                 card.classList.add('app-card-has-background');
+                  // Use a CSS variable so the desaturation layer (::after) can
+                  // render the image while the card itself stays unfiltered.
+                  card.style.setProperty('--app-card-bg-image', `url("${bgUrl}")`);
+             }
             let badgeHtml = '';
             if (app.badge) {
                 badgeHtml = `<div class="app-card-badge${app.badgeClass ? ' ' + app.badgeClass : ''}">${app.badge}</div>`;
@@ -182,9 +190,19 @@ function renderAppGrid() {
                 }).join('');
                 tagsHtml = `<div class="app-card-tags">${tagItems}</div>`;
             }
+             // Icon: use image if hasIcon + iconUrl provided, otherwise text/emoji
+             let iconContent;
+             if (app.hasIcon && app.iconUrl) {
+                 const iconUrl = getAppAssetUrl(app.iconUrl);
+                 const safeName = HtmlUtils && HtmlUtils.escapeHtml ? HtmlUtils.escapeHtml(app.name || '') : (app.name || '');
+                 iconContent = `<img src="${iconUrl}" alt="${safeName}" class="app-card-icon-img">`;
+             } else {
+                 iconContent = app.icon || '';
+             }
             card.innerHTML = `
-                    <div class="app-card-icon">${app.icon}</div>
-                    <div class="app-card-body">
+                     <div class="app-card-content">
+                         <div class="app-card-icon">${iconContent}</div>
+                         <div class="app-card-body">
                         <h3>${app.name}</h3>
                         <p>${app.description}</p>
                         ${tagsHtml}
@@ -192,7 +210,8 @@ function renderAppGrid() {
                             ${launchBtnHtml}
                             ${readmeHintHtml}
                         </div>
-                    </div>
+                         </div>
+                     </div>
                     ${badgeHtml}
                 `;
             innerGrid.appendChild(card);
@@ -231,6 +250,12 @@ function getAppUrl(app) {
          return app.path.endsWith('/') ? app.path : app.path + '/';
      }
      return `/${app.id}/`;
+}
+function getAppAssetUrl(relativePath) {
+      if (!relativePath) return '';
+      // Strip any leading slash to avoid double-slashes
+      const clean = String(relativePath).replace(/^\/+/, '');
+      return `/appDirectory/${clean}`;
 }
 
 
@@ -351,7 +376,42 @@ function showAppReadme(app) {
     ensureReadmeModal();
     const modal = document.getElementById('app-readme-modal');
     modal.dataset.currentAppId = app.id;
-    document.getElementById('app-readme-icon').textContent = app.icon || '';
+     const iconEl = document.getElementById('app-readme-icon');
+     if (iconEl) {
+         if (app.hasIcon && app.iconUrl) {
+             const iconUrl = getAppAssetUrl(app.iconUrl);
+             const safeName = HtmlUtils && HtmlUtils.escapeHtml ? HtmlUtils.escapeHtml(app.name || '') : (app.name || '');
+             iconEl.innerHTML = `<img src="${iconUrl}" alt="${safeName}" class="app-readme-icon-img">`;
+         } else {
+             iconEl.textContent = app.icon || '';
+         }
+     }
+     // Apply background image to modal header if available
+      // Apply background image to the entire modal content (not just header)
+      const modalContent = modal.querySelector('.app-readme-modal-content');
+      const headerEl = modal.querySelector('.app-readme-header');
+      if (app.hasBackground && app.backgroundUrl) {
+          const bgUrl = getAppAssetUrl(app.backgroundUrl);
+          if (modalContent) {
+              modalContent.classList.add('app-readme-modal-has-background');
+              modalContent.style.setProperty('--app-readme-bg-image', `url("${bgUrl}")`);
+          }
+          if (headerEl) {
+              // Keep the class for backwards compatibility / styling hooks,
+              // but no longer set an inline background-image on the header.
+              headerEl.classList.add('app-readme-header-has-background');
+              headerEl.style.backgroundImage = '';
+          }
+      } else {
+          if (modalContent) {
+              modalContent.classList.remove('app-readme-modal-has-background');
+              modalContent.style.removeProperty('--app-readme-bg-image');
+          }
+          if (headerEl) {
+              headerEl.classList.remove('app-readme-header-has-background');
+              headerEl.style.backgroundImage = '';
+          }
+      }
     document.getElementById('app-readme-title').textContent = app.name || '';
     document.getElementById('app-readme-description').textContent = app.description || '';
      const launchLink = document.getElementById('app-readme-launch-btn');

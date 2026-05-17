@@ -18,6 +18,8 @@ class AppEntry(
     val tags: List<String> = emptyList(),
     val cardClass: String? = null,
     val readme: String? = null,
+     val hasBackground: Boolean = false,
+     val hasIcon: Boolean = false,
     val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : DynamicEnum<AppEntry>(name) {
 

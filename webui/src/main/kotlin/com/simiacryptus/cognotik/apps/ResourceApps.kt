@@ -38,6 +38,8 @@ open class ResourceApps(
                 val readme = entry.path?.let { rp ->
                     loadReadme(rp)
                 }
+                 val hasBackground = entry.path?.let { rp -> resourceExists("${rp.trimEnd('/')}/background.png") } ?: false
+                 val hasIcon = entry.path?.let { rp -> resourceExists("${rp.trimEnd('/')}/icon.png") } ?: false
                 AppEntry.register(
                     AppEntry(
                         name = "app-" + entry.id?.removePrefix("app-"),
@@ -53,6 +55,8 @@ open class ResourceApps(
                         resource_path = entry.path,
                         cardClass = entry.cardClass,
                         readme = readme,
+                         hasBackground = hasBackground,
+                         hasIcon = hasIcon,
                         classLoader = classLoader,
                         category = entry.category,
                         tags = entry.tags,
@@ -91,4 +95,15 @@ open class ResourceApps(
         log.debug("No README.md found for resource path '{}'", resourcePath)
         return null
     }
+     /**
+      * Checks whether a given classpath resource exists.
+      */
+     private fun resourceExists(path: String): Boolean {
+         return try {
+             classLoader.getResource(path) != null
+         } catch (e: Exception) {
+             log.debug("Error checking resource '{}': {}", path, e.message)
+             false
+         }
+     }
 }

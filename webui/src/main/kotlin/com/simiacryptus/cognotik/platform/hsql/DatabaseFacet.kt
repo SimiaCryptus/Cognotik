@@ -203,12 +203,7 @@ class DatabaseFacet(
     companion object {
         private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
 
-        var root = System.getProperty("cognotik.db.root") ?: File(
-            System.getProperty(
-                "user.home",
-                "."
-            )
-        ).resolve(".cognotik").absolutePath
+        var root = System.getProperty("cognotik.db.root") ?: File(System.getProperty("user.home", ".")).resolve(".cognotik").absolutePath
         val dbName = System.getProperty("cognotik.db.dbName")
         val serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
         val serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
@@ -357,6 +352,47 @@ class DatabaseFacet(
             if (registeredDatabases.isEmpty()) {
                 throw IllegalStateException("Cannot start shared HSQL server: no databases registered")
             }
+           // Before starting the server, check for stale lock files on file-backed
+           // databases. A stale lock file is one whose heartbeat hasn't been
+           // updated recently, indicating the owning JVM crashed without
+           // releasing it. If the lock file is live (recent heartbeat), another
+          // process is actively using the database; in that case we log an
+          // error and fall back to an ephemeral in-memory database so the
+          // application can still start (with non-persistent storage).
+           for ((db, path) in registeredDatabases) {
+               if (!path.startsWith("file:")) continue
+               val dbFilePath = path.removePrefix("file:")
+               val lockFile = File("$dbFilePath.lck")
+               if (!lockFile.exists()) continue
+               val ageMs = System.currentTimeMillis() - lockFile.lastModified()
+               // HSQL updates the heartbeat every ~10s. Consider a lock file
+               // stale if its heartbeat is older than 30s.
+               if (ageMs > 30_000) {
+                   log.warn(
+                       "Found stale HSQL lock file for database '{}' at {} (age={}ms); removing",
+                       db, lockFile.absolutePath, ageMs
+                   )
+                   try {
+                       if (!lockFile.delete()) {
+                           log.warn("Failed to delete stale lock file: {}", lockFile.absolutePath)
+                       }
+                   } catch (e: Exception) {
+                       log.warn("Error deleting stale lock file ${lockFile.absolutePath}", e)
+                   }
+               } else {
+                   log.error(
+                       "HSQL database '{}' at '{}' is locked by another running process " +
+                               "(lock file {} heartbeat age={}ms). " +
+                               "Falling back to an ephemeral in-memory database for '{}'; " +
+                               "data will NOT be persisted. To enable persistence, stop the other " +
+                               "instance, configure a different database location via " +
+                               "-Dcognotik.db.root=<path>, or point this instance at a shared " +
+                               "database server via -Dcognotik.db.serviceUrl=<jdbc-url>.",
+                       db, dbFilePath, lockFile.absolutePath, ageMs, db
+                   )
+                   registeredDatabases[db] = "mem:$db"
+               }
+           }
             // Try multiple times in case the chosen ephemeral port is taken between
             // our probe and HSQL's bind (common when multiple application instances
             // are racing for the same port range).
@@ -392,6 +428,52 @@ class DatabaseFacet(
                     }
                     if (candidate.state != 1) {
                         val cause = candidate.serverError
+                       // If the server shut down because it couldn't acquire
+                       // the database lock, retrying won't help - another
+                       // process owns it. Convert all file-backed databases
+                       // to in-memory and retry so the application can still
+                       // start (with non-persistent storage).
+                       val causeMsg = cause?.message ?: ""
+                       val isLockFailure = causeMsg.contains("lock", ignoreCase = true) ||
+                               registeredDatabases.any { (_, p) ->
+                                   if (!p.startsWith("file:")) false
+                                   else {
+                                       val lf = File("${p.removePrefix("file:")}.lck")
+                                       lf.exists() &&
+                                               (System.currentTimeMillis() - lf.lastModified()) < 30_000
+                                   }
+                               }
+                       if (isLockFailure) {
+                           try { candidate.shutdown() } catch (_: Exception) {}
+                           val converted = mutableListOf<String>()
+                           registeredDatabases.entries.forEach { e ->
+                               if (e.value.startsWith("file:")) {
+                                   converted += e.key
+                                   e.setValue("mem:${e.key}")
+                               }
+                           }
+                           if (converted.isNotEmpty()) {
+                               log.error(
+                                   "HSQL server failed to start because database(s) {} are locked by " +
+                                           "another running process (cause: {}). Falling back to " +
+                                           "ephemeral in-memory storage for these databases; data " +
+                                           "will NOT be persisted. To enable persistence, stop the " +
+                                           "other instance, configure a different database location " +
+                                           "via -Dcognotik.db.root=<path>, or point this instance at " +
+                                           "a shared database server via -Dcognotik.db.serviceUrl=<jdbc-url>.",
+                                   converted, causeMsg, cause
+                               )
+                               // Retry immediately with the converted registrations.
+                               continue
+                           } else {
+                               // Nothing left to convert; surface the error.
+                               throw IllegalStateException(
+                                   "HSQL server failed to start due to a lock failure but no " +
+                                           "file-backed databases were registered. Registered: $registeredDatabases",
+                                   cause
+                               )
+                           }
+                       }
                         val stateName = when (candidate.state) {
                             1 -> "ONLINE"
                             4 -> "OPENING"
@@ -412,6 +494,9 @@ class DatabaseFacet(
                     chosenPort = freePort
                     break
                 } catch (e: Exception) {
+                   // Lock-acquisition failures are handled above by converting
+                   // file-backed databases to in-memory; any other exception
+                   // here is treated as potentially transient and retried.
                     lastError = e
                     log.warn(
                         "Shared HSQL server start attempt $attempt on port $freePort failed: ${e.message}",
