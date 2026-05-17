@@ -134,48 +134,52 @@ function escapeHtmlSafe(s) {
     }[c]));
 }
 // ===== Usage modal =====
+// Generic helper to wire up a modal that displays a given URL in an iframe.
+function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url }) {
+     const btn = document.getElementById(buttonId);
+     const modal = document.getElementById(modalId);
+     const iframe = document.getElementById(iframeId);
+     const closeBtn = closeBtnId ? document.getElementById(closeBtnId) : null;
+     if (!btn || !modal || !iframe) return;
+     const close = () => {
+         modal.style.display = 'none';
+         iframe.src = 'about:blank';
+     };
+     btn.addEventListener('click', () => {
+         // (Re)load each time it's opened so data is fresh
+         iframe.src = url;
+         modal.style.display = 'block';
+     });
+     if (closeBtn) {
+         closeBtn.addEventListener('click', close);
+     }
+     // Close when clicking outside modal-content
+     modal.addEventListener('click', (e) => {
+         if (e.target === modal) close();
+     });
+     // Close on Escape key
+     document.addEventListener('keydown', (e) => {
+         if (e.key === 'Escape' && modal.style.display === 'block') close();
+     });
+}
 function setupUsageModal() {
-    const btn = document.getElementById('usage-btn');
-    const modal = document.getElementById('usage-modal');
-    const closeBtn = document.getElementById('close-usage-modal');
-    const iframe = document.getElementById('usage-iframe');
-    if (!btn || !modal || !iframe) return;
-    btn.addEventListener('click', () => {
-        // (Re)load each time it's opened so data is fresh
-        iframe.src = '/usage/';
-        modal.style.display = 'block';
-    });
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-            iframe.src = 'about:blank';
-        });
-    }
-    // Close when clicking outside modal-content
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-            iframe.src = 'about:blank';
-        }
-    });
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.style.display === 'block') {
-            modal.style.display = 'none';
-            iframe.src = 'about:blank';
-        }
-    });
+     setupIframeModal({
+         buttonId: 'usage-btn',
+         modalId: 'usage-modal',
+         iframeId: 'usage-iframe',
+         closeBtnId: 'close-usage-modal',
+         url: '/usage/'
+     });
 }
 // ===== Sessions button =====
 function setupSessionsButton() {
-    const btn = document.getElementById('sessions-btn');
-    const modal = document.getElementById('usage-modal');
-    const iframe = document.getElementById('usage-iframe');
-    if (!btn || !modal || !iframe) return;
-    btn.addEventListener('click', () => {
-        iframe.src = '/sessions/';
-        modal.style.display = 'block';
-    });
+     setupIframeModal({
+         buttonId: 'sessions-btn',
+         modalId: 'sessions-modal',
+         iframeId: 'sessions-iframe',
+         closeBtnId: 'close-sessions-modal',
+         url: '/sessions/'
+     });
 }
 // ===== Budget button =====
 function formatBudget(amount) {
@@ -212,14 +216,13 @@ function updateBudgetDisplay() {
     });
 }
 function setupBudgetButton() {
-    const btn = document.getElementById('budget-btn');
-    const modal = document.getElementById('usage-modal');
-    const iframe = document.getElementById('usage-iframe');
-    if (!btn || !modal || !iframe) return;
-    btn.addEventListener('click', () => {
-        iframe.src = '/credits/';
-        modal.style.display = 'block';
-    });
+     setupIframeModal({
+         buttonId: 'budget-btn',
+         modalId: 'credits-modal',
+         iframeId: 'credits-iframe',
+         closeBtnId: 'close-credits-modal',
+         url: '/credits/'
+     });
     updateBudgetDisplay();
     // Refresh budget every 60 seconds
     setInterval(updateBudgetDisplay, 60000);

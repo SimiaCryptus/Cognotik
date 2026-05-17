@@ -169,7 +169,7 @@ open class DocOpsApp(
       response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
       return
     }
-    val globalSession = Session.newGlobalID()
+    val globalSession = session.toGlobal()
     val globalRoot = dataStorage.getUserDir(user, globalSession)
     try {
       copyFileWithLineEndingNormalization(sessionRoot, globalRoot)

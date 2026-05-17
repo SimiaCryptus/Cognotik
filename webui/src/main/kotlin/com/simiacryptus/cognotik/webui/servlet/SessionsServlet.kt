@@ -90,17 +90,7 @@ class SessionsServlet : HttpServlet() {
                 meta.sessionTime?.let { jsonString(isoDate(it)) } ?: "null"
             ).append(",")
             sb.append("\"messageCount\":").append(meta.messageIds.size).append(",")
-            sb.append("\"messageIds\":[")
-            meta.messageIds.forEachIndexed { i, mid ->
-                if (i > 0) sb.append(",")
-                sb.append(jsonString(mid))
-            }
-            sb.append("],")
             sb.append("\"additional\":{")
-            meta.additional.entries.forEachIndexed { i, e ->
-                if (i > 0) sb.append(",")
-                sb.append(jsonString(e.key)).append(":").append(jsonString(e.value))
-            }
             sb.append("}")
             sb.append("}")
         }
@@ -153,7 +143,6 @@ class SessionsServlet : HttpServlet() {
                 append("<th>Name</th>")
                 append("<th>Owner</th>")
                 append("<th>Time</th>")
-                append("<th>Actions</th>")
                 append("</tr></thead>\n")
                 append("<tbody>\n")
                 for (meta in sessions) {
@@ -164,29 +153,7 @@ class SessionsServlet : HttpServlet() {
                     append("<td>").append(htmlEscape(meta.name ?: id)).append("</td>")
                     append("<td>").append(htmlEscape(meta.ownerId ?: "")).append("</td>")
                     append("<td>").append(htmlEscape(meta.sessionTime?.let { isoDate(it) } ?: "")).append("</td>")
-                    append("<td><a class=\"link\" href=\"#")
-                        .append(htmlEscape(id))
-                        .append("\" onclick=\"event.stopPropagation();toggleDetails('")
-                        .append(jsEscape(id)).append("');return false;\">Details</a></td>")
                     append("</tr>\n")
-                    append("<tr id=\"details-").append(htmlEscape(id))
-                        .append("\" class=\"details\" style=\"display:none\">")
-                    append("<td colspan=\"4\">")
-                    append("<div class=\"details-content\">")
-                    if (meta.additional.isNotEmpty()) {
-                        append("<h4>Additional Metadata</h4>")
-                        append("<table class=\"sub\"><tbody>")
-                        for ((k, v) in meta.additional) {
-                            append("<tr><th>").append(htmlEscape(k)).append("</th><td>")
-                                .append(htmlEscape(v)).append("</td></tr>")
-                        }
-                        append("</tbody></table>")
-                    }
-                    if (meta.additional.isEmpty()) {
-                        append("<p><em>No additional metadata.</em></p>")
-                    }
-                    append("</div>")
-                    append("</td></tr>\n")
                 }
                 append("</tbody>\n")
                 append("</table>\n")

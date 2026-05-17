@@ -205,9 +205,6 @@ abstract class ApplicationServer(
         return settingsFile
     }
 
-    protected open fun sessionsServlet(path: String) =
-        ServletHolder("sessionList", SessionListServlet(this.dataStorage, path, this))
-
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
@@ -223,8 +220,6 @@ abstract class ApplicationServer(
         logger.debug("Added fileIndex servlet")
         webAppContext.addServlet(fileZip, "/fileZip")
         logger.debug("Added fileZip servlet")
-        webAppContext.addServlet(sessionsServlet(path), "/sessions")
-        logger.debug("Added sessions servlet")
         webAppContext.addServlet(sessionSettingsServlet, "/settings")
         logger.debug("Added sessionSettings servlet")
         webAppContext.addServlet(sessionThreadsServlet, "/threads")

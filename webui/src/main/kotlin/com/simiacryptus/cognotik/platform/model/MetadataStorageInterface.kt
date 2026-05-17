@@ -14,7 +14,6 @@ import java.util.*
  * @property sessionTime The timestamp associated with the session, or null if not set
  * @property ownerId The owner identifier for the session, or null if not set
  * @property path The path associated with the session, or null if not set
- * @property additional Any additional key-value metadata associated with the session
  */
 data class SessionMetadata(
     val id: Session = Session.NULL,
@@ -23,7 +22,6 @@ data class SessionMetadata(
     val sessionTime: Date? = null,
     val ownerId: String? = null,
     val path: String? = null,
-    val additional: Map<String, String> = emptyMap()
 )
 
 

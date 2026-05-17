@@ -202,18 +202,13 @@ class MetadataStorageDB : MetadataStorageInterface {
                         sessionTime = sessionTime,
                         ownerId = ownerId,
                         path = path,
-                        additional = additional
                     )
                 }
             }
         }
     }
 
-    /**
-     * Sets multiple metadata fields for a session in a single transactional batch.
-     * Only non-null fields in [metadata] are written. Additional key/value pairs
-     * from [SessionMetadata.additional] are also persisted.
-     */
+
     override fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) {
         log.debug("Setting unified session metadata for session: {}, user: {}", session, user?.email)
         val userEmail = user?.email ?: ""
@@ -227,7 +222,6 @@ class MetadataStorageDB : MetadataStorageInterface {
         }
         metadata.ownerId?.let { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
         metadata.path?.let { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
-        metadata.additional.forEach { (k, v) -> upsertMetadata(session.sessionId, userEmail, k, v, now) }
         log.info("Unified session metadata set successfully for session: {}", session)
     }
 

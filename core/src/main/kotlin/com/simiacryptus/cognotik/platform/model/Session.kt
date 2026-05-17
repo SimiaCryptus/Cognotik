@@ -17,6 +17,11 @@ open class Session(
   override fun toString() = sessionId
   fun isGlobal(): Boolean = sessionId.startsWith("G-")
 
+  fun toGlobal(): Session = when {
+      isGlobal() -> this
+      else -> Session("G-${sessionId.removePrefix("U-")}")
+  }
+
   companion object {
     val NULL = object : Session("") {
       override fun validateSessionId() {
