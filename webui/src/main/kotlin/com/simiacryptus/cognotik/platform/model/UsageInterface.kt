@@ -62,6 +62,8 @@ interface UsageInterface {
    */
   fun clear()
   fun setParentSession(child: Session, parent: Session)
+  fun getParentSession(child: Session): Session?
+
    /**
     * Returns the available budget (in cost units, e.g. USD) for a user.
     *

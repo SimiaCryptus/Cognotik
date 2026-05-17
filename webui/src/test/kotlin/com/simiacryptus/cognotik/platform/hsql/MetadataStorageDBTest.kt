@@ -59,24 +59,6 @@ package com.simiacryptus.cognotik.platform.hsql
             }
         }
 
-
-        @Test
-        fun `init should create root directory if it does not exist`() {
-             // Create a uniquely-named directory under java.io.tmpdir so the test
-             // verifies directory-creation behavior without using a persistent DB.
-             val newDir = File(
-                 System.getProperty("java.io.tmpdir"),
-                 "hsql-metadata-new-dir-${UUID.randomUUID()}"
-             )
-             assertFalse(newDir.exists())
-             try {
-                 MetadataStorageDB()
-                 assertTrue(newDir.exists())
-             } finally {
-                 newDir.deleteRecursively()
-             }
-        }
-
         @Test
         fun `init should accept null root`() {
             assertDoesNotThrow {

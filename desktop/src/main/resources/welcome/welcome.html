@@ -31,6 +31,13 @@
      <button class="top-bar-btn" id="usage-btn" type="button" aria-label="Open Usage">
          <span class="btn-icon" aria-hidden="true">📊</span> Usage
      </button>
+     <button class="top-bar-btn" id="sessions-btn" type="button" aria-label="Open Sessions">
+         <span class="btn-icon" aria-hidden="true">📁</span> Sessions
+     </button>
+     <button class="top-bar-btn" id="budget-btn" type="button" aria-label="Open Credits"
+             title="Available budget">
+         <span class="btn-icon" aria-hidden="true">💰</span> <span id="budget-amount">Budget</span>
+     </button>
     <button class="top-bar-btn" id="logout-btn" role="button" aria-label="Logout"
             onclick="fetch('/login/?action=logout', {method: 'POST'}).then(() => location.reload())">
         <span class="btn-icon" aria-hidden="true">🚪</span> Logout

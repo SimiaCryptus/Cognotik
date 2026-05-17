@@ -18,7 +18,7 @@ class SessionsServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
-            metadataDB.listSessions(user).map { Session(it) }
+            metadataDB.listSessions(user).map {Session(it)}
         } catch (e: Exception) {
             log.error("Failed to list sessions for user ${user.email}", e)
             emptyList()

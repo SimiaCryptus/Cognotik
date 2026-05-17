@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.sql.Timestamp
@@ -104,6 +105,22 @@ class MetadataStorageDB : MetadataStorageInterface {
             }
         }.also { log.info("Found {} sessions for path: {}", it.size, path) }
     }
+    override fun listSessions(user: User): List<String> {
+        log.debug("Listing sessions for user: {}", user.email)
+        return facet.withConnection { conn ->
+            conn.prepareStatement(
+                "SELECT DISTINCT session_id FROM metadata WHERE user_email = ?"
+            ).use { stmt ->
+                stmt.setString(1, user.email)
+                stmt.executeQuery().use { rs ->
+                    val sessions = mutableListOf<String>()
+                    while (rs.next()) sessions.add(rs.getString("session_id"))
+                    sessions
+                }
+            }
+        }.also { log.info("Found {} sessions for user: {}", it.size, user.email) }
+    }
+
 
     override fun getSessionOwner(session: Session): String? {
         log.debug("Fetching session owner for session: {}", session)
@@ -136,6 +153,82 @@ class MetadataStorageDB : MetadataStorageInterface {
             }
         }
         log.info("Deleted session: {} for user: {}", session, user?.email ?: "anonymous")
+    }
+
+    /**
+     * Retrieves all metadata for a session in a single database query, returning
+     * a unified [SessionMetadata] object. This is more efficient than calling
+     * individual getters as it requires only one round-trip to the database.
+     */
+    override fun getSessionMetadata(user: User?, session: Session): SessionMetadata {
+        log.debug("Fetching unified session metadata for session: {}, user: {}", session, user?.email)
+        return facet.withConnection { conn ->
+            conn.prepareStatement(
+                "SELECT key, value, timestamp FROM metadata WHERE session_id = ? AND (user_email = ? OR user_email = '')"
+            ).use { stmt ->
+                stmt.setString(1, session.sessionId)
+                stmt.setString(2, user?.email ?: "")
+                stmt.executeQuery().use { rs ->
+                    var name: String? = null
+                    var messageIds: List<String> = emptyList()
+                    var sessionTime: Date? = null
+                    var ownerId: String? = null
+                    var path: String? = null
+                    val additional = mutableMapOf<String, String>()
+                    while (rs.next()) {
+                        val key = rs.getString("key")
+                        val value = rs.getString("value")
+                        when (key) {
+                            "name" -> name = value
+                            "message_ids" -> messageIds =
+                                if (value.isNullOrEmpty()) emptyList()
+                                else value.split(",").filter { it.isNotEmpty() }
+
+                            "session_time" -> sessionTime = try {
+                                Date(value.toLong())
+                            } catch (e: Exception) {
+                                rs.getTimestamp("timestamp")
+                            }
+
+                            "owner_id" -> ownerId = value
+                            "path" -> path = value
+                            else -> if (value != null) additional[key] = value
+                        }
+                    }
+                    SessionMetadata(
+                        id = session,
+                        name = name,
+                        messageIds = messageIds,
+                        sessionTime = sessionTime,
+                        ownerId = ownerId,
+                        path = path,
+                        additional = additional
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets multiple metadata fields for a session in a single transactional batch.
+     * Only non-null fields in [metadata] are written. Additional key/value pairs
+     * from [SessionMetadata.additional] are also persisted.
+     */
+    override fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) {
+        log.debug("Setting unified session metadata for session: {}, user: {}", session, user?.email)
+        val userEmail = user?.email ?: ""
+        val now = Timestamp(System.currentTimeMillis())
+        metadata.name?.let { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
+        if (metadata.messageIds.isNotEmpty()) {
+            upsertMetadata(session.sessionId, userEmail, "message_ids", metadata.messageIds.joinToString(","), now)
+        }
+        metadata.sessionTime?.let {
+            upsertMetadata(session.sessionId, userEmail, "session_time", it.time.toString(), Timestamp(it.time))
+        }
+        metadata.ownerId?.let { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
+        metadata.path?.let { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
+        metadata.additional.forEach { (k, v) -> upsertMetadata(session.sessionId, userEmail, k, v, now) }
+        log.info("Unified session metadata set successfully for session: {}", session)
     }
 
     private fun upsertMetadata(

@@ -121,6 +121,27 @@ class UsageDB : UsageInterface {
         }
     }
 
+    override fun getParentSession(child: Session): Session? {
+        log.info("Getting parent session for child: {}", child.sessionId)
+        return facet.withConnection { conn ->
+            conn.prepareStatement(
+                "SELECT parent_session_id FROM session_parents WHERE child_session_id = ?"
+            ).use { stmt ->
+                stmt.setString(1, child.sessionId)
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) {
+                        val parentId = rs.getString(1)
+                        log.debug("Found parent session ID: {} for child: {}", parentId, child.sessionId)
+                        Session(parentId)
+                    } else {
+                        log.debug("No parent session found for child: {}", child.sessionId)
+                        null
+                    }
+                }
+            }
+        }
+    }
+
     override fun getAvailableBudget(user: User): Double {
         if (user.email.isEmpty()) return 0.0
         return facet.withConnection { conn ->

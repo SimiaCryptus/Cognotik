@@ -94,77 +94,135 @@ function setupApiKeyBanner() {
 }
 // ===== Localhost detection: hide User Settings button when not on localhost =====
 function isLocalhost() {
-     const host = window.location.hostname;
-     return host === 'localhost'
-         || host === '127.0.0.1'
-         || host === '::1'
-         || host === '[::1]';
+    const host = window.location.hostname;
+    return host === 'localhost'
+        || host === '127.0.0.1'
+        || host === '::1'
+        || host === '[::1]';
 }
 function applyLocalhostRestrictions() {
-     if (!isLocalhost()) {
-         const settingsBtn = document.getElementById('user-settings-btn');
-         if (settingsBtn) settingsBtn.style.display = 'none';
-         const pluginManagerBtn = document.getElementById('plugin-manager-btn');
-         if (pluginManagerBtn) pluginManagerBtn.style.display = 'none';
-     }
+    if (!isLocalhost()) {
+        const settingsBtn = document.getElementById('user-settings-btn');
+        if (settingsBtn) settingsBtn.style.display = 'none';
+        const pluginManagerBtn = document.getElementById('plugin-manager-btn');
+        if (pluginManagerBtn) pluginManagerBtn.style.display = 'none';
+    }
 }
 // ===== Update logout button label with user name =====
 function updateLogoutButtonLabel() {
-     try {
-         const user = appState && appState.userInfo;
-         if (!user) return;
-         const label = user.name || user.email || user.id;
-         if (!label) return;
-         const btn = document.getElementById('logout-btn');
-         if (!btn) return;
-         btn.setAttribute('aria-label', 'Logout ' + label);
-         btn.setAttribute('title', 'Logout (' + label + ')');
-         btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
-             escapeHtmlSafe(label);
-     } catch (e) {
-         console.warn('[init] Unable to update logout button label:', e);
-     }
+    try {
+        const user = appState && appState.userInfo;
+        if (!user) return;
+        const label = user.name || user.email || user.id;
+        if (!label) return;
+        const btn = document.getElementById('logout-btn');
+        if (!btn) return;
+        btn.setAttribute('aria-label', 'Logout ' + label);
+        btn.setAttribute('title', 'Logout (' + label + ')');
+        btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
+            escapeHtmlSafe(label);
+    } catch (e) {
+        console.warn('[init] Unable to update logout button label:', e);
+    }
 }
 function escapeHtmlSafe(s) {
-     if (typeof HtmlUtils !== 'undefined' && HtmlUtils && typeof HtmlUtils.escapeHtml === 'function') {
-         return HtmlUtils.escapeHtml(s);
-     }
-     return String(s).replace(/[&<>"']/g, c => ({
-         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-     }[c]));
+    if (typeof HtmlUtils !== 'undefined' && HtmlUtils && typeof HtmlUtils.escapeHtml === 'function') {
+        return HtmlUtils.escapeHtml(s);
+    }
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
 }
 // ===== Usage modal =====
 function setupUsageModal() {
-     const btn = document.getElementById('usage-btn');
-     const modal = document.getElementById('usage-modal');
-     const closeBtn = document.getElementById('close-usage-modal');
-     const iframe = document.getElementById('usage-iframe');
-     if (!btn || !modal || !iframe) return;
-     btn.addEventListener('click', () => {
-         // (Re)load each time it's opened so data is fresh
-         iframe.src = '/usage/';
-         modal.style.display = 'block';
-     });
-     if (closeBtn) {
-         closeBtn.addEventListener('click', () => {
-             modal.style.display = 'none';
-             iframe.src = 'about:blank';
-         });
-     }
-     // Close when clicking outside modal-content
-     modal.addEventListener('click', (e) => {
-         if (e.target === modal) {
-             modal.style.display = 'none';
-             iframe.src = 'about:blank';
-         }
-     });
-     // Close on Escape key
-     document.addEventListener('keydown', (e) => {
-         if (e.key === 'Escape' && modal.style.display === 'block') {
-             modal.style.display = 'none';
-             iframe.src = 'about:blank';
-         }
-     });
+    const btn = document.getElementById('usage-btn');
+    const modal = document.getElementById('usage-modal');
+    const closeBtn = document.getElementById('close-usage-modal');
+    const iframe = document.getElementById('usage-iframe');
+    if (!btn || !modal || !iframe) return;
+    btn.addEventListener('click', () => {
+        // (Re)load each time it's opened so data is fresh
+        iframe.src = '/usage/';
+        modal.style.display = 'block';
+    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            iframe.src = 'about:blank';
+        });
+    }
+    // Close when clicking outside modal-content
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            iframe.src = 'about:blank';
+        }
+    });
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            modal.style.display = 'none';
+            iframe.src = 'about:blank';
+        }
+    });
+}
+// ===== Sessions button =====
+function setupSessionsButton() {
+    const btn = document.getElementById('sessions-btn');
+    const modal = document.getElementById('usage-modal');
+    const iframe = document.getElementById('usage-iframe');
+    if (!btn || !modal || !iframe) return;
+    btn.addEventListener('click', () => {
+        iframe.src = '/sessions/';
+        modal.style.display = 'block';
+    });
+}
+// ===== Budget button =====
+function formatBudget(amount) {
+    if (typeof amount !== 'number' || isNaN(amount)) return '—';
+    const sign = amount < 0 ? '-' : '';
+    const abs = Math.abs(amount);
+    return sign + '$' + abs.toFixed(2);
+}
+function updateBudgetDisplay() {
+    const span = document.getElementById('budget-amount');
+    if (!span) return;
+    fetch('/usage/?format=json', {
+        headers: { 'Accept': 'application/json' }
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch usage: ' + response.status);
+        }
+        return response.json();
+    }).then(data => {
+        const budget = (data && typeof data.available_budget === 'number')
+            ? data.available_budget : null;
+        if (budget === null) {
+            span.textContent = 'Budget';
+            return;
+        }
+        span.textContent = formatBudget(budget);
+        const btn = document.getElementById('budget-btn');
+        if (btn) {
+            btn.setAttribute('title', 'Available budget: ' + formatBudget(budget));
+        }
+    }).catch(err => {
+        console.warn('[updateBudgetDisplay] Error:', err);
+        span.textContent = 'Budget';
+    });
+}
+function setupBudgetButton() {
+    const btn = document.getElementById('budget-btn');
+    const modal = document.getElementById('usage-modal');
+    const iframe = document.getElementById('usage-iframe');
+    if (!btn || !modal || !iframe) return;
+    btn.addEventListener('click', () => {
+        iframe.src = '/credits/';
+        modal.style.display = 'block';
+    });
+    updateBudgetDisplay();
+    // Refresh budget every 60 seconds
+    setInterval(updateBudgetDisplay, 60000);
 }
 
 
@@ -183,20 +241,23 @@ document.addEventListener('DOMContentLoaded', function() {
             populateQuickSettingsModels(appState, availableModels);
             populateBasicChatModelSelections(appState, availableModels);
             updateApiKeyBanner();
-             updateLogoutButtonLabel();
+            updateLogoutButtonLabel();
+            updateBudgetDisplay();
         }
     });
     setupPluginManagerModal();
     setupApiKeyBanner();
-     setupUsageModal();
-     applyLocalhostRestrictions();
+    setupUsageModal();
+    setupSessionsButton();
+    setupBudgetButton();
+    applyLocalhostRestrictions();
     if (typeof setupAuthBanner === 'function') setupAuthBanner();
     if (typeof updateAuthBanner === 'function') {
         updateAuthBanner();
-       // Periodically refresh the auth banner every 30 seconds (localhost only)
-       if (isLocalhost()) {
-           setInterval(() => updateAuthBanner(), 30000);
-       }
+        // Periodically refresh the auth banner every 30 seconds (localhost only)
+        if (isLocalhost()) {
+            setInterval(() => updateAuthBanner(), 30000);
+        }
     }
     loadAppDirectory().then(() => {
         renderAppGrid();
@@ -225,7 +286,7 @@ loadApiProviders().then(() => {
     modelManager.populateModelSelections();
     populateQuickSettingsModels(appState, availableModels);
     updateApiKeyBanner();
-     updateLogoutButtonLabel();
+    updateLogoutButtonLabel();
     return loadCognitiveTypes();
 }).catch(error => {
     console.error('[init] Error during initialization:', error);
@@ -233,6 +294,6 @@ loadApiProviders().then(() => {
     loadUserSettings().then(() => {
         populateQuickSettingsModels(appState, availableModels);
         updateApiKeyBanner();
-         updateLogoutButtonLabel();
+        updateLogoutButtonLabel();
     });
 });

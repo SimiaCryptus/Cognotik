@@ -64,14 +64,14 @@ class GeminiSdkChatClient(
       if (useVertexAI) {
         builder.vertexAI(true)
         if (project != null && location != null) {
-          log.info("Configuring Gemini client with Vertex AI: project={}, location={}", project, location)
+          log.debug("Configuring Gemini client with Vertex AI: project={}, location={}", project, location)
           builder.project(project).location(location)
         } else {
-          log.info("Configuring Gemini client with Vertex AI using API key (project/location not provided)")
+          log.debug("Configuring Gemini client with Vertex AI using API key (project/location not provided)")
           builder.apiKey(apiKey.decrypt)
         }
       } else {
-        log.info("Configuring Gemini client with API key (Generative Language API)")
+        log.debug("Configuring Gemini client with API key (Generative Language API)")
         builder.apiKey(apiKey.decrypt)
       }
 

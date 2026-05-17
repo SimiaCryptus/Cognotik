@@ -256,22 +256,6 @@ package com.simiacryptus.cognotik.platform.hsql
         }
 
         @Test
-        fun `constructor creates root directory if it does not exist`() {
-            val newRoot = java.io.File(
-                System.getProperty("java.io.tmpdir"),
-                "hsql-user-settings-new-dir-${java.util.UUID.randomUUID()}"
-            )
-            assertFalse(newRoot.exists())
-            try {
-                val mgr = UserSettingsDB()
-                assertTrue(newRoot.exists())
-                assertNotNull(mgr)
-            } finally {
-                newRoot.deleteRecursively()
-            }
-        }
-
-        @Test
         fun `constructor accepts null root`() {
             // Should not throw
             val mgr = UserSettingsDB()

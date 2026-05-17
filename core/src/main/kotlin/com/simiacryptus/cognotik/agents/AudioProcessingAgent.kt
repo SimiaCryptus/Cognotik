@@ -5,8 +5,11 @@ import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.util.BudgetException
+import com.simiacryptus.cognotik.util.NonRetryableException
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.Executors
@@ -322,6 +325,8 @@ open class AudioProcessingAgent(
                 pool.submit<Pair<String, AudioSegment?>> {
                     try {
                         renderSegmentWithRetry(messages, seg, index, parsed.size, timeoutScheduler)
+                    } catch (e: BudgetException) {
+                        throw e
                     } catch (e: Exception) {
                         log.error(
                             "Failed to render segment {} of {} (voice='{}'); substituting empty result.",
@@ -351,6 +356,21 @@ open class AudioProcessingAgent(
                     )
                     future.cancel(true)
                     (parsed[index].text to null)
+                } catch (e: BudgetException) {
+                    throw e
+                } catch (e: ExecutionException) {
+                    when(e) {
+                        is InterruptedException, is java.util.concurrent.CancellationException -> {
+                            log.error(
+                                "Segment {} of {} was interrupted or cancelled during rendering; substituting empty result.",
+                                index + 1,
+                                parsed.size,
+                                e
+                            )
+                            (parsed[index].text to null)
+                        }
+                        else -> throw e.cause ?: e
+                    }
                 } catch (e: Exception) {
                     log.error(
                         "Error retrieving result for segment {} of {}; substituting empty result.",
@@ -457,6 +477,17 @@ open class AudioProcessingAgent(
                     )
                 }
                 return result
+            } catch (e: NonRetryableException) {
+                // Do not retry on exceptions that are explicitly marked non-retryable.
+                log.error(
+                    "Segment {} of {} failed with non-retryable error on attempt {}/{}; aborting retries.",
+                    index + 1,
+                    total,
+                    attempt,
+                    totalAttempts,
+                    e
+                )
+                throw e
             } catch (e: Throwable) {
                 armed.set(false)
                 watchdog.cancel(false)

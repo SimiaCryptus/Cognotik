@@ -823,7 +823,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
             val cookie = request.getCookie()
             val user = ApplicationServices.authenticationManager.getUser(cookie)
             if (user == null && !session.isGlobal()) {
-                log.warn("isAuthenticatedForSession: no user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
+                log.debug("isAuthenticatedForSession: no user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
                 if (!response.isCommitted) {
                     response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
                     val originalRequest = request.requestURL.toString()

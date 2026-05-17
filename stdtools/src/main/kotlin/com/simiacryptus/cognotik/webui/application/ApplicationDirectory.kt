@@ -84,6 +84,12 @@ abstract class ApplicationDirectory(
     open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
         .also { log.debug("Initialized CognitiveConfigServlet") }
 
+    open val sessionsServlet: HttpServlet = SessionsServlet()
+        .also { log.debug("Initialized SessionsServlet") }
+
+    open val creditsServlet: CreditsServlet = CreditsServlet()
+        .also { log.debug("Initialized CreditsServlet") }
+
   open fun setupPlatform() {
         log.info("Setting up platform (default implementation - no action taken)")
     }
@@ -115,6 +121,8 @@ abstract class ApplicationDirectory(
         newWebAppContext("/logout", logoutServlet),
         newWebAppContext("/login", loginServlet),
         newWebAppContext("/api", welcomeServlet).configureAuth(ApplicationServer::class.java),
+        newWebAppContext("/sessions", sessionsServlet).configureAuth(ApplicationServer::class.java),
+        newWebAppContext("/credits", creditsServlet).configureAuth(ApplicationServer::class.java),
         newWebAppContext("/apiProviders", apiProviderServlet).configureAuth(ApplicationServer::class.java),
         newWebAppContext("/apiKeys", apiKeyServlet).configureAuth(ApplicationServer::class.java),
         newWebAppContext("/appDirectory", appDirectoryServlet).configureAuth(ApplicationServer::class.java),
@@ -302,3 +310,4 @@ abstract class ApplicationDirectory(
     }
 
 }
+
