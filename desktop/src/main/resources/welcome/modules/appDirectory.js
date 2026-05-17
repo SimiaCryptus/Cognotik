@@ -1,6 +1,5 @@
 // ===== App Directory =====
 let appDirectory = [];
-let appLaunchHandlers = null;
 let appSearchQuery = '';
 // Tag filter state: tag -> 'ignore' | 'require' | 'exclude'
 let tagFilters = {};
@@ -104,9 +103,7 @@ function renderTagFilters() {
             }
             renderTagFilters();
             renderAppGrid();
-            if (appLaunchHandlers) {
-                setupAppCards(appLaunchHandlers);
-            }
+             setupAppCards();
         });
     });
 
@@ -116,9 +113,7 @@ function renderTagFilters() {
             tagFilters = {};
             renderTagFilters();
             renderAppGrid();
-            if (appLaunchHandlers) {
-                setupAppCards(appLaunchHandlers);
-            }
+             setupAppCards();
         });
     }
 }
@@ -165,8 +160,9 @@ function renderAppGrid() {
         innerGrid.className = 'app-grid-inner';
 
         apps.forEach(app => {
-            const card = document.createElement('a');
-            card.href = '#';
+             const appUrl = getAppUrl(app);
+             const card = document.createElement('a');
+             card.href = appUrl;
             card.className = 'app-card' + (app.cardClass ? ' ' + app.cardClass : '');
             card.id = app.id;
             let badgeHtml = '';
@@ -174,7 +170,7 @@ function renderAppGrid() {
                 badgeHtml = `<div class="app-card-badge${app.badgeClass ? ' ' + app.badgeClass : ''}">${app.badge}</div>`;
             }
             const hasReadme = !!app.readme;
-            const launchBtnHtml = `<button class="button app-card-launch-btn" data-app-id="${app.id}">Launch Session</button>`;
+             const launchBtnHtml = `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Launch Session</a>`;
             const readmeHintHtml = hasReadme
                 ? `<div class="app-card-readme-hint">Click card for details</div>`
                 : '';
@@ -228,6 +224,15 @@ function renderAppGrid() {
     updateNoResultsMessage(filteredApps.length);
     ensureReadmeModal();
 }
+function getAppUrl(app) {
+     if (!app) return '#';
+     if (app.path) {
+         // Ensure trailing slash
+         return app.path.endsWith('/') ? app.path : app.path + '/';
+     }
+     return `/${app.id}/`;
+}
+
 
 function filterApps(apps, query) {
     const q = (query || '').trim().toLowerCase();
@@ -282,9 +287,7 @@ function setupAppSearch() {
         }
         renderAppGrid();
         // Re-attach card handlers since DOM was rebuilt
-        if (appLaunchHandlers) {
-            setupAppCards(appLaunchHandlers);
-        }
+         setupAppCards();
     };
     input.addEventListener('input', handleInput);
     input.addEventListener('keydown', (e) => {
@@ -321,7 +324,7 @@ function ensureReadmeModal() {
                 <div class="app-readme-body" id="app-readme-body"></div>
                 <div class="button-group app-readme-actions">
                     <button class="button secondary" id="app-readme-close-btn">Close</button>
-                    <button class="button" id="app-readme-launch-btn">Launch Session</button>
+                     <a class="button" id="app-readme-launch-btn" href="#">Launch Session</a>
                 </div>
             </div>
         `;
@@ -335,10 +338,12 @@ function ensureReadmeModal() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });
-    modal.querySelector('#app-readme-launch-btn').addEventListener('click', () => {
-        const appId = modal.dataset.currentAppId;
-        closeModal();
-        if (appId) launchApp(appId);
+     modal.querySelector('#app-readme-launch-btn').addEventListener('click', (e) => {
+         // Allow modifier-clicks (alt, ctrl, cmd, middle-click) to use default link behavior
+         if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) {
+             return;
+         }
+         closeModal();
     });
 }
 
@@ -349,6 +354,10 @@ function showAppReadme(app) {
     document.getElementById('app-readme-icon').textContent = app.icon || '';
     document.getElementById('app-readme-title').textContent = app.name || '';
     document.getElementById('app-readme-description').textContent = app.description || '';
+     const launchLink = document.getElementById('app-readme-launch-btn');
+     if (launchLink) {
+         launchLink.href = getAppUrl(app);
+     }
     const body = document.getElementById('app-readme-body');
     const readmeContent = app.readme || '_No additional details available._';
     try {
@@ -362,44 +371,29 @@ function showAppReadme(app) {
     modal.style.display = 'block';
 }
 
-function launchApp(appId) {
-    const app = appDirectory.find(a => a.id === appId);
-    if (!app || !appLaunchHandlers) return;
-    if (app.type === 'chat') {
-        appLaunchHandlers.onChat();
-    } else if (app.type === 'docops') {
-        const docopsSessionId = Utils.generateSessionId();
-        console.log(`[launchApp] Launching ${app.id} with session:`, docopsSessionId);
-        window.location.href = `${app.path}/`;
-    } else if (app.type === 'pipeline') {
-        appLaunchHandlers.onPipeline();
-    }
-}
 
-function setupAppCards(handlers) {
-    appLaunchHandlers = handlers;
+function setupAppCards() {
     const filteredApps = filterApps(appDirectory, appSearchQuery);
     filteredApps.forEach(app => {
         const element = document.getElementById(app.id);
         if (!element) return;
 
-        const launchBtn = element.querySelector('.app-card-launch-btn');
-        if (launchBtn) {
-            launchBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                launchApp(app.id);
-            });
-        }
 
         element.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (e.target.closest('.app-card-launch-btn')) return;
-            if (app.readme) {
+             // Allow modifier-clicks (alt, ctrl, cmd, shift, middle-click) to use default link behavior
+             if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) {
+                 return;
+             }
+             // If user clicked the launch button, let the link navigate normally
+             if (e.target.closest('.app-card-launch-btn')) {
+                 return;
+             }
+             // For cards with a readme, intercept plain clicks to show the readme modal
+             if (app.readme) {
+                 e.preventDefault();
                 showAppReadme(app);
-            } else {
-                launchApp(app.id);
             }
+             // Otherwise, let the link navigate normally (do nothing)
         });
     });
 }

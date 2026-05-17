@@ -262,17 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAppDirectory().then(() => {
         renderAppGrid();
         setupAppSearch();
-        setupAppCards({
-            onChat: () => {
-                populateBasicChatModelSelections(appState, availableModels);
-                prefillBasicChatModal();
-                document.getElementById('basic-chat-settings-modal').style.display = 'block';
-            },
-            onPipeline: () => {
-                document.getElementById('custom-pipeline-modal').style.display = 'block';
-                modelManager.populateModelSelections();
-            }
-        });
+         setupAppCards();
     }).catch(error => {
         console.error('[init] Error loading app directory:', error);
     });

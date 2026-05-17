@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.application.authenticate
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import jakarta.servlet.http.HttpServlet
@@ -34,7 +35,7 @@ import java.util.jar.JarFile
  *  http://localhost:12891/docops?sessionId=U-20260310-i2oc2f&doc=ops/foo.md&target=output.md
  *
  * */
-class DocOpsApp(
+open class DocOpsApp(
     root: File,
     appId: String,
     applicationName: String = appId,
@@ -120,12 +121,68 @@ class DocOpsApp(
     super.configure(webAppContext)
     webAppContext.addServlet(
       ServletHolder("redirect", object : HttpServlet() {
-      override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        resp.sendRedirect("${req.contextPath}/fileIndex/${req.getParameter("sessionId") ?: Session.newUserID()}/app.html")
-      }
-    }), "/*")
+        override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+          when {
+            request.pathInfo == "/" -> response.sendRedirect(
+              "${request.contextPath}/fileIndex/${
+                request.getParameter(
+                  "sessionId"
+                ) ?: Session.newUserID()
+              }/app.html"
+            )
+
+            request.pathInfo == "/global" -> response.sendRedirect(
+              "${request.contextPath}/fileIndex/${
+                request.getParameter(
+                  "sessionId"
+                ) ?: Session.newGlobalID()
+              }/app.html"
+            )
+
+            request.pathInfo.startsWith("/share/") ->
+              share(
+                request,
+                response,
+                Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
+                authenticate(request, response) ?: this@DocOpsApp.run {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session")
+                    return
+                })
+
+            else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
+          }
+        }
+
+      }), "/*"
+    )
   }
 
+  protected open fun share(
+    request: HttpServletRequest,
+    response: HttpServletResponse,
+    session: Session,
+    user: User
+  ) {
+    require(!session.isGlobal()) { "Cannot share a global session" }
+    val sessionRoot = dataStorage.getUserDir(user, session)
+    if (!sessionRoot.exists() || sessionRoot.list()?.isEmpty() == true) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
+      return
+    }
+    val globalSession = Session.newGlobalID()
+    val globalRoot = dataStorage.getUserDir(user, globalSession)
+    try {
+      copyFileWithLineEndingNormalization(sessionRoot, globalRoot)
+      response.sendRedirect("${request.contextPath}/fileIndex/${globalSession.sessionId}/app.html")
+    } catch (e: Exception) {
+      LoggerFactory.getLogger(DocOpsApp::class.java)
+        .error(
+          "Failed to share session ${session.sessionId} to global session ${globalSession.sessionId}: ${e.message}",
+          e
+        )
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to share session: ${e.message}")
+    }
+  }
   private fun extractFromUrl(resourceUrl: URL, resourcePath: String, targetDir: File): Boolean {
     val decodedUrl = URLDecoder.decode(resourceUrl.toString(), "UTF-8")
     if (decodedUrl.startsWith("jar:")) {
