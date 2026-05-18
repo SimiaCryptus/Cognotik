@@ -18,6 +18,12 @@
         <span class="logo-text">Cognotik</span>
     </div>
     <div class="top-bar-spacer"></div>
+     <select class="theme-selector" id="layout-selector" aria-label="Select layout" title="Select layout style">
+         <option value="grid">▦ Grid</option>
+         <option value="compact">▪ Compact</option>
+         <option value="list">☰ List</option>
+         <option value="masonry">▤ Masonry</option>
+     </select>
     <select class="theme-selector" id="theme-selector" aria-label="Select theme" title="Select theme">
         <option value="auto">🖥️ Auto</option>
         <option value="light">☀️ Light</option>
@@ -76,7 +82,7 @@
 </div>
 
 <!-- App Grid -->
-<section class="app-grid-section">
+<section class="app-grid-section" id="app-grid-section" data-layout="grid">
     <div class="app-search-container">
         <input type="text" id="app-search-input" class="app-search-input"
                placeholder="🔍 Search applications..." autocomplete="off"
@@ -533,6 +539,28 @@
              applyTheme(value);
          });
     })();
+</script>
+<script>
+     (function() {
+         const STORAGE_KEY = 'cognotik-layout';
+         const selector = document.getElementById('layout-selector');
+         const section = document.getElementById('app-grid-section');
+         function applyLayout(layout) {
+             if (section) section.setAttribute('data-layout', layout);
+         }
+         const saved = localStorage.getItem(STORAGE_KEY) || 'grid';
+         if (selector) {
+             selector.value = saved;
+             applyLayout(saved);
+             selector.addEventListener('change', function() {
+                 const value = selector.value;
+                 localStorage.setItem(STORAGE_KEY, value);
+                 applyLayout(value);
+             });
+         } else {
+             applyLayout(saved);
+         }
+     })();
 </script>
 
 
