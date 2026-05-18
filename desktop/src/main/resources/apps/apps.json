@@ -1,161 +1,124 @@
 [
-  {
-    "name": "Philosophical Calculator",
-    "icon": "🧮",
-    "description": "Multi-perspective analysis through philosophical, rhetorical, and creative lenses.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "apps/philosophical-calculator",
-    "id": "philosophical-calculator",
-    "category": "productivity",
-    "tags": [
-      "ai",
-      "multi-perspective",
-      "analysis",
-      "writing",
-      "brainstorming"
-    ]
-  },
-  {
-    "name": "WebApp Factory",
-    "icon": "🏗️",
-    "description": "Turn natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "apps/webapp-factory",
-    "id": "webapp-factory",
-    "category": "developer-tools",
-    "tags": [
-      "ai",
-      "code-generation",
-      "web",
-      "automation",
-      "output-artifact"
-    ]
-  },
-  {
-    "name": "Sys Wizard",
-    "icon": "🧙",
-    "description": "Describe a goal in plain language and get a shell script that accomplishes it — with auto-fix.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "apps/sys-wizard",
-    "id": "sys-wizard",
-    "category": "developer-tools",
-    "tags": [
-      "ai",
-      "code-generation",
-      "scripting",
-      "automation",
-      "devops"
-    ]
-  },
-  {
-    "name": "Interactive Stories",
-    "icon": "📖",
-    "description": "Craft branching, AI-powered narratives. Write a premise, generate an opening scene, then explore a tree of story nodes by choosing one of three branches (A/B/C) at every step. Each path is saved to disk so you can revisit and continue any branch later.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "apps/interactive-stories",
-    "id": "interactive-stories",
-    "category": "creative",
-    "tags": [
-      "ai",
-      "storytelling",
-      "interactive",
-      "narrative",
-      "branching",
-      "output-artifact"
-    ]
-  },
-  {
-    "name": "Comic Serial",
-    "icon": "📚",
-    "description": "Transform story ideas into an ongoing comic book series with consistent characters and arcs.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "apps/comic-serial",
-    "id": "comic-serial",
-    "category": "creative",
-    "tags": [
-      "ai",
-      "storytelling",
-      "narrative",
-      "illustration",
-      "output-artifact"
-    ]
-  },
-  {
-    "name": "Quiz Whiz",
-    "icon": "🧠",
-    "description": "Turn a plain-English quiz idea into a fully working, playable web-based quiz game through a multi-step AI pipeline that designs, generates data, and implements the code.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "apps/quiz-wiz",
-    "id": "quiz-wiz",
-    "category": "education",
-    "tags": [
-      "ai",
-      "code-generation",
-      "interactive",
-      "learning",
-      "output-artifact"
-    ]
-  },
-  {
-    "name": "Omega App Factory",
-    "icon": "🔮",
-    "description": "Meta-application that designs and produces other DocOps applications from plain language descriptions.",
-    "badge": "Experimental",
-    "badgeClass": "accent",
-    "type": "docops",
-    "path": "apps/omega",
-    "id": "omega",
-    "category": "developer-tools",
-    "tags": [
-      "ai",
-      "code-generation",
-      "automation",
-      "output-artifact",
-      "devops"
-    ]
-  },
-  {
-    "name": "Basic Chat",
-    "icon": "💬",
-    "description": "Interactive conversation with AI. Ask questions, brainstorm ideas, or get help with any topic.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "chat",
-    "category": "productivity",
-    "tags": [
-      "ai",
-      "interactive",
-      "brainstorming",
-      "analysis"
-    ]
-  },
-  {
-    "name": "Custom Task Pipeline",
-    "icon": "🔧",
-    "description": "Build a custom AI pipeline with configurable cognitive modes, task selection, and model settings.",
-    "type": "pipeline",
-    "category": "developer-tools",
-    "tags": [
-      "ai",
-      "automation",
-      "devops",
-      "scripting",
-      "multi-perspective"
-    ],
-    "badge": "Advanced",
-    "badgeClass": "muted",
-    "cardClass": "app-card-muted"
-  }
-]
+    {
+      "name": "Philosophical Calculator",
+      "icon": "🧮",
+      "description": "Multi-perspective analysis through philosophical, rhetorical, and creative lenses.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "docops",
+      "path": "apps/philosophical-calculator",
+      "id": "philosophical-calculator",
+      "category": "Think",
+      "tags": [
+        "Teach"
+      ]
+    },
+    {
+      "name": "WebApp Factory",
+      "icon": "🏗️",
+      "description": "Turn natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "docops",
+      "path": "apps/webapp-factory",
+      "id": "webapp-factory",
+      "category": "Create",
+      "tags": [
+        "Devs"
+      ]
+    },
+    {
+      "name": "Sys Wizard",
+      "icon": "🧙",
+      "description": "Describe a goal in plain language and get a shell script that accomplishes it — with auto-fix.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "docops",
+      "path": "apps/sys-wizard",
+      "id": "sys-wizard",
+      "category": "Perform",
+      "tags": [
+        "Devs"
+      ]
+    },
+    {
+      "name": "Interactive Stories",
+      "icon": "📖",
+      "description": "Craft branching, AI-powered narratives. Write a premise, generate an opening scene, then explore a tree of story nodes by choosing one of three branches (A/B/C) at every step. Each path is saved to disk so you can revisit and continue any branch later.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "docops",
+      "path": "apps/interactive-stories",
+      "id": "interactive-stories",
+      "category": "Imagine",
+      "tags": [
+        "Kids"
+      ]
+    },
+    {
+      "name": "Comic Serial",
+      "icon": "📚",
+      "description": "Transform story ideas into an ongoing comic book series with consistent characters and arcs.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "docops",
+      "path": "apps/comic-serial",
+      "id": "comic-serial",
+      "category": "Imagine",
+      "tags": [
+        "Kids"
+      ]
+    },
+    {
+      "name": "Quiz Whiz",
+      "icon": "🧠",
+      "description": "Turn a plain-English quiz idea into a fully working, playable web-based quiz game through a multi-step AI pipeline that designs, generates data, and implements the code.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "docops",
+      "path": "apps/quiz-wiz",
+      "id": "quiz-wiz",
+      "category": "Create",
+      "tags": [
+        "Teach",
+        "Kids"
+      ]
+    },
+    {
+      "name": "Omega App Factory",
+      "icon": "🔮",
+      "description": "Meta-application that designs and produces other DocOps applications from plain language descriptions.",
+      "badge": "Experimental",
+      "badgeClass": "accent",
+      "type": "docops",
+      "path": "apps/omega",
+      "id": "omega",
+      "category": "Imagine",
+      "tags": [
+        "Devs"
+      ]
+    },
+    {
+      "name": "Basic Chat",
+      "icon": "💬",
+      "description": "Interactive conversation with AI. Ask questions, brainstorm ideas, or get help with any topic.",
+      "badge": null,
+      "badgeClass": "",
+      "type": "chat",
+      "category": "Perform",
+      "tags": []
+    },
+    {
+      "name": "Custom Task Pipeline",
+      "icon": "🔧",
+      "description": "Build a custom AI pipeline with configurable cognitive modes, task selection, and model settings.",
+      "type": "pipeline",
+      "category": "Perform",
+      "tags": [
+        "Devs"
+      ],
+      "badge": "Advanced",
+      "badgeClass": "muted",
+      "cardClass": "app-card-muted"
+    }
+  ]
