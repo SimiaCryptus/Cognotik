@@ -122,7 +122,7 @@ class UsageDB : UsageInterface {
     }
 
     override fun getParentSession(child: Session): Session? {
-        log.info("Getting parent session for child: {}", child.sessionId)
+        log.debug("Getting parent session for child: {}", child.sessionId)
         return facet.withConnection { conn ->
             conn.prepareStatement(
                 "SELECT parent_session_id FROM session_parents WHERE child_session_id = ?"

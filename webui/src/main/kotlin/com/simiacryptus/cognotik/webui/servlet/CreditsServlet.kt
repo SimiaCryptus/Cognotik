@@ -4,28 +4,33 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
+import com.simiacryptus.cognotik.webui.servlet.payment.PaymentProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 /**
  * Self-service "buy credits" servlet.
  *
- * This is a NO-OP stand-in for a real payment/checkout flow. It is structured
- * like a low-friction checkout (package selection -> review -> confirmation)
- * but performs no payment processing. Instead, it credits the user's budget
- * directly via [UsageInterface.creditUser].
+ * Structured as a low-friction checkout (package selection -> review ->
+ * confirmation / external redirect -> receipt).  The actual payment logic is
+ * delegated to a [PaymentProvider], making it easy to swap between the
+ * built-in no-op provider and a real processor such as Stripe.
  *
- * This serves as a budgeting failsafe control: users can self-issue credits
- * to top up their available budget without administrative friction, while
- * still going through a flow that records ledger entries and produces a
- * "receipt" for auditability.
+ * Default provider: [NoOpPaymentProvider] – applies credits immediately
+ * without any real payment processing (original behaviour).
  */
-open class CreditsServlet : HttpServlet() {
+open class CreditsServlet(
+    private val provider: PaymentProvider?
+) : HttpServlet() {
+
     val usageDB: UsageInterface by lazy { ApplicationServices.fileApplicationServices().usageManager }
+
+    private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
@@ -33,7 +38,8 @@ open class CreditsServlet : HttpServlet() {
         when (req.getParameter("step")?.lowercase()) {
             "review" -> renderReview(req, resp, user)
             "receipt" -> renderReceipt(req, resp, user)
-            else -> renderCheckout(req, resp, user)
+            "callback" -> handleProviderCallback(req, resp, user)
+            else -> renderCheckout(resp, user)
         }
     }
 
@@ -49,57 +55,100 @@ open class CreditsServlet : HttpServlet() {
 
         val cappedAmount = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
         val orderId = UUID.randomUUID().toString().take(8).uppercase()
-        val timestamp = Instant.now().toString()
 
-        val newBudget = try {
-            usageDB.creditUser(
-                user = user,
-                amount = cappedAmount,
-                comment = "Self-service credit purchase (no-op checkout) order=$orderId",
-                metadata = mapOf(
-                    "order_id" to orderId,
-                    "source" to "self-service-checkout",
-                    "requested_amount" to amount.toString(),
-                    "applied_amount" to cappedAmount.toString(),
-                    "timestamp" to timestamp,
-                    "user_email" to (user.email ?: "")
+        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+        when (val result = provider.initiateCheckout(req, resp, user, cappedAmount, orderId)) {
+            is PaymentProvider.CheckoutResult.Completed -> {
+                log.info(
+                    "Credit applied via ${provider.name}: user=${user.email} " +
+                            "amount=${result.amount} order=${result.orderId} newBudget=${result.newBudget}"
                 )
-            )
-        } catch (e: Exception) {
-            log.error("Failed to credit user ${user.email}", e)
-            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            renderError(resp, "Unable to process credit at this time. Please try again later.")
-            return
+                resp.sendRedirect(
+                    "?step=receipt" +
+                            "&order=${result.orderId}" +
+                            "&amount=${result.amount}" +
+                            "&balance=${result.newBudget}"
+                )
+            }
+
+            is PaymentProvider.CheckoutResult.Redirected -> {
+                // Provider has already redirected the user; nothing more to do.
+            }
+
+            is PaymentProvider.CheckoutResult.Failed -> {
+                resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                renderError(resp, result.message)
+            }
         }
-
-        log.info("Self-service credit applied: user=${user.email} amount=$cappedAmount order=$orderId newBudget=$newBudget")
-
-        resp.sendRedirect(
-            "?step=receipt" +
-                    "&order=$orderId" +
-                    "&amount=$cappedAmount" +
-                    "&balance=$newBudget"
-        )
     }
 
-    private fun parseAmount(req: HttpServletRequest): Double? {
-        req.getParameter("package")?.let { pkg ->
+    private fun handleProviderCallback(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
+        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+        when (val result = provider.handleCallback(req, resp, user)) {
+            is PaymentProvider.CheckoutResult.Completed -> {
+                log.info(
+                    "Callback credit applied via ${provider.name}: user=${user.email} " +
+                            "amount=${result.amount} order=${result.orderId} newBudget=${result.newBudget}"
+                )
+                resp.sendRedirect(
+                    "?step=receipt" +
+                            "&order=${result.orderId}" +
+                            "&amount=${result.amount}" +
+                            "&balance=${result.newBudget}"
+                )
+            }
+
+            is PaymentProvider.CheckoutResult.Failed -> {
+                resp.status = HttpServletResponse.SC_BAD_GATEWAY
+                renderError(resp, result.message)
+            }
+
+            is PaymentProvider.CheckoutResult.Redirected -> {
+                // Unusual in a callback, but respect it.
+            }
+
+            null -> {
+                log.warn("Provider ${provider.name} returned null from handleCallback for user=${user.email}")
+                resp.sendRedirect("?")
+            }
+        }
+    }
+
+
+    private fun parseAmount(request: HttpServletRequest): Double? {
+        request.getParameter("package")?.let { pkg ->
             PACKAGES.firstOrNull { it.id == pkg }?.let { return it.amount }
         }
-        return req.getParameter("amount")?.toDoubleOrNull()
+        return request.getParameter("amount")?.toDoubleOrNull()
     }
 
-    private fun currentBudget(user: User): Double? =
-        runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
 
-    private fun renderCheckout(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-        resp.contentType = "text/html"
-        resp.status = HttpServletResponse.SC_OK
+    private fun renderCheckout(response: HttpServletResponse, user: User) {
+        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+        response.contentType = "text/html"
+        response.status = HttpServletResponse.SC_OK
 
         val budget = currentBudget(user)
         val budgetHtml = if (budget != null) {
             """<div class="budget">Current balance: <strong>${"%.4f".format(budget)}</strong></div>"""
         } else ""
+        val paymentNotice = if (!provider.requiresPayment) {
+            """
+             <div class="notice">
+                 <strong>Notice:</strong> This is a self-service credit top-up.
+                 No payment is processed. Credits applied here are governed by
+                 your account's budgeting policy and audited via ledger entries.
+             </div>
+             """.trimIndent()
+        } else {
+            """
+             <div class="notice">
+                 <strong>Payment provider:</strong> ${provider.name}.
+                 You will be redirected to complete payment before credits are applied.
+             </div>
+             """.trimIndent()
+        }
+
 
         val packageCards = PACKAGES.joinToString("\n") { pkg ->
             """
@@ -112,7 +161,7 @@ open class CreditsServlet : HttpServlet() {
                 """.trimIndent()
         }
 
-        resp.writer.write(
+        response.writer.write(
             """
                 <html>
                 <head>
@@ -123,13 +172,9 @@ open class CreditsServlet : HttpServlet() {
                 <body>
                 <div class="container">
                     <h1>Buy Credits</h1>
-                    <div class="scope">Account: ${user.email ?: "(unknown)"}</div>
+                    <div class="scope">Account: ${user.email}</div>
                     $budgetHtml
-                    <div class="notice">
-                        <strong>Notice:</strong> This is a self-service credit top-up.
-                        No payment is processed. Credits applied here are governed by
-                        your account's budgeting policy and audited via ledger entries.
-                    </div>
+                     $paymentNotice
                     <form method="get" action="">
                         <input type="hidden" name="step" value="review"/>
                         <h2>Select a package</h2>
@@ -146,7 +191,9 @@ open class CreditsServlet : HttpServlet() {
                             <span class="hint">(max ${"%.2f".format(MAX_PURCHASE_AMOUNT)})</span>
                         </div>
                         <div class="actions">
-                            <button type="submit" class="btn-primary">Continue &rarr;</button>
+                             <button type="submit" class="btn-primary">
+                                 ${if (provider.requiresPayment) "Continue to Payment &rarr;" else "Continue &rarr;"}
+                             </button>
                             <a href="/usage" class="btn-link">View usage</a>
                         </div>
                     </form>
@@ -157,28 +204,37 @@ open class CreditsServlet : HttpServlet() {
         )
     }
 
-    private fun renderReview(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-        resp.contentType = "text/html"
-        resp.status = HttpServletResponse.SC_OK
+    private fun renderReview(request: HttpServletRequest, response: HttpServletResponse, user: User) {
+        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+        response.contentType = "text/html"
+        response.status = HttpServletResponse.SC_OK
 
-        val amount = parseAmount(req)
+        val amount = parseAmount(request)
         if (amount == null || amount <= 0.0) {
-            resp.sendRedirect("?")
+            response.sendRedirect("?")
             return
         }
         val capped = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
         val budget = currentBudget(user)
         val projected = (budget ?: 0.0) + capped
 
-        val pkgLabel = req.getParameter("package")?.let { id ->
+        val pkgLabel = request.getParameter("package")?.let { id ->
             PACKAGES.firstOrNull { it.id == id }?.label
         } ?: "Custom amount"
 
         val warning = if (amount > MAX_PURCHASE_AMOUNT) {
             """<div class="warning">Requested amount exceeds the per-purchase cap of ${"%.2f".format(MAX_PURCHASE_AMOUNT)}. The applied amount will be capped.</div>"""
         } else ""
+        val providerExtras = provider.reviewPageExtras(request, user)
+        val paymentMethodRow = if (provider.requiresPayment) {
+            "<tr><th>Payment method</th><td><em>${provider.name}</em></td></tr>"
+        } else {
+            "<tr><th>Payment method</th><td><em>No-op (self-service)</em></td></tr>"
+        }
+        val confirmLabel = if (provider.requiresPayment) "Proceed to Payment &rarr;" else "Confirm &amp; Apply Credits"
 
-        resp.writer.write(
+
+        response.writer.write(
             """
                 <html>
                 <head>
@@ -189,7 +245,7 @@ open class CreditsServlet : HttpServlet() {
                 <body>
                 <div class="container">
                     <h1>Review Your Order</h1>
-                    <div class="scope">Account: ${user.email ?: "(unknown)"}</div>
+                    <div class="scope">Account: ${user.email}</div>
                     $warning
                     <table class="review-table">
                         <tr><th>Package</th><td>$pkgLabel</td></tr>
@@ -197,12 +253,13 @@ open class CreditsServlet : HttpServlet() {
                         <tr><th>Applied amount</th><td><strong>${"%.4f".format(capped)}</strong></td></tr>
                         <tr><th>Current balance</th><td>${budget?.let { "%.4f".format(it) } ?: "—"}</td></tr>
                         <tr class="total-row"><th>Balance after</th><td><strong>${"%.4f".format(projected)}</strong></td></tr>
-                        <tr><th>Payment method</th><td><em>No-op (self-service)</em></td></tr>
+                         $paymentMethodRow
                     </table>
+                     $providerExtras
                     <form method="post" action="">
                         <input type="hidden" name="amount" value="$capped"/>
                         <div class="actions">
-                            <button type="submit" class="btn-primary">Confirm &amp; Apply Credits</button>
+                             <button type="submit" class="btn-primary">$confirmLabel</button>
                             <a href="?" class="btn-link">Back</a>
                         </div>
                     </form>
@@ -232,7 +289,7 @@ open class CreditsServlet : HttpServlet() {
                 <body>
                 <div class="container">
                     <h1>✓ Credits Applied</h1>
-                    <div class="scope">Account: ${user.email ?: "(unknown)"}</div>
+                    <div class="scope">Account: ${user.email}</div>
                     <div class="receipt">
                         <table class="review-table">
                             <tr><th>Order ID</th><td><code>$orderId</code></td></tr>

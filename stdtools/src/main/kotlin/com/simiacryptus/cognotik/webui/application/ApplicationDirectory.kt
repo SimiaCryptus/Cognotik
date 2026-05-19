@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
+import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.Servlet
@@ -87,7 +88,7 @@ abstract class ApplicationDirectory(
     open val sessionsServlet: HttpServlet = SessionsServlet()
         .also { log.debug("Initialized SessionsServlet") }
 
-    open val creditsServlet: CreditsServlet = CreditsServlet()
+    open val creditsServlet: CreditsServlet = CreditsServlet(NoOpPaymentProvider(ApplicationServices.fileApplicationServices().usageManager))
         .also { log.debug("Initialized CreditsServlet") }
 
   open fun setupPlatform() {

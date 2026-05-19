@@ -34,27 +34,23 @@ package com.simiacryptus.cognotik.platform.hsql
             manager = UserSettingsDB()
             // Clean DB between tests to ensure isolation.
             try {
-                UserSettingsDB.facet.withConnection() { conn ->
+                UserSettingsDB.facet.withConnection { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM user_settings")
                     }
                 }
-            } catch (e: Exception) {
-                // ignore - table may not exist yet on first run
-            }
+            } catch (_: Exception) { }
         }
 
         @AfterEach
         fun tearDown() {
             try {
-                UserSettingsDB.facet.withConnection() { conn ->
+                UserSettingsDB.facet.withConnection { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("DELETE FROM user_settings")
                     }
                 }
-            } catch (e: Exception) {
-                // ignore
-            }
+            } catch (_: Exception) { }
         }
 
         private fun apiData(name: String, baseUrl: String, keyValue: String = "test-key"): ApiData =
