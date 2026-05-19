@@ -112,25 +112,25 @@ function applyLocalhostRestrictions() {
 function updateLogoutButtonLabel() {
     try {
         const user = appState && appState.userInfo;
-         const btn = document.getElementById('auth-btn');
-         const labelEl = document.getElementById('auth-btn-label');
-         if (!btn || !labelEl) return;
-         if (!user) {
-             // Not logged in
-             btn.setAttribute('aria-label', 'Login');
-             btn.setAttribute('title', 'Login');
-             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🔑</span> Login';
-             btn.onclick = () => { window.location.href = '/login/'; };
-         } else {
-             const label = user.name || user.email || user.id || 'Logout';
-             btn.setAttribute('aria-label', 'Logout ' + label);
-             btn.setAttribute('title', 'Logout (' + label + ')');
-             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
-                 escapeHtmlSafe(label);
-             btn.onclick = () => {
-                 fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
-             };
-         }
+        const btn = document.getElementById('auth-btn');
+        const labelEl = document.getElementById('auth-btn-label');
+        if (!btn || !labelEl) return;
+        if (!user) {
+            // Not logged in
+            btn.setAttribute('aria-label', 'Login');
+            btn.setAttribute('title', 'Login');
+            btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🔑</span> Login';
+            btn.onclick = () => { window.location.href = '/login/'; };
+        } else {
+            const label = user.name || user.email || user.id || 'Logout';
+            btn.setAttribute('aria-label', 'Logout ' + label);
+            btn.setAttribute('title', 'Logout (' + label + ')');
+            btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
+                escapeHtmlSafe(label);
+            btn.onclick = () => {
+                fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+            };
+        }
     } catch (e) {
         console.warn('[init] Unable to update logout button label:', e);
     }
@@ -146,50 +146,50 @@ function escapeHtmlSafe(s) {
 // ===== Usage modal =====
 // Generic helper to wire up a modal that displays a given URL in an iframe.
 function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url }) {
-     const btn = document.getElementById(buttonId);
-     const modal = document.getElementById(modalId);
-     const iframe = document.getElementById(iframeId);
-     const closeBtn = closeBtnId ? document.getElementById(closeBtnId) : null;
-     if (!btn || !modal || !iframe) return;
-     const close = () => {
-         modal.style.display = 'none';
-         iframe.src = 'about:blank';
-     };
-     btn.addEventListener('click', () => {
-         // (Re)load each time it's opened so data is fresh
-         iframe.src = url;
-         modal.style.display = 'block';
-     });
-     if (closeBtn) {
-         closeBtn.addEventListener('click', close);
-     }
-     // Close when clicking outside modal-content
-     modal.addEventListener('click', (e) => {
-         if (e.target === modal) close();
-     });
-     // Close on Escape key
-     document.addEventListener('keydown', (e) => {
-         if (e.key === 'Escape' && modal.style.display === 'block') close();
-     });
+    const btn = document.getElementById(buttonId);
+    const modal = document.getElementById(modalId);
+    const iframe = document.getElementById(iframeId);
+    const closeBtn = closeBtnId ? document.getElementById(closeBtnId) : null;
+    if (!btn || !modal || !iframe) return;
+    const close = () => {
+        modal.style.display = 'none';
+        iframe.src = 'about:blank';
+    };
+    btn.addEventListener('click', () => {
+        // (Re)load each time it's opened so data is fresh
+        iframe.src = url;
+        modal.style.display = 'block';
+    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', close);
+    }
+    // Close when clicking outside modal-content
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) close();
+    });
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') close();
+    });
 }
 function setupUsageModal() {
-     setupIframeModal({
-         buttonId: 'usage-btn',
-         modalId: 'usage-modal',
-         iframeId: 'usage-iframe',
-         closeBtnId: 'close-usage-modal',
-         url: '/usage/'
-     });
+    setupIframeModal({
+        buttonId: 'usage-btn',
+        modalId: 'usage-modal',
+        iframeId: 'usage-iframe',
+        closeBtnId: 'close-usage-modal',
+        url: '/usage/'
+    });
 }
 // ===== Sessions button =====
 function setupSessionsButton() {
-     setupIframeModal({
-         buttonId: 'sessions-btn',
-         modalId: 'sessions-modal',
-         iframeId: 'sessions-iframe',
-         closeBtnId: 'close-sessions-modal',
-         url: '/sessions/'
-     });
+    setupIframeModal({
+        buttonId: 'sessions-btn',
+        modalId: 'sessions-modal',
+        iframeId: 'sessions-iframe',
+        closeBtnId: 'close-sessions-modal',
+        url: '/sessions/'
+    });
 }
 // ===== Budget button =====
 function formatBudget(amount) {
@@ -226,13 +226,13 @@ function updateBudgetDisplay() {
     });
 }
 function setupBudgetButton() {
-     setupIframeModal({
-         buttonId: 'budget-btn',
-         modalId: 'credits-modal',
-         iframeId: 'credits-iframe',
-         closeBtnId: 'close-credits-modal',
-         url: '/credits/'
-     });
+    setupIframeModal({
+        buttonId: 'budget-btn',
+        modalId: 'credits-modal',
+        iframeId: 'credits-iframe',
+        closeBtnId: 'close-credits-modal',
+        url: '/credits/'
+    });
     updateBudgetDisplay();
     // Refresh budget every 60 seconds
     setInterval(updateBudgetDisplay, 60000);
@@ -275,33 +275,33 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAppDirectory().then(() => {
         renderAppGrid();
         setupAppSearch();
-         setupAppCards();
+        setupAppCards();
     }).catch(error => {
         console.error('[init] Error loading app directory:', error);
     });
 });
 
 // Load API providers and models first, then initialize everything
-  loadApiProviders().then(() => {
-      uiManager.setupTooltips();
-      return loadUserSettings(httpService, appState);
-  }).then(() => {
-      modelManager.populateModelSelections();
-      populateQuickSettingsModels(appState, availableModels);
-      updateApiKeyBanner();
-      updateLogoutButtonLabel();
-     // Re-render app grid now that login state is known
-     renderAppGrid();
-     setupAppCards();
-      return loadCognitiveTypes();
-  }).catch(error => {
-      console.error('[init] Error during initialization:', error);
-      uiManager.setupTooltips();
-      loadUserSettings().then(() => {
-          populateQuickSettingsModels(appState, availableModels);
-          updateApiKeyBanner();
-          updateLogoutButtonLabel();
-         renderAppGrid();
-         setupAppCards();
-      });
-  });
+loadApiProviders().then(() => {
+    uiManager.setupTooltips();
+    return loadUserSettings(httpService, appState);
+}).then(() => {
+    modelManager.populateModelSelections();
+    populateQuickSettingsModels(appState, availableModels);
+    updateApiKeyBanner();
+    updateLogoutButtonLabel();
+    // Re-render app grid now that login state is known
+    renderAppGrid();
+    setupAppCards();
+    return loadCognitiveTypes();
+}).catch(error => {
+    console.error('[init] Error during initialization:', error);
+    uiManager.setupTooltips();
+    loadUserSettings().then(() => {
+        populateQuickSettingsModels(appState, availableModels);
+        updateApiKeyBanner();
+        updateLogoutButtonLabel();
+        renderAppGrid();
+        setupAppCards();
+    });
+});

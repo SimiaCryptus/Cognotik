@@ -11,7 +11,10 @@
       "category": "Think",
       "tags": [
         "Teach"
-      ]
+      ],
+      "videoUrl": "https://cognotik.com/tours/core/edit/philosophical-calculator.mp4",
+      "exampleSessions": {
+      }
     },
     {
       "name": "WebApp Factory",
@@ -25,7 +28,10 @@
       "category": "Create",
       "tags": [
         "Devs"
-      ]
+      ],
+      "videoUrl": "https://cognotik.com/tours/core/edit/webapp-factory.mp4",
+      "exampleSessions": {
+      }
     },
     {
       "name": "Sys Wizard",
@@ -39,7 +45,10 @@
       "category": "Perform",
       "tags": [
         "Devs"
-      ]
+      ],
+      "videoUrl": "https://cognotik.com/tours/core/edit/sys-wizard.mp4",
+      "exampleSessions": {
+      }
     },
     {
       "name": "Interactive Stories",
@@ -53,7 +62,10 @@
       "category": "Imagine",
       "tags": [
         "Kids"
-      ]
+      ],
+      "videoUrl": "https://cognotik.com/tours/core/edit/interactive-stories.mp4",
+      "exampleSessions": {
+      }
     },
     {
       "name": "Comic Serial",
@@ -67,7 +79,10 @@
       "category": "Imagine",
       "tags": [
         "Kids"
-      ]
+      ],
+      "videoUrl": "https://cognotik.com/tours/core/edit/comic-serial.mp4",
+      "exampleSessions": {
+      }
     },
     {
       "name": "Quiz Whiz",

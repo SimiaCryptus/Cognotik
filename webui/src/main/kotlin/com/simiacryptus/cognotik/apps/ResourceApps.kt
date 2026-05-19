@@ -25,6 +25,8 @@ open class ResourceApps(
         val badge: String?,
         val badgeClass: String?,
         val cardClass: String? = null,
+        val videoUrl: String? = null,
+        val exampleSessions: Map<String, String>? = null,
     )
 
     override fun init() {
@@ -60,6 +62,8 @@ open class ResourceApps(
                         classLoader = classLoader,
                         category = entry.category,
                         tags = entry.tags,
+                        videoUrl = entry.videoUrl,
+                        exampleSessions = entry.exampleSessions,
                     )
                 )
             }

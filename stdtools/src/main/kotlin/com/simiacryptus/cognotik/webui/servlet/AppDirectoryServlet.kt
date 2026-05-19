@@ -59,6 +59,8 @@ package com.simiacryptus.cognotik.webui.servlet
                         "hasIcon" to entry.hasIcon,
                         "backgroundUrl" to if (entry.hasBackground) "${entry.appId}/background.png" else null,
                         "iconUrl" to if (entry.hasIcon) "${entry.appId}/icon.png" else null,
+                        "videoUrl" to entry.videoUrl,
+                        "exampleSessions" to entry.exampleSessions,
                     )
                 }
                 resp.writer.write(gson.toJson(entries))
