@@ -36,7 +36,11 @@ class SecureString {
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(SecureString::class.java)
     private const val PREFIX = "SECURE::"
-    private val keyFile = File(System.getProperty("user.home"), ".cognotik").resolve(".key")
+    val possibleKeys = listOf(
+      File("/var/cognotik"),
+      File(System.getProperty("user.home"), ".cognotik")
+    )
+    private val keyFile = (possibleKeys.firstOrNull { it.resolve(".key").exists() } ?: possibleKeys.first()).resolve(".key")
     private val key: SecretKey by lazy {
       if (keyFile.exists()) {
         try {
@@ -54,6 +58,11 @@ class SecureString {
         val key = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
           ?: throw RuntimeException("Unable to generate encryption key")
         keyFile.writeBytes(key.encoded)
+        /* Or, as a shell script:
+        *    mkdir -p /var/cognotik
+        *    openssl rand -out /var/cognotik/.key 32
+        *
+        * */
         key
       }
     }
