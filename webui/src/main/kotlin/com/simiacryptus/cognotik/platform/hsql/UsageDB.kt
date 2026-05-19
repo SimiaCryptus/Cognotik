@@ -14,6 +14,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.sql.Date as SqlDate
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class UsageDB : UsageInterface {
 
@@ -209,6 +211,43 @@ class UsageDB : UsageInterface {
             }
         }
     }
+
+    override fun getUserCredits(user: User, from: LocalDate, to: LocalDate): List<UsageInterface.CreditEntry> {
+        require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
+        return facet.withConnection { conn ->
+            conn.prepareStatement(
+                """
+                     SELECT datetime, amount, comment, metadata
+                     FROM user_credits
+                     WHERE user_id = ? AND datetime >= ? AND datetime < ?
+                     ORDER BY datetime ASC
+                     """
+            ).use { stmt ->
+                stmt.setString(1, user.email)
+                stmt.setTimestamp(2, Timestamp.from(from.atStartOfDay(ZoneOffset.UTC).toInstant()))
+                stmt.setTimestamp(3, Timestamp.from(to.atStartOfDay(ZoneOffset.UTC).toInstant()))
+                stmt.executeQuery().use { rs ->
+                    val out = mutableListOf<UsageInterface.CreditEntry>()
+                    while (rs.next()) {
+                        val ts = rs.getTimestamp(1)?.toInstant() ?: Instant.EPOCH
+                        val amount = rs.getDouble(2)
+                        val comment = rs.getString(3)?.takeIf { it.isNotEmpty() }
+                        val metaRaw = rs.getString(4)?.takeIf { it.isNotEmpty() }
+                        val metadata: Map<String, String>? = metaRaw?.let {
+                            try {
+                                Gson().fromJson(it, object : TypeToken<Map<String, String>>() {}.type)
+                            } catch (e: Throwable) {
+                                null
+                            }
+                        }
+                        out.add(UsageInterface.CreditEntry(ts, amount, comment, metadata))
+                    }
+                    out
+                }
+            }
+        }
+    }
+
 
     private fun collectSessionIds(conn: Connection, sessionId: String): Set<String> {
         val visited = linkedSetOf<String>()
