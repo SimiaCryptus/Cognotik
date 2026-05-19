@@ -112,15 +112,25 @@ function applyLocalhostRestrictions() {
 function updateLogoutButtonLabel() {
     try {
         const user = appState && appState.userInfo;
-        if (!user) return;
-        const label = user.name || user.email || user.id;
-        if (!label) return;
-        const btn = document.getElementById('logout-btn');
-        if (!btn) return;
-        btn.setAttribute('aria-label', 'Logout ' + label);
-        btn.setAttribute('title', 'Logout (' + label + ')');
-        btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
-            escapeHtmlSafe(label);
+         const btn = document.getElementById('auth-btn');
+         const labelEl = document.getElementById('auth-btn-label');
+         if (!btn || !labelEl) return;
+         if (!user) {
+             // Not logged in
+             btn.setAttribute('aria-label', 'Login');
+             btn.setAttribute('title', 'Login');
+             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🔑</span> Login';
+             btn.onclick = () => { window.location.href = '/login/'; };
+         } else {
+             const label = user.name || user.email || user.id || 'Logout';
+             btn.setAttribute('aria-label', 'Logout ' + label);
+             btn.setAttribute('title', 'Logout (' + label + ')');
+             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
+                 escapeHtmlSafe(label);
+             btn.onclick = () => {
+                 fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+             };
+         }
     } catch (e) {
         console.warn('[init] Unable to update logout button label:', e);
     }
@@ -272,21 +282,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load API providers and models first, then initialize everything
-loadApiProviders().then(() => {
-    uiManager.setupTooltips();
-    return loadUserSettings(httpService, appState);
-}).then(() => {
-    modelManager.populateModelSelections();
-    populateQuickSettingsModels(appState, availableModels);
-    updateApiKeyBanner();
-    updateLogoutButtonLabel();
-    return loadCognitiveTypes();
-}).catch(error => {
-    console.error('[init] Error during initialization:', error);
-    uiManager.setupTooltips();
-    loadUserSettings().then(() => {
-        populateQuickSettingsModels(appState, availableModels);
-        updateApiKeyBanner();
-        updateLogoutButtonLabel();
-    });
-});
+  loadApiProviders().then(() => {
+      uiManager.setupTooltips();
+      return loadUserSettings(httpService, appState);
+  }).then(() => {
+      modelManager.populateModelSelections();
+      populateQuickSettingsModels(appState, availableModels);
+      updateApiKeyBanner();
+      updateLogoutButtonLabel();
+     // Re-render app grid now that login state is known
+     renderAppGrid();
+     setupAppCards();
+      return loadCognitiveTypes();
+  }).catch(error => {
+      console.error('[init] Error during initialization:', error);
+      uiManager.setupTooltips();
+      loadUserSettings().then(() => {
+          populateQuickSettingsModels(appState, availableModels);
+          updateApiKeyBanner();
+          updateLogoutButtonLabel();
+         renderAppGrid();
+         setupAppCards();
+      });
+  });

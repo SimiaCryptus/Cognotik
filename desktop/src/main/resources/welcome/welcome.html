@@ -45,10 +45,10 @@
              title="Available budget">
          <span class="btn-icon" aria-hidden="true">💰</span> <span id="budget-amount">Budget</span>
      </button>
-    <button class="top-bar-btn" id="logout-btn" role="button" aria-label="Logout"
-            onclick="fetch('/login/?action=logout', {method: 'POST'}).then(() => location.reload())">
-        <span class="btn-icon" aria-hidden="true">🚪</span> Logout
-    </button>
+     <button class="top-bar-btn" id="auth-btn" role="button" aria-label="Login"
+             onclick="window.location.href='/login/'">
+         <span class="btn-icon" aria-hidden="true">🔑</span> <span id="auth-btn-label">Login</span>
+     </button>
 </div>
 <!-- API Key Configuration Banner -->
 <div class="api-key-banner" id="api-key-banner" role="alert">

@@ -540,24 +540,24 @@ After the code changes, provide a brief summary of what was implemented.
 
     @JvmStatic
     val IterativeFileModification = TaskType(
-      "IterativeFileModification",
-      "File",
-      IterativeFileModificationTask::class.java,
-      IterativeFileModificationTaskExecutionConfigData::class.java,
-      IterativeFileModificationTypeConfig::class.java,
-      "Multi-phase file modification with planning and iterative implementation",
-      """
-                Performs complex file modifications through a two-phase approach:
-                <ul>
-                    <li><b>Planning Phase:</b> An AI agent analyzes the modification goal and generates a list of discrete, ordered changes</li>
-                    <li><b>Implementation Phase:</b> Each change is implemented iteratively by a separate AI agent</li>
-                    <li>Supports optional user approval between each change iteration</li>
-                    <li>Maintains context of previously implemented changes for coherent modifications</li>
-                    <li>Ideal for complex refactoring, multi-step modifications, or large-scale code changes</li>
-                    <li>Provides detailed transcripts and progress tracking for each phase</li>
-                    <li>Configurable models for planning and implementation phases</li>
-                </ul>
-            """,
+        name = "IterativeFileModification",
+        category = "File",
+        taskClass = IterativeFileModificationTask::class.java,
+        executionConfigClass = IterativeFileModificationTaskExecutionConfigData::class.java,
+        taskSettingsClass = IterativeFileModificationTypeConfig::class.java,
+        description = "Multi-phase file modification with planning and iterative implementation",
+        tooltipHtml = """
+                        Performs complex file modifications through a two-phase approach:
+                        <ul>
+                            <li><b>Planning Phase:</b> An AI agent analyzes the modification goal and generates a list of discrete, ordered changes</li>
+                            <li><b>Implementation Phase:</b> Each change is implemented iteratively by a separate AI agent</li>
+                            <li>Supports optional user approval between each change iteration</li>
+                            <li>Maintains context of previously implemented changes for coherent modifications</li>
+                            <li>Ideal for complex refactoring, multi-step modifications, or large-scale code changes</li>
+                            <li>Provides detailed transcripts and progress tracking for each phase</li>
+                            <li>Configurable models for planning and implementation phases</li>
+                        </ul>
+                    """,
     )
   }
 }

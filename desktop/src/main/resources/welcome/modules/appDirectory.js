@@ -178,7 +178,10 @@ function renderAppGrid() {
                 badgeHtml = `<div class="app-card-badge${app.badgeClass ? ' ' + app.badgeClass : ''}">${app.badge}</div>`;
             }
             const hasReadme = !!app.readme;
-             const launchBtnHtml = `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Launch Session</a>`;
+              const loggedIn = isUserLoggedIn();
+              const launchBtnHtml = loggedIn
+                  ? `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Launch Session</a>`
+                  : `<a class="button app-card-launch-btn app-card-launch-btn-login" href="/login/" data-app-id="${app.id}" title="Login to launch this application">Login to Launch</a>`;
             const readmeHintHtml = hasReadme
                 ? `<div class="app-card-readme-hint">Click card for details</div>`
                 : '';
@@ -244,13 +247,18 @@ function renderAppGrid() {
     ensureReadmeModal();
 }
 function getAppUrl(app) {
-     if (!app) return '#';
-     if (app.path) {
-         // Ensure trailing slash
-         return app.path.endsWith('/') ? app.path : app.path + '/';
-     }
-     return `/${app.id}/`;
+       if (!app) return '#';
+       if (app.path) {
+           // Ensure trailing slash
+           return app.path.endsWith('/') ? app.path : app.path + '/';
+       }
+       return `/${app.id}/`;
+  }
+function isUserLoggedIn() {
+    // appState.userInfo is populated after loadUserSettings resolves
+    return !!(typeof appState !== 'undefined' && appState && appState.userInfo);
 }
+
 function getAppAssetUrl(relativePath) {
       if (!relativePath) return '';
       // Strip any leading slash to avoid double-slashes
@@ -448,8 +456,8 @@ function setupAppCards() {
              if (e.target.closest('.app-card-launch-btn')) {
                  return;
              }
-             // For cards with a readme, intercept plain clicks to show the readme modal
-             if (app.readme) {
+              // For cards with a readme (and user is logged in), intercept plain clicks to show the readme modal
+              if (app.readme && isUserLoggedIn()) {
                  e.preventDefault();
                 showAppReadme(app);
             }

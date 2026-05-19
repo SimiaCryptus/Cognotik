@@ -289,23 +289,23 @@ All required (non-optional) fields must be populated with appropriate values ext
 
     @JvmStatic
     val RenderErbTemplate = TaskType(
-      "RenderErbTemplate",
-      "Writing",
-      RenderErbTemplateTask::class.java,
-      RenderErbTemplateTaskExecutionConfig::class.java,
-      RenderErbTemplateTaskTypeConfig::class.java,
-      "Render ERB-style templates with dynamic data for document generation",
-      """
-                Renders ERB-style templates using a powerful template engine.
-                <ul>
-                    <li>Supports variable interpolation with <%= expression %></li>
-                    <li>Control structures: for loops and if/else conditionals</li>
-                    <li>Built-in filters: escape, markdown, upper, lower, join, default</li>
-                    <li>Optional TypeScript-style schema validation</li>
-                    <li>Can output to file or return rendered content</li>
-                    <li>Useful for generating reports, documents, LaTeX files, etc.</li>
-                </ul>
-            """
+        name = "RenderErbTemplate",
+        category = "Writing",
+        taskClass = RenderErbTemplateTask::class.java,
+        executionConfigClass = RenderErbTemplateTaskExecutionConfig::class.java,
+        taskSettingsClass = RenderErbTemplateTaskTypeConfig::class.java,
+        description = "Render ERB-style templates with dynamic data for document generation",
+        tooltipHtml = """
+                        Renders ERB-style templates using a powerful template engine.
+                        <ul>
+                            <li>Supports variable interpolation with <%= expression %></li>
+                            <li>Control structures: for loops and if/else conditionals</li>
+                            <li>Built-in filters: escape, markdown, upper, lower, join, default</li>
+                            <li>Optional TypeScript-style schema validation</li>
+                            <li>Can output to file or return rendered content</li>
+                            <li>Useful for generating reports, documents, LaTeX files, etc.</li>
+                        </ul>
+                    """
     )
   }
 }

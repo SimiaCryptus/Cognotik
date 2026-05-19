@@ -352,24 +352,24 @@ $extractedTemplate
 
     @JvmStatic
     val CreateErbTemplate = TaskType(
-      "CreateErbTemplate",
-      "Writing",
-      CreateErbTemplateTask::class.java,
-      CreateErbTemplateTaskExecutionConfigData::class.java,
-      CreateErbTemplateTaskTypeConfig::class.java,
-      "Generate ERB-style templates for dynamic document generation",
-      """
-                Creates ERB-style templates with AI assistance for generating dynamic documents.
-                <ul>
-                    <li>Supports variable interpolation with <%= expression %></li>
-                    <li>Includes control structures (for loops, if/else conditionals)</li>
-                    <li>Provides built-in filters (escape, markdown, upper, lower, join, default)</li>
-                    <li>Optional TypeScript-style schema preambles for data validation</li>
-                    <li>Supports multiple output formats (LaTeX, HTML, Markdown, text)</li>
-                    <li>Generates well-documented, maintainable templates</li>
-                    <li>Handles complex nested data structures</li>
-                </ul>
-            """
+        name = "CreateErbTemplate",
+        category = "Writing",
+        taskClass = CreateErbTemplateTask::class.java,
+        executionConfigClass = CreateErbTemplateTaskExecutionConfigData::class.java,
+        taskSettingsClass = CreateErbTemplateTaskTypeConfig::class.java,
+        description = "Generate ERB-style templates for dynamic document generation",
+        tooltipHtml = """
+                        Creates ERB-style templates with AI assistance for generating dynamic documents.
+                        <ul>
+                            <li>Supports variable interpolation with <%= expression %></li>
+                            <li>Includes control structures (for loops, if/else conditionals)</li>
+                            <li>Provides built-in filters (escape, markdown, upper, lower, join, default)</li>
+                            <li>Optional TypeScript-style schema preambles for data validation</li>
+                            <li>Supports multiple output formats (LaTeX, HTML, Markdown, text)</li>
+                            <li>Generates well-documented, maintainable templates</li>
+                            <li>Handles complex nested data structures</li>
+                        </ul>
+                    """
     )
   }
 }

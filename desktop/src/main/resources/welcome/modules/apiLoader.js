@@ -7,13 +7,7 @@ async function loadApiProviders() {
     console.log('[loadApiProviders] Loading API providers from server...');
     try {
         const response = await fetch('apiProviders/?format=json');
-        if (response.redirected || response.status >= 300) {
-            console.warn('[loadApiProviders] Detected redirect (redirected:', response.redirected, ', status:', response.status, ', url:', response.url, ') - redirecting to login');
-            window.location.href = 'login/';
-            return;
-        }
         const providersResponse = await response.json();
-
         const providers = providersResponse.configuredProviders || [];
         const availableProvidersList = providersResponse.availableProviders || [];
 

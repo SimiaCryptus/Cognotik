@@ -520,21 +520,21 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
 
     @JvmStatic
     val GenerateQRImage = TaskType(
-      "GenerateQRImage",
-      "Writing",
-      GenerateQRImageTask::class.java,
-      GenerateQRImageTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Generate artistic QR codes with AI styling",
-      """
-              Creates stylized QR codes using AI image processing while maintaining scannability.
-              <ul>
-                <li>Generates QR codes with high error correction (30% redundancy)</li>
-                <li>Applies artistic styles using AI image generation</li>
-                <li>Verifies the resulting QR code remains readable</li>
-                <li>Retries with more conservative styling if verification fails</li>
-              </ul>
-            """
+        name = "GenerateQRImage",
+        category = "Writing",
+        taskClass = GenerateQRImageTask::class.java,
+        executionConfigClass = GenerateQRImageTaskExecutionConfigData::class.java,
+        taskSettingsClass = TaskTypeConfig::class.java,
+        description = "Generate artistic QR codes with AI styling",
+        tooltipHtml = """
+                      Creates stylized QR codes using AI image processing while maintaining scannability.
+                      <ul>
+                        <li>Generates QR codes with high error correction (30% redundancy)</li>
+                        <li>Applies artistic styles using AI image generation</li>
+                        <li>Verifies the resulting QR code remains readable</li>
+                        <li>Retries with more conservative styling if verification fails</li>
+                      </ul>
+                    """
     )
   }
 }
