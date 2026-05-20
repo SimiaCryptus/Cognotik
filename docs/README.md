@@ -13,7 +13,7 @@ details for UI servlets and code interpreters.
 Understanding the foundation of the system, including session management, storage, and the design philosophy behind the
 framework's extensibility.
 
-* **[Platform Architecture](./platform.md)**
+* **[Platform Architecture](platform/platform.md)**
   * Overview of the layered architecture (Service, Interface, Implementation).
   * Session management (Global vs. User sessions).
   * Data storage, authentication, and cloud integration.
@@ -21,10 +21,10 @@ framework's extensibility.
   * **Must Read:** Explains the "Multiplicative Scaling" philosophy.
   * Deep dive into the Strategy Patterns used for Models, Providers, and Tasks.
   * Historical context on interoperability and AI-assisted development.
-* **[User Settings Subsystem](./user_settings.md)**
+* **[User Settings Subsystem](platform/user_settings.md)**
   * Managing API credentials and local tool configurations.
   * Persistence, security masking, and JSON migration logic.
-* **[Generative Use Cases](./use_case_categories.md)**
+* **[Generative Use Cases](theory/use_case_categories.md)**
   * A taxonomy of generative AI patterns (0→1 Creation, 1→1 Transformation, Synthesis, etc.).
 
 ### 2. AI Logic & Cognitive Models
@@ -69,14 +69,14 @@ The subsystems responsible for running code and applying AI-generated changes to
 
 Documentation for the web-based components of the framework.
 
-* **[Servlets Guide](./servlets.md)**
+* **[Servlets Guide](platform/servlets.md)**
   * Overview of all HTTP endpoints (Auth, Session Management, File Serving, Proxying).
-* **[Server-Driven UI](user_interface.md)**
+* **[Server-Driven UI](platform/user_interface.md)**
   * Guide to the `SessionTask` UI system.
   * How to build interactive, streaming UIs using Kotlin (Tabs, Buttons, Markdown rendering).
-* **[Application API](./application_api.md)**
+* **[Application API](extend/application_api.md)**
   * Detailed reference for HTTP endpoints (Session management, File system, Usage).
-* **[WebSocket Protocol](./websocket_protocol.md)**
+* **[WebSocket Protocol](platform/websocket_protocol.md)**
   * Technical guide to the real-time communication protocol.
   * Message replay, synchronization, and data transport.
 
@@ -96,8 +96,8 @@ Guidelines for extending the framework and maintaining quality.
 
 1. **New Users:** Start with **[Task Planning Overview](./taskplanning.md)** and *
    *[Cognitive Modes](cognitive/cognitive_modes.md)** to understand what the system does.
-2. **Architects:** Read **[Strategic Extensibility](extend/strategies.md)** and **[Platform Architecture](./platform.md)** to
+2. **Architects:** Read **[Strategic Extensibility](extend/strategies.md)** and **[Platform Architecture](platform/platform.md)** to
    understand the design philosophy.
 3. **Task Developers:** Read **[Actor Types](extend/agent_types.md)**, **[Task Library](./task_type_docs.md)**, and *
    *[Task Implementation Standards](tasks/task_type_best_practices.md)**.
-4. **UI/Web Developers:** Focus on **[Servlets](./servlets.md)** and **[Server-Driven UI](user_interface.md)**.
+4. **UI/Web Developers:** Focus on **[Servlets](platform/servlets.md)** and **[Server-Driven UI](platform/user_interface.md)**.
