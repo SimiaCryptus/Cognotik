@@ -20,10 +20,6 @@
                          return {
                              id: model.name,
                              name: model.name,
-
-                             description: model.maxTokens
-                                 ? 'Max tokens: ' + model.maxTokens
-                                 : 'No token limit specified'
                          };
                      });
                  }

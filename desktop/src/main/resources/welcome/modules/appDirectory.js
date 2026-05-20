@@ -5,6 +5,26 @@ let appSearchQuery = '';
 let tagFilters = {};
 // Category collapse state: category -> boolean (true = collapsed)
 let collapsedCategories = {};
+/**
+  * Returns the current budget value from the DOM, or null if unknown.
+  * < 0.01  => 'critical'
+  * < 1.00  => 'warning'
+  * otherwise => 'ok'
+  */
+function getBudgetState() {
+     const btn = document.getElementById('budget-btn');
+     if (!btn || !btn.hasAttribute('data-budget')) return { value: null, level: 'unknown' };
+     const value = parseFloat(btn.getAttribute('data-budget'));
+     if (isNaN(value)) return { value: null, level: 'unknown' };
+     const level = value < 0.01 ? 'critical' : value < 1.00 ? 'warning' : 'ok';
+     return { value, level };
+}
+function formatBudgetLabel(amount) {
+     if (typeof amount !== 'number' || isNaN(amount)) return '—';
+     const sign = amount < 0 ? '-' : '';
+     const abs = Math.abs(amount);
+     return sign + '$' + abs.toFixed(2);
+}
 
 async function loadAppDirectory() {
     console.log('[loadAppDirectory] Loading app directory...');
@@ -179,9 +199,17 @@ function renderAppGrid() {
             }
             const hasReadme = !!app.readme;
             const loggedIn = isUserLoggedIn();
-            const launchBtnHtml = loggedIn
-                ? `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Launch Session</a>`
-                : `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Login to Launch</a>`;
+         const budgetState = getBudgetState();
+         let launchBtnHtml;
+         if (!loggedIn) {
+             launchBtnHtml = `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Login to Launch</a>`;
+         } else if (budgetState.level === 'critical') {
+             launchBtnHtml = `<a class="button app-card-launch-btn app-card-launch-btn--no-credits" href="/credits/" data-app-id="${app.id}" title="Insufficient credits — add credits to launch">Add Credits to Launch</a>`;
+         } else if (budgetState.level === 'warning') {
+             launchBtnHtml = `<a class="button app-card-launch-btn app-card-launch-btn--low-credits" href="${appUrl}" data-app-id="${app.id}" title="Low balance: ${formatBudgetLabel(budgetState.value)}">Launch Session</a>`;
+         } else {
+             launchBtnHtml = `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Launch Session</a>`;
+         }
             const hasExtras = hasReadme || app.videoUrl || (app.exampleSessions && Object.keys(app.exampleSessions).length > 0);
             const readmeHintHtml = hasExtras
                 ? `<div class="app-card-readme-hint">Click for details</div>`

@@ -23,9 +23,6 @@ export async function loadApiProviders() {
                     availableModels[provider.name] = provider.models.map(model => ({
                         id: model.name,
                         name: model.name,
-                        description: model.maxTokens 
-                            ? `Max tokens: ${model.maxTokens}` 
-                            : 'No token limit specified'
                     }));
                 }
             });

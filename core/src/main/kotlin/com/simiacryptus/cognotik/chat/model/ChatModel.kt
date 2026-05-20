@@ -13,7 +13,6 @@ import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-
 class ChatModel(
   val name: String = "",
   modelId: String = name,
@@ -22,15 +21,18 @@ class ChatModel(
   provider: APIProvider? = null,
   val inputTokenPricePerK: Double = 0.0,
   val outputTokenPricePerK: Double = inputTokenPricePerK,
-  val supportsTemperature : Boolean = true,
-  val supportsReasoning : Boolean = false,
+  val supportsTemperature: Boolean = true,
+  val supportsReasoning: Boolean = false,
   val deprecated: Boolean = false,
+  val inputModalities: Set<ChatMessageModality>,
+  val outputModalities: Set<ChatMessageModality>,
 ) : LLMModel(
   modelId = modelId,
   maxTotalTokens = maxTotalTokens,
   maxOutTokens = maxOutTokens,
   provider = provider,
 ) {
+
   override fun toString() = modelId
 
   fun pricing(usage: Usage): Double {
@@ -70,7 +72,14 @@ class ChatModel(
   )
 
   companion object {
-    val NULL: ChatModel = ChatModel(name = "NULL", modelId = "NULL", maxTotalTokens = -1, inputTokenPricePerK = 0.0, outputTokenPricePerK = 0.0)
+    val NULL: ChatModel = ChatModel(
+      name = "NULL",
+      modelId = "NULL",
+      outputTokenPricePerK = 0.0,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
     val log = getLogger(ChatModel::class.java)
   }
 }
+

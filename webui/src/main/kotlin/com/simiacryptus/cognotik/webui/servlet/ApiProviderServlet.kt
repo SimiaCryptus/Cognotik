@@ -37,7 +37,8 @@ class ApiProviderServlet : HttpServlet() {
 
   data class ModelInfo(
     val name: String,
-    val maxTokens: Int? = null
+    val inputModalities: Set<String> = emptySet(),
+    val outputModalities: Set<String> = emptySet()
   )
 
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -93,7 +94,6 @@ class ApiProviderServlet : HttpServlet() {
         """
                 <li>
                     ${model.name}
-                    ${model.maxTokens?.let { " (max tokens: $it)" } ?: ""}
                 </li>
                 """.trimIndent()
       }
@@ -293,10 +293,17 @@ class ApiProviderServlet : HttpServlet() {
                 name = provider.name,
                 baseUrl = apiConfig.apiBase,
                 models = models.map { model ->
-                  ModelInfo(
-                    name = model.modelId,
-                    maxTokens = model.maxTotalTokens
-                  )
+                  if (model is ChatModel) {
+                    ModelInfo(
+                      name = model.modelId,
+                      inputModalities = model.inputModalities.map { it.name }.toSet(),
+                      outputModalities = model.outputModalities.map { it.name }.toSet(),
+                    )
+                  } else {
+                    ModelInfo(
+                      name = model.modelId,
+                    )
+                  }
                 },
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = try {

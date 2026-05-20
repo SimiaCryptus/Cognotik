@@ -72,7 +72,10 @@ class ChatInterface(
             logLevel = Level.INFO,
             temperature = 0.0,
             provider = APIProvider.NULL,
-            modelType = ChatModel(),
+            modelType = ChatModel(
+                inputModalities = setOf(),
+                outputModalities = setOf()
+            ),
             workPool = java.util.concurrent.Executors.newCachedThreadPool(),
             scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
                 java.util.concurrent.Executors.newScheduledThreadPool(

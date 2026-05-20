@@ -7,6 +7,7 @@ import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -113,8 +114,9 @@ class GeminiSdkChatClient(
                 maxTotalTokens = it.inputTokenLimit().get() + it.outputTokenLimit().get(),
                 maxOutTokens = it.outputTokenLimit().get(),
                 provider = CoreProviders.Gemini,
-                inputTokenPricePerK = 0.0, // Default pricing - would need to be configured
-                outputTokenPricePerK = 0.0
+                outputTokenPricePerK = 0.0, // Default pricing - would need to be configured
+                inputModalities = setOf(ChatMessageModality.TEXT),
+                outputModalities = setOf(ChatMessageModality.TEXT)
               )
             } catch (e: NoSuchElementException) {
               log.warn("Skipping model {} due to missing token limits: {}", baseModelId, e.message)

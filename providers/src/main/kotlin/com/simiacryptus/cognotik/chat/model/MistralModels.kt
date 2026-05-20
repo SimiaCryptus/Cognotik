@@ -1,156 +1,187 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
 
 object MistralModels {
 
   // Frontier Generalist Models
   val MistralSmall4 = ChatModel(
-    name = "MistralSmall4",
-    modelId = "mistral-small-2603",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0003
+      name = "MistralSmall4",
+      modelId = "mistral-small-2603",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
 
   val MistralLarge3 = ChatModel(
-    name = "MistralLarge3",
-    modelId = "mistral-large-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.002,
-    outputTokenPricePerK = 0.006
+      name = "MistralLarge3",
+      modelId = "mistral-large-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.002,
+      outputTokenPricePerK = 0.006,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val MistralMedium3_1 = ChatModel(
-    name = "MistralMedium3_1",
-    modelId = "mistral-medium-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0015,
-    outputTokenPricePerK = 0.0045
+      name = "MistralMedium3_1",
+      modelId = "mistral-medium-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0015,
+      outputTokenPricePerK = 0.0045,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val MistralSmall3_2 = ChatModel(
-    name = "MistralSmall3_2",
-    modelId = "mistral-small-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0003
+      name = "MistralSmall3_2",
+      modelId = "mistral-small-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val Ministral3_14B = ChatModel(
-    name = "Ministral3_14B",
-    modelId = "ministral-14b-latest",
-    maxTotalTokens = 32768,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.00009,
-    outputTokenPricePerK = 0.00009
+      name = "Ministral3_14B",
+      modelId = "ministral-14b-latest",
+      maxTotalTokens = 32768,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.00009,
+      outputTokenPricePerK = 0.00009,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val Ministral3_8B = ChatModel(
-    name = "Ministral3_8B",
-    modelId = "ministral-8b-latest",
-    maxTotalTokens = 32768,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.00009,
-    outputTokenPricePerK = 0.00009
+      name = "Ministral3_8B",
+      modelId = "ministral-8b-latest",
+      maxTotalTokens = 32768,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.00009,
+      outputTokenPricePerK = 0.00009,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val Ministral3_3B = ChatModel(
-    name = "Ministral3_3B",
-    modelId = "ministral-3b-latest",
-    maxTotalTokens = 32768,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.00004,
-    outputTokenPricePerK = 0.00004
+      name = "Ministral3_3B",
+      modelId = "ministral-3b-latest",
+      maxTotalTokens = 32768,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.00004,
+      outputTokenPricePerK = 0.00004,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val MagistralMedium1_2 = ChatModel(
-    name = "MagistralMedium1_2",
-    modelId = "magistral-medium-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.002,
-    outputTokenPricePerK = 0.006
+      name = "MagistralMedium1_2",
+      modelId = "magistral-medium-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.002,
+      outputTokenPricePerK = 0.006,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val MagistralSmall1_2 = ChatModel(
-    name = "MagistralSmall1_2",
-    modelId = "magistral-small-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0003
+      name = "MagistralSmall1_2",
+      modelId = "magistral-small-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   // Specialist Models
   val Leanstral = ChatModel(
-    name = "Leanstral",
-    modelId = "leanstral-2603",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0003
+      name = "Leanstral",
+      modelId = "leanstral-2603",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
 
   val Codestral = ChatModel(
-    name = "Codestral",
-    modelId = "codestral-latest",
-    maxTotalTokens = 262144,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0003,
-    outputTokenPricePerK = 0.0009
+      name = "Codestral",
+      modelId = "codestral-latest",
+      maxTotalTokens = 262144,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0003,
+      outputTokenPricePerK = 0.0009,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val Devstral2 = ChatModel(
-    name = "Devstral2",
-    modelId = "devstral-large-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.002,
-    outputTokenPricePerK = 0.006
+      name = "Devstral2",
+      modelId = "devstral-large-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.002,
+      outputTokenPricePerK = 0.006,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val DevstralSmall2 = ChatModel(
-    name = "DevstralSmall2",
-    modelId = "devstral-small-latest",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0003
+      name = "DevstralSmall2",
+      modelId = "devstral-small-latest",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   // Other Models
   val MistralSmallCreative = ChatModel(
-    name = "MistralSmallCreative",
-    modelId = "mistral-small-creative-2512",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.0001,
-    outputTokenPricePerK = 0.0003
+      name = "MistralSmallCreative",
+      modelId = "mistral-small-creative-2512",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val DevstralMedium1_0 = ChatModel(
-    name = "DevstralMedium1_0",
-    modelId = "devstral-medium-2507",
-    maxTotalTokens = 131072,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.002,
-    outputTokenPricePerK = 0.006
+      name = "DevstralMedium1_0",
+      modelId = "devstral-medium-2507",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.002,
+      outputTokenPricePerK = 0.006,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val MistralNemo = ChatModel(
-    name = "MistralNemo",
-    modelId = "open-mistral-nemo",
-    maxTotalTokens = 131071,
-    provider = CoreProviders.Mistral,
-    inputTokenPricePerK = 0.00015,
-    outputTokenPricePerK = 0.00015
+      name = "MistralNemo",
+      modelId = "open-mistral-nemo",
+      maxTotalTokens = 131071,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.00015,
+      outputTokenPricePerK = 0.00015,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val values = mapOf(

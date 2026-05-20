@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
@@ -257,7 +258,11 @@ class DocProcessorServlet() : HttpServlet() {
             if (modelId.isNullOrBlank()) return null
             models.values.find { it.modelId == modelId }?.let { return it }
             log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
-            return ChatModel(modelId = modelId, provider = null)
+            return ChatModel(
+                modelId = modelId,
+                inputModalities = setOf(ChatMessageModality.TEXT),
+                outputModalities = setOf(ChatMessageModality.TEXT)
+            )
         }
 
     }

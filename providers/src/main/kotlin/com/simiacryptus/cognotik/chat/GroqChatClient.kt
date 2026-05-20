@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GroqModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
@@ -97,10 +98,11 @@ class GroqChatClient(
           ChatModel(
             name = groqModel.id,
             modelId = groqModel.id,
-            provider = CoreProviders.Groq,
             maxTotalTokens = groqModel.context_window,
-            inputTokenPricePerK = 0.0, // Groq doesn't publicly list token pricing as of now
-            outputTokenPricePerK = 0.0
+            provider = CoreProviders.Groq,
+            outputTokenPricePerK = 0.0, // Groq doesn't publicly list token pricing as of now
+            inputModalities = setOf(ChatMessageModality.TEXT),
+            outputModalities = setOf(ChatMessageModality.TEXT)
           )
         } else {
           null
@@ -135,7 +137,7 @@ class GroqChatClient(
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(groqRequest)
       val result =
-        post("${apiBase}/openai/chat/completions", json)
+        post("${apiBase}/chat/completions", json)
       checkError(result)
       val response = JsonUtil.objectMapper().readValue(
         result,

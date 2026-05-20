@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -154,8 +155,9 @@ class OllamaChatClient(
           maxTotalTokens = 4096, // Default, could be model-specific
           maxOutTokens = 4096,
           provider = CoreProviders.Ollama,
-          inputTokenPricePerK = 0.0, // Ollama is typically free/local
-          outputTokenPricePerK = 0.0
+          outputTokenPricePerK = 0.0, // Ollama is typically free/local
+          inputModalities = setOf(ChatMessageModality.TEXT),
+          outputModalities = setOf(ChatMessageModality.TEXT)
         )
       }
     } catch (e: Exception) {

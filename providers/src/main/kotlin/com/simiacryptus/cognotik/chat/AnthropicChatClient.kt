@@ -3,7 +3,8 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
   import com.simiacryptus.cognotik.CoreProviders
   import com.simiacryptus.cognotik.chat.model.AnthropicModels
-  import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
+import com.simiacryptus.cognotik.chat.model.ChatModel
   import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
   import com.simiacryptus.cognotik.models.ModelSchema
@@ -59,11 +60,12 @@ class AnthropicChatClient(
             ChatModel(
               name = modelInfo.display_name,
               modelId = modelInfo.id,
-              provider = CoreProviders.Anthropic,
               maxTotalTokens = 200000,
               maxOutTokens = 64000,
-              inputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
-              outputTokenPricePerK = 0.0 // TODO: Set actual pricing if known
+              provider = CoreProviders.Anthropic,
+              outputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
+              inputModalities = setOf(ChatMessageModality.TEXT),
+              outputModalities = setOf(ChatMessageModality.TEXT) // TODO: Set actual pricing if known
             )
           }
         }

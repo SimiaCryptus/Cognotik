@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -137,7 +138,9 @@ class AwsChatClient(
               maxOutTokens = specs.maxOutTokens,
               provider = CoreProviders.AWS,
               inputTokenPricePerK = specs.inputTokenPricePerK,
-              outputTokenPricePerK = specs.outputTokenPricePerK
+              outputTokenPricePerK = specs.outputTokenPricePerK,
+              inputModalities = setOf(ChatMessageModality.TEXT),
+              outputModalities = setOf(ChatMessageModality.TEXT)
             )
           }
         } catch (e: Exception) {
@@ -179,7 +182,9 @@ class AwsChatClient(
       maxOutTokens = maxOutTokens,
       provider = CoreProviders.AWS,
       inputTokenPricePerK = inputPrice,
-      outputTokenPricePerK = outputPrice
+      outputTokenPricePerK = outputPrice,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
 
@@ -244,7 +249,9 @@ class AwsChatClient(
         maxOutTokens = 4096,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.003,
-        outputTokenPricePerK = 0.015
+        outputTokenPricePerK = 0.015,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Claude 3 Haiku",
@@ -253,7 +260,9 @@ class AwsChatClient(
         maxOutTokens = 4096,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.00025,
-        outputTokenPricePerK = 0.00125
+        outputTokenPricePerK = 0.00125,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Llama 3 70B Instruct",
@@ -262,7 +271,9 @@ class AwsChatClient(
         maxOutTokens = 2048,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.00265,
-        outputTokenPricePerK = 0.0035
+        outputTokenPricePerK = 0.0035,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Mistral 7B Instruct",
@@ -271,7 +282,9 @@ class AwsChatClient(
         maxOutTokens = 4096,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.00015,
-        outputTokenPricePerK = 0.0002
+        outputTokenPricePerK = 0.0002,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Amazon Titan Text Express",
@@ -280,7 +293,9 @@ class AwsChatClient(
         maxOutTokens = 8192,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.0002,
-        outputTokenPricePerK = 0.0006
+        outputTokenPricePerK = 0.0006,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       )
     )
   }

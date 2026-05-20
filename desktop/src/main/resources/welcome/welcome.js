@@ -201,6 +201,7 @@ function formatBudget(amount) {
 function updateBudgetDisplay() {
     const span = document.getElementById('budget-amount');
     if (!span) return;
+     const btn = document.getElementById('budget-btn');
     fetch('/usage/?format=json', {
         headers: { 'Accept': 'application/json' }
     }).then(response => {
@@ -213,16 +214,36 @@ function updateBudgetDisplay() {
             ? data.available_budget : null;
         if (budget === null) {
             span.textContent = 'Budget';
+             if (btn) {
+                 btn.removeAttribute('data-budget');
+                 btn.classList.remove('budget-warning', 'budget-critical');
+             }
             return;
         }
         span.textContent = formatBudget(budget);
-        const btn = document.getElementById('budget-btn');
         if (btn) {
             btn.setAttribute('title', 'Available budget: ' + formatBudget(budget));
+             btn.setAttribute('data-budget', String(budget));
+             btn.classList.remove('budget-warning', 'budget-critical');
+             if (budget < 0.01) {
+                 btn.classList.add('budget-critical');
+                 span.textContent = formatBudget(budget);
+             } else if (budget < 1.00) {
+                 btn.classList.add('budget-warning');
+             }
         }
+         updateBudgetWarningBanner(budget);
+         // Re-render app grid so launch buttons reflect the new budget state
+         renderAppGrid();
+         setupAppCards();
     }).catch(err => {
         console.warn('[updateBudgetDisplay] Error:', err);
         span.textContent = 'Budget';
+         if (btn) {
+             btn.removeAttribute('data-budget');
+             btn.classList.remove('budget-warning', 'budget-critical');
+         }
+         updateBudgetWarningBanner(null);
     });
 }
 function setupBudgetButton() {
@@ -236,6 +257,30 @@ function setupBudgetButton() {
     updateBudgetDisplay();
     // Refresh budget every 60 seconds
     setInterval(updateBudgetDisplay, 60000);
+}
+function updateBudgetWarningBanner(budget) {
+     const banner = document.getElementById('budget-warning-banner');
+     if (!banner) return;
+     if (typeof budget !== 'number' || isNaN(budget)) {
+         banner.classList.remove('visible', 'budget-critical-banner');
+         banner.innerHTML = '';
+         return;
+     }
+     if (budget < 0.01) {
+         banner.classList.add('visible', 'budget-critical-banner');
+         banner.innerHTML = `<strong>🚫 Insufficient credits (${formatBudget(budget)}).</strong>
+             You need credits to launch AI sessions.
+             <a href="/credits/">Add credits now →</a>`;
+     } else if (budget < 1.00) {
+         banner.classList.add('visible');
+         banner.classList.remove('budget-critical-banner');
+         banner.innerHTML = `<strong>⚠️ Low balance: ${formatBudget(budget)}.</strong>
+             Your available credits are running low.
+             <a href="/credits/">Top up credits →</a>`;
+     } else {
+         banner.classList.remove('visible', 'budget-critical-banner');
+         banner.innerHTML = '';
+     }
 }
 
 

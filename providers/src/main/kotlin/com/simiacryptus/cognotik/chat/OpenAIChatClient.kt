@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.OpenAIModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
@@ -85,10 +86,11 @@ class OpenAIChatClient(
           ChatModel(
             name = modelInfo.id,
             modelId = modelInfo.id,
-            provider = CoreProviders.OpenAI,
             maxTotalTokens = 128000,
-            inputTokenPricePerK = 0.0,
-            outputTokenPricePerK = 0.0
+            provider = CoreProviders.OpenAI,
+            outputTokenPricePerK = 0.0,
+            inputModalities = setOf(ChatMessageModality.TEXT),
+            outputModalities = setOf(ChatMessageModality.TEXT)
           )
         } else {
           null

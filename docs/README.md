@@ -34,9 +34,9 @@ How the AI "thinks," assumes personas, and structures its reasoning.
 * **[Actor Types](agent_types.md)**
   * Guide to the base AI workers: `SimpleActor` (Text), `ParsedActor` (Structured Data), `CodingActor` (Code Gen), and
     `ImageActor`.
-* **[Cognitive Modes](./cognitive_modes.md)**
+* **[Cognitive Modes](cognitive/cognitive_modes.md)**
   * User guide to the planning engines: Conversational, Waterfall, Adaptive Planning, and Hierarchical Planning.
-* **[Cognitive Schemas](./cognitive_schema.md)**
+* **[Cognitive Schemas](cognitive/cognitive_schema.md)**
   * Defining AI "Mindsets" or personas (e.g., Project Manager, Scientific Method, Agile Developer, Critical Auditor).
 
 ### 3. Task Planning System
@@ -49,7 +49,7 @@ The core engine where AI logic meets actionable execution.
 * **[Task Library & Reference](./task_type_docs.md)**
   * Detailed documentation of available tools: `RunCodeTask`, `FileModificationTask`, `CrawlerAgentTask`,
     `VectorSearchTask`, and more.
-* **[Launch API & Configuration](./task_planning_launch_api.md)**
+* **[Launch API & Configuration](tasks/task_planning_launch_api.md)**
   * How to configure and launch sessions via the Web UI, IntelliJ Plugin, or HTTP API.
   * Details on `OrchestrationConfig` and model selection.
 
@@ -84,10 +84,10 @@ Documentation for the web-based components of the framework.
 
 Guidelines for extending the framework and maintaining quality.
 
-* **[Task Implementation Standards](task_type_best_practices.md)**
+* **[Task Implementation Standards](tasks/task_type_best_practices.md)**
   * **Critical for Contributors:** Rules for creating new `TaskType` entities.
   * Safety protocols (Human-in-the-loop), UI feedback requirements, and configuration standards.
-* **[Product Page Guidelines](./task_product_page.md)**
+* **[Product Page Guidelines](tasks/task_product_page.md)**
   * Design and content standards for creating user-facing "Product Pages" for specific tasks.
 
 ---
@@ -95,9 +95,9 @@ Guidelines for extending the framework and maintaining quality.
 ## 🚀 Recommended Reading Path
 
 1. **New Users:** Start with **[Task Planning Overview](./taskplanning.md)** and *
-   *[Cognitive Modes](./cognitive_modes.md)** to understand what the system does.
+   *[Cognitive Modes](cognitive/cognitive_modes.md)** to understand what the system does.
 2. **Architects:** Read **[Strategic Extensibility](./strategies.md)** and **[Platform Architecture](./platform.md)** to
    understand the design philosophy.
 3. **Task Developers:** Read **[Actor Types](agent_types.md)**, **[Task Library](./task_type_docs.md)**, and *
-   *[Task Implementation Standards](task_type_best_practices.md)**.
+   *[Task Implementation Standards](tasks/task_type_best_practices.md)**.
 4. **UI/Web Developers:** Focus on **[Servlets](./servlets.md)** and **[Server-Driven UI](user_interface.md)**.
