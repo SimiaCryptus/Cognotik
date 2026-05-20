@@ -361,8 +361,8 @@ function ensureReadmeModal() {
                 </div>
                  <div class="app-readme-scroll-body" id="app-readme-scroll-body">
                      <div class="app-readme-body" id="app-readme-body"></div>
-                     <div class="app-readme-video-section" id="app-readme-video-section" style="display:none;"></div>
                      <div class="app-readme-examples-section" id="app-readme-examples-section" style="display:none;"></div>
+                     <div class="app-readme-video-section" id="app-readme-video-section" style="display:none;"></div>
                  </div>
                 <div class="button-group app-readme-actions">
                     <button class="button secondary" id="app-readme-close-btn">Close</button>

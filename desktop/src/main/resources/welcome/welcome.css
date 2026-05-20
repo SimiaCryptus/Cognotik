@@ -95,6 +95,17 @@ a:hover {
     font-size: 1.2em;
     color: var(--color-heading);
 }
+.logo-about-trigger {
+     transition: color var(--transition-base), opacity var(--transition-base);
+     border-radius: var(--radius-sm);
+     padding: 2px 4px;
+}
+.logo-about-trigger:hover,
+.logo-about-trigger:focus-visible {
+     color: var(--color-primary);
+     outline: none;
+     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+}
 
 .top-bar-spacer {
     flex: 1;

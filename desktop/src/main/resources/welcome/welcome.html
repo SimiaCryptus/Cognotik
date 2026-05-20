@@ -15,7 +15,10 @@
 <div class="top-bar">
     <div class="logo-container">
         <img alt="Cognotik Logo" class="logo" src="logo.svg">
-        <span class="logo-text">Cognotik</span>
+         <span class="logo-text logo-about-trigger" id="logo-about-trigger"
+               role="button" tabindex="0" title="About Cognotik"
+               aria-label="About Cognotik"
+               style="cursor:pointer;">Cognotik</span>
     </div>
     <div class="top-bar-spacer"></div>
      <select class="theme-selector" id="layout-selector" aria-label="Select layout" title="Select layout style">
@@ -495,6 +498,21 @@
                   title="Credits"></iframe>
       </div>
 </div>
+<!-- About Modal -->
+<div class="modal" id="about-modal">
+     <div class="modal-content modal-content-wide" style="max-height: 90vh; overflow-y: auto; padding: 0;">
+         <div style="position: sticky; top: 0; z-index: 10; display: flex; justify-content: flex-end;
+                     padding: 10px 14px; background: var(--color-surface);
+                     border-bottom: 1px solid var(--color-border);">
+             <span class="close" id="close-about-modal" style="float:none; line-height:1;">&times;</span>
+         </div>
+         <iframe id="about-iframe" src="about:blank"
+                 style="width: 100%; border: none; min-height: 600px; display: block;"
+                 title="About Cognotik"
+                 onload="this.style.height = (this.contentWindow.document.body.scrollHeight + 40) + 'px'">
+         </iframe>
+     </div>
+</div>
 
 <script src="modules/marked.min.js"></script>
 <script src="modules/constants.js"></script>
@@ -518,9 +536,9 @@
 <script src="modules/pipelineWizard.js"></script>
 
 <script src="welcome.js"></script>
-<script>
-    (function() {
-         const STORAGE_KEY = 'cognotik-theme';
+  <script>
+      (function() {
+           const STORAGE_KEY = 'cognotik-theme';
          const selector = document.getElementById('theme-selector');
          const root = document.documentElement;
          function applyTheme(theme) {
@@ -560,6 +578,48 @@
          } else {
              applyLayout(saved);
          }
+     })();
+</script>
+<script>
+     (function () {
+         // ===== About Modal =====
+         var aboutModal  = document.getElementById('about-modal');
+         var aboutIframe = document.getElementById('about-iframe');
+         var closeAbout  = document.getElementById('close-about-modal');
+         var trigger     = document.getElementById('logo-about-trigger');
+         var logoImg     = document.querySelector('.logo-container .logo');
+         function openAbout() {
+             if (aboutIframe.src === 'about:blank' || aboutIframe.src === '') {
+                 aboutIframe.src = 'about.html';
+             }
+             aboutModal.style.display = 'block';
+         }
+         function closeAboutModal() {
+             aboutModal.style.display = 'none';
+         }
+         if (trigger) {
+             trigger.addEventListener('click', openAbout);
+             trigger.addEventListener('keydown', function (e) {
+                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAbout(); }
+             });
+         }
+         // Also open on logo image click
+         if (logoImg) {
+             logoImg.style.cursor = 'pointer';
+             logoImg.setAttribute('title', 'About Cognotik');
+             logoImg.addEventListener('click', openAbout);
+         }
+         if (closeAbout) closeAbout.addEventListener('click', closeAboutModal);
+         if (aboutModal) {
+             aboutModal.addEventListener('click', function (e) {
+                 if (e.target === aboutModal) closeAboutModal();
+             });
+         }
+         document.addEventListener('keydown', function (e) {
+             if (e.key === 'Escape' && aboutModal && aboutModal.style.display === 'block') {
+                 closeAboutModal();
+             }
+         });
      })();
 </script>
 
