@@ -17,7 +17,7 @@ framework's extensibility.
   * Overview of the layered architecture (Service, Interface, Implementation).
   * Session management (Global vs. User sessions).
   * Data storage, authentication, and cloud integration.
-* **[Strategic Extensibility](./strategies.md)**
+* **[Strategic Extensibility](extend/strategies.md)**
   * **Must Read:** Explains the "Multiplicative Scaling" philosophy.
   * Deep dive into the Strategy Patterns used for Models, Providers, and Tasks.
   * Historical context on interoperability and AI-assisted development.
@@ -31,7 +31,7 @@ framework's extensibility.
 
 How the AI "thinks," assumes personas, and structures its reasoning.
 
-* **[Actor Types](agent_types.md)**
+* **[Actor Types](extend/agent_types.md)**
   * Guide to the base AI workers: `SimpleActor` (Text), `ParsedActor` (Structured Data), `CodingActor` (Code Gen), and
     `ImageActor`.
 * **[Cognitive Modes](cognitive/cognitive_modes.md)**
@@ -57,11 +57,11 @@ The core engine where AI logic meets actionable execution.
 
 The subsystems responsible for running code and applying AI-generated changes to source files.
 
-* **[Interpreter Subsystem](./interpreter.md)**
+* **[Interpreter Subsystem](extend/interpreter.md)**
   * Guide to the `Interpreter` interface.
   * Implementations for Kotlin, Groovy, and Shell execution.
   * Security and output interception.
-* **[Patch Processors](./patch_processors.md)**
+* **[Patch Processors](extend/patch_processors.md)**
   * Deep dive into the fuzzy matching algorithms used to apply AI code edits.
   * Explanation of different processors (CStyle, Python, Markdown, Strict vs. Lenient).
 
@@ -96,8 +96,8 @@ Guidelines for extending the framework and maintaining quality.
 
 1. **New Users:** Start with **[Task Planning Overview](./taskplanning.md)** and *
    *[Cognitive Modes](cognitive/cognitive_modes.md)** to understand what the system does.
-2. **Architects:** Read **[Strategic Extensibility](./strategies.md)** and **[Platform Architecture](./platform.md)** to
+2. **Architects:** Read **[Strategic Extensibility](extend/strategies.md)** and **[Platform Architecture](./platform.md)** to
    understand the design philosophy.
-3. **Task Developers:** Read **[Actor Types](agent_types.md)**, **[Task Library](./task_type_docs.md)**, and *
+3. **Task Developers:** Read **[Actor Types](extend/agent_types.md)**, **[Task Library](./task_type_docs.md)**, and *
    *[Task Implementation Standards](tasks/task_type_best_practices.md)**.
 4. **UI/Web Developers:** Focus on **[Servlets](./servlets.md)** and **[Server-Driven UI](user_interface.md)**.
