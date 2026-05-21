@@ -1,5 +1,6 @@
 # Writeable files and directories for this application
 # Uses .gitignore-style syntax (whitelist)
+idea.md
 
 # Project output folder and all contents
 code/

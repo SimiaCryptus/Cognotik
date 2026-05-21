@@ -1,6 +1,8 @@
 # .writeable - Whitelist of files and directories writable by the application
 # Uses .gitignore-style syntax: listed paths are ALLOWED to be written
 # Everything not listed here should be treated as read-only
+notes/**
+instruct.md
 
 # Article and essay outputs
 content.md
