@@ -19,11 +19,16 @@ import com.google.gson.reflect.TypeToken
 
 class UsageDB : UsageInterface {
 
-    override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
+    override fun incrementUsage(session: Session, user: User, model: AIModel, usage: ModelSchema.Usage) {
         try {
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
-            usageValues.addAndGet(tokens)
+            val scaledUsage = if (cost_scaling_factor != 1.0) {
+                usage.copy(cost = (usage.cost ?: 0.0) * cost_scaling_factor)
+            } else {
+                usage
+            }
+            usageValues.addAndGet(scaledUsage)
             val now = Instant.now()
             val day = LocalDate.ofInstant(now, ZoneOffset.UTC)
             facet.withTransaction { conn ->
@@ -34,7 +39,10 @@ class UsageDB : UsageInterface {
                     applyBudgetDelta(conn, user.email, -cost)
                 }
             }
-            log.info("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelId)
+            log.info(
+                "Usage incremented for session: {}, user: {}, model: {} (cost_scaling_factor={})",
+                session, user.email, model.modelId, cost_scaling_factor
+            )
         } catch (e: Exception) {
             log.error(
                 "Error incrementing usage for session={}, user={}, model={}", session, user.email, model.modelId, e
@@ -420,6 +428,13 @@ class UsageDB : UsageInterface {
 
     companion object {
         private val log = LoggerFactory.getLogger(UsageDB::class.java)
+
+        var cost_scaling_factor: Double = 1.0
+            set(value) {
+                require(value > 0) { "Cost scaling factor must be positive" }
+                log.warn("Setting cost scaling factor to {}. This will affect all future cost calculations. Current value: {}", value, field)
+                field = value
+            }
 
         /**
          * Schema DDL designed to be compatible across HSQL and PostgreSQL.

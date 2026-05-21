@@ -26,14 +26,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
       base = api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
       session = session,
-      onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-          session,
-          user,
-          model,
-          usage
-        )
-      },
+      user = user,
     )
   },
   val port: Int = Random.nextInt(1024, 65535),

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.ON_USAGE
 import com.simiacryptus.cognotik.platform.file.AuthenticationManager
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -70,13 +71,14 @@ object ApplicationServices {
             require(!isLocked) { "ApplicationServices is locked" }
             field = value
         }
-
 }
 
 open class FileApplicationServices(val rootDir: File) {
     open val dataStorageFactory: DataStorage by lazy { DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = metadataStorageFactory) }
     open val metadataStorageFactory: MetadataStorageDB by lazy { MetadataStorageDB() }
-    open val usageManager: UsageInterface by lazy { UsageDB() }
+    open val usageManager: UsageInterface by lazy { UsageDB().apply {
+        ON_USAGE = { model, usage, user, session -> this.incrementUsage(session, user, model, usage) }
+    } }
     open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsDB() }
 }
 

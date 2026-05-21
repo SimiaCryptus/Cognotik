@@ -334,14 +334,7 @@ fun ApiChatModel.instance(): ChatInterface? {
           AppSettingsState.localUser
         ),
         session = AppSettingsState.currentSession,
-        onUsage = { model, usage ->
-            usageManager.incrementUsage(
-                AppSettingsState.currentSession,
-              AppSettingsState.localUser,
-                model,
-                usage
-            )
-        },
+        user = AppSettingsState.localUser,
     )
 }
 

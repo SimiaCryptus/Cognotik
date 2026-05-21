@@ -29,14 +29,7 @@ open class PlanHarness(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
       base = api.apiBase ?: throw IllegalArgumentException("No API base found for provider: ${model.provider?.name}"),
       session = session,
-      onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-          session = session,
-          user,
-          model,
-          usage
-        )
-      },
+      user = user,
     )
   },
   val port: Int = Random.nextInt(1024, 65535),
@@ -126,14 +119,7 @@ open class PlanHarness(
           ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
         base = api.apiBase,
         session = session,
-        onUsage = { model, usage ->
-          ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-            session = session,
-            user,
-            model,
-            usage
-          )
-        },
+        user = user,
       )
     }
 

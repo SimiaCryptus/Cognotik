@@ -547,12 +547,5 @@ fun ApiChatModel.instance(
     temperature = temperature,
     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
     session = session,
-    onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-            session,
-            user,
-            model,
-            usage
-        )
-    }
+    user = user,
 )

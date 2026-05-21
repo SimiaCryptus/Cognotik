@@ -68,14 +68,7 @@ class BasicChatApp(
           temperature = settings.temperature,
           scheduledPool = threadPoolManager.getScheduledPool(session, user),
           session = session,
-          onUsage = { model: LLMModel, usage : Usage ->
-            fileApplicationServices().usageManager.incrementUsage(
-              session,
-              user,
-              model,
-              usage
-            )
-          },
+          user = user,
         )
       } else {
         log.warn("No API key found for model ${model} for user ${user.name}. This model will not be available in the chat session.")

@@ -783,7 +783,7 @@ class AppSettingsComponent : Disposable {
         AppSettingsState.instance.embeddingModel?.let { model ->
             this.embeddingModel.selectedItem = model
         }
-        AppSettingsState.instance.audioModel?.model?.let { modelId ->
+        AppSettingsState.instance.audioModel?.model?.modelId?.let { modelId ->
             this.audioModel.selectedItem = modelId
         }
         AppSettingsState.instance.processor.let { processor ->

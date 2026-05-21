@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
@@ -56,7 +57,7 @@ class ChatModel(
       )
     ),
     session: Session,
-    onUsage: (LLMModel, Usage) -> Unit = { _, _ -> },
+    user: User,
   ): ChatInterface = ChatInterface(
     logStreams = logStreams,
     key = key,
@@ -67,11 +68,14 @@ class ChatModel(
     modelType = this,
     workPool = workPool,
     scheduledPool = scheduledPool,
-    onUsage = onUsage,
     session = session,
+    onUsage = { model, usage -> ON_USAGE(model, usage, user, session) },
   )
 
   companion object {
+    var ON_USAGE : (LLMModel, Usage, User, Session) -> Unit = { model, usage, user, session ->
+      log.info("Model: ${model.modelId}, Prompt Tokens: ${usage.prompt_tokens}, Completion Tokens: ${usage.completion_tokens}, Total Tokens: ${usage.total_tokens}, User: ${user.id}")
+    }
     val NULL: ChatModel = ChatModel(
       name = "NULL",
       modelId = "NULL",

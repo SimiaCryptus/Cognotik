@@ -53,14 +53,7 @@ open class UnifiedHarness(
       })!!,
       base = api.apiBase,
       session = session,
-      onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-          session = session,
-          user,
-          model,
-          usage
-        )
-      },
+      user = user,
     )
   },
   val smartModel: ChatModel,

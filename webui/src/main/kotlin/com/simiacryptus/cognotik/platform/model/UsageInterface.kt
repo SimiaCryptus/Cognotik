@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.platform.model
 import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
 import java.time.LocalDate
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
@@ -51,9 +50,9 @@ interface UsageInterface {
      * @param session The session in which the usage occurred
      * @param user The user who initiated the AI model call
      * @param model The AI model that was used
-     * @param tokens The usage details including prompt tokens, completion tokens, and cost
+     * @param usage The usage details including prompt tokens, completion tokens, and cost
      */
-    fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage)
+    fun incrementUsage(session: Session, user: User, model: AIModel, usage: ModelSchema.Usage)
 
     /**
      * Clears all stored usage data.

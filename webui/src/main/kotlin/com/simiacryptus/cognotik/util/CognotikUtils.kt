@@ -74,15 +74,8 @@ object CognotikUtils {
       1.0,
       MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
       session = session,
-    ) { m: LLMModel?, usage: ModelSchema.Usage? ->
-      fileApplicationServices().usageManager.incrementUsage(
-        session,
-        user(),
-        m!!,
-        usage!!
-      )
-      Unit
-    }
+      user = user(),
+    )
   }
 
   @JvmStatic

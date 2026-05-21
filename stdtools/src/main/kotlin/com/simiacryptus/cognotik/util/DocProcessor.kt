@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -16,10 +15,6 @@ import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.Render
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.asApiChatModel
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.TEMPLATE_VAR_KEYS
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.extractPathFromMarkdownLink
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -34,7 +29,6 @@ import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.Duration
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture.allOf
@@ -43,43 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-/**
- * Status of a single target generation task
- */
-enum class TaskStatus {
-    PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
-}
-
-/**
- * Status entry for a single target generation task in docops.status.json
- */
-data class TaskStatusEntry(
-    val target: String,
-    val status: TaskStatus,
-    val sessionId: String? = null,
-    val startedAt: String? = null,
-    val completedAt: String? = null,
-    val error: String? = null
-)
-
-/**
- * Root structure for docops.status.json
- */
-data class DocOpsStatus(
-    val lastUpdated: String,
-    val tasks: Map<String, TaskStatusEntry>
-)
-
-
-/**
- * DocProcessor processes markdown documentation files that specify target files via frontmatter.
- *
- * Each markdown file can contain a YAML frontmatter block with a 'specifies' key that contains
- * a glob pattern (or multiple patterns). Files matching this pattern will be updated based on the markdown content.
- *
- * Additionally, a 'transforms' key can specify source->destination file transformations using regex
- * patterns with capture groups and backreferences.
- */
 class DocProcessor(
     val root: File,
     val docsFolder: File,
@@ -95,70 +52,19 @@ class DocProcessor(
     val autoFix: Boolean,
     val user: User,
     val parentSession: Session? = null,
-    /**
-     * Optional caller-provided template variable overrides. Values here take
-     * precedence over defaults declared in a markdown file's frontmatter
-     * (`template_vars`, `template_variables`, `vars`, or `variables`).
-     *
-     * Variables not declared in frontmatter but supplied here are still
-     * applied to both the body and the (stripped) frontmatter prior to
-     * re-parsing.
-     */
     val templateVarOverrides: Map<String, String> = emptyMap(),
-) {
-    private val statusFile = File(root, "docops.status.json")
+    var showMenubar: Boolean = true,
+) : DocStatus(root) {
 
-    private fun readStatusLocked(): DocOpsStatus {
-        return try {
-            if (statusFile.exists()) {
-                JsonUtil.fromJson(statusFile.readText(), DocOpsStatus::class.java)
-            } else {
-                DocOpsStatus(lastUpdated = nowTimestamp(), tasks = emptyMap())
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to read docops.status.json, starting fresh", e)
-            DocOpsStatus(lastUpdated = nowTimestamp(), tasks = emptyMap())
-        }
-    }
-
-    /**
-     * Update the status of a specific target task in a thread-safe manner.
-     */
     private fun updateTaskStatus(
         targetKey: String,
         status: TaskStatus,
         sessionId: String? = null,
         error: String? = null
     ) {
-        synchronized(statusLock) {
-            val current1 = readStatusLocked()
-            val existingEntry1 = current1.tasks[targetKey]
-            val now1 = nowTimestamp()
-            val updatedEntry1 = TaskStatusEntry(
-                target = targetKey,
-                status = status,
-                sessionId = sessionId ?: existingEntry1?.sessionId,
-                startedAt = if (status == TaskStatus.RUNNING) now1 else existingEntry1?.startedAt,
-                completedAt = if (status in setOf(
-                        TaskStatus.COMPLETED,
-                        TaskStatus.FAILED,
-                        TaskStatus.CANCELLED
-                    )
-                ) now1 else existingEntry1?.completedAt,
-                error = error
-            )
-            val updatedTasks1 = current1.tasks.toMutableMap()
-            updatedTasks1[targetKey] = updatedEntry1
-            statusFile.writeText(JsonUtil.toJson(DocOpsStatus(lastUpdated = now1, tasks = updatedTasks1)))
-            log.info("Updated status for target '$targetKey' to $status${error?.let { " with error: $it" } ?: ""}")
-            return
-        }
+        setTaskStatus(targetKey, status, sessionId, error)
     }
 
-    /**
-     * Mark all tasks currently in RUNNING status as the given status.
-     * Used for cleanup when the overall process times out or is interrupted.
-     */
     private fun markRunningTasksAs(status: TaskStatus, error: String? = null) {
         synchronized(statusLock) {
             val current1 = readStatusLocked()
@@ -173,17 +79,16 @@ class DocProcessor(
                     )
                 }
             }
-            statusFile.writeText(JsonUtil.toJson(DocOpsStatus(lastUpdated = now1, tasks = updatedTasks1)))
+            writeStatusLocked(DocOpsStatus(lastUpdated = now1, tasks = updatedTasks1))
             log.info("Marked all RUNNING tasks as $status${error?.let { " with error: $it" } ?: ""}")
             return
         }
     }
 
-
     /**
      * Initialize the status file with all planned tasks set to PENDING.
      */
-    private fun initializeStatus(tasks: List<ModificationTask>) {
+   fun initializeStatus(tasks: List<ModificationTask>) {
         synchronized(statusLock) {
             val now = nowTimestamp()
             val taskEntries = tasks.associate { task ->
@@ -206,27 +111,14 @@ class DocProcessor(
                 merged[key] = entry
             }
             log.info("Initialized status for ${taskEntries.size} tasks, preserving ${existing.tasks.count { it.value.status == TaskStatus.COMPLETED }} completed tasks from previous status")
-            statusFile.writeText(JsonUtil.toJson(DocOpsStatus(lastUpdated = now, tasks = merged)))
+            writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = merged))
         }
     }
 
-    private fun nowTimestamp(): String =
-        Instant.now().toString()
-
-
-    /**
-     * Check if a string is a URL (http or https)
-     */
     fun isUrl(path: String): Boolean {
         return path.startsWith("http://") || path.startsWith("https://")
     }
 
-    var showMenubar: Boolean = true
-
-    /**
-     * Fetch a URL and cache its content locally. Returns the local cached file.
-     * If the URL has already been fetched, returns the cached version.
-     */
     private fun fetchAndCacheUrl(url: String): File? {
         try {
             urlCacheDir.mkdirs()
@@ -307,11 +199,6 @@ class DocProcessor(
         }
     }
 
-    /**
-     * Resolve a related resource path. If it's a URL, fetch and cache it.
-     * If it's a local path, resolve it relative to the base directory.
-     * Returns the resolved File, or null if the resource couldn't be resolved.
-     */
     fun resolveRelatedResource(baseDirOrDocFile: File, relatedPath: String): File? {
         return if (isUrl(relatedPath)) {
             fetchAndCacheUrl(relatedPath)
@@ -324,12 +211,6 @@ class DocProcessor(
         }
     }
 
-    /**
-     * Resolve a related resource path, supporting glob patterns, URLs, and literal paths.
-     * For glob patterns (containing *, ?, or [), expands the pattern against the filesystem.
-     * For URLs, fetches and caches the content.
-     * For literal paths, returns the file even if it doesn't exist.
-     */
     fun resolveRelatedResources(baseDir: File, relatedPath: String): List<File> {
         return if (isUrl(relatedPath)) {
             listOfNotNull(fetchAndCacheUrl(relatedPath)?.absoluteFile)
@@ -350,7 +231,6 @@ class DocProcessor(
         }
     }
 
-
     data class DocSpec(
         val docFile: File,
         val specifies: List<String>,
@@ -366,26 +246,15 @@ class DocProcessor(
         val targetFolder: String? = null,
     )
 
-    /**
-     * Represents a file transformation specification.
-     * @param sourcePattern Regex pattern to match source files
-     * @param destinationPattern Destination pattern with backreferences (e.g., $1, $2)
-     */
     data class TransformSpec(
         val sourcePattern: String,
         val destinationPattern: String
     )
 
-    /**
-     * Represents a non-pattern-based generation specification.
-     * @param output The single output file path (relative to doc file)
-     * @param inputs List of glob patterns for input files to include as context
-     */
     data class GenerateSpec(
         val output: String,
         val inputs: List<String>
     )
-
 
     data class TransformMatch(
         val sourceFile: File,
@@ -487,26 +356,8 @@ class DocProcessor(
         return modificationTasksRecursive(docSpecs, emptySet(), 0)
     }
 
-    /**
-     * Normalize a file path for case-insensitive comparison.
-     * This ensures that targets are aggregated consistently regardless of case differences in paths.
-     */
     private fun normalizePath(path: String): String = path.lowercase()
 
-
-    /**
-     * Recursively compute modification tasks. After computing the initial set of targets,
-     * check if any newly-generated target files would match additional doc specs (via specifies,
-     * transforms, generates, or documents patterns). If so, treat those hypothetical files as
-     * existing and re-expand to discover transitive targets. This continues until a fixed-point
-     * is reached (no new targets are discovered), enabling proper dependency ordering for
-     * multi-stage build pipelines with intermediate artifacts.
-     *
-     * @param docSpecs The doc specifications to process
-     * @param knownTargets Set of target file paths already discovered in previous iterations
-     * @param depth Current recursion depth (bounded to prevent infinite loops)
-     * @return Complete list of modification tasks including transitively discovered ones
-     */
     private fun modificationTasksRecursive(
         docSpecs: List<DocSpec>,
         knownTargets: Set<String>,
@@ -558,16 +409,6 @@ class DocProcessor(
         return currentTasks
     }
 
-    /**
-     * Discover transitive targets: given a set of newly discovered target files (which don't
-     * exist on disk yet), check if any doc spec transform/specifies/generates patterns would
-     * match those hypothetical files and produce additional targets.
-     *
-     * @param docSpecs All doc specifications
-     * @param newTargetPaths Absolute paths of newly discovered targets
-     * @param allKnownTargets All targets discovered so far (to avoid re-discovering)
-     * @return Set of new transitive target absolute paths not yet in allKnownTargets
-     */
     private fun discoverTransitiveTargets(
         docSpecs: List<DocSpec>,
         newTargetPaths: Set<String>,
@@ -621,10 +462,6 @@ class DocProcessor(
         return transitiveTargets
     }
 
-    /**
-     * Build a single ModificationTask for a given target file path.
-     * Extracted from the inner loop of modificationTasks for reuse in recursive planning.
-     */
     private fun buildModificationTask(
         targetFile: String,
         fileToSpecs: Map<String, List<DocSpec>>,
@@ -741,10 +578,6 @@ class DocProcessor(
         }
     }
 
-    /**
-     * Resolve task config JSON overrides from frontmatter 'task_config_json' paths.
-     * Loads the referenced JSON file and returns its contents as a map, or null if not specified.
-     */
     private fun resolveTaskConfigJson(
         specs: List<DocSpec>,
         transforms: List<TransformMatch>,
@@ -783,11 +616,6 @@ class DocProcessor(
         return null
     }
 
-    /**
-     * Resolves the task type to use based on frontmatter specifications.
-     * Priority: specs > transforms > documents > generates, first non-null wins.
-     * Defaults to FileModification if no task type is specified.
-     */
     fun resolveTaskType(
         specs: List<DocSpec>,
         transforms: List<TransformMatch>,
@@ -1235,7 +1063,7 @@ class DocProcessor(
         task: SessionTask? = null,
         model: ChatInterface? = null
     ): TaskExecutionConfig {
-        val model = model ?: harness.fastModel.asApiChatModel(user).let {
+        val model = model ?: harness.fastModel.asChatInterface(user).let {
             if (task != null) it.getChildClient(task) else it
         }
         val data = mod.data.copy()
@@ -1257,38 +1085,34 @@ class DocProcessor(
 
             else -> {
                 // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
-                mod.patchProcessor?.apply {
-                    harness.processor = this
-                }
+                mod.patchProcessor?.apply { harness.processor = this }
                 val newRoot = data.main_file?.parentFile ?: root
                 val data = data.copy(root = newRoot)
-                val orchestrationConfig = harness.createSettings(
-                    session = Session.newUserID(),
-                    autoFix = true,
-                    typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
-                    workingDir = newRoot.toString(),
-                )
-                val contextMessages = buildList {
-                    add("Task type: ${mod.taskType.name}")
-                    add("Task description: ${data.task_description}")
-                    data.relative_files?.forEach { text -> add("Output file: $text") }
-                    data.relative_related_files?.forEach { relatedFile ->
-                        val resolvedFile =
-                            if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
-                        if (resolvedFile.exists()) {
-                            add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
-                        }
-                    }
-                    val message = mod.message()
-                    if (message.isNotBlank()) add(message)
-                }
                 val (_, taskConfig) = ConversationalMode.requestToTask(
                     defaultModel = model,
                     fastModel = model,
                     userMessage = data.task_description,
-                    orchestrationConfig = orchestrationConfig,
+                    orchestrationConfig = harness.createSettings(
+                        session = Session.newUserID(),
+                        autoFix = true,
+                        typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
+                        workingDir = newRoot.toString(),
+                    ),
                     prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
-                    history = contextMessages,
+                    history = buildList {
+                        add("Task type: ${mod.taskType.name}")
+                        add("Task description: ${data.task_description}")
+                        data.relative_files?.forEach { text -> add("Output file: $text") }
+                        data.relative_related_files?.forEach { relatedFile ->
+                            val resolvedFile =
+                                if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
+                            if (resolvedFile.exists()) {
+                                add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
+                            }
+                        }
+                        val message = mod.message()
+                        if (message.isNotBlank()) add(message)
+                    },
                     singleStage = true,
                     taskTypes = listOf(mod.taskType)
                 )
@@ -1329,14 +1153,6 @@ class DocProcessor(
     }
 
 
-    /**
-     * Sorts modification tasks so that dependencies are processed before dependents.
-     * Uses topological sorting with cycle detection - when cycles are encountered,
-     * the cycle is broken by processing one of the cycle members to allow progress.
-     *
-     * @param tasks The list of modification tasks to sort
-     * @return A sorted list where dependencies come before their dependents
-     */
     fun sortByDependencies(tasks: List<ModificationTask>): List<ModificationTask> {
         if (tasks.isEmpty()) return tasks
         // Build a map from target file path to task
@@ -1395,9 +1211,6 @@ class DocProcessor(
         return result
     }
 
-    /**
-     * Parse a markdown file and extract frontmatter with 'specifies' key
-     */
     fun parseMarkdownWithFrontmatter(file: File): DocSpec? {
         if (!file.exists() || !file.isFile) {
             log.warn("File does not exist or is not a file: ${file.absolutePath}")
@@ -1475,38 +1288,14 @@ class DocProcessor(
         )
     }
 
-    /**
-     * Parse 'update_mode' from frontmatter.
-     * This allows individual doc files to override the global update mode.
-     * Supported values: SkipExisting, OverwriteExisting, OverwriteToUpdate,
-     * PatchExisting, PatchToUpdate, ForceUpdate, ForceOverwrite
-     */
     fun parseUpdateMode(frontmatter: Map<String, Any>): String? {
         return frontmatter["update_mode"] as? String
     }
 
-    /**
-     * Parse 'root_override' from frontmatter.
-     * This allows individual doc files to specify a different root directory for task processing.
-     * The value is a relative path from the document file's parent directory.
-     * The resolved path must be strictly under the default root directory.
-     */
     fun parseFolder(frontmatter: Map<String, Any>): String? {
         return frontmatter["folder"] as? String
     }
 
-    /**
-     * Resolve the effective root directory for a given set of specs.
-     * Per-doc root_override in frontmatter takes priority.
-     * The resolved root must be strictly under (or equal to) the default root directory.
-     *
-     * @param specs The doc specifications to check for root_override
-     * @param transforms Transform matches to check for root_override
-     * @param documents Document matches to check for root_override
-     * @param generates Generate matches to check for root_override
-     * @return The resolved root directory
-     * @throws IllegalArgumentException if the resolved root is not under the default root
-     */
     fun resolveEffectiveRoot(
         specs: List<DocSpec>,
         transforms: List<TransformMatch> = emptyList(),
@@ -1534,11 +1323,6 @@ class DocProcessor(
         return resolvedRoot
     }
 
-    /**
-     * Resolve the effective update mode for a given set of specs.
-     * Per-doc update_mode in frontmatter takes priority over the global updateMode.
-     * If multiple specs specify different update modes, the first one wins.
-     */
     fun resolveUpdateMode(
         specs: List<DocSpec>,
         transforms: List<TransformMatch> = emptyList(),
@@ -1563,18 +1347,10 @@ class DocProcessor(
         }
     }
 
-    /**
-     * Parse 'task_type' from frontmatter.
-     * This specifies which task type to use for processing (defaults to FileModification).
-     */
     fun parseTaskType(frontmatter: Map<String, Any>): String? {
         return frontmatter["task_type"] as? String
     }
 
-    /**
-     * Parse 'task_config_json' from frontmatter.
-     * This specifies a relative file path to a JSON file containing task type configuration.
-     */
     fun parseTaskConfigJson(frontmatter: Map<String, Any>): String? {
         return frontmatter["task_config_json"] as? String
     }
@@ -1625,49 +1401,18 @@ class DocProcessor(
     companion object {
         private val log = LoggerFactory.getLogger(DocProcessor::class.java)
 
-        /**
-         * Regex matching a markdown link of the form `[label](target)`. The
-         * label may be empty and the target is captured in group 1. Whitespace
-         * around the target is tolerated.
-         */
         private val MARKDOWN_LINK_REGEX = Regex("""^\s*\[[^\]]*]\(\s*([^)\s]+)\s*\)\s*$""")
 
-        /**
-         * Extract the target path from a string that may be either a plain path
-         * or a markdown link of the form `[label](path)`. Returns the original
-         * string trimmed if no markdown link is detected.
-         */
         fun extractPathFromMarkdownLink(value: String): String {
             val match = MARKDOWN_LINK_REGEX.matchEntire(value) ?: return value.trim()
             return match.groupValues[1].trim()
         }
 
-        /**
-         * Apply [extractPathFromMarkdownLink] to every element of a list.
-         */
         fun extractPathsFromMarkdownLinks(values: List<String>): List<String> =
             values.map { extractPathFromMarkdownLink(it) }
 
-        /**
-         * Frontmatter keys recognized as template variable declarations.
-         * These keys are stripped from the frontmatter before re-parsing the
-         * substituted YAML, so they never appear as ordinary fields.
-         */
         val TEMPLATE_VAR_KEYS = setOf("template_vars", "template_variables", "vars", "variables")
 
-        /**
-         * List the template variable keys (and their declared default values)
-         * available in a given markdown document with frontmatter.
-         *
-         * Reads the file, extracts the YAML frontmatter (if present), and
-         * returns the parsed template variable declarations from any of the
-         * recognized [TEMPLATE_VAR_KEYS]. Returns an empty map if the file
-         * does not exist, has no frontmatter, or declares no template
-         * variables.
-         *
-         * @param file The markdown file to scan.
-         * @return Ordered map of variable name -> default value (possibly empty).
-         */
         fun listTemplateVarKeys(file: File): Map<String, String> {
             if (!file.exists() || !file.isFile) {
                 log.debug("listTemplateVarKeys: file does not exist or is not a file: ${file.absolutePath}")
@@ -1692,18 +1437,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Convenience overload that returns just the variable names (keys),
-         * preserving declaration order.
-         */
-        fun listTemplateVarKeyNames(file: File): List<String> =
-            listTemplateVarKeys(file).keys.toList()
-
-        /**
-         * Aggregate template variable declarations across multiple markdown
-         * files. When the same variable is declared in multiple files with
-         * different defaults, the first encountered default wins.
-         */
         fun listTemplateVarKeys(files: Iterable<File>): Map<String, String> {
             val merged = linkedMapOf<String, String>()
             for (file in files) {
@@ -1715,29 +1448,6 @@ class DocProcessor(
             return merged
         }
 
-        /**
-         * Parse template variable declarations from frontmatter.
-         *
-         * Supported formats under any of the recognized keys
-         * ([TEMPLATE_VAR_KEYS]):
-         *
-         *  - Map form (preferred):
-         *      template_vars:
-         *        MY_VAR: default value
-         *        OTHER: another default
-         *
-         *  - List form (each item is "KEY: default" or "KEY=default"):
-         *      template_vars:
-         *        - MY_VAR: default value
-         *        - OTHER=another default
-         *
-         * Note: Because [parseFrontmatter] currently produces map values as raw
-         * strings or lists of strings, the map form may be received as a list of
-         * "KEY: value" strings (one per indented line). Both representations are
-         * accepted here.
-         *
-         * @return Map of variable name -> default string value. Empty if none.
-         */
         fun parseTemplateVars(frontmatter: Map<String, Any>): Map<String, String> {
             val result = linkedMapOf<String, String>()
             for (key in TEMPLATE_VAR_KEYS) {
@@ -1783,12 +1493,6 @@ class DocProcessor(
             return result
         }
 
-        /**
-         * Replace every occurrence of `{{KEY}}` in [text] with the corresponding
-         * value from [vars]. Whitespace inside the braces is tolerated (e.g.
-         * `{{ KEY }}`). Unknown variables are left untouched so that downstream
-         * stages can either substitute them or surface them as-is.
-         */
         fun applyTemplateSubstitutions(text: String, vars: Map<String, String>): String {
             if (vars.isEmpty()) return text
             val pattern = Regex("""\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*}}""")
@@ -1804,15 +1508,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Render a parsed frontmatter map back to a YAML-ish string that
-         * [parseFrontmatter] can re-parse. Only the value shapes produced by
-         * [parseFrontmatter] are supported (String and List<String>). Other
-         * types are converted via toString().
-         *
-         * This is intentionally minimal: it exists solely to allow template
-         * substitution to be applied to frontmatter values and then re-parsed.
-         */
         fun renderFrontmatterToYaml(frontmatter: Map<String, Any>): String {
             val sb = StringBuilder()
             for ((key, value) in frontmatter) {
@@ -1842,19 +1537,10 @@ class DocProcessor(
             return sb.toString()
         }
 
-
-        /**
-         * Check if a pattern contains glob wildcards
-         */
         fun isGlobPattern(pattern: String): Boolean {
             return pattern.contains("*") || pattern.contains("?") || pattern.contains("[")
         }
 
-        /**
-         * Expand a pattern that may be either a glob or a literal file path.
-         * For literal paths (no wildcards), returns the file even if it doesn't exist yet.
-         * For glob patterns, only returns existing files that match.
-         */
         fun expandPatternOrLiteral(baseDir: File, pattern: String): List<File> {
             return if (isGlobPattern(pattern)) {
                 // It's a glob pattern - only return existing files
@@ -1875,9 +1561,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Expand a simple glob pattern (e.g., *.kt) in a specific directory
-         */
         fun expandSimpleGlob(baseDir: File, pattern: String): List<File> {
             // Resolve the pattern relative to the base directory (document's parent)
             val patternFile = File(pattern)
@@ -1952,15 +1635,6 @@ class DocProcessor(
                 .filter { it.isFile && matcher.matches(it.toPath().fileName) }
         }
 
-        /**
-         * Parse 'transforms' from frontmatter.
-         * Supports formats:
-         * - Single: "transforms: pattern -> destination"
-         * - List:
-         *   transforms:
-         *     - "pattern1 -> destination1"
-         *     - "pattern2 -> destination2"
-         */
         fun parseTransforms(frontmatter: Map<String, Any>): List<TransformSpec> {
             val transformValue = frontmatter["transforms"] ?: return emptyList()
             val transformStrings = when (transformValue) {
@@ -1983,11 +1657,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Parse 'documents' from frontmatter (supports single value or list)
-         * This is the reverse of 'specifies' - the document itself is the target,
-         * and the matching files are the supporting context.
-         */
         fun parseDocuments(frontmatter: Map<String, Any>): List<String> {
             return when (val value = frontmatter["documents"]) {
                 is String -> listOf(extractPathFromMarkdownLink(value))
@@ -1996,10 +1665,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Parse 'related' from frontmatter (supports single value or list)
-         * These are additional files to include as context in modification tasks.
-         */
         fun parseRelated(frontmatter: Map<String, Any>): List<String> {
             return when (val value = frontmatter["related"]) {
                 is String -> listOf(extractPathFromMarkdownLink(value))
@@ -2035,9 +1700,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Parse a single generate spec from a map
-         */
         private fun parseGenerateSpec(map: Map<*, *>): GenerateSpec? {
             val output = (map["output"] as? String)?.let { extractPathFromMarkdownLink(it) } ?: return null
             val inputs = when (val inputsValue = map["inputs"]) {
@@ -2052,9 +1714,6 @@ class DocProcessor(
             return GenerateSpec(output = output, inputs = inputs)
         }
 
-        /**
-         * Parse 'specifies' from frontmatter (supports single value or list)
-         */
         fun parseSpecifies(frontmatter: Map<String, Any>): List<String> {
             return when (val value = frontmatter["specifies"]) {
                 is String -> listOf(extractPathFromMarkdownLink(value))
@@ -2063,9 +1722,6 @@ class DocProcessor(
             }
         }
 
-        /**
-         * Parse YAML frontmatter into a map (supports simple values and lists)
-         */
         fun parseFrontmatter(text: String): Map<String, Any> {
             val result = mutableMapOf<String, Any>()
             val lines = text.lines()
@@ -2099,13 +1755,6 @@ class DocProcessor(
             return result
         }
 
-        /**
-         * Apply backreference substitutions to a destination pattern using regex matcher groups.
-         * Supports arithmetic modifiers on capture groups, e.g.:
-         * - $1 -> replaced with group 1
-         * - $2+1 -> if group 2 is numeric, replaced with (group2 + 1); otherwise replaced with group2 + "+1"
-         * - $0-5 -> if group 0 is numeric, replaced with (group0 - 5); otherwise replaced with group0 + "-5"
-         */
         fun applyBackreferences(destPattern: String, matcher: Matcher): String {
             var result = destPattern
             // Match backreferences like $0, $1, $2+1, $3-10, etc.
@@ -2140,10 +1789,6 @@ class DocProcessor(
             return result
         }
 
-
-        /**
-         * Expand a single transform pattern to file matches
-         */
         fun expandTransformPattern(
             root: File,
             transform: TransformSpec,
@@ -2194,19 +1839,5 @@ class DocProcessor(
                 ), concurrency
             )
 
-        private val statusLock = Any()
     }
-}
-
-fun ChatModel.asApiChatModel(
-    user: User
-): ChatInterface {
-    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
-    val name = provider?.name
-    if (name == null) {
-        throw IllegalStateException("Provider not specified for model $modelId")
-    }
-    val secureString = (userSettings.apis.find { it.provider?.name == name }?.key
-        ?: throw IllegalStateException("API key for model provider $name not found in user settings"))
-    return asApiChatModel((secureString).decrypt!!).instance(user)
 }
