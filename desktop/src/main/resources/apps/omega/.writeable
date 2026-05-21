@@ -1,0 +1,32 @@
+# .writeable — Application write-access whitelist
+# Syntax mirrors .gitignore: patterns are relative to the project root.
+# Only paths matched here may be written by the DocOps pipeline.
+# Lines beginning with # are comments; blank lines are ignored.
+
+# ── User-authored input files ──────────────────────────────────────────────
+# These are created/edited by the user and consumed by the pipeline.
+idea.md
+pipeline_notes.md
+ui_notes.md
+
+# ── Requirements lifecycle files ──────────────────────────────────────────
+# Produced and refined by requirements_op, review_requirements_op,
+# and refine_requirements_op.
+requirements.md
+requirements_review.md
+
+# ── Generated application — pipeline ops ──────────────────────────────────
+# All op files and supporting JSON configs produced by generate_pipeline_op
+# and update_pipeline_op live here.
+generated_app/ops/
+
+# ── Generated application — UI and documentation ──────────────────────────
+# The single-file UI (index.html) and README produced by generate_ui_op
+# and update_ui_op.
+generated_app/index.html
+generated_app/README.md
+
+# ── DocOps runtime artefacts ──────────────────────────────────────────────
+# Status and task-tracking files written by the DocOps servlet itself.
+docops.status.json
+generated_app/docops.status.json

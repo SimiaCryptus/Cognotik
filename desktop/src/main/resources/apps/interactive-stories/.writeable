@@ -1,0 +1,19 @@
+# Writeable paths whitelist
+# This file uses .gitignore-style patterns to specify which files and
+# directories the application is permitted to write to.
+
+# Story node markdown files (initial node and all choice branches)
+story/0.md
+story/*.md
+
+# Story media assets (images and audio for all nodes)
+story/*.png
+story/*.wav
+
+# Persistent world-building and style reference files
+story/world_facts.md
+story/image_style.md
+story/audio_style.md
+
+# Application stylesheet
+style.css

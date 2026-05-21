@@ -78,6 +78,18 @@ object IgnoreFileUtil {
         markerFileName = ".hidden",
         alwaysIgnored = emptySet(),
     )
+    /**
+     * Predefined spec for `.writeable`. When present, acts as a whitelist:
+     * only paths matching patterns in this file are considered writeable;
+     * everything else within the scope of the `.writeable` file is read-only.
+     * Uses the `.writeable` file itself as the marker so the scope is bounded
+     * to the directory tree containing it.
+     */
+    val WRITEABLE = IgnoreSpec(
+        ignoreFileName = ".writeable",
+        markerFileName = ".writeable",
+        alwaysIgnored = emptySet(),
+    )
 
 
     private data class IgnoreCache(
@@ -116,7 +128,11 @@ object IgnoreFileUtil {
                 try {
                     // Handle negation patterns (starting with !)
                     val isNegation = pattern.startsWith("!")
-                    val cleanPattern = if (isNegation) pattern.substring(1) else pattern
+                    val rawPattern = if (isNegation) pattern.substring(1) else pattern
+                    // A trailing slash (gitignore convention) means "directory":
+                    // match the directory itself and anything under it.
+                    val dirOnly = rawPattern.endsWith("/")
+                    val cleanPattern = if (dirOnly) rawPattern.trimEnd('/') else rawPattern
 
                     val regexPattern = buildString {
                         append("^")
@@ -129,7 +145,12 @@ object IgnoreFileUtil {
                                 else -> append(Regex.escape(char.toString()))
                             }
                         }
-                        append("$")
+                        if (dirOnly) {
+                            // Match the directory itself OR any path under it
+                            append("([/\\\\].*)?$")
+                        } else {
+                            append("$")
+                        }
                     }
                     Regex(regexPattern)
                 } catch (e: Exception) {

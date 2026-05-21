@@ -1,0 +1,25 @@
+# .writeable - Whitelist of files and directories writable by the application
+# Uses .gitignore-style syntax: listed paths are ALLOWED to be written
+# Everything not listed here should be treated as read-only
+
+# Article and essay outputs
+content.md
+summary.md
+brainstorm.md
+
+# Analytical outputs
+dialectical.md
+gametheory.md
+perspectives.md
+persuasive.md
+socratic.md
+
+# Narrative and creative outputs
+narrative.md
+comic.md
+
+# Technical outputs
+technical_explanation.md
+
+# Web outputs
+page.html

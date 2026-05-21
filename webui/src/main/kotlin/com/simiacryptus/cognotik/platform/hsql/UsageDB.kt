@@ -431,7 +431,7 @@ class UsageDB : UsageInterface {
 
         var cost_scaling_factor: Double = 1.0
             set(value) {
-                require(value > 0) { "Cost scaling factor must be positive" }
+                require(value >= 0.0) { "Cost scaling factor must be non-negative" }
                 log.warn("Setting cost scaling factor to {}. This will affect all future cost calculations. Current value: {}", value, field)
                 field = value
             }
