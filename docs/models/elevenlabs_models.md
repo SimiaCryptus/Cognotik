@@ -7,5 +7,3 @@ related:
 ---
 
 # [ElevenLabs  Models](../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/ElevenLabsModels.kt)
-
-IMPORTANT: Review/fix/update the listed models' input and output modalities

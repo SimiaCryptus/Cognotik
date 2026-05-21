@@ -7,6 +7,3 @@ related:
 ---
 
 # [GeminiModels.kt](../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt)
-
-
-IMPORTANT: Review/fix/update the listed models' input and output modalities

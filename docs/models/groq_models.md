@@ -6,5 +6,3 @@ related:
 ---
 
 # [Groq Models](../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GroqModels.kt)
-
-IMPORTANT: Review/fix/update the listed models' input and output modalities
