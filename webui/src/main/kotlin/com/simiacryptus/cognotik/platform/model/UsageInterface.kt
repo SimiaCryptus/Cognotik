@@ -126,6 +126,7 @@ interface UsageInterface {
      * @return A list of [CreditEntry] records ordered by ascending datetime
      */
     fun getUserCredits(user: User, from: LocalDate, to: LocalDate): List<CreditEntry>
+    fun getUserBalance(userId: String) :  Double
 
     /**
      * Represents a single credit ledger entry for a user.

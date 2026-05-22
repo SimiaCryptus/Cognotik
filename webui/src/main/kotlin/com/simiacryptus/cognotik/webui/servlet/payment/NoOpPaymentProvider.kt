@@ -14,10 +14,18 @@ import java.time.Instant
  * Suitable for internal / development deployments where budgeting is
  * enforced by policy rather than by actual monetary transactions.
  */
-class NoOpPaymentProvider(private val usageDB: UsageInterface) : PaymentProvider {
+class NoOpPaymentProvider(
+    private val usageDB: UsageInterface,
+    val authorizedUsers: List<String>? = null
+) : PaymentProvider {
 
     override val name: String = "No-op (self-service)"
     override val requiresPayment: Boolean = false
+     override fun isAuthorized(user: User): Boolean {
+         val list = authorizedUsers ?: return true
+         return list.contains(user.email)
+     }
+
 
     override fun initiateCheckout(
         req: HttpServletRequest,
@@ -26,6 +34,12 @@ class NoOpPaymentProvider(private val usageDB: UsageInterface) : PaymentProvider
         amount: Double,
         orderId: String
     ): PaymentProvider.CheckoutResult {
+         if (!isAuthorized(user)) {
+             log.warn("Unauthorized credit attempt: user=${user.email} amount=$amount order=$orderId")
+             return PaymentProvider.CheckoutResult.Failed(
+                 "You are not authorized to use this payment method. Please contact support."
+             )
+        }
         val timestamp = Instant.now().toString()
         return try {
             val newBudget = usageDB.creditUser(

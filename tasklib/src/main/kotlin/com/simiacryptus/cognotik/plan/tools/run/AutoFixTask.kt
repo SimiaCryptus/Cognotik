@@ -78,9 +78,9 @@ class AutoFixTask(
   )
 
   data class CommandWithWorkingDir(
-    @Description("The executable to be run, as a relative path or simple command name.")
+    @Description("The executable to be run, as a relative path or simple command name. DO NOT invoke a shell unless specifically instructed. DO NOT use shell features like &&, |, >, etc. These features are provided by the requested script and the runtime harness.")
     var executable: String = "",
-    @Description("The arguments for the command; optional")
+    @Description("The arguments for the command; optional. DOES NOT SUPPORT shell features, such as quoting, &&, |, >, etc.")
     var arguments: MutableList<String> = ArrayList(),
     @Description("The relative path of the working directory for this command, relative to the project root. Null means the project root.")
     var working_dir: String? = null

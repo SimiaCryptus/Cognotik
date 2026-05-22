@@ -30,6 +30,19 @@ interface PaymentProvider {
      * Used by the UI to show/hide the "no payment processed" notice.
      */
     val requiresPayment: Boolean
+     /**
+      * Whether the given [user] is authorized to use this payment provider.
+      *
+      * Implementations can use this to restrict access (e.g. an allow-list
+      * of internal users for a no-op provider).  The default implementation
+      * allows all users.
+      *
+      * The UI uses this to hide providers from users who can't use them,
+      * avoiding teasing them with features (such as self-service credit
+      * issuance) reserved for administrators.
+      */
+     fun isAuthorized(user: User): Boolean = true
+
 
     /**
      * Called when the user confirms their order on the review page.

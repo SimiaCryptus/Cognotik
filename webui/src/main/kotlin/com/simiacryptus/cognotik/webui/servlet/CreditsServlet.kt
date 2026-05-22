@@ -25,15 +25,44 @@ import java.util.*
  * without any real payment processing (original behaviour).
  */
 open class CreditsServlet(
-    private val provider: PaymentProvider?
+     private vararg val providers: PaymentProvider
 ) : HttpServlet() {
 
     val usageDB: UsageInterface by lazy { ApplicationServices.fileApplicationServices().usageManager }
 
     private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
+      /**
+       * Providers visible to (and usable by) the given user.  Filters out
+       * providers that have explicitly denied authorization for the user,
+       * so the UI never teases admin-only payment methods.
+       */
+      private fun authorizedProviders(user: User): List<PaymentProvider> =
+          providers.filter { it.isAuthorized(user) }
+
+      private fun resolveProvider(req: HttpServletRequest, user: User): PaymentProvider {
+          val available = authorizedProviders(user)
+          if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
+          val requested = req.getParameter("provider")
+          if (requested != null) {
+              available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
+          }
+          return available.first()
+      }
+
+      private fun defaultProvider(user: User): PaymentProvider {
+          val available = authorizedProviders(user)
+          if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
+          return available.first()
+      }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
+         if (authorizedProviders(user).isEmpty()) {
+             resp.status = HttpServletResponse.SC_FORBIDDEN
+             renderError(resp, "You are not authorized to purchase credits. Please contact support.")
+             return
+         }
+
 
         when (req.getParameter("step")?.lowercase()) {
             "review" -> renderReview(req, resp, user)
@@ -46,6 +75,12 @@ open class CreditsServlet(
 
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
+         if (authorizedProviders(user).isEmpty()) {
+             resp.status = HttpServletResponse.SC_FORBIDDEN
+             renderError(resp, "You are not authorized to purchase credits. Please contact support.")
+             return
+         }
+
 
         val amount = parseAmount(req)
         if (amount == null || amount <= 0.0) {
@@ -57,7 +92,12 @@ open class CreditsServlet(
         val cappedAmount = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
         val orderId = UUID.randomUUID().toString().take(8).uppercase()
 
-        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+          val provider = resolveProvider(req, user)
+          if (!provider.isAuthorized(user)) {
+              resp.status = HttpServletResponse.SC_FORBIDDEN
+              renderError(resp, "You are not authorized to use this payment method. Please contact support.")
+              return
+          }
         when (val result = provider.initiateCheckout(req, resp, user, cappedAmount, orderId)) {
             is PaymentProvider.CheckoutResult.Completed -> {
                 log.info(
@@ -68,7 +108,8 @@ open class CreditsServlet(
                     "?step=receipt" +
                             "&order=${result.orderId}" +
                             "&amount=${result.amount}" +
-                            "&balance=${result.newBudget}"
+                             "&balance=${result.newBudget}" +
+                             "&provider=${provider.name}"
                 )
             }
 
@@ -84,7 +125,7 @@ open class CreditsServlet(
     }
 
     private fun handleProviderCallback(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+          val provider = resolveProvider(req, user)
         when (val result = provider.handleCallback(req, resp, user)) {
             is PaymentProvider.CheckoutResult.Completed -> {
                 log.info(
@@ -95,7 +136,8 @@ open class CreditsServlet(
                     "?step=receipt" +
                             "&order=${result.orderId}" +
                             "&amount=${result.amount}" +
-                            "&balance=${result.newBudget}"
+                             "&balance=${result.newBudget}" +
+                             "&provider=${provider.name}"
                 )
             }
 
@@ -125,7 +167,8 @@ open class CreditsServlet(
 
 
     private fun renderCheckout(response: HttpServletResponse, user: User) {
-        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+          val available = authorizedProviders(user)
+          val provider = available.first()
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
 
@@ -133,22 +176,50 @@ open class CreditsServlet(
         val budgetHtml = if (budget != null) {
             """<div class="budget">Current balance: <strong>${"%.4f".format(budget)}</strong></div>"""
         } else ""
-        val paymentNotice = if (!provider.requiresPayment) {
-            """
-             <div class="notice">
-                 <strong>Notice:</strong> This is a self-service credit top-up.
-                 No payment is processed. Credits applied here are governed by
-                 your account's budgeting policy and audited via ledger entries.
-             </div>
-             """.trimIndent()
-        } else {
-            """
-             <div class="notice">
-                 <strong>Payment provider:</strong> ${provider.name}.
-                 You will be redirected to complete payment before credits are applied.
-             </div>
-             """.trimIndent()
-        }
+          val paymentNotice = if (available.size > 1) {
+             """
+              <div class="notice">
+                  <strong>Multiple payment providers available.</strong> Select your preferred method below.
+              </div>
+              """.trimIndent()
+         } else if (!provider.requiresPayment) {
+             """
+              <div class="notice">
+                  <strong>Notice:</strong> This is a self-service credit top-up.
+                  No payment is processed. Credits applied here are governed by
+                  your account's budgeting policy and audited via ledger entries.
+              </div>
+              """.trimIndent()
+         } else {
+             """
+              <div class="notice">
+                  <strong>Payment provider:</strong> ${provider.name}.
+                  You will be redirected to complete payment before credits are applied.
+              </div>
+              """.trimIndent()
+         }
+
+          val providerSelection = if (available.size > 1) {
+              val providerOptions = available.mapIndexed { idx, p ->
+                 val checked = if (idx == 0) "checked" else ""
+                 val desc = if (p.requiresPayment) "External payment" else "Self-service (no payment)"
+                 """
+                     <label class="pkg-card">
+                         <input type="radio" name="provider" value="${p.name}" $checked/>
+                         <div class="pkg-title">${p.name}</div>
+                         <div class="pkg-desc">$desc</div>
+                     </label>
+                     """.trimIndent()
+             }.joinToString("\n")
+             """
+                 <h2>Select a payment method</h2>
+                 <div class="pkg-grid">
+                     $providerOptions
+                 </div>
+                 """.trimIndent()
+         } else {
+             """<input type="hidden" name="provider" value="${provider.name}"/>"""
+         }
 
 
         val packageCards = PACKAGES.joinToString("\n") { pkg ->
@@ -178,6 +249,7 @@ open class CreditsServlet(
                      $paymentNotice
                     <form method="get" action="">
                         <input type="hidden" name="step" value="review"/>
+                         $providerSelection
                         <h2>Select a package</h2>
                         <div class="pkg-grid">
                             $packageCards
@@ -193,7 +265,7 @@ open class CreditsServlet(
                         </div>
                         <div class="actions">
                              <button type="submit" class="btn-primary">
-                                 ${if (provider.requiresPayment) "Continue to Payment &rarr;" else "Continue &rarr;"}
+                                  Continue &rarr;
                              </button>
                             <a href="/usage" class="btn-link">View usage</a>
                         </div>
@@ -206,7 +278,12 @@ open class CreditsServlet(
     }
 
     private fun renderReview(request: HttpServletRequest, response: HttpServletResponse, user: User) {
-        val provider = provider ?: throw RuntimeException("No payment provider configured for CreditsServlet")
+          val provider = resolveProvider(request, user)
+          if (!provider.isAuthorized(user)) {
+              response.status = HttpServletResponse.SC_FORBIDDEN
+              renderError(response, "You are not authorized to use this payment method. Please contact support.")
+              return
+          }
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
 
@@ -230,7 +307,7 @@ open class CreditsServlet(
         val paymentMethodRow = if (provider.requiresPayment) {
             "<tr><th>Payment method</th><td><em>${provider.name}</em></td></tr>"
         } else {
-            "<tr><th>Payment method</th><td><em>No-op (self-service)</em></td></tr>"
+             "<tr><th>Payment method</th><td><em>${provider.name} (self-service)</em></td></tr>"
         }
         val confirmLabel = if (provider.requiresPayment) "Proceed to Payment &rarr;" else "Confirm &amp; Apply Credits"
 
@@ -259,6 +336,7 @@ open class CreditsServlet(
                      $providerExtras
                     <form method="post" action="">
                         <input type="hidden" name="amount" value="$capped"/>
+                         <input type="hidden" name="provider" value="${provider.name}"/>
                         <div class="actions">
                              <button type="submit" class="btn-primary">$confirmLabel</button>
                             <a href="?" class="btn-link">Back</a>

@@ -256,6 +256,18 @@ class UsageDB : UsageInterface {
         }
     }
 
+    override fun getUserBalance(userId: String): Double {
+        if (userId.isEmpty()) return 0.0
+        return facet.withConnection { conn ->
+            conn.prepareStatement("SELECT available FROM user_budget WHERE user_id = ?").use { stmt ->
+                stmt.setString(1, userId)
+                stmt.executeQuery().use { rs ->
+                    if (rs.next()) rs.getDouble(1) else 0.0
+                }
+            }
+        }
+    }
+
 
     private fun collectSessionIds(conn: Connection, sessionId: String): Set<String> {
         val visited = linkedSetOf<String>()
