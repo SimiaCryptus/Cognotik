@@ -14,7 +14,8 @@
       ],
       "videoUrl": "https://cognotik.com/tours/core/edit/philosophical-calculator.mp4",
       "exampleSessions": {
-        "The Algorithmic Crucible": "https://hosted.cognotik.com/philosophical-calculator/fileIndex/G-20260520-hBbPM5oP/app.html"
+        "The Algorithmic Crucible": "https://hosted.cognotik.com/philosophical-calculator/fileIndex/G-20260520-hBbPM5oP/app.html",
+        "The Ghost in the Assembly Line": "https://hosted.cognotik.com/philosophical-calculator/fileIndex/G-20260522-ZaaytZ8t/app.html"
       }
     },
     {
@@ -49,6 +50,7 @@
       ],
       "videoUrl": "https://cognotik.com/tours/core/edit/sys-wizard.mp4",
       "exampleSessions": {
+        "Test": "https://hosted.cognotik.com/sys-wizard/fileIndex/G-20260522-b1OnXj8g/app.html"
       }
     },
     {
@@ -66,6 +68,7 @@
       ],
       "videoUrl": "https://cognotik.com/tours/core/edit/interactive-stories.mp4",
       "exampleSessions": {
+        "The Lighthouse at the Edge of Memory": "https://hosted.cognotik.com/interactive-stories/fileIndex/G-20260521-6p1PBuPB/app.html"
       }
     },
     {
