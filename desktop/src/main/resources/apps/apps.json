@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "Quiz Whiz",
+      "name": "Quiz Wiz",
       "icon": "🧠",
       "description": "Turn a plain-English quiz idea into a fully working, playable web-based quiz game through a multi-step AI pipeline that designs, generates data, and implements the code.",
       "badge": null,
