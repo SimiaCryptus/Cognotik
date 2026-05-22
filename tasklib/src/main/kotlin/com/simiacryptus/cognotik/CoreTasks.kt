@@ -71,7 +71,9 @@ object CoreTasks : CognotikPlugin {
         "1" to AutoFixTask.AutoFixTaskExecutionConfigData(
           task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
             AutoFixTask.CommandWithWorkingDir(
-              command = mutableListOf("echo", "Hello, World!"), working_dir = "."
+              executable = "echo",
+              arguments = mutableListOf("Hello, World!"),
+              working_dir = "."
             )
           )
         ), "2" to FileModificationTask.FileModificationTaskExecutionConfigData(

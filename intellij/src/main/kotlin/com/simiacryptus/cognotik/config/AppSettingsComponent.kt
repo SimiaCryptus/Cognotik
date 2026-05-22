@@ -672,7 +672,7 @@ class AppSettingsComponent : Disposable {
                 emptyMap()
             }
             availableAudioModels.forEach {
-                this.audioModel.addItem(it.value.modelId)
+             this.audioModel.addItem(it.value.modelId as String)
             }
         } catch (e: Exception) {
             log.error("Error loading audio models: ${e.message}", e)
@@ -784,7 +784,7 @@ class AppSettingsComponent : Disposable {
             this.embeddingModel.selectedItem = model
         }
         AppSettingsState.instance.audioModel?.model?.modelId?.let { modelId ->
-            this.audioModel.selectedItem = modelId
+             this.audioModel.selectedItem = modelId as String
         }
         AppSettingsState.instance.processor.let { processor ->
             this.patchProcessor.selectedItem = processor.label

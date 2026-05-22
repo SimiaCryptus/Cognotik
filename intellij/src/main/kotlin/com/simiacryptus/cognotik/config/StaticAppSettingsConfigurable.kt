@@ -440,7 +440,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
             settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
             settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelId }
-            settings.audioModel?.model?.let { component.audioModel.selectedItem = it }
+             settings.audioModel?.model?.let { component.audioModel.selectedItem = it.modelId }
             component.devActions.isSelected = settings.devActions
             component.temperature.text = settings.temperature.toString()
             component.embeddingModel.selectedItem = settings.embeddingModel
@@ -479,7 +479,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val smartModelName = component.smartModel.selectedItem as String?
             val imageChatModelName = component.imageChatModel.selectedItem as String?
             val imageModelName = component.mainImageModel.selectedItem as String?
-            val audioModelName = component.audioModel.selectedItem as String?
+             val audioModelName = component.audioModel.selectedItem?.let {
+                 when (it) {
+                     is String -> it
+                     else -> try {
+                         it.javaClass.getMethod("getModelId").invoke(it) as? String
+                             ?: it.javaClass.getMethod("getName").invoke(it) as? String
+                             ?: it.toString()
+                     } catch (e: Exception) {
+                         it.toString()
+                     }
+                 }
+             }
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName, audio: $audioModelName")
 
             val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->

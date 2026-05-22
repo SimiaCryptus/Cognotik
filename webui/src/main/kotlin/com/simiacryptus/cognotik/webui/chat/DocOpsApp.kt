@@ -341,6 +341,7 @@ open class DocOpsApp(
          input.copyTo(output)
        }
      }
+    setExecutableIfShellScript(targetFile)
    }
 
    private fun copyFileWithLineEndingNormalization(source: File, targetFile: File) {
@@ -351,6 +352,21 @@ open class DocOpsApp(
      } else {
        source.copyTo(targetFile, overwrite = true)
      }
+    setExecutableIfShellScript(targetFile)
+  }
+  /**
+   * Sets the executable bit on shell script files (*.sh) so they can be run directly.
+   */
+  private fun setExecutableIfShellScript(file: File) {
+    if (file.name.endsWith(".sh", ignoreCase = true)) {
+      try {
+        if (!file.setExecutable(true, false)) {
+          log.warn("Failed to set executable bit on shell script: ${file.absolutePath}")
+        }
+      } catch (e: Exception) {
+        log.warn("Exception setting executable bit on ${file.absolutePath}: ${e.message}", e)
+      }
+    }
    }
 
   companion object {

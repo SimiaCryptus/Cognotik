@@ -78,35 +78,18 @@ class AutoFixTask(
   )
 
   data class CommandWithWorkingDir(
-    @Description("The command to be executed as a list of strings. The first element is the executable, followed by arguments. DO NOT USE PIPE OR REDIRECTION SYNTAX, AS THIS IS NOT INTERPRETED BY A SHELL. For example, to run `ls -la`, specify `['ls', '-la']`.")
-    var command: MutableList<String> = ArrayList(),
+    @Description("The executable to be run, as a relative path or simple command name.")
+    var executable: String = "",
+    @Description("The arguments for the command; optional")
+    var arguments: MutableList<String> = ArrayList(),
     @Description("The relative path of the working directory for this command, relative to the project root. Null means the project root.")
     var working_dir: String? = null
   ) : ValidatedObject {
     override fun validate(): String ? {
-      if (command.isEmpty()) {
+      if (executable.isBlank()) {
         return "command must not be empty"
       }
-      command.map { it.trim() }.forEach {
-        when {
-          it.startsWith("<") -> return "Piping and redirection syntax is not supported. Found: $it"
-          it.startsWith(">") -> return "Piping and redirection syntax is not supported. Found: $it"
-          it.startsWith("|") -> return "Piping and redirection syntax is not supported. Found: $it"
-        }
-      }
       return null
-    }
-
-    fun filteredCommand(): List<String> {
-      return command.map { it.trim() }.filter {
-        when {
-          it.startsWith("<") -> false
-          it.startsWith(">") -> false
-          it.startsWith("|") -> false
-          it.isBlank() -> false
-          else -> true
-        }
-      }
     }
   }
 
@@ -136,21 +119,21 @@ class AutoFixTask(
         subTask.ui.pool.submit {
           val transcriptPath = transcriptFile()
           val transcript: FileOutputStream? = subTask.newUserFileStream(transcriptPath)
-          val model = (typeConfig.model?.let { it.instance(orchestrationConfig.user) } ?: defaultSmart).getChildClient(subTask)
+          val model = (typeConfig.model?.instance(orchestrationConfig.user) ?: defaultSmart).getChildClient(subTask)
           val fastModel = defaultFast.getChildClient(subTask)
           try {
             transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
             transcript?.write("## Self-Healing Task Execution\n\n".toByteArray())
             transcript?.write("### Commands\n".toByteArray())
             executionConfig?.commands?.forEachIndexed { index, cmd ->
-              transcript?.write("${index + 1}. `${cmd.filteredCommand().joinToString(" ")}` in `${cmd.working_dir ?: orchestrationConfig.workingDir ?: agent.root}`\n".toByteArray())
+              transcript?.write("${index + 1}. `${(listOf(cmd.executable) + cmd.arguments).joinToString(" ")}` in `${cmd.working_dir ?: orchestrationConfig.workingDir ?: agent.root}`\n".toByteArray())
             }
             transcript?.write("\n".toByteArray())
             CmdPatchApp(
               root = agent.root,
               settings = PatchApp.Settings(
                 commands = executionConfig?.commands?.map { commandWithDir ->
-                  val alias = commandWithDir.filteredCommand().firstOrNull()
+                  val alias = (listOf(commandWithDir.executable) + commandWithDir.arguments).firstOrNull()
                   val toolExecutable = if (alias != null) {
                     val tools =
                       ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
@@ -167,7 +150,8 @@ class AutoFixTask(
                   PatchApp.CommandSettings(
                     executable = toolExecutable ?: alias?.resolveTool(this.root)
                     ?: throw IllegalArgumentException("Command not found: $alias"),
-                    arguments = commandWithDir.filteredCommand().drop(1).joinToString(" "),
+                    arguments = (listOf(commandWithDir.executable) + commandWithDir.arguments).drop(1)
+                      .joinToString(" "),
                     workingDirectory = ((commandWithDir.working_dir
                       ?: orchestrationConfig.workingDir)?.let { agent.root.toFile().resolve(it) }
                       ?: agent.root.toFile()).apply { mkdirs() },

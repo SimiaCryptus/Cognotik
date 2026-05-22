@@ -39,6 +39,7 @@ open class CreditsServlet(
             "review" -> renderReview(req, resp, user)
             "receipt" -> renderReceipt(req, resp, user)
             "callback" -> handleProviderCallback(req, resp, user)
+             "poll", "webhook" -> handleProviderCallback(req, resp, user)
             else -> renderCheckout(resp, user)
         }
     }
