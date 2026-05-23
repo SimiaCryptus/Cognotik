@@ -13,16 +13,42 @@ object MarkdownRenderer {
     val html = markdownContent.markdownToHtml()
     return """
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="auto">
 <head>
 <meta charset="UTF-8"></meta>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
 <title>$title</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 40px; }
-pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; }
-code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 2px; }
+:root {
+   --bg-page: #ffffff;
+   --text-primary: #1c1e21;
+   --code-bg: #f4f4f4;
+   --code-text: #1c1e21;
+}
+html[data-theme="dark"] {
+   --bg-page: #1a1d21;
+   --text-primary: #e4e6eb;
+   --code-bg: #2d3035;
+   --code-text: #e4e6eb;
+}
+@media (prefers-color-scheme: dark) {
+   html[data-theme="auto"] {
+     --bg-page: #1a1d21;
+     --text-primary: #e4e6eb;
+     --code-bg: #2d3035;
+     --code-text: #e4e6eb;
+   }
+}
+body { font-family: Arial, sans-serif; margin: 40px; background-color: var(--bg-page); color: var(--text-primary); }
+pre { background-color: var(--code-bg); color: var(--code-text); padding: 10px; border-radius: 4px; }
+code { background-color: var(--code-bg); color: var(--code-text); padding: 2px 4px; border-radius: 2px; }
 </style>
+<script src="/modules/theme.js"></script>
+<script>
+   if (typeof ThemeManager !== 'undefined') {
+     ThemeManager.init();
+   }
+</script>
 </head>
 <body>
 $html

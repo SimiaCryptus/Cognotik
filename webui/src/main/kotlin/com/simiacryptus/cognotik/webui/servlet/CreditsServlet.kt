@@ -245,6 +245,7 @@ open class CreditsServlet(
                 <div class="container">
                     <h1>Buy Credits</h1>
                     <div class="scope">Account: ${user.email}</div>
+                    ${navBar("credits")}
                     $budgetHtml
                      $paymentNotice
                     <form method="get" action="">
@@ -268,6 +269,7 @@ open class CreditsServlet(
                                   Continue &rarr;
                              </button>
                             <a href="/usage" class="btn-link">View usage</a>
+                            <a href="/gifts/" class="btn-link">Gifts</a>
                         </div>
                     </form>
                 </div>
@@ -324,6 +326,7 @@ open class CreditsServlet(
                 <div class="container">
                     <h1>Review Your Order</h1>
                     <div class="scope">Account: ${user.email}</div>
+                    ${navBar("credits")}
                     $warning
                     <table class="review-table">
                         <tr><th>Package</th><td>$pkgLabel</td></tr>
@@ -369,6 +372,7 @@ open class CreditsServlet(
                 <div class="container">
                     <h1>✓ Credits Applied</h1>
                     <div class="scope">Account: ${user.email}</div>
+                    ${navBar("credits")}
                     <div class="receipt">
                         <table class="review-table">
                             <tr><th>Order ID</th><td><code>$orderId</code></td></tr>
@@ -383,6 +387,7 @@ open class CreditsServlet(
                     <div class="actions">
                         <a href="?" class="btn-primary">Buy more credits</a>
                         <a href="/usage" class="btn-link">View usage</a>
+                        <a href="/gifts/" class="btn-link">Gifts</a>
                     </div>
                 </div>
                 </body>
@@ -420,6 +425,12 @@ open class CreditsServlet(
                 h1, h2 { color: #333; }
                 h2 { margin-top: 24px; font-size: 1.1em; }
                 .scope { color: #666; margin-bottom: 12px; }
+                .nav-bar { display: flex; gap: 8px; padding: 10px 12px; background: #f0f3f8;
+                           border-radius: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+                .nav-bar a { color: #4a6fa5; text-decoration: none; padding: 6px 12px;
+                             border-radius: 4px; font-size: 0.95em; }
+                .nav-bar a:hover { background: #e1e7f1; text-decoration: none; }
+                .nav-bar a.active { background: #4a6fa5; color: #fff; font-weight: 600; }
                 .budget { padding: 10px 14px; background: #eef7ee; border-left: 4px solid #4a8;
                           margin-bottom: 16px; border-radius: 4px; }
                 .notice { padding: 10px 14px; background: #fffbe6; border-left: 4px solid #e0b500;
@@ -453,6 +464,17 @@ open class CreditsServlet(
                 code { background: #f4f6f9; padding: 2px 6px; border-radius: 3px; }
             </style>
         """.trimIndent()
+    private fun navBar(active: String): String {
+        fun cls(name: String) = if (name == active) "active" else ""
+        return """
+            <nav class="nav-bar">
+                <a href="/usage" class="${cls("usage")}">📊 Usage</a>
+                <a href="/credits" class="${cls("credits")}">💳 Buy Credits</a>
+                <a href="/gifts/" class="${cls("gifts")}">🎁 Gifts</a>
+            </nav>
+        """.trimIndent()
+    }
+
 
     private data class CreditPackage(
         val id: String,

@@ -461,6 +461,91 @@ class LoginServlet : HttpServlet() {
             return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 .replace("\"", "&quot;").replace("'", "&#x27;")
         }
+        /**
+         * HTML snippet that loads the site-wide ThemeManager module.
+        * See `/modules/theme.js` for documentation.
+        *
+        * The ThemeManager:
+        * - Persists selection in localStorage under 'cognotik-theme'
+        * - Is overridable via URL parameter ?theme=light|dark|auto
+        * - URL param value (if present and valid) is persisted to localStorage
+        * - Applies theme by setting data-theme attribute on <html>
+         */
+        private const val THEME_SCRIPT_TAG = """<script src="/modules/theme.js"></script>"""
+        /**
+         * HTML snippet that initializes the ThemeManager and (if present) binds it
+         * to a theme selector element with id="theme-selector".
+        *
+        * Initialization is wrapped in DOMContentLoaded to ensure the selector
+        * element (if any) is available when bindSelector is called.
+         */
+        private const val THEME_INIT_SCRIPT = """<script>
+(function() {
+    function initTheme() {
+        try {
+            if (typeof ThemeManager !== 'undefined') {
+                ThemeManager.init();
+                var selector = document.getElementById('theme-selector');
+                if (selector) {
+                    ThemeManager.bindSelector(selector);
+                }
+            } else {
+                console.warn('ThemeManager is not available; theme will not be applied.');
+            }
+        } catch (e) {
+            console.error('Failed to initialize ThemeManager', e);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTheme);
+    } else {
+        initTheme();
+    }
+})();
+</script>"""
+        /**
+         * Injects the ThemeManager script (`/modules/theme.js`) and initialization
+         * code into the rendered HTML. The script tag is inserted just before
+         * `</head>` and the initialization is inserted just before `</body>`.
+         * If the corresponding tags are not present, the snippets are appended.
+         *
+         * This ensures every page served by [LoginServlet] participates in the
+         * site-wide theme management, with theme selection persisted in localStorage
+         * under 'cognotik-theme' and overridable via the `?theme=` URL parameter.
+         */
+        internal fun injectThemeManager(html: String): String {
+            return try {
+                var result = html
+                // Avoid double-injecting if the template already references theme.js
+                val alreadyHasScript = result.contains("/modules/theme.js")
+                if (!alreadyHasScript) {
+                    result = if (result.contains("</head>", ignoreCase = true)) {
+                        result.replaceFirst(
+                            Regex("</head>", RegexOption.IGNORE_CASE),
+                            "$THEME_SCRIPT_TAG</head>"
+                        )
+                    } else {
+                        // No <head> tag: prepend the script so it loads before body content
+                        THEME_SCRIPT_TAG + result
+                    }
+                }
+                val alreadyHasInit = result.contains("ThemeManager.init(")
+                if (!alreadyHasInit) {
+                    result = if (result.contains("</body>", ignoreCase = true)) {
+                        result.replaceFirst(
+                            Regex("</body>", RegexOption.IGNORE_CASE),
+                            "$THEME_INIT_SCRIPT</body>"
+                        )
+                    } else {
+                        result + THEME_INIT_SCRIPT
+                    }
+                }
+                result
+            } catch (e: Exception) {
+                log.error("Failed to inject ThemeManager into HTML; serving page without theme support", e)
+                html
+            }
+        }
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
@@ -1016,14 +1101,18 @@ class LoginServlet : HttpServlet() {
 
             resp.contentType = "text/html"
             resp.characterEncoding = "UTF-8"
-            resp.writer.write(html)
+            resp.writer.write(injectThemeManager(html))
         } catch (e: Exception) {
             log.error("Failed to serve login page", e)
             try {
                 resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
                 resp.contentType = "text/html"
                 resp.characterEncoding = "UTF-8"
-                resp.writer.write("<html><body><h1>Internal Server Error</h1><p>Unable to render login page.</p></body></html>")
+                resp.writer.write(
+                    injectThemeManager(
+                        "<html><head></head><body><h1>Internal Server Error</h1><p>Unable to render login page.</p></body></html>"
+                    )
+                )
             } catch (inner: Exception) {
                 log.error("Failed to write fallback error response", inner)
             }
@@ -1072,14 +1161,18 @@ class LoginServlet : HttpServlet() {
 
             resp.contentType = "text/html"
             resp.characterEncoding = "UTF-8"
-            resp.writer.write(html)
+            resp.writer.write(injectThemeManager(html))
         } catch (e: Exception) {
             log.error("Failed to serve registration page", e)
             try {
                 resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
                 resp.contentType = "text/html"
                 resp.characterEncoding = "UTF-8"
-                resp.writer.write("<html><body><h1>Internal Server Error</h1><p>Unable to render registration page.</p></body></html>")
+                resp.writer.write(
+                    injectThemeManager(
+                        "<html><head></head><body><h1>Internal Server Error</h1><p>Unable to render registration page.</p></body></html>"
+                    )
+                )
             } catch (inner: Exception) {
                 log.error("Failed to write fallback error response", inner)
             }

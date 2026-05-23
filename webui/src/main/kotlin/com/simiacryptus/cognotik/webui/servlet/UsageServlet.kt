@@ -206,32 +206,181 @@ class UsageServlet : HttpServlet() {
                 <head>
                     <title>Usage</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+                    <script src="/modules/theme.js"></script>
                     <style>
+                        :root,
+                        html[data-theme="light"] {
+                            --bg: #ffffff;
+                            --fg: #333333;
+                            --muted-fg: #555555;
+                            --border: #dddddd;
+                            --row-alt-bg: #f2f2f2;
+                            --header-bg: #4a6fa5;
+                            --header-fg: #ffffff;
+                            --total-row-bg: #e8eef7;
+                            --budget-bg: #eef7ee;
+                            --budget-border: #4a8;
+                            --nav-bg: #f0f3f8;
+                            --nav-link: #4a6fa5;
+                            --nav-link-hover-bg: #e1e7f1;
+                            --nav-active-bg: #4a6fa5;
+                            --nav-active-fg: #ffffff;
+                            --btn-primary-bg: #4a6fa5;
+                            --btn-primary-fg: #ffffff;
+                            --btn-primary-hover-bg: #3a5a8c;
+                            --btn-secondary-bg: #ffffff;
+                            --btn-secondary-fg: #4a6fa5;
+                            --btn-secondary-border: #4a6fa5;
+                            --btn-secondary-hover-bg: #eef2f9;
+                            --credit-positive: #2a7a2a;
+                            --credit-negative: #a02020;
+                            --credit-meta-fg: #666666;
+                            --input-bg: #ffffff;
+                            --input-fg: #333333;
+                            --input-border: #cccccc;
+                        }
+                        html[data-theme="dark"] {
+                            --bg: #1e1e1e;
+                            --fg: #e6e6e6;
+                            --muted-fg: #bbbbbb;
+                            --border: #444444;
+                            --row-alt-bg: #2a2a2a;
+                            --header-bg: #2c4a78;
+                            --header-fg: #ffffff;
+                            --total-row-bg: #2f3b50;
+                            --budget-bg: #1f3a1f;
+                            --budget-border: #4a8;
+                            --nav-bg: #2a2a2a;
+                            --nav-link: #8ab0e0;
+                            --nav-link-hover-bg: #3a3a3a;
+                            --nav-active-bg: #2c4a78;
+                            --nav-active-fg: #ffffff;
+                            --btn-primary-bg: #2c4a78;
+                            --btn-primary-fg: #ffffff;
+                            --btn-primary-hover-bg: #3a5a8c;
+                            --btn-secondary-bg: #2a2a2a;
+                            --btn-secondary-fg: #8ab0e0;
+                            --btn-secondary-border: #8ab0e0;
+                            --btn-secondary-hover-bg: #3a3a3a;
+                            --credit-positive: #5fcf5f;
+                            --credit-negative: #ff7070;
+                            --credit-meta-fg: #aaaaaa;
+                            --input-bg: #2a2a2a;
+                            --input-fg: #e6e6e6;
+                            --input-border: #555555;
+                        }
+                        @media (prefers-color-scheme: dark) {
+                            html[data-theme="auto"] {
+                                --bg: #1e1e1e;
+                                --fg: #e6e6e6;
+                                --muted-fg: #bbbbbb;
+                                --border: #444444;
+                                --row-alt-bg: #2a2a2a;
+                                --header-bg: #2c4a78;
+                                --header-fg: #ffffff;
+                                --total-row-bg: #2f3b50;
+                                --budget-bg: #1f3a1f;
+                                --budget-border: #4a8;
+                                --nav-bg: #2a2a2a;
+                                --nav-link: #8ab0e0;
+                                --nav-link-hover-bg: #3a3a3a;
+                                --nav-active-bg: #2c4a78;
+                                --nav-active-fg: #ffffff;
+                                --btn-primary-bg: #2c4a78;
+                                --btn-primary-fg: #ffffff;
+                                --btn-primary-hover-bg: #3a5a8c;
+                                --btn-secondary-bg: #2a2a2a;
+                                --btn-secondary-fg: #8ab0e0;
+                                --btn-secondary-border: #8ab0e0;
+                                --btn-secondary-hover-bg: #3a3a3a;
+                                --credit-positive: #5fcf5f;
+                                --credit-negative: #ff7070;
+                                --credit-meta-fg: #aaaaaa;
+                                --input-bg: #2a2a2a;
+                                --input-fg: #e6e6e6;
+                                --input-border: #555555;
+                            }
+                        }
+                        html, body { background-color: var(--bg); color: var(--fg); }
                         body { font-family: Arial, sans-serif; margin: 20px; }
-                        h1, h2 { color: #333; }
+                        h1, h2 { color: var(--fg); }
                         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                        tr:nth-child(even) { background-color: #f2f2f2; }
-                        .table-header { background-color: #4a6fa5; color: white; }
-                        .total-row { font-weight: bold; background-color: #e8eef7 !important; }
-                        .scope { font-size: 1.1em; margin-bottom: 10px; color: #555; }
-                        .budget { font-size: 1.1em; margin-bottom: 15px; padding: 8px; background: #eef7ee; border-left: 4px solid #4a8; }
+                        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+                        tr:nth-child(even) { background-color: var(--row-alt-bg); }
+                        .table-header { background-color: var(--header-bg); color: var(--header-fg); }
+                        .table-header th { color: var(--header-fg); }
+                        .total-row { font-weight: bold; background-color: var(--total-row-bg) !important; }
+                        .scope { font-size: 1.1em; margin-bottom: 10px; color: var(--muted-fg); }
+                        .budget { font-size: 1.1em; margin-bottom: 15px; padding: 8px; background: var(--budget-bg); border-left: 4px solid var(--budget-border); }
                         .range-form { margin-bottom: 15px; }
                         .range-form label { margin-right: 10px; }
-                         .credit-positive { color: #2a7a2a; font-weight: bold; }
-                         .credit-negative { color: #a02020; font-weight: bold; }
-                         .credit-meta { font-size: 0.85em; color: #666; font-style: italic; }
+                        .range-form input[type="date"] {
+                            background: var(--input-bg); color: var(--input-fg);
+                            border: 1px solid var(--input-border); padding: 4px 6px; border-radius: 3px;
+                        }
+                        .range-form button {
+                            background: var(--btn-primary-bg); color: var(--btn-primary-fg);
+                            border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;
+                        }
+                        .range-form button:hover { background: var(--btn-primary-hover-bg); }
+                        #theme-selector {
+                            background: var(--input-bg); color: var(--input-fg);
+                            border: 1px solid var(--input-border); padding: 4px 6px; border-radius: 3px;
+                        }
+                         .credit-positive { color: var(--credit-positive); font-weight: bold; }
+                         .credit-negative { color: var(--credit-negative); font-weight: bold; }
+                         .credit-meta { font-size: 0.85em; color: var(--credit-meta-fg); font-style: italic; }
+                         .nav-bar { display: flex; gap: 8px; padding: 10px 12px; background: var(--nav-bg);
+                                    border-radius: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+                         .nav-bar a { color: var(--nav-link); text-decoration: none; padding: 6px 12px;
+                                      border-radius: 4px; font-size: 0.95em; }
+                         .nav-bar a:hover { background: var(--nav-link-hover-bg); text-decoration: none; }
+                         .nav-bar a.active { background: var(--nav-active-bg); color: var(--nav-active-fg); font-weight: 600; }
+                         .actions-bar { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; }
+                         .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-fg); border: none; padding: 8px 16px;
+                                        border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.95em; }
+                         .btn-primary:hover { background: var(--btn-primary-hover-bg); }
+                         .btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-fg); border: 1px solid var(--btn-secondary-border);
+                                          padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 0.95em; }
+                         .btn-secondary:hover { background: var(--btn-secondary-hover-bg); }
                     </style>
                 </head>
                 <body>
+                <div class="theme-switcher" style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:10px;">
+                    <label for="theme-selector" style="margin-right:8px; font-size:0.95em;">Theme:</label>
+                    <select id="theme-selector" aria-label="Theme selector">
+                        <option value="auto">Auto</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
                 <h1>Usage Summary</h1>
                 $scopeHtml
+                ${navBar("usage")}
                 $budgetHtml
                 $rangeFormHtml
                 <h2>By Model</h2>
                 $modelTableHtml
                 $dailyHtml
              $creditsHtml
+                <script>
+                    (function() {
+                        function initTheme() {
+                            if (typeof ThemeManager !== 'undefined') {
+                                ThemeManager.init();
+                                var sel = document.getElementById('theme-selector');
+                                if (sel) ThemeManager.bindSelector(sel);
+                            } else {
+                                console.warn('ThemeManager not loaded from /modules/theme.js');
+                            }
+                        }
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initTheme);
+                        } else {
+                            initTheme();
+                        }
+                    })();
+                </script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -364,6 +513,16 @@ class UsageServlet : HttpServlet() {
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
             .replace("'", "&#39;")
+    private fun navBar(active: String): String {
+        fun cls(name: String) = if (name == active) "active" else ""
+        return """
+            <nav class="nav-bar">
+                <a href="/usage" class="${cls("usage")}">📊 Usage</a>
+                <a href="/credits" class="${cls("credits")}">💳 Buy Credits</a>
+                <a href="/gifts/" class="${cls("gifts")}">🎁 Send Gifts</a>
+            </nav>
+        """.trimIndent()
+    }
 
 
     companion object {

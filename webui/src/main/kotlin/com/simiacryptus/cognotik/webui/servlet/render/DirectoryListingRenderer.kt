@@ -64,24 +64,87 @@ object DirectoryListingRenderer {
     actualFilePath: String = ""
   ) = """
 |<!DOCTYPE html>
-|<html lang="en">
+|<html lang="en" data-theme="auto">
 |<head>
 |    <meta charset="UTF-8">
 |    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 |    <title>Directory Listing: /$currentPath</title>
 |    <style>
+|        :root {
+|            --bg-page: #f0f2f5;
+|            --bg-surface: #ffffff;
+|            --bg-surface-alt: #f8f9fa;
+|            --bg-hover: #e9ecef;
+|            --text-primary: #1c1e21;
+|            --text-secondary: #343a40;
+|            --text-muted: #6c757d;
+|            --text-faint: #adb5bd;
+|            --border-color: #dee2e6;
+|            --border-input: #ced4da;
+|            --link-color: #0d6efd;
+|            --link-hover: #0a58ca;
+|            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+|            --shadow-md: 0 1px 3px rgba(0,0,0,0.03);
+|            --shadow-lg: 0 2px 4px rgba(0,0,0,0.05);
+|            --drop-zone-bg: #f8f9fa;
+|            --drop-zone-hover-bg: #e7f1ff;
+|            --code-color: #adb5bd;
+|        }
+|        html[data-theme="dark"] {
+|            --bg-page: #1a1d21;
+|            --bg-surface: #25282c;
+|            --bg-surface-alt: #2d3035;
+|            --bg-hover: #34383d;
+|            --text-primary: #e4e6eb;
+|            --text-secondary: #d1d3d8;
+|            --text-muted: #9ba1a8;
+|            --text-faint: #6c7079;
+|            --border-color: #3a3f44;
+|            --border-input: #4a4f55;
+|            --link-color: #5a9eff;
+|            --link-hover: #7ab4ff;
+|            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+|            --shadow-md: 0 1px 3px rgba(0,0,0,0.4);
+|            --shadow-lg: 0 2px 4px rgba(0,0,0,0.5);
+|            --drop-zone-bg: #2d3035;
+|            --drop-zone-hover-bg: #2a3a4f;
+|            --code-color: #6c7079;
+|        }
+|        @media (prefers-color-scheme: dark) {
+|            html[data-theme="auto"] {
+|                --bg-page: #1a1d21;
+|                --bg-surface: #25282c;
+|                --bg-surface-alt: #2d3035;
+|                --bg-hover: #34383d;
+|                --text-primary: #e4e6eb;
+|                --text-secondary: #d1d3d8;
+|                --text-muted: #9ba1a8;
+|                --text-faint: #6c7079;
+|                --border-color: #3a3f44;
+|                --border-input: #4a4f55;
+|                --link-color: #5a9eff;
+|                --link-hover: #7ab4ff;
+|                --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+|                --shadow-md: 0 1px 3px rgba(0,0,0,0.4);
+|                --shadow-lg: 0 2px 4px rgba(0,0,0,0.5);
+|                --drop-zone-bg: #2d3035;
+|                --drop-zone-hover-bg: #2a3a4f;
+|                --code-color: #6c7079;
+|            }
+|        }
 |        body {
 |            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-|            background-color: #f0f2f5;
-|            color: #1c1e21;
+|            background-color: var(--bg-page);
+|            color: var(--text-primary);
 |            margin: 0;
 |            padding: 0;
 |            line-height: 1.5;
+|            transition: background-color 0.2s ease, color 0.2s ease;
 |        }
 |        .navbar {
-|            background-color: #ffffff;
+|            background-color: var(--bg-surface);
 |            padding: 1rem 1.5rem;
-|            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+|            box-shadow: var(--shadow-lg);
 |            margin-bottom: 1.5rem;
 |            display: flex;
 |            align-items: center;
@@ -91,8 +154,17 @@ object DirectoryListingRenderer {
 |        .navbar-title {
 |            font-size: 1.4rem;
 |            font-weight: 600;
-|            color: #343a40;
+|            color: var(--text-secondary);
 |            margin-right: 1rem;
+|        }
+|        .theme-selector {
+|            padding: 0.4rem 0.6rem;
+|            font-size: 0.85rem;
+|            color: var(--text-primary);
+|            background-color: var(--bg-surface);
+|            border: 1px solid var(--border-input);
+|            border-radius: 0.25rem;
+|            cursor: pointer;
 |        }
 |        .zip-link {
 |            display: inline-block;
@@ -100,7 +172,7 @@ object DirectoryListingRenderer {
 |            font-size: 0.9rem;
 |            font-weight: 500;
 |            color: #fff;
-|            background-color: #0d6efd;
+|            background-color: var(--link-color);
 |            border: none;
 |            border-radius: 0.25rem;
 |            text-decoration: none;
@@ -108,14 +180,14 @@ object DirectoryListingRenderer {
 |            white-space: nowrap;
 |        }
 |        .zip-link:hover {
-|            background-color: #0b5ed7;
+|            background-color: var(--link-hover);
 |        }
 |        .upload-section {
-|            background-color: #ffffff;
-|            border: 1px solid #dee2e6;
+|            background-color: var(--bg-surface);
+|            border: 1px solid var(--border-color);
 |            border-radius: 0.375rem;
 |            margin-bottom: 1.5rem;
-|            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+|            box-shadow: var(--shadow-md);
 |        }
 |        .upload-form {
 |            display: flex;
@@ -127,9 +199,11 @@ object DirectoryListingRenderer {
 |            flex: 1;
 |            min-width: 200px;
 |            padding: 0.5rem;
-|            border: 1px solid #ced4da;
+|            border: 1px solid var(--border-input);
 |            border-radius: 0.25rem;
 |            font-size: 0.9rem;
+|            background-color: var(--bg-surface);
+|            color: var(--text-primary);
 |        }
 |        .upload-button {
 |            padding: 0.5rem 1.5rem;
@@ -166,25 +240,25 @@ object DirectoryListingRenderer {
 |            border: 1px solid #f5c2c7;
 |        }
 |        .drop-zone {
-|            border: 2px dashed #ced4da;
+|            border: 2px dashed var(--border-input);
 |            border-radius: 0.25rem;
 |            padding: 2rem;
 |            text-align: center;
 |            transition: all 0.3s ease;
 |            cursor: pointer;
-|            background-color: #f8f9fa;
+|            background-color: var(--drop-zone-bg);
 |        }
 |        .drop-zone.drag-over {
-|            border-color: #0d6efd;
-|            background-color: #e7f1ff;
+|            border-color: var(--link-color);
+|            background-color: var(--drop-zone-hover-bg);
 |        }
 |        .drop-zone-text {
-|            color: #6c757d;
+|            color: var(--text-muted);
 |            font-size: 0.95rem;
 |            margin-bottom: 0.5rem;
 |        }
 |        .drop-zone-hint {
-|            color: #adb5bd;
+|            color: var(--text-faint);
 |            font-size: 0.85rem;
 |        }
 |        .container {
@@ -195,32 +269,32 @@ object DirectoryListingRenderer {
 |        .breadcrumb-nav {
 |            margin-bottom: 1.5rem;
 |            padding: 0.75rem 1rem;
-|            background-color: #ffffff;
+|            background-color: var(--bg-surface);
 |            border-radius: 0.25rem;
-|            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+|            box-shadow: var(--shadow-sm);
 |        }
 |        .breadcrumb {
 |            padding: 0; margin:0; list-style:none; display:flex; flex-wrap:wrap;
 |        }
 |        .section {
-|            background-color: #ffffff;
-|            border: 1px solid #dee2e6;
+|            background-color: var(--bg-surface);
+|            border: 1px solid var(--border-color);
 |            border-radius: 0.375rem;
 |            margin-bottom: 1.5rem;
-|            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+|            box-shadow: var(--shadow-md);
 |        }
 |        .section-header {
 |            padding: 0.75rem 1.25rem;
 |            margin-bottom: 0;
-|            background-color: #f8f9fa;
-|            border-bottom: 1px solid #dee2e6;
+|            background-color: var(--bg-surface-alt);
+|            border-bottom: 1px solid var(--border-color);
 |            border-top-left-radius: calc(0.375rem - 1px);
 |            border-top-right-radius: calc(0.375rem - 1px);
 |        }
 |        .section-title {
 |            font-size: 1.2rem;
 |            font-weight: 500;
-|            color: #343a40;
+|            color: var(--text-secondary);
 |            margin: 0;
 |        }
 |        .section-content {
@@ -236,7 +310,7 @@ object DirectoryListingRenderer {
 |        }
 |        .item-list li:last-child { margin-bottom: 0; }
 |        .item-link {
-|            color: #0d6efd;
+|            color: var(--link-color);
 |            text-decoration: none;
 |            display: flex;
 |            align-items: center;
@@ -245,37 +319,37 @@ object DirectoryListingRenderer {
 |            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 |        }
 |        .item-link:hover {
-|            background-color: #e9ecef;
-|            color: #0a58ca;
+|            background-color: var(--bg-hover);
+|            color: var(--link-hover);
 |        }
 |        .item-link .icon {
 |            margin-right: 0.7em;
 |            width: 1.2em;
 |            text-align: center;
-|            color: #495057;
+|            color: var(--text-secondary);
 |        }
-|        .item-link:hover .icon { color: #0a58ca; }
+|        .item-link:hover .icon { color: var(--link-hover); }
 |        .empty-state {
-|            color: #6c757d;
+|            color: var(--text-muted);
 |            padding: 0.5rem 0.75rem;
 |            font-style: italic;
 |        }
 |        .action-link {
 |            margin-left: 0.5rem;
 |            font-size: 0.85rem;
-|            color: #6c757d;
+|            color: var(--text-muted);
 |            text-decoration: none;
 |            padding: 0.2rem 0.5rem;
 |            border-radius: 0.2rem;
 |            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 |        }
 |        .action-link:hover {
-|            background-color: #e9ecef;
-|            color: #0a58ca;
+|            background-color: var(--bg-hover);
+|            color: var(--link-hover);
 |        }
 |        .filesystem-path {
 |            font-size: 0.75rem;
-|            color: #adb5bd;
+|            color: var(--text-faint);
 |            padding: 0.25rem 1rem 0.5rem 1rem;
 |            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 |            word-break: break-all;
@@ -283,12 +357,12 @@ object DirectoryListingRenderer {
 |        }
 |        .filesystem-path summary {
 |            cursor: pointer;
-|            color: #adb5bd;
+|            color: var(--text-faint);
 |            font-size: 0.75rem;
 |            outline: none;
 |        }
 |        .filesystem-path summary:hover {
-|            color: #6c757d;
+|            color: var(--text-muted);
 |        }
 |        .delete-link {
 |            margin-left: 0.5rem;
@@ -313,10 +387,14 @@ object DirectoryListingRenderer {
 |        }
         $additionalStyles
     </style>
+|    <script src="/modules/theme.js"></script>
 |    <script>
+|        if (typeof ThemeManager !== 'undefined') {
+|            ThemeManager.init();
+|        }
 |        function setupDropZone() {
-|            const dropZone = document.getElementById('drop-zone');
-|            const fileInput = document.getElementById('file-input');
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
 |            dropZone.addEventListener('click', () => {
 |                fileInput.click();
 |            });
@@ -371,6 +449,10 @@ object DirectoryListingRenderer {
 |        window.addEventListener('DOMContentLoaded', () => {
 |            setupDropZone();
 |            setupClipboardPaste();
+|            const themeSelector = document.getElementById('theme-selector');
+|            if (themeSelector && typeof ThemeManager !== 'undefined') {
+|                ThemeManager.bindSelector(themeSelector);
+|            }
 |        });
 |        async function uploadFile(event) {
 |            event.preventDefault();
@@ -458,6 +540,11 @@ object DirectoryListingRenderer {
 |    <div class="navbar">
 |        <span class="navbar-title"> File Browser</span>
 |        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+|        <select id="theme-selector" class="theme-selector" aria-label="Theme">
+|            <option value="auto">🌓 Auto</option>
+|            <option value="light">☀️ Light</option>
+|            <option value="dark">🌙 Dark</option>
+|        </select>
 |        ${if (zipLink.isNotBlank()) """<a href="$zipLink" class="zip-link">Download Current Directory as ZIP</a>""" else ""}
 |        $toolbarActions
 |        </div>

@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
+import com.simiacryptus.cognotik.webui.servlet.GiftedCreditsServlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.webui.chat.ChatServer
@@ -136,6 +137,7 @@ abstract class ApplicationDirectory(
         pluginManagerServlet?.let { pluginManagerServlet ->
             newWebAppContext("/pluginManager", pluginManagerServlet).configureAuth(ApplicationServer::class.java)
         },
+        newWebAppContext("/gifts/*", GiftedCreditsServlet()),
     ).toTypedArray() + childWebApps.map {
         log.debug("Adding child web app context for path: ${it.path}")
         newWebAppContext(it.path, it.server)

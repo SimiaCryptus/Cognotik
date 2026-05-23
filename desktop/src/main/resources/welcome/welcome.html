@@ -11,48 +11,10 @@
 </head>
 <body>
 
-<!-- Top Bar -->
-<div class="top-bar">
-    <div class="logo-container">
-        <img alt="Cognotik Logo" class="logo" src="logo.svg">
-         <span class="logo-text logo-about-trigger" id="logo-about-trigger"
-               role="button" tabindex="0" title="About Cognotik"
-               aria-label="About Cognotik"
-               style="cursor:pointer;">Cognotik</span>
-    </div>
-    <div class="top-bar-spacer"></div>
-     <select class="theme-selector" id="layout-selector" aria-label="Select layout" title="Select layout style">
-         <option value="grid">▦ Grid</option>
-         <option value="compact">▪ Compact</option>
-         <option value="list">☰ List</option>
-         <option value="masonry">▤ Masonry</option>
-     </select>
-    <select class="theme-selector" id="theme-selector" aria-label="Select theme" title="Select theme">
-        <option value="auto">🖥️ Auto</option>
-        <option value="light">☀️ Light</option>
-        <option value="dark">🌙 Dark</option>
-    </select>
-    <button class="top-bar-btn" id="user-settings-btn" type="button" aria-label="Open Settings">
-        <span class="btn-icon" aria-hidden="true">⚙️</span> Settings
-    </button>
-    <button class="top-bar-btn" id="plugin-manager-btn" type="button" aria-label="Open Plugin Manager">
-        <span class="btn-icon" aria-hidden="true">🔌</span> Plugins
-    </button>
-     <button class="top-bar-btn" id="usage-btn" type="button" aria-label="Open Usage">
-         <span class="btn-icon" aria-hidden="true">📊</span> Usage
-     </button>
-     <button class="top-bar-btn" id="sessions-btn" type="button" aria-label="Open Sessions">
-         <span class="btn-icon" aria-hidden="true">📁</span> Sessions
-     </button>
-     <button class="top-bar-btn" id="budget-btn" type="button" aria-label="Open Credits"
-             title="Available budget">
-         <span class="btn-icon" aria-hidden="true">💰</span> <span id="budget-amount">Budget</span>
-     </button>
-     <button class="top-bar-btn" id="auth-btn" role="button" aria-label="Login"
-             onclick="window.location.href='/login/'">
-         <span class="btn-icon" aria-hidden="true">🔑</span> <span id="auth-btn-label">Login</span>
-     </button>
-</div>
+
+<!-- Top Bar (rendered by Menubar component) -->
+<div id="menubar-container"></div>
+
 <!-- API Key Configuration Banner -->
 <div class="api-key-banner" id="api-key-banner" role="alert">
     <div class="api-key-banner-content">
@@ -470,16 +432,6 @@
         <p>Cognotik &copy; 2026 SimiaCryptus Software</p>
     </div>
 </footer>
-<!-- Usage Modal -->
-<div class="modal" id="usage-modal">
-     <div class="modal-content modal-content-wide" style="height: 85vh; display: flex; flex-direction: column;">
-         <span class="close" id="close-usage-modal">&times;</span>
-         <h3>📊 Usage</h3>
-         <iframe id="usage-iframe" src="about:blank"
-                 style="flex: 1; width: 100%; border: 1px solid #ddd; border-radius: 4px; background: #fff;"
-                 title="Usage"></iframe>
-     </div>
-</div>
 <!-- Sessions Modal -->
 <div class="modal" id="sessions-modal">
       <div class="modal-content modal-content-wide" style="height: 85vh; display: flex; flex-direction: column;">
@@ -490,14 +442,14 @@
                   title="Sessions"></iframe>
       </div>
 </div>
-<!-- Credits/Budget Modal -->
-<div class="modal" id="credits-modal">
+<!-- Usage / Credits Modal (unified) -->
+<div class="modal" id="usage-modal">
       <div class="modal-content modal-content-wide" style="height: 85vh; display: flex; flex-direction: column;">
-          <span class="close" id="close-credits-modal">&times;</span>
-          <h3>💰 Credits</h3>
-          <iframe id="credits-iframe" src="about:blank"
+           <span class="close" id="close-usage-modal">&times;</span>
+           <h3>📊 Usage &amp; Credits</h3>
+           <iframe id="usage-iframe" src="about:blank"
                   style="flex: 1; width: 100%; border: 1px solid #ddd; border-radius: 4px; background: #fff;"
-                  title="Credits"></iframe>
+                   title="Usage and Credits"></iframe>
       </div>
 </div>
 <!-- About Modal -->
@@ -517,6 +469,8 @@
 </div>
 
 <script src="modules/marked.min.js"></script>
+<script src="modules/theme.js"></script>
+<script src="modules/menubar.js"></script>
 <script src="modules/constants.js"></script>
 <script src="modules/utils.js"></script>
 <script src="modules/http.js"></script>
@@ -538,58 +492,12 @@
 <script src="modules/pipelineWizard.js"></script>
 
 <script src="welcome.js"></script>
-  <script>
-      (function() {
-           const STORAGE_KEY = 'cognotik-theme';
-         const selector = document.getElementById('theme-selector');
-         const root = document.documentElement;
-         function applyTheme(theme) {
-             if (theme === 'auto') {
-                 root.removeAttribute('data-theme');
-             } else {
-                 root.setAttribute('data-theme', theme);
-             }
-         }
-         const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
-         selector.value = saved;
-         applyTheme(saved);
-         selector.addEventListener('change', function() {
-             const value = selector.value;
-             localStorage.setItem(STORAGE_KEY, value);
-             applyTheme(value);
-         });
-    })();
-</script>
-<script>
-     (function() {
-         const STORAGE_KEY = 'cognotik-layout';
-         const selector = document.getElementById('layout-selector');
-         const section = document.getElementById('app-grid-section');
-         function applyLayout(layout) {
-             if (section) section.setAttribute('data-layout', layout);
-         }
-         const saved = localStorage.getItem(STORAGE_KEY) || 'grid';
-         if (selector) {
-             selector.value = saved;
-             applyLayout(saved);
-             selector.addEventListener('change', function() {
-                 const value = selector.value;
-                 localStorage.setItem(STORAGE_KEY, value);
-                 applyLayout(value);
-             });
-         } else {
-             applyLayout(saved);
-         }
-     })();
-</script>
 <script>
      (function () {
          // ===== About Modal =====
          var aboutModal  = document.getElementById('about-modal');
          var aboutIframe = document.getElementById('about-iframe');
          var closeAbout  = document.getElementById('close-about-modal');
-         var trigger     = document.getElementById('logo-about-trigger');
-         var logoImg     = document.querySelector('.logo-container .logo');
          function openAbout() {
              if (aboutIframe.src === 'about:blank' || aboutIframe.src === '') {
                  aboutIframe.src = 'about.html';
@@ -599,18 +507,8 @@
          function closeAboutModal() {
              aboutModal.style.display = 'none';
          }
-         if (trigger) {
-             trigger.addEventListener('click', openAbout);
-             trigger.addEventListener('keydown', function (e) {
-                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAbout(); }
-             });
-         }
-         // Also open on logo image click
-         if (logoImg) {
-             logoImg.style.cursor = 'pointer';
-             logoImg.setAttribute('title', 'About Cognotik');
-             logoImg.addEventListener('click', openAbout);
-         }
+          // Expose for menubar onTitleClick callback
+          window.__openAboutModal = openAbout;
          if (closeAbout) closeAbout.addEventListener('click', closeAboutModal);
          if (aboutModal) {
              aboutModal.addEventListener('click', function (e) {

@@ -6,8 +6,8 @@ object GitStyles {
 border-color: #6f42c1;
 }
 .git-section .section-header {
-background-color: #f3f0ff;
-border-bottom-color: #d4c5f9;
+background-color: var(--bg-surface-alt, #f3f0ff);
+border-bottom-color: var(--border-color, #d4c5f9);
 display: flex;
 align-items: center;
 justify-content: space-between;
@@ -53,7 +53,7 @@ text-align: center;
 padding: 1.5rem 1rem;
 }
 .git-init-message {
-color: #495057;
+color: var(--text-secondary, #495057);
 font-size: 0.95rem;
 margin-bottom: 1rem;
 max-width: 500px;
@@ -78,17 +78,18 @@ font-size: 1rem;
 .git-cancel-btn:hover { background-color: #5a6268; }
 .git-panel {
 margin-top: 0.75rem;
-border: 1px solid #dee2e6;
+border: 1px solid var(--border-color, #dee2e6);
 border-radius: 0.25rem;
 overflow: hidden;
 }
 .git-panel-title {
 margin: 0;
 padding: 0.5rem 0.75rem;
-background-color: #f8f9fa;
-border-bottom: 1px solid #dee2e6;
+background-color: var(--bg-surface-alt, #f8f9fa);
+border-bottom: 1px solid var(--border-color, #dee2e6);
 font-size: 0.95rem;
 font-weight: 500;
+color: var(--text-primary, inherit);
 }
 .git-output {
 margin: 0;
@@ -110,8 +111,8 @@ word-break: break-all;
 .git-diff-output .diff-file { color: #dcdcaa; font-weight: bold; }
 .git-tabs {
 display: flex;
-border-bottom: 1px solid #dee2e6;
-background-color: #f8f9fa;
+border-bottom: 1px solid var(--border-color, #dee2e6);
+background-color: var(--bg-surface-alt, #f8f9fa);
 }
 .git-tab {
 padding: 0.4rem 1rem;
@@ -119,11 +120,11 @@ border: none;
 background: none;
 cursor: pointer;
 font-size: 0.85rem;
-color: #6c757d;
+color: var(--text-muted, #6c757d);
 border-bottom: 2px solid transparent;
 transition: all 0.15s;
 }
-.git-tab:hover { color: #343a40; }
+.git-tab:hover { color: var(--text-secondary, #343a40); }
 .git-tab.active {
 color: #6f42c1;
 border-bottom-color: #6f42c1;
@@ -139,7 +140,8 @@ justify-content: center;
 z-index: 1000;
 }
 .git-dialog-content {
-background: white;
+background: var(--bg-surface, white);
+color: var(--text-primary, inherit);
 padding: 1.5rem;
 border-radius: 0.5rem;
 min-width: 400px;
@@ -149,12 +151,14 @@ box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 .git-dialog-content h3 {
 margin-top: 0;
 margin-bottom: 1rem;
-color: #343a40;
+color: var(--text-secondary, #343a40);
 }
 .git-commit-input {
 width: 100%;
 padding: 0.5rem;
-border: 1px solid #ced4da;
+border: 1px solid var(--border-input, #ced4da);
+background-color: var(--bg-surface, #fff);
+color: var(--text-primary, inherit);
 border-radius: 0.25rem;
 font-family: inherit;
 font-size: 0.9rem;
@@ -181,14 +185,14 @@ display: flex;
 align-items: center;
 justify-content: space-between;
 padding: 0.5rem 0.75rem;
-border-bottom: 1px solid #dee2e6;
+border-bottom: 1px solid var(--border-color, #dee2e6);
 font-size: 0.9rem;
 transition: background-color 0.15s;
 }
 .git-branch-item:last-child { border-bottom: none; }
-.git-branch-item:hover { background-color: #f8f9fa; }
+.git-branch-item:hover { background-color: var(--bg-hover, #f8f9fa); }
 .git-branch-item.current-branch {
-background-color: #f3f0ff;
+background-color: var(--bg-surface-alt, #f3f0ff);
 font-weight: 600;
 }
 .git-branch-name {

@@ -1,5 +1,6 @@
 // Main entry point - orchestrates module initialization.
 // Module files (must be loaded before this script):
+//   theme.js, menubar.js,
 //   htmlUtils.js, appDirectory.js, apiLoader.js, quickSettings.js,
 //   basicChat.js, userSettings.js, pluginManager.js,
 //   cognitiveMode.js, pipelineWizard.js
@@ -172,15 +173,6 @@ function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url }) {
         if (e.key === 'Escape' && modal.style.display === 'block') close();
     });
 }
-function setupUsageModal() {
-    setupIframeModal({
-        buttonId: 'usage-btn',
-        modalId: 'usage-modal',
-        iframeId: 'usage-iframe',
-        closeBtnId: 'close-usage-modal',
-        url: '/usage/'
-    });
-}
 // ===== Sessions button =====
 function setupSessionsButton() {
     setupIframeModal({
@@ -191,7 +183,7 @@ function setupSessionsButton() {
         url: '/sessions/'
     });
 }
-// ===== Budget button =====
+// ===== Budget / Usage button (unified) =====
 function formatBudget(amount) {
     if (typeof amount !== 'number' || isNaN(amount)) return '—';
     const sign = amount < 0 ? '-' : '';
@@ -249,10 +241,10 @@ function updateBudgetDisplay() {
 function setupBudgetButton() {
     setupIframeModal({
         buttonId: 'budget-btn',
-        modalId: 'credits-modal',
-        iframeId: 'credits-iframe',
-        closeBtnId: 'close-credits-modal',
-        url: '/credits/'
+         modalId: 'usage-modal',
+         iframeId: 'usage-iframe',
+         closeBtnId: 'close-usage-modal',
+         url: '/usage/'
     });
     updateBudgetDisplay();
     // Refresh budget every 60 seconds
@@ -270,13 +262,13 @@ function updateBudgetWarningBanner(budget) {
          banner.classList.add('visible', 'budget-critical-banner');
          banner.innerHTML = `<strong>🚫 Insufficient credits (${formatBudget(budget)}).</strong>
              You need credits to launch AI sessions.
-             <a href="/credits/">Add credits now →</a>`;
+             <a href="/usage/">Add credits now →</a>`;
      } else if (budget < 1.00) {
          banner.classList.add('visible');
          banner.classList.remove('budget-critical-banner');
          banner.innerHTML = `<strong>⚠️ Low balance: ${formatBudget(budget)}.</strong>
              Your available credits are running low.
-             <a href="/credits/">Top up credits →</a>`;
+             <a href="/usage/">Top up credits →</a>`;
      } else {
          banner.classList.remove('visible', 'budget-critical-banner');
          banner.innerHTML = '';
@@ -286,6 +278,9 @@ function updateBudgetWarningBanner(budget) {
 
 // ===== Main Initialization =====
 document.addEventListener('DOMContentLoaded', function() {
+     // Render top menubar via reusable component
+     renderMenubar();
+
     setupBasicChatModal({ httpService, notificationService, sessionId });
     setupSettingsSection(notificationService);
     setupCustomPipelineModal({
@@ -305,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     setupPluginManagerModal();
     setupApiKeyBanner();
-    setupUsageModal();
     setupSessionsButton();
     setupBudgetButton();
     applyLocalhostRestrictions();
@@ -325,6 +319,49 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('[init] Error loading app directory:', error);
     });
 });
+function renderMenubar() {
+     if (typeof Menubar === 'undefined') {
+         console.warn('[renderMenubar] Menubar component not loaded');
+         return;
+     }
+     const appGridSection = document.getElementById('app-grid-section');
+     Menubar.render('#menubar-container', {
+         title: 'Cognotik',
+         titleAriaLabel: 'About Cognotik',
+         titleClickable: true,
+         onTitleClick: function () {
+             if (typeof window.__openAboutModal === 'function') {
+                 window.__openAboutModal();
+             }
+         },
+         showLayoutSelector: true,
+         showThemeSelector: true,
+         onLayoutChange: function (layout) {
+             if (appGridSection) appGridSection.setAttribute('data-layout', layout);
+         },
+         buttons: [
+             { id: 'user-settings-btn', icon: '⚙️', label: 'Settings', ariaLabel: 'Open Settings' },
+             { id: 'plugin-manager-btn', icon: '🔌', label: 'Plugins', ariaLabel: 'Open Plugin Manager' },
+             { id: 'sessions-btn', icon: '📁', label: 'Sessions', ariaLabel: 'Open Sessions' },
+             {
+                 id: 'budget-btn',
+                 icon: '📊',
+                 label: 'Budget',
+                 labelId: 'budget-amount',
+                 ariaLabel: 'Open Usage & Credits',
+                 title: 'Usage and available credit balance'
+             },
+             {
+                 id: 'auth-btn',
+                 icon: '🔑',
+                 label: 'Login',
+                 labelId: 'auth-btn-label',
+                 ariaLabel: 'Login',
+                 onClick: function () { window.location.href = '/login/'; }
+             }
+         ]
+     });
+}
 
 // Load API providers and models first, then initialize everything
 loadApiProviders().then(() => {
