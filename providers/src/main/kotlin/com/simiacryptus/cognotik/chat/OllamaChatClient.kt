@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.*
@@ -129,13 +130,11 @@ class OllamaChatClient(
         usage = ModelSchema.Usage(
           prompt_tokens = ollamaResponse.prompt_eval_count?.toLong() ?: 0L,
           completion_tokens = ollamaResponse.eval_count?.toLong() ?: 0L,
-          total_tokens = ((ollamaResponse.prompt_eval_count ?: 0) + (ollamaResponse.eval_count
-            ?: 0)).toLong()
         )
       )
 
       if (response.usage != null) {
-        usageHandler.onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
+        usageHandler.onUsage(model, response.usage?.copy(cost = response.usage!!.price(model).cost)!!)
       }
 
 

@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -349,7 +350,7 @@ class AwsChatClient(
         log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
         usageHandler.onUsage(
           model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!
+          response.usage!!.price(model)
         )
       }
 

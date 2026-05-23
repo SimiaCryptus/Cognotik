@@ -6,6 +6,19 @@
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
         <link href="welcome.css" rel="stylesheet">
         <title>About Cognotik</title>
+     <script src="/modules/theme.js"></script>
+     <script>
+         // Initialize theme as early as possible to avoid flash of unstyled content
+         if (typeof ThemeManager !== 'undefined') {
+             ThemeManager.init();
+         } else {
+             document.addEventListener('DOMContentLoaded', function () {
+                 if (typeof ThemeManager !== 'undefined') {
+                     ThemeManager.init();
+                 }
+             });
+         }
+     </script>
         <style>
             body {
                 max-width: 960px;

@@ -171,6 +171,7 @@ class SessionsServlet : HttpServlet() {
             sb.append("\"name\":").append(jsonString(meta.name)).append(",")
             sb.append("\"ownerId\":").append(jsonString(meta.ownerId)).append(",")
             sb.append("\"path\":").append(jsonString(meta.path)).append(",")
+             sb.append("\"shareUrl\":").append(jsonString(buildShareUrl(meta.path ?: "", meta.id.sessionId))).append(",")
             sb.append("\"sessionTime\":").append(
                 meta.sessionTime?.let { jsonString(isoDate(it)) } ?: "null"
             ).append(",")
@@ -269,6 +270,7 @@ class SessionsServlet : HttpServlet() {
                 appendSortableHeader(this, "Tokens", "tokens", sortBy, sortDir, page, pageSize, numeric = true)
                 appendSortableHeader(this, "Cost", "cost", sortBy, sortDir, page, pageSize, numeric = true)
                 append("<th>Details</th>")
+                 append("<th>Share</th>")
                 append("</tr></thead>\n")
                 append("<tbody>\n")
                 for (meta in sessions) {
@@ -278,6 +280,7 @@ class SessionsServlet : HttpServlet() {
                     val tokens = totalTokens(usage)
                     val cost = totalCost(usage)
                     val rowId = htmlEscape(id)
+                     val shareUrl = buildShareUrl(path, id)
                     append("<tr class=\"clickable\" onclick=\"navigateTo('")
                         .append(jsEscape(path)).append("')\">")
                     append("<td>").append(htmlEscape(meta.name ?: id)).append("</td>")
@@ -287,10 +290,13 @@ class SessionsServlet : HttpServlet() {
                     append("<td class=\"num\">").append(formatCost(cost)).append("</td>")
                     append("<td><a class=\"link\" href=\"javascript:void(0)\" onclick=\"event.stopPropagation();toggleDetails('")
                         .append(jsEscape(id)).append("')\">Show</a></td>")
+                     append("<td><a class=\"link\" href=\"")
+                         .append(htmlEscape(shareUrl))
+                         .append("\" target=\"_blank\" onclick=\"event.stopPropagation()\">Share</a></td>")
                     append("</tr>\n")
                     // Details row
                     append("<tr id=\"details-").append(rowId)
-                        .append("\" class=\"details\" style=\"display:none\"><td colspan=\"7\">\n")
+                         .append("\" class=\"details\" style=\"display:none\"><td colspan=\"8\">\n")
                     append("<div class=\"details-content\">\n")
                     append("<h4>Usage Summary</h4>\n")
                     if (usage.isEmpty()) {
@@ -465,6 +471,37 @@ class SessionsServlet : HttpServlet() {
 
     private fun jsEscape(s: String): String =
         s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r")
+     private fun buildShareUrl(path: String, sessionId: String): String {
+         if (path.isBlank()) return "share/$sessionId/"
+         // The path may include a session-specific suffix like "fileIndex/<sessionId>/app.html".
+         // Strip it to get the app base path before appending share/<sessionId>/.
+         val basePath = stripSessionSuffix(path, sessionId)
+         val normalized = if (basePath.endsWith("/")) basePath else "$basePath/"
+         return "${normalized}share/$sessionId/"
+     }
+
+     private fun stripSessionSuffix(path: String, sessionId: String): String {
+         // Look for "/fileIndex/<sessionId>" and strip everything from there onward.
+         val marker = "/fileIndex/$sessionId"
+         val idx = path.indexOf(marker)
+         if (idx >= 0) {
+             return path.substring(0, idx)
+         }
+         // Generic fallback: if the path contains the sessionId, strip from the segment that contains it.
+         val sessionIdx = path.indexOf(sessionId)
+         if (sessionIdx > 0) {
+             // Find the last '/' before the sessionId
+             val precedingSlash = path.lastIndexOf('/', sessionIdx - 1)
+             // Also look further back to skip an intermediate segment like "fileIndex"
+             if (precedingSlash > 0) {
+                 val priorSlash = path.lastIndexOf('/', precedingSlash - 1)
+                 if (priorSlash >= 0) return path.substring(0, priorSlash)
+                 return path.substring(0, precedingSlash)
+             }
+         }
+         return path
+     }
+
 
     private fun isoDate(d: Date): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")

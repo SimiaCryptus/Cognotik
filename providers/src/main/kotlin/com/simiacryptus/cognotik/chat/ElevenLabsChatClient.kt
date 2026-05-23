@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ElevenLabsModels
+import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
@@ -143,15 +144,13 @@ class ElevenLabsChatClient(
         )
 
         // Estimate token usage based on character count (ElevenLabs bills by character)
-        val charCount = textToSpeak.length.toLong()
         val usage = ModelSchema.Usage(
-            prompt_tokens = charCount,
+            prompt_tokens = textToSpeak.length.toLong(),
             completion_tokens = 0L,
-            total_tokens = charCount
         )
 
         try {
-            usageHandler.onUsage(model, usage.copy(cost = model.pricing(usage)))
+            usageHandler.onUsage(model, usage.price(model))
         } catch (e: Exception) {
             log.warn("Request {}: failed to record usage: {}", requestId, e.message)
         }

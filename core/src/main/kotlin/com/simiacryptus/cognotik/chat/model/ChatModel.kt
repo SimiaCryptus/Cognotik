@@ -14,6 +14,7 @@ import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 class ChatModel(
   val name: String = "",
   modelId: String = name,
@@ -39,8 +40,8 @@ class ChatModel(
   fun pricing(usage: Usage): Double {
     val promptCost = usage.prompt_tokens * inputTokenPricePerK
     val completionCost = usage.completion_tokens * outputTokenPricePerK
-    val estimatedUnaccountedCost =
-      (usage.total_tokens - (usage.prompt_tokens + usage.completion_tokens)) * ((inputTokenPricePerK + outputTokenPricePerK) / 2)
+    val unaccountedTokens = (usage.total_tokens - (usage.prompt_tokens + usage.completion_tokens)).coerceAtLeast(0)
+    val estimatedUnaccountedCost = unaccountedTokens * ((inputTokenPricePerK + outputTokenPricePerK) / 2)
     return (promptCost + completionCost + estimatedUnaccountedCost) / 1000.0
   }
 
@@ -87,3 +88,5 @@ class ChatModel(
   }
 }
 
+
+fun Usage.price(model: ChatModel): Usage = this.copy(cost = model.pricing(this))

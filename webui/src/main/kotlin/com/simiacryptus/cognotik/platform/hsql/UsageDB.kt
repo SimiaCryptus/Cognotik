@@ -23,11 +23,7 @@ class UsageDB : UsageInterface {
         try {
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
-            val scaledUsage = if (cost_scaling_factor != 1.0) {
-                usage.copy(cost = (usage.cost ?: 0.0) * cost_scaling_factor)
-            } else {
-                usage
-            }
+            val scaledUsage = usage.copy(cost = (usage.cost ?: 0.0).coerceAtLeast(0.0) * cost_scaling_factor.coerceAtLeast(0.0))
             usageValues.addAndGet(scaledUsage)
             val now = Instant.now()
             val day = LocalDate.ofInstant(now, ZoneOffset.UTC)
@@ -75,7 +71,7 @@ class UsageDB : UsageInterface {
         return facet.withConnection { conn ->
             val allSessionIds = collectSessionIds(conn, session.sessionId)
             log.debug("Collected session IDs (including children): {}", allSessionIds)
-            if (allSessionIds.isEmpty()) return@withConnection emptyMap<String, ModelSchema.Usage>()
+            if (allSessionIds.isEmpty()) return@withConnection emptyMap()
             val placeholders = allSessionIds.joinToString(",") { "?" }
             conn.prepareStatement(
                 """

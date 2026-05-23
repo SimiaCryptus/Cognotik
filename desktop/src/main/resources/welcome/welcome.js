@@ -129,7 +129,11 @@ function updateLogoutButtonLabel() {
             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
                 escapeHtmlSafe(label);
             btn.onclick = () => {
-                fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+                 const confirmMessage = 'Are you sure you want to log out' +
+                     (label && label !== 'Logout' ? ' as ' + label : '') + '?';
+                 if (window.confirm(confirmMessage)) {
+                     fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+                 }
             };
         }
     } catch (e) {

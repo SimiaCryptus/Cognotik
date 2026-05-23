@@ -5,7 +5,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
   import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
-  import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
+import com.simiacryptus.cognotik.chat.model.price
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
   import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -238,9 +239,6 @@ class AnthropicChatClient(
             ), usage = ModelSchema.Usage(
               prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
               completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
-              total_tokens = (response.usage?.input_tokens?.toLong()
-                ?: 0) + (response.usage?.output_tokens
-                ?: 0),
             )
           )
           JsonUtil.toJson(chatResponse)
@@ -257,10 +255,7 @@ class AnthropicChatClient(
         ModelSchema.ChatResponse::class.java
       )
       if (response.usage != null) {
-        usageHandler.onUsage(
-          model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!
-        )
+        usageHandler.onUsage(model, response.usage!!.price(model))
       }
       response
     }

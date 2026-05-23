@@ -6,12 +6,8 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.authenticate
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import jakarta.servlet.http.HttpServlet
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
@@ -120,83 +116,8 @@ open class DocOpsApp(
   override fun configure(webAppContext: WebAppContext) {
     super.configure(webAppContext)
     webAppContext.addServlet(
-      ServletHolder("redirect", object : HttpServlet() {
-        override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-          when {
-            request.pathInfo == "/" -> response.sendRedirect(
-              "${request.contextPath}/fileIndex/${
-                request.getParameter(
-                  "sessionId"
-                ) ?: Session.newUserID()
-              }/app.html"
-            )
-
-            request.pathInfo == "/global" -> response.sendRedirect(
-              "${request.contextPath}/fileIndex/${
-                request.getParameter(
-                  "sessionId"
-                ) ?: Session.newGlobalID()
-              }/app.html"
-            )
-
-            request.pathInfo.startsWith("/share/") ->
-              share(
-                request,
-                response,
-                Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
-                authenticate(request, response) ?: this@DocOpsApp.run {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session")
-                    return
-                })
-
-            else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
-          }
-        }
-
-      }), "/*"
+      ServletHolder("redirect", RouterServlet(dataStorage)), "/*"
     )
-  }
-
-  protected open fun share(
-    request: HttpServletRequest,
-    response: HttpServletResponse,
-    session: Session,
-    user: User
-  ) {
-    require(!session.isGlobal()) { "Cannot share a global session" }
-    val sessionRoot = dataStorage.getUserDir(user, session)
-    if (!sessionRoot.exists() || sessionRoot.list()?.isEmpty() == true) {
-      response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
-      return
-    }
-    val globalSession = session.toGlobal()
-    val globalRoot = dataStorage.getUserDir(user, globalSession)
-    try {
-      copyRecursively(sessionRoot, globalRoot)
-      response.sendRedirect("${request.contextPath}/fileIndex/${globalSession.sessionId}/app.html")
-    } catch (e: Exception) {
-      LoggerFactory.getLogger(DocOpsApp::class.java)
-        .error(
-          "Failed to share session ${session.sessionId} to global session ${globalSession.sessionId}: ${e.message}",
-          e
-        )
-      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to share session: ${e.message}")
-    }
-  }
-
-  protected fun copyRecursively(source: File, destination: File) {
-    try {
-      if (source.isDirectory) {
-        destination.mkdirs()
-        source.listFiles()?.forEach { child ->
-          copyRecursively(child, File(destination, child.name))
-        }
-      } else {
-        copyFileWithLineEndingNormalization(source, destination)
-      }
-    } catch (e: Exception) {
-      log.error("Failed to copy file from ${source.absolutePath} to ${destination.absolutePath}: ${e.message}", e)
-    }
   }
 
   private fun extractFromUrl(resourceUrl: URL, resourcePath: String, targetDir: File): Boolean {
@@ -323,52 +244,6 @@ open class DocOpsApp(
     return path.replace('\\', '/').split('/').any { it.equals("demo", ignoreCase = false) }
   }
 
-   private fun isTextFile(fileName: String): Boolean {
-     val ext = fileName.substringAfterLast('.', "").lowercase()
-     val baseName = fileName.substringAfterLast('/').substringAfterLast('\\').lowercase()
-     return ext in TEXT_EXTENSIONS || baseName in setOf(
-       "dockerfile", "makefile", "gemfile", "rakefile", "vagrantfile",
-       "license", "readme", "changelog", "authors", "contributors"
-     )
-   }
-   private fun copyWithLineEndingNormalization(input: InputStream, targetFile: File) {
-     if (isTextFile(targetFile.name)) {
-       val content = input.readBytes().toString(Charsets.UTF_8)
-       val normalized = content.replace("\r\n", "\n")
-       targetFile.writeText(normalized, Charsets.UTF_8)
-     } else {
-       targetFile.outputStream().use { output ->
-         input.copyTo(output)
-       }
-     }
-    setExecutableIfShellScript(targetFile)
-   }
-
-   private fun copyFileWithLineEndingNormalization(source: File, targetFile: File) {
-     if (isTextFile(targetFile.name)) {
-       val content = source.readText(Charsets.UTF_8)
-       val normalized = content.replace("\r\n", "\n")
-       targetFile.writeText(normalized, Charsets.UTF_8)
-     } else {
-       source.copyTo(targetFile, overwrite = true)
-     }
-    setExecutableIfShellScript(targetFile)
-  }
-  /**
-   * Sets the executable bit on shell script files (*.sh) so they can be run directly.
-   */
-  private fun setExecutableIfShellScript(file: File) {
-    if (file.name.endsWith(".sh", ignoreCase = true)) {
-      try {
-        if (!file.setExecutable(true, false)) {
-          log.warn("Failed to set executable bit on shell script: ${file.absolutePath}")
-        }
-      } catch (e: Exception) {
-        log.warn("Exception setting executable bit on ${file.absolutePath}: ${e.message}", e)
-      }
-    }
-   }
-
   companion object {
     val log = LoggerFactory.getLogger(DocOpsApp::class.java)
     var OVERWRITE: Boolean = false
@@ -384,5 +259,51 @@ open class DocOpsApp(
       "log", "tex", "rst", "adoc", "asciidoc", "mjs", "cjs"
     )
 
+    fun copyFileWithLineEndingNormalization(source: File, targetFile: File) {
+      if (isTextFile(targetFile.name)) {
+        val content = source.readText(Charsets.UTF_8)
+        val normalized = content.replace("\r\n", "\n")
+        targetFile.writeText(normalized, Charsets.UTF_8)
+      } else {
+        source.copyTo(targetFile, overwrite = true)
+      }
+      setExecutableIfShellScript(targetFile)
+    }
+    private fun isTextFile(fileName: String): Boolean {
+      val ext = fileName.substringAfterLast('.', "").lowercase()
+      val baseName = fileName.substringAfterLast('/').substringAfterLast('\\').lowercase()
+      return ext in TEXT_EXTENSIONS || baseName in setOf(
+        "dockerfile", "makefile", "gemfile", "rakefile", "vagrantfile",
+        "license", "readme", "changelog", "authors", "contributors"
+      )
+    }
+    private fun copyWithLineEndingNormalization(input: InputStream, targetFile: File) {
+      if (isTextFile(targetFile.name)) {
+        val content = input.readBytes().toString(Charsets.UTF_8)
+        val normalized = content.replace("\r\n", "\n")
+        targetFile.writeText(normalized, Charsets.UTF_8)
+      } else {
+        targetFile.outputStream().use { output ->
+          input.copyTo(output)
+        }
+      }
+      setExecutableIfShellScript(targetFile)
+    }
+
+    /**
+     * Sets the executable bit on shell script files (*.sh) so they can be run directly.
+     */
+    private fun setExecutableIfShellScript(file: File) {
+      if (file.name.endsWith(".sh", ignoreCase = true)) {
+        try {
+          if (!file.setExecutable(true, false)) {
+            log.warn("Failed to set executable bit on shell script: ${file.absolutePath}")
+          }
+        } catch (e: Exception) {
+          log.warn("Exception setting executable bit on ${file.absolutePath}: ${e.message}", e)
+        }
+      }
+    }
   }
 }
+

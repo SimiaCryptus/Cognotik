@@ -25,61 +25,56 @@ import java.util.*
  * without any real payment processing (original behaviour).
  */
 open class CreditsServlet(
-     private vararg val providers: PaymentProvider
+    private vararg val providers: PaymentProvider
 ) : HttpServlet() {
 
     val usageDB: UsageInterface by lazy { ApplicationServices.fileApplicationServices().usageManager }
 
     private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
-      /**
-       * Providers visible to (and usable by) the given user.  Filters out
-       * providers that have explicitly denied authorization for the user,
-       * so the UI never teases admin-only payment methods.
-       */
-      private fun authorizedProviders(user: User): List<PaymentProvider> =
-          providers.filter { it.isAuthorized(user) }
 
-      private fun resolveProvider(req: HttpServletRequest, user: User): PaymentProvider {
-          val available = authorizedProviders(user)
-          if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
-          val requested = req.getParameter("provider")
-          if (requested != null) {
-              available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
-          }
-          return available.first()
-      }
+    /**
+     * Providers visible to (and usable by) the given user.  Filters out
+     * providers that have explicitly denied authorization for the user,
+     * so the UI never teases admin-only payment methods.
+     */
+    private fun authorizedProviders(user: User): List<PaymentProvider> =
+        providers.filter { it.isAuthorized(user) }
 
-      private fun defaultProvider(user: User): PaymentProvider {
-          val available = authorizedProviders(user)
-          if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
-          return available.first()
-      }
+    private fun resolveProvider(req: HttpServletRequest, user: User): PaymentProvider {
+        val available = authorizedProviders(user)
+        if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
+        val requested = req.getParameter("provider")
+        if (requested != null) {
+            available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
+        }
+        return available.first()
+    }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
-         if (authorizedProviders(user).isEmpty()) {
-             resp.status = HttpServletResponse.SC_FORBIDDEN
-             renderError(resp, "You are not authorized to purchase credits. Please contact support.")
-             return
-         }
+        if (authorizedProviders(user).isEmpty()) {
+            resp.status = HttpServletResponse.SC_FORBIDDEN
+            renderError(resp, "You are not authorized to purchase credits. Please contact support.")
+            return
+        }
 
 
         when (req.getParameter("step")?.lowercase()) {
             "review" -> renderReview(req, resp, user)
             "receipt" -> renderReceipt(req, resp, user)
             "callback" -> handleProviderCallback(req, resp, user)
-             "poll", "webhook" -> handleProviderCallback(req, resp, user)
+            "poll", "webhook" -> handleProviderCallback(req, resp, user)
             else -> renderCheckout(resp, user)
         }
     }
 
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
-         if (authorizedProviders(user).isEmpty()) {
-             resp.status = HttpServletResponse.SC_FORBIDDEN
-             renderError(resp, "You are not authorized to purchase credits. Please contact support.")
-             return
-         }
+        if (authorizedProviders(user).isEmpty()) {
+            resp.status = HttpServletResponse.SC_FORBIDDEN
+            renderError(resp, "You are not authorized to purchase credits. Please contact support.")
+            return
+        }
 
 
         val amount = parseAmount(req)
@@ -92,12 +87,12 @@ open class CreditsServlet(
         val cappedAmount = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
         val orderId = UUID.randomUUID().toString().take(8).uppercase()
 
-          val provider = resolveProvider(req, user)
-          if (!provider.isAuthorized(user)) {
-              resp.status = HttpServletResponse.SC_FORBIDDEN
-              renderError(resp, "You are not authorized to use this payment method. Please contact support.")
-              return
-          }
+        val provider = resolveProvider(req, user)
+        if (!provider.isAuthorized(user)) {
+            resp.status = HttpServletResponse.SC_FORBIDDEN
+            renderError(resp, "You are not authorized to use this payment method. Please contact support.")
+            return
+        }
         when (val result = provider.initiateCheckout(req, resp, user, cappedAmount, orderId)) {
             is PaymentProvider.CheckoutResult.Completed -> {
                 log.info(
@@ -108,8 +103,8 @@ open class CreditsServlet(
                     "?step=receipt" +
                             "&order=${result.orderId}" +
                             "&amount=${result.amount}" +
-                             "&balance=${result.newBudget}" +
-                             "&provider=${provider.name}"
+                            "&balance=${result.newBudget}" +
+                            "&provider=${provider.name}"
                 )
             }
 
@@ -125,7 +120,7 @@ open class CreditsServlet(
     }
 
     private fun handleProviderCallback(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-          val provider = resolveProvider(req, user)
+        val provider = resolveProvider(req, user)
         when (val result = provider.handleCallback(req, resp, user)) {
             is PaymentProvider.CheckoutResult.Completed -> {
                 log.info(
@@ -136,8 +131,8 @@ open class CreditsServlet(
                     "?step=receipt" +
                             "&order=${result.orderId}" +
                             "&amount=${result.amount}" +
-                             "&balance=${result.newBudget}" +
-                             "&provider=${provider.name}"
+                            "&balance=${result.newBudget}" +
+                            "&provider=${provider.name}"
                 )
             }
 
@@ -167,8 +162,8 @@ open class CreditsServlet(
 
 
     private fun renderCheckout(response: HttpServletResponse, user: User) {
-          val available = authorizedProviders(user)
-          val provider = available.first()
+        val available = authorizedProviders(user)
+        val provider = available.first()
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
 
@@ -176,50 +171,50 @@ open class CreditsServlet(
         val budgetHtml = if (budget != null) {
             """<div class="budget">Current balance: <strong>${"%.4f".format(budget)}</strong></div>"""
         } else ""
-          val paymentNotice = if (available.size > 1) {
-             """
+        val paymentNotice = if (available.size > 1) {
+            """
               <div class="notice">
                   <strong>Multiple payment providers available.</strong> Select your preferred method below.
               </div>
               """.trimIndent()
-         } else if (!provider.requiresPayment) {
-             """
+        } else if (!provider.requiresPayment) {
+            """
               <div class="notice">
                   <strong>Notice:</strong> This is a self-service credit top-up.
                   No payment is processed. Credits applied here are governed by
                   your account's budgeting policy and audited via ledger entries.
               </div>
               """.trimIndent()
-         } else {
-             """
+        } else {
+            """
               <div class="notice">
                   <strong>Payment provider:</strong> ${provider.name}.
                   You will be redirected to complete payment before credits are applied.
               </div>
               """.trimIndent()
-         }
+        }
 
-          val providerSelection = if (available.size > 1) {
-              val providerOptions = available.mapIndexed { idx, p ->
-                 val checked = if (idx == 0) "checked" else ""
-                 val desc = if (p.requiresPayment) "External payment" else "Self-service (no payment)"
-                 """
+        val providerSelection = if (available.size > 1) {
+            val providerOptions = available.mapIndexed { idx, p ->
+                val checked = if (idx == 0) "checked" else ""
+                val desc = if (p.requiresPayment) "External payment" else "Self-service (no payment)"
+                """
                      <label class="pkg-card">
                          <input type="radio" name="provider" value="${p.name}" $checked/>
                          <div class="pkg-title">${p.name}</div>
                          <div class="pkg-desc">$desc</div>
                      </label>
                      """.trimIndent()
-             }.joinToString("\n")
-             """
+            }.joinToString("\n")
+            """
                  <h2>Select a payment method</h2>
                  <div class="pkg-grid">
                      $providerOptions
                  </div>
                  """.trimIndent()
-         } else {
-             """<input type="hidden" name="provider" value="${provider.name}"/>"""
-         }
+        } else {
+            """<input type="hidden" name="provider" value="${provider.name}"/>"""
+        }
 
 
         val packageCards = PACKAGES.joinToString("\n") { pkg ->
@@ -240,6 +235,7 @@ open class CreditsServlet(
                     <title>Buy Credits</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                     ${commonStyles()}
+                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -273,6 +269,7 @@ open class CreditsServlet(
                         </div>
                     </form>
                 </div>
+               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -280,12 +277,12 @@ open class CreditsServlet(
     }
 
     private fun renderReview(request: HttpServletRequest, response: HttpServletResponse, user: User) {
-          val provider = resolveProvider(request, user)
-          if (!provider.isAuthorized(user)) {
-              response.status = HttpServletResponse.SC_FORBIDDEN
-              renderError(response, "You are not authorized to use this payment method. Please contact support.")
-              return
-          }
+        val provider = resolveProvider(request, user)
+        if (!provider.isAuthorized(user)) {
+            response.status = HttpServletResponse.SC_FORBIDDEN
+            renderError(response, "You are not authorized to use this payment method. Please contact support.")
+            return
+        }
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
 
@@ -309,7 +306,7 @@ open class CreditsServlet(
         val paymentMethodRow = if (provider.requiresPayment) {
             "<tr><th>Payment method</th><td><em>${provider.name}</em></td></tr>"
         } else {
-             "<tr><th>Payment method</th><td><em>${provider.name} (self-service)</em></td></tr>"
+            "<tr><th>Payment method</th><td><em>${provider.name} (self-service)</em></td></tr>"
         }
         val confirmLabel = if (provider.requiresPayment) "Proceed to Payment &rarr;" else "Confirm &amp; Apply Credits"
 
@@ -321,6 +318,7 @@ open class CreditsServlet(
                     <title>Review Purchase</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                     ${commonStyles()}
+                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -346,6 +344,7 @@ open class CreditsServlet(
                         </div>
                     </form>
                 </div>
+               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -367,6 +366,7 @@ open class CreditsServlet(
                     <title>Receipt</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                     ${commonStyles()}
+                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -390,6 +390,7 @@ open class CreditsServlet(
                         <a href="/gifts/" class="btn-link">Gifts</a>
                     </div>
                 </div>
+               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -404,6 +405,7 @@ open class CreditsServlet(
                 <head>
                     <title>Error</title>
                     ${commonStyles()}
+                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -411,6 +413,7 @@ open class CreditsServlet(
                     <div class="warning">$message</div>
                     <div class="actions"><a href="?" class="btn-primary">Try again</a></div>
                 </div>
+               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -419,51 +422,102 @@ open class CreditsServlet(
 
     private fun commonStyles(): String = """
             <style>
-                body { font-family: Arial, sans-serif; margin: 0; background: #f7f8fa; }
-                .container { max-width: 760px; margin: 30px auto; padding: 24px; background: #fff;
-                             border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-                h1, h2 { color: #333; }
+               :root {
+                   --bg-page: #f7f8fa;
+                   --bg-container: #ffffff;
+                   --bg-muted: #f4f6f9;
+                   --bg-nav: #f0f3f8;
+                   --bg-nav-hover: #e1e7f1;
+                   --text-primary: #333333;
+                   --text-secondary: #666666;
+                   --text-muted: #777777;
+                   --text-hint: #888888;
+                   --border-color: #dddddd;
+                   --border-table: #e1e4e8;
+                   --accent: #4a6fa5;
+                   --accent-hover: #3a5a8c;
+                   --accent-bg: #f4f7fc;
+                   --success-bg: #eef7ee;
+                   --success-border: #4a8;
+                   --notice-bg: #fffbe6;
+                   --notice-border: #e0b500;
+                   --warning-bg: #fdecea;
+                   --warning-border: #c0392b;
+                   --shadow: 0 1px 4px rgba(0,0,0,0.08);
+               }
+               html[data-theme="dark"] {
+                   --bg-page: #1a1d23;
+                   --bg-container: #252932;
+                   --bg-muted: #2f3440;
+                   --bg-nav: #2a2e38;
+                   --bg-nav-hover: #353a47;
+                   --text-primary: #e4e6eb;
+                   --text-secondary: #b0b3b8;
+                   --text-muted: #9a9da3;
+                   --text-hint: #8a8d93;
+                   --border-color: #3a3f4b;
+                   --border-table: #3a3f4b;
+                   --accent: #6b8fc7;
+                   --accent-hover: #8aa8db;
+                   --accent-bg: #2d3340;
+                   --success-bg: #2a3a2e;
+                   --success-border: #5ab;
+                   --notice-bg: #3a3520;
+                   --notice-border: #d4a818;
+                   --warning-bg: #3a2624;
+                   --warning-border: #d4544a;
+                   --shadow: 0 1px 4px rgba(0,0,0,0.4);
+               }
+               body { font-family: Arial, sans-serif; margin: 0; background: var(--bg-page); color: var(--text-primary); }
+               .container { max-width: 760px; margin: 30px auto; padding: 24px; background: var(--bg-container);
+                            border-radius: 8px; box-shadow: var(--shadow); }
+               h1, h2 { color: var(--text-primary); }
                 h2 { margin-top: 24px; font-size: 1.1em; }
-                .scope { color: #666; margin-bottom: 12px; }
-                .nav-bar { display: flex; gap: 8px; padding: 10px 12px; background: #f0f3f8;
+               .scope { color: var(--text-secondary); margin-bottom: 12px; }
+               .nav-bar { display: flex; gap: 8px; padding: 10px 12px; background: var(--bg-nav);
                            border-radius: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-                .nav-bar a { color: #4a6fa5; text-decoration: none; padding: 6px 12px;
+               .nav-bar a { color: var(--accent); text-decoration: none; padding: 6px 12px;
                              border-radius: 4px; font-size: 0.95em; }
-                .nav-bar a:hover { background: #e1e7f1; text-decoration: none; }
-                .nav-bar a.active { background: #4a6fa5; color: #fff; font-weight: 600; }
-                .budget { padding: 10px 14px; background: #eef7ee; border-left: 4px solid #4a8;
+               .nav-bar a:hover { background: var(--bg-nav-hover); text-decoration: none; }
+               .nav-bar a.active { background: var(--accent); color: #fff; font-weight: 600; }
+               .budget { padding: 10px 14px; background: var(--success-bg); border-left: 4px solid var(--success-border);
                           margin-bottom: 16px; border-radius: 4px; }
-                .notice { padding: 10px 14px; background: #fffbe6; border-left: 4px solid #e0b500;
+               .notice { padding: 10px 14px; background: var(--notice-bg); border-left: 4px solid var(--notice-border);
                           margin: 14px 0; border-radius: 4px; font-size: 0.95em; }
-                .warning { padding: 10px 14px; background: #fdecea; border-left: 4px solid #c0392b;
+               .warning { padding: 10px 14px; background: var(--warning-bg); border-left: 4px solid var(--warning-border);
                            margin: 14px 0; border-radius: 4px; }
                 .pkg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
                             gap: 12px; margin: 12px 0; }
-                .pkg-card { display: block; border: 2px solid #ddd; border-radius: 6px; padding: 12px;
+               .pkg-card { display: block; border: 2px solid var(--border-color); border-radius: 6px; padding: 12px;
                             cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-                .pkg-card:hover { border-color: #4a6fa5; background: #f4f7fc; }
+               .pkg-card:hover { border-color: var(--accent); background: var(--accent-bg); }
                 .pkg-card input[type=radio] { margin-right: 6px; }
                 .pkg-title { font-weight: bold; margin-top: 6px; }
-                .pkg-amount { color: #4a6fa5; font-size: 1.05em; margin: 4px 0; }
-                .pkg-desc { color: #777; font-size: 0.85em; }
+               .pkg-amount { color: var(--accent); font-size: 1.05em; margin: 4px 0; }
+               .pkg-desc { color: var(--text-muted); font-size: 0.85em; }
                 .custom-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
-                .custom-row input[type=number] { padding: 6px; width: 120px; }
-                .hint { color: #888; font-size: 0.85em; }
+               .custom-row input[type=number] { padding: 6px; width: 120px; background: var(--bg-container);
+                                                color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; }
+               .hint { color: var(--text-hint); font-size: 0.85em; }
                 .actions { margin-top: 20px; display: flex; gap: 12px; align-items: center; }
-                .btn-primary { background: #4a6fa5; color: #fff; border: none; padding: 10px 18px;
+               .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 18px;
                                border-radius: 4px; cursor: pointer; font-size: 1em; text-decoration: none; }
-                .btn-primary:hover { background: #3a5a8c; }
-                .btn-link { color: #4a6fa5; text-decoration: none; }
+               .btn-primary:hover { background: var(--accent-hover); }
+               .btn-link { color: var(--accent); text-decoration: none; }
                 .btn-link:hover { text-decoration: underline; }
                 table.review-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-                table.review-table th, table.review-table td { border: 1px solid #e1e4e8;
+               table.review-table th, table.review-table td { border: 1px solid var(--border-table);
                                                                 padding: 8px 10px; text-align: left; }
-                table.review-table th { background: #f4f6f9; width: 35%; }
-                .total-row td, .total-row th { background: #eef7ee; }
+               table.review-table th { background: var(--bg-muted); width: 35%; }
+               .total-row td, .total-row th { background: var(--success-bg); }
                 .receipt { margin: 14px 0; }
-                code { background: #f4f6f9; padding: 2px 6px; border-radius: 3px; }
+               code { background: var(--bg-muted); padding: 2px 6px; border-radius: 3px; }
+               .theme-selector-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+               .theme-selector-wrap select { background: var(--bg-container); color: var(--text-primary);
+                                              border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; }
             </style>
         """.trimIndent()
+
     private fun navBar(active: String): String {
         fun cls(name: String) = if (name == active) "active" else ""
         return """
@@ -471,7 +525,23 @@ open class CreditsServlet(
                 <a href="/usage" class="${cls("usage")}">📊 Usage</a>
                 <a href="/credits" class="${cls("credits")}">💳 Buy Credits</a>
                 <a href="/gifts/" class="${cls("gifts")}">🎁 Gifts</a>
+               <span class="theme-selector-wrap">
+                   <label for="theme-selector" style="font-size: 0.9em;">Theme:</label>
+                   <select id="theme-selector">
+                       <option value="auto">Auto</option>
+                       <option value="light">Light</option>
+                       <option value="dark">Dark</option>
+                   </select>
+               </span>
             </nav>
+           <script>
+               (function() {
+                   if (typeof ThemeManager !== 'undefined') {
+                       var sel = document.getElementById('theme-selector');
+                       if (sel) ThemeManager.bindSelector(sel);
+                   }
+               })();
+           </script>
         """.trimIndent()
     }
 

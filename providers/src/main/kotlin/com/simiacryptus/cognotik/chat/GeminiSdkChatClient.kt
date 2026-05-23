@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
@@ -229,7 +230,7 @@ class GeminiSdkChatClient(
       }
       if (chatResponse.usage != null) {
         try {
-          usageHandler.onUsage(model, chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!)
+          usageHandler.onUsage(model, chatResponse.usage?.copy(cost = chatResponse.usage!!.price(model).cost)!!)
         } catch (e: Exception) {
           log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }
