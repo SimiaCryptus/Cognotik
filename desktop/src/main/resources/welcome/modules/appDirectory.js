@@ -181,6 +181,7 @@ function renderAppGrid() {
 
         apps.forEach(app => {
             const appUrl = getAppUrl(app);
+             const launchUrl = getAppLaunchUrl(app);
             const card = document.createElement('a');
             card.href = appUrl;
             card.className = 'app-card' + (app.cardClass ? ' ' + app.cardClass : '');
@@ -202,13 +203,13 @@ function renderAppGrid() {
          const budgetState = getBudgetState();
          let launchBtnHtml;
          if (!loggedIn) {
-             launchBtnHtml = `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Login to Launch</a>`;
+              launchBtnHtml = `<a class="button app-card-launch-btn" href="${launchUrl}" data-app-id="${app.id}">Login to Launch</a>`;
          } else if (budgetState.level === 'critical') {
              launchBtnHtml = `<a class="button app-card-launch-btn app-card-launch-btn--no-credits" href="/credits/" data-app-id="${app.id}" title="Insufficient credits — add credits to launch">Add Credits to Launch</a>`;
          } else if (budgetState.level === 'warning') {
-             launchBtnHtml = `<a class="button app-card-launch-btn app-card-launch-btn--low-credits" href="${appUrl}" data-app-id="${app.id}" title="Low balance: ${formatBudgetLabel(budgetState.value)}">Launch Session</a>`;
+              launchBtnHtml = `<a class="button app-card-launch-btn app-card-launch-btn--low-credits" href="${launchUrl}" data-app-id="${app.id}" title="Low balance: ${formatBudgetLabel(budgetState.value)}">Launch Session</a>`;
          } else {
-             launchBtnHtml = `<a class="button app-card-launch-btn" href="${appUrl}" data-app-id="${app.id}">Launch Session</a>`;
+              launchBtnHtml = `<a class="button app-card-launch-btn" href="${launchUrl}" data-app-id="${app.id}">Launch Session</a>`;
          }
             const hasExtras = hasReadme || app.videoUrl || (app.exampleSessions && Object.keys(app.exampleSessions).length > 0);
             const readmeHintHtml = hasExtras
@@ -282,6 +283,12 @@ function getAppUrl(app) {
         return app.path.endsWith('/') ? app.path : app.path + '/';
     }
     return `/${app.id}/`;
+}
+function getAppLaunchUrl(app) {
+     // URL that launches a new session for the app
+     const base = getAppUrl(app);
+     if (!base || base === '#') return '#';
+     return base.endsWith('/') ? base + 'new' : base + '/new';
 }
 function isUserLoggedIn() {
     // appState.userInfo is populated after loadUserSettings resolves
@@ -461,7 +468,7 @@ function showAppReadme(app) {
     document.getElementById('app-readme-description').textContent = app.description || '';
     const launchLink = document.getElementById('app-readme-launch-btn');
     if (launchLink) {
-        launchLink.href = getAppUrl(app);
+         launchLink.href = getAppLaunchUrl(app);
     }
     const body = document.getElementById('app-readme-body');
     const readmeContent = app.readme || '_No additional details available._';

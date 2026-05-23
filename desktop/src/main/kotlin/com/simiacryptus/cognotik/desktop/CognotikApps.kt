@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
-import com.simiacryptus.cognotik.webui.chat.DocOpsApp
+import com.simiacryptus.cognotik.webui.servlet.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server

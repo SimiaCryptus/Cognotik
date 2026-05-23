@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.webui.chat
+package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -37,6 +37,7 @@ open class DocOpsApp(
     applicationName: String = appId,
     val resourcePath : String,
     val classLoader: ClassLoader = this.javaClass.classLoader,
+     val readme: String = "",
 ) : ApplicationServer(
   applicationName = applicationName,
   path = "/$appId",
@@ -61,6 +62,12 @@ open class DocOpsApp(
 
   @Suppress("UNCHECKED_CAST")
   override fun <T : Any> initSettings(session: Session, user: User): T = Settings() as T
+
+  fun extractResources(resourcePath: String, targetDir: File): Boolean {
+    val resourceUrl = classLoader.getResource(resourcePath)
+      ?: return extractResourcesFromClassLoaderUrls(resourcePath, targetDir)
+    return extractFromUrl(resourceUrl, resourcePath, targetDir)
+  }
 
   override fun newSession(user: User, session: Session): SocketManager {
     val newSession = super.newSession(user, session)!!
@@ -107,16 +114,11 @@ open class DocOpsApp(
     return newSession
   }
 
-  fun extractResources(resourcePath: String, targetDir: File): Boolean {
-    val resourceUrl = classLoader.getResource(resourcePath)
-      ?: return extractResourcesFromClassLoaderUrls(resourcePath, targetDir)
-    return extractFromUrl(resourceUrl, resourcePath, targetDir)
-  }
 
   override fun configure(webAppContext: WebAppContext) {
     super.configure(webAppContext)
     webAppContext.addServlet(
-      ServletHolder("redirect", RouterServlet(dataStorage)), "/*"
+       ServletHolder("redirect", RouterServlet(dataStorage, applicationName)), "/*"
     )
   }
 
@@ -306,4 +308,3 @@ open class DocOpsApp(
     }
   }
 }
-
