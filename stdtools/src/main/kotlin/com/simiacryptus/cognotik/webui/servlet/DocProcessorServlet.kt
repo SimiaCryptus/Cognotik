@@ -49,7 +49,7 @@ package com.simiacryptus.cognotik.webui.servlet
      */
     class DocProcessorServlet() : HttpServlet() {
         private val dataStorage by lazy { ApplicationServices.fileApplicationServices().dataStorageFactory }
-        private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataStorageFactory }
+        private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
 
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
             doPost(req, resp)

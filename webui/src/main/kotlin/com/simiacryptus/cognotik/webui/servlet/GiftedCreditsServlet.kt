@@ -369,7 +369,7 @@ class GiftedCreditsServlet : HttpServlet() {
             // Gift creation is now available to all authenticated users.
             // Show current balance so users know what they can afford.
             val currentBalance = try {
-                ApplicationServices.fileApplicationServices().usageManager.getUserBalance(user.id)
+                ApplicationServices.fileApplicationServices().usageDB.getUserBalance(user.id)
             } catch (e: Exception) {
                 log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
                 0.0
@@ -1385,7 +1385,7 @@ class GiftedCreditsServlet : HttpServlet() {
             "Gift claimed successfully by user={} giftId={} amountGranted={} theme={}",
             userinfo, giftId, gift.amountGranted, theme.id
         )
-        ApplicationServices.fileApplicationServices().usageManager.creditUser(
+        ApplicationServices.fileApplicationServices().usageDB.creditUser(
             user = userinfo,
             amount = gift.amountGranted,
             comment = "Claimed gift $giftId",

@@ -13,7 +13,7 @@ import java.util.*
 
 open class DataStorage(
   private val dataDir: File,
-  val metadataStorage: MetadataStorageInterface = ApplicationServices.fileApplicationServices(dataDir.parentFile).metadataStorageFactory
+  val metadataStorage: MetadataStorageInterface = ApplicationServices.fileApplicationServices(dataDir.parentFile).metadataDB
 ) : StorageInterface {
 
   init {

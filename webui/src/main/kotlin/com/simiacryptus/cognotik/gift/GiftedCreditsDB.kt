@@ -121,7 +121,7 @@ class GiftedCreditsDB(
             throw IllegalArgumentException("grantDuration must be positive, got $grantDuration")
         }
          // Check creator has sufficient credit balance
-         val usageManager = ApplicationServices.fileApplicationServices().usageManager
+         val usageManager = ApplicationServices.fileApplicationServices().usageDB
          val creatorBalance = try {
              usageManager.getUserBalance(creator.id)
          } catch (e: Exception) {
@@ -284,7 +284,7 @@ class GiftedCreditsDB(
                      val creatorId = gift.createdBy
                      if (!creatorId.isNullOrBlank()) {
                          try {
-                             val creatorBalance = ApplicationServices.fileApplicationServices().usageManager.getUserBalance(creatorId)
+                             val creatorBalance = ApplicationServices.fileApplicationServices().usageDB.getUserBalance(creatorId)
                              log.debug(
                                  "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
                                  creatorId, creatorBalance, gift.amountGranted

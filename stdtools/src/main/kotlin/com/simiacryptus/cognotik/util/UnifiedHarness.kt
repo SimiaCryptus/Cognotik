@@ -128,7 +128,7 @@ open class UnifiedHarness(
     ) {
       override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
-        val usageManager = ApplicationServices.fileApplicationServices().usageManager
+        val usageManager = ApplicationServices.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         super.onComplete(mode, task)
       }
@@ -243,7 +243,7 @@ open class UnifiedHarness(
       override fun onTaskComplete(result: String, task: SessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
-        val usageManager = ApplicationServices.fileApplicationServices().usageManager
+        val usageManager = ApplicationServices.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         completionLatch.countDown()
         onComplete(result, task)

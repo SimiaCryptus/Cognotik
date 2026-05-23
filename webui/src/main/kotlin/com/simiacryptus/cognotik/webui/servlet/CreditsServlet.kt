@@ -28,7 +28,7 @@ open class CreditsServlet(
     private vararg val providers: PaymentProvider
 ) : HttpServlet() {
 
-    val usageDB: UsageInterface by lazy { ApplicationServices.fileApplicationServices().usageManager }
+    val usageDB: UsageInterface by lazy { ApplicationServices.fileApplicationServices().usageDB }
 
     private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
 

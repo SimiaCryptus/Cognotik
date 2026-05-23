@@ -14,8 +14,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class SessionsServlet : HttpServlet() {
-    val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataStorageFactory }
-    val usageDB by lazy { ApplicationServices.fileApplicationServices().usageManager }
+    val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
+    val usageDB by lazy { ApplicationServices.fileApplicationServices().usageDB }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to list sessions")
@@ -37,6 +37,21 @@ class SessionsServlet : HttpServlet() {
             }
         }
         val parentSessionIds = sessionParents.values.toSet()
+         // Build reverse map: parent -> list of children metadata
+         val childrenByParent: Map<Session, List<SessionMetadata>> = sessionParents.entries
+             .groupBy({ it.value }, { it.key })
+             .mapValues { (_, childSessions) ->
+                 childSessions.mapNotNull { childSession ->
+                     allMetadata.firstOrNull { it.id == childSession }
+                         ?: try {
+                             metadataDB.getSessionMetadata(user, childSession)
+                         } catch (e: Exception) {
+                             log.warn("Failed to load metadata for child session $childSession", e)
+                             null
+                         }
+                 }
+             }
+
 
         // Filter sessions that are visible (not children, have a path, and have messages or are parents)
         val visibleMetadata = allMetadata
@@ -44,7 +59,8 @@ class SessionsServlet : HttpServlet() {
             .filter { !it.path.isNullOrBlank() }
             .filter { it.messageIds.isNotEmpty() || parentSessionIds.contains(it.id) }
 
-        // Compute usage summaries for visible sessions
+
+         // Compute usage summaries for visible sessions (includes children via getSessionUsageSummary)
         val sessionUsages: Map<SessionMetadata, Map<String, ModelSchema.Usage>> = visibleMetadata.associateWith {
             try {
                 usageDB.getSessionUsageSummary(it.id)
@@ -53,6 +69,17 @@ class SessionsServlet : HttpServlet() {
                 emptyMap()
             }
         }
+         // Compute per-child usage summaries for visible parent sessions
+         val childUsages: Map<Session, Map<String, ModelSchema.Usage>> = visibleMetadata
+             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
+             .associate { childMeta ->
+                 childMeta.id to try {
+                     usageDB.getSessionUsageSummary(childMeta.id)
+                 } catch (e: Exception) {
+                     log.warn("Failed to load usage for child session ${childMeta.id}", e)
+                     emptyMap()
+                 }
+             }
 
         // Sort
         val sortBy = req.getParameter("sortBy")?.lowercase() ?: "time"
@@ -72,11 +99,13 @@ class SessionsServlet : HttpServlet() {
         when (resolveFormat(req)) {
             Format.JSON -> writeJson(
                 resp, user, pagedMetadata, sessionUsages,
-                totalCount, effectivePage, pageSize, totalPages, sortBy, sortDir
+                 childrenByParent, childUsages,
+                 totalCount, effectivePage, pageSize, totalPages, sortBy, sortDir
             )
 
             Format.HTML -> writeHtml(
                 resp, user, pagedMetadata, sessionUsages,
+                 childrenByParent, childUsages,
                 totalCount, effectivePage, pageSize, totalPages, sortBy, sortDir
             )
         }
@@ -143,6 +172,8 @@ class SessionsServlet : HttpServlet() {
         user: User,
         sessions: List<SessionMetadata>,
         sessionUsages: Map<SessionMetadata, Map<String, ModelSchema.Usage>>,
+         childrenByParent: Map<Session, List<SessionMetadata>>,
+         childUsages: Map<Session, Map<String, ModelSchema.Usage>>,
         totalCount: Int,
         page: Int,
         pageSize: Int,
@@ -166,6 +197,7 @@ class SessionsServlet : HttpServlet() {
         sessions.forEachIndexed { idx, meta ->
             if (idx > 0) sb.append(",")
             val usage = sessionUsages[meta] ?: emptyMap()
+             val children = childrenByParent[meta.id] ?: emptyList()
             sb.append("{")
             sb.append("\"id\":").append(jsonString(meta.id.sessionId)).append(",")
             sb.append("\"name\":").append(jsonString(meta.name)).append(",")
@@ -176,6 +208,7 @@ class SessionsServlet : HttpServlet() {
                 meta.sessionTime?.let { jsonString(isoDate(it)) } ?: "null"
             ).append(",")
             sb.append("\"messageCount\":").append(meta.messageIds.size).append(",")
+             sb.append("\"childCount\":").append(children.size).append(",")
             sb.append("\"usage\":{")
             sb.append("\"totalTokens\":").append(totalTokens(usage)).append(",")
             sb.append("\"promptTokens\":").append(totalPromptTokens(usage)).append(",")
@@ -195,6 +228,39 @@ class SessionsServlet : HttpServlet() {
                 sb.append("}")
             }
             sb.append("},")
+             sb.append("\"children\":[")
+             children.forEachIndexed { cIdx, child ->
+                 if (cIdx > 0) sb.append(",")
+                 val cUsage = childUsages[child.id] ?: emptyMap()
+                 sb.append("{")
+                 sb.append("\"id\":").append(jsonString(child.id.sessionId)).append(",")
+                 sb.append("\"name\":").append(jsonString(child.name)).append(",")
+                 sb.append("\"sessionTime\":").append(
+                     child.sessionTime?.let { jsonString(isoDate(it)) } ?: "null"
+                 ).append(",")
+                 sb.append("\"messageCount\":").append(child.messageIds.size).append(",")
+                 sb.append("\"usage\":{")
+                 sb.append("\"totalTokens\":").append(totalTokens(cUsage)).append(",")
+                 sb.append("\"promptTokens\":").append(totalPromptTokens(cUsage)).append(",")
+                 sb.append("\"completionTokens\":").append(totalCompletionTokens(cUsage)).append(",")
+                 sb.append("\"cost\":").append(totalCost(cUsage))
+                 sb.append("},")
+                 sb.append("\"usageByModel\":{")
+                 var cFirst = true
+                 for ((model, u) in cUsage) {
+                     if (!cFirst) sb.append(",")
+                     cFirst = false
+                     sb.append(jsonString(model)).append(":{")
+                     sb.append("\"promptTokens\":").append(u.prompt_tokens).append(",")
+                     sb.append("\"completionTokens\":").append(u.completion_tokens).append(",")
+                     sb.append("\"totalTokens\":").append(u.total_tokens).append(",")
+                     sb.append("\"cost\":").append(u.cost ?: 0.0)
+                     sb.append("}")
+                 }
+                 sb.append("}")
+                 sb.append("}")
+             }
+             sb.append("],")
             sb.append("\"additional\":{")
             sb.append("}")
             sb.append("}")
@@ -209,6 +275,8 @@ class SessionsServlet : HttpServlet() {
         user: User,
         sessions: List<SessionMetadata>,
         sessionUsages: Map<SessionMetadata, Map<String, ModelSchema.Usage>>,
+         childrenByParent: Map<Session, List<SessionMetadata>>,
+         childUsages: Map<Session, Map<String, ModelSchema.Usage>>,
         totalCount: Int,
         page: Int,
         pageSize: Int,
@@ -269,6 +337,7 @@ class SessionsServlet : HttpServlet() {
                 appendSortableHeader(this, "Time", "time", sortBy, sortDir, page, pageSize)
                 appendSortableHeader(this, "Tokens", "tokens", sortBy, sortDir, page, pageSize, numeric = true)
                 appendSortableHeader(this, "Cost", "cost", sortBy, sortDir, page, pageSize, numeric = true)
+                 append("<th class=\"num\">Subsessions</th>")
                 append("<th>Details</th>")
                  append("<th>Share</th>")
                 append("</tr></thead>\n")
@@ -281,6 +350,7 @@ class SessionsServlet : HttpServlet() {
                     val cost = totalCost(usage)
                     val rowId = htmlEscape(id)
                      val shareUrl = buildShareUrl(path, id)
+                     val children = childrenByParent[meta.id] ?: emptyList()
                     append("<tr class=\"clickable\" onclick=\"navigateTo('")
                         .append(jsEscape(path)).append("')\">")
                     append("<td>").append(htmlEscape(meta.name ?: id)).append("</td>")
@@ -288,6 +358,7 @@ class SessionsServlet : HttpServlet() {
                     append("<td>").append(htmlEscape(meta.sessionTime?.let { isoDate(it) } ?: "")).append("</td>")
                     append("<td class=\"num\">").append(formatNumber(tokens)).append("</td>")
                     append("<td class=\"num\">").append(formatCost(cost)).append("</td>")
+                     append("<td class=\"num\">").append(children.size).append("</td>")
                     append("<td><a class=\"link\" href=\"javascript:void(0)\" onclick=\"event.stopPropagation();toggleDetails('")
                         .append(jsEscape(id)).append("')\">Show</a></td>")
                      append("<td><a class=\"link\" href=\"")
@@ -296,7 +367,7 @@ class SessionsServlet : HttpServlet() {
                     append("</tr>\n")
                     // Details row
                     append("<tr id=\"details-").append(rowId)
-                         .append("\" class=\"details\" style=\"display:none\"><td colspan=\"8\">\n")
+                          .append("\" class=\"details\" style=\"display:none\"><td colspan=\"8\">\n")
                     append("<div class=\"details-content\">\n")
                     append("<h4>Usage Summary</h4>\n")
                     if (usage.isEmpty()) {
@@ -328,10 +399,83 @@ class SessionsServlet : HttpServlet() {
                         append("</tbody>\n")
                         append("</table>\n")
                     }
+                     // Subsessions section
+                     if (children.isNotEmpty()) {
+                         append("<h4>Subsessions (").append(children.size).append(")</h4>\n")
+                         append("<table class=\"sub subsessions\">\n")
+                         append("<thead><tr>")
+                         append("<th>ID</th>")
+                         append("<th>Name</th>")
+                         append("<th>Time</th>")
+                         append("<th class=\"num\">Messages</th>")
+                         append("<th class=\"num\">Prompt</th>")
+                         append("<th class=\"num\">Completion</th>")
+                         append("<th class=\"num\">Total Tokens</th>")
+                         append("<th class=\"num\">Cost</th>")
+                         append("</tr></thead>\n")
+                         append("<tbody>\n")
+                         // Sort children by session time desc
+                         val sortedChildren = children.sortedByDescending { it.sessionTime?.time ?: 0L }
+                         var childPromptSum = 0L
+                         var childCompletionSum = 0L
+                         var childTokenSum = 0L
+                         var childCostSum = 0.0
+                         for (child in sortedChildren) {
+                             val cUsage = childUsages[child.id] ?: emptyMap()
+                             val cPrompt = totalPromptTokens(cUsage)
+                             val cCompletion = totalCompletionTokens(cUsage)
+                             val cTotal = totalTokens(cUsage)
+                             val cCost = totalCost(cUsage)
+                             childPromptSum += cPrompt
+                             childCompletionSum += cCompletion
+                             childTokenSum += cTotal
+                             childCostSum += cCost
+                             append("<tr>")
+                             append("<td class=\"mono\">").append(htmlEscape(child.id.sessionId)).append("</td>")
+                             append("<td>").append(htmlEscape(child.name ?: child.id.sessionId)).append("</td>")
+                             append("<td>").append(htmlEscape(child.sessionTime?.let { isoDate(it) } ?: "")).append("</td>")
+                             append("<td class=\"num\">").append(child.messageIds.size).append("</td>")
+                             append("<td class=\"num\">").append(formatNumber(cPrompt)).append("</td>")
+                             append("<td class=\"num\">").append(formatNumber(cCompletion)).append("</td>")
+                             append("<td class=\"num\">").append(formatNumber(cTotal)).append("</td>")
+                             append("<td class=\"num\">").append(formatCost(cCost)).append("</td>")
+                             append("</tr>\n")
+                             // Per-model breakdown row (collapsible by default hidden via nested table)
+                             if (cUsage.isNotEmpty()) {
+                                 append("<tr class=\"submodel-row\"><td></td><td colspan=\"7\">\n")
+                                 append("<table class=\"sub nested\">\n")
+                                 append("<thead><tr><th>Model</th><th class=\"num\">Prompt</th><th class=\"num\">Completion</th><th class=\"num\">Total</th><th class=\"num\">Cost</th></tr></thead>\n")
+                                 append("<tbody>\n")
+                                 for ((model, u) in cUsage) {
+                                     append("<tr>")
+                                     append("<td class=\"mono\">").append(htmlEscape(model)).append("</td>")
+                                     append("<td class=\"num\">").append(formatNumber(u.prompt_tokens)).append("</td>")
+                                     append("<td class=\"num\">").append(formatNumber(u.completion_tokens)).append("</td>")
+                                     append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
+                                     append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")
+                                     append("</tr>\n")
+                                 }
+                                 append("</tbody></table>\n")
+                                 append("</td></tr>\n")
+                             }
+                         }
+                         append("<tr class=\"total-row\">")
+                         append("<td colspan=\"4\"><strong>Subsessions Total</strong></td>")
+                         append("<td class=\"num\"><strong>").append(formatNumber(childPromptSum)).append("</strong></td>")
+                         append("<td class=\"num\"><strong>").append(formatNumber(childCompletionSum)).append("</strong></td>")
+                         append("<td class=\"num\"><strong>").append(formatNumber(childTokenSum)).append("</strong></td>")
+                         append("<td class=\"num\"><strong>").append(formatCost(childCostSum)).append("</strong></td>")
+                         append("</tr>\n")
+                         append("</tbody>\n")
+                         append("</table>\n")
+                     }
                     append("<h4>Session</h4>\n")
                     append("<table class=\"sub\">\n")
                     append("<tr><th>ID</th><td class=\"mono\">").append(htmlEscape(id)).append("</td></tr>\n")
                     append("<tr><th>Path</th><td class=\"mono\">").append(htmlEscape(path)).append("</td></tr>\n")
+                     if (children.isNotEmpty()) {
+                         append("<tr><th>Subsession Count</th><td>").append(children.size).append("</td></tr>\n")
+                     }
                     append("</table>\n")
                     append("</div>\n")
                     append("</td></tr>\n")
@@ -591,6 +735,15 @@ class SessionsServlet : HttpServlet() {
                     table.sub th { background: transparent; text-transform: none; letter-spacing: normal; font-size: 13px; padding: 4px 8px 4px 0; }
                     table.sub td { padding: 4px 8px; border: none; }
                      table.sub tr.total-row td { border-top: 1px solid var(--border-strong); }
+                      table.sub.subsessions { width: 100%; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px; }
+                      table.sub.subsessions thead th { background: var(--hover-bg); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+                      table.sub.subsessions tbody tr { border-bottom: 1px solid var(--border); }
+                      table.sub.subsessions tbody tr:last-child { border-bottom: none; }
+                      table.sub.subsessions td { padding: 6px 8px; }
+                      table.sub.nested { width: 100%; margin: 4px 0 4px 12px; background: var(--bg); border-left: 2px solid var(--border-strong); padding-left: 8px; }
+                      table.sub.nested th { font-size: 11px; color: var(--muted-fg); }
+                      table.sub.nested td { font-size: 12px; padding: 2px 6px; }
+                      tr.submodel-row td { padding: 0 8px 6px !important; background: transparent !important; }
                     tr.clickable { cursor: pointer; }
                     .pagination { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 0; }
                      .page-info { font-size: 13px; color: var(--muted-fg); }

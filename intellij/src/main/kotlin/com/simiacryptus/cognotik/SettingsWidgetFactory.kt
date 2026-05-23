@@ -370,7 +370,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).metadataStorageFactory.getSessionName(
+                            ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).metadataDB.getSessionName(
                                 null,
                                 value
                             )
@@ -530,7 +530,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(
-                UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).usageManager),
+                UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).usageDB),
                 BorderLayout.CENTER
             )
 

@@ -89,7 +89,7 @@ abstract class ApplicationDirectory(
     open val sessionsServlet: HttpServlet = SessionsServlet()
         .also { log.debug("Initialized SessionsServlet") }
 
-    open val creditsServlet: CreditsServlet = CreditsServlet(NoOpPaymentProvider(ApplicationServices.fileApplicationServices().usageManager))
+    open val creditsServlet: CreditsServlet = CreditsServlet(NoOpPaymentProvider(ApplicationServices.fileApplicationServices().usageDB))
         .also { log.debug("Initialized CreditsServlet") }
 
   open fun setupPlatform() {

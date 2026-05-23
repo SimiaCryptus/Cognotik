@@ -317,7 +317,7 @@ data class AppSettingsState(
 
 
 fun ApiChatModel.instance(): ChatInterface? {
-    val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager
+    val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageDB
     val model = model
     if (model == null) {
         log.warn("Model not configured for ${provider?.provider?.name}")

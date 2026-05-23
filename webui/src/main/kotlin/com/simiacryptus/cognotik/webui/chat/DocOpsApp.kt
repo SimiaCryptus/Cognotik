@@ -46,7 +46,7 @@ open class DocOpsApp(
   override val inputCnt get() = 0
 
   private val metadataStorage by lazy {
-    ApplicationServices.fileApplicationServices().metadataStorageFactory
+    ApplicationServices.fileApplicationServices().metadataDB
   }
 
   data class Settings(

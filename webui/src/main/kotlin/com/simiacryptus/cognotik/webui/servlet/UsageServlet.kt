@@ -21,7 +21,7 @@ class UsageServlet : HttpServlet() {
     public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
         response.status = HttpServletResponse.SC_OK
         val useJson = isJsonRequested(request)
-        val usageManager = ApplicationServices.fileApplicationServices().usageManager
+        val usageManager = ApplicationServices.fileApplicationServices().usageDB
 
         if (request.parameterMap.containsKey("sessionId")) {
             handleSessionUsage(request, response, useJson, usageManager)

@@ -541,7 +541,7 @@ class AppSettingsComponent : Disposable {
 
 
     @Name("Editor Actions")
-    var usage = UsageTable(fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager)
+    var usage = UsageTable(fileApplicationServices(AppSettingsState.Companion.pluginHome).usageDB)
 
     init {
         log.debug("Initializing AppSettingsComponent")

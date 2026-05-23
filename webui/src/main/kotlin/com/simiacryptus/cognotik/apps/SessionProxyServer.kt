@@ -60,10 +60,10 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
      private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
     fun setParentSession(child: Session, parent: Session) {
-      ApplicationServices.fileApplicationServices().usageManager.setParentSession(child, parent)
+      ApplicationServices.fileApplicationServices().usageDB.setParentSession(child, parent)
     }
     var OWNER_ID = "localhost:12345"
-    val metadataStorage by lazy { ApplicationServices.fileApplicationServices().metadataStorageFactory }
+    val metadataStorage by lazy { ApplicationServices.fileApplicationServices().metadataDB }
 
      private fun registerSessionOwner(session: Session) {
        try {
