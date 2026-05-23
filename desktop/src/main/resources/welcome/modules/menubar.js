@@ -139,22 +139,27 @@
         }
 
         // Wire up logo click handler
-        if (options.titleClickable && typeof options.onTitleClick === 'function') {
+       const isHomepage = window.location.pathname === '/' || window.location.pathname === '';
+       const homeNavigateHandler = function () {
+           window.location.href = '/';
+       };
+       const effectiveTitleClick = (typeof options.onTitleClick === 'function')
+           ? options.onTitleClick
+          : (!isHomepage ? homeNavigateHandler : null);
+      // When not on homepage, the logo image always navigates home,
+      // regardless of any custom onTitleClick for the title text.
+      const logoImgClick = !isHomepage ? homeNavigateHandler : effectiveTitleClick;
+
+       if (options.titleClickable && typeof effectiveTitleClick === 'function') {
             const trigger = target.querySelector('#logo-about-trigger');
-            const logoImg = target.querySelector('.logo-container .logo');
             if (trigger) {
-                trigger.addEventListener('click', options.onTitleClick);
+               trigger.addEventListener('click', effectiveTitleClick);
                 trigger.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        options.onTitleClick(e);
+                       effectiveTitleClick(e);
                     }
                 });
-            }
-            if (logoImg) {
-                logoImg.style.cursor = 'pointer';
-                logoImg.setAttribute('title', options.titleAriaLabel || options.title);
-                logoImg.addEventListener('click', options.onTitleClick);
             }
         } else if (options.titleHref) {
             const trigger = target.querySelector('#logo-about-trigger');
@@ -164,6 +169,24 @@
                 });
             }
         }
+       // Always wire up the logo image click: navigate home when not on homepage,
+       // otherwise fall back to the configured title click handler (if any).
+       const logoImg = target.querySelector('.logo-container .logo');
+       if (logoImg && typeof logoImgClick === 'function') {
+           logoImg.style.cursor = 'pointer';
+           logoImg.setAttribute('title', !isHomepage ? 'Go to homepage' : (options.titleAriaLabel || options.title));
+           logoImg.addEventListener('click', logoImgClick);
+       }
+       // When not on homepage, ensure the title text also navigates home,
+       // even if titleClickable was false or a custom onTitleClick wasn't set.
+       if (!isHomepage) {
+           const trigger = target.querySelector('#logo-about-trigger');
+           if (trigger && !options.titleClickable) {
+               trigger.style.cursor = 'pointer';
+               trigger.addEventListener('click', homeNavigateHandler);
+           }
+       }
+
 
         return target.querySelector('.top-bar');
     }

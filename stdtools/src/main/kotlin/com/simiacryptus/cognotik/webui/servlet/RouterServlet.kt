@@ -302,9 +302,8 @@ class RouterServlet(
         val videoUrl = appEntry.videoUrl
         val exampleSessions = appEntry.exampleSessions ?: emptyMap()
         // Background and icon image URLs (served by a static resource handler based on appId)
-        val appResourceBase = "${request.contextPath}/appResources/${appEntry.appId ?: appEntry.id}"
-        val backgroundUrl = if (appEntry.hasBackground) "$appResourceBase/background" else null
-        val iconUrl = if (appEntry.hasIcon) "$appResourceBase/icon" else null
+        val backgroundUrl =
+            if (appEntry.hasBackground) "/appDirectory/${appEntry.appId ?: appEntry.id}/background.png" else null
 
         val backgroundCss = if (backgroundUrl != null) {
             """
@@ -318,7 +317,7 @@ class RouterServlet(
               background-attachment: fixed;
               filter: saturate(0.35) brightness(0.85) blur(1px);
               opacity: 0.45;
-              z-index: -1;
+              z-index: 0;
               pointer-events: none;
             }
             [data-theme="dark"] .background-layer {
@@ -331,6 +330,13 @@ class RouterServlet(
                 opacity: 0.35;
               }
             }
+            /* Ensure content sits above the background layer */
+            body > *:not(.background-layer) {
+              position: relative;
+              z-index: 1;
+            }
+            /* Make body transparent so background-layer is visible behind content */
+            body { background: transparent !important; }
             """.trimIndent()
         } else ""
 
@@ -338,11 +344,7 @@ class RouterServlet(
             """<div class="background-layer" aria-hidden="true"></div>"""
         } else ""
 
-        val iconHtml = if (iconUrl != null) {
-            """<img class="app-icon" src="${escapeHtml(iconUrl)}" alt="${escapeHtml(displayName)} icon" />"""
-        } else {
-            """<span class="app-icon-emoji" aria-hidden="true">${escapeHtml(icon)}</span>"""
-        }
+        val iconHtml = """<span class="app-icon-emoji" aria-hidden="true">${escapeHtml(icon)}</span>"""
 
         val badgeHtml = if (!badge.isNullOrBlank()) {
             val cls = badgeClass?.let { " ${escapeHtml(it)}" } ?: ""
