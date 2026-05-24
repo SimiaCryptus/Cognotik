@@ -43,7 +43,13 @@ class ChatModel(
     val completionCost = usage.completion_tokens * outputTokenPricePerK
     val unaccountedTokens = (usage.total_tokens - (usage.prompt_tokens + usage.completion_tokens)).coerceAtLeast(0)
     val estimatedUnaccountedCost = unaccountedTokens * ((inputTokenPricePerK + outputTokenPricePerK) / 2)
-    return (promptCost + completionCost + estimatedUnaccountedCost) / 1000.0
+    val totalCost = (promptCost + completionCost + estimatedUnaccountedCost) / 1000.0
+    // TODO: Downgrade this to debug once we have more confidence in the accuracy of the cost estimation
+    log.info("Calculating cost for model ${modelId}: Prompt Tokens: ${usage.prompt_tokens} at ${inputTokenPricePerK}/k = ${String.format("%.4f", promptCost / 1000.0)}, " +
+      "Completion Tokens: ${usage.completion_tokens} at ${outputTokenPricePerK}/k = ${String.format("%.4f", completionCost / 1000.0)}, " +
+      "Unaccounted Tokens: $unaccountedTokens estimated at ${String.format("%.4f", estimatedUnaccountedCost / 1000.0)}, Total Cost: ${String.format("%.4f", totalCost)}"
+    )
+    return totalCost
   }
 
   fun instance(

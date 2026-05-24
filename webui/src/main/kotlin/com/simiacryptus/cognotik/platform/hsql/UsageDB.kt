@@ -23,7 +23,13 @@ class UsageDB : UsageInterface {
         try {
             val isTracked = tracked_users.contains(user.email)
             val usageKey = UsageInterface.UsageKey(session, user, model)
-            val cost = usage.cost(model).coerceAtLeast(0.0) * cost_scaling_factor.coerceAtLeast(0.0)
+            val rawCost = model.pricing(usage)
+            val cost = rawCost.coerceAtLeast(0.0) * cost_scaling_factor.coerceAtLeast(0.0)
+            // TODO: Downgrade this to debug once we have more confidence in the accuracy of the cost estimation
+            log.info(
+                "Incrementing usage for session: {}, user: {}, model: {} (raw_cost={}, scaled_cost={}, cost_scaling_factor={})",
+                session, user.email, model.modelId, rawCost, cost, cost_scaling_factor
+            )
             val now = Instant.now()
             val day = LocalDate.ofInstant(now, ZoneOffset.UTC)
             val usageValues = UsageInterface.UsageValues()

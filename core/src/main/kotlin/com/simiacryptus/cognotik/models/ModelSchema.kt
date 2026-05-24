@@ -52,9 +52,7 @@ interface ModelSchema {
     var completion_tokens: Long = 0,
     var total_tokens: Long = prompt_tokens + completion_tokens,
     var cost: Double = 0.0,
-  ) {
-    fun cost(model: AIModel): Double = model.pricing(this)
-  }
+  )
 
   data class UsageData(
     val input_text: String? = null,
