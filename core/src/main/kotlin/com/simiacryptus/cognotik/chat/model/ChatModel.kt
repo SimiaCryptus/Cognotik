@@ -94,7 +94,7 @@ class ChatModel(
         val perTypeCosts: Map<TokenTypes, Double> = counts.mapValues { (type, count) ->
             (tokenPricingPerK[type] ?: 0.0) * count
         }
-        val accountedTokens = counts.values.sum()
+        val accountedTokens = counts.entries.filter { tokenPricingPerK.containsKey(it.key) }.sumOf { it.value }
         val accountedCost = perTypeCosts.values.sum()
 
         // Estimate cost for any unaccounted tokens using the average of known prices.

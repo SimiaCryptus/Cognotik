@@ -150,6 +150,41 @@ class SessionsServlet : HttpServlet() {
         if (usage == null) return 0.0
         return usage.values.sumOf { it.cost }
     }
+    /**
+     * Collects all token types present across the given usage map, in a stable display order.
+     * Prompt and Completion are shown first (if present), followed by any other token types
+     * sorted alphabetically.
+     */
+    private fun collectTokenTypes(usage: Map<String, ModelSchema.Usage>?): List<TokenTypes> {
+        if (usage == null || usage.isEmpty()) return emptyList()
+        val all = linkedSetOf<TokenTypes>()
+        for (u in usage.values) {
+            for ((type, count) in u.counts) {
+                if (count > 0L) all.add(type)
+            }
+        }
+        val ordered = mutableListOf<TokenTypes>()
+        if (all.contains(TokenTypes.Prompt)) ordered.add(TokenTypes.Prompt)
+        if (all.contains(TokenTypes.Completion)) ordered.add(TokenTypes.Completion)
+        val rest = all.filter { it != TokenTypes.Prompt && it != TokenTypes.Completion }
+            .sortedBy { it.name }
+        ordered.addAll(rest)
+        return ordered
+    }
+    private fun tokensOfType(usage: Map<String, ModelSchema.Usage>?, type: TokenTypes): Long {
+        if (usage == null) return 0L
+        return usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
+    }
+    private fun friendlyTokenTypeName(type: TokenTypes): String {
+        // Insert spaces between camel case boundaries for readability
+        val name = type.name
+        val sb = StringBuilder(name.length + 4)
+        for ((i, c) in name.withIndex()) {
+            if (i > 0 && c.isUpperCase() && name[i - 1].isLowerCase()) sb.append(' ')
+            sb.append(c)
+        }
+        return sb.toString()
+    }
 
     private fun resolveFormat(req: HttpServletRequest): Format {
         val formatParam = req.getParameter("format")?.lowercase()
@@ -375,29 +410,56 @@ class SessionsServlet : HttpServlet() {
                     if (usage.isEmpty()) {
                         append("<div class=\"empty-inline\">No usage recorded.</div>\n")
                     } else {
+                        val tokenTypes = collectTokenTypes(usage)
+                        // High-level KPI tiles
+                        append("<div class=\"kpis\">\n")
+                        append("<div class=\"kpi\"><div class=\"kpi-label\">Total Tokens</div><div class=\"kpi-value\">")
+                            .append(formatNumber(totalTokens(usage))).append("</div></div>\n")
+                        for (t in tokenTypes) {
+                            val v = tokensOfType(usage, t)
+                            if (v == 0L) continue
+                            append("<div class=\"kpi\"><div class=\"kpi-label\">")
+                                .append(htmlEscape(friendlyTokenTypeName(t)))
+                                .append("</div><div class=\"kpi-value\">")
+                                .append(formatNumber(v)).append("</div></div>\n")
+                        }
+                        append("<div class=\"kpi\"><div class=\"kpi-label\">Cost</div><div class=\"kpi-value\">")
+                            .append(formatCost(totalCost(usage))).append("</div></div>\n")
+                        append("<div class=\"kpi\"><div class=\"kpi-label\">Models</div><div class=\"kpi-value\">")
+                            .append(usage.size).append("</div></div>\n")
+                        append("</div>\n")
                         append("<table class=\"sub\">\n")
-                        append("<thead><tr><th>Model</th><th class=\"num\">Prompt</th><th class=\"num\">Completion</th><th class=\"num\">Total</th><th class=\"num\">Cost</th></tr></thead>\n")
+                        append("<thead><tr><th>Model</th>")
+                        for (t in tokenTypes) {
+                            append("<th class=\"num\">").append(htmlEscape(friendlyTokenTypeName(t))).append("</th>")
+                        }
+                        append("<th class=\"num\">Total</th><th class=\"num\">Cost</th></tr></thead>\n")
                         append("<tbody>\n")
                         for ((model, u) in usage) {
                             append("<tr>")
                             append("<td class=\"mono\">").append(htmlEscape(model)).append("</td>")
-                            append("<td class=\"num\">").append(formatNumber(u.counts.getOrDefault(TokenTypes.Prompt, 0))).append("</td>")
-                            append("<td class=\"num\">").append(formatNumber(
-                                u.counts.getOrDefault(
-                                    TokenTypes.Completion,
-                                    0
-                                )
-                            )).append("</td>")
+                            for (t in tokenTypes) {
+                                val v = u.counts.getOrDefault(t, 0L)
+                                if (v == 0L) {
+                                    append("<td class=\"num muted\">—</td>")
+                                } else {
+                                    append("<td class=\"num\">").append(formatNumber(v)).append("</td>")
+                                }
+                            }
                             append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
                             append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")
                             append("</tr>\n")
                         }
                         append("<tr class=\"total-row\">")
                         append("<td><strong>Total</strong></td>")
-                        append("<td class=\"num\"><strong>").append(formatNumber(totalPromptTokens(usage)))
-                            .append("</strong></td>")
-                        append("<td class=\"num\"><strong>").append(formatNumber(totalCompletionTokens(usage)))
-                            .append("</strong></td>")
+                        for (t in tokenTypes) {
+                            val v = tokensOfType(usage, t)
+                            if (v == 0L) {
+                                append("<td class=\"num muted\"><strong>—</strong></td>")
+                            } else {
+                                append("<td class=\"num\"><strong>").append(formatNumber(v)).append("</strong></td>")
+                            }
+                        }
                         append("<td class=\"num\"><strong>").append(formatNumber(totalTokens(usage)))
                             .append("</strong></td>")
                         append("<td class=\"num\"><strong>").append(formatCost(totalCost(usage)))
@@ -409,32 +471,38 @@ class SessionsServlet : HttpServlet() {
                     // Subsessions section
                     if (children.isNotEmpty()) {
                         append("<h4>Subsessions (").append(children.size).append(")</h4>\n")
+                        // Collect union of token types across all child usages
+                        val allChildUsages = children.map { childUsages[it.id] ?: emptyMap() }
+                        val childTokenTypes = collectTokenTypes(
+                            allChildUsages.flatMap { it.entries }
+                                .associate { it.key to it.value }
+                        )
                         append("<table class=\"sub subsessions\">\n")
                         append("<thead><tr>")
                         append("<th>ID</th>")
                         append("<th>Name</th>")
                         append("<th>Time</th>")
                         append("<th class=\"num\">Messages</th>")
-                        append("<th class=\"num\">Prompt</th>")
-                        append("<th class=\"num\">Completion</th>")
+                        for (t in childTokenTypes) {
+                            append("<th class=\"num\">").append(htmlEscape(friendlyTokenTypeName(t))).append("</th>")
+                        }
                         append("<th class=\"num\">Total Tokens</th>")
                         append("<th class=\"num\">Cost</th>")
                         append("</tr></thead>\n")
                         append("<tbody>\n")
                         // Sort children by session time desc
                         val sortedChildren = children.sortedByDescending { it.sessionTime?.time ?: 0L }
-                        var childPromptSum = 0L
-                        var childCompletionSum = 0L
+                        val childTypeSums = mutableMapOf<TokenTypes, Long>()
                         var childTokenSum = 0L
                         var childCostSum = 0.0
                         for (child in sortedChildren) {
                             val cUsage = childUsages[child.id] ?: emptyMap()
-                            val cPrompt = totalPromptTokens(cUsage)
-                            val cCompletion = totalCompletionTokens(cUsage)
                             val cTotal = totalTokens(cUsage)
                             val cCost = totalCost(cUsage)
-                            childPromptSum += cPrompt
-                            childCompletionSum += cCompletion
+                            for (t in childTokenTypes) {
+                                val v = tokensOfType(cUsage, t)
+                                if (v != 0L) childTypeSums[t] = (childTypeSums[t] ?: 0L) + v
+                            }
                             childTokenSum += cTotal
                             childCostSum += cCost
                             append("<tr>")
@@ -443,33 +511,40 @@ class SessionsServlet : HttpServlet() {
                             append("<td>").append(htmlEscape(child.sessionTime?.let { isoDate(it) } ?: ""))
                                 .append("</td>")
                             append("<td class=\"num\">").append(child.messageIds.size).append("</td>")
-                            append("<td class=\"num\">").append(formatNumber(cPrompt)).append("</td>")
-                            append("<td class=\"num\">").append(formatNumber(cCompletion)).append("</td>")
+                            for (t in childTokenTypes) {
+                                val v = tokensOfType(cUsage, t)
+                                if (v == 0L) {
+                                    append("<td class=\"num muted\">—</td>")
+                                } else {
+                                    append("<td class=\"num\">").append(formatNumber(v)).append("</td>")
+                                }
+                            }
                             append("<td class=\"num\">").append(formatNumber(cTotal)).append("</td>")
                             append("<td class=\"num\">").append(formatCost(cCost)).append("</td>")
                             append("</tr>\n")
                             // Per-model breakdown row (collapsible by default hidden via nested table)
                             if (cUsage.isNotEmpty()) {
-                                append("<tr class=\"submodel-row\"><td></td><td colspan=\"7\">\n")
+                                val nestedColspan = 3 + childTokenTypes.size + 2
+                                append("<tr class=\"submodel-row\"><td></td><td colspan=\"").append(nestedColspan).append("\">\n")
+                                val cUsageTokenTypes = collectTokenTypes(cUsage)
                                 append("<table class=\"sub nested\">\n")
-                                append("<thead><tr><th>Model</th><th class=\"num\">Prompt</th><th class=\"num\">Completion</th><th class=\"num\">Total</th><th class=\"num\">Cost</th></tr></thead>\n")
+                                append("<thead><tr><th>Model</th>")
+                                for (t in cUsageTokenTypes) {
+                                    append("<th class=\"num\">").append(htmlEscape(friendlyTokenTypeName(t))).append("</th>")
+                                }
+                                append("<th class=\"num\">Total</th><th class=\"num\">Cost</th></tr></thead>\n")
                                 append("<tbody>\n")
                                 for ((model, u) in cUsage) {
                                     append("<tr>")
                                     append("<td class=\"mono\">").append(htmlEscape(model)).append("</td>")
-                                    append("<td class=\"num\">").append(formatNumber(
-                                        u.counts.getOrDefault(
-                                            TokenTypes.Prompt,
-                                            0
-                                        )
-                                    )).append("</td>")
-                                    append("<td class=\"num\">").append(formatNumber(
-                                        u.counts.getOrDefault(
-                                            TokenTypes.Completion,
-                                            0
-                                        )
-                                    ))
-                                        .append("</td>")
+                                    for (t in cUsageTokenTypes) {
+                                        val v = u.counts.getOrDefault(t, 0L)
+                                        if (v == 0L) {
+                                            append("<td class=\"num muted\">—</td>")
+                                        } else {
+                                            append("<td class=\"num\">").append(formatNumber(v)).append("</td>")
+                                        }
+                                    }
                                     append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
                                     append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")
                                     append("</tr>\n")
@@ -480,10 +555,14 @@ class SessionsServlet : HttpServlet() {
                         }
                         append("<tr class=\"total-row\">")
                         append("<td colspan=\"4\"><strong>Subsessions Total</strong></td>")
-                        append("<td class=\"num\"><strong>").append(formatNumber(childPromptSum))
-                            .append("</strong></td>")
-                        append("<td class=\"num\"><strong>").append(formatNumber(childCompletionSum))
-                            .append("</strong></td>")
+                        for (t in childTokenTypes) {
+                            val v = childTypeSums[t] ?: 0L
+                            if (v == 0L) {
+                                append("<td class=\"num muted\"><strong>—</strong></td>")
+                            } else {
+                                append("<td class=\"num\"><strong>").append(formatNumber(v)).append("</strong></td>")
+                            }
+                        }
                         append("<td class=\"num\"><strong>").append(formatNumber(childTokenSum))
                             .append("</strong></td>")
                         append("<td class=\"num\"><strong>").append(formatCost(childCostSum)).append("</strong></td>")
@@ -779,6 +858,11 @@ class SessionsServlet : HttpServlet() {
                       .btn:hover { background: var(--hover-bg); border-color: var(--muted-fg); }
                       .btn:active { transform: translateY(1px); }
                       .btn.copied { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+                      .kpis { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+                      .kpi { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; min-width: 110px; box-shadow: var(--shadow); }
+                      .kpi-label { font-size: 11px; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; }
+                      .kpi-value { font-size: 16px; font-weight: 600; color: var(--header-fg); font-variant-numeric: tabular-nums; margin-top: 2px; }
+                      td.muted, th.muted { color: var(--muted-fg); }
                 """
 
         private const val JS = """

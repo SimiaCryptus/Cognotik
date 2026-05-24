@@ -52,7 +52,7 @@ open class ResourceApps(
                         badge = entry.badge,
                         badgeClass = entry.badgeClass ?: "",
                         type = entry.type,
-                        path = "/" + entry.path.split('/').lastOrNull(),
+                        path = "/" + (entry.path?.split('/')?.lastOrNull() ?: ""),
                         appId = entry.id?.removePrefix("app-"),
                         resource_path = entry.path,
                         cardClass = entry.cardClass,

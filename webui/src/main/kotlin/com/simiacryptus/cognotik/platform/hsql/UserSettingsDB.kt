@@ -5,18 +5,31 @@ import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.javatime.timestamp
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
-import java.sql.Timestamp
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * HSQL-backed implementation of [UserSettingsInterface].
- *
- * Settings are stored as a single JSON blob per user in the `user_settings`
- * table, managed by its own [DatabaseFacet] (separate logical DB from metadata).
+ * Exposed table definition for user settings.
+ */
+object UserSettingsTable : Table("user_settings") {
+    val userKey = varchar("user_key", 255)
+    val settingsJson = text("settings_json")
+    val timestamp = timestamp("timestamp")
+    override val primaryKey = PrimaryKey(userKey)
+}
+
+/**
+ * HSQL-backed implementation of [UserSettingsInterface] using Exposed DSL.
  */
 open class UserSettingsDB : UserSettingsInterface {
-
 
     private val cache = ConcurrentHashMap<User, UserSettings>()
 
@@ -34,97 +47,145 @@ open class UserSettingsDB : UserSettingsInterface {
     override fun updateUserSettings(user: User, settings: UserSettings) {
         log.debug("Updating user settings for user: {}", user)
         try {
-            val prev = loadFromDb(user)
-            val merged = if (prev != null) {
-                settings.copy(
-                    passwordHash = settings.passwordHash?.ifBlank { null } ?: prev.passwordHash
-                )
-            } else {
-                settings
+            // Merge and write inside a single transaction so concurrent writers
+            // cannot interleave between the read and the write.
+            val merged = transaction(facet.database) {
+                val prev = UserSettingsTable
+                    .selectAll()
+                    .where { UserSettingsTable.userKey eq userKey(user) }
+                    .limit(1)
+                    .firstOrNull()
+                    ?.let { row ->
+                        try {
+                            fromJson<UserSettings>(row[UserSettingsTable.settingsJson], UserSettings::class.java)
+                        } catch (e: Throwable) {
+                            log.error(
+                                "Failed to deserialize existing user settings for user: {}; existing settings will be discarded",
+                                user, e
+                            )
+                            null
+                        }
+                    }
+                val computed = if (prev != null) {
+                    settings.copy(
+                        passwordHash = settings.passwordHash?.ifBlank { null } ?: prev.passwordHash
+                    )
+                } else {
+                    settings
+                }
+                val key = userKey(user)
+                val json = computed.toJson()
+                val now = Instant.now()
+                val updated = UserSettingsTable.update({ UserSettingsTable.userKey eq key }) {
+                    it[settingsJson] = json
+                    it[timestamp] = now
+                }
+                if (updated == 0) {
+                    try {
+                        UserSettingsTable.insert {
+                            it[userKey] = key
+                            it[settingsJson] = json
+                            it[timestamp] = now
+                        }
+                    } catch (e: java.sql.SQLException) {
+                        // Race: another writer inserted between our UPDATE and INSERT. Retry UPDATE.
+                        log.debug(
+                            "Insert race detected for user_settings (user={}); retrying update: {}",
+                            user, e.message
+                        )
+                        val retried = UserSettingsTable.update({ UserSettingsTable.userKey eq key }) {
+                            it[settingsJson] = json
+                            it[timestamp] = now
+                        }
+                        if (retried == 0) {
+                            log.error(
+                                "Failed to upsert user settings after insert race for user: {}",
+                                user, e
+                            )
+                            throw e
+                        }
+                    }
+                }
+                computed
             }
-            writeToDb(user, merged)
             cache[user] = merged
-            log.info("Successfully updated user settings for user: {}", user)
+            log.debug("Successfully updated user settings for user: {}", user)
         } catch (e: Exception) {
-            log.error("Failed to write user settings for user: {}", user, e)
+            log.error("Failed to write user settings for user: {}: {}", user, e.message, e)
             throw e
         }
     }
 
     private fun loadFromDb(user: User): UserSettings? {
-        return facet.withConnection() { conn ->
-            conn.prepareStatement(
-                "SELECT settings_json FROM user_settings WHERE user_key = ?"
-            ).use { stmt ->
-                stmt.setString(1, userKey(user))
-                stmt.executeQuery().use { rs ->
-                    if (rs.next()) {
+        val key = userKey(user)
+        return try {
+            transaction(facet.database) {
+                UserSettingsTable
+                    .selectAll()
+                    .where { UserSettingsTable.userKey eq key }
+                    .limit(1)
+                    .firstOrNull()
+                    ?.let { row ->
                         try {
-                            val json = rs.getString("settings_json")
-                            fromJson<UserSettings>(json, UserSettings::class.java)
+                            fromJson<UserSettings>(row[UserSettingsTable.settingsJson], UserSettings::class.java)
                         } catch (e: Throwable) {
-                            log.error("Failed to deserialize user settings for user: {}", user, e)
+                            log.error(
+                                "Failed to deserialize user settings for user: {}; returning defaults",
+                                user, e
+                            )
                             null
                         }
-                    } else null
+                    }
+            }
+        } catch (e: Exception) {
+            log.error("Failed to load user settings for user: {}: {}", user, e.message, e)
+            null
+        }
+    }
+
+    private fun writeToDb(user: User, settings: UserSettings) {
+        val key = userKey(user)
+        val json = settings.toJson()
+        val now = Instant.now()
+        transaction(facet.database) {
+            val updated = UserSettingsTable.update({ UserSettingsTable.userKey eq key }) {
+                it[settingsJson] = json
+                it[timestamp] = now
+            }
+            if (updated == 0) {
+                try {
+                    UserSettingsTable.insert {
+                        it[userKey] = key
+                        it[settingsJson] = json
+                        it[timestamp] = now
+                    }
+                } catch (e: java.sql.SQLException) {
+                    // Race: another writer inserted between our UPDATE and INSERT. Retry UPDATE.
+                    log.debug(
+                        "Insert race detected for user_settings (user={}); retrying update: {}",
+                        user, e.message
+                    )
+                    val retried = UserSettingsTable.update({ UserSettingsTable.userKey eq key }) {
+                        it[settingsJson] = json
+                        it[timestamp] = now
+                    }
+                    if (retried == 0) {
+                        log.error(
+                            "Failed to upsert user settings after insert race for user: {}",
+                            user, e
+                        )
+                        throw e
+                    }
                 }
             }
         }
     }
 
-    private fun writeToDb(user: User, settings: UserSettings) {
-        facet.withConnection() { conn ->
-             upsertUserSettings(conn, userKey(user), settings.toJson(), Timestamp(System.currentTimeMillis()))
-        }
-    }
-     /**
-      * Portable upsert that works on both HSQL and PostgreSQL.
-      * Performs an UPDATE first; if no rows are affected, performs an INSERT.
-      * This avoids vendor-specific MERGE/ON CONFLICT syntax differences.
-      */
-     private fun upsertUserSettings(
-         conn: java.sql.Connection,
-         key: String,
-         json: String,
-         ts: Timestamp
-     ) {
-         val updated = conn.prepareStatement(
-             "UPDATE user_settings SET settings_json = ?, timestamp = ? WHERE user_key = ?"
-         ).use { stmt ->
-             stmt.setString(1, json)
-             stmt.setTimestamp(2, ts)
-             stmt.setString(3, key)
-             stmt.executeUpdate()
-         }
-         if (updated == 0) {
-             try {
-                 conn.prepareStatement(
-                     "INSERT INTO user_settings (user_key, settings_json, timestamp) VALUES (?, ?, ?)"
-                 ).use { stmt ->
-                     stmt.setString(1, key)
-                     stmt.setString(2, json)
-                     stmt.setTimestamp(3, ts)
-                     stmt.executeUpdate()
-                 }
-             } catch (e: java.sql.SQLException) {
-                 // Race condition: another writer inserted between our UPDATE and INSERT.
-                 // Retry the UPDATE once.
-                 conn.prepareStatement(
-                     "UPDATE user_settings SET settings_json = ?, timestamp = ? WHERE user_key = ?"
-                 ).use { stmt ->
-                     stmt.setString(1, json)
-                     stmt.setTimestamp(2, ts)
-                     stmt.setString(3, key)
-                     stmt.executeUpdate()
-                 }
-             }
-         }
-     }
-
     private fun userKey(user: User): String {
         val email = try {
             user.email
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            log.debug("Could not read user.email for {}: {}", user, e.message, e)
             null
         }
         return email?.takeIf { it.isNotBlank() } ?: user.toString()
@@ -135,16 +196,7 @@ open class UserSettingsDB : UserSettingsInterface {
 
         internal val facet = DatabaseFacet(
             name = "user_settings",
-            schema = {
-                listOf(
-                    """
-                    CREATE TABLE IF NOT EXISTS user_settings (
-                        user_key VARCHAR(255) PRIMARY KEY,
-                        settings_json LONGVARCHAR,
-                        timestamp TIMESTAMP
-                    )
-                    """
-                )
-            }        )
+            tables = listOf(UserSettingsTable),
+        )
     }
 }

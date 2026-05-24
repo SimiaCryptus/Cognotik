@@ -219,7 +219,7 @@ package com.simiacryptus.cognotik.platform.hsql
         fun `listSessions should return sessions matching path`() {
             MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                 conn.prepareStatement(
-                    "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
+               "INSERT INTO metadata (session_id, user_email, meta_key, \"value\", timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
                     stmt.setString(1, testSession.sessionId)
                     stmt.setString(2, "")
@@ -245,7 +245,7 @@ package com.simiacryptus.cognotik.platform.hsql
         fun `listSessions should not return sessions with different paths`() {
             MetadataStorageDB.Companion.facet.getConnection().use { conn ->
                 conn.prepareStatement(
-                    "INSERT INTO metadata (session_id, user_email, key, value, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
+               "INSERT INTO metadata (session_id, user_email, meta_key, \"value\", timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
                 ).use { stmt ->
                     stmt.setString(1, testSession.sessionId)
                     stmt.setString(2, "")

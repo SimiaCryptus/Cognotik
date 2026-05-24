@@ -209,14 +209,7 @@ open class CognotikApps(
         startSocketServer(actualPort + 1)
         ApplicationServices.pluginManager.apply {
             getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-            subscribeToChanges {
-                log.info("Plugin change detected, reinitializing apps...")
-                try {
-                    reloadApps()
-                } catch (e: Exception) {
-                    log.error("Failed to reload apps after plugin change: ${e.message}", e)
-                }
-            }
+            subscribeToChanges()
         }
         initDynamicEnums()
 
@@ -233,6 +226,17 @@ open class CognotikApps(
             checkIsAlive()
         }, 10, 10, TimeUnit.SECONDS)
         _main(*filteredArgs)
+    }
+
+    protected open fun PluginManagerInterface.subscribeToChanges() {
+        subscribeToChanges {
+            log.info("Plugin change detected, reinitializing apps...")
+            try {
+                reloadApps()
+            } catch (e: Exception) {
+                log.error("Failed to reload apps after plugin change: ${e.message}", e)
+            }
+        }
     }
 
     private fun initSystemTray() {

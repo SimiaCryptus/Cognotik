@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.gift.GiftedCreditsDB
-import com.simiacryptus.cognotik.gift.GiftedCreditsInterface
+import com.simiacryptus.cognotik.platform.hsql.GiftedCreditsDB
+import com.simiacryptus.cognotik.platform.model.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.toJson

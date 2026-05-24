@@ -1,6 +1,5 @@
-package com.simiacryptus.cognotik.gift
+package com.simiacryptus.cognotik.platform.model
 
-import com.simiacryptus.cognotik.platform.model.User
 import java.time.Duration
 import java.time.Instant
 
@@ -28,9 +27,9 @@ interface GiftedCreditsInterface {
       val amountGranted: Double,
       val grantDuration: Duration,
       val totalBudget: Double,
-     val spentBudget: Double,
-     val createdBy: String? = null,
-     val theme: String? = null
+      val spentBudget: Double,
+      val createdBy: String? = null,
+      val theme: String? = null
   )
    /**
     * Represents a single claim of a gift by a user.
@@ -56,7 +55,7 @@ interface GiftedCreditsInterface {
    * @return The created Gift object
    */
   fun createGift(
-     creator: User,
+      creator: User,
       amountGranted: Double,
       grantDuration: Duration,
       totalBudget: Double,
