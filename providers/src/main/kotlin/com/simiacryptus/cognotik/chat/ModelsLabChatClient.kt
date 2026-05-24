@@ -4,7 +4,6 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -59,7 +58,7 @@ class ModelsLabChatClient(
       val response: ModelSchema.ChatResponse =
         JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
       if (response.usage != null) {
-        usageHandler.onUsage(model, response.usage?.copy(cost = response.usage!!.price(model).cost)!!)
+        usageHandler.onUsage(model, response.usage!!)
       }
       response
     }

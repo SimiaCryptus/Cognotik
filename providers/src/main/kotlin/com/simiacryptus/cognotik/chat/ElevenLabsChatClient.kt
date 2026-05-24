@@ -6,7 +6,6 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ElevenLabsModels
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
@@ -150,7 +149,7 @@ class ElevenLabsChatClient(
         )
 
         try {
-            usageHandler.onUsage(model, usage.price(model))
+            usageHandler.onUsage(model, usage)
         } catch (e: Exception) {
             log.warn("Request {}: failed to record usage: {}", requestId, e.message)
         }

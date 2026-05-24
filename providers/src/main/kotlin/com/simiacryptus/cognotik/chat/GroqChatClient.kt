@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GroqModels
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -146,7 +145,7 @@ class GroqChatClient(
       )
 
       if (response.usage != null) {
-        usageHandler.onUsage(model, response.usage?.copy(cost = response.usage!!.price(model).cost)!!)
+        usageHandler.onUsage(model, response.usage!!)
       }
 
       response

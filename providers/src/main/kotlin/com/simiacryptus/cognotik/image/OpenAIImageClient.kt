@@ -82,13 +82,9 @@ open class OpenAIImageClient(
           true
         )
       }
-      val dims = request.size?.split("x")
       onUsage(
         model, Usage(
-          completion_tokens = 1, cost = model?.pricing(
-            width = dims?.get(0)?.toInt() ?: 0,
-            height = dims?.get(1)?.toInt() ?: 0
-          )
+          completion_tokens = 1,
         )
       )
       JsonUtil.objectMapper().readValue(

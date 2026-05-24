@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
   import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
   import com.simiacryptus.cognotik.models.ModelSchema
@@ -255,7 +254,18 @@ class AnthropicChatClient(
         ModelSchema.ChatResponse::class.java
       )
       if (response.usage != null) {
-        usageHandler.onUsage(model, response.usage!!.price(model))
+        usageHandler.onUsage(model, response.usage!!, ModelSchema.UsageData(
+          input_text = anthropicChatRequest.messages?.joinToString("\n\n") { msg ->
+            msg.content?.joinToString("\n") { part ->
+              when (part) {
+                is AnthropicTextContentBlock -> part.text ?: ""
+                is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
+                else -> ""
+              }
+            }.orEmpty()
+          }.orEmpty(),
+          output_text = response.choices.joinToString("\n\n") { it.message?.content.orEmpty() }
+        ))
       }
       response
     }
@@ -263,7 +273,7 @@ class AnthropicChatClient(
 
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(model.modelId.isNotBlank()) { "Model name cannot be blank" }
     require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
   }
 

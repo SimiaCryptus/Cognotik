@@ -52,7 +52,7 @@ interface UsageInterface {
      * @param model The AI model that was used
      * @param usage The usage details including prompt tokens, completion tokens, and cost
      */
-    fun incrementUsage(session: Session, user: User, model: AIModel, usage: ModelSchema.Usage)
+    fun incrementUsage(session: Session, user: User, model: AIModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData? = null)
 
     /**
      * Clears all stored usage data.
@@ -182,10 +182,10 @@ interface UsageInterface {
          *
          * @param tokens The usage object containing tokens and cost to add
          */
-        fun addAndGet(tokens: ModelSchema.Usage) {
+        fun addAndGet(tokens: ModelSchema.Usage, cost: Double? = null) {
             inputTokens.addAndGet(tokens.prompt_tokens)
             outputTokens.addAndGet(tokens.completion_tokens)
-            cost.addAndGet(tokens.cost ?: 0.0)
+            this.cost.addAndGet(cost ?: 0.0)
         }
     }
 

@@ -85,10 +85,6 @@ class GeminiImageClient(
         onUsage(
           model, Usage(
             completion_tokens = imageData.size.toLong(),
-            cost = model.pricing(
-              width = dims?.get(0)?.toInt() ?: 1024,
-              height = dims?.get(1)?.toInt() ?: 1024
-            ) * imageData.size
           )
         )
       }

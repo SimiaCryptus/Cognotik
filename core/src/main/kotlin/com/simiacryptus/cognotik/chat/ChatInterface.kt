@@ -24,7 +24,7 @@ class ChatInterface(
     val modelType: ChatModel,
     private val workPool: ExecutorService,
     private val scheduledPool: ListeningScheduledExecutorService,
-    private val onUsage: (model: LLMModel, tokens: ModelSchema.Usage) -> Unit,
+    private val onUsage: (model: LLMModel, tokens: ModelSchema.Usage, data: ModelSchema.UsageData?) -> Unit,
     val session: Session
 ) {
     val logStreams: MutableList<BufferedOutputStream> = logStreams.toMutableList()
@@ -37,7 +37,7 @@ class ChatInterface(
         chatRequest = chatRequest,
         model = modelType,
         logStreams = logStreams,
-        usageHandler = UsageListener.fn(session) { model, usage -> onUsage(model, usage) }
+        usageHandler = UsageListener.fn(session) { model, usage, data -> onUsage(model, usage, data) }
     )
 
     private fun getChatClient(): ChatClientInterface = provider.getChatClient(
@@ -82,7 +82,7 @@ class ChatInterface(
                     4
                 )
             ),
-            onUsage = { _, _ -> },
+            onUsage = { _, _, _ -> },
             session = Session.newUserID(),
         )
         val log = LoggerFactory.getLogger(ChatInterface::class.java)

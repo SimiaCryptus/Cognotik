@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -53,7 +52,7 @@ class DeepSeekChatClient(
     checkError(result)
     val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
     if (response.usage != null && model is ChatModel) {
-      usageHandler.onUsage(model, response.usage!!.price(model))
+      usageHandler.onUsage(model, response.usage!!)
     }
     return response
   }

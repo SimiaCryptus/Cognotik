@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.OpenAIModels
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -61,7 +60,7 @@ class OpenAIChatClient(
       )
 
       if (response.usage != null) {
-        usageHandler.onUsage(model, response.usage?.copy(cost = response.usage!!.price(model).cost)!!)
+        usageHandler.onUsage(model, response.usage!!)
       }
 
       response

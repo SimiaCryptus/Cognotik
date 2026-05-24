@@ -7,10 +7,11 @@ import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.chat.AnthropicChatClient.Companion.AnthropicImageContentBlock
+import com.simiacryptus.cognotik.chat.AnthropicChatClient.Companion.AnthropicTextContentBlock
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.chat.model.price
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
@@ -230,7 +231,10 @@ class GeminiSdkChatClient(
       }
       if (chatResponse.usage != null) {
         try {
-          usageHandler.onUsage(model, chatResponse.usage?.copy(cost = chatResponse.usage!!.price(model).cost)!!)
+          usageHandler.onUsage(model, chatResponse.usage!!, ModelSchema.UsageData(
+            input_text = contents.joinToString("\n\n") { it.toMarkdown() },
+            output_text = chatResponse.choices.joinToString("\n\n") { choice -> choice.message?.content ?: "" },
+          ))
         } catch (e: Exception) {
           log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }
@@ -660,9 +664,6 @@ class GeminiSdkChatClient(
 
   private fun convertFromGeminiResponse(response: GenerateContentResponse): ModelSchema.ChatResponse {
     val choices = response.candidates().orElse(emptyList()).mapIndexed { index, candidate ->
-
-
-
       try {
         val content = candidate.content().orElse(null)
         val text = content?.parts()?.orElse(emptyList())

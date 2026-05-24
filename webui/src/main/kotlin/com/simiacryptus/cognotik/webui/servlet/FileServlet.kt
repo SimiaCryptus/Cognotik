@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.servlet.render.DirectoryListingRenderer
 import com.simiacryptus.cognotik.webui.servlet.render.DirectoryPageModel
 import com.simiacryptus.cognotik.webui.servlet.render.MarkdownRenderer
+import com.simiacryptus.cognotik.webui.servlet.render.MonacoEditorRenderer
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitHtml
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitScripts
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitStyles
@@ -42,6 +43,7 @@ abstract class FileServlet : HttpServlet() {
                 response.writer.write("File not found")
                 return
             }
+             val editParam = request.getParameter("edit")
             when {
                 file != null && file.name == "_files.json" && !file.exists() -> {
                     serveVirtualFilesJson(file, response)
@@ -50,6 +52,10 @@ abstract class FileServlet : HttpServlet() {
                 file != null && !file.exists() -> {
                     serveNonExistentFile(file, response)
                 }
+                 file != null && file.isFile && editParam != null && editParam != "false" -> {
+                     serveEditor(file, dir, response)
+                 }
+
 
                 file != null && file.isFile -> {
                     FileRequestHandler.serveFile(file, request, response)
@@ -254,6 +260,51 @@ abstract class FileServlet : HttpServlet() {
             resp.writer.write("File not found")
         }
     }
+     private fun serveEditor(file: File, baseDir: File, resp: HttpServletResponse) {
+         try {
+             val isBinary = isBinaryFile(file)
+             if (isBinary) {
+                 log.info("Refusing to open binary file in editor: ${file.absolutePath}")
+                 resp.status = HttpServletResponse.SC_BAD_REQUEST
+                 resp.contentType = "text/plain"
+                 resp.characterEncoding = "UTF-8"
+                 resp.writer.write("Cannot edit binary file: ${file.name}")
+                 return
+             }
+             val content = file.readText(Charsets.UTF_8)
+             val readOnly = FileAccessControl.isReadOnly(baseDir, file)
+             resp.contentType = "text/html"
+             resp.characterEncoding = "UTF-8"
+             resp.status = HttpServletResponse.SC_OK
+             resp.writer.write(
+                 MonacoEditorRenderer.renderEditorPage(
+                     filename = file.name,
+                     filePath = file.absolutePath,
+                     content = content,
+                     readOnly = readOnly
+                 )
+             )
+         } catch (e: Exception) {
+             log.error("Error serving editor for file: ${file.absolutePath}", e)
+             resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+             resp.writer.write("Error opening editor: ${e.message}")
+         }
+     }
+     private fun isBinaryFile(file: File): Boolean {
+         if (!file.exists() || !file.isFile) return false
+         val sampleSize = minOf(file.length(), 8192L).toInt()
+         if (sampleSize == 0) return false
+         val buffer = ByteArray(sampleSize)
+         file.inputStream().use { input ->
+             val read = input.read(buffer)
+             if (read <= 0) return false
+             for (i in 0 until read) {
+                 val b = buffer[i].toInt() and 0xFF
+                 if (b == 0) return true
+             }
+         }
+         return false
+     }
 
     private fun serveNonExistentFile(file: File, resp: HttpServletResponse) {
         val fileName = file.name
@@ -347,7 +398,8 @@ abstract class FileServlet : HttpServlet() {
                  val deleteButton = if (!FileAccessControl.isReadOnly(baseDir, it)) {
                      """<button class="delete-link" onclick="deleteItem(event, '${escapeJs(fileName)}', false)" title="Delete file">🗑️ Delete</button>"""
                  } else ""
-                 """<li style="display: flex; align-items: center;">$baseLink$htmlLink$fileActions$deleteButton</li>"""
+                 val editButton = """<a class="action-link" href="${fileName}?edit=1" title="Edit file in Monaco editor">✏️ Edit</a>"""
+                 """<li style="display: flex; align-items: center;">$baseLink$htmlLink$editButton$fileActions$deleteButton</li>"""
             } ?: ""
         val folders = file?.listFiles()
             ?.filter { !it.isFile }

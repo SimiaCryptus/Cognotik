@@ -76,7 +76,7 @@ open class FileApplicationServices(val rootDir: File) {
     open val dataStorageFactory: DataStorage by lazy { DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = metadataDB) }
     open val metadataDB: MetadataStorageDB by lazy { MetadataStorageDB() }
     open val usageDB: UsageInterface by lazy { UsageDB().apply {
-        ChatModel.ON_USAGE = { model, usage, user, session -> this.incrementUsage(session, user, model, usage) }
+        ChatModel.ON_USAGE = { model, usage, user, session, data -> this.incrementUsage(session, user, model, usage, data) }
     } }
     open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsDB() }
 }

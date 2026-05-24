@@ -38,7 +38,6 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val usage = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
-            cost = 30.0,
         )
         log.info("Incrementing usage for session {} with model {}", session, model)
         impl.incrementUsage(session, testUser, model, usage)
@@ -101,12 +100,10 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val usage1 = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
-            cost = 30.0,
         )
         val usage2 = ModelSchema.Usage(
             prompt_tokens = 5,
             completion_tokens = 10,
-            cost = 15.0,
         )
         log.info("Incrementing usage for model1 {} and model2 {}", model1, model2)
         impl.incrementUsage(session, testUser, model1, usage1)
@@ -143,7 +140,6 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val expectedUsage = ModelSchema.Usage(
             prompt_tokens = 15,
             completion_tokens = 30,
-            cost = 45.0,
         )
         Assertions.assertEquals(expectedUsage, usageSummary[model.modelId])
 //    val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
@@ -185,7 +181,6 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val childUsage = ModelSchema.Usage(
             prompt_tokens = 5,
             completion_tokens = 10,
-            cost = 15.0,
         )
         log.info("Incrementing usage for parent session {} and child session {}", parentSession, childSession)
         impl.incrementUsage(parentSession, testUser, model, parentUsage)
@@ -196,7 +191,6 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val expectedCombined = ModelSchema.Usage(
             prompt_tokens = 15,
             completion_tokens = 30,
-            cost = 45.0,
         )
         log.debug("Verifying combined usage for parent session includes child usage")
         Assertions.assertEquals(expectedCombined, parentSummary[model.modelId])
@@ -222,7 +216,6 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val expectedCombined = ModelSchema.Usage(
             prompt_tokens = 12,
             completion_tokens = 15,
-            cost = 18.0,
         )
         log.debug("Verifying combined usage for grandparent session includes all descendant usage")
         Assertions.assertEquals(expectedCombined, grandparentSummary[model.modelId])

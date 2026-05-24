@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -37,7 +38,7 @@ class ChatModel(
 
   override fun toString() = modelId
 
-  fun pricing(usage: Usage): Double {
+  override fun pricing(usage: Usage): Double {
     val promptCost = usage.prompt_tokens * inputTokenPricePerK
     val completionCost = usage.completion_tokens * outputTokenPricePerK
     val unaccountedTokens = (usage.total_tokens - (usage.prompt_tokens + usage.completion_tokens)).coerceAtLeast(0)
@@ -70,11 +71,11 @@ class ChatModel(
     workPool = workPool,
     scheduledPool = scheduledPool,
     session = session,
-    onUsage = { model, usage -> ON_USAGE(model, usage, user, session) },
+    onUsage = { model, usage, data -> ON_USAGE(model, usage, user, session, data) },
   )
 
   companion object {
-    var ON_USAGE : (LLMModel, Usage, User, Session) -> Unit = { model, usage, user, session ->
+    var ON_USAGE : (LLMModel, Usage, User, Session, ModelSchema.UsageData?) -> Unit = { model, usage, user, session, data ->
       log.info("Model: ${model.modelId}, Prompt Tokens: ${usage.prompt_tokens}, Completion Tokens: ${usage.completion_tokens}, Total Tokens: ${usage.total_tokens}, User: ${user.id}")
     }
     val NULL: ChatModel = ChatModel(
@@ -87,6 +88,3 @@ class ChatModel(
     val log = getLogger(ChatModel::class.java)
   }
 }
-
-
-fun Usage.price(model: ChatModel): Usage = this.copy(cost = model.pricing(this))

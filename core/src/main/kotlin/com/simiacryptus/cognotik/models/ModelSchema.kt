@@ -51,7 +51,14 @@ interface ModelSchema {
     var prompt_tokens: Long = 0,
     var completion_tokens: Long = 0,
     var total_tokens: Long = prompt_tokens + completion_tokens,
-    var cost: Double? = null
+    var cost: Double = 0.0,
+  ) {
+    fun cost(model: AIModel): Double = model.pricing(this)
+  }
+
+  data class UsageData(
+    val input_text: String? = null,
+    val output_text: String? = null,
   )
 
   data class TranscriptionPacket(
@@ -136,7 +143,11 @@ interface ModelSchema {
     var modalities: List<String>? = null,
     var audio: Map<String, String>? = null,
     var reasoning_effort: String? = null,
-  )
+  ) {
+    fun toRequestData() = UsageData(
+        input_text = messages.joinToString("\n") { "${it.role}: ${it.content?.joinToString(" ") { part -> part.text ?: "" }}" }
+      )
+  }
 
   data class GroqChatRequest(
     var messages: List<GroqChatMessage> = listOf(),
