@@ -1,19 +1,15 @@
 ﻿package com.simiacryptus.cognotik.config
 
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.UsageInterface
-import com.simiacryptus.cognotik.util.BrowseUtil
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Font
 import java.awt.event.ActionEvent
-import java.net.URI
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.swing.AbstractAction
@@ -38,8 +34,8 @@ class UsageTable(
       ).map { entry ->
             listOf(
                 entry.key,
-                entry.value.prompt_tokens.toString(),
-                entry.value.completion_tokens.toString(),
+                entry.value.counts.getOrDefault(TokenTypes.Prompt, 0).toString(),
+                entry.value.counts.getOrDefault(TokenTypes.Completion, 0).toString(),
                 String.format("%.2f", entry.value.cost)
             ).toMutableList()
         }

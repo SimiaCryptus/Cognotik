@@ -48,11 +48,30 @@ interface ModelSchema {
   }
 
   data class Usage(
-    var prompt_tokens: Long = 0,
-    var completion_tokens: Long = 0,
-    var total_tokens: Long = prompt_tokens + completion_tokens,
+    val counts: MutableMap<TokenTypes, Long> = mutableMapOf(),
+    var total_tokens: Long = counts.values.sum(),
     var cost: Double = 0.0,
-  )
+  ) {
+    constructor(
+      prompt_tokens: Long = 0,
+      completion_tokens: Long = 0,
+      total_tokens: Long = prompt_tokens + completion_tokens,
+      cost: Double = 0.0
+    ) : this(
+      counts = mutableMapOf(
+        TokenTypes.Prompt to prompt_tokens,
+        TokenTypes.Completion to completion_tokens
+      ), total_tokens = total_tokens, cost = cost
+    )
+  }
+
+  enum class TokenTypes {
+    Prompt,
+    Completion,
+    Thinking,
+    Tools,
+    Cached
+  }
 
   data class UsageData(
     val input_text: String? = null,

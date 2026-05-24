@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
@@ -121,16 +122,16 @@ class UsageServlet : HttpServlet() {
     ) {
         resp.contentType = "application/json"
 
-        val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
-        val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }
+        val totalPromptTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Prompt, 0) }
+        val totalCompletionTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Completion, 0) }
         val totalCost = usage.values.sumOf { it.cost ?: 0.0 }
 
         val result = mutableMapOf<String, Any?>(
             "models" to usage.entries.map { (model, count) ->
                 mapOf(
                     "model" to model,
-                    "prompt_tokens" to count.prompt_tokens,
-                    "completion_tokens" to count.completion_tokens,
+                    "prompt_tokens" to count.counts.getOrDefault(TokenTypes.Prompt, 0),
+                    "completion_tokens" to count.counts.getOrDefault(TokenTypes.Completion, 0),
                     "cost" to (count.cost ?: 0.0)
                 )
             },
@@ -155,8 +156,8 @@ class UsageServlet : HttpServlet() {
                 mapOf(
                     "day" to d.day.toString(),
                     "model" to d.model,
-                    "prompt_tokens" to d.usage.prompt_tokens,
-                    "completion_tokens" to d.usage.completion_tokens,
+                    "prompt_tokens" to d.usage.counts.getOrDefault(TokenTypes.Prompt, 0),
+                    "completion_tokens" to d.usage.counts.getOrDefault(TokenTypes.Completion, 0),
                     "cost" to (d.usage.cost ?: 0.0)
                 )
             }
@@ -189,8 +190,8 @@ class UsageServlet : HttpServlet() {
     ) {
         resp.contentType = "text/html"
 
-        val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
-        val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }
+        val totalPromptTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Prompt, 0) }
+        val totalCompletionTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Completion, 0) }
         val totalCost = usage.values.sumOf { it.cost ?: 0.0 }
 
         val scopeHtml = renderScope(scopeLabel)
@@ -416,8 +417,8 @@ class UsageServlet : HttpServlet() {
             """
                 <tr class="table-row">
                     <td class="model-cell">$model</td>
-                    <td class="prompt-cell">${count.prompt_tokens}</td>
-                    <td class="completion-cell">${count.completion_tokens}</td>
+                    <td class="prompt-cell">${count.counts.getOrDefault(TokenTypes.Prompt, 0)}</td>
+                    <td class="completion-cell">${count.counts.getOrDefault(TokenTypes.Completion, 0)}</td>
                     <td class="cost-cell">${"%.4f".format(count.cost ?: 0.0)}</td>
                 </tr>
                 """.trimIndent()
@@ -448,8 +449,8 @@ class UsageServlet : HttpServlet() {
                 <tr class="table-row">
                     <td>${d.day}</td>
                     <td>${d.model}</td>
-                    <td>${d.usage.prompt_tokens}</td>
-                    <td>${d.usage.completion_tokens}</td>
+                    <td>${d.usage.counts.getOrDefault(TokenTypes.Prompt, 0)}</td>
+                    <td>${d.usage.counts.getOrDefault(TokenTypes.Completion, 0)}</td>
                     <td>${"%.4f".format(d.usage.cost ?: 0.0)}</td>
                 </tr>
                 """.trimIndent()

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
@@ -137,12 +138,12 @@ class SessionsServlet : HttpServlet() {
 
     private fun totalPromptTokens(usage: Map<String, ModelSchema.Usage>?): Long {
         if (usage == null) return 0L
-        return usage.values.sumOf { it.prompt_tokens }
+        return usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Prompt, 0) }
     }
 
     private fun totalCompletionTokens(usage: Map<String, ModelSchema.Usage>?): Long {
         if (usage == null) return 0L
-        return usage.values.sumOf { it.completion_tokens }
+        return usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Completion, 0) }
     }
 
     private fun totalCost(usage: Map<String, ModelSchema.Usage>?): Double {
@@ -221,8 +222,8 @@ class SessionsServlet : HttpServlet() {
                 if (!first) sb.append(",")
                 first = false
                 sb.append(jsonString(model)).append(":{")
-                sb.append("\"promptTokens\":").append(u.prompt_tokens).append(",")
-                sb.append("\"completionTokens\":").append(u.completion_tokens).append(",")
+                sb.append("\"promptTokens\":").append(u.counts.getOrDefault(TokenTypes.Prompt, 0)).append(",")
+                sb.append("\"completionTokens\":").append(u.counts.getOrDefault(TokenTypes.Completion, 0)).append(",")
                 sb.append("\"totalTokens\":").append(u.total_tokens).append(",")
                 sb.append("\"cost\":").append(u.cost ?: 0.0)
                 sb.append("}")
@@ -251,8 +252,8 @@ class SessionsServlet : HttpServlet() {
                     if (!cFirst) sb.append(",")
                     cFirst = false
                     sb.append(jsonString(model)).append(":{")
-                    sb.append("\"promptTokens\":").append(u.prompt_tokens).append(",")
-                    sb.append("\"completionTokens\":").append(u.completion_tokens).append(",")
+                    sb.append("\"promptTokens\":").append(u.counts.getOrDefault(TokenTypes.Prompt, 0)).append(",")
+                    sb.append("\"completionTokens\":").append(u.counts.getOrDefault(TokenTypes.Completion, 0)).append(",")
                     sb.append("\"totalTokens\":").append(u.total_tokens).append(",")
                     sb.append("\"cost\":").append(u.cost ?: 0.0)
                     sb.append("}")
@@ -380,8 +381,13 @@ class SessionsServlet : HttpServlet() {
                         for ((model, u) in usage) {
                             append("<tr>")
                             append("<td class=\"mono\">").append(htmlEscape(model)).append("</td>")
-                            append("<td class=\"num\">").append(formatNumber(u.prompt_tokens)).append("</td>")
-                            append("<td class=\"num\">").append(formatNumber(u.completion_tokens)).append("</td>")
+                            append("<td class=\"num\">").append(formatNumber(u.counts.getOrDefault(TokenTypes.Prompt, 0))).append("</td>")
+                            append("<td class=\"num\">").append(formatNumber(
+                                u.counts.getOrDefault(
+                                    TokenTypes.Completion,
+                                    0
+                                )
+                            )).append("</td>")
                             append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
                             append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")
                             append("</tr>\n")
@@ -451,8 +457,18 @@ class SessionsServlet : HttpServlet() {
                                 for ((model, u) in cUsage) {
                                     append("<tr>")
                                     append("<td class=\"mono\">").append(htmlEscape(model)).append("</td>")
-                                    append("<td class=\"num\">").append(formatNumber(u.prompt_tokens)).append("</td>")
-                                    append("<td class=\"num\">").append(formatNumber(u.completion_tokens))
+                                    append("<td class=\"num\">").append(formatNumber(
+                                        u.counts.getOrDefault(
+                                            TokenTypes.Prompt,
+                                            0
+                                        )
+                                    )).append("</td>")
+                                    append("<td class=\"num\">").append(formatNumber(
+                                        u.counts.getOrDefault(
+                                            TokenTypes.Completion,
+                                            0
+                                        )
+                                    ))
                                         .append("</td>")
                                     append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
                                     append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")

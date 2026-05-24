@@ -7,14 +7,14 @@ import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.AnthropicChatClient.Companion.AnthropicImageContentBlock
-import com.simiacryptus.cognotik.chat.AnthropicChatClient.Companion.AnthropicTextContentBlock
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.toJson
 import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory
@@ -762,9 +762,16 @@ class GeminiSdkChatClient(
 
     val usage = try {
       response.usageMetadata().orElse(null)?.let { metadata ->
+        val counts = mutableMapOf(
+          TokenTypes.Prompt to metadata.promptTokenCount().orElse(0).toLong(),
+          TokenTypes.Completion to metadata.candidatesTokenCount().orElse(0).toLong(),
+          TokenTypes.Cached to metadata.cachedContentTokenCount().orElse(0).toLong(),
+          TokenTypes.Thinking to metadata.thoughtsTokenCount().orElse(0).toLong(),
+          TokenTypes.Tools to metadata.toolUsePromptTokenCount().orElse(0).toLong()
+        )
+        log.info("Gemini response usage metadata: {}", counts.toJson())
         ModelSchema.Usage(
-          prompt_tokens = metadata.promptTokenCount().orElse(0).toLong(),
-          completion_tokens = metadata.candidatesTokenCount().orElse(0).toLong(),
+          counts = counts,
           total_tokens = metadata.totalTokenCount().orElse(0).toLong()
         )
       }

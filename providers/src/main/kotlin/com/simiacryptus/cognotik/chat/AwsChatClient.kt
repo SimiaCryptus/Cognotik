@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
@@ -346,7 +347,21 @@ class AwsChatClient(
       val response = fromConverseResponse(converseResponse)
 
       if (response.usage != null) {
-        log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
+        log.debug("Usage for model ${model.modelId}: prompt_tokens=${
+          response.usage?.let {
+            it.counts.getOrDefault(
+              TokenTypes.Prompt,
+              0
+            )
+          }
+        }, completion_tokens=${
+          response.usage?.let {
+            it.counts.getOrDefault(
+              TokenTypes.Completion,
+              0
+            )
+          }
+        }, total_tokens=${response.usage?.total_tokens}")
         usageHandler.onUsage(
           model,
           response.usage!!

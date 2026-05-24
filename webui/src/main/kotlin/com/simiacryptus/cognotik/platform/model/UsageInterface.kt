@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.platform.model
 import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import java.time.LocalDate
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
@@ -183,8 +184,8 @@ interface UsageInterface {
          * @param tokens The usage object containing tokens and cost to add
          */
         fun addAndGet(tokens: ModelSchema.Usage, cost: Double? = null) {
-            inputTokens.addAndGet(tokens.prompt_tokens)
-            outputTokens.addAndGet(tokens.completion_tokens)
+            inputTokens.addAndGet(tokens.counts.getOrDefault(TokenTypes.Prompt, 0))
+            outputTokens.addAndGet(tokens.counts.getOrDefault(TokenTypes.Completion, 0))
             this.cost.addAndGet(cost ?: 0.0)
         }
     }
