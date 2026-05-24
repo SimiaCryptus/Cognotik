@@ -393,8 +393,7 @@ class RouterServlet(
         val examplesHtml = if (exampleSessions.isNotEmpty()) {
             buildString {
                 append("""<div class="app-examples"><h2>Example Sessions</h2><ul class="examples-list">""")
-                exampleSessions.forEach { (name, sessionId) ->
-                    val url = "${request.contextPath}/fileIndex/${escapeHtml(sessionId)}/app.html"
+                exampleSessions.forEach { (name, url) ->
                     append("""<li><a href="""").append(escapeHtml(url)).append("""">""")
                         .append(escapeHtml(name)).append("</a></li>")
                 }
