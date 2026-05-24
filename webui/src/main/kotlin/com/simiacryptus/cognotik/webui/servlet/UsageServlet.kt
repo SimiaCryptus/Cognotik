@@ -122,23 +122,35 @@ class UsageServlet : HttpServlet() {
     ) {
         resp.contentType = "application/json"
 
-        val totalPromptTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Prompt, 0) }
-        val totalCompletionTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Completion, 0) }
+        // Collect all token types present across usage and daily breakdown
+        val allTokenTypes: List<TokenTypes> = collectTokenTypes(usage, daily)
+        val totalsByType: Map<TokenTypes, Long> = allTokenTypes.associateWith { type ->
+            usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
+        }
         val totalCost = usage.values.sumOf { it.cost ?: 0.0 }
 
         val result = mutableMapOf<String, Any?>(
             "models" to usage.entries.map { (model, count) ->
-                mapOf(
+                val m = mutableMapOf<String, Any?>(
                     "model" to model,
-                    "prompt_tokens" to count.counts.getOrDefault(TokenTypes.Prompt, 0),
-                    "completion_tokens" to count.counts.getOrDefault(TokenTypes.Completion, 0),
                     "cost" to (count.cost ?: 0.0)
                 )
+                // Token counts keyed by token type name
+                val tokens = allTokenTypes.associate { type ->
+                    type.name to count.counts.getOrDefault(type, 0L)
+                }
+                m["tokens"] = tokens
+                // Backwards-compatible flat fields
+                m["prompt_tokens"] = count.counts.getOrDefault(TokenTypes.Prompt, 0L)
+                m["completion_tokens"] = count.counts.getOrDefault(TokenTypes.Completion, 0L)
+                m
             },
-            "totals" to mapOf(
-                "prompt_tokens" to totalPromptTokens,
-                "completion_tokens" to totalCompletionTokens,
-                "cost" to totalCost
+            "totals" to mutableMapOf<String, Any?>(
+                "cost" to totalCost,
+                "tokens" to allTokenTypes.associate { it.name to (totalsByType[it] ?: 0L) },
+                // Backwards-compatible flat fields
+                "prompt_tokens" to (totalsByType[TokenTypes.Prompt] ?: 0L),
+                "completion_tokens" to (totalsByType[TokenTypes.Completion] ?: 0L)
             )
         )
 
@@ -153,12 +165,16 @@ class UsageServlet : HttpServlet() {
         }
         if (daily.isNotEmpty()) {
             result["daily"] = daily.map { d ->
-                mapOf(
+                mutableMapOf<String, Any?>(
                     "day" to d.day.toString(),
                     "model" to d.model,
-                    "prompt_tokens" to d.usage.counts.getOrDefault(TokenTypes.Prompt, 0),
-                    "completion_tokens" to d.usage.counts.getOrDefault(TokenTypes.Completion, 0),
-                    "cost" to (d.usage.cost ?: 0.0)
+                    "cost" to (d.usage.cost ?: 0.0),
+                    "tokens" to allTokenTypes.associate { type ->
+                        type.name to d.usage.counts.getOrDefault(type, 0L)
+                    },
+                    // Backwards-compatible flat fields
+                    "prompt_tokens" to d.usage.counts.getOrDefault(TokenTypes.Prompt, 0L),
+                    "completion_tokens" to d.usage.counts.getOrDefault(TokenTypes.Completion, 0L)
                 )
             }
         }
@@ -177,6 +193,33 @@ class UsageServlet : HttpServlet() {
         val gson: Gson = GsonBuilder().setPrettyPrinting().create()
         resp.writer.write(gson.toJson(result))
     }
+    /**
+     * Collects the union of all TokenTypes appearing in either the summary or daily usage,
+     * preserving a stable column order: Prompt and Completion first (when present),
+     * then any remaining types in enum declaration order.
+     */
+    private fun collectTokenTypes(
+        usage: Map<String, ModelSchema.Usage>,
+        daily: List<UsageInterface.DailyUsage>
+    ): List<TokenTypes> {
+        val present = LinkedHashSet<TokenTypes>()
+        usage.values.forEach { u -> u.counts.keys.forEach { present.add(it) } }
+        daily.forEach { d -> d.usage.counts.keys.forEach { present.add(it) } }
+        val preferredOrder = mutableListOf<TokenTypes>()
+        if (present.contains(TokenTypes.Prompt)) preferredOrder.add(TokenTypes.Prompt)
+        if (present.contains(TokenTypes.Completion)) preferredOrder.add(TokenTypes.Completion)
+        // Append remaining token types in enum declaration order for stability
+        TokenTypes.values().forEach { t ->
+            if (present.contains(t) && !preferredOrder.contains(t)) preferredOrder.add(t)
+        }
+        // Ensure at least Prompt/Completion columns appear even when no data is present
+        if (preferredOrder.isEmpty()) {
+            preferredOrder.add(TokenTypes.Prompt)
+            preferredOrder.add(TokenTypes.Completion)
+        }
+        return preferredOrder
+    }
+
 
     private fun serveHtml(
         resp: HttpServletResponse,
@@ -190,15 +233,17 @@ class UsageServlet : HttpServlet() {
     ) {
         resp.contentType = "text/html"
 
-        val totalPromptTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Prompt, 0) }
-        val totalCompletionTokens = usage.values.sumOf { it.counts.getOrDefault(TokenTypes.Completion, 0) }
+        val allTokenTypes: List<TokenTypes> = collectTokenTypes(usage, daily)
+        val totalsByType: Map<TokenTypes, Long> = allTokenTypes.associateWith { type ->
+            usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
+        }
         val totalCost = usage.values.sumOf { it.cost ?: 0.0 }
 
         val scopeHtml = renderScope(scopeLabel)
         val budgetHtml = renderBudget(availableBudget)
         val rangeFormHtml = renderRangeForm(from, to)
-        val modelTableHtml = renderModelTable(usage, totalPromptTokens, totalCompletionTokens, totalCost)
-        val dailyHtml = renderDailyTable(daily)
+        val modelTableHtml = renderModelTable(usage, allTokenTypes, totalsByType, totalCost)
+        val dailyHtml = renderDailyTable(daily, allTokenTypes)
         val creditsHtml = renderCreditsTable(credits)
 
         resp.writer.write(
@@ -409,48 +454,62 @@ class UsageServlet : HttpServlet() {
 
     private fun renderModelTable(
         usage: Map<String, ModelSchema.Usage>,
-        totalPromptTokens: Long,
-        totalCompletionTokens: Long,
+        allTokenTypes: List<TokenTypes>,
+        totalsByType: Map<TokenTypes, Long>,
         totalCost: Double
     ): String {
+        val headerCols = allTokenTypes.joinToString("\n") { t ->
+            "                        <th>${escapeHtml(formatTokenTypeName(t))}</th>"
+        }
         val rows = usage.entries.joinToString("\n") { (model, count) ->
+            val tokenCells = allTokenTypes.joinToString("\n") { t ->
+                """                    <td class="token-cell token-${t.name.lowercase()}">${count.counts.getOrDefault(t, 0L)}</td>"""
+            }
             """
                 <tr class="table-row">
-                    <td class="model-cell">$model</td>
-                    <td class="prompt-cell">${count.counts.getOrDefault(TokenTypes.Prompt, 0)}</td>
-                    <td class="completion-cell">${count.counts.getOrDefault(TokenTypes.Completion, 0)}</td>
+                    <td class="model-cell">${escapeHtml(model)}</td>
+$tokenCells
                     <td class="cost-cell">${"%.4f".format(count.cost ?: 0.0)}</td>
                 </tr>
                 """.trimIndent()
+        }
+        val totalCells = allTokenTypes.joinToString("\n") { t ->
+            """                    <td class="token-cell token-${t.name.lowercase()}">${totalsByType[t] ?: 0L}</td>"""
         }
         return """
                 <table class="usage-table">
                     <tr class="table-header">
                         <th>Model</th>
-                        <th>Prompt</th>
-                        <th>Completion</th>
+$headerCols
                         <th>Cost</th>
                     </tr>
                     $rows
                     <tr class="table-row total-row">
                         <td class="model-cell">Total</td>
-                        <td class="prompt-cell">$totalPromptTokens</td>
-                        <td class="completion-cell">$totalCompletionTokens</td>
+$totalCells
                         <td class="cost-cell">${"%.4f".format(totalCost)}</td>
                     </tr>
                 </table>
                 """.trimIndent()
     }
 
-    private fun renderDailyTable(daily: List<UsageInterface.DailyUsage>): String {
+    private fun renderDailyTable(
+        daily: List<UsageInterface.DailyUsage>,
+        allTokenTypes: List<TokenTypes>
+    ): String {
         if (daily.isEmpty()) return ""
+        val headerCols = allTokenTypes.joinToString("\n") { t ->
+            "                        <th>${escapeHtml(formatTokenTypeName(t))}</th>"
+        }
         val rows = daily.joinToString("\n") { d ->
+            val tokenCells = allTokenTypes.joinToString("\n") { t ->
+                """                    <td class="token-cell token-${t.name.lowercase()}">${d.usage.counts.getOrDefault(t, 0L)}</td>"""
+            }
             """
                 <tr class="table-row">
                     <td>${d.day}</td>
-                    <td>${d.model}</td>
-                    <td>${d.usage.counts.getOrDefault(TokenTypes.Prompt, 0)}</td>
-                    <td>${d.usage.counts.getOrDefault(TokenTypes.Completion, 0)}</td>
+                    <td>${escapeHtml(d.model)}</td>
+$tokenCells
                     <td>${"%.4f".format(d.usage.cost ?: 0.0)}</td>
                 </tr>
                 """.trimIndent()
@@ -461,13 +520,20 @@ class UsageServlet : HttpServlet() {
                     <tr class="table-header">
                         <th>Day</th>
                         <th>Model</th>
-                        <th>Prompt</th>
-                        <th>Completion</th>
+$headerCols
                         <th>Cost</th>
                     </tr>
                     $rows
                 </table>
                 """.trimIndent()
+    }
+    /**
+     * Formats a TokenTypes enum value into a more readable column header.
+     * Inserts spaces before camel-case boundaries, e.g. "CacheRead" -> "Cache Read".
+     */
+    private fun formatTokenTypeName(t: TokenTypes): String {
+        val name = t.name
+        return name.replace(Regex("(?<=[a-z0-9])(?=[A-Z])"), " ")
     }
 
     private fun renderCreditsTable(credits: List<UsageInterface.CreditEntry>): String {

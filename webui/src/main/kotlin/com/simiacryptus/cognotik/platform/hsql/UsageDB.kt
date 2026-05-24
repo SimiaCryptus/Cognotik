@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -65,10 +66,10 @@ class UsageDB : UsageInterface {
         return facet.withConnection { conn ->
             conn.prepareStatement(
                 """
-                    SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
+                     SELECT model, token_type, SUM(token_count), SUM(cost)
                     FROM usage_daily
                     WHERE user_id = ? AND day >= ? AND day < ?
-                    GROUP BY model
+                     GROUP BY model, token_type
                     """
             ).use { stmt ->
                 stmt.setString(1, user.email)
@@ -88,10 +89,11 @@ class UsageDB : UsageInterface {
             val placeholders = allSessionIds.joinToString(",") { "?" }
             conn.prepareStatement(
                 """
-                    SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
-                    FROM usage
-                    WHERE session_id IN ($placeholders)
-                    GROUP BY model
+                     SELECT u.model, ut.token_type, SUM(ut.token_count), SUM(u.cost)
+                     FROM usage u
+                     LEFT JOIN usage_tokens ut ON u.id = ut.usage_id
+                     WHERE u.session_id IN ($placeholders)
+                     GROUP BY u.model, ut.token_type
                     """
             ).use { stmt ->
                 allSessionIds.forEachIndexed { index, sessionId ->
@@ -106,6 +108,7 @@ class UsageDB : UsageInterface {
         log.debug("Clearing all usage data")
         facet.withTransaction { conn ->
             conn.createStatement().use { stmt ->
+                 stmt.executeUpdate("DELETE FROM usage_tokens")
                 stmt.executeUpdate("DELETE FROM usage")
                 stmt.executeUpdate("DELETE FROM usage_daily")
                 stmt.executeUpdate("DELETE FROM session_parents")
@@ -204,7 +207,7 @@ class UsageDB : UsageInterface {
         return facet.withConnection { conn ->
             conn.prepareStatement(
                 """
-                    SELECT day, model, prompt_tokens, completion_tokens, cost
+                     SELECT day, model, token_type, token_count, cost
                     FROM usage_daily
                     WHERE user_id = ? AND day >= ? AND day < ?
                     ORDER BY day ASC, model ASC
@@ -214,14 +217,32 @@ class UsageDB : UsageInterface {
                 stmt.setDate(2, SqlDate.valueOf(from))
                 stmt.setDate(3, SqlDate.valueOf(to))
                 stmt.executeQuery().use { rs ->
-                    val out = mutableListOf<UsageInterface.DailyUsage>()
+                     // Aggregate rows by (day, model) since usage_daily now has one row per token type.
+                     val grouped = linkedMapOf<Pair<LocalDate, String>, Pair<MutableMap<TokenTypes, Long>, Double>>()
                     while (rs.next()) {
                         val day = rs.getDate(1).toLocalDate()
                         val model = rs.getString(2)
-                        val usage = ModelSchema.Usage(
-                            prompt_tokens = rs.getLong(3), completion_tokens = rs.getLong(4), cost = rs.getDouble(5)
-                        )
-                        out.add(UsageInterface.DailyUsage(day, model, usage))
+                         val tokenTypeRaw = rs.getString(3)
+                         val tokenCount = rs.getLong(4)
+                         val cost = rs.getDouble(5)
+                         val key = day to model
+                         val entry = grouped.getOrPut(key) { mutableMapOf<TokenTypes, Long>() to 0.0 }
+                         val parsedType = tokenTypeRaw?.let { runCatching { TokenTypes.valueOf(it) }.getOrNull() }
+                         if (parsedType != null && tokenCount != 0L) {
+                             entry.first.merge(parsedType, tokenCount) { a, b -> a + b }
+                         }
+                         // Cost is replicated across token-type rows for same (day, model); take the max to avoid double counting.
+                         grouped[key] = entry.first to maxOf(entry.second, cost)
+                     }
+                     val out = mutableListOf<UsageInterface.DailyUsage>()
+                     for ((key, value) in grouped) {
+                         val (day, model) = key
+                         val (counts, cost) = value
+                         val totalTokens = counts.values.sum()
+                         val usage = ModelSchema.Usage(
+                             counts = counts, total_tokens = totalTokens, cost = cost
+                         )
+                         out.add(UsageInterface.DailyUsage(day, model, usage))
                     }
                     out
                 }
@@ -314,17 +335,24 @@ class UsageDB : UsageInterface {
             usageKey.user?.email,
             usageKey.model.modelId
         )
-        conn.prepareStatement(
+         val tokenSnapshots: Map<TokenTypes, Long> = usageValues.tokenCounts
+             .mapValues { it.value.get() }
+             .filterValues { it != 0L }
+         // Computed total for the legacy aggregate columns (prompt + completion only) for backward compatibility.
+         val promptTotal = tokenSnapshots.getOrDefault(TokenTypes.Prompt, 0L)
+         val completionTotal = tokenSnapshots.getOrDefault(TokenTypes.Completion, 0L)
+         val generatedKeys = conn.prepareStatement(
             """
                 INSERT INTO usage (session_id, user_id, model, prompt_tokens, completion_tokens, cost, datetime, input_text, output_text)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """
-        ).use { stmt ->
+                 """,
+             java.sql.Statement.RETURN_GENERATED_KEYS
+         ).use { stmt ->
             stmt.setString(1, usageKey.session.sessionId)
             stmt.setString(2, usageKey.user?.email ?: "")
             stmt.setString(3, usageKey.model.modelId)
-            stmt.setLong(4, usageValues.inputTokens.get())
-            stmt.setLong(5, usageValues.outputTokens.get())
+             stmt.setLong(4, promptTotal)
+             stmt.setLong(5, completionTotal)
             stmt.setDouble(6, usageValues.cost.get())
             stmt.setTimestamp(7, ts)
             if (inputText != null) {
@@ -338,6 +366,22 @@ class UsageDB : UsageInterface {
                  stmt.setNull(9, java.sql.Types.LONGVARCHAR)
             }
             stmt.executeUpdate()
+             stmt.generatedKeys.use { gk ->
+                 if (gk.next()) gk.getLong(1) else -1L
+             }
+         }
+         if (generatedKeys > 0 && tokenSnapshots.isNotEmpty()) {
+             conn.prepareStatement(
+                 "INSERT INTO usage_tokens (usage_id, token_type, token_count) VALUES (?, ?, ?)"
+             ).use { stmt ->
+                 for ((type, count) in tokenSnapshots) {
+                     stmt.setLong(1, generatedKeys)
+                     stmt.setString(2, type.name)
+                     stmt.setLong(3, count)
+                     stmt.addBatch()
+                 }
+                 stmt.executeBatch()
+             }
         }
     }
 
@@ -347,25 +391,45 @@ class UsageDB : UsageInterface {
         val userId = usageKey.user?.email ?: ""
         val model = usageKey.model.modelId
         val sqlDay = SqlDate.valueOf(day)
-        val pTokens = usageValues.inputTokens.get()
-        val cTokens = usageValues.outputTokens.get()
         val cost = usageValues.cost.get()
+         val tokenSnapshots: Map<TokenTypes, Long> = usageValues.tokenCounts
+             .mapValues { it.value.get() }
+             .filterValues { it != 0L }
+         // If there are no token counts but there is a cost, record an "Other" entry to preserve cost.
+         val entries: Map<TokenTypes, Long> = if (tokenSnapshots.isEmpty() && cost != 0.0) {
+             mapOf(TokenTypes.Prompt to 0L)
+         } else tokenSnapshots
+         // Distribute cost only to the first entry to avoid double counting in joins/aggregations.
+         val firstType = entries.keys.firstOrNull()
+         for ((type, count) in entries) {
+             val rowCost = if (type == firstType) cost else 0.0
+             upsertDailyUsageRow(conn, userId, sqlDay, model!!, type, count, rowCost)
+         }
+     }
+     private fun upsertDailyUsageRow(
+         conn: Connection,
+         userId: String,
+         sqlDay: SqlDate,
+         model: String,
+         tokenType: TokenTypes,
+         tokenCount: Long,
+         cost: Double
+     ) {
         if (facet.dbProvider == "postgresql") {
             conn.prepareStatement(
                 """
-                     INSERT INTO usage_daily (user_id, day, model, prompt_tokens, completion_tokens, cost)
+                      INSERT INTO usage_daily (user_id, day, model, token_type, token_count, cost)
                      VALUES (?, ?, ?, ?, ?, ?)
-                     ON CONFLICT (user_id, day, model) DO UPDATE
-                     SET prompt_tokens = usage_daily.prompt_tokens + EXCLUDED.prompt_tokens,
-                         completion_tokens = usage_daily.completion_tokens + EXCLUDED.completion_tokens,
+                      ON CONFLICT (user_id, day, model, token_type) DO UPDATE
+                      SET token_count = usage_daily.token_count + EXCLUDED.token_count,
                          cost = usage_daily.cost + EXCLUDED.cost
                      """
             ).use { stmt ->
                 stmt.setString(1, userId)
                 stmt.setDate(2, sqlDay)
                 stmt.setString(3, model)
-                stmt.setLong(4, pTokens)
-                stmt.setLong(5, cTokens)
+                 stmt.setString(4, tokenType.name)
+                 stmt.setLong(5, tokenCount)
                 stmt.setDouble(6, cost)
                 stmt.executeUpdate()
             }
@@ -374,32 +438,31 @@ class UsageDB : UsageInterface {
         val updated = conn.prepareStatement(
             """
                  UPDATE usage_daily
-                 SET prompt_tokens = prompt_tokens + ?,
-                     completion_tokens = completion_tokens + ?,
+                  SET token_count = token_count + ?,
                      cost = cost + ?
-                 WHERE user_id = ? AND day = ? AND model = ?
+                  WHERE user_id = ? AND day = ? AND model = ? AND token_type = ?
                  """
         ).use { stmt ->
-            stmt.setLong(1, pTokens)
-            stmt.setLong(2, cTokens)
-            stmt.setDouble(3, cost)
-            stmt.setString(4, userId)
-            stmt.setDate(5, sqlDay)
-            stmt.setString(6, model)
+             stmt.setLong(1, tokenCount)
+             stmt.setDouble(2, cost)
+             stmt.setString(3, userId)
+             stmt.setDate(4, sqlDay)
+             stmt.setString(5, model)
+             stmt.setString(6, tokenType.name)
             stmt.executeUpdate()
         }
         if (updated == 0) {
             conn.prepareStatement(
                 """
-                     INSERT INTO usage_daily (user_id, day, model, prompt_tokens, completion_tokens, cost)
+                      INSERT INTO usage_daily (user_id, day, model, token_type, token_count, cost)
                      VALUES (?, ?, ?, ?, ?, ?)
                      """
             ).use { stmt ->
                 stmt.setString(1, userId)
                 stmt.setDate(2, sqlDay)
                 stmt.setString(3, model)
-                stmt.setLong(4, pTokens)
-                stmt.setLong(5, cTokens)
+                 stmt.setString(4, tokenType.name)
+                 stmt.setLong(5, tokenCount)
                 stmt.setDouble(6, cost)
                 stmt.executeUpdate()
             }
@@ -460,14 +523,30 @@ class UsageDB : UsageInterface {
     }
 
     private fun generateUsageSummary(resultSet: ResultSet): Map<String, ModelSchema.Usage> {
-        val summary = mutableMapOf<String, ModelSchema.Usage>()
+         // Rows are: model, token_type, SUM(token_count), SUM(cost)
+         // We need to aggregate per-model with a counts map and a single cost (avoid double counting cost across token-type rows).
+         val counts = linkedMapOf<String, MutableMap<TokenTypes, Long>>()
+         val costs = linkedMapOf<String, Double>()
         while (resultSet.next()) {
             val model = resultSet.getString(1)
-            summary[model] = ModelSchema.Usage(
-                prompt_tokens = resultSet.getLong(2),
-                completion_tokens = resultSet.getLong(3),
-                cost = resultSet.getDouble(4)
-            )
+             val tokenTypeRaw = resultSet.getString(2)
+             val tokenCount = resultSet.getLong(3)
+             val cost = resultSet.getDouble(4)
+             val countsForModel = counts.getOrPut(model) { mutableMapOf() }
+             val parsedType = tokenTypeRaw?.let { runCatching { TokenTypes.valueOf(it) }.getOrNull() }
+             if (parsedType != null && tokenCount != 0L) {
+                 countsForModel.merge(parsedType, tokenCount) { a, b -> a + b }
+             }
+             // Cost rows for the same model are duplicated across token types in the GROUP BY;
+             // use max to approximate the per-model cost without double counting.
+             costs[model] = maxOf(costs.getOrDefault(model, 0.0), cost)
+         }
+         val summary = mutableMapOf<String, ModelSchema.Usage>()
+         for ((model, countMap) in counts) {
+             val totalTokens = countMap.values.sum()
+             summary[model] = ModelSchema.Usage(
+                 counts = countMap, total_tokens = totalTokens, cost = costs.getOrDefault(model, 0.0)
+             )
         }
         return summary
     }
@@ -523,6 +602,15 @@ class UsageDB : UsageInterface {
                     // Schema upgrade for existing deployments (idempotent via IF NOT EXISTS where supported)
                      "ALTER TABLE usage ADD COLUMN IF NOT EXISTS input_text $largeText",
                      "ALTER TABLE usage ADD COLUMN IF NOT EXISTS output_text $largeText",
+                     """
+                     CREATE TABLE IF NOT EXISTS usage_tokens (
+                         usage_id BIGINT,
+                         token_type VARCHAR(64),
+                         token_count BIGINT,
+                         PRIMARY KEY (usage_id, token_type)
+                     )
+                     """,
+                     "CREATE INDEX IF NOT EXISTS idx_usage_tokens_usage ON usage_tokens(usage_id)",
                     """
                     CREATE TABLE IF NOT EXISTS session_parents (
                         child_session_id VARCHAR(255),
@@ -536,13 +624,20 @@ class UsageDB : UsageInterface {
                         user_id VARCHAR(255),
                         day DATE,
                         model VARCHAR(255),
-                        prompt_tokens BIGINT DEFAULT 0,
-                        completion_tokens BIGINT DEFAULT 0,
+                         token_type VARCHAR(64) DEFAULT 'Prompt',
+                         token_count BIGINT DEFAULT 0,
                         cost DOUBLE PRECISION DEFAULT 0,
-                        PRIMARY KEY (user_id, day, model)
+                         PRIMARY KEY (user_id, day, model, token_type)
                     )
                     """,
                     "CREATE INDEX IF NOT EXISTS idx_usage_daily_user_day ON usage_daily(user_id, day)",
+                    // Schema migration for existing deployments: add token_type column and token_count column.
+                    // These are idempotent via IF NOT EXISTS (supported by HSQL 2.x and PostgreSQL 9.6+).
+                    "ALTER TABLE usage_daily ADD COLUMN IF NOT EXISTS token_type VARCHAR(64) DEFAULT 'Prompt'",
+                    "ALTER TABLE usage_daily ADD COLUMN IF NOT EXISTS token_count BIGINT DEFAULT 0",
+                    // Best-effort backfill: ensure existing rows have non-null token_type.
+                    "UPDATE usage_daily SET token_type = 'Prompt' WHERE token_type IS NULL",
+                    "UPDATE usage_daily SET token_count = 0 WHERE token_count IS NULL",
                     """
                     CREATE TABLE IF NOT EXISTS user_credits (
                         id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,

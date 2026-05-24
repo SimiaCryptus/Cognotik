@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import java.time.LocalDate
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Interface for managing and tracking AI model usage across users and sessions.
@@ -53,7 +54,13 @@ interface UsageInterface {
      * @param model The AI model that was used
      * @param usage The usage details including prompt tokens, completion tokens, and cost
      */
-    fun incrementUsage(session: Session, user: User, model: AIModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData? = null)
+    fun incrementUsage(
+        session: Session,
+        user: User,
+        model: AIModel,
+        usage: ModelSchema.Usage,
+        data: ModelSchema.UsageData? = null
+    )
 
     /**
      * Clears all stored usage data.
@@ -127,7 +134,7 @@ interface UsageInterface {
      * @return A list of [CreditEntry] records ordered by ascending datetime
      */
     fun getUserCredits(user: User, from: LocalDate, to: LocalDate): List<CreditEntry>
-    fun getUserBalance(userId: String) :  Double
+    fun getUserBalance(userId: String): Double
 
     /**
      * Represents a single credit ledger entry for a user.
@@ -164,28 +171,26 @@ interface UsageInterface {
      * across multiple threads. It's designed to handle concurrent updates without
      * requiring external synchronization.
      *
-     * @property inputTokens Atomic counter for input/prompt tokens
-     * @property outputTokens Atomic counter for output/completion tokens
+     * @property tokenCounts Atomic counters for each token type
      * @property cost Atomic accumulator for monetary cost
      */
 
     class UsageValues(
-        val inputTokens: AtomicLong = AtomicLong(),
-        val outputTokens: AtomicLong = AtomicLong(),
+        val tokenCounts: ConcurrentHashMap<TokenTypes, AtomicLong> = ConcurrentHashMap(),
         val cost: AtomicDouble = AtomicDouble(),
     ) {
         /**
          * Atomically adds the given usage tokens and cost to the current values.
          *
          * This method is thread-safe and can be called concurrently without external
-         * synchronization. It updates all three metrics (input tokens, output tokens,
-         * and cost) atomically.
+         * synchronization. It updates token counts (per type) and cost atomically.
          *
          * @param tokens The usage object containing tokens and cost to add
          */
         fun addAndGet(tokens: ModelSchema.Usage, cost: Double? = null) {
-            inputTokens.addAndGet(tokens.counts.getOrDefault(TokenTypes.Prompt, 0))
-            outputTokens.addAndGet(tokens.counts.getOrDefault(TokenTypes.Completion, 0))
+            tokens.counts.forEach { (type, count) ->
+                tokenCounts.computeIfAbsent(type) { AtomicLong() }.addAndGet(count)
+            }
             this.cost.addAndGet(cost ?: 0.0)
         }
     }
