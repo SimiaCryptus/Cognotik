@@ -146,9 +146,8 @@ abstract class ApplicationDirectory(
     }
 
     protected open fun WebAppContext.configureAuth(applicationClass: Class<ApplicationServer>): WebAppContext {
-        val authFilter = authFilter(applicationClass)
         log.debug("Adding authentication filter to context: ${this.contextPath}")
-        addFilter(authFilter, "/*", EnumSet.of(DispatcherType.REQUEST))
+        addFilter(authFilter(applicationClass), "/*", EnumSet.of(DispatcherType.REQUEST))
         return this
     }
 

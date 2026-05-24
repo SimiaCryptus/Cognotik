@@ -208,7 +208,6 @@ abstract class ApplicationServer(
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
-        webAppContext.addFilter(getFilter(ApplicationServer::class.java), "/*", null)
         logger.debug("Adding servlets for application: {}", applicationName)
         webAppContext.addServlet(appInfoServlet, "/appInfo")
         logger.debug("Added appInfo servlet")

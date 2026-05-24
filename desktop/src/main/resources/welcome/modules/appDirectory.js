@@ -232,11 +232,12 @@ function renderAppGrid() {
             } else {
                 iconContent = app.icon || '';
             }
+            const safeAppName = HtmlUtils && HtmlUtils.escapeHtml ? HtmlUtils.escapeHtml(app.name || '') : (app.name || '');
             card.innerHTML = `
                        <div class="app-card-content">
                            <div class="app-card-icon">${iconContent}</div>
                            <div class="app-card-body">
-                          <h3>${app.name}</h3>
+                          <h3><a class="app-card-title-link" href="${appUrl}" data-app-id="${app.id}" title="Go to ${safeAppName}">${app.name}</a></h3>
                           <p>${app.description}</p>
                           ${tagsHtml}
                           <div class="app-card-actions">
@@ -539,6 +540,10 @@ function setupAppCards() {
             }
             // If user clicked the launch button, let the link navigate normally
             if (e.target.closest('.app-card-launch-btn')) {
+                return;
+            }
+            // If user clicked the title link, let it navigate to the app's gateway page
+            if (e.target.closest('.app-card-title-link')) {
                 return;
             }
             // For cards with extras (readme, video, examples), intercept plain clicks to show the readme modal
