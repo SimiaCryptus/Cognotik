@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.platform.file
 
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
+import com.simiacryptus.cognotik.platform.hsql.MetadataStorageDB
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -190,5 +192,11 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
 }
 
-class DataStorageTest : StorageInterfaceTest(DataStorage(Files.createTempDirectory("sessionDataTest").toFile()))
+class DataStorageTest : StorageInterfaceTest(run {
+    DatabaseFacet.root = null
+    DataStorage(
+        Files.createTempDirectory("sessionDataTest").toFile(),
+        MetadataStorageDB()
+    )
+})
 

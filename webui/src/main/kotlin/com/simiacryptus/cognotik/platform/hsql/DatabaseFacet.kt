@@ -7,7 +7,9 @@ import org.jetbrains.exposed.v1.core.vendors.DatabaseDialect
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.statements.api.ExposedConnection
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction as exposedTransaction
 import org.jetbrains.exposed.v1.jdbc.vendors.DatabaseDialectMetadata
 import org.slf4j.LoggerFactory
@@ -15,6 +17,7 @@ import java.io.File
 import java.net.ServerSocket
 import java.sql.Connection
 import java.sql.DriverManager
+import java.util.LinkedHashMap
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -153,10 +156,10 @@ class DatabaseFacet(
             exposedTransaction(db) {
                 val ddls = schema.invoke(dbProvider)
                 if (ddls.isNotEmpty()) {
-                    val jdbcConn = (this.connection as? org.jetbrains.exposed.v1.jdbc.JdbcTransaction)?.let { null }
+                    val jdbcConn = (this.connection as? JdbcTransaction)?.let { null }
                     // Execute raw DDL strings via the Exposed transaction's connection.
                     val rawConn =
-                        (this.connection as org.jetbrains.exposed.v1.jdbc.statements.api.ExposedConnection<*>).connection as java.sql.Connection
+                        (this.connection as ExposedConnection<*>).connection as Connection
                     rawConn.createStatement().use { stmt ->
                         log.info("Executing {} $name schema DDL statements for {}", ddls.size, url)
                         var failures = 0
@@ -387,7 +390,7 @@ class DatabaseFacet(
     companion object {
         private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
 
-        var root = System.getProperty("cognotik.db.root") ?: File(
+        var root: String? = System.getProperty("cognotik.db.root") ?: File(
             System.getProperty(
                 "user.home",
                 "."
@@ -464,7 +467,7 @@ class DatabaseFacet(
          * "/abs/path/foo".
          * Order of insertion is preserved for stable index assignment.
          */
-        private val registeredDatabases = java.util.LinkedHashMap<String, String>()
+        private val registeredDatabases = LinkedHashMap<String, String>()
 
         /**
          * Build a JDBC URL for connecting to a database hosted on the
