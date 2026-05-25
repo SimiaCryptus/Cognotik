@@ -240,6 +240,237 @@ class MetadataStorageDB : MetadataStorageInterface {
         metadata.path?.let { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
         log.debug("Unified session metadata set successfully for session: {}", session)
     }
+    override fun listSessionMetadata(user: User): List<SessionMetadata> {
+        log.debug("Bulk listing session metadata for user: {}", user.email)
+        return tx {
+            // First find all session IDs that have at least one row authored by
+            // this user. Then pull every metadata row for those sessions
+            // (including user-agnostic rows such as owner_id) in a single
+            // query. This keeps the result-set bounded to the user's sessions
+            // and avoids pulling every owner_id row in the database.
+            val userSessionIds = sessionIdsForUser(user.email)
+            if (userSessionIds.isEmpty()) return@tx emptyList()
+            val rows = MetadataTable
+                .selectAll()
+                .where {
+                    (MetadataTable.sessionId inList userSessionIds) and
+                            ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq ""))
+                }
+                .toList()
+            buildSessionMetadataList(rows, restrictToSessionIds = userSessionIds)
+        }.also { log.debug("Loaded metadata for {} session(s) for user: {}", it.size, user.email) }
+    }
+    /**
+     * Listing-page optimized: project only the columns required by the
+     * sessions list and skip "message_ids" entirely (which can be large).
+     */
+    override fun listSessionEntries(user: User): List<MetadataStorageInterface.SessionListEntry> {
+        log.debug("Listing session entries (projection) for user: {}", user.email)
+        return tx {
+            val userSessionIds = sessionIdsForUser(user.email)
+            if (userSessionIds.isEmpty()) return@tx emptyList()
+            val rows = MetadataTable
+                .select(
+                    MetadataTable.sessionId,
+                    MetadataTable.key,
+                    MetadataTable.value,
+                    MetadataTable.timestamp,
+                )
+                .where {
+                    (MetadataTable.sessionId inList userSessionIds) and
+                            ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq "")) and
+                            (MetadataTable.key inList listOf("name", "session_time", "owner_id", "path"))
+                }
+                .toList()
+            buildSessionListEntries(rows, restrictToSessionIds = userSessionIds)
+        }.also { log.debug("Loaded {} session entries for user: {}", it.size, user.email) }
+    }
+    override fun listSessionEntries(path: String): List<MetadataStorageInterface.SessionListEntry> {
+        log.debug("Listing session entries (projection) for path: {}", path)
+        return tx {
+            val sessionIds = MetadataTable
+                .select(MetadataTable.sessionId)
+                .where { (MetadataTable.value eq path) and (MetadataTable.key eq "path") }
+                .withDistinct()
+                .map { it[MetadataTable.sessionId] }
+                .toSet()
+            if (sessionIds.isEmpty()) return@tx emptyList()
+            val rows = MetadataTable
+                .select(
+                    MetadataTable.sessionId,
+                    MetadataTable.key,
+                    MetadataTable.value,
+                    MetadataTable.timestamp,
+                )
+                .where {
+                    (MetadataTable.sessionId inList sessionIds) and
+                            (MetadataTable.key inList listOf("name", "session_time", "owner_id", "path"))
+                }
+                .toList()
+            buildSessionListEntries(rows, restrictToSessionIds = sessionIds)
+        }.also { log.debug("Loaded {} session entries for path: {}", it.size, path) }
+    }
+
+    override fun listSessionMetadata(path: String): List<SessionMetadata> {
+        log.debug("Bulk listing session metadata for path: {}", path)
+        return tx {
+            val sessionIds = MetadataTable
+                .select(MetadataTable.sessionId)
+                .where { (MetadataTable.value eq path) and (MetadataTable.key eq "path") }
+                .withDistinct()
+                .map { it[MetadataTable.sessionId] }
+                .toSet()
+            if (sessionIds.isEmpty()) return@tx emptyList()
+            val rows = MetadataTable
+                .selectAll()
+                .where { MetadataTable.sessionId inList sessionIds }
+                .toList()
+            buildSessionMetadataList(rows, restrictToSessionIds = sessionIds)
+        }.also { log.debug("Loaded metadata for {} session(s) on path: {}", it.size, path) }
+    }
+    override fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
+        if (sessionIds.isEmpty()) return emptyList()
+        val userEmail = user?.email ?: ""
+        log.debug("Bulk fetching session metadata for {} session(s), user: {}", sessionIds.size, userEmail)
+        val sessionIdSet = sessionIds.toSet()
+        return tx {
+            val rows = MetadataTable
+                .selectAll()
+                .where {
+                    (MetadataTable.sessionId inList sessionIdSet) and
+                            ((MetadataTable.userEmail eq userEmail) or (MetadataTable.userEmail eq ""))
+                }
+                .toList()
+            val byId = buildSessionMetadataMap(rows)
+            // Preserve caller-provided ordering and fill blanks for unknown sessions.
+            sessionIds.map { id -> byId[id] ?: SessionMetadata(id = Session(id)) }
+        }
+    }
+    /**
+     * Returns the set of session IDs that have at least one metadata row authored
+     * by the given user. Must be called inside a transaction.
+     */
+    private fun sessionIdsForUser(userEmail: String): Set<String> {
+        return MetadataTable
+            .select(MetadataTable.sessionId)
+            .where { MetadataTable.userEmail eq userEmail }
+            .withDistinct()
+            .map { it[MetadataTable.sessionId] }
+            .toSet()
+    }
+    /**
+     * Group raw metadata rows by session_id and reduce each group into a [SessionMetadata].
+     * If [restrictToSessionIds] is non-null, sessions not present in that set are dropped
+     * from the result (used to ensure user-scoped listings don't leak sessions for which
+     * the only matching rows were user-agnostic owner_id entries).
+     */
+    private fun buildSessionMetadataList(
+        rows: List<ResultRow>,
+        restrictToSessionIds: Set<String>? = null
+    ): List<SessionMetadata> {
+        val map = buildSessionMetadataMap(rows)
+        val filtered = if (restrictToSessionIds != null) {
+            restrictToSessionIds.mapNotNull { map[it] }
+        } else {
+            map.values.toList()
+        }
+        return filtered
+    }
+    private fun buildSessionMetadataMap(rows: List<ResultRow>): Map<String, SessionMetadata> {
+        if (rows.isEmpty()) return emptyMap()
+        // Accumulator per session_id.
+        data class Accum(
+            var name: String? = null,
+            var messageIds: List<String> = emptyList(),
+            var sessionTime: Date? = null,
+            var ownerId: String? = null,
+            var path: String? = null,
+        )
+        val grouped = LinkedHashMap<String, Accum>()
+        for (row in rows) {
+            val sid = row[MetadataTable.sessionId]
+            val acc = grouped.getOrPut(sid) { Accum() }
+            val k = row[MetadataTable.key]
+            val v = row[MetadataTable.value]
+            when (k) {
+                "name" -> acc.name = v
+                "message_ids" -> acc.messageIds =
+                    if (v.isNullOrEmpty()) emptyList()
+                    else v.split(",").filter { it.isNotEmpty() }
+                "session_time" -> acc.sessionTime = try {
+                    if (v != null) Date(v.toLong())
+                    else Date.from(row[MetadataTable.timestamp])
+                } catch (e: Exception) {
+                    log.warn(
+                        "Invalid session_time value '{}' for session: {}; falling back to row timestamp",
+                        v, sid, e
+                    )
+                    Date.from(row[MetadataTable.timestamp])
+                }
+                "owner_id" -> acc.ownerId = v
+                "path" -> acc.path = v
+            }
+        }
+        return grouped.mapValues { (sid, acc) ->
+            SessionMetadata(
+                id = Session(sid),
+                name = acc.name,
+                messageIds = acc.messageIds,
+                sessionTime = acc.sessionTime,
+                ownerId = acc.ownerId,
+                path = acc.path,
+            )
+        }
+    }
+    /**
+     * Lightweight equivalent of [buildSessionMetadataMap] for the listing
+     * projection. Skips message_ids parsing entirely.
+     */
+    private fun buildSessionListEntries(
+        rows: List<ResultRow>,
+        restrictToSessionIds: Set<String>? = null
+    ): List<MetadataStorageInterface.SessionListEntry> {
+        if (rows.isEmpty()) return emptyList()
+        data class Accum(
+            var name: String? = null,
+            var sessionTime: Date? = null,
+            var ownerId: String? = null,
+            var path: String? = null,
+        )
+        val grouped = LinkedHashMap<String, Accum>()
+        for (row in rows) {
+            val sid = row[MetadataTable.sessionId]
+            val acc = grouped.getOrPut(sid) { Accum() }
+            val k = row[MetadataTable.key]
+            val v = row[MetadataTable.value]
+            when (k) {
+                "name" -> acc.name = v
+                "session_time" -> acc.sessionTime = try {
+                    if (v != null) Date(v.toLong())
+                    else Date.from(row[MetadataTable.timestamp])
+                } catch (e: Exception) {
+                    log.warn(
+                        "Invalid session_time value '{}' for session: {}; falling back to row timestamp",
+                        v, sid, e
+                    )
+                    Date.from(row[MetadataTable.timestamp])
+                }
+                "owner_id" -> acc.ownerId = v
+                "path" -> acc.path = v
+            }
+        }
+        val ids = restrictToSessionIds ?: grouped.keys
+        return ids.mapNotNull { sid ->
+            val acc = grouped[sid] ?: return@mapNotNull null
+            MetadataStorageInterface.SessionListEntry(
+                id = Session(sid),
+                name = acc.name,
+                sessionTime = acc.sessionTime,
+                ownerId = acc.ownerId,
+                path = acc.path,
+            )
+        }
+    }
 
     /**
      * Upsert implemented with Exposed DSL: try UPDATE first, then INSERT if no

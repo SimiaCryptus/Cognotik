@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.util
 
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class HtmlSimplifierTest {
@@ -684,7 +684,12 @@ class HtmlSimplifierTest {
                 </body>
                 </html>
             """.trimIndent()
-            val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com")
+            // Disable navigational-element removal so we can assert nav-link content is preserved.
+            val result = HtmlSimplifier.scrubHtml(
+                html,
+                baseUrl = "https://example.com",
+                removeNavigationalElements = false
+            )
 
             // Content should be preserved
             assertTrue(result.contains("Welcome"), "Heading content should be preserved")
@@ -935,6 +940,223 @@ class HtmlSimplifierTest {
             )
             assertTrue(result.contains("style"), "Style should be preserved")
             assertTrue(result.contains("https://example.com/page"), "URL should be absolute")
+        }
+    }
+
+    // ─── Boilerplate Removal (Content Extraction) ───────────────────────
+    @Nested
+    inner class BoilerplateRemoval {
+        @Test
+        fun `should remove template elements by default`() {
+            val html = """
+               <html><body>
+                 <p>Main content</p>
+                 <template><div>No results found</div></template>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Main content"), "Real content should be preserved")
+            assertFalse(result.contains("No results found"), "Template content should be removed")
+            assertFalse(result.contains("<template"), "Template tags should be removed")
+        }
+
+        @Test
+        fun `should keep template elements when disabled`() {
+            val html = """
+               <html><body>
+                 <p>Main</p>
+                 <template><span>placeholder</span></template>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, removeTemplateElements = false)
+            assertTrue(result.contains("Main"), "Content should be preserved")
+        }
+
+        @Test
+        fun `should remove navigational chrome by default`() {
+            val html = """
+               <html><body>
+                 <header><a href="/login">Log in</a></header>
+                 <nav><a href="/a">A</a><a href="/b">B</a></nav>
+                 <main><h1>Article</h1><p>Body</p></main>
+                 <aside><p>Promo</p></aside>
+                 <footer><p>Copyright</p></footer>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Article"), "Main heading should be preserved")
+            assertTrue(result.contains("Body"), "Main body should be preserved")
+            assertFalse(result.contains("Log in"), "Header should be removed")
+            assertFalse(result.contains("Promo"), "Aside should be removed")
+            assertFalse(result.contains("Copyright"), "Footer should be removed")
+        }
+
+        @Test
+        fun `should remove transient UI role containers`() {
+            val html = """
+               <html><body>
+                 <div role="tooltip">Hover help</div>
+                 <div role="alert">Saved!</div>
+                 <p>Real content</p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Real content"), "Content should be preserved")
+            assertFalse(result.contains("Hover help"), "Tooltip should be removed")
+            assertFalse(result.contains("Saved!"), "Alert should be removed")
+        }
+
+        @Test
+        fun `should remove empty anchors`() {
+            val html = """
+               <html><body>
+                 <a href="/x"></a>
+                 <a href="/y">Real link</a>
+                 <p>Content</p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Real link"), "Real link should be preserved")
+            assertTrue(result.contains("Content"), "Content should be preserved")
+            // Empty anchor should be gone; the only href left should be /y
+            val hrefCount = "href".toRegex().findAll(result).count()
+            assertEquals(1, hrefCount, "Only the non-empty anchor's href should remain")
+        }
+
+        @Test
+        fun `should collapse boilerplate link lists`() {
+            val html = buildString {
+                append("<html><body><h1>Jobs</h1>")
+                append("<div><p>Top Staff Engineer Jobs</p></div>")
+                append("<div>")
+                for (i in 1..20) {
+                    append("<a href=\"/cat/$i\">Category $i</a>")
+                }
+                append("</div>")
+                append("<p>End of page</p>")
+                append("</body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Jobs"), "Heading should be preserved")
+            assertTrue(result.contains("End of page"), "Content after list should be preserved")
+            assertTrue(
+                result.contains("navigational links omitted") || result.contains("omitted"),
+                "Long link list should be collapsed to a placeholder"
+            )
+            assertFalse(
+                result.contains("Category 1") && result.contains("Category 20"),
+                "Individual category links should be collapsed away"
+            )
+        }
+
+        @Test
+        fun `should not collapse short link lists`() {
+            val html = """
+               <html><body>
+                 <ul>
+                   <li><a href="/a">Alpha</a></li>
+                   <li><a href="/b">Beta</a></li>
+                 </ul>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Alpha"), "Short list anchor text should remain")
+            assertTrue(result.contains("Beta"), "Short list anchor text should remain")
+        }
+
+        @Test
+        fun `should not collapse list when collapseLinkLists is false`() {
+            val html = buildString {
+                append("<html><body><div>")
+                for (i in 1..15) {
+                    append("<a href=\"/cat/$i\">Category $i</a>")
+                }
+                append("</div></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html, collapseLinkLists = false)
+            assertTrue(result.contains("Category 1"), "Links should remain when collapsing disabled")
+            assertTrue(result.contains("Category 15"), "Links should remain when collapsing disabled")
+        }
+
+        @Test
+        fun `should preserve job-listing-like content while removing chrome`() {
+            val html = """
+               <html><body>
+                 <nav><a href="/cities/austin">Austin</a><a href="/cities/seattle">Seattle</a></nav>
+                 <main>
+                   <h1>Staff Software Engineer Jobs</h1>
+                   <div>
+                     <h2><a href="/job/1">Senior Staff Software Engineer</a></h2>
+                     <span>Remote</span><span>180K-240K</span>
+                     <p>Lead backend dev with Python and Kubernetes.</p>
+                   </div>
+                 </main>
+                 <template><div>No Results Found</div></template>
+                 <footer><a href="/x">x</a></footer>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Senior Staff Software Engineer"), "Job title preserved")
+            assertTrue(result.contains("180K-240K"), "Salary preserved")
+            assertTrue(result.contains("Python"), "Tech preserved")
+            assertFalse(result.contains("Austin"), "Nav city links removed")
+            assertFalse(result.contains("No Results Found"), "Template chrome removed")
+        }
+    }
+
+    // ─── Link Summarization ─────────────────────────────────────────────
+    @Nested
+    inner class LinkSummarization {
+        @Test
+        fun `should produce link index header and replace hrefs with indices`() {
+            val html = """
+               <html><body>
+                 <p>See <a href="https://example.com/a">Alpha</a> and
+                    <a href="https://example.com/b">Beta</a>.</p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, summarizeLinks = true)
+            assertTrue(result.startsWith("Links:"), "Output should begin with a Links header")
+            assertTrue(result.contains("[1] https://example.com/a"), "First URL should be indexed")
+            assertTrue(result.contains("[2] https://example.com/b"), "Second URL should be indexed")
+            assertTrue(result.contains("Alpha [1]"), "Anchor text should be followed by its index")
+            assertTrue(result.contains("Beta [2]"), "Anchor text should be followed by its index")
+            assertFalse(result.contains("<a "), "Anchor tags should be removed when summarizing")
+            assertFalse(result.contains("href="), "href attributes should be removed when summarizing")
+        }
+
+        @Test
+        fun `should deduplicate repeated URLs`() {
+            val html = """
+               <html><body>
+                 <p><a href="https://example.com/x">One</a>
+                    <a href="https://example.com/x">Two</a>
+                    <a href="https://example.com/y">Three</a></p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, summarizeLinks = true)
+            assertTrue(result.contains("[1] https://example.com/x"), "First URL indexed at 1")
+            assertTrue(result.contains("[2] https://example.com/y"), "Second unique URL indexed at 2")
+            assertFalse(result.contains("[3] https://example.com/x"), "Duplicate URL should not be re-indexed")
+            assertTrue(result.contains("One [1]"), "First anchor uses index 1")
+            assertTrue(result.contains("Two [1]"), "Duplicate anchor reuses index 1")
+            assertTrue(result.contains("Three [2]"), "Different URL uses index 2")
+        }
+
+        @Test
+        fun `should omit header when no links present`() {
+            val html = "<html><body><p>No links here</p></body></html>"
+            val result = HtmlSimplifier.scrubHtml(html, summarizeLinks = true)
+            assertFalse(result.startsWith("Links:"), "No header when there are no links")
+            assertTrue(result.contains("No links here"))
+        }
+
+        @Test
+        fun `should not summarize when flag is false`() {
+            val html = """<html><body><a href="https://example.com">Link</a></body></html>"""
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertFalse(result.startsWith("Links:"), "No header by default")
+            assertTrue(result.contains("href"), "Anchor href preserved by default")
         }
     }
 }

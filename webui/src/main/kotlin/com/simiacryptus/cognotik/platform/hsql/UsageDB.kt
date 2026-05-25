@@ -24,6 +24,7 @@ import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -250,6 +251,129 @@ class UsageDB : UsageInterface {
             summary
         }
     }
+    override fun getSessionUsageSummaryBulk(
+        sessionIds: Collection<String>
+    ): Map<String, Map<String, ModelSchema.Usage>> {
+        if (sessionIds.isEmpty()) return emptyMap()
+        log.debug("Bulk session usage summary for {} session(s)", sessionIds.size)
+        val sessionIdSet = sessionIds.toSet()
+        return transaction(database) {
+            // Fetch every usage row across all requested sessions in one query.
+            // Intentionally does NOT recurse into descendant sessions — this is
+            // the listing-page semantics (each row in the listing represents a
+            // single session, not a subtree).
+            val usageRows = UsageTable
+                .selectAll()
+                .where { UsageTable.sessionId inList sessionIdSet }
+                .map { row ->
+                    UsageRowSlim(
+                        id = row[UsageTable.id],
+                        sessionId = row[UsageTable.sessionId] ?: "",
+                        model = row[UsageTable.model] ?: "",
+                        cost = row[UsageTable.cost] ?: 0.0,
+                    )
+                }
+            if (usageRows.isEmpty()) {
+                return@transaction sessionIds.associateWith { emptyMap<String, ModelSchema.Usage>() }
+            }
+            val usageIds = usageRows.map { it.id }
+            // Group token rows by usage_id once for the whole batch.
+            val tokenRowsByUsageId = UsageTokensTable
+                .selectAll()
+                .where { UsageTokensTable.usageId inList usageIds }
+                .groupBy { it[UsageTokensTable.usageId] }
+            // Per-session, per-model accumulators.
+            val countsBySession = linkedMapOf<String, LinkedHashMap<String, MutableMap<TokenTypes, Long>>>()
+            val costsBySession = linkedMapOf<String, LinkedHashMap<String, Double>>()
+            for (usageRow in usageRows) {
+                val sid = usageRow.sessionId
+                val model = usageRow.model
+                val sessionCosts = costsBySession.getOrPut(sid) { LinkedHashMap() }
+                sessionCosts[model] = (sessionCosts[model] ?: 0.0) + usageRow.cost
+                val sessionCounts = countsBySession.getOrPut(sid) { LinkedHashMap() }
+                val countsForModel = sessionCounts.getOrPut(model) { mutableMapOf() }
+                val tokenRows = tokenRowsByUsageId[usageRow.id].orEmpty()
+                for (tokenRow in tokenRows) {
+                    val tokenTypeRaw = tokenRow[UsageTokensTable.tokenType]
+                    val tokenCount = tokenRow[UsageTokensTable.tokenCount]
+                    val parsedType = runCatching { TokenTypes.valueOf(tokenTypeRaw) }.getOrNull()
+                    if (parsedType != null && tokenCount != 0L) {
+                        countsForModel.merge(parsedType, tokenCount) { a, b -> a + b }
+                    }
+                }
+            }
+            // Materialize into the public summary shape, preserving the caller's
+            // requested session ordering and including empty entries for sessions
+            // that had no usage rows.
+            sessionIds.associateWith { sid ->
+                val sessionCounts = countsBySession[sid] ?: return@associateWith emptyMap()
+                val sessionCosts = costsBySession[sid].orEmpty()
+                val summary = LinkedHashMap<String, ModelSchema.Usage>()
+                for ((model, countMap) in sessionCounts) {
+                    val totalTokens = countMap.values.sum()
+                    summary[model] = ModelSchema.Usage(
+                        counts = countMap,
+                        total_tokens = totalTokens,
+                        cost = sessionCosts[model] ?: 0.0,
+                    )
+                }
+                summary
+            }
+        }
+    }
+    override fun getSessionUsageTotalsBulk(
+        sessionIds: Collection<String>
+    ): Map<String, UsageInterface.SessionUsageTotals> {
+        if (sessionIds.isEmpty()) return emptyMap()
+        log.debug("Bulk session usage totals for {} session(s)", sessionIds.size)
+        val sessionIdSet = sessionIds.toSet()
+        return transaction(database) {
+            // Compute totals directly from the usage row using prompt_tokens
+            // and completion_tokens columns. We intentionally avoid joining
+            // usage_tokens here: for the listing-page summary, those two
+            // columns capture the displayed total. This keeps the query to a
+            // single table scan over `usage` filtered by session_id, which is
+            // backed by idx_usage_session.
+            val perSessionCost = linkedMapOf<String, Double>()
+            val perSessionModels = linkedMapOf<String, MutableSet<String>>()
+            val perSessionTokens = linkedMapOf<String, Long>()
+            UsageTable.select(
+                    UsageTable.id,
+                    UsageTable.sessionId,
+                    UsageTable.model,
+                    UsageTable.cost,
+                    UsageTable.promptTokens,
+                    UsageTable.completionTokens,
+                )
+                .where { UsageTable.sessionId inList sessionIdSet }
+                .forEach { row ->
+                    val sid = row[UsageTable.sessionId] ?: return@forEach
+                    val cost = row[UsageTable.cost] ?: 0.0
+                    val model = row[UsageTable.model]
+                    val prompt = row[UsageTable.promptTokens] ?: 0L
+                    val completion = row[UsageTable.completionTokens] ?: 0L
+                    perSessionCost[sid] = (perSessionCost[sid] ?: 0.0) + cost
+                    perSessionTokens[sid] = (perSessionTokens[sid] ?: 0L) + prompt + completion
+                    if (!model.isNullOrEmpty()) {
+                        perSessionModels.getOrPut(sid) { mutableSetOf() }.add(model)
+                    }
+                }
+            sessionIds.associateWith { sid ->
+                UsageInterface.SessionUsageTotals(
+                    totalTokens = perSessionTokens[sid] ?: 0L,
+                    totalCost = perSessionCost[sid] ?: 0.0,
+                    modelCount = perSessionModels[sid]?.size ?: 0,
+                )
+            }
+        }
+    }
+    /** Internal slim projection of a usage row for bulk aggregation. */
+    private data class UsageRowSlim(
+        val id: Long,
+        val sessionId: String,
+        val model: String,
+        val cost: Double,
+    )
 
     override fun clear() {
         log.warn("Clearing ALL usage data (usage, usage_tokens, usage_daily, session_parents, user_credits, user_budget)")

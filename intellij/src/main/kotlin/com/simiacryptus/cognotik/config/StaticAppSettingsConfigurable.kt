@@ -90,19 +90,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         } catch (e: Exception) {
             log.warn("Error building Configuration", e)
         }
-        try {
-            tabbedPane.addTab("Tools", JPanel(BorderLayout()).apply {
-                add(JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(JPanel(BorderLayout()).apply {
-                        add(JLabel("Configured Tools:"), BorderLayout.NORTH)
-                        add(component.toolManagementPanel, BorderLayout.CENTER)
-                    })
-                }, BorderLayout.NORTH)
-            })
-        } catch (e: Exception) {
-            log.warn("Error building Tools Settings", e)
-        }
 
 
         tabbedPane.addTab("Advanced Settings", JPanel(BorderLayout()).apply {
@@ -581,25 +568,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     }
                 } catch (e: Exception) {
                     log.error("Failed to read API configuration from row $row", e)
-                }
-            }
-            val toolsModel = component.tools.model as DefaultTableModel
-            log.debug("Reading Tools from table with ${toolsModel.rowCount} rows")
-            userSettings.tools.clear()
-            for (row in 0 until toolsModel.rowCount) {
-                try {
-                    val providerName = (toolsModel.getValueAt(row, 0) as? String) ?: ""
-                    val path = (toolsModel.getValueAt(row, 1) as? String) ?: ""
-                    if (providerName.isNotBlank()) {
-                        try {
-                            val provider = ToolProvider.valueOf(providerName)
-                            userSettings.tools.add(ToolData(provider, path))
-                        } catch (e: Exception) {
-                            log.warn("Unknown tool provider: $providerName")
-                        }
-                    }
-                } catch (e: Exception) {
-                    log.error("Failed to read tool configuration from row $row", e)
                 }
             }
             ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(

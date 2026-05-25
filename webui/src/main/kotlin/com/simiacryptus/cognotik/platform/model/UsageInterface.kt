@@ -43,6 +43,54 @@ interface UsageInterface {
      *         containing aggregated token counts and costs for each model used in the session
      */
     fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage>
+    /**
+     * Bulk variant of [getSessionUsageSummary] that fetches usage summaries for
+     * multiple sessions in a single backend call.
+     *
+     * NOTE: Unlike [getSessionUsageSummary], this method intentionally returns
+     * usage attributable directly to each session ID provided, without recursing
+     * into descendant sessions. This is the form needed by the sessions listing
+     * page and avoids quadratic behaviour when many sessions are displayed.
+     *
+     * The default implementation falls back to invoking [getSessionUsageSummary]
+     * per session (which does include descendants), so existing implementations
+     * remain source-compatible. DB-backed implementations should override this
+     * for both efficiency and the documented non-recursive semantics.
+     *
+     * @param sessionIds The set of session IDs to summarize
+     * @return A map from session ID to its per-model usage summary
+     */
+    fun getSessionUsageSummaryBulk(sessionIds: Collection<String>): Map<String, Map<String, ModelSchema.Usage>> {
+        return sessionIds.associateWith { getSessionUsageSummary(Session(it)) }
+    }
+    /**
+     * Aggregated single-row summary across all models for a session, suitable for
+     * compact display in listing UIs.
+     */
+    data class SessionUsageTotals(
+        val totalTokens: Long,
+        val totalCost: Double,
+        val modelCount: Int,
+    )
+    /**
+     * Bulk-fetch aggregated totals (token count + cost across all models) for
+     * multiple sessions in a single call. Designed for the sessions listing page
+     * where only summary numbers are displayed.
+     *
+     * The default implementation delegates to [getSessionUsageSummaryBulk].
+     */
+    fun getSessionUsageTotalsBulk(sessionIds: Collection<String>): Map<String, SessionUsageTotals> {
+        val raw = getSessionUsageSummaryBulk(sessionIds)
+        return raw.mapValues { (_, perModel) ->
+            var tokens = 0L
+            var cost = 0.0
+            for ((_, usage) in perModel) {
+                tokens += usage.total_tokens
+                cost += usage.cost
+            }
+            SessionUsageTotals(totalTokens = tokens, totalCost = cost, modelCount = perModel.size)
+        }
+    }
 
     /**
      * Records and increments usage statistics for a specific AI model invocation.

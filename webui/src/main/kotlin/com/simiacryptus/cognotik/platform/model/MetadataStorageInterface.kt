@@ -187,4 +187,116 @@ interface MetadataStorageInterface {
         metadata.sessionTime?.let { setSessionTime(user, session, it) }
         metadata.ownerId?.let { setSessionOwner(session, it) }
     }
+    /**
+     * Bulk-fetch metadata for all sessions belonging to a user in a single backend call.
+     *
+     * This is intended for listing UIs that previously issued N+1 queries
+     * (one [listSessions] call followed by per-session calls to [getSessionName],
+     * [getMessageIds], [getSessionTime], [getSessionOwner], etc.).
+     *
+     * The default implementation falls back to per-session retrieval and exists
+     * so existing implementations remain source-compatible. DB-backed
+     * implementations should override this for efficiency.
+     *
+     * @param user The user whose sessions should be listed
+     * @return A list of [SessionMetadata] objects, one per session
+     */
+    fun listSessionMetadata(user: User): List<SessionMetadata> {
+        return listSessions(user).map { sessionId ->
+            getSessionMetadata(user, Session(sessionId))
+        }
+    }
+    /**
+     * Bulk-fetch metadata for all sessions associated with a path in a single backend call.
+     *
+     * The default implementation falls back to per-session retrieval. DB-backed
+     * implementations should override this for efficiency.
+     *
+     * @param path The path to search for associated sessions
+     * @return A list of [SessionMetadata] objects, one per session
+     */
+    fun listSessionMetadata(path: String): List<SessionMetadata> {
+        return listSessions(path).map { sessionId ->
+            getSessionMetadata(null, Session(sessionId))
+        }
+    }
+    /**
+     * Bulk-fetch metadata for an explicit set of session IDs.
+     *
+     * @param user The user associated with the sessions, or null for anonymous sessions
+     * @param sessionIds The session IDs to fetch metadata for
+     * @return A list of [SessionMetadata] objects in the same order as [sessionIds];
+     *         sessions with no recorded metadata are returned with default field values
+     */
+    fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
+        return sessionIds.map { sessionId ->
+            getSessionMetadata(user, Session(sessionId))
+        }
+    }
+    /**
+     * Listing-page optimized projection containing only the fields displayed in
+     * a session list row. Implementations may project fewer columns from
+     * storage and avoid loading large/unused fields (e.g. message IDs) to
+     * accelerate listings.
+     */
+    data class SessionListEntry(
+        val id: Session,
+        val name: String?,
+        val sessionTime: Date?,
+        val ownerId: String?,
+        val path: String?,
+    )
+    /**
+     * Bulk-fetch only the metadata fields needed to render a sessions listing
+     * page. The default implementation falls back to [listSessionMetadata] and
+     * drops [SessionMetadata.messageIds]; DB-backed implementations should
+     * override this to project only the columns actually needed.
+     *
+     * @param user The user whose sessions should be listed
+     * @return Lightweight list of session entries
+     */
+    fun listSessionEntries(user: User): List<SessionListEntry> {
+        return listSessionMetadata(user).map {
+            SessionListEntry(
+                id = it.id,
+                name = it.name,
+                sessionTime = it.sessionTime,
+                ownerId = it.ownerId,
+                path = it.path,
+            )
+        }
+    }
+    /**
+     * Bulk-fetch only the metadata fields needed to render a sessions listing
+     * page filtered by path. The default implementation falls back to
+     * [listSessionMetadata]; DB-backed implementations should override this
+     * to project only the columns actually needed.
+     */
+    fun listSessionEntries(path: String): List<SessionListEntry> {
+        return listSessionMetadata(path).map {
+            SessionListEntry(
+                id = it.id,
+                name = it.name,
+                sessionTime = it.sessionTime,
+                ownerId = it.ownerId,
+                path = it.path,
+            )
+        }
+    }
+    /**
+     * Bulk-fetch lightweight session entries for an explicit set of session IDs.
+     * Default implementation delegates to [getSessionMetadataBulk]; DB-backed
+     * implementations may override for efficiency.
+     */
+    fun getSessionEntriesBulk(user: User?, sessionIds: Collection<String>): List<SessionListEntry> {
+        return getSessionMetadataBulk(user, sessionIds).map {
+            SessionListEntry(
+                id = it.id,
+                name = it.name,
+                sessionTime = it.sessionTime,
+                ownerId = it.ownerId,
+                path = it.path,
+            )
+        }
+    }
 }
