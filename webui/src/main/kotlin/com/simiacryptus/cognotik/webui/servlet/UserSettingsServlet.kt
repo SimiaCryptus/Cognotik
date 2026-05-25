@@ -32,7 +32,6 @@ class UserSettingsServlet : HttpServlet() {
             provider = apiData.provider
           )//.validate()
         }.toMutableList(),
-        etc = settings.etc.toMutableMap(),
       ).jsonCast<Map<String,Any>>() + mapOf(
         "user" to user
       )
@@ -101,7 +100,6 @@ class UserSettingsServlet : HttpServlet() {
     }.toMutableList()
     val reconstructedSettings = UserSettings(
       apis = reconstructedApis,
-      etc = settings.etc
     )
     userSettingsManager.updateUserSettings(
       user,

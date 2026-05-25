@@ -103,8 +103,6 @@ function isLocalhost() {
 }
 function applyLocalhostRestrictions() {
     if (!isLocalhost()) {
-        const settingsBtn = document.getElementById('user-settings-btn');
-        if (settingsBtn) settingsBtn.style.display = 'none';
         const pluginManagerBtn = document.getElementById('plugin-manager-btn');
         if (pluginManagerBtn) pluginManagerBtn.style.display = 'none';
     }
@@ -113,9 +111,12 @@ function applyLocalhostRestrictions() {
 function updateLogoutButtonLabel() {
     try {
         const user = appState && appState.userInfo;
-        const btn = document.getElementById('auth-btn');
+         let btn = document.getElementById('auth-btn');
         const labelEl = document.getElementById('auth-btn-label');
         if (!btn || !labelEl) return;
+         // Always remove any existing dropdown so we can re-create based on state
+         const existingMenu = document.getElementById('user-menu-dropdown');
+         if (existingMenu) existingMenu.remove();
         if (!user) {
             // Not logged in
             btn.setAttribute('aria-label', 'Login');
@@ -123,22 +124,154 @@ function updateLogoutButtonLabel() {
             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🔑</span> Login';
             btn.onclick = () => { window.location.href = '/login/'; };
         } else {
+            // Clone the button to strip any pre-existing event listeners
+            // (e.g. the login redirect handler attached by the Menubar component)
+            const clone = btn.cloneNode(true);
+            btn.parentNode.replaceChild(clone, btn);
+            btn = clone;
             const label = user.name || user.email || user.id || 'Logout';
-            btn.setAttribute('aria-label', 'Logout ' + label);
-            btn.setAttribute('title', 'Logout (' + label + ')');
-            btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🚪</span> ' +
-                escapeHtmlSafe(label);
-            btn.onclick = () => {
-                 const confirmMessage = 'Are you sure you want to log out' +
-                     (label && label !== 'Logout' ? ' as ' + label : '') + '?';
-                 if (window.confirm(confirmMessage)) {
-                     fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
-                 }
-            };
+             btn.setAttribute('aria-label', 'User menu for ' + label);
+             btn.setAttribute('title', label);
+             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">👤</span> ' +
+                 escapeHtmlSafe(label) + ' <span aria-hidden="true" style="margin-left:4px;">▾</span>';
+             setupUserMenu(btn, label);
         }
     } catch (e) {
         console.warn('[init] Unable to update logout button label:', e);
     }
+}
+function setupUserMenu(btn, label) {
+     // Make the parent a positioning context for the dropdown
+     const parent = btn.parentElement;
+     if (parent && getComputedStyle(parent).position === 'static') {
+         parent.style.position = 'relative';
+     }
+     // Build the dropdown
+     const menu = document.createElement('div');
+     menu.id = 'user-menu-dropdown';
+     menu.setAttribute('role', 'menu');
+     menu.style.position = 'absolute';
+     menu.style.right = '0';
+     menu.style.top = '100%';
+     menu.style.marginTop = '0';
+     menu.style.paddingTop = '4px';
+     menu.style.minWidth = '180px';
+     menu.style.zIndex = '1000';
+     menu.style.display = 'none';
+     // The actual visual menu (inner element so we can have an invisible
+     // hover-bridge above it, preventing the menu from closing when the
+     // mouse moves from the button to the menu).
+     const menuInner = document.createElement('div');
+     menuInner.style.background = 'var(--color-surface, #fff)';
+     menuInner.style.border = '1px solid var(--color-border, #ddd)';
+     menuInner.style.borderRadius = '6px';
+     menuInner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+     menuInner.style.padding = '6px 0';
+     menu.appendChild(menuInner);
+     const makeItem = (icon, text, onClick) => {
+         const item = document.createElement('button');
+         item.type = 'button';
+         item.setAttribute('role', 'menuitem');
+         item.style.display = 'flex';
+         item.style.alignItems = 'center';
+         item.style.gap = '8px';
+         item.style.width = '100%';
+         item.style.padding = '8px 14px';
+         item.style.background = 'transparent';
+         item.style.border = 'none';
+         item.style.textAlign = 'left';
+         item.style.cursor = 'pointer';
+         item.style.font = 'inherit';
+         item.style.color = 'inherit';
+         item.innerHTML = '<span aria-hidden="true">' + icon + '</span> ' + escapeHtmlSafe(text);
+         item.addEventListener('mouseenter', () => { item.style.background = 'rgba(0,0,0,0.06)'; });
+         item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+         item.addEventListener('click', (e) => {
+             e.stopPropagation();
+             hideMenu();
+             onClick();
+         });
+         return item;
+     };
+     const settingsItem = makeItem('⚙️', 'Settings', () => {
+         const modal = document.getElementById('user-settings-modal');
+         if (modal) {
+             modal.style.display = 'block';
+             if (typeof populateUserSettings === 'function') {
+                 populateUserSettings(appState);
+             }
+         }
+     });
+     menuInner.appendChild(settingsItem);
+     const logoutItem = makeItem('🚪', 'Logout', () => {
+         const confirmMessage = 'Are you sure you want to log out' +
+             (label && label !== 'Logout' ? ' as ' + label : '') + '?';
+         if (window.confirm(confirmMessage)) {
+             fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+         }
+     });
+     menuInner.appendChild(logoutItem);
+     parent.appendChild(menu);
+     // Hover-based open/close with a small grace delay so users can move
+     // the mouse between button and menu without the menu disappearing.
+     let hideTimer = null;
+     const showMenu = () => {
+         if (hideTimer) {
+             clearTimeout(hideTimer);
+             hideTimer = null;
+         }
+         menu.style.display = 'block';
+         btn.setAttribute('aria-expanded', 'true');
+     };
+     const hideMenu = () => {
+         if (hideTimer) clearTimeout(hideTimer);
+         hideTimer = setTimeout(() => {
+             menu.style.display = 'none';
+             btn.setAttribute('aria-expanded', 'false');
+             hideTimer = null;
+         }, 200);
+     };
+     const cancelHide = () => {
+         if (hideTimer) {
+             clearTimeout(hideTimer);
+             hideTimer = null;
+         }
+     };
+     btn.setAttribute('aria-haspopup', 'true');
+     btn.setAttribute('aria-expanded', 'false');
+     btn.addEventListener('mouseenter', showMenu);
+     btn.addEventListener('mouseleave', hideMenu);
+     btn.addEventListener('focus', showMenu);
+     menu.addEventListener('mouseenter', cancelHide);
+     menu.addEventListener('mouseleave', hideMenu);
+     // Allow click to toggle as well (for touch / keyboard users)
+     btn.onclick = (e) => {
+         e.stopPropagation();
+         const visible = menu.style.display === 'block';
+         if (visible) {
+             cancelHide();
+             menu.style.display = 'none';
+             btn.setAttribute('aria-expanded', 'false');
+         } else {
+             showMenu();
+         }
+     };
+     // Close on outside click
+     document.addEventListener('click', (e) => {
+         if (!menu.contains(e.target) && e.target !== btn) {
+             cancelHide();
+             menu.style.display = 'none';
+             btn.setAttribute('aria-expanded', 'false');
+         }
+     });
+     // Close on Escape
+     document.addEventListener('keydown', (e) => {
+         if (e.key === 'Escape') {
+             cancelHide();
+             menu.style.display = 'none';
+             btn.setAttribute('aria-expanded', 'false');
+         }
+     });
 }
 function escapeHtmlSafe(s) {
     if (typeof HtmlUtils !== 'undefined' && HtmlUtils && typeof HtmlUtils.escapeHtml === 'function') {
@@ -344,7 +477,6 @@ function renderMenubar() {
              if (appGridSection) appGridSection.setAttribute('data-layout', layout);
          },
          buttons: [
-             { id: 'user-settings-btn', icon: '⚙️', label: 'Settings', ariaLabel: 'Open Settings' },
              { id: 'plugin-manager-btn', icon: '🔌', label: 'Plugins', ariaLabel: 'Open Plugin Manager' },
              { id: 'sessions-btn', icon: '📁', label: 'Sessions', ariaLabel: 'Open Sessions' },
              {
@@ -365,6 +497,15 @@ function renderMenubar() {
              }
          ]
      });
+     // Hidden trigger for legacy code that may reference 'user-settings-btn'.
+     // The visible entry point is now within the user dropdown menu.
+     if (!document.getElementById('user-settings-btn')) {
+         const hiddenBtn = document.createElement('button');
+         hiddenBtn.id = 'user-settings-btn';
+         hiddenBtn.type = 'button';
+         hiddenBtn.style.display = 'none';
+         document.body.appendChild(hiddenBtn);
+     }
 }
 
 // Load API providers and models first, then initialize everything

@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -90,6 +91,7 @@ class UsageDB : UsageInterface {
     }
 
     private val database: Database get() = ExposedDatabase.get(facet)
+    val userSettingsManager by lazy { ApplicationServices.fileApplicationServices().userSettingsManager }
 
     override fun incrementUsage(
         session: Session,
@@ -99,7 +101,7 @@ class UsageDB : UsageInterface {
         data: ModelSchema.UsageData?
     ) {
         try {
-            val isTracked = tracked_users.contains(user.email)
+            val isTracked = userSettingsManager.getUserSettings(user).collectSessionData
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val rawCost = model.pricing(usage)
             val cost = rawCost.coerceAtLeast(0.0) * cost_scaling_factor.coerceAtLeast(0.0)
@@ -801,6 +803,13 @@ class UsageDB : UsageInterface {
                     """,
                     "CREATE INDEX IF NOT EXISTS idx_usage_session ON usage(session_id)",
                     "CREATE INDEX IF NOT EXISTS idx_usage_user_dt ON usage(user_id, datetime)",
+                    // Composite index supporting getSessionUsageRows which filters by
+                    // session_id (often inList across multiple sessions) and orders
+                    // by datetime ASC. Also accelerates bulk listing-page queries.
+                    "CREATE INDEX IF NOT EXISTS idx_usage_session_dt ON usage(session_id, datetime)",
+                    // Index supporting model-scoped aggregations and analytics that
+                    // group by model across users/sessions.
+                    "CREATE INDEX IF NOT EXISTS idx_usage_model ON usage(model)",
                     "ALTER TABLE usage ADD COLUMN IF NOT EXISTS input_text $largeText",
                     "ALTER TABLE usage ADD COLUMN IF NOT EXISTS output_text $largeText",
                     """
@@ -811,6 +820,9 @@ class UsageDB : UsageInterface {
                          PRIMARY KEY (usage_id, token_type)
                      )
                      """,
+                    // Redundant with PK leading column (usage_id) but retained for
+                    // backward compatibility with existing deployments. The PK
+                    // already supports inList(usage_id) lookups efficiently.
                     "CREATE INDEX IF NOT EXISTS idx_usage_tokens_usage ON usage_tokens(usage_id)",
                     """
                     CREATE TABLE IF NOT EXISTS session_parents (
@@ -832,6 +844,9 @@ class UsageDB : UsageInterface {
                     )
                     """,
                     "CREATE INDEX IF NOT EXISTS idx_usage_daily_user_day ON usage_daily(user_id, \"day\")",
+                    // Supports cross-user analytics by day (e.g. daily totals across
+                    // all users for a date range).
+                    "CREATE INDEX IF NOT EXISTS idx_usage_daily_day ON usage_daily(\"day\")",
                     "ALTER TABLE usage_daily ADD COLUMN IF NOT EXISTS token_type VARCHAR(64) DEFAULT 'Prompt'",
                     "ALTER TABLE usage_daily ADD COLUMN IF NOT EXISTS token_count BIGINT DEFAULT 0",
                     "UPDATE usage_daily SET token_type = 'Prompt' WHERE token_type IS NULL",

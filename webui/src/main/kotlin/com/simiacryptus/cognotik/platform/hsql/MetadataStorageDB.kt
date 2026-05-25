@@ -608,6 +608,16 @@ class MetadataStorageDB : MetadataStorageInterface {
                  """,
                     "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
                     "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
+                    // Supports listSessionMetadata/listSessionEntries which first
+                    // collects session IDs for a user, then re-queries by
+                    // (session_id inList ..., user_email = ? OR user_email = '').
+                    // The PK covers (session_id, user_email, meta_key) leading-edge
+                    // queries, but a dedicated (user_email, session_id) index
+                    // accelerates the initial sessionIdsForUser distinct scan.
+                    "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
+                    // Supports queries that filter by meta_key alone (e.g. scanning
+                    // for all "owner_id" rows or all "path" rows during admin tasks).
+                    "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(meta_key)",
                 )
             },
             tables = listOf(MetadataTable),

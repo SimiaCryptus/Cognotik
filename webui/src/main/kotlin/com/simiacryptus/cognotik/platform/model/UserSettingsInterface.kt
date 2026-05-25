@@ -48,12 +48,11 @@ interface UserSettingsInterface {
  *
  * @property apis List of API configurations for various providers (OpenAI, Anthropic, etc.)
  * @property tools List of custom tools/commands available to the user
- * @property etc Additional miscellaneous settings stored as key-value pairs
  * @property toolPaths Map of tool providers to their executable paths
  */
 data class UserSettings(
     val apis: MutableList<ApiData> = mutableListOf(),
-    val etc: MutableMap<String, Any> = mutableMapOf(),
+    val collectSessionData: Boolean = false,
     val passwordHash: String? = null,
 )
 

@@ -22,19 +22,13 @@
             }
         });
 
-        document.querySelectorAll('.tab-button').forEach(button => {
+        applyHostedRestrictions();
+
+        document.querySelectorAll('#user-settings-modal .tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 const tabId = button.getAttribute('data-tab');
                 switchTab(tabId);
             });
-        });
-
-        document.getElementById('add-local-tool')?.addEventListener('click', () => {
-            const toolPath = document.getElementById('new-tool-path')?.value;
-            if (toolPath) {
-                addLocalTool(appState, toolPath);
-                document.getElementById('new-tool-path').value = '';
-            }
         });
 
         document.getElementById('reset-user-settings')?.addEventListener('click', () => {
@@ -46,6 +40,32 @@
         document.getElementById('save-user-settings')?.addEventListener('click', () => {
             saveUserSettings({ appState, httpService, notificationService, modelManager, onSettingsSaved });
         });
+    }
+
+    function isLocalhostHost() {
+        const host = window.location.hostname;
+        return host === 'localhost'
+            || host === '127.0.0.1'
+            || host === '::1'
+            || host === '[::1]';
+    }
+
+    function applyHostedRestrictions() {
+        // On hosted (non-localhost) versions, hide API Keys tab since those are
+        // not relevant to the hosted version.
+        if (!isLocalhostHost()) {
+            const apiKeysTabBtn = document.querySelector('#user-settings-modal .tab-button[data-tab="api-keys"]');
+            const apiKeysTab = document.getElementById('api-keys-tab');
+            if (apiKeysTabBtn) apiKeysTabBtn.style.display = 'none';
+            if (apiKeysTab) {
+                apiKeysTab.classList.remove('active');
+            }
+            // Activate the General tab by default
+            const generalTabBtn = document.querySelector('#user-settings-modal .tab-button[data-tab="general"]');
+            const generalTab = document.getElementById('general-tab');
+            if (generalTabBtn) generalTabBtn.classList.add('active');
+            if (generalTab) generalTab.classList.add('active');
+        }
     }
 
     function populateUserSettings(appState) {
@@ -92,7 +112,11 @@
             apiKeysContainer.appendChild(addProviderBtn);
         }
 
-        populateLocalTools(appState);
+        // Populate general settings (collectSessionData checkbox)
+        const collectSessionDataCheckbox = document.getElementById('collect-session-data');
+        if (collectSessionDataCheckbox) {
+            collectSessionDataCheckbox.checked = !!appState.apiSettings.collectSessionData;
+        }
     }
 
     function createProviderInput(appState, providerId, apiKey, baseUrl) {
@@ -375,6 +399,11 @@
         appState.apiSettings.apiKeys = apiKeys;
         appState.apiSettings.apiBase = apiBase;
 
+        // Collect general settings
+        const collectSessionDataCheckbox = document.getElementById('collect-session-data');
+        const collectSessionData = collectSessionDataCheckbox ? !!collectSessionDataCheckbox.checked : false;
+        appState.apiSettings.collectSessionData = collectSessionData;
+
         const apisArray = Object.keys(apiKeys).map(provider => ({
             provider: provider,
             key: apiKeys[provider],
@@ -383,7 +412,7 @@
 
         const settingsToSave = {
             apis: apisArray,
-            tools: appState.apiSettings.localTools || [],
+            collectSessionData: collectSessionData,
             etc: {}
         };
 
@@ -401,55 +430,20 @@
     }
 
     function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        // Only switch tabs within the user settings modal
+        const modal = document.getElementById('user-settings-modal');
+        if (!modal) return;
+        modal.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        modal.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
 
         const selectedContent = document.getElementById(`${tabId}-tab`);
         if (selectedContent) selectedContent.classList.add('active');
 
-        const selectedButton = document.querySelector(`[data-tab="${tabId}"]`);
+        const selectedButton = modal.querySelector(`[data-tab="${tabId}"]`);
         if (selectedButton) selectedButton.classList.add('active');
     }
 
-    function populateLocalTools(appState) {
-        const localToolsList = document.getElementById('local-tools-list');
-        if (!localToolsList) return;
-
-        localToolsList.innerHTML = '';
-
-        if (appState.apiSettings.localTools && appState.apiSettings.localTools.length > 0) {
-            appState.apiSettings.localTools.forEach((tool, index) => {
-                const toolItem = document.createElement('div');
-                toolItem.className = 'tool-item';
-                toolItem.innerHTML = `
-                    <span>${tool}</span>
-                    <button class="button secondary small" onclick="removeLocalTool(${index})">Remove</button>
-                `;
-                localToolsList.appendChild(toolItem);
-            });
-        } else {
-            localToolsList.innerHTML = '<p>No local tools configured</p>';
-        }
-    }
-
-    function addLocalTool(appState, toolPath) {
-        if (!appState.apiSettings.localTools) appState.apiSettings.localTools = [];
-        if (!appState.apiSettings.localTools.includes(toolPath)) {
-            appState.apiSettings.localTools.push(toolPath);
-            populateLocalTools(appState);
-        }
-    }
-
-    function removeLocalTool(index) {
-        // Note: this is invoked via inline onclick - relies on global appState
-        if (window.appState && window.appState.apiSettings.localTools &&
-            index >= 0 && index < window.appState.apiSettings.localTools.length) {
-            window.appState.apiSettings.localTools.splice(index, 1);
-            populateLocalTools(window.appState);
-        }
-    }
-
     function resetUserSettings(appState) {
-        appState.apiSettings = {apiKeys: {}, apiBase: {}, localTools: []};
+        appState.apiSettings = { apiKeys: {}, apiBase: {}, collectSessionData: false };
         populateUserSettings(appState);
     }

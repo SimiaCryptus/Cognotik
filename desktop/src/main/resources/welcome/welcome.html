@@ -243,7 +243,7 @@
 
         <div class="settings-tabs">
             <button class="tab-button active" data-tab="api-keys">API Keys</button>
-            <button class="tab-button" data-tab="local-tools">Local Tools</button>
+             <button class="tab-button" data-tab="general">General</button>
         </div>
 
         <div class="tab-content active" id="api-keys-tab">
@@ -251,19 +251,18 @@
             <div id="api-keys-container"></div>
         </div>
 
-        <div class="tab-content" id="local-tools-tab">
-            <p>Configure local tools that can be used by the AI:</p>
-            <div class="form-group">
-                <label for="local-tools-list">Local Tools:</label>
-                <div id="local-tools-container">
-                    <div id="local-tools-list"></div>
-                    <div class="tool-actions">
-                        <input id="new-tool-path" placeholder="Enter tool path or command" type="text">
-                        <button class="button" id="add-local-tool">Add Tool</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+         <div class="tab-content" id="general-tab">
+             <p>General preferences:</p>
+             <div class="form-group">
+                 <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
+                     <input type="checkbox" id="collect-session-data">
+                     Collect session data
+                     <span class="tooltip">?<span class="tooltiptext">
+                         If enabled, anonymous session usage data may be collected to help improve Cognotik.
+                     </span></span>
+                 </label>
+             </div>
+         </div>
 
         <div class="button-group">
             <button class="button secondary" id="reset-user-settings">Reset</button>

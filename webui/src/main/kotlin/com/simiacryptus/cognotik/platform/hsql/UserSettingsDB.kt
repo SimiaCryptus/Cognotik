@@ -17,19 +17,19 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Exposed table definition for user settings.
- */
-object UserSettingsTable : Table("user_settings") {
-    val userKey = varchar("user_key", 255)
-    val settingsJson = text("settings_json")
-    val timestamp = timestamp("timestamp")
-    override val primaryKey = PrimaryKey(userKey)
-}
-
-/**
  * HSQL-backed implementation of [UserSettingsInterface] using Exposed DSL.
  */
 open class UserSettingsDB : UserSettingsInterface {
+
+    /**
+     * Exposed table definition for user settings.
+     */
+    object UserSettingsTable : Table("user_settings") {
+        val userKey = varchar("user_key", 255)
+        val settingsJson = text("settings_json")
+        val timestamp = timestamp("timestamp")
+        override val primaryKey = PrimaryKey(userKey)
+    }
 
     private val cache = ConcurrentHashMap<User, UserSettings>()
 

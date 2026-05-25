@@ -44,6 +44,10 @@ class GiftedCreditsDB(
         val createdBy = varchar("created_by", 255).nullable()
         val theme = varchar("theme", 64).nullable()
         override val primaryKey = PrimaryKey(id)
+        init {
+            // Supports admin queries that list gifts by creator.
+            index("idx_gifts_created_by", isUnique = false, createdBy)
+        }
     }
 
     /**
@@ -54,6 +58,15 @@ class GiftedCreditsDB(
         val userId = varchar("user_id", 255)
         val claimedAt = timestamp("claimed_at").clientDefault { Instant.now() }
         override val primaryKey = PrimaryKey(giftId, userId)
+        init {
+            // Supports listClaims(userId = ...) and per-user claim history,
+            // including ordering by claimedAt DESC for that user.
+            index("idx_gift_claims_user", isUnique = false, userId, claimedAt)
+            // Supports listClaims(giftId = ...) ordered by claimedAt. The PK
+            // leading column already covers giftId equality, but does not help
+            // ordering by claimedAt within a single gift.
+            index("idx_gift_claims_gift_time", isUnique = false, giftId, claimedAt)
+        }
     }
 
     val facet = DatabaseFacet(
