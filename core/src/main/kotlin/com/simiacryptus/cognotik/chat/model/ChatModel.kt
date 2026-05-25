@@ -41,6 +41,18 @@ class ChatModel(
     provider = provider,
 ) {
 
+    fun priceStructure() : Map<TokenTypes, Double> {
+        return TokenTypes.values().associateWith { type ->
+            var type: TokenTypes? = type
+            var value = tokenPricingPerK[type]
+            while(value == null) {
+                type = type?.parent
+                if(type == null) break
+                value = tokenPricingPerK[type]
+            }
+            value ?: 0.0
+        }
+    }
     /**
      * Backwards-compatible constructor using explicit prompt/completion prices.
      */
@@ -91,16 +103,17 @@ class ChatModel(
     override fun pricing(usage: Usage): Double {
         val counts = usage.counts
         // Compute cost for each accounted token type using the pricing map.
+        val priceStructure = priceStructure()
         val perTypeCosts: Map<TokenTypes, Double> = counts.mapValues { (type, count) ->
-            (tokenPricingPerK[type] ?: 0.0) * count
+            (priceStructure[type] ?: 0.0) * count
         }
-        val accountedTokens = counts.entries.filter { tokenPricingPerK.containsKey(it.key) }.sumOf { it.value }
+        val accountedTokens = counts.entries.filter { priceStructure.containsKey(it.key) }.sumOf { it.value }
         val accountedCost = perTypeCosts.values.sum()
 
         // Estimate cost for any unaccounted tokens using the average of known prices.
         val unaccountedTokens = (usage.total_tokens - accountedTokens).coerceAtLeast(0)
-        val averagePricePerK = if (tokenPricingPerK.isNotEmpty()) {
-            tokenPricingPerK.values.average()
+        val averagePricePerK = if (priceStructure.isNotEmpty()) {
+            priceStructure.values.average()
         } else 0.0
         val estimatedUnaccountedCost = unaccountedTokens * averagePricePerK
 
@@ -110,7 +123,7 @@ class ChatModel(
             "Calculating cost for model ${modelId}: " +
                     perTypeCosts.entries.joinToString(", ") { (type, cost) ->
                         val count = counts.getOrDefault(type, 0)
-                        val price = tokenPricingPerK[type] ?: 0.0
+                        val price = priceStructure[type] ?: 0.0
                         "$type Tokens: $count at ${price}/k = ${String.format("%.4f", cost / 1000.0)}"
                     } +
                     ", Unaccounted Tokens: $unaccountedTokens estimated at ${

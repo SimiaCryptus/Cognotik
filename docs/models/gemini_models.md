@@ -8,4 +8,6 @@ related:
 
 # [GeminiModels.kt](../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt)
 
-Update pricing format to map-based definition.
+Update pricing format to map-based definition, including TokenTypes.Thinking and TokenTypes.Cached
+
+

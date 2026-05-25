@@ -179,10 +179,11 @@ class GeminiSdkChatClient(
       }
       log.debug("Request {}: built config and {} content items", requestID, contents.size)
       val sysInstruct = config?.systemInstruction()?.getOrNull()?.text()?.indent("  ")
-      val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
+      val sysText = sysInstruct?.let { "System Instruction:\n```\n$it\n```\n\n" } ?: ""
+      val inputText = contents.joinToString("\n\n") { it.toMarkdown() }
       val toJson = config?.toJson()?.indent("  ") ?: "No config"
       log(
-        "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>",
+        "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$inputText\n</details>",
         logStreams
       )
       val response = try {
@@ -232,7 +233,7 @@ class GeminiSdkChatClient(
       if (chatResponse.usage != null) {
         try {
           usageHandler.onUsage(model, chatResponse.usage!!, ModelSchema.UsageData(
-            input_text = contents.joinToString("\n\n") { it.toMarkdown() },
+            input_text = sysText + "\n\n" + inputText,
             output_text = chatResponse.choices.joinToString("\n\n") { choice -> choice.message?.content ?: "" },
           ))
         } catch (e: Exception) {
@@ -278,9 +279,6 @@ class GeminiSdkChatClient(
 
   private fun Content.toMarkdown(): CharSequence {
     val sb = StringBuilder()
-
-
-
     try {
       this.role().getOrNull()?.let { role ->
         sb.append("**Role:** ").append(role).append("\n\n")

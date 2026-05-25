@@ -431,6 +431,53 @@ class UsageDB : UsageInterface {
                 ?.get(UserBudgetTable.available) ?: 0.0
         }
     }
+    override fun getSessionUsageRows(session: Session): List<UsageInterface.UsageRow> {
+        log.debug("Getting session usage rows for session: {}", session)
+        return transaction(database) {
+            val allSessionIds = collectSessionIds(session.sessionId)
+            if (allSessionIds.isEmpty()) return@transaction emptyList()
+            val rows = UsageTable
+                .selectAll()
+                .where { UsageTable.sessionId inList allSessionIds.toList() }
+                .orderBy(UsageTable.datetime to SortOrder.ASC)
+                .map { row ->
+                    val id = row[UsageTable.id]
+                    id to UsageInterface.UsageRow(
+                        id = id,
+                        sessionId = row[UsageTable.sessionId],
+                        userId = row[UsageTable.userId],
+                        model = row[UsageTable.model],
+                        datetime = row[UsageTable.datetime],
+                        tokenCounts = emptyMap(),
+                        cost = row[UsageTable.cost] ?: 0.0,
+                        inputText = row[UsageTable.inputText],
+                        outputText = row[UsageTable.outputText]
+                    )
+                }
+            if (rows.isEmpty()) return@transaction emptyList()
+            val ids = rows.map { it.first }
+            val tokensById = UsageTokensTable
+                .selectAll()
+                .where { UsageTokensTable.usageId inList ids }
+                .groupBy { it[UsageTokensTable.usageId] }
+                .mapValues { (_, tokenRows) ->
+                    val map = mutableMapOf<TokenTypes, Long>()
+                    for (tr in tokenRows) {
+                        val rawType = tr[UsageTokensTable.tokenType]
+                        val count = tr[UsageTokensTable.tokenCount]
+                        val parsed = runCatching { TokenTypes.valueOf(rawType) }.getOrNull()
+                        if (parsed != null && count != 0L) {
+                            map.merge(parsed, count) { a, b -> a + b }
+                        }
+                    }
+                    map.toMap()
+                }
+            rows.map { (id, row) ->
+                row.copy(tokenCounts = tokensById[id] ?: emptyMap())
+            }
+        }
+    }
+
 
     /**
      * Recursively collect all descendant session IDs (BFS). Must be invoked inside a transaction.

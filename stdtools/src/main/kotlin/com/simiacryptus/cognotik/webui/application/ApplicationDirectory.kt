@@ -88,6 +88,8 @@ abstract class ApplicationDirectory(
 
     open val sessionsServlet: HttpServlet = SessionsServlet()
         .also { log.debug("Initialized SessionsServlet") }
+    open val sessionUsageDetailsServlet by lazy { SessionUsageDetailsServlet() }
+        .also { log.debug("Initialized SessionUsageDetailsServlet") }
 
     open val creditsServlet: CreditsServlet = CreditsServlet(NoOpPaymentProvider(ApplicationServices.fileApplicationServices().usageDB))
         .also { log.debug("Initialized CreditsServlet") }
@@ -116,33 +118,36 @@ abstract class ApplicationDirectory(
         }
     }
 
-    open fun webAppContexts() = listOfNotNull(
-        run { log.debug("Creating web app contexts"); null },
-        newWebAppContext("/", welcomeResources, "welcome", welcomeServlet),
-        newWebAppContext("/auth/*", authCallbackServlet),
-        newWebAppContext("/logout", logoutServlet),
-        newWebAppContext("/login", loginServlet),
-        newWebAppContext("/appDirectory", appDirectoryServlet),
-        newWebAppContext("/api", welcomeServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/sessions", sessionsServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/credits", creditsServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/apiProviders", apiProviderServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/apiKeys", apiKeyServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/cognitiveConfig", cognitiveConfigServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/docops", docopsServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/userInfo", userInfoServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/userSettings", userSettingsServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/usage", usageServlet).configureAuth(ApplicationServer::class.java),
-        newWebAppContext("/taskConfig", taskConfigServlet).configureAuth(ApplicationServer::class.java),
-        pluginManagerServlet?.let { pluginManagerServlet ->
-            newWebAppContext("/pluginManager", pluginManagerServlet).configureAuth(ApplicationServer::class.java)
-        },
-        newWebAppContext("/gifts/*", GiftedCreditsServlet()),
-    ).toTypedArray() + childWebApps.map {
-        log.debug("Adding child web app context for path: ${it.path}")
-        newWebAppContext(it.path, it.server)
-    }.also { contexts ->
-        log.info("Created ${contexts.size} web app contexts total")
+    open fun webAppContexts(): Array<WebAppContext> {
+        return listOfNotNull(
+            run { log.debug("Creating web app contexts"); null },
+            newWebAppContext("/", welcomeResources, "welcome", welcomeServlet),
+            newWebAppContext("/auth/*", authCallbackServlet),
+            newWebAppContext("/logout", logoutServlet),
+            newWebAppContext("/login", loginServlet),
+            newWebAppContext("/appDirectory", appDirectoryServlet),
+            newWebAppContext("/api", welcomeServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/sessions", sessionsServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/sessionUsage", sessionUsageDetailsServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/credits", creditsServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/apiProviders", apiProviderServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/apiKeys", apiKeyServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/cognitiveConfig", cognitiveConfigServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/docops", docopsServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/userInfo", userInfoServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/userSettings", userSettingsServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/usage", usageServlet).configureAuth(ApplicationServer::class.java),
+            newWebAppContext("/taskConfig", taskConfigServlet).configureAuth(ApplicationServer::class.java),
+            pluginManagerServlet?.let { pluginManagerServlet ->
+                newWebAppContext("/pluginManager", pluginManagerServlet).configureAuth(ApplicationServer::class.java)
+            },
+            newWebAppContext("/gifts/*", GiftedCreditsServlet()),
+        ).toTypedArray() + childWebApps.map {
+            log.debug("Adding child web app context for path: ${it.path}")
+            newWebAppContext(it.path, it.server)
+        }.also { contexts ->
+            log.info("Created ${contexts.size} web app contexts total")
+        }
     }
 
     protected open fun WebAppContext.configureAuth(applicationClass: Class<ApplicationServer>): WebAppContext {

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.chat.model
 
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 
 @Suppress("unused")
 object GeminiModels {
@@ -15,8 +16,10 @@ object GeminiModels {
         maxTotalTokens = 2097152,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00125,
-        outputTokenPricePerK = 0.005,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00125,
+            TokenTypes.Completion to 0.005,
+        ),
         deprecated = true,
         inputModalities = setOf(
             ChatMessageModality.TEXT,
@@ -34,8 +37,10 @@ object GeminiModels {
         maxTotalTokens = 2097152,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00025,
-        outputTokenPricePerK = 0.0005,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00025,
+            TokenTypes.Completion to 0.0005,
+        ),
         deprecated = true,
         inputModalities = setOf(ChatMessageModality.TEXT),
         outputModalities = setOf(ChatMessageModality.TEXT)
@@ -48,8 +53,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.000075,
-        outputTokenPricePerK = 0.0003,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.000075,
+            TokenTypes.Completion to 0.0003,
+        ),
         deprecated = true,
         inputModalities = setOf(
             ChatMessageModality.TEXT,
@@ -67,8 +74,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0000375,
-        outputTokenPricePerK = 0.00015,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0000375,
+            TokenTypes.Completion to 0.00015,
+        ),
         deprecated = true,
         inputModalities = setOf(
             ChatMessageModality.TEXT,
@@ -91,8 +100,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0001,
-        outputTokenPricePerK = 0.0004,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0001,
+            TokenTypes.Completion to 0.0004,
+        ),
         deprecated = true,
         inputModalities = setOf(
             ChatMessageModality.TEXT,
@@ -110,8 +121,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.000075,  // $0.075/1M
-        outputTokenPricePerK = 0.0003,   // $0.30/1M
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.000075,    // $0.075/1M
+            TokenTypes.Completion to 0.0003,  // $0.30/1M
+        ),
         deprecated = true,
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE, ChatMessageModality.VIDEO),
         outputModalities = setOf(ChatMessageModality.TEXT)
@@ -124,8 +137,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0001,
-        outputTokenPricePerK = 0.0004,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0001,
+            TokenTypes.Completion to 0.0004,
+        ),
         deprecated = true,
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO, ChatMessageModality.VIDEO),
         outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO)
@@ -138,8 +153,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0001,
-        outputTokenPricePerK = 0.0004,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0001,
+            TokenTypes.Completion to 0.0004,
+        ),
         deprecated = true,
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
@@ -157,8 +174,11 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 32768,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0003,   // $0.30/1M text/image input
-        outputTokenPricePerK = 0.03,    // $30/1M tokens; $0.039/image (1024x1024)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0003,     // $0.30/1M text/image input
+            TokenTypes.Completion to 0.002,  // $2.50/1M text output (same as 2.5 Flash)
+            TokenTypes.Image to 0.03,        // $30/1M image output tokens; $0.039/image (1024x1024)
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
     )
@@ -170,8 +190,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00125,  // $1.25/1M (prompts <= 200k tokens)
-        outputTokenPricePerK = 0.01,    // $10.00/1M (prompts <= 200k tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00125,    // $1.25/1M (prompts <= 200k tokens)
+            TokenTypes.Completion to 0.01,   // $10.00/1M (prompts <= 200k tokens)
+            TokenTypes.Thinking to 0.01,     // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.000125,   // $0.125/1M cached input (prompts <= 200k)
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -188,8 +212,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0003,   // $0.30/1M text/image/video
-        outputTokenPricePerK = 0.0025,  // $2.50/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0003,     // $0.30/1M text/image/video
+            TokenTypes.Completion to 0.0025, // $2.50/1M (including thinking tokens)
+            TokenTypes.Thinking to 0.0025,   // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.00003,    // $0.03/1M cached input text/image/video
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -206,8 +234,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0001,   // $0.10/1M text/image/video
-        outputTokenPricePerK = 0.0004,  // $0.40/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0001,     // $0.10/1M text/image/video
+            TokenTypes.Completion to 0.0004, // $0.40/1M (including thinking tokens)
+            TokenTypes.Thinking to 0.0004,   // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.00001,    // $0.01/1M cached input text/image/video
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -224,8 +256,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0001,
-        outputTokenPricePerK = 0.0004,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0001,
+            TokenTypes.Completion to 0.0004,
+            TokenTypes.Thinking to 0.0004,
+            TokenTypes.Cached to 0.00001,
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -242,8 +278,10 @@ object GeminiModels {
         maxTotalTokens = 131072,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0005,   // $0.50/1M text input
-        outputTokenPricePerK = 0.002,   // $2.00/1M text output
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0005,     // $0.50/1M text input
+            TokenTypes.Completion to 0.002,  // $2.00/1M text output; $12.00/1M audio output
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO, ChatMessageModality.VIDEO),
         outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO)
     )
@@ -255,8 +293,10 @@ object GeminiModels {
         maxTotalTokens = 8192,
         maxOutTokens = 16384,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0005,   // $0.50/1M text input
-        outputTokenPricePerK = 0.01,    // $10.00/1M audio output
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0005,     // $0.50/1M text input
+            TokenTypes.Completion to 0.01,   // $10.00/1M audio output
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT),
         outputModalities = setOf(ChatMessageModality.AUDIO)
     )
@@ -268,8 +308,10 @@ object GeminiModels {
         maxTotalTokens = 8192,
         maxOutTokens = 16384,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.001,    // $1.00/1M text input
-        outputTokenPricePerK = 0.02,    // $20.00/1M audio output
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.001,      // $1.00/1M text input
+            TokenTypes.Completion to 0.02,   // $20.00/1M audio output
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT),
         outputModalities = setOf(ChatMessageModality.AUDIO)
     )
@@ -281,8 +323,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00125,  // $1.25/1M (prompts <= 200k tokens)
-        outputTokenPricePerK = 0.01,    // $10.00/1M (prompts <= 200k tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00125,    // $1.25/1M (prompts <= 200k tokens)
+            TokenTypes.Completion to 0.01,   // $10.00/1M (prompts <= 200k tokens)
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -298,8 +342,10 @@ object GeminiModels {
         maxTotalTokens = 8192,
         maxOutTokens = 0,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0002,   // $0.20/1M text input
-        outputTokenPricePerK = 0.0,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0002,     // $0.20/1M text input
+            TokenTypes.Completion to 0.0,
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -316,8 +362,10 @@ object GeminiModels {
         maxTotalTokens = 8192,
         maxOutTokens = 0,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00015,  // $0.15/1M text input
-        outputTokenPricePerK = 0.0,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00015,    // $0.15/1M text input
+            TokenTypes.Completion to 0.0,
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT),
         outputModalities = setOf()
     )
@@ -334,8 +382,11 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.002,
-        outputTokenPricePerK = 0.012,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.002,
+            TokenTypes.Completion to 0.012,
+            TokenTypes.Thinking to 0.012,
+        ),
         deprecated = true,
         inputModalities = setOf(
             ChatMessageModality.TEXT,
@@ -353,8 +404,12 @@ object GeminiModels {
         maxTotalTokens = 65536,
         maxOutTokens = 32768,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.002,    // $2.00/1M text/image input
-        outputTokenPricePerK = 0.12,    // $120.00/1M image output tokens; $0.134/image (1K/2K), $0.24/image (4K)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.002,      // $2.00/1M text/image input
+            TokenTypes.Completion to 0.012,  // $12.00/1M text and thinking output
+            TokenTypes.Thinking to 0.012,    // thinking tokens billed at output rate
+            TokenTypes.Image to 0.12,        // $120.00/1M image output tokens; $0.134/image (1K/2K), $0.24/image (4K)
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
     )
@@ -366,8 +421,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0005,   // $0.50/1M text/image/video
-        outputTokenPricePerK = 0.003,   // $3.00/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0005,     // $0.50/1M text/image/video
+            TokenTypes.Completion to 0.003,  // $3.00/1M (including thinking tokens)
+            TokenTypes.Thinking to 0.003,    // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.00005,    // $0.05/1M cached input text/image/video
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -388,8 +447,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.002,    // $2.00/1M (prompts <= 200k tokens)
-        outputTokenPricePerK = 0.012,   // $12.00/1M (prompts <= 200k tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.002,      // $2.00/1M (prompts <= 200k tokens)
+            TokenTypes.Completion to 0.012,  // $12.00/1M (prompts <= 200k tokens)
+            TokenTypes.Thinking to 0.012,    // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.0002,     // $0.20/1M cached input (prompts <= 200k)
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -406,8 +469,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00025,  // $0.25/1M text/image/video
-        outputTokenPricePerK = 0.0015,  // $1.50/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00025,    // $0.25/1M text/image/video
+            TokenTypes.Completion to 0.0015, // $1.50/1M (including thinking tokens)
+            TokenTypes.Thinking to 0.0015,   // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.000025,   // $0.025/1M cached input text/image/video
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -424,8 +491,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00025,  // $0.25/1M text/image/video
-        outputTokenPricePerK = 0.0015,  // $1.50/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00025,    // $0.25/1M text/image/video
+            TokenTypes.Completion to 0.0015, // $1.50/1M (including thinking tokens)
+            TokenTypes.Thinking to 0.0015,   // thinking tokens billed at output rate
+            TokenTypes.Cached to 0.000025,   // $0.025/1M cached input text/image/video
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -442,8 +513,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 32768,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0005,   // $0.50/1M text/image input
-        outputTokenPricePerK = 0.06,    // $60.00/1M image output tokens
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0005,     // $0.50/1M text/image input
+            TokenTypes.Completion to 0.003,  // $3.00/1M text and thinking output
+            TokenTypes.Thinking to 0.003,    // thinking tokens billed at output rate
+            TokenTypes.Image to 0.06,        // $60.00/1M image output tokens; $0.045/image (0.5K), $0.067/image (1K)
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
     )
@@ -455,8 +530,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 32768,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00075,  // $0.75/1M text input
-        outputTokenPricePerK = 0.0045,  // $4.50/1M text output
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00075,    // $0.75/1M text input
+            TokenTypes.Completion to 0.0045, // $4.50/1M text output
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.AUDIO,
@@ -473,8 +550,10 @@ object GeminiModels {
         maxTotalTokens = 8192,
         maxOutTokens = 16384,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.001,    // $1.00/1M text input
-        outputTokenPricePerK = 0.02,    // $20.00/1M audio output
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.001,      // $1.00/1M text input
+            TokenTypes.Completion to 0.02,   // $20.00/1M audio output
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT),
         outputModalities = setOf(ChatMessageModality.AUDIO)
     )
@@ -490,8 +569,12 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0015,   // $1.50/1M
-        outputTokenPricePerK = 0.009,   // $9.00/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0015,     // $1.50/1M
+            TokenTypes.Completion to 0.009,  // $9.00/1M
+            TokenTypes.Thinking to 0.009,
+            TokenTypes.Cached to 0.00015,    // $0.15/1M cached input
+        ),
         inputModalities = setOf(
             ChatMessageModality.TEXT,
             ChatMessageModality.IMAGE,
@@ -512,8 +595,11 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.001,    // $1.00/1M text/image/video
-        outputTokenPricePerK = 0.005,   // $5.00/1M (including thinking tokens)
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.001,      // $1.00/1M text/image/video
+            TokenTypes.Completion to 0.005,  // $5.00/1M (including thinking tokens)
+            TokenTypes.Thinking to 0.005,    // thinking tokens billed at output rate
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE, ChatMessageModality.VIDEO),
         outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -525,8 +611,10 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.0003,
-        outputTokenPricePerK = 0.0025,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.0003,
+            TokenTypes.Completion to 0.0025,
+        ),
         deprecated = true,
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE, ChatMessageModality.VIDEO),
         outputModalities = setOf(ChatMessageModality.TEXT)
@@ -540,8 +628,11 @@ object GeminiModels {
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
         // Billed at standard Gemini list rates for underlying model inference
-        inputTokenPricePerK = 0.00125,
-        outputTokenPricePerK = 0.01,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00125,
+            TokenTypes.Completion to 0.01,
+            TokenTypes.Thinking to 0.01,
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -553,8 +644,11 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00125,
-        outputTokenPricePerK = 0.01,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00125,
+            TokenTypes.Completion to 0.01,
+            TokenTypes.Thinking to 0.01,
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -566,8 +660,11 @@ object GeminiModels {
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = CoreProviders.Gemini,
-        inputTokenPricePerK = 0.00125,
-        outputTokenPricePerK = 0.01,
+        tokenPricingPerK = mapOf(
+            TokenTypes.Prompt to 0.00125,
+            TokenTypes.Completion to 0.01,
+            TokenTypes.Thinking to 0.01,
+        ),
         inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
         outputModalities = setOf(ChatMessageModality.TEXT)
     )

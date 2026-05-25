@@ -135,6 +135,31 @@ interface UsageInterface {
      */
     fun getUserCredits(user: User, from: LocalDate, to: LocalDate): List<CreditEntry>
     fun getUserBalance(userId: String): Double
+    /**
+     * Retrieves the individual usage rows for a session (and its descendant sessions).
+     *
+     * Each entry corresponds to a single recorded AI model invocation, including
+     * token counts, cost, timestamp, and (where retained) the input and output text.
+     *
+     * @param session The session whose usage rows are to be retrieved
+     * @return A list of [UsageRow] entries ordered by ascending datetime
+     */
+    fun getSessionUsageRows(session: Session): List<UsageRow>
+    /**
+     * Represents a single usage row recorded for a session.
+     */
+    data class UsageRow(
+        val id: Long,
+        val sessionId: String?,
+        val userId: String?,
+        val model: String?,
+        val datetime: Instant?,
+        val tokenCounts: Map<TokenTypes, Long>,
+        val cost: Double,
+        val inputText: String?,
+        val outputText: String?
+    )
+
 
     /**
      * Represents a single credit ledger entry for a user.

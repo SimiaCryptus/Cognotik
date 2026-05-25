@@ -65,12 +65,15 @@ interface ModelSchema {
     )
   }
 
-  enum class TokenTypes {
+  enum class TokenTypes(val parent: TokenTypes? = null) {
     Prompt,
     Completion,
-    Thinking,
-    Tools,
-    Cached
+    Cached(Prompt),
+    Thinking(Completion),
+    Tools(Completion),
+    Image(Completion),
+    CacheWrite5m(),
+    CacheWrite1h(),
   }
 
   data class UsageData(

@@ -17,7 +17,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     object MetadataTable : Table("metadata") {
         val sessionId: Column<String> = varchar("session_id", 255)
         val userEmail: Column<String> = varchar("user_email", 255)
-         val key: Column<String> = varchar("meta_key", 255)
+        val key: Column<String> = varchar("meta_key", 255)
         val value: Column<String?> = text("value").nullable()
         val timestamp: Column<Instant> = timestamp("timestamp")
         override val primaryKey = PrimaryKey(sessionId, userEmail, key)
@@ -376,7 +376,7 @@ class MetadataStorageDB : MetadataStorageInterface {
                  )
                  """,
                     "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
-                     "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
+                    "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
                 )
             },
             tables = listOf(MetadataTable),

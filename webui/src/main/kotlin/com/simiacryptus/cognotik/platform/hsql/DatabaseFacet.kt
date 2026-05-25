@@ -565,53 +565,6 @@ class DatabaseFacet(
             if (registeredDatabases.isEmpty()) {
                 throw IllegalStateException("Cannot start shared H2 server: no databases registered")
             }
-            // Before starting the server, check for stale lock files on file-backed
-            // databases. H2 uses `<dbpath>.lock.db` as its lock file. A stale
-            // lock file is one whose modification time hasn't been updated
-            // recently, indicating the owning JVM crashed without releasing it.
-            // If the lock file is live (recent heartbeat), another process is
-            // actively using the database; in that case we log an error and
-            // fall back to an ephemeral in-memory database so the application
-            // can still start (with non-persistent storage).
-            for ((db, path) in registeredDatabases) {
-                if (path.startsWith("mem:")) continue
-                val lockFile = File("$path.lock.db")
-                if (!lockFile.exists()) continue
-                val ageMs = System.currentTimeMillis() - lockFile.lastModified()
-                // H2 updates the lock file heartbeat every ~1s by default.
-                // Consider a lock file stale if its heartbeat is older than 30s.
-                if (ageMs > 30_000) {
-                    log.warn(
-                        "Found stale H2 lock file for database '{}' at {} (age={}ms); removing",
-                        db, lockFile.absolutePath, ageMs
-                    )
-                    try {
-                        if (!lockFile.delete()) {
-                            log.warn(
-                                "Failed to delete stale lock file: {} (database '{}'); the server start may fail",
-                                lockFile.absolutePath, db
-                            )
-                        }
-                    } catch (e: Exception) {
-                        log.warn(
-                            "Error deleting stale lock file {} for database '{}': {}",
-                            lockFile.absolutePath, db, e.message, e
-                        )
-                    }
-                } else {
-                    log.error(
-                        "H2 database '{}' at '{}' is locked by another running process " +
-                                "(lock file {} heartbeat age={}ms). " +
-                                "Falling back to an ephemeral in-memory database for '{}'; " +
-                                "data will NOT be persisted. To enable persistence, stop the other " +
-                                "instance, configure a different database location via " +
-                                "-Dcognotik.db.root=<path>, or point this instance at a shared " +
-                                "database server via -Dcognotik.db.serviceUrl=<jdbc-url>.",
-                        db, path, lockFile.absolutePath, ageMs, db
-                    )
-                    registeredDatabases[db] = "mem:$db"
-                }
-            }
             // Try multiple times in case the chosen ephemeral port is taken between
             // our probe and H2's bind (common when multiple application instances
             // are racing for the same port range).

@@ -189,36 +189,7 @@ open class ChatSocketManager(
       // Write assistant response to transcript
       transcriptStream?.write("## Assistant\n$response\n\n".transcriptFilter().toByteArray())
       transcriptStream?.flush()
-
-      try {
-        val answer = extractTopics(response, model)
-        val topicsText = try {
-          answer.topics.let { topics ->
-            if (topics?.isNotEmpty() == true) {
-              topics.forEach { (topicType, entities) ->
-                val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
-                synchronized(topicList) {
-                  topicList.addAll(entities)
-                }
-              }
-              val joinToString =
-                topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
-              task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
-              "\n\n" + joinToString
-            } else {
-              ""
-            }
-          }
-        } catch (e: Exception) {
-          task.error(e)
-          log.error("Error in topic extraction", e)
-          ""
-        }
-        response + topicsText
-      } catch (e: Exception) {
-        log.error("Error in topic extraction", e)
-        response
-      }
+      response
     }
   }
 
@@ -232,22 +203,6 @@ open class ChatSocketManager(
         function1(target)
       }
     }.forEach { it.get() }
-  }
-
-  private fun extractTopics(response: String, model: ChatInterface): Topics {
-    val topicsParsedActor = ParsedAgent(
-      resultClass = Topics::class.java,
-      prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
-      model = model,
-      temperature = temperature,
-      name = "Topics",
-      parsingChatter = fastModel,
-    )
-    return if (fastTopicParsing) {
-      topicsParsedActor.getParser().apply(response)
-    } else {
-      topicsParsedActor.answer(listOf(response)).obj
-    }
   }
 
   protected open fun chatMessages(): List<ModelSchema.ChatMessage> = synchronized(messagesLock) {
