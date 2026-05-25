@@ -7,7 +7,7 @@ slf4j = "2.0.17"
 logback = "1.5.23"
 jackson = "2.19.0"
 aws = "2.41.24"
-kotlin = "2.3.0"
+kotlin = "2.3.20"
 commons-text = "1.13.1"
 commons-io = "2.21.0"
 httpclient5 = "5.6"
@@ -16,8 +16,8 @@ gson = "2.13.2"
 hsqldb = "2.7.4"
 antlr = "4.13.2"
 asm = "9.8"
-kotlinx-coroutines = "1.10.2"
-kotlinx-collections-immutable = "0.3.8"
+kotlinx-coroutines = "1.11.0"
+kotlinx-collections-immutable = "0.4.0"
 mockito = "5.17.0"
 mockk = "1.13.5"
 flexmark = "0.64.8"
@@ -131,8 +131,6 @@ selenium-java = { group = "org.seleniumhq.selenium", name = "selenium-java", ver
 pty4j = { group = "org.jetbrains.pty4j", name = "pty4j", version = "0.13.11" }
 webdrivermanager = { group = "io.github.bonigarcia", name = "webdrivermanager", version.ref = "webdrivermanager" }
 remoterobot-fixtures = { group = "com.intellij.remoterobot", name = "remote-fixtures", version.ref = "remoterobot" }
-remoterobot-robot = { group = "com.intellij.remoterobot", name = "remote-robot", version.ref = "remoterobot" }
-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 batik-transcoder = { group = "org.apache.xmlgraphics", name = "batik-transcoder", version.ref = "batik" }
 batik-codec = { group = "org.apache.xmlgraphics", name = "batik-codec", version.ref = "batik" }
 httpclient5-fluent = { group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version.ref = "httpclient5" }
@@ -162,19 +160,6 @@ google-http-client-gson = { group = "com.google.http-client", name = "google-htt
 commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
 commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commonsCsv" }
 odfdom-java = { group = "org.odftoolkit", name = "odfdom-java", version.ref = "odftoolkit" }
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
-androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "androidx-swiperefreshlayout" }
-androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidx-webkit" }
-androidx-emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "androidx-emoji2" }
-androidx-emoji2-bundled = { group = "androidx.emoji2", name = "emoji2-bundled", version.ref = "androidx-emoji2" }
-slf4jandroid = { group = "org.slf4j", name = "slf4j-android", version.ref = "slf4jandroid" }
-androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext" }
-androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-test-espresso" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }

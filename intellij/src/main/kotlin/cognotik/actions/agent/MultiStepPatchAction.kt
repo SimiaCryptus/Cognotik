@@ -1,6 +1,5 @@
 package cognotik.actions.agent
 
-import ai.grazie.utils.mpp.UUID
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -34,6 +33,7 @@ import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
+import java.util.UUID
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
@@ -219,7 +219,7 @@ class MultiStepPatchAction : BaseAction() {
             try {
                 val taskTabs = TabbedDisplay(task)
                 architectureResponse?.obj?.tasks?.map { (paths, description) ->
-                    var description = (description ?: UUID.random().toString()).trim()
+                    var description = (description ?: UUID.randomUUID().toString()).trim()
 
                     while (description.startsWith("#")) {
                         description = description.substring(1)

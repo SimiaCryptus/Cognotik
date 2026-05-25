@@ -198,20 +198,23 @@ open class CognotikApps(
         }
     }
 
-
-    open fun init(actualPort: Int, args: Array<out String>) {
+    init {
         require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
         ResourceApps("apps/apps.json").init()
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
+        ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        initDynamicEnums()
+    }
+
+    open fun init(actualPort: Int, args: Array<out String>) {
         initSystemTray()
         startSocketServer(actualPort + 1)
         ApplicationServices.pluginManager.apply {
             getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
             subscribeToChanges()
         }
-        initDynamicEnums()
 
         Runtime.getRuntime().addShutdownHook(Thread {
             log.info("Shutdown hook triggered, stopping server...")

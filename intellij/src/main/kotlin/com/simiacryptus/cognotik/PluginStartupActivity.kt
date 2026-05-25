@@ -6,12 +6,14 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.startup.ProjectActivity
+import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.FileValidators
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -31,14 +33,21 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
-    override suspend fun execute(project: Project) {
-        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
-        ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
-        configLogging()
+
+    init {
+        require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+        ResourceApps("apps/apps.json").init()
+        //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
         ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
+    }
+
+    override suspend fun execute(project: Project) {
+        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
+        ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
+        configLogging()
 
         System.getProperty("cognotik.config")?.let { configFile ->
             try {

@@ -1,8 +1,8 @@
 import org.jetbrains.changelog.Changelog
- import org.jetbrains.changelog.markdownToHTML
- import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
- plugins {
+plugins {
     kotlin("jvm")
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
@@ -21,6 +21,8 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
+
     implementation(project(":core")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")

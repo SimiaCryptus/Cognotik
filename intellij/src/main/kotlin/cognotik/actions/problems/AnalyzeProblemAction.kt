@@ -44,7 +44,7 @@ class AnalyzeProblemAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project: Project = e.project ?: return
-        val item = e.getData(PlatformDataKeys.SELECTED_ITEM) as ProblemNode? ?: return
+        val item = e.getData(PlatformDataKeys.SELECTED_ITEM) as? ProblemNode? ?: return
         val file: VirtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
         val gitRoot = findGitRoot(file)
 
@@ -52,7 +52,7 @@ class AnalyzeProblemAction : AnAction() {
             try {
                 val problemInfo = buildString {
                     appendLine("File: ${file.path}")
-                    appendLine("Problem: ${item.text}")
+                    appendLine("Problem: ${item.getText()}")
 
                     val psiFile = PsiManager.getInstance(project).findFile(file)
                     val fileType = if (psiFile != null) {
@@ -65,8 +65,8 @@ class AnalyzeProblemAction : AnAction() {
 
                     val document = FileDocumentManager.getInstance().getDocument(file)
                     if (document != null) {
-                        val lineNumber = item.line
-                        val column = item.column
+                        val lineNumber = item.getLine()
+                        val column = item.getColumn()
                         appendLine("Position: Line ${lineNumber + 1}, Column ${column + 1}")
 
                         val startLine = maxOf(0, lineNumber - 2)

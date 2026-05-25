@@ -18,12 +18,14 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
+import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.log
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
@@ -282,13 +284,18 @@ data class AppSettingsState(
 
         val localUser: User = com.simiacryptus.cognotik.platform.model.defaultUser
 
-        @JvmStatic
-        val instance: AppSettingsState by lazy {
+        init {
+            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+            ResourceApps("apps/apps.json").init()
+            //ResourceApps("/apps/disabled_apps.json").init()
             CoreProviders.init()
             CoreTasks.init()
             ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
             initDynamicEnums()
-            require(APIProvider.values().isNotEmpty()) { "No API providers registered" }
+        }
+
+        @JvmStatic
+        val instance: AppSettingsState by lazy {
             ApplicationManager.getApplication()?.getService(AppSettingsState::class.java) ?: AppSettingsState()
         }
 
