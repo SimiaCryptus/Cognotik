@@ -53,7 +53,6 @@ interface UserSettingsInterface {
  */
 data class UserSettings(
     val apis: MutableList<ApiData> = mutableListOf(),
-    val tools: MutableList<ToolData> = mutableListOf(),
     val etc: MutableMap<String, Any> = mutableMapOf(),
     val passwordHash: String? = null,
 )

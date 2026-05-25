@@ -328,7 +328,7 @@ class BrainstormingTask(
           transcript?.write("${option.description}\n\n".toByteArray())
         }
       }
-      transcript?.write(generatedOptionsString)
+      transcript?.write(generatedOptionsString.toByteArray())
 
       // Display generated options
       optionsTask.add(
@@ -583,7 +583,7 @@ class BrainstormingTask(
           }\n".toByteArray()
         )
       }
-      transcript_detailed?.write(generatedOptionsString)
+      transcript_detailed?.write(generatedOptionsString.toByteArray())
       
       transcript?.write("\n</div>\n\n".toByteArray())
 

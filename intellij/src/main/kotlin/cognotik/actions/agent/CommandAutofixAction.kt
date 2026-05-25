@@ -80,10 +80,6 @@ class CommandAutofixAction : BaseAction() {
                                     cmdPanel.commandField.selectedItem?.toString()
                                         ?: throw IllegalArgumentException("No executable selected")
                                 )
-                                val tools =
-                                  ApplicationServices.fileApplicationServices().userSettingsManager
-                                    .getUserSettings(localUser).tools
-                                tools.addAll(ToolProvider.scanRecursive(File(executable.absolutePath)))
                                 val argument = cmdPanel.argumentsField.selectedItem?.toString() ?: ""
                                 AppSettingsState.instance.recentArguments?.remove(argument)
                                 AppSettingsState.instance.recentArguments?.add(0, argument)
@@ -478,10 +474,7 @@ class CommandAutofixAction : BaseAction() {
                     selectedItem = workingDirectory.absolutePath
                     preferredSize = Dimension(400, preferredSize.height)
                 }
-                val executables: List<String>? =
-                  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser)
-                    .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
-                val commandField = ComboBox(executables?.toTypedArray() ?: emptyArray()).apply {
+                val commandField = ComboBox(emptyArray<String>()).apply {
                     isEditable = true
                     preferredSize = Dimension(400, preferredSize.height)
                 }

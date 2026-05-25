@@ -9,8 +9,10 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.resolveTool
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -55,14 +57,9 @@ class RunToolTask(
   )
 
   override fun promptSegment(): String {
-    val executables: List<String>? =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(orchestrationConfig.user)
-        .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
-
     return """
             RunTool - Execute external CLI tools with custom arguments.
             * **Use when:** You need to run compilers, linters, search tools, or custom scripts.
-            * **Available tools:** ${executables?.joinToString(", ") ?: "None"}
             * **Inputs:** Specify the `tool` name and a list of `args`.
         """.trimIndent()
   }
@@ -90,21 +87,9 @@ class RunToolTask(
         val args = executionConfig?.args ?: emptyList()
         val workingDir = executionConfig?.workingDir?.let { File(it) }
           ?: File(orchestrationConfig.absoluteWorkingDir ?: ".")
-        val tools =
-          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(orchestrationConfig.user).tools
         val executionConfig = this.executionConfig ?: throw IllegalStateException("Execution config is null")
-        val executable =
-          tools.find { it.provider?.getExecutables()?.contains(executionConfig.tool) == true }?.let { toolData ->
-            if (toolData.path != null) {
-              toolData.provider!!.resolve(toolData.path).forEach { resolved -> File(resolved) }
-            }
-            val resolved: String? = toolData.resolve(executionConfig.tool)
-            if (resolved != null) {
-              File(resolved)
-            } else {
-              null
-            }
-          }
+        val executable = tool.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+          ?: throw IllegalArgumentException("Executable '$tool' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
         val command = listOf(executable?.absolutePath
           ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
         ) + args

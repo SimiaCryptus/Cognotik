@@ -94,11 +94,7 @@ class AutoFixTask(
   }
 
   override fun promptSegment(): String {
-    val executables =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(orchestrationConfig.user)
-        .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
-        .joinToString("\n") { "    * $it" }
-    return typeConfig.promptTemplate.replace("{executables}", executables).trim()
+    return typeConfig.promptTemplate.trim()
   }
 
   override val typeConfig: AutoFixTaskTypeConfig
@@ -134,21 +130,8 @@ class AutoFixTask(
               settings = PatchApp.Settings(
                 commands = executionConfig?.commands?.map { commandWithDir ->
                   val alias = (listOf(commandWithDir.executable) + commandWithDir.arguments).firstOrNull()
-                  val toolExecutable = if (alias != null) {
-                    val tools =
-                      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
-                        orchestrationConfig.user
-                      ).tools
-                    tools.find { it.provider?.getExecutables()?.contains(alias) == true }?.let { toolData ->
-                      if (toolData.path != null) {
-                        toolData.provider!!.resolve(toolData.path).firstOrNull()?.let { File(it) }
-                      } else {
-                        toolData.resolve(alias)?.let { File(it) }
-                      }
-                    }
-                  } else null
                   PatchApp.CommandSettings(
-                    executable = toolExecutable ?: alias?.resolveTool(this.root)
+                    executable = alias?.resolveTool(this.root)
                     ?: throw IllegalArgumentException("Command not found: $alias"),
                     arguments = (listOf(commandWithDir.executable) + commandWithDir.arguments).drop(1)
                       .joinToString(" "),
