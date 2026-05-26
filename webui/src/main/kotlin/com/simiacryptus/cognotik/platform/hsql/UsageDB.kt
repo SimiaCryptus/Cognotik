@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.let
 
 class UsageDB : UsageInterface {
@@ -92,6 +94,64 @@ class UsageDB : UsageInterface {
 
     private val database: Database get() = ExposedDatabase.get(facet)
     val userSettingsManager by lazy { ApplicationServices.fileApplicationServices().userSettingsManager }
+     /**
+      * On-heap cache of per-session usage summaries (subtree-aware).
+      *
+      * Keyed by session ID, the value is the same shape returned by
+      * [getSessionUsageSummary]. Entries are evicted via TTL (see
+      * [sessionUsageCacheTtlMillis]) and explicitly invalidated whenever a
+      * usage row is written for the session (or any of its descendants),
+      * or when the parent/child relationship changes.
+      *
+      * This cache is intentionally scoped to per-session usage aggregation,
+      * which is the hot path for the sessions listing UI. It does NOT cache
+      * global cost/budget or per-user aggregates, which must remain realtime.
+      */
+     private data class SessionUsageCacheEntry(
+         val value: Map<String, ModelSchema.Usage>,
+         val loadedAtNanos: Long,
+     )
+     private val sessionUsageCache = ConcurrentHashMap<String, SessionUsageCacheEntry>()
+     private val sessionUsageCacheHits = AtomicLong(0)
+     private val sessionUsageCacheMisses = AtomicLong(0)
+     private val sessionUsageCacheTtlMillis: Long =
+         System.getProperty("cognotik.sessionUsage.cacheTtlMillis", "300000").toLong()
+     private fun isFresh(entry: SessionUsageCacheEntry): Boolean {
+         if (sessionUsageCacheTtlMillis <= 0) return true
+         val ageMs = (System.nanoTime() - entry.loadedAtNanos) / 1_000_000L
+         return ageMs < sessionUsageCacheTtlMillis
+     }
+     /**
+      * Invalidate the cached usage summary for [sessionId] and every ancestor.
+      * Must be invoked inside a transaction (it consults SessionParentsTable).
+      */
+     private fun invalidateSessionAndAncestors(sessionId: String) {
+         val toInvalidate = linkedSetOf<String>()
+         val queue = ArrayDeque<String>()
+         queue.add(sessionId)
+         while (queue.isNotEmpty()) {
+             val current = queue.removeFirst()
+             if (!toInvalidate.add(current)) continue
+             SessionParentsTable
+                 .selectAll()
+                 .where { SessionParentsTable.childSessionId eq current }
+                 .forEach { row ->
+                     val parentId = row[SessionParentsTable.parentSessionId]
+                     if (parentId !in toInvalidate) queue.add(parentId)
+                 }
+         }
+         for (sid in toInvalidate) sessionUsageCache.remove(sid)
+     }
+     /** Returns a snapshot of session-usage cache statistics: (hits, misses, size). */
+     fun sessionUsageCacheStats(): Triple<Long, Long, Int> =
+         Triple(sessionUsageCacheHits.get(), sessionUsageCacheMisses.get(), sessionUsageCache.size)
+     /** Clear all cached session usage summaries. */
+     fun invalidateSessionUsageCache() {
+         val size = sessionUsageCache.size
+         sessionUsageCache.clear()
+         log.debug("Invalidated all {} cached session usage summaries", size)
+     }
+
 
     override fun incrementUsage(
         session: Session,
@@ -131,6 +191,9 @@ class UsageDB : UsageInterface {
                 if (cost != 0.0 && user.email.isNotEmpty()) {
                     applyBudgetDelta(user.email, -cost)
                 }
+                 // Invalidate cached usage summaries for this session and any
+                 // ancestor session that aggregates over it.
+                 invalidateSessionAndAncestors(session.sessionId)
             }
             log.debug(
                 "Usage incremented for session: {}, user: {}, model: {} (cost_scaling_factor={})",
@@ -191,10 +254,24 @@ class UsageDB : UsageInterface {
 
     override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> {
         log.debug("Getting session usage summary for session: {}", session)
+         // Fast path: serve from on-heap cache when fresh.
+         sessionUsageCache[session.sessionId]?.let { entry ->
+             if (isFresh(entry)) {
+                 sessionUsageCacheHits.incrementAndGet()
+                 return entry.value
+             } else {
+                 sessionUsageCache.remove(session.sessionId, entry)
+             }
+         }
+         sessionUsageCacheMisses.incrementAndGet()
         return transaction(database) {
             val allSessionIds = collectSessionIds(session.sessionId)
             log.debug("Collected session IDs (including children): {}", allSessionIds)
-            if (allSessionIds.isEmpty()) return@transaction emptyMap()
+             if (allSessionIds.isEmpty()) {
+                 sessionUsageCache[session.sessionId] =
+                     SessionUsageCacheEntry(emptyMap(), System.nanoTime())
+                 return@transaction emptyMap()
+             }
             // Fetch usage rows for the relevant sessions.
             val usageRows = UsageTable
                 .selectAll()
@@ -206,7 +283,11 @@ class UsageDB : UsageInterface {
                         row[UsageTable.cost] ?: 0.0
                     )
                 }
-            if (usageRows.isEmpty()) return@transaction emptyMap()
+             if (usageRows.isEmpty()) {
+                 sessionUsageCache[session.sessionId] =
+                     SessionUsageCacheEntry(emptyMap(), System.nanoTime())
+                 return@transaction emptyMap()
+             }
             val usageIds = usageRows.map { it.first }
             val usageById = usageRows.associateBy { it.first }
             // Fetch token rows for those usage ids.
@@ -250,6 +331,8 @@ class UsageDB : UsageInterface {
                     counts = countMap, total_tokens = totalTokens, cost = costs.getOrDefault(model, 0.0)
                 )
             }
+             sessionUsageCache[session.sessionId] =
+                 SessionUsageCacheEntry(summary, System.nanoTime())
             summary
         }
     }
@@ -258,7 +341,25 @@ class UsageDB : UsageInterface {
     ): Map<String, Map<String, ModelSchema.Usage>> {
         if (sessionIds.isEmpty()) return emptyMap()
         log.debug("Bulk session usage summary for {} session(s)", sessionIds.size)
-        val sessionIdSet = sessionIds.toSet()
+         val sessionIdSet = sessionIds.toSet()
+
+         // Serve any cache hits up-front; only query the DB for the remainder.
+         val cacheHits = LinkedHashMap<String, Map<String, ModelSchema.Usage>>()
+         val toLoad = mutableSetOf<String>()
+         for (sid in sessionIdSet) {
+             val entry = sessionUsageCache[sid]
+             if (entry != null && isFresh(entry)) {
+                 sessionUsageCacheHits.incrementAndGet()
+                 cacheHits[sid] = entry.value
+             } else {
+                 if (entry != null) sessionUsageCache.remove(sid, entry)
+                 sessionUsageCacheMisses.incrementAndGet()
+                 toLoad.add(sid)
+             }
+         }
+         if (toLoad.isEmpty()) {
+             return sessionIds.associateWith { cacheHits[it] ?: emptyMap() }
+         }
         return transaction(database) {
             // Fetch every usage row across all requested sessions in one query.
             // Intentionally does NOT recurse into descendant sessions — this is
@@ -266,7 +367,7 @@ class UsageDB : UsageInterface {
             // single session, not a subtree).
             val usageRows = UsageTable
                 .selectAll()
-                .where { UsageTable.sessionId inList sessionIdSet }
+                 .where { UsageTable.sessionId inList toLoad }
                 .map { row ->
                     UsageRowSlim(
                         id = row[UsageTable.id],
@@ -275,15 +376,11 @@ class UsageDB : UsageInterface {
                         cost = row[UsageTable.cost] ?: 0.0,
                     )
                 }
-            if (usageRows.isEmpty()) {
-                return@transaction sessionIds.associateWith { emptyMap<String, ModelSchema.Usage>() }
-            }
-            val usageIds = usageRows.map { it.id }
-            // Group token rows by usage_id once for the whole batch.
-            val tokenRowsByUsageId = UsageTokensTable
-                .selectAll()
-                .where { UsageTokensTable.usageId inList usageIds }
-                .groupBy { it[UsageTokensTable.usageId] }
+             val tokenRowsByUsageId = if (usageRows.isEmpty()) emptyMap()
+             else UsageTokensTable
+                 .selectAll()
+                 .where { UsageTokensTable.usageId inList usageRows.map { it.id } }
+                 .groupBy { it[UsageTokensTable.usageId] }
             // Per-session, per-model accumulators.
             val countsBySession = linkedMapOf<String, LinkedHashMap<String, MutableMap<TokenTypes, Long>>>()
             val costsBySession = linkedMapOf<String, LinkedHashMap<String, Double>>()
@@ -307,8 +404,13 @@ class UsageDB : UsageInterface {
             // Materialize into the public summary shape, preserving the caller's
             // requested session ordering and including empty entries for sessions
             // that had no usage rows.
-            sessionIds.associateWith { sid ->
-                val sessionCounts = countsBySession[sid] ?: return@associateWith emptyMap()
+             val loaded = LinkedHashMap<String, Map<String, ModelSchema.Usage>>()
+             for (sid in toLoad) {
+                 val sessionCounts = countsBySession[sid]
+                 if (sessionCounts == null) {
+                     loaded[sid] = emptyMap()
+                     continue
+                 }
                 val sessionCosts = costsBySession[sid].orEmpty()
                 val summary = LinkedHashMap<String, ModelSchema.Usage>()
                 for ((model, countMap) in sessionCounts) {
@@ -319,7 +421,16 @@ class UsageDB : UsageInterface {
                         cost = sessionCosts[model] ?: 0.0,
                     )
                 }
-                summary
+                 loaded[sid] = summary
+             }
+             // Populate cache for loaded entries.
+             val now = System.nanoTime()
+             for ((sid, summary) in loaded) {
+                 sessionUsageCache[sid] = SessionUsageCacheEntry(summary, now)
+             }
+             // Merge cache hits and freshly loaded entries, preserving caller order.
+             sessionIds.associateWith { sid ->
+                 cacheHits[sid] ?: loaded[sid] ?: emptyMap()
             }
         }
     }
@@ -388,6 +499,7 @@ class UsageDB : UsageInterface {
                 UserCreditsTable.deleteAll()
                 UserBudgetTable.deleteAll()
             }
+             sessionUsageCache.clear()
             log.info("All usage data cleared successfully")
         } catch (e: Exception) {
             log.error("Failed to clear usage data", e)
@@ -403,6 +515,10 @@ class UsageDB : UsageInterface {
                 it[childSessionId] = child.sessionId
                 it[parentSessionId] = parent.sessionId
             }
+             // The new parent (and any of its ancestors) now aggregates over `child`,
+             // so their cached summaries are stale. Also invalidate `child` for safety.
+             invalidateSessionAndAncestors(parent.sessionId)
+             sessionUsageCache.remove(child.sessionId)
         }
     }
 

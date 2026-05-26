@@ -15,9 +15,16 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * HSQL-backed implementation of [UserSettingsInterface] using Exposed DSL.
+  *
+  * Maintains an on-heap cache of [UserSettings] keyed by [User] to avoid
+  * round-tripping to the database on every read. Cache entries have a
+  * configurable TTL (default 5 minutes) after which they are reloaded from
+  * the database on next access. Writes update the cache atomically with the
+  * underlying database row so subsequent reads observe the new value.
  */
 open class UserSettingsDB : UserSettingsInterface {
 
@@ -31,15 +38,50 @@ open class UserSettingsDB : UserSettingsInterface {
         override val primaryKey = PrimaryKey(userKey)
     }
 
-    private val cache = ConcurrentHashMap<User, UserSettings>()
+     /**
+      * Cache entry pairing a value with the wall-clock time it was loaded so
+      * we can expire it after [cacheTtlMillis].
+      */
+     private data class CacheEntry(val value: UserSettings, val loadedAtNanos: Long)
+
+     private val cache = ConcurrentHashMap<User, CacheEntry>()
+
+     /** Cache statistics, exposed for diagnostics/testing. */
+     private val cacheHits = AtomicLong(0)
+     private val cacheMisses = AtomicLong(0)
+
+     /** TTL for cache entries in milliseconds. Override via system property. */
+     private val cacheTtlMillis: Long =
+         System.getProperty("cognotik.userSettings.cacheTtlMillis", "300000").toLong()
+
+     private fun isFresh(entry: CacheEntry): Boolean {
+         if (cacheTtlMillis <= 0) return true
+         val ageMs = (System.nanoTime() - entry.loadedAtNanos) / 1_000_000L
+         return ageMs < cacheTtlMillis
+     }
 
     override fun getUserSettings(user: User): UserSettings {
         log.debug("Retrieving user settings for user: {}", user)
-        cache[user]?.let { return it }
+         cache[user]?.let { entry ->
+             if (isFresh(entry)) {
+                 cacheHits.incrementAndGet()
+                 log.debug("Cache hit for user: {}", user)
+                 return entry.value
+             } else {
+                 log.debug("Cache entry expired for user: {}; reloading", user)
+                 cache.remove(user, entry)
+             }
+         }
         return synchronized(cache) {
-            cache[user]?.let { return@synchronized it }
+             cache[user]?.let { entry ->
+                 if (isFresh(entry)) {
+                     cacheHits.incrementAndGet()
+                     return@synchronized entry.value
+                 }
+             }
+             cacheMisses.incrementAndGet()
             val loaded = loadFromDb(user) ?: UserSettings()
-            cache[user] = loaded
+             cache[user] = CacheEntry(loaded, System.nanoTime())
             loaded
         }
     }
@@ -108,13 +150,34 @@ open class UserSettingsDB : UserSettingsInterface {
                 }
                 computed
             }
-            cache[user] = merged
+             cache[user] = CacheEntry(merged, System.nanoTime())
             log.debug("Successfully updated user settings for user: {}", user)
         } catch (e: Exception) {
+             // On failure, invalidate cache so we don't serve a stale value
+             // that disagrees with the database.
+             cache.remove(user)
             log.error("Failed to write user settings for user: {}: {}", user, e.message, e)
             throw e
         }
     }
+     /**
+      * Invalidate the cached entry for [user], forcing the next read to
+      * reload from the database. Useful when external processes may have
+      * modified the row out-of-band.
+      */
+     fun invalidate(user: User) {
+         cache.remove(user)
+         log.debug("Invalidated cache entry for user: {}", user)
+     }
+     /** Clear all cached entries. */
+     fun invalidateAll() {
+         val size = cache.size
+         cache.clear()
+         log.debug("Invalidated all {} cached user settings entries", size)
+     }
+     /** Returns a snapshot of cache statistics: (hits, misses, size). */
+     fun cacheStats(): Triple<Long, Long, Int> =
+         Triple(cacheHits.get(), cacheMisses.get(), cache.size)
 
     private fun loadFromDb(user: User): UserSettings? {
         val key = userKey(user)
@@ -143,43 +206,6 @@ open class UserSettingsDB : UserSettingsInterface {
         }
     }
 
-    private fun writeToDb(user: User, settings: UserSettings) {
-        val key = userKey(user)
-        val json = settings.toJson()
-        val now = Instant.now()
-        transaction(facet.database) {
-            val updated = UserSettingsTable.update({ UserSettingsTable.userKey eq key }) {
-                it[settingsJson] = json
-                it[timestamp] = now
-            }
-            if (updated == 0) {
-                try {
-                    UserSettingsTable.insert {
-                        it[userKey] = key
-                        it[settingsJson] = json
-                        it[timestamp] = now
-                    }
-                } catch (e: java.sql.SQLException) {
-                    // Race: another writer inserted between our UPDATE and INSERT. Retry UPDATE.
-                    log.debug(
-                        "Insert race detected for user_settings (user={}); retrying update: {}",
-                        user, e.message
-                    )
-                    val retried = UserSettingsTable.update({ UserSettingsTable.userKey eq key }) {
-                        it[settingsJson] = json
-                        it[timestamp] = now
-                    }
-                    if (retried == 0) {
-                        log.error(
-                            "Failed to upsert user settings after insert race for user: {}",
-                            user, e
-                        )
-                        throw e
-                    }
-                }
-            }
-        }
-    }
 
     private fun userKey(user: User): String {
         val email = try {

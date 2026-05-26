@@ -32,6 +32,7 @@ class UserSettingsServlet : HttpServlet() {
             provider = apiData.provider
           )//.validate()
         }.toMutableList(),
+        collectSessionData = settings.collectSessionData,
       ).jsonCast<Map<String,Any>>() + mapOf(
         "user" to user
       )
@@ -77,7 +78,6 @@ class UserSettingsServlet : HttpServlet() {
                         </html>
                   """.trimIndent()
       )
-      response
     }
   }
 
@@ -100,6 +100,7 @@ class UserSettingsServlet : HttpServlet() {
     }.toMutableList()
     val reconstructedSettings = UserSettings(
       apis = reconstructedApis,
+        collectSessionData = settings.collectSessionData,
     )
     userSettingsManager.updateUserSettings(
       user,

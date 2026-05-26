@@ -17,6 +17,90 @@ import java.util.*
 class SessionsServlet : HttpServlet() {
     val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
     val usageDB by lazy { ApplicationServices.fileApplicationServices().usageDB }
+    override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
+        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val action = req.getParameter("action")?.lowercase()
+        when (action) {
+            "delete" -> handleDelete(req, resp, user)
+            else -> {
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.contentType = "application/json"
+                resp.writer.write("{\"success\":false,\"error\":\"Unknown action: ${action ?: ""}\"}")
+            }
+        }
+    }
+
+    override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
+        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        handleDelete(req, resp, user)
+    }
+
+    private fun handleDelete(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
+        val sessionId = req.getParameter("sessionId")
+        if (sessionId.isNullOrBlank()) {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.contentType = "application/json"
+            resp.writer.write("{\"success\":false,\"error\":\"Missing sessionId parameter\"}")
+            return
+        }
+        val session = try {
+            Session(sessionId)
+        } catch (e: Exception) {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.contentType = "application/json"
+            resp.writer.write("{\"success\":false,\"error\":\"Invalid sessionId\"}")
+            return
+        }
+        // Authorize: only the owner (or a user with a metadata entry for the session) can delete.
+        val ownerId = try {
+            metadataDB.getSessionOwner(session)
+        } catch (e: Exception) {
+            log.warn("Failed to fetch owner for session $sessionId", e)
+            null
+        }
+        val userSessions = try {
+            metadataDB.listSessions(user).toSet()
+        } catch (e: Exception) {
+            log.warn("Failed to list sessions for user ${user.email}", e)
+            emptySet()
+        }
+        val isOwner = ownerId != null && ownerId == user.email
+        val hasUserMetadata = userSessions.contains(sessionId)
+        if (!isOwner && !hasUserMetadata) {
+            resp.status = HttpServletResponse.SC_FORBIDDEN
+            resp.contentType = "application/json"
+            resp.writer.write("{\"success\":false,\"error\":\"Not authorized to delete this session\"}")
+            return
+        }
+        try {
+            ApplicationServices.fileApplicationServices().dataStorageFactory.deleteSession(user, session)
+            log.info("User ${user.email} deleted session $sessionId")
+            resp.status = HttpServletResponse.SC_OK
+            resp.contentType = "application/json"
+            resp.writer.write("{\"success\":true,\"sessionId\":\"${jsonStringInner(sessionId)}\"}")
+        } catch (e: Exception) {
+            log.error("Failed to delete session $sessionId for user ${user.email}", e)
+            // Fallback: delete metadata directly if dataStorage path failed
+            try {
+                metadataDB.deleteSession(user, session)
+                resp.status = HttpServletResponse.SC_OK
+                resp.contentType = "application/json"
+                resp.writer.write("{\"success\":true,\"sessionId\":\"${jsonStringInner(sessionId)}\",\"warning\":\"Metadata deleted; storage cleanup may have failed\"}")
+            } catch (e2: Exception) {
+                log.error("Fallback metadata-only delete also failed for session $sessionId", e2)
+                resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                resp.contentType = "application/json"
+                resp.writer.write("{\"success\":false,\"error\":\"Failed to delete session\"}")
+            }
+        }
+    }
+
+    private fun jsonStringInner(s: String): String {
+        // Returns the content of a JSON string without surrounding quotes
+        val full = jsonString(s)
+        return full.substring(1, full.length - 1)
+    }
+
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to list sessions")
@@ -70,16 +154,28 @@ class SessionsServlet : HttpServlet() {
                 emptyMap()
             }
         }
-        // Compute per-child usage summaries for visible parent sessions
+        // Compute per-child usage summaries for visible parent sessions using a
+        // single bulk query. Children in the listing are leaf-style entries (we
+        // don't recurse further into their descendants here), which matches the
+        // non-recursive semantics of getSessionUsageSummaryBulk.
+        val childSessionIds: List<String> = visibleMetadata
+            .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
+            .map { it.id.sessionId }
+            .distinct()
+        val childUsagesById: Map<String, Map<String, ModelSchema.Usage>> = if (childSessionIds.isEmpty()) {
+            emptyMap()
+        } else {
+            try {
+                usageDB.getSessionUsageSummaryBulk(childSessionIds)
+            } catch (e: Exception) {
+                log.warn("Failed to bulk-load child session usage summaries", e)
+                emptyMap()
+            }
+        }
         val childUsages: Map<Session, Map<String, ModelSchema.Usage>> = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
             .associate { childMeta ->
-                childMeta.id to try {
-                    usageDB.getSessionUsageSummary(childMeta.id)
-                } catch (e: Exception) {
-                    log.warn("Failed to load usage for child session ${childMeta.id}", e)
-                    emptyMap()
-                }
+                childMeta.id to (childUsagesById[childMeta.id.sessionId] ?: emptyMap())
             }
 
         // Sort
@@ -150,6 +246,7 @@ class SessionsServlet : HttpServlet() {
         if (usage == null) return 0.0
         return usage.values.sumOf { it.cost }
     }
+
     /**
      * Collects all token types present across the given usage map, in a stable display order.
      * Prompt and Completion are shown first (if present), followed by any other token types
@@ -171,10 +268,12 @@ class SessionsServlet : HttpServlet() {
         ordered.addAll(rest)
         return ordered
     }
+
     private fun tokensOfType(usage: Map<String, ModelSchema.Usage>?, type: TokenTypes): Long {
         if (usage == null) return 0L
         return usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
     }
+
     private fun friendlyTokenTypeName(type: TokenTypes): String {
         // Insert spaces between camel case boundaries for readability
         val name = type.name
@@ -288,7 +387,8 @@ class SessionsServlet : HttpServlet() {
                     cFirst = false
                     sb.append(jsonString(model)).append(":{")
                     sb.append("\"promptTokens\":").append(u.counts.getOrDefault(TokenTypes.Prompt, 0)).append(",")
-                    sb.append("\"completionTokens\":").append(u.counts.getOrDefault(TokenTypes.Completion, 0)).append(",")
+                    sb.append("\"completionTokens\":").append(u.counts.getOrDefault(TokenTypes.Completion, 0))
+                        .append(",")
                     sb.append("\"totalTokens\":").append(u.total_tokens).append(",")
                     sb.append("\"cost\":").append(u.cost ?: 0.0)
                     sb.append("}")
@@ -376,8 +476,9 @@ class SessionsServlet : HttpServlet() {
                 appendSortableHeader(this, "Cost", "cost", sortBy, sortDir, page, pageSize, numeric = true)
                 append("<th class=\"num\">Subsessions</th>")
                 append("<th>Details</th>")
-                    append("<th>Usage Rows</th>")
+                append("<th>Usage Rows</th>")
                 append("<th>Share</th>")
+                append("<th>Actions</th>")
                 append("</tr></thead>\n")
                 append("<tbody>\n")
                 for (meta in sessions) {
@@ -399,16 +500,19 @@ class SessionsServlet : HttpServlet() {
                     append("<td class=\"num\">").append(children.size).append("</td>")
                     append("<td><a class=\"link\" href=\"javascript:void(0)\" onclick=\"event.stopPropagation();toggleDetails('")
                         .append(jsEscape(id)).append("')\">Show</a></td>")
-                        append("<td><a class=\"link\" href=\"/sessionUsage?session=")
-                            .append(htmlEscape(id))
-                            .append("&format=html\" target=\"_blank\" onclick=\"event.stopPropagation()\">View</a></td>")
+                    append("<td><a class=\"link\" href=\"/sessionUsage?session=")
+                        .append(htmlEscape(id))
+                        .append("&format=html\" target=\"_blank\" onclick=\"event.stopPropagation()\">View</a></td>")
                     append("<td><a class=\"link\" href=\"")
                         .append(htmlEscape(shareUrl))
                         .append("\" target=\"_blank\" onclick=\"event.stopPropagation()\">Share</a></td>")
+                    append("<td><a class=\"link danger\" href=\"javascript:void(0)\" onclick=\"event.stopPropagation();deleteSession('")
+                        .append(jsEscape(id)).append("','")
+                        .append(jsEscape(meta.name ?: id)).append("')\">Delete</a></td>")
                     append("</tr>\n")
                     // Details row
                     append("<tr id=\"details-").append(rowId)
-                            .append("\" class=\"details\" style=\"display:none\"><td colspan=\"9\">\n")
+                        .append("\" class=\"details\" style=\"display:none\"><td colspan=\"10\">\n")
                     append("<div class=\"details-content\">\n")
                     append("<h4>Usage Summary</h4>\n")
                     if (usage.isEmpty()) {
@@ -529,12 +633,14 @@ class SessionsServlet : HttpServlet() {
                             // Per-model breakdown row (collapsible by default hidden via nested table)
                             if (cUsage.isNotEmpty()) {
                                 val nestedColspan = 3 + childTokenTypes.size + 2
-                                append("<tr class=\"submodel-row\"><td></td><td colspan=\"").append(nestedColspan).append("\">\n")
+                                append("<tr class=\"submodel-row\"><td></td><td colspan=\"").append(nestedColspan)
+                                    .append("\">\n")
                                 val cUsageTokenTypes = collectTokenTypes(cUsage)
                                 append("<table class=\"sub nested\">\n")
                                 append("<thead><tr><th>Model</th>")
                                 for (t in cUsageTokenTypes) {
-                                    append("<th class=\"num\">").append(htmlEscape(friendlyTokenTypeName(t))).append("</th>")
+                                    append("<th class=\"num\">").append(htmlEscape(friendlyTokenTypeName(t)))
+                                        .append("</th>")
                                 }
                                 append("<th class=\"num\">Total</th><th class=\"num\">Cost</th></tr></thead>\n")
                                 append("<tbody>\n")
@@ -862,6 +968,9 @@ class SessionsServlet : HttpServlet() {
                       .btn:hover { background: var(--hover-bg); border-color: var(--muted-fg); }
                       .btn:active { transform: translateY(1px); }
                       .btn.copied { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+                       .link.danger { color: #dc2626; }
+                       [data-theme="dark"] .link.danger { color: #f87171; }
+                       .link.danger:hover { text-decoration: underline; }
                       .kpis { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
                       .kpi { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; min-width: 110px; box-shadow: var(--shadow); }
                       .kpi-label { font-size: 11px; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -882,6 +991,47 @@ class SessionsServlet : HttpServlet() {
                     function navigateTo(path) {
                        if (path) window.open(path, '_blank');
                     }
+                     function deleteSession(sessionId, sessionName) {
+                         if (!sessionId) return;
+                         var label = sessionName ? (sessionName + ' (' + sessionId + ')') : sessionId;
+                         if (!confirm('Delete session ' + label + '?\nThis action cannot be undone.')) return;
+                         var form = new URLSearchParams();
+                         form.append('action', 'delete');
+                         form.append('sessionId', sessionId);
+                         fetch(window.location.pathname, {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                             body: form.toString(),
+                             credentials: 'same-origin'
+                         }).then(function(resp) {
+                             return resp.json().then(function(data) { return { ok: resp.ok, data: data }; });
+                         }).then(function(res) {
+                             if (res.ok && res.data && res.data.success) {
+                                 // Remove the row and its details row from the DOM
+                                 var rows = document.querySelectorAll('#sessions tbody tr');
+                                 for (var i = 0; i < rows.length; i++) {
+                                     var row = rows[i];
+                                     if (row.classList.contains('details')) continue;
+                                     if (row.getAttribute('onclick') && row.getAttribute('onclick').indexOf(sessionId) !== -1) {
+                                         var next = rows[i + 1];
+                                         row.parentNode.removeChild(row);
+                                         if (next && next.classList.contains('details')) {
+                                             next.parentNode.removeChild(next);
+                                         }
+                                         break;
+                                     }
+                                 }
+                                 // Also try matching by details row id as a fallback
+                                 var details = document.getElementById('details-' + sessionId);
+                                 if (details && details.parentNode) details.parentNode.removeChild(details);
+                             } else {
+                                 var msg = (res.data && res.data.error) ? res.data.error : 'Unknown error';
+                                 alert('Failed to delete session: ' + msg);
+                             }
+                         }).catch(function(err) {
+                             alert('Failed to delete session: ' + err);
+                         });
+                     }
                     function toggleDetails(id) {
                         var row = document.getElementById('details-' + id);
                         if (!row) return;
