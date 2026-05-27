@@ -36,12 +36,23 @@ class SecureString {
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(SecureString::class.java)
     private const val PREFIX = "SECURE::"
-    val possibleKeys = listOf(
+    val possibleKeyFiles = listOf(
       File("/var/cognotik"),
       File(System.getProperty("user.home"), ".cognotik")
-    )
-    private val keyFile = (possibleKeys.firstOrNull { it.resolve(".key").exists() } ?: possibleKeys.first()).resolve(".key")
-    private val key: SecretKey by lazy {
+    ).toMutableList()
+    private val keyFile = (possibleKeyFiles.firstOrNull { it.resolve(".key").exists() } ?: possibleKeyFiles.first()).resolve(".key")
+    var key: SecretKey? = null
+      get() {
+        if (field == null) {
+          field = _key
+        }
+        return field
+      }
+      set(value) {
+        field = value
+      }
+
+    private val _key: SecretKey by lazy {
       if (keyFile.exists()) {
         try {
           val keyBytes = keyFile.readBytes()
@@ -55,8 +66,7 @@ class SecureString {
         }
       } else {
         keyFile.parentFile.mkdirs()
-        val key = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
-          ?: throw RuntimeException("Unable to generate encryption key")
+        val key = randomKey()
         keyFile.writeBytes(key.encoded)
         /* Or, as a shell script:
         *    mkdir -p /var/cognotik
@@ -66,6 +76,9 @@ class SecureString {
         key
       }
     }
+
+    fun randomKey(): SecretKey = (KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
+      ?: throw RuntimeException("Unable to generate encryption key"))
 
     private fun encrypt(str: String): ByteArray {
       if (str.isEmpty()) return ByteArray(0)
