@@ -584,12 +584,12 @@ class DatabaseFacet(
                 val args = mutableListOf(
                     "-tcpPort", freePort.toString(),
                     "-tcpAllowOthers",
-                    "-ifNotExists",
-                    // Base dir: parent of registered file paths if any.
-                    // H2 requires `-baseDir` to allow URLs that reference
-                    // absolute paths; we set it to the filesystem root so
-                    // any absolute path is accepted.
-                    "-baseDir", File("/").absolutePath
+                    "-ifNotExists"
+                    // Intentionally no `-baseDir`: on Windows, setting
+                    // baseDir to a filesystem root anchors the server to a
+                    // single drive letter, which rejects database paths on
+                    // other drives with "<path> outside <drive>:/". Without
+                    // baseDir, H2 accepts absolute paths on any drive.
                 )
                 val candidate = try {
                     Server.createTcpServer(*args.toTypedArray())
