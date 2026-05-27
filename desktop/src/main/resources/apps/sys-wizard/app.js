@@ -1,6 +1,6 @@
 // === Imports from utils/ ===
 import { parseSessionUrl, getProxyUrl, getAppRoot } from './utils/session.js';
-import { readFile, writeFile, fileExists } from './utils/fileIO.js';
+import { readFile, writeFile, fileExists, listFiles } from './utils/fileIO.js';
 import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from './utils/docops.js';
 import {
     renderMarkdown,
@@ -675,6 +675,188 @@ import {
             viewFile(this.dataset.file, this.dataset.viewer);
         });
     });
+     // === Code Directory File Listing ===
+     function getFileExtension(filename) {
+         var lastDot = filename.lastIndexOf('.');
+         if (lastDot < 0 || lastDot === filename.length - 1) return '';
+         return filename.substring(lastDot + 1).toLowerCase();
+     }
+     function getFileTypeIcon(filename) {
+         var ext = getFileExtension(filename);
+         var iconMap = {
+             'md': '📝',
+             'markdown': '📝',
+             'html': '🌐',
+             'htm': '🌐',
+             'txt': '📄',
+             'log': '📋',
+             'sh': '🐚',
+             'bash': '🐚',
+             'py': '🐍',
+             'js': '📜',
+             'json': '🔧',
+             'yaml': '🔧',
+             'yml': '🔧',
+             'xml': '📰',
+             'csv': '📊'
+         };
+         return iconMap[ext] || '📄';
+     }
+     function isSupportedViewType(filename) {
+         var ext = getFileExtension(filename);
+         return ['md', 'markdown', 'html', 'htm', 'txt', 'log', 'sh', 'bash', 'py', 'js', 'json', 'yaml', 'yml', 'xml', 'csv'].indexOf(ext) !== -1;
+     }
+     function renderFileContent(content, filename) {
+         var ext = getFileExtension(filename);
+         if (ext === 'md' || ext === 'markdown') {
+            // Render markdown using marked.min.js (loaded globally via <script> tag).
+            // Falls back to the ui.js renderMarkdown utility, then to raw preformatted text.
+            var rendered = '';
+            try {
+                if (typeof window !== 'undefined' && window.marked) {
+                    if (typeof window.marked.parse === 'function') {
+                        rendered = window.marked.parse(content);
+                    } else if (typeof window.marked === 'function') {
+                        rendered = window.marked(content);
+                    }
+                }
+                if (!rendered || rendered.trim().length === 0) {
+                    rendered = renderMarkdown(content);
+                }
+            } catch (e) {
+                console.error('Markdown render failed:', e);
+                try {
+                    rendered = renderMarkdown(content);
+                } catch (e2) {
+                    rendered = '';
+                }
+            }
+            if (!rendered || rendered.trim().length === 0) {
+                // Fallback: show raw markdown as preformatted text
+                rendered = '<pre class="text-preview"><code>' + escapeHtml(content) + '</code></pre>';
+            }
+            return '<div class="markdown-preview">' + rendered + '</div>';
+         } else if (ext === 'html' || ext === 'htm') {
+             // Render HTML in a sandboxed iframe for safety
+             return '<iframe class="html-preview-frame" sandbox="allow-same-origin" srcdoc="' +
+                 escapeHtml(content) + '"></iframe>';
+         } else if (isScriptFile(filename)) {
+             return renderScript(content);
+         } else {
+             // Plain text / log / other — render as preformatted text
+             return '<pre class="text-preview"><code>' + escapeHtml(content) + '</code></pre>';
+         }
+     }
+     async function loadCodeFilesList() {
+         var listEl = document.getElementById('code-files-list');
+         if (!listEl) return;
+         try {
+             var files = await listFiles(basePath, 'code');
+             if (!files || files.length === 0) {
+                 listEl.innerHTML =
+                     '<div class="empty-state">' +
+                     '<div class="empty-icon">📁</div>' +
+                     '<p class="empty-title">No files yet</p>' +
+                     '<p class="empty-desc">Run the pipeline to generate files in the <code>code/</code> directory.</p>' +
+                     '</div>';
+                 return;
+             }
+             // Sort: directories first, then by name
+             files.sort(function(a, b) {
+                 var aDir = a.isDirectory || a.directory || false;
+                 var bDir = b.isDirectory || b.directory || false;
+                 if (aDir !== bDir) return aDir ? -1 : 1;
+                 var aName = (a.name || a.path || '').toLowerCase();
+                 var bName = (b.name || b.path || '').toLowerCase();
+                 return aName.localeCompare(bName);
+             });
+             var html = '<ul class="code-files-ul">';
+             files.forEach(function(file) {
+                 var name = file.name || file.path || 'unknown';
+                 var isDir = file.isDirectory || file.directory || false;
+                 var size = file.size;
+                 var icon = isDir ? '📂' : getFileTypeIcon(name);
+                 var fullPath = 'code/' + name;
+                 var canView = !isDir && isSupportedViewType(name);
+                 var sizeStr = '';
+                 if (typeof size === 'number') {
+                     if (size < 1024) sizeStr = size + ' B';
+                     else if (size < 1024 * 1024) sizeStr = (size / 1024).toFixed(1) + ' KB';
+                     else sizeStr = (size / (1024 * 1024)).toFixed(2) + ' MB';
+                 }
+                 html += '<li class="code-file-item">' +
+                     '<span class="code-file-icon">' + icon + '</span>' +
+                     '<span class="code-file-name">' + escapeHtml(name) + '</span>' +
+                     '<span class="code-file-size">' + escapeHtml(sizeStr) + '</span>';
+                 if (canView) {
+                     html += '<button class="btn btn-secondary btn-sm code-file-view-btn" ' +
+                         'data-file="' + escapeHtml(fullPath) + '">' +
+                         '<span class="btn-icon">👁</span> View</button>';
+                 } else if (!isDir) {
+                     html += '<span class="code-file-unsupported">—</span>';
+                 }
+                 html += '</li>';
+             });
+             html += '</ul>';
+             listEl.innerHTML = html;
+             // Bind view buttons
+             listEl.querySelectorAll('.code-file-view-btn').forEach(function(btn) {
+                 btn.addEventListener('click', function() {
+                     viewCodeFile(this.dataset.file);
+                 });
+             });
+         } catch (e) {
+             listEl.innerHTML =
+                 '<div class="empty-state">' +
+                 '<div class="empty-icon">⚠️</div>' +
+                 '<p class="empty-title">Failed to list files</p>' +
+                 '<p class="empty-desc">' + escapeHtml(e.message) + '</p>' +
+                 '</div>';
+         }
+     }
+     async function viewCodeFile(filePath) {
+         var viewer = document.getElementById('code-files-viewer');
+         if (!viewer) return;
+         try {
+             var content = await readFileLocal(filePath);
+             if (content === null) {
+                 viewer.innerHTML = '<p class="placeholder">File not found or empty.</p>';
+             } else {
+                 var fileName = filePath.split('/').pop();
+                 var header = '<div class="code-file-viewer-header">' +
+                     '<span class="code-file-viewer-icon">' + getFileTypeIcon(fileName) + '</span>' +
+                     '<span class="code-file-viewer-name">' + escapeHtml(filePath) + '</span>' +
+                     '<button class="btn btn-secondary btn-sm" id="close-code-file-viewer">' +
+                     '<span class="btn-icon">✕</span> Close</button>' +
+                     '</div>';
+                 viewer.innerHTML = header + '<div class="code-file-viewer-body">' + renderFileContent(content, fileName) + '</div>';
+                 viewer.classList.add('visible');
+                 var closeBtn = document.getElementById('close-code-file-viewer');
+                 if (closeBtn) {
+                     closeBtn.addEventListener('click', function() {
+                         viewer.classList.remove('visible');
+                         viewer.innerHTML = '';
+                     });
+                 }
+                 // Scroll viewer into view
+                 viewer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+             }
+         } catch (e) {
+             viewer.innerHTML = '<p class="placeholder" style="color: var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
+             viewer.classList.add('visible');
+         }
+     }
+     // Refresh button
+     var refreshCodeFilesBtn = document.getElementById('refresh-code-files');
+     if (refreshCodeFilesBtn) {
+         refreshCodeFilesBtn.addEventListener('click', function() {
+             var self = this;
+             self.disabled = true;
+             loadCodeFilesList().finally(function() {
+                 self.disabled = false;
+             });
+         });
+     }
 
     // === Refresh Buttons (Results section) ===
     document.querySelectorAll('.btn-refresh').forEach(function(btn) {
@@ -1353,6 +1535,7 @@ import {
     loadInitialFiles();
     checkExistingFiles();
     loadApiProviders();
+     loadCodeFilesList();
 
     // Load usage when navigating to usage tab
     document.querySelectorAll('.nav-link').forEach(function(link) {
@@ -1360,6 +1543,9 @@ import {
             if (this.dataset.section === 'section-usage') {
                 loadUsageData();
             }
+             if (this.dataset.section === 'section-results') {
+                 loadCodeFilesList();
+             }
         });
     });
 
