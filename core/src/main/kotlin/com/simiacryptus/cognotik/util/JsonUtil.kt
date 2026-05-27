@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -108,8 +109,29 @@ object JsonUtil {
     }
   }
 
+  @JvmStatic
+  fun <T : Any> merge(vararg values: T?): T {
+    val objectMapper = objectMapper()
+   val nonNullValues = values.filterNotNull()
+   require(nonNullValues.isNotEmpty()) { "At least one non-null value is required for merge" }
+   val base = nonNullValues.first()
+   val jsonNode = objectMapper.valueToTree<JsonNode>(base)
+   nonNullValues.drop(1).forEach { value ->
+      val updateNode = objectMapper.valueToTree<JsonNode>(value)
+     updateNode.fields().forEach { (fieldName, fieldValue) ->
+       if (!fieldValue.isNull) {
+         (jsonNode as com.fasterxml.jackson.databind.node.ObjectNode).set<JsonNode>(fieldName, fieldValue)
+       }
+     }
+    }
+   @Suppress("UNCHECKED_CAST")
+   return objectMapper.treeToValue(jsonNode, base.javaClass) as T
+  }
+
   private val log = LoggerFactory.getLogger(JsonUtil::class.java)
 }
+
+
 
 fun <T : Any> T.copy(fn: T.() -> Unit): T {
   return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, this.javaClass).apply { fn(this) } }

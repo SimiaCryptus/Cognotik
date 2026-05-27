@@ -159,7 +159,7 @@ class ChatModel(
         workPool = workPool,
         scheduledPool = scheduledPool,
         session = session,
-        onUsage = { model, usage, data -> ON_USAGE(model, usage, user, session, data) },
+        user = user,
     )
 
     companion object {

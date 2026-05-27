@@ -3,10 +3,12 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.ON_USAGE
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -24,9 +26,10 @@ class ChatInterface(
     val modelType: ChatModel,
     private val workPool: ExecutorService,
     private val scheduledPool: ListeningScheduledExecutorService,
-    private val onUsage: (model: LLMModel, tokens: ModelSchema.Usage, data: ModelSchema.UsageData?) -> Unit,
-    val session: Session
+    var session: Session,
+    val user : User,
 ) {
+    val onUsage: (model: LLMModel, tokens: ModelSchema.Usage, data: ModelSchema.UsageData?) -> Unit = { model, usage, data -> ON_USAGE(model, usage, user, session, data) }
     val logStreams: MutableList<BufferedOutputStream> = logStreams.toMutableList()
         get() = when {
             !ENABLE_LOGS -> mutableListOf()
@@ -60,8 +63,8 @@ class ChatInterface(
         modelType = this.modelType,
         workPool = this.workPool,
         scheduledPool = this.scheduledPool,
-        onUsage = this.onUsage,
         session = this.session,
+        user = this.user,
     )
 
     companion object {
@@ -82,8 +85,8 @@ class ChatInterface(
                     4
                 )
             ),
-            onUsage = { _, _, _ -> },
             session = Session.newUserID(),
+            user = User.NULL,
         )
         val log = LoggerFactory.getLogger(ChatInterface::class.java)
         var ENABLE_LOGS = false

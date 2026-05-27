@@ -343,7 +343,7 @@ class DocProcessorAction : BaseAction() {
                                     taskType = mod.taskType,
                                     timeoutMinutes = 30,
                                     message = mod.message(),
-                                    executionConfig = docProcessor.executionConfig(mod, harness)
+                                    executionConfig = docProcessor.executionConfig(mod, harness,)
                                 ) { session ->
                                     if (cancelFlag.get()) {
                                         log.info("Cancellation requested, skipping execution of remaining tasks")

@@ -1013,7 +1013,7 @@ class DocProcessor(
                 taskType = rebasedMod.taskType,
                 timeoutMinutes = 30,
                 message = rebasedMod.message(),
-                executionConfig = executionConfig(rebasedMod, harness),
+                executionConfig = executionConfig(rebasedMod, harness, parentSession = parentSession),
                 parentSession = parentSession,
                 onComplete = { _: String, task: SessionTask ->
                     val sessionId = task.ui.sessionId.toString()
@@ -1061,10 +1061,19 @@ class DocProcessor(
         mod: ModificationTask,
         harness: UnifiedHarness,
         task: SessionTask? = null,
-        model: ChatInterface? = null
+        model: ChatInterface? = null,
+        parentSession: Session? = null
     ): TaskExecutionConfig {
-        val model = model ?: harness.fastModel.asChatInterface(user).let {
-            if (task != null) it.getChildClient(task) else it
+        var model = model ?: harness.fastModel.asChatInterface(user).let {
+            if (task != null) {
+                it.getChildClient(task)
+            } else {
+                log.info("No task provided for execution config, using base model without session context")
+                it
+            }
+        }
+        if(null != parentSession) {
+            model.session = parentSession
         }
         val data = mod.data.copy()
         val config = when {
@@ -1116,7 +1125,8 @@ class DocProcessor(
                     singleStage = true,
                     taskTypes = listOf(mod.taskType)
                 )
-                taskConfig
+                JsonUtil.merge(taskConfig, mod.data.taskConfigOverrides ?: emptyMap<String, Any>())
+
             }
         }.jsonCast<MutableMap<String, Any>>()
         config["related_files"] = (config["related_files"] ?: emptyList<String>()).let {
