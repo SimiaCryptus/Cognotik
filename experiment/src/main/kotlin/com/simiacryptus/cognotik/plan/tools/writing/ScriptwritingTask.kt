@@ -360,7 +360,7 @@ class ScriptwritingTask(
         prompt = outlinePrompt,
         model = api,
         temperature = 0.7,
-        parsingChatter = fastApi
+        parsingModel = fastApi
       )
 
       val outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -491,7 +491,7 @@ class ScriptwritingTask(
           prompt = hookPrompt,
           model = api,
           temperature = 0.8,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val hookSegment = hookAgent.answer(listOf("Write opening")).obj
@@ -635,7 +635,7 @@ class ScriptwritingTask(
           prompt = sectionPrompt,
           model = api,
           temperature = 0.8,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val sectionSegment = sectionAgent.answer(listOf("Write section")).obj
@@ -754,7 +754,7 @@ class ScriptwritingTask(
         prompt = closingPrompt,
         model = api,
         temperature = 0.8,
-        parsingChatter = fastApi
+        parsingModel = fastApi
       )
 
       val closingSegment = closingAgent.answer(listOf("Write closing")).obj

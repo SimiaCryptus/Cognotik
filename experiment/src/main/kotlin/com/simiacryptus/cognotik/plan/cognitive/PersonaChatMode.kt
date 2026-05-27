@@ -474,7 +474,7 @@ open class PersonaChatMode(
           append("\nChoose the most suitable task type and provide details of how it should be executed.")
         },
         model = defaultModel,
-        parsingChatter = fastModel,
+        parsingModel = fastModel,
         temperature = orchestrationConfig.temperature,
         describer = describer,
         parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->

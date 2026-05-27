@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
@@ -287,9 +286,9 @@ open class ChatSocketManager(
       try {
         val chatResponse = model.chat(
           ChatRequest(
-            model = model.modelType.modelId,
+            model = model.model.modelId,
             messages = finalMessages,
-            temperature = model.temperature,
+            temperature = temperature,
             audio = model.audio,
           )
         )

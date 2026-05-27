@@ -482,7 +482,7 @@ class ChainOfThoughtTask(
       model = api,
       temperature = 0.3,
       name = "ReasoningStep$stepNumber",
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     var step: ReasoningStep? = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
@@ -546,7 +546,7 @@ class ChainOfThoughtTask(
       model = api,
       temperature = 0.1,
       name = "StepValidation",
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     var validation: StepValidation? = validationAgent.answer(listOf("Validate step ${step.step_number}")).obj

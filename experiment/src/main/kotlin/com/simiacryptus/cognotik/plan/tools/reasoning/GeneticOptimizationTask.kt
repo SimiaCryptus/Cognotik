@@ -896,7 +896,7 @@ class GeneticOptimizationTask(
       model = api,
       temperature = tc.mutation_temperature,
       name = "MutationGenerator",
-      parsingChatter = fastApi,
+      parsingModel = fastApi,
       deserializerRetries = 2,
     ).answer(
       listOf(
@@ -1042,7 +1042,7 @@ class GeneticOptimizationTask(
       model = api,
       temperature = tc.evaluation_temperature,
       name = "VariantEvaluator",
-      parsingChatter = fastApi,
+      parsingModel = fastApi,
       deserializerRetries = 2,
     ).answer(
       listOf(

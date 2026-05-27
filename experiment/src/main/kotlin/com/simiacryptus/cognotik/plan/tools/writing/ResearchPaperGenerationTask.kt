@@ -592,7 +592,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
           ),
         model = api,
         temperature = 0.7,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -715,7 +715,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             ),
           model = api,
           temperature = 0.7,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
         var generatedSection = sectionAgent.answer(listOf("Write section")).obj
@@ -792,7 +792,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
           .replace("{analysis_result}", analysisResult.truncateForDisplay(3000)),
         model = api,
         temperature = 0.6,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       val bibliography = bibliographyAgent.answer(listOf("Generate bibliography")).obj.citations
@@ -873,7 +873,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             .replace("{paper_content}", resultBuilder.toString().truncateForDisplay(5000)),
           model = api,
           temperature = 0.6,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
         val review = reviewAgent.answer(listOf("Review the paper")).obj

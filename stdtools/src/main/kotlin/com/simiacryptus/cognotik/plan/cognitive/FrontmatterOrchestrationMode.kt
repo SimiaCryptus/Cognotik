@@ -269,7 +269,7 @@ open class FrontmatterOrchestrationMode(
       ),
       prompt = buildSpecificationPrompt(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     )
@@ -446,9 +446,9 @@ Do NOT generate the actual file contents. Generate specifications that describe 
         root = root.toFile(),
         docsFolder = specsDir.toFile(),
         updateMode = config.defaultOverwriteMode,
-        fastModel = orchestrationConfig.defaultFast.modelType,
-        smartModel = orchestrationConfig.defaultSmart.modelType,
-        imageModel = orchestrationConfig.defaultImage.modelType,
+        fastModel = orchestrationConfig.defaultFast.model,
+        smartModel = orchestrationConfig.defaultSmart.model,
+        imageModel = orchestrationConfig.defaultImage.model,
         autoFix = true,
         user = orchestrationConfig.user
       )

@@ -1092,7 +1092,7 @@ The perspective field in your response should be: "$perspective"
         model = api,
         temperature = 0.4,
         name = "PerspectiveEvaluator_$perspective",
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       ).answer(
         listOf(
           """
@@ -1266,7 +1266,7 @@ The strategy field should be: "$strategy"
         model = api,
         temperature = 0.8,
         name = "PoliticalMutationGenerator",
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       ).answer(
         listOf(
           """
@@ -1338,7 +1338,7 @@ Generate the crossover variant.
         model = api,
         temperature = 0.7,
         name = "PoliticalCrossoverGenerator",
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       ).answer(
         listOf(
           """

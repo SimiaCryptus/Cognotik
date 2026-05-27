@@ -341,7 +341,7 @@ ${JsonUtil.toJson(taskConfig)}
             .joinToString("\n\n"))
       },
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     )
@@ -390,7 +390,7 @@ ${JsonUtil.toJson(taskConfig)}
         exampleInstance = Voting(listOf(1, 3), "Tasks 1 and 3 align with goals."),
         prompt = "Vote for the best tasks.",
         model = orchestrationConfig.defaultSmart.getChildClient(task),
-        parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+        parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
         temperature = orchestrationConfig.temperature
       )
       val vote = voter.answer(

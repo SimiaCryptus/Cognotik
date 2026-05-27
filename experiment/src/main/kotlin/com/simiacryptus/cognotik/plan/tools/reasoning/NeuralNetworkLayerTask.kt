@@ -1205,7 +1205,7 @@ Be concise, practical, and actionable. Focus on helping users make informed deci
         model = api,
         temperature = 0.3,
         name = "ExecutiveSummaryGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Generate executive summary")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate executive summary", e)
@@ -1260,7 +1260,7 @@ Think of explaining to a smart high school student or non-technical stakeholder.
         model = api,
         temperature = 0.4,
         name = "IntuitiveExplanationGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Generate intuitive explanation")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate intuitive explanation", e)
@@ -1312,7 +1312,7 @@ For Mermaid, use flowchart syntax with clear node labels.
         model = api,
         temperature = 0.3,
         name = "ConceptualDiagramGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Generate conceptual diagram")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate conceptual diagram", e)
@@ -1369,7 +1369,7 @@ Focus on issues practitioners actually encounter.
         model = api,
         temperature = 0.3,
         name = "PracticalGuidanceGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Generate practical guidance")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate practical guidance", e)
@@ -1423,7 +1423,7 @@ Be rigorous and use standard mathematical notation.
         model = api,
         temperature = 0.3,
         name = "LayerDefinitionGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Generate formal definition")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate layer definition", e)
@@ -1471,7 +1471,7 @@ Assume upstream gradient ∂L/∂y is given. Use standard notation.
         model = api,
         temperature = 0.3,
         name = "GradientDerivationGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Derive gradients")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate gradient derivation", e)
@@ -1520,7 +1520,7 @@ Focus on implications for optimization and training dynamics.
         model = api,
         temperature = 0.3,
         name = "HigherOrderAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze higher-order derivatives")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate higher-order analysis", e)
@@ -1565,7 +1565,7 @@ Consider gradient descent dynamics: θ_{t+1} = θ_t - η∇L(θ_t)
         model = api,
         temperature = 0.3,
         name = "StabilityAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze stability")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate stability analysis", e)
@@ -1613,7 +1613,7 @@ These are crucial for:
         model = api,
         temperature = 0.3,
         name = "LipschitzAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze Lipschitz properties")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate Lipschitz analysis", e)
@@ -1654,7 +1654,7 @@ Consider both forward and backward passes.
         model = api,
         temperature = 0.3,
         name = "NumericalStabilityAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze numerical stability")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate numerical stability analysis", e)
@@ -1708,7 +1708,7 @@ For Python, use NumPy. For Tensorflow.js, use tfjs. For pseudocode, be clear and
         model = api,
         temperature = 0.3,
         name = "ImplementationGenerator",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Generate implementation")).obj.copy(language = language)
     } catch (e: Exception) {
       log.warn("Failed to generate implementation for $language", e)
@@ -1758,7 +1758,7 @@ Express in terms of batch size (B), dimensions, etc.
         model = api,
         temperature = 0.3,
         name = "ComplexityAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze complexity")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate complexity analysis", e)
@@ -1807,7 +1807,7 @@ Consider both theoretical novelty and practical innovation.
         model = api,
         temperature = 0.3,
         name = "OriginalityAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze originality")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate originality analysis", e)
@@ -1861,7 +1861,7 @@ Be practical and specific. Consider both research and production use cases.
         model = api,
         temperature = 0.3,
         name = "UseCaseAnalyzer",
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       ).answer(listOf("Analyze use cases")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate use case analysis", e)

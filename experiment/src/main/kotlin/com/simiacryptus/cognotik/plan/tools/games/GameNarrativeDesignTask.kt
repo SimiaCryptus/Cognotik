@@ -535,7 +535,7 @@ For endings, define:
 - Optional epilogue
 
 Ensure the structure supports ${gameConfig.player_agency_level} player agency with meaningful choices.
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.7, parsingModel = defaultFast
         )
 
         val gameNarrative = gameStructureAgent.answer(listOf("Generate game structure")).obj
@@ -644,7 +644,7 @@ Design the following:
 4. **Unique Mechanics**: Specific mechanics that reinforce the narrative themes.
 5. **Ludonarrative Harmony**: How gameplay reinforces the story.
 Ensure mechanics fit the '${gameConfig.genre}' genre and '${gameConfig.tone}' tone.
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.7, parsingModel = defaultFast
           )
           val mechanics = mechanicsAgent.answer(listOf("Design game mechanics")).obj
           gameDesignData = gameDesignData.copy(mechanics = mechanics)
@@ -822,7 +822,7 @@ Make dialogue:
 - Support different playstyles
 
 Ensure each character's dialogue matches their established style.
-          """.trimIndent(), model = api, temperature = 0.8, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.8, parsingModel = defaultFast
           )
 
           val dialogueTrees = dialogueAgent.answer(listOf("Generate dialogue trees")).obj.trees
@@ -999,7 +999,7 @@ For each quest:
 - What unlocks it (optional)
 
 Make quests feel meaningful, not just filler content.
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.7, parsingModel = defaultFast
           )
 
           val sideQuests = sideQuestAgent.answer(listOf("Generate side quests")).obj.quests

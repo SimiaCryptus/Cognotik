@@ -452,7 +452,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
           prompt = highLevelPrompt,
           model = smartApi,
           temperature = 0.7,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val highLevelOutline = try {
@@ -490,7 +490,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             prompt = sceneExpansionPrompt,
             model = smartApi,
             temperature = 0.7,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
           try {
             val expandedAct = sceneExpansionAgent.answer(listOf("Expand act into scenes")).obj
@@ -662,7 +662,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             prompt = scenePromptText,
             model = smartApi,
             temperature = 0.8,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           var generatedScene = sceneAgent.answer(listOf("Write the scene")).obj

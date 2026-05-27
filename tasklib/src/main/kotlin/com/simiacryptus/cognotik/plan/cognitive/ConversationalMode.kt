@@ -413,7 +413,7 @@ open class ConversationalMode(
             model = model,
             temperature = orchestrationConfig.temperature,
             name = "Topics",
-            parsingChatter = chatInterface,
+            parsingModel = chatInterface,
         )
         return topicsParsedActor.getParser().apply(response)
     }
@@ -500,7 +500,7 @@ open class ConversationalMode(
                     }
                 }.also { log.debug("Constructed prompt for ParsedAgent (length: ${it.length}):\n${it.take(500)}...") },
                 model = defaultModel,
-                parsingChatter = fastModel,
+                parsingModel = fastModel,
                 temperature = orchestrationConfig.temperature,
                 describer = describer,
                 parserPrompt = "Task Subtype Schema:\n" + taskTypes.joinToString("\n\n") { taskType ->

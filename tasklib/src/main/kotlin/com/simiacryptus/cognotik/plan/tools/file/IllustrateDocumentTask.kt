@@ -219,7 +219,7 @@ class IllustrateDocumentTask(
           prompt = analysisPrompt,
           model = defaultChatter,
           temperature = 0.5,
-          parsingChatter = parsingChatter
+          parsingModel = parsingChatter
         )
 
         val analysis = analysisAgent.answer(listOf(analysisPrompt))

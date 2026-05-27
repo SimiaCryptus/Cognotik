@@ -271,7 +271,7 @@ All required (non-optional) fields must be populated with appropriate values ext
                       Use the content to infer any relevant details that could be useful for rendering the template.
                     """.trimIndent(),
             model = model,
-            parsingChatter = model,
+            parsingModel = model,
             temperature = 0.0,
             singleStage = true,
           )

@@ -794,7 +794,7 @@ For the answer field, return the appropriate type based on the question:
             """.trimIndent(),
       model = api,
       temperature = 0.1,
-      parsingChatter = api
+      parsingModel = api
     )
 
 
@@ -1101,7 +1101,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
             """.trimIndent(),
       model = api,
       temperature = 0.1,
-      parsingChatter = api
+      parsingModel = api
     )
 
     openEndedQuestions.forEach { question ->

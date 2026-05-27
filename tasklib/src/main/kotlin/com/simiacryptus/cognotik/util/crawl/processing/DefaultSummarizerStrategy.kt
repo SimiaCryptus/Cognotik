@@ -154,7 +154,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
         resultClass = CrawlerAgentTask.ParsedPage::class.java,
         model = model,
         describer = describer,
-        parsingChatter = model,
+        parsingModel = model,
       ).answer(listOf(content))
     } catch (e: Exception) {
       log.error("Error during content transformation", e)

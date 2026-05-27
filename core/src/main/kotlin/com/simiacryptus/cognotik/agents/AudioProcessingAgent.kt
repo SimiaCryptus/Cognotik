@@ -155,7 +155,7 @@ open class AudioProcessingAgent(
         }
         log.debug(
             "Calling text model '{}' to generate script (inputs={}, userParts={})...",
-            tm.modelType.modelId,
+            tm.model.modelId,
             inputs.size,
             userContent.size
         )
@@ -163,7 +163,7 @@ open class AudioProcessingAgent(
         val response = try {
             tm.chat(
                 ChatRequest(
-                    model = tm.modelType.modelId,
+                    model = tm.model.modelId,
                     messages = listOf(
                         ChatMessage(
                             role = Role.system, content = scriptPrompt.toContentList()
@@ -171,7 +171,7 @@ open class AudioProcessingAgent(
                             role = Role.user, content = userContent
                         )
                     ),
-                    temperature = tm.temperature,
+                    temperature = temperature,
                     audio = tm.audio,
                 )
             )
@@ -269,7 +269,7 @@ open class AudioProcessingAgent(
             return try {
                 val choices = model.chat(
                     ChatRequest(
-                        model = model.modelType.modelId,
+                        model = model.model.modelId,
                         messages = messages.toList(),
                         temperature = 0.0,
                         audio = singleCallAudioConfig,
@@ -604,7 +604,7 @@ open class AudioProcessingAgent(
         val responseMessage = try {
             model.chat(
                 ChatRequest(
-                    model = model.modelType.modelId,
+                    model = model.model.modelId,
                     messages = segmentMessages.toList(),
                     temperature = 0.0,
                     audio = audioConfig,

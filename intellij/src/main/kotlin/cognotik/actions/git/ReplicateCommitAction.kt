@@ -232,7 +232,7 @@ class ReplicateCommitAction : BaseAction() {
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
                     model = AppSettingsState.instance.smartChatClient,
-                    parsingChatter = AppSettingsState.instance.fastChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"

@@ -11,8 +11,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -132,7 +130,7 @@ open class ProjectManagerStrategy(
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(listOf(userMessage) + contextData).obj.apply {
@@ -214,7 +212,7 @@ open class ProjectManagerStrategy(
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast,
+      parsingModel = orchestrationConfig.defaultFast,
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(
@@ -295,7 +293,7 @@ class ScientificMethodStrategy : CognitiveSchemaStrategy("Scientific Researcher"
                 4. List any known facts provided in the prompt.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(listOf(userMessage) + contextData).obj
@@ -325,7 +323,7 @@ class ScientificMethodStrategy : CognitiveSchemaStrategy("Scientific Researcher"
                 6. Update the experiment log.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(
@@ -374,7 +372,7 @@ class AgileDeveloperStrategy : CognitiveSchemaStrategy("Agile Developer", "Itera
                 Create a TODO list of small, incremental steps.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(listOf(userMessage) + contextData).obj
@@ -403,7 +401,7 @@ class AgileDeveloperStrategy : CognitiveSchemaStrategy("Agile Developer", "Itera
                 - Update known bugs and TODO list.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(
@@ -464,7 +462,7 @@ class CriticalAuditorStrategy : CognitiveSchemaStrategy("Critical Auditor", "Sec
                 Initialize the risk assessment.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(listOf(userMessage) + contextData).obj
@@ -492,7 +490,7 @@ class CriticalAuditorStrategy : CognitiveSchemaStrategy("Critical Auditor", "Sec
                 - If serious issues found, escalate severity.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(
@@ -547,7 +545,7 @@ class CreativeWriterStrategy : CognitiveSchemaStrategy("Creative Writer", "Narra
                 Create a high-level outline of chapters or sections.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(listOf(userMessage) + contextData).obj
@@ -575,7 +573,7 @@ class CreativeWriterStrategy : CognitiveSchemaStrategy("Creative Writer", "Narra
                 - Adjust the outline if the story evolves differently.
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(

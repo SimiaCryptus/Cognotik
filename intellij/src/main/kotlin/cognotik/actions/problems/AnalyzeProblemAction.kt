@@ -173,7 +173,7 @@ class AnalyzeProblemAction : AnAction() {
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatClient,
-                        parsingChatter = AppSettingsState.instance.fastChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
                     ).answer(listOf(problemInfo))
 
                   val map = mapOf(

@@ -428,7 +428,7 @@ Be specific with numbers and percentages where available.
           """.trimIndent(),
             model = api,
             temperature = 0.6,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           val dataAnalyses = dataAnalysisAgent.answer(listOf("Analyze data")).obj.analyses
@@ -531,7 +531,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
           """.trimIndent(),
             model = api,
             temperature = 0.7,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -692,7 +692,7 @@ Be specific, data-driven, and actionable.
           """.trimIndent(),
               model = api,
               temperature = 0.7,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             var generatedSection = sectionAgent.answer(listOf("Write section")).obj
@@ -791,7 +791,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
           """.trimIndent(),
               model = api,
               temperature = 0.7,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             val recommendations = recommendationAgent.answer(listOf("Generate recommendations")).obj.recommendations
@@ -910,7 +910,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
           """.trimIndent(),
               model = api,
               temperature = 0.6,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             val riskAssessment = riskAgent.answer(listOf("Assess risks")).obj.risks

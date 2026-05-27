@@ -377,7 +377,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
             model = defaultSmart.getChildClient(task),
             temperature = 0.8,
             name = "LateralThinking_${technique}",
-            parsingChatter = defaultFast,
+            parsingModel = defaultFast,
           )
 
           val application = techniqueParser.answer(listOf(techniquePrompt)).obj
@@ -606,7 +606,7 @@ Provide a structured evaluation.
             model = defaultSmart.getChildClient(task),
             temperature = 0.4,
             name = "FeasibilityEvaluation",
-            parsingChatter = defaultFast,
+            parsingModel = defaultFast,
           )
 
           feasibilityEvaluation = feasibilityParser.answer(listOf(feasibilityPrompt)).obj

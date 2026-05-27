@@ -310,7 +310,7 @@ class BrainstormingTask(
         prompt = brainstormPrompt,
         model = defaultChatter,
         temperature = if (includeCreative) 0.8 else 0.6,
-        parsingChatter = parsingChatter
+        parsingModel = parsingChatter
       )
 
       val brainstormResult = brainstormAgent.answer(listOf(brainstormPrompt))
@@ -392,7 +392,7 @@ class BrainstormingTask(
           prompt = analysisPrompt,
           model = defaultChatter,
           temperature = 0.3,
-          parsingChatter = parsingChatter
+          parsingModel = parsingChatter
         )
         val analysis = perOptionAgent.answer(listOf(analysisPrompt))
         analyses[optionNumber] = analysis.obj
@@ -503,7 +503,7 @@ class BrainstormingTask(
         prompt = summaryPrompt,
         model = defaultChatter,
         temperature = 0.4,
-        parsingChatter = parsingChatter
+        parsingModel = parsingChatter
       )
 
       val summaryResult = summaryAgent.answer(listOf(summaryPrompt)).obj

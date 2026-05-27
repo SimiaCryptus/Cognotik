@@ -283,7 +283,7 @@ class AnalogicalReasoningTask(
         model = api,
         temperature = 0.7,
         name = "AnalogicalReasoning",
-        parsingChatter = fastApi,
+        parsingModel = fastApi,
         deserializerRetries = 2,
       )
 

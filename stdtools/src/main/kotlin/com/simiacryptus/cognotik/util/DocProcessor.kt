@@ -1064,16 +1064,14 @@ class DocProcessor(
         model: ChatInterface? = null,
         parentSession: Session? = null
     ): TaskExecutionConfig {
-        var model = model ?: harness.fastModel.asChatInterface(user).let {
+        val model = model ?: harness.fastModel.asChatInterface(user).let {
             if (task != null) {
                 it.getChildClient(task)
+            } else if (null != parentSession) {
+                it.getChildClient(parentSession)
             } else {
-                log.info("No task provided for execution config, using base model without session context")
                 it
             }
-        }
-        if(null != parentSession) {
-            model.session = parentSession
         }
         val data = mod.data.copy()
         val config = when {

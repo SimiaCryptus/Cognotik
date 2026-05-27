@@ -463,7 +463,7 @@ class InteractiveStoryTask(
         prompt = structurePrompt,
         model = smartApi,
         temperature = 0.5,
-        parsingChatter = fastApi
+        parsingModel = fastApi
       )
 
       val structure = structureAgent.answer(listOf("Create detailed structure from outline")).obj
@@ -635,7 +635,7 @@ class InteractiveStoryTask(
         prompt = openingPrompt,
         model = smartApi,
         temperature = 0.8,
-        parsingChatter = fastApi
+        parsingModel = fastApi
       )
 
       val openingSegment = openingAgent.answer(listOf("Write opening")).obj
@@ -767,7 +767,7 @@ class InteractiveStoryTask(
           prompt = decisionPrompt,
           model = smartApi,
           temperature = 0.8,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val segment = decisionAgent.answer(listOf("Write decision point")).obj.copy(id = decisionPoint.id)
@@ -898,7 +898,7 @@ class InteractiveStoryTask(
           prompt = endingPrompt,
           model = smartApi,
           temperature = 0.8,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val endingSegment = endingAgent.answer(listOf("Write ending")).obj.copy(id = ending.id)

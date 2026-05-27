@@ -227,7 +227,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
       prompt = prompt,
       resultClass = ExtractedTableData::class.java,
       model = model,
-      parsingChatter = model
+      parsingModel = model
     ).answer(listOf(content.take(50000))).obj
 
     // Apply row limit if configured

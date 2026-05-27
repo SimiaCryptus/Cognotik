@@ -200,7 +200,7 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
         "\nAvailable files:\n\n" + FileSelectionUtils.getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
       } ?: ""),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = 0.1,
       describer = describer
     )

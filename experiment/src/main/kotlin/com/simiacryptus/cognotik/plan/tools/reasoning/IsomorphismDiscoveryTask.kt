@@ -225,7 +225,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             prompt = prompt,
             model = api,
             temperature = 0.2,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           var result = parser.answer(listOf(prompt)).obj

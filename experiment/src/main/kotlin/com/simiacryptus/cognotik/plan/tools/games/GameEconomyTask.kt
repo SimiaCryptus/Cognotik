@@ -916,7 +916,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
           prompt = summaryPrompt,
           model = api,
           temperature = 0.2,
-          parsingChatter = defaultFast,
+          parsingModel = defaultFast,
         )
 
         val gameEconomy = parsedAgent.answer(toInput(summaryPrompt)).obj

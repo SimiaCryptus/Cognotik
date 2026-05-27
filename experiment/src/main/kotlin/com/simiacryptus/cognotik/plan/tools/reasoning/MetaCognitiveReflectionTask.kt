@@ -267,7 +267,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       resultClass = ReflectionAnalysis::class.java,
       prompt = buildSystemPrompt() + "\n\n" + prompt,
       model = api,
-      parsingChatter = defaultFast
+      parsingModel = defaultFast
     )
 
     try {

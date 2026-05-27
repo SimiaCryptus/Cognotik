@@ -17,7 +17,7 @@ open class ParsedAgent<T : Any>(
   name: String? = resultClass?.simpleName,
   model: ChatInterface,
   temperature: Double = 0.3,
-  val parsingChatter: ChatInterface,
+  val parsingModel: ChatInterface,
   val deserializerRetries: Int = 2,
   val validation: Boolean = true,
   open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
@@ -83,9 +83,9 @@ open class ParsedAgent<T : Any>(
     override val text =
       model.chat(
         ChatRequest(
-          model = model.modelType.modelId,
+          model = model.model.modelId,
           messages = messages.toList(),
-          temperature = model.temperature,
+          temperature = temperature,
           audio = model.audio,
         )
       ).choices.firstOrNull()?.message?.content
@@ -133,9 +133,9 @@ open class ParsedAgent<T : Any>(
         """.trimMargin()
     for (i in 0 until deserializerRetries) {
       try {
-        val content = parsingChatter.chat(
+        val content = parsingModel.chat(
           ChatRequest(
-            model = parsingChatter.modelType.modelId,
+            model = parsingModel.model.modelId,
             messages = listOf(
               ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
               ModelSchema.ChatMessage(
@@ -143,8 +143,8 @@ open class ParsedAgent<T : Any>(
                 content = "The user message to parse:\n\n$input".toContentList()
               ),
             ),
-            temperature = parsingChatter.temperature,
-            audio = parsingChatter.audio,
+            temperature = temperature,
+            audio = parsingModel.audio,
           )
         ).choices.first().message?.content
 
@@ -241,7 +241,7 @@ inline fun <reified T : Any> Any.parserCast(
   prompt = "",
   resultClass = T::class.java,
   model = model,
-  parsingChatter = model,
+  parsingModel = model,
   describer = describer,
   singleStage = true
 ).getParser().apply(this.toJson())

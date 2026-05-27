@@ -287,7 +287,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           resultClass = ComicScript::class.java,
           prompt = scriptPrompt,
           model = api,
-          parsingChatter = parsingChatter,
+          parsingModel = parsingChatter,
           temperature = 0.7
         )
 

@@ -782,7 +782,7 @@ class DecompositionSynthesisTask(
       resultClass = ProblemDecomposition::class.java,
       prompt = prompt,
       model = api,
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     return decompositionAgent.answer(listOf(problem)).obj
@@ -856,7 +856,7 @@ class DecompositionSynthesisTask(
         resultClass = SubproblemSolution::class.java,
         prompt = prompt,
         model = api,
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       )
 
       val solution = solutionAgent.answer(listOf(subproblem.description)).obj
@@ -963,7 +963,7 @@ class DecompositionSynthesisTask(
       resultClass = SynthesizedSolution::class.java,
       prompt = prompt,
       model = api,
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
     return synthesisAgent.answer(listOf(problem)).obj
   }
@@ -1004,7 +1004,7 @@ class DecompositionSynthesisTask(
       resultClass = CoherenceValidation::class.java,
       prompt = prompt,
       model = api,
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     return validationAgent.answer(listOf(synthesized.solution)).obj

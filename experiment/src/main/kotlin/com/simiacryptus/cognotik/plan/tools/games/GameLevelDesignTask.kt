@@ -531,7 +531,7 @@ Keep zone descriptions brief - detailed content will be added later.
           """.trimIndent(),
         model = api,
         temperature = 0.7,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       var level = structureAgent.answer(listOf("Create level structure")).obj
@@ -662,7 +662,7 @@ Return the complete level with all encounters filled in.
           """.trimIndent(),
         model = api,
         temperature = 0.7,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       level = encounterAgent.answer(listOf("Design encounters")).obj
@@ -775,7 +775,7 @@ Return the complete level with pacing_curve filled in.
           """.trimIndent(),
         model = api,
         temperature = 0.6,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       level = pacingAgent.answer(listOf("Analyze pacing")).obj
@@ -883,7 +883,7 @@ Return the complete level with collectibles and secrets filled in.
           """.trimIndent(),
           model = api,
           temperature = 0.7,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
         level = collectiblesAgent.answer(listOf("Add collectibles and secrets")).obj
@@ -980,7 +980,7 @@ Create comprehensive guidance that helps without patronizing.
           """.trimIndent(),
         model = api,
         temperature = 0.6,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       val guidance = guidanceAgent.answer(listOf("Design player guidance")).obj
@@ -1078,7 +1078,7 @@ Ensure variants maintain the core level design while adjusting challenge.
           """.trimIndent(),
           model = api,
           temperature = 0.6,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
         val variants = variantsAgent.answer(listOf("Generate difficulty variants")).obj

@@ -538,7 +538,7 @@ class TechnicalExplanationTask(
           prompt = outlinePrompt,
           model = api,
           temperature = typeConfig?.outline_temperature ?: 0.6,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -743,7 +743,7 @@ class TechnicalExplanationTask(
             prompt = sectionPrompt,
             model = api,
             temperature = typeConfig?.section_temperature ?: 0.7,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val section = sectionAgent.answer(listOf("Write section")).obj

@@ -20,9 +20,9 @@ open class ChatAgent(
   override fun respond(input: List<String>, vararg messages: ModelSchema.ChatMessage): String =
     model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = messages.toList(),
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     ).choices.first().message?.content ?: throw RuntimeException("No response")

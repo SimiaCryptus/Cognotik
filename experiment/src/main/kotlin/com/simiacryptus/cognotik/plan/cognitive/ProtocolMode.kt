@@ -234,7 +234,7 @@ open class ProtocolMode(
       resultClass = ProtocolDefinition::class.java,
       prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(messages).obj
@@ -261,7 +261,7 @@ open class ProtocolMode(
       resultClass = Tasks::class.java,
       prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
@@ -304,7 +304,7 @@ open class ProtocolMode(
       resultClass = ValidationResult::class.java,
       prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(messages).obj
@@ -345,7 +345,7 @@ open class ProtocolMode(
                 $availableFiles
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = 0.1,
       describer = describer
     )

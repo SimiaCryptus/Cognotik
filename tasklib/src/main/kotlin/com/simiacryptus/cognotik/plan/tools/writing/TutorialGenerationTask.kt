@@ -443,7 +443,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                   """.trimIndent(),
             model = api,
             temperature = 0.6,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           val outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -649,7 +649,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                   """.trimIndent(),
               model = api,
               temperature = 0.5,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             val tutorialStep = stepAgent.answer(listOf("Write step")).obj
@@ -786,7 +786,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                   """.trimIndent(),
               model = api,
               temperature = 0.5,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             troubleshootingSection = troubleshootingAgent.answer(listOf("Create troubleshooting")).obj
@@ -888,7 +888,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                   """.trimIndent(),
               model = api,
               temperature = 0.6,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             nextSteps = nextStepsAgent.answer(listOf("Generate next steps")).obj

@@ -384,8 +384,4 @@ val Throwable.stackTraceTxt: String
     return sw.toString()
   }
 
-fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
-  val childClient = this.getChildClient()
-  childClient.logStreams += task.newLogStream()
-  return childClient
-}
+fun ChatInterface.getChildClient(task: SessionTask) = getChildClient(task.ui.sessionId).apply { logStreams += task.newLogStream() }

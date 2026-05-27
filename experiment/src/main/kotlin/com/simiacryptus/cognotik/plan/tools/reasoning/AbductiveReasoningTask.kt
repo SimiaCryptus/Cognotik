@@ -728,7 +728,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       prompt = prompt.toString(),
       model = api,
       temperature = 0.7,
-      parsingChatter = defaultFast
+      parsingModel = defaultFast
     )
 
     val response = parsedAgent.answer(listOf(prompt.toString())).obj
@@ -785,7 +785,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       prompt = prompt.toString(),
       model = api,
       temperature = 0.5,
-      parsingChatter = defaultFast
+      parsingModel = defaultFast
     )
 
     val response = parsedAgent.answer(listOf(prompt.toString())).obj

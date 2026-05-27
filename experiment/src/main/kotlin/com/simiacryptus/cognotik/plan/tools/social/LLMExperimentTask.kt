@@ -676,7 +676,7 @@ Be specific and reference the data provided.
         """.trimIndent(),
     model = this,
     temperature = 0.1,
-    parsingChatter = this,
+    parsingModel = this,
   ).answer(
     listOf(
       "Response to evaluate:\n```\n$response\n```"

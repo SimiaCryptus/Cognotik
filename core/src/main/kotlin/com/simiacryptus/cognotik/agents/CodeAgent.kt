@@ -434,9 +434,9 @@ Correct the code and try again.
   private fun chat(request: ChatRequest, model: ChatInterface): String {
     return model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = request.messages,
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     )

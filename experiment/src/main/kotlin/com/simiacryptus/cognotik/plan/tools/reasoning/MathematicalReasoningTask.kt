@@ -619,7 +619,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.3,
         name = "InitialStateAnalyzer",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Analyze the initial state")).obj
     } catch (e: Exception) {
       log.warn("Failed to analyze initial state", e)
@@ -783,7 +783,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.4,
         name = "StepGenerator",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Generate the next step")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate next step", e)
@@ -817,7 +817,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.2,
         name = "StepVerifier",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Verify this step")).obj
     } catch (e: Exception) {
       log.warn("Failed to verify step", e)
@@ -851,7 +851,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.2,
         name = "GoalChecker",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Check if goal is reached")).obj
     } catch (e: Exception) {
       log.warn("Failed to check goal", e)
@@ -888,7 +888,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.6,
         name = "AlternativeGenerator",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Generate alternatives")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate alternatives", e)

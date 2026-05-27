@@ -177,7 +177,7 @@ class FactCheckingStrategy : PageProcessingStrategy {
       prompt = prompt,
       resultClass = FactCheckResult::class.java,
       model = context.orchestrationConfig.defaultFast.getChildClient(context.task),
-      parsingChatter = context.orchestrationConfig.defaultFast.getChildClient(context.task)
+      parsingModel = context.orchestrationConfig.defaultFast.getChildClient(context.task)
     ).answer(listOf(content))
 
     return analysis.obj.copy(

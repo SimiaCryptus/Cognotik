@@ -211,7 +211,7 @@ class CausalInferenceTask(
             resultClass = CausalAnalysisResult::class.java,
             prompt = prompt,
             model = api,
-            parsingChatter = fastApi,
+            parsingModel = fastApi,
             deserializerRetries = 2
           )
 

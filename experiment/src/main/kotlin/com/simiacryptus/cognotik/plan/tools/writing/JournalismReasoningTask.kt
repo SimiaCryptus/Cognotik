@@ -443,7 +443,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = factPrompt,
             model = smartApi,
             temperature = 0.3,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val factChecks = factAgent.answer(listOf("Verify facts")).obj.facts
@@ -569,7 +569,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = perspectivePrompt,
             model = smartApi,
             temperature = 0.5,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val perspectives = perspectiveAgent.answer(listOf("Identify perspectives")).obj.sources
@@ -672,7 +672,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = contextPrompt,
             model = smartApi,
             temperature = 0.5,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val context = contextAgent.answer(listOf("Analyze context")).obj
@@ -766,7 +766,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = biasPrompt,
             model = smartApi,
             temperature = 0.4,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val biasAnalysis = biasAgent.answer(listOf("Analyze biases")).obj
@@ -873,7 +873,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = anglesPrompt,
             model = smartApi,
             temperature = 0.7,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val angles = anglesAgent.answer(listOf("Explore angles")).obj.angles
@@ -990,7 +990,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = gapsPrompt,
             model = smartApi,
             temperature = 0.5,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val gaps = gapsAgent.answer(listOf("Find gaps")).obj.gaps

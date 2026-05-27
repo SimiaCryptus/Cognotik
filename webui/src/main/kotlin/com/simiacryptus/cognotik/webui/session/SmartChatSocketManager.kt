@@ -109,9 +109,9 @@ open class SmartChatSocketManager(
       try {
         val chatResponse = modelToUse.chat(
           ChatRequest(
-            model = modelToUse.modelType.modelId,
+            model = modelToUse.model.modelId,
             messages = finalMessages,
-            temperature = modelToUse.temperature,
+            temperature = temperature,
             audio = modelToUse.audio,
           )
         )
@@ -183,7 +183,7 @@ open class SmartChatSocketManager(
       model = model,
       temperature = temperature,
       name = "Topics",
-      parsingChatter = fastModel,
+      parsingModel = fastModel,
     )
     return if (fastTopicParsing) {
       topicsParsedActor.getParser().apply(response)
@@ -231,7 +231,7 @@ open class SmartChatSocketManager(
       model = model,
       temperature = 0.1,
       name = "QueryElevation",
-      parsingChatter = model,
+      parsingModel = model,
     ).getParser().apply(userMessage)
     log.debug("Elevation decision: shouldElevate=${decision.shouldElevate}, reason=${decision.reason}")
     decision.shouldElevate
@@ -330,9 +330,9 @@ open class SmartChatSocketManager(
       val childClient = fastModel.getChildClient(task)
       val response = childClient.chat(
         ChatRequest(
-          model = childClient.modelType.modelId,
+          model = childClient.model.modelId,
           messages = summaryMessages,
-          temperature = childClient.temperature,
+          temperature = temperature,
           audio = childClient.audio,
         )
       )

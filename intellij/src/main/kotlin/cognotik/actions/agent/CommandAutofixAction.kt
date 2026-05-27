@@ -118,8 +118,8 @@ class CommandAutofixAction : BaseAction() {
                     root = root,
                     settings = settings,
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartChatClient.getChildClient(),
-                    fastModel = AppSettingsState.instance.fastChatClient.getChildClient(),
+                    model = AppSettingsState.instance.smartChatClient,
+                    fastModel = AppSettingsState.instance.fastChatClient,
                     processor = AppSettingsState.instance.processor
                 )
                 val session = Session.newUserID()

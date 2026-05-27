@@ -152,7 +152,7 @@ class MultiStepPatchAction : BaseAction() {
           For each task, provide a list of files to be modified and a description of the changes to be made.
         """.trimIndent(),
                 model = model,
-                parsingChatter = fastModel,
+                parsingModel = fastModel,
             ),
             ActorTypes.TaskCodingActor to ChatAgent(
                 prompt = "Implement the changes to the codebase as described in the task list.\n\n" + processor.patchFormatPrompt,

@@ -317,7 +317,7 @@ Ensure the structure:
           """.trimIndent(),
         model = api,
         temperature = 0.6,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       val structure = structureAgent.answer(listOf("Generate structure")).obj
@@ -443,7 +443,7 @@ After writing, provide:
         prompt = writingPrompt,
         model = api,
         temperature = 0.7,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       var article = articleAgent.answer(listOf("Write the article")).obj
@@ -573,7 +573,7 @@ Make each snippet:
           """.trimIndent(),
           model = api,
           temperature = 0.8,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
         val socialSnippets = socialAgent.answer(listOf("Generate snippets")).obj

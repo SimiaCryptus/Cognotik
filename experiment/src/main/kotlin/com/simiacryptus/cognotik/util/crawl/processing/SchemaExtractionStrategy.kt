@@ -206,7 +206,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
       prompt = prompt,
       resultClass = ExtractedData::class.java,
       model = model,
-      parsingChatter = model
+      parsingModel = model
     ).answer(listOf(content.take(50000))).obj // Limit content size for processing
   }
 

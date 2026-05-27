@@ -163,7 +163,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         val response =
           model.chat(
             ChatRequest(
-              model = model.modelType.modelId,
+              model = model.model.modelId,
               messages = listOf(
                 ChatMessage(
                   Role.system,
@@ -188,7 +188,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                                       """.trimIndent()).toContentList(),
                 )
               ),
-              temperature = model.temperature,
+              temperature = AppSettingsState.instance.temperature,
               audio = model.audio,
             )
           ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(

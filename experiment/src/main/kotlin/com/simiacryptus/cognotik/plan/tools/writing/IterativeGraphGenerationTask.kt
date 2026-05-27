@@ -250,7 +250,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
             prompt = prompt,
             model = api,
             temperature = 0.2,
-            parsingChatter = api,
+            parsingModel = api,
             singleStage = true
           ).answer(listOf("Analyze and update graph"))
 

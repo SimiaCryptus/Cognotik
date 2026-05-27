@@ -174,7 +174,7 @@ open class PromptOptimization(
     testCase: TestCase
   ): List<Pair<ChatResponse, Double>> {
     var chatRequest = ChatRequest(
-      model = model.modelType.modelId
+      model = model.model.modelId
     )
     var response = ChatResponse()
     chatRequest = chatRequest.copy(
@@ -196,9 +196,9 @@ open class PromptOptimization(
       for (retry in 0..testCase.retries) {
         response = model.chat(
           ChatRequest(
-            model = model.modelType.modelId,
+            model = model.model.modelId,
             messages = chatRequest.messages,
-            temperature = model.temperature,
+            temperature = chatRequest.temperature,
             audio = model.audio,
           )
         )

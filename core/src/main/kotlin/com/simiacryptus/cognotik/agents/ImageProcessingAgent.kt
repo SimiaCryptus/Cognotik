@@ -48,9 +48,9 @@ open class ImageProcessingAgent(
   ): ImageAndText {
     val choices = model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = messages.toList(),
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     ).choices

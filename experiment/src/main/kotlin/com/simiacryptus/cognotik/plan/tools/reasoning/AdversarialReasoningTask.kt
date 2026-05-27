@@ -741,7 +741,7 @@ Be thorough, creative, and adversarial in your thinking.
 Consider unconventional attack paths and second-order effects.$exploitWarning
             """.trimIndent(),
       model = api,
-      parsingChatter = api,
+      parsingModel = api,
       temperature = 0.8 // Higher temperature for creative adversarial thinking
     )
   }

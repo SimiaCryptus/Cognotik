@@ -268,7 +268,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
           prompt = timelinePrompt,
           model = api,
           temperature = 0.3,
-          parsingChatter = defaultFast,
+          parsingModel = defaultFast,
         )
 
         val timelineAnalysis = timelineAgent.answer(listOf(timelinePrompt)).obj

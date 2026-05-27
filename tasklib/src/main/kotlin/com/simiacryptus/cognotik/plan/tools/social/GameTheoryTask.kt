@@ -646,7 +646,7 @@ GameTheory - Analyze strategic interactions using game theory
           prompt = summaryPrompt,
           model = api,
           temperature = effectiveTypeConfig.summary_temperature,
-          parsingChatter = defaultFast,
+          parsingModel = defaultFast,
           deserializerRetries = 2,
         )
 

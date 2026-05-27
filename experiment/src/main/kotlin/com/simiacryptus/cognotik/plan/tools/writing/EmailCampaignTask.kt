@@ -371,7 +371,7 @@ Consider:
           """.trimIndent(),
             model = api,
             temperature = 0.7,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           val strategy = strategyAgent.answer(listOf("Develop strategy")).obj
@@ -482,7 +482,7 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
           """.trimIndent(),
               model = api,
               temperature = 0.7,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -583,7 +583,7 @@ For each variant, specify the approach used and character count.
             """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = defaultFast
+                parsingModel = defaultFast
               )
 
               subjectAgent.answer(listOf("Generate subject lines")).obj.variants
@@ -610,7 +610,7 @@ ${if (executionConfig.use_emoji) "- Uses relevant emoji if appropriate" else "- 
             """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = defaultFast
+                parsingModel = defaultFast
               )
 
               subjectAgent.answer(listOf("Generate subject line")).obj.variants
@@ -685,7 +685,7 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
           """.trimIndent(),
               model = api,
               temperature = 0.8,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             var emailContent = emailAgent.answer(listOf("Write email")).obj.copy(

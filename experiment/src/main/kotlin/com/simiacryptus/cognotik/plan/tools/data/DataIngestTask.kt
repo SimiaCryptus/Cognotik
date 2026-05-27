@@ -195,7 +195,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
             resultClass = RegexSuggestion::class.java,
             prompt = prompt,
             model = defaultChatter,
-            parsingChatter = parsingChatter
+            parsingModel = parsingChatter
           )
 
           val suggestion = agent.answer(listOf(prompt)).obj

@@ -192,15 +192,15 @@ open class ProxyAgent<T : Any>(
             )
       )
     )
-    request = request.copy(model = model.modelType.modelId)
+    request = request.copy(model = model.model.modelId)
     request = request.copy(temperature = temperature)
     val json = JsonUtil.toJson(request)
     log.info("Request JSON: {}", json)
     val completion = model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = request.messages,
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     ).choices.first().message?.content.orEmpty()

@@ -250,7 +250,7 @@ $dependencyContext
       resultClass = ModificationPlan::class.java,
       prompt = planningPrompt,
       model = defaultChatter,
-      parsingChatter = parsingChatter
+      parsingModel = parsingChatter
     )
 
     val planningInput = buildString {

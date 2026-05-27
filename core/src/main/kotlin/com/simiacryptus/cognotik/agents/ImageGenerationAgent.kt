@@ -62,9 +62,9 @@ open class ImageGenerationAgent(
   override fun respond(input: List<String>, vararg messages: ChatMessage): ImageAndText {
     var text = model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = messages.toList(),
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     ).choices.first().message?.content
@@ -73,7 +73,7 @@ open class ImageGenerationAgent(
     while (maxPrompt <= text.length && null != imageClient) {
       text = model.chat(
         ChatRequest(
-          model = model.modelType.modelId,
+          model = model.model.modelId,
           messages = listOf(
             messages.toList(),
             listOf(
@@ -82,7 +82,7 @@ open class ImageGenerationAgent(
             ),
           ).flatten().toTypedArray()
             .toList(),
-          temperature = model.temperature,
+          temperature = temperature,
           audio = model.audio,
         )
       ).choices.first().message?.content ?: throw RuntimeException("No response")
