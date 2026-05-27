@@ -73,9 +73,29 @@ function hasConfiguredApiKeys(state) {
         return v !== null && v !== undefined && String(v).trim() !== '';
     });
 }
+function isCognotikHostedEnvironment() {
+     try {
+         const host = (window.location.hostname || '').toLowerCase();
+         if (!host) return false;
+         // Match hosted.cognotik.com exactly, or any subdomain of cognotik.com
+         if (host === 'hosted.cognotik.com') return true;
+         if (host === 'cognotik.com') return true;
+         if (host.endsWith('.cognotik.com')) return true;
+         return false;
+     } catch (e) {
+         return false;
+     }
+}
 function updateApiKeyBanner() {
     const banner = document.getElementById('api-key-banner');
     if (!banner) return;
+     // Suppress the banner entirely on the hosted Cognotik environment,
+     // where API keys are managed server-side and users do not need to
+     // configure their own.
+     if (isCognotikHostedEnvironment()) {
+         banner.style.display = 'none';
+         return;
+     }
     if (hasConfiguredApiKeys(appState)) {
         banner.style.display = 'none';
     } else {
@@ -283,21 +303,32 @@ function escapeHtmlSafe(s) {
 }
 // ===== Usage modal =====
 // Generic helper to wire up a modal that displays a given URL in an iframe.
-function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url }) {
+function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url, loadingOverlayId }) {
     const btn = document.getElementById(buttonId);
     const modal = document.getElementById(modalId);
     const iframe = document.getElementById(iframeId);
     const closeBtn = closeBtnId ? document.getElementById(closeBtnId) : null;
+    const loadingOverlay = loadingOverlayId ? document.getElementById(loadingOverlayId) : null;
     if (!btn || !modal || !iframe) return;
     const close = () => {
         modal.style.display = 'none';
         iframe.src = 'about:blank';
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
     };
     btn.addEventListener('click', () => {
         // (Re)load each time it's opened so data is fresh
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
         iframe.src = url;
         modal.style.display = 'block';
     });
+    if (loadingOverlay) {
+        iframe.addEventListener('load', () => {
+            // Don't hide overlay for the "about:blank" reset
+            if (iframe.src && iframe.src !== 'about:blank' && !iframe.src.endsWith('about:blank')) {
+                loadingOverlay.style.display = 'none';
+            }
+        });
+    }
     if (closeBtn) {
         closeBtn.addEventListener('click', close);
     }
@@ -317,7 +348,8 @@ function setupSessionsButton() {
         modalId: 'sessions-modal',
         iframeId: 'sessions-iframe',
         closeBtnId: 'close-sessions-modal',
-        url: '/sessions/'
+        url: '/sessions/',
+        loadingOverlayId: 'sessions-loading-overlay'
     });
 }
 // ===== Budget / Usage button (unified) =====

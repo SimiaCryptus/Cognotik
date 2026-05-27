@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -193,6 +194,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 }
 
 class DataStorageTest : StorageInterfaceTest(run {
+    SecureString.key = SecureString.randomKey()
     DatabaseFacet.root = null
     DataStorage(
         Files.createTempDirectory("sessionDataTest").toFile(),
