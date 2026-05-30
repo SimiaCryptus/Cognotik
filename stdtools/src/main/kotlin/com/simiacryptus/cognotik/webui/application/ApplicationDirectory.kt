@@ -76,7 +76,10 @@ abstract class ApplicationDirectory(
         .also { log.debug("Initialized SimpleLoginServlet") }
     open val appDirectoryServlet: HttpServlet = AppDirectoryServlet()
         .also { log.debug("Initialized AppDirectoryServlet") }
+     open val sitemapServlet: HttpServlet = SitemapServlet()
+         .also { log.debug("Initialized SitemapServlet") }
     open val pluginManagerServlet: HttpServlet? by lazy { PluginManagerServlet().also { log.debug("Initialized PluginManagerServlet") } }
+    open val videoLandingServlet by lazy { VideoLandingServlet() }
 
     open val authCallbackServlet by lazy { AuthCallbackServlet() }
 
@@ -121,11 +124,17 @@ abstract class ApplicationDirectory(
     open fun webAppContexts(): Array<WebAppContext> {
         return listOfNotNull(
             run { log.debug("Creating web app contexts"); null },
-            newWebAppContext("/", welcomeResources, "welcome", welcomeServlet),
+             newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).also { ctx ->
+                 val sitemapHolder = ServletHolder(sitemapServlet)
+                 sitemapHolder.registration.setMultipartConfig(MultipartConfigElement("./tmp"))
+                 ctx.addServlet(sitemapHolder, "/sitemap.xml")
+                 ctx.addServlet(sitemapHolder, "/sitemap")
+             },
             newWebAppContext("/auth/*", authCallbackServlet),
             newWebAppContext("/logout", logoutServlet),
             newWebAppContext("/login", loginServlet),
             newWebAppContext("/appDirectory", appDirectoryServlet),
+            newWebAppContext("/video", videoLandingServlet),
             newWebAppContext("/api", welcomeServlet).configureAuth(ApplicationServer::class.java),
             newWebAppContext("/sessions", sessionsServlet).configureAuth(ApplicationServer::class.java),
             newWebAppContext("/sessionUsage", sessionUsageDetailsServlet).configureAuth(ApplicationServer::class.java),
@@ -317,4 +326,3 @@ abstract class ApplicationDirectory(
     }
 
 }
-

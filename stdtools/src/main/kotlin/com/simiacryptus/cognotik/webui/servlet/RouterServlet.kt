@@ -304,6 +304,10 @@ class RouterServlet(
         // Background and icon image URLs (served by a static resource handler based on appId)
         val backgroundUrl =
             if (appEntry.hasBackground) "/appDirectory/${appEntry.appId ?: appEntry.id}/background.png" else null
+         // Video landing page URL (SEO-friendly dedicated page)
+         val videoLandingUrl = if (!appEntry.videoUrl.isNullOrBlank())
+             "/video/${appEntry.appId ?: appEntry.id}"
+         else null
 
         val backgroundCss = if (backgroundUrl != null) {
             """
@@ -372,21 +376,29 @@ class RouterServlet(
         val videoHtml = if (!videoUrl.isNullOrBlank()) {
             // Support direct video files and YouTube/Vimeo embeds
             if (videoUrl.contains("youtube.com") || videoUrl.contains("youtu.be") || videoUrl.contains("vimeo.com")) {
-                """
-                <div class="app-video">
-                  <iframe src="${escapeHtml(videoUrl)}" frameborder="0" allowfullscreen
-                          title="${escapeHtml(displayName)} demo"></iframe>
-                </div>
-                """.trimIndent()
+                 val landingLink = if (videoLandingUrl != null)
+                     """<div class="app-video-footer"><a href="${escapeHtml(videoLandingUrl)}" class="video-landing-link">🔗 View dedicated video page</a></div>"""
+                 else ""
+                 """
+                 <div class="app-video">
+                   <iframe src="${escapeHtml(videoUrl)}" frameborder="0" allowfullscreen
+                           title="${escapeHtml(displayName)} demo"></iframe>
+                 </div>
+                 $landingLink
+                 """.trimIndent()
             } else {
-                """
-                <div class="app-video">
-                  <video controls preload="metadata">
-                    <source src="${escapeHtml(videoUrl)}">
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-                """.trimIndent()
+                 val landingLink = if (videoLandingUrl != null)
+                     """<div class="app-video-footer"><a href="${escapeHtml(videoLandingUrl)}" class="video-landing-link">🔗 View dedicated video page</a></div>"""
+                 else ""
+                 """
+                 <div class="app-video">
+                   <video controls preload="metadata">
+                     <source src="${escapeHtml(videoUrl)}">
+                     Your browser does not support the video tag.
+                   </video>
+                 </div>
+                 $landingLink
+                 """.trimIndent()
             }
         } else ""
 
@@ -410,6 +422,7 @@ class RouterServlet(
                <script src="/modules/theme.js"></script>
                <script src="/modules/marked.min.js"></script>
                <link rel="stylesheet" href="/menubar.css">
+              ${if (videoLandingUrl != null) """<link rel="alternate" type="text/html" href="${escapeHtml(videoLandingUrl)}" title="${escapeHtml("$displayName Demo Video")}">""" else ""}
                <style>
                  :root {
                    --bg: #ffffff;
@@ -490,6 +503,19 @@ class RouterServlet(
                  .app-video { margin: 1.5em 0; border-radius: 6px; overflow: hidden;
                               background: var(--panel-bg); border: 1px solid var(--panel-border); }
                  .app-video iframe, .app-video video { width: 100%; aspect-ratio: 16 / 9; display: block; border: 0; }
+                .app-video-footer {
+                  padding: 0.4em 0.75em;
+                  background: var(--panel-bg);
+                  border: 1px solid var(--panel-border);
+                  border-top: none;
+                  border-radius: 0 0 6px 6px;
+                  font-size: 0.85em;
+                }
+                .video-landing-link {
+                  color: var(--btn-primary-bg);
+                  text-decoration: none;
+                }
+                .video-landing-link:hover { text-decoration: underline; }
                  .app-examples { margin: 2em 0; padding: 1em; background: var(--panel-bg);
                                  border: 1px solid var(--panel-border); border-radius: 4px; }
                  .app-examples h2 { margin-top: 0; }
