@@ -19,6 +19,10 @@ import java.util.TimeZone
  *
  * Optionally, requesting `?format=txt` returns a plain-text list of URLs
  * (one per line), useful for quick inspection or simple crawlers.
+  *
+  * This servlet also handles robots.txt requests. The robots.txt disallows all
+  * paths by default, then explicitly allows only the URLs defined in the sitemap,
+  * plus sitemap.xml, robots.txt, and the gateway page itself.
  */
 class SitemapServlet : HttpServlet() {
 
@@ -37,44 +41,26 @@ class SitemapServlet : HttpServlet() {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&apos;")
+         /** Extracts the path component from an absolute URL, or returns the value as-is if already a path. */
+         private fun toPath(url: String, baseUrl: String): String? {
+             return when {
+                 url.startsWith(baseUrl) -> url.removePrefix(baseUrl).ifEmpty { "/" }
+                 url.startsWith("http://") || url.startsWith("https://") -> null // external URL – skip
+                 url.startsWith("/") -> url
+                 else -> "/$url"
+             }
+         }
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         try {
             val baseUrl = computeBaseUrl(req)
-            val format = req.getParameter("format")?.lowercase()
+             val servletPath = req.servletPath ?: req.pathInfo ?: ""
 
-            val urls = buildUrlList(baseUrl)
-
-            if (format == "txt") {
-                resp.contentType = "text/plain; charset=UTF-8"
-                resp.characterEncoding = "UTF-8"
-                resp.writer.use { out ->
-                    urls.forEach { out.println(it.loc) }
-                }
-                log.debug("Served sitemap.txt with ${urls.size} URLs")
-                return
-            }
-
-            resp.contentType = "application/xml; charset=UTF-8"
-            resp.characterEncoding = "UTF-8"
-            resp.setHeader("Cache-Control", "public, max-age=3600")
-
-            val now = w3cDateNow()
-            resp.writer.use { out ->
-                out.println("""<?xml version="1.0" encoding="UTF-8"?>""")
-                out.println("""<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">""")
-                urls.forEach { entry ->
-                    out.println("  <url>")
-                    out.println("    <loc>${escapeXml(entry.loc)}</loc>")
-                    out.println("    <lastmod>$now</lastmod>")
-                    out.println("    <changefreq>${entry.changefreq}</changefreq>")
-                    out.println("    <priority>${entry.priority}</priority>")
-                    out.println("  </url>")
-                }
-                out.println("</urlset>")
-            }
-            log.debug("Served sitemap.xml with ${urls.size} URLs")
+             when {
+                 servletPath.endsWith("robots.txt") -> serveRobotsTxt(req, resp, baseUrl)
+                 else -> serveSitemap(req, resp, baseUrl)
+             }
         } catch (e: Exception) {
             log.error("Error generating sitemap: ${e.message}", e)
             resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
@@ -82,6 +68,67 @@ class SitemapServlet : HttpServlet() {
             resp.writer.use { it.write("Error generating sitemap: ${e.message ?: "unknown"}") }
         }
     }
+     private fun serveSitemap(req: HttpServletRequest, resp: HttpServletResponse, baseUrl: String) {
+         val format = req.getParameter("format")?.lowercase()
+         val urls = buildUrlList(baseUrl)
+         if (format == "txt") {
+             resp.contentType = "text/plain; charset=UTF-8"
+             resp.characterEncoding = "UTF-8"
+             resp.writer.use { out ->
+                 urls.forEach { out.println(it.loc) }
+             }
+             log.debug("Served sitemap.txt with ${urls.size} URLs")
+             return
+         }
+         resp.contentType = "application/xml; charset=UTF-8"
+         resp.characterEncoding = "UTF-8"
+         resp.setHeader("Cache-Control", "public, max-age=3600")
+         val now = w3cDateNow()
+         resp.writer.use { out ->
+             out.println("""<?xml version="1.0" encoding="UTF-8"?>""")
+             out.println("""<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">""")
+             urls.forEach { entry ->
+                 out.println("  <url>")
+                 out.println("    <loc>${escapeXml(entry.loc)}</loc>")
+                 out.println("    <lastmod>$now</lastmod>")
+                 out.println("    <changefreq>${entry.changefreq}</changefreq>")
+                 out.println("    <priority>${entry.priority}</priority>")
+                 out.println("  </url>")
+             }
+             out.println("</urlset>")
+         }
+         log.debug("Served sitemap.xml with ${urls.size} URLs")
+     }
+     private fun serveRobotsTxt(req: HttpServletRequest, resp: HttpServletResponse, baseUrl: String) {
+         val urls = buildUrlList(baseUrl)
+         // Collect the path components of all sitemap URLs that belong to this host.
+         // External URLs (different host) are excluded from Allow rules.
+         val allowedPaths = urls
+             .mapNotNull { toPath(it.loc, baseUrl) }
+             .distinct()
+             .sorted()
+         resp.contentType = "text/plain; charset=UTF-8"
+         resp.characterEncoding = "UTF-8"
+         resp.setHeader("Cache-Control", "public, max-age=3600")
+         resp.writer.use { out ->
+             out.println("User-agent: *")
+             // Disallow everything by default …
+             out.println("Disallow: /")
+             out.println()
+             // … then explicitly allow the sitemap URLs …
+             allowedPaths.forEach { path ->
+                 out.println("Allow: $path")
+             }
+             // … plus the meta-files and gateway page themselves.
+             out.println("Allow: /sitemap.xml")
+             out.println("Allow: /robots.txt")
+             out.println("Allow: /gateway")
+             out.println()
+             out.println("Sitemap: $baseUrl/sitemap.xml")
+         }
+         log.debug("Served robots.txt with ${allowedPaths.size} allowed paths")
+     }
+
 
     private data class UrlEntry(
         val loc: String,
@@ -95,6 +142,8 @@ class SitemapServlet : HttpServlet() {
         entries += UrlEntry(loc = "$baseUrl/", changefreq = "daily", priority = "1.0")
         // App directory listing
         entries += UrlEntry(loc = "$baseUrl/appDirectory", changefreq = "daily", priority = "0.8")
+         // Gateway page
+         entries += UrlEntry(loc = "$baseUrl/gateway", changefreq = "daily", priority = "0.9")
 
         // Each registered AppEntry
         try {

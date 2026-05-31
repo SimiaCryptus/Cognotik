@@ -127,6 +127,7 @@ abstract class ApplicationDirectory(
              newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).also { ctx ->
                  val sitemapHolder = ServletHolder(sitemapServlet)
                  sitemapHolder.registration.setMultipartConfig(MultipartConfigElement("./tmp"))
+                 ctx.addServlet(sitemapHolder, "/robots.txt")
                  ctx.addServlet(sitemapHolder, "/sitemap.xml")
                  ctx.addServlet(sitemapHolder, "/sitemap")
              },
