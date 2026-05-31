@@ -63,6 +63,41 @@
             .about-section {
                 margin-bottom: 36px;
             }
+           .demo-video-section {
+               margin-bottom: 36px;
+           }
+           .demo-video-wrapper {
+               position: relative;
+               width: 100%;
+               border-radius: var(--radius-lg);
+               overflow: hidden;
+               border: 1px solid var(--color-border);
+               box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+               background: #000;
+              max-height: 220px;
+              transition: max-height 0.4s ease;
+          }
+          .demo-video-wrapper.playing {
+              max-height: 1200px;
+           }
+           .demo-video-wrapper video {
+               display: block;
+               width: 100%;
+               height: auto;
+              max-height: 220px;
+              object-fit: contain;
+              transition: max-height 0.4s ease;
+          }
+          .demo-video-wrapper.playing video {
+              max-height: none;
+           }
+           .demo-video-caption {
+               margin-top: 10px;
+               text-align: center;
+               font-size: 0.9em;
+               color: var(--color-muted);
+           }
+
 
             .about-section h2 {
                 font-size: 1.35em;
@@ -356,6 +391,47 @@
             <p class="about-hero-tagline">No subscriptions. No lock-in. No black boxes. Just AI you actually own.</p>
         </div>
     </div>
+   <div class="about-section demo-video-section">
+       <h2>🎬 See Cognotik in Action</h2>
+       <p>
+           Take a quick tour of Cognotik — see how purpose-built AI apps, multi-step workflows,
+           and human-in-the-loop controls come together in a single workspace.
+       </p>
+       <div class="demo-video-wrapper" id="demoVideoWrapper">
+           <video
+               id="demoVideo"
+               controls
+               preload="metadata"
+               playsinline
+               poster="logo.svg"
+               src="http://cognotik.com/videos/cognotik_tour.mp4">
+               <source src="http://cognotik.com/videos/cognotik_tour.mp4" type="video/mp4">
+               Your browser does not support embedded video.
+               <a href="http://cognotik.com/videos/cognotik_tour.mp4" rel="noopener" target="_blank">
+                   Watch the Cognotik tour video
+               </a>.
+           </video>
+       </div>
+       <p class="demo-video-caption">
+           Watch the full tour at
+           <a href="http://cognotik.com/videos/cognotik_tour.html" rel="noopener" target="_blank">cognotik.com/videos/cognotik_tour.html</a>
+       </p>
+   </div>
+   <script>
+       (function () {
+           var video = document.getElementById('demoVideo');
+           var wrapper = document.getElementById('demoVideoWrapper');
+           if (video && wrapper) {
+               video.addEventListener('play', function () {
+                   wrapper.classList.add('playing');
+               });
+               video.addEventListener('ended', function () {
+                   wrapper.classList.remove('playing');
+               });
+           }
+       })();
+   </script>
+
 
     <div class="about-section">
         <h2>🧠 What is Cognotik?</h2>

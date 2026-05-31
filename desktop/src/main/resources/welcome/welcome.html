@@ -508,13 +508,28 @@
          var aboutIframe = document.getElementById('about-iframe');
          var closeAbout  = document.getElementById('close-about-modal');
          function openAbout() {
-             if (aboutIframe.src === 'about:blank' || aboutIframe.src === '') {
-                 aboutIframe.src = 'about.html';
-             }
+            // Always (re)load to ensure a fresh state, since we blank the
+            // iframe on close to stop any playing media (e.g. demo video).
+            aboutIframe.src = 'about.html';
              aboutModal.style.display = 'block';
          }
          function closeAboutModal() {
              aboutModal.style.display = 'none';
+            // Stop any media playback (e.g. the demo video) by unloading
+            // the iframe document entirely. Simply hiding the modal does
+            // not pause <video> elements inside the iframe.
+            try {
+                var win = aboutIframe.contentWindow;
+                if (win) {
+                    var videos = win.document ? win.document.querySelectorAll('video, audio') : [];
+                    videos.forEach(function (v) {
+                        try { v.pause(); } catch (e) { /* ignore */ }
+                    });
+                }
+            } catch (e) {
+                // Cross-origin or access errors — fall through to src reset.
+            }
+            aboutIframe.src = 'about:blank';
          }
           // Expose for menubar onTitleClick callback
           window.__openAboutModal = openAbout;
