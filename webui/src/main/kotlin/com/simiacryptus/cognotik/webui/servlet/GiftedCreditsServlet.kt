@@ -395,6 +395,12 @@ class GiftedCreditsServlet : HttpServlet() {
                                 $themeOptions
                             </select>
                         </label>
+                        <div class="license-notice">
+                            <label style="display:flex;align-items:flex-start;gap:8px;font-weight:500;font-size:0.95em;">
+                                <input type="checkbox" name="acceptLicense" required style="width:auto;margin-top:4px;"/>
+                                <span>I have read and agree to the <a href="/LICENSE.html" target="_blank" rel="noopener" class="license-link">Cognotik Software License Agreement</a>, including the terms regarding API Credits, gifts, and non-refundability (Section 8.2).</span>
+                            </label>
+                        </div>
                         <button type="submit">✨ Create Gift ✨</button>
                     </form>
                 </div>
@@ -567,6 +573,35 @@ class GiftedCreditsServlet : HttpServlet() {
                             font-weight: 600;
                             cursor: pointer;
                         }
+                        .license-notice {
+                            background: ${theme.cardAccent};
+                            border: 2px dashed ${theme.accentColor};
+                            border-radius: 10px;
+                            padding: 12px 16px;
+                            margin: 15px 0;
+                        }
+                        .license-link {
+                            color: ${theme.primaryColor};
+                            font-weight: 700;
+                            text-decoration: underline;
+                        }
+                        .license-link:hover {
+                            color: ${theme.primaryDark};
+                        }
+                        .license-footer {
+                            margin-top: 30px;
+                            padding: 20px;
+                            background: ${theme.cardAccent};
+                            border-radius: 12px;
+                            text-align: center;
+                            border-top: 3px solid ${theme.accentColor};
+                        }
+                        .license-footer p {
+                            margin: 0;
+                            color: ${theme.primaryDark};
+                            font-size: 0.95em;
+                            line-height: 1.5;
+                        }
                     </style>
                 </head>
                 <body>
@@ -593,16 +628,16 @@ class GiftedCreditsServlet : HttpServlet() {
     
                  $createGiftSection
     
-                <div class="form-container">
-                    <h2>${theme.emoji} Claim Your Gift ${theme.emoji}</h2>
-                     <form method="post" action="$requestUri">
-                        <input type="hidden" name="action" value="claim"/>
-                        <input type="hidden" name="theme" value="${theme.id}"/>
-                        <label>🎫 Gift ID: <input type="text" name="giftId" required/></label>
-                        <button type="submit">${theme.emoji} Claim Now! ${theme.emoji}</button>
-                    </form>
-                </div>
-    
+<div class="form-container">
+                     <h2>${theme.emoji} Claim Your Gift ${theme.emoji}</h2>
+                      <form method="post" action="$requestUri">
+                         <input type="hidden" name="action" value="claim"/>
+                         <input type="hidden" name="theme" value="${theme.id}"/>
+                         <label>🎫 Gift ID: <input type="text" name="giftId" required/></label>
+                         <button type="submit">${theme.emoji} Claim Now! ${theme.emoji}</button>
+                     </form>
+                 </div>
+                 $giftsTable
                 $giftsTable
                  <h2 id="claims">$claimsHeading</h2>
                  $claimsFilterForm
@@ -639,6 +674,13 @@ class GiftedCreditsServlet : HttpServlet() {
                 }
                  </table>
                  <div class="festive-divider">${theme.dividerContent}</div>
+                 <footer class="license-footer">
+                     <p>
+                         📜 Use of Cognotik, gifted credits, and the cloud-hosted service is governed by the
+                         <a href="/LICENSE.html" target="_blank" rel="noopener" class="license-link">Cognotik Software License Agreement</a>.
+                         API Credits and gifts are non-refundable and have no cash value (see Section 8.2).
+                     </p>
+                 </footer>
                  </div>
                 </body>
                 </html>
@@ -863,6 +905,10 @@ class GiftedCreditsServlet : HttpServlet() {
                      $giftDetailsBlock
                      <a class="button" href="$loginUrl">🔐 Sign In to Claim</a>
                      <p class="note">After signing in, you'll be returned here to complete your claim.</p>
+                     <p style="color:#888;font-size:0.85em;margin-top:10px;">
+                         📜 By signing in and claiming, you agree to the
+                         <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik License Agreement</a>.
+                     </p>
                      <div class="festive-banner">${theme.bannerContent}</div>
                      <div style="margin-top:20px;">
                          <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>
@@ -1008,6 +1054,10 @@ class GiftedCreditsServlet : HttpServlet() {
                      <p>If someone shared a gift link with you, signing in will let you claim it.</p>
                      <a class="button" href="$loginUrl">🔐 Sign In</a>
                      <p class="hint">You'll be returned to this page after signing in. After signing in, you'll also have access to <strong>📊 Usage</strong> tracking and <strong>💳 Credit purchases</strong>.</p>
+                     <p style="color:#888;font-size:0.85em;margin-top:10px;">
+                         📜 Use of Cognotik is governed by the
+                         <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik Software License Agreement</a>.
+                     </p>
                      <div class="festive-banner">${theme.bannerContent}</div>
                      <div style="margin-top:20px;">
                          <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>
@@ -1064,6 +1114,17 @@ class GiftedCreditsServlet : HttpServlet() {
                     val grantDurationStr = request.getParameter("grantDuration")
                     val totalBudgetStr = request.getParameter("totalBudget")
                     val giftThemeId = request.getParameter("giftTheme")?.takeIf { it.isNotBlank() }
+                    val acceptLicense = request.getParameter("acceptLicense")
+                    if (acceptLicense.isNullOrBlank() || !(acceptLicense.equals("on", ignoreCase = true) ||
+                                acceptLicense.equals("true", ignoreCase = true) ||
+                                acceptLicense == "1")) {
+                        log.warn("Gift creation rejected: license not accepted by user={}", user)
+                        response.sendError(
+                            HttpServletResponse.SC_BAD_REQUEST,
+                            "You must accept the Cognotik Software License Agreement to create a gift. See /LICENSE.html"
+                        )
+                        return
+                    }
                     if (amountGrantedStr.isNullOrBlank() || grantDurationStr.isNullOrBlank() || totalBudgetStr.isNullOrBlank()) {
                         log.warn(
                             "Create gift missing parameters by user={} (amount={}, duration={}, budget={})",
@@ -1346,6 +1407,11 @@ class GiftedCreditsServlet : HttpServlet() {
                         <p><span class="theme-badge">🎨 ${theme.displayName}</span></p>
                     </div>
                     <p>Are you sure you want to claim this gift? This action cannot be undone.</p>
+                    <p style="font-size:0.9em;color:#666;font-style:italic;">
+                        By claiming, you agree to the
+                        <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik Software License Agreement</a>.
+                        Credits are non-refundable and have no cash value.
+                    </p>
                     <div class="button-row">
                         <a class="button primary" href="$confirmUrl">${theme.emoji} Yes, Claim It!</a>
                         <a class="button secondary" href="$cancelUrl">✖ Cancel</a>
@@ -1575,6 +1641,10 @@ class GiftedCreditsServlet : HttpServlet() {
                                                  <a class="button secondary" href="/credits">💳 Buy More Credits</a>
                                              </div>
                                              <p class="redirect-note">🕐 You will be redirected automatically in 5 seconds...</p>
+                                             <p style="color:#888;font-size:0.85em;margin-top:15px;">
+                                                 📜 Use of credits is governed by the
+                                                 <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik License Agreement</a>.
+                                             </p>
                                              <div class="festive-banner">${theme.bannerContent}</div>
                                              <div style="margin-top:20px;">
                                                  <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>

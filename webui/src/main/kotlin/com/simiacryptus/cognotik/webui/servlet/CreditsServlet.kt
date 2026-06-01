@@ -193,6 +193,14 @@ open class CreditsServlet(
               </div>
               """.trimIndent()
         }
+        val licenseNotice = """
+              <div class="notice license-notice">
+                  <strong>📄 License Terms:</strong> By purchasing credits, you agree to the
+                  <a href="/LICENSE.html" target="_blank" rel="noopener">Cognotik Software License Agreement</a>,
+                  including the <a href="/LICENSE.html#82-api-credits-for-the-cloud-hosted-version" target="_blank" rel="noopener">API Credits terms (Section 8.2)</a>.
+                  <strong>API Credits are non-refundable, have no cash value, and may be consumed unpredictably.</strong>
+              </div>
+              """.trimIndent()
 
         val providerSelection = if (available.size > 1) {
             val providerOptions = available.mapIndexed { idx, p ->
@@ -260,6 +268,7 @@ open class CreditsServlet(
                             <input type="number" name="amount" min="0.01" max="$MAX_PURCHASE_AMOUNT" step="0.01" placeholder="0.00"/>
                             <span class="hint">(max ${"%.2f".format(MAX_PURCHASE_AMOUNT)})</span>
                         </div>
+                         $licenseNotice
                         <div class="actions">
                              <button type="submit" class="btn-primary">
                                   Continue &rarr;
@@ -309,6 +318,27 @@ open class CreditsServlet(
             "<tr><th>Payment method</th><td><em>${provider.name} (self-service)</em></td></tr>"
         }
         val confirmLabel = if (provider.requiresPayment) "Proceed to Payment &rarr;" else "Confirm &amp; Apply Credits"
+        val licenseAgreementBlock = """
+              <div class="license-agreement">
+                  <h3>License Agreement</h3>
+                  <div class="license-summary">
+                      <p>By confirming this purchase, you acknowledge and agree to the
+                      <a href="/LICENSE.html" target="_blank" rel="noopener">Cognotik Software License Agreement</a>.
+                      Key terms regarding credits:</p>
+                      <ul>
+                          <li><strong>Non-refundable:</strong> All credit purchases are final. See <a href="/LICENSE.html#82-api-credits-for-the-cloud-hosted-version" target="_blank" rel="noopener">Section 8.2(b)</a>.</li>
+                          <li><strong>No cash value:</strong> Credits cannot be redeemed for cash, transferred, or inherited. See <a href="/LICENSE.html#82-api-credits-for-the-cloud-hosted-version" target="_blank" rel="noopener">Section 8.2(a)</a>.</li>
+                          <li><strong>Consumption risk:</strong> Credits may be consumed rapidly or unpredictably. See <a href="/LICENSE.html#82-api-credits-for-the-cloud-hosted-version" target="_blank" rel="noopener">Section 8.2(c)</a>.</li>
+                          <li><strong>No data retention guarantee:</strong> See <a href="/LICENSE.html#81-cloud-hosted-version-eg-hostedcognotikcom" target="_blank" rel="noopener">Section 8.1</a>.</li>
+                          <li><strong>AI Output:</strong> May contain errors or fabrications and must be independently verified. See <a href="/LICENSE.html#4-ai-generated-content-disclaimer" target="_blank" rel="noopener">Section 4</a>.</li>
+                      </ul>
+                  </div>
+                  <label class="license-checkbox">
+                      <input type="checkbox" name="accept_license" id="accept_license" required/>
+                      I have read and agree to the <a href="/LICENSE.html" target="_blank" rel="noopener">Cognotik Software License Agreement</a>, including the non-refundable nature of API Credits.
+                  </label>
+              </div>
+              """.trimIndent()
 
 
         response.writer.write(
@@ -335,16 +365,28 @@ open class CreditsServlet(
                          $paymentMethodRow
                     </table>
                      $providerExtras
+                     $licenseAgreementBlock
                     <form method="post" action="">
                         <input type="hidden" name="amount" value="$capped"/>
                          <input type="hidden" name="provider" value="${provider.name}"/>
                         <div class="actions">
-                             <button type="submit" class="btn-primary">$confirmLabel</button>
+                             <button type="submit" class="btn-primary" id="confirm-btn" disabled>$confirmLabel</button>
                             <a href="?" class="btn-link">Back</a>
                         </div>
                     </form>
                 </div>
                <script>ThemeManager.init();</script>
+                <script>
+                    (function() {
+                        var checkbox = document.getElementById('accept_license');
+                        var btn = document.getElementById('confirm-btn');
+                        if (checkbox && btn) {
+                            checkbox.addEventListener('change', function() {
+                                btn.disabled = !checkbox.checked;
+                            });
+                        }
+                    })();
+                </script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -383,6 +425,12 @@ open class CreditsServlet(
                     </div>
                     <div class="notice">
                         Your credits have been applied. A ledger entry has been recorded for audit purposes.
+                    </div>
+                    <div class="notice license-notice">
+                        <strong>License Reminder:</strong> These credits are subject to the
+                        <a href="/LICENSE.html" target="_blank" rel="noopener">Cognotik Software License Agreement</a>.
+                        Credits are non-refundable and have no cash value
+                        (<a href="/LICENSE.html#82-api-credits-for-the-cloud-hosted-version" target="_blank" rel="noopener">Section 8.2</a>).
                     </div>
                     <div class="actions">
                         <a href="?" class="btn-primary">Buy more credits</a>
@@ -503,6 +551,8 @@ open class CreditsServlet(
                .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 18px;
                                border-radius: 4px; cursor: pointer; font-size: 1em; text-decoration: none; }
                .btn-primary:hover { background: var(--accent-hover); }
+               .btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
+               .btn-primary:disabled:hover { background: var(--text-muted); }
                .btn-link { color: var(--accent); text-decoration: none; }
                 .btn-link:hover { text-decoration: underline; }
                 table.review-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
@@ -515,6 +565,23 @@ open class CreditsServlet(
                .theme-selector-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
                .theme-selector-wrap select { background: var(--bg-container); color: var(--text-primary);
                                               border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; }
+               .license-notice { font-size: 0.9em; }
+               .license-notice a { color: var(--accent); text-decoration: underline; }
+               .license-notice a:hover { color: var(--accent-hover); }
+               .license-agreement { margin: 18px 0; padding: 14px; background: var(--bg-muted);
+                                    border: 1px solid var(--border-color); border-radius: 6px; }
+               .license-agreement h3 { margin-top: 0; font-size: 1.05em; color: var(--text-primary); }
+               .license-summary { font-size: 0.9em; color: var(--text-secondary); margin-bottom: 12px; }
+               .license-summary ul { margin: 8px 0; padding-left: 22px; }
+               .license-summary li { margin: 4px 0; }
+               .license-summary a { color: var(--accent); text-decoration: underline; }
+               .license-summary a:hover { color: var(--accent-hover); }
+               .license-checkbox { display: flex; align-items: flex-start; gap: 8px; padding: 10px;
+                                   background: var(--bg-container); border: 2px solid var(--notice-border);
+                                   border-radius: 4px; cursor: pointer; font-size: 0.95em; }
+               .license-checkbox input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
+               .license-checkbox a { color: var(--accent); text-decoration: underline; font-weight: 600; }
+               .license-checkbox a:hover { color: var(--accent-hover); }
             </style>
         """.trimIndent()
 
@@ -525,6 +592,7 @@ open class CreditsServlet(
                 <a href="/usage" class="${cls("usage")}">📊 Usage</a>
                 <a href="/credits" class="${cls("credits")}">💳 Buy Credits</a>
                 <a href="/gifts/" class="${cls("gifts")}">🎁 Gifts</a>
+                 <a href="/LICENSE.html" target="_blank" rel="noopener" class="${cls("license")}">📄 License</a>
                <span class="theme-selector-wrap">
                    <label for="theme-selector" style="font-size: 0.9em;">Theme:</label>
                    <select id="theme-selector">
