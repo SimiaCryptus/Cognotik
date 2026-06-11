@@ -232,6 +232,58 @@ object AnthropicModels {
         inputModalities = setOf(ChatMessageModality.TEXT),
         outputModalities = setOf(ChatMessageModality.TEXT)
     )
+     @JvmStatic
+     val Claude48Opus = ChatModel(
+         name = "Claude Opus 4.8",
+         modelId = "claude-opus-4-8",
+         maxTotalTokens = 1000000,
+         maxOutTokens = 128000,
+         provider = CoreProviders.Anthropic,
+         tokenPricingPerK = mapOf(
+             TokenTypes.Prompt to 5.0 / 1000.0,
+             TokenTypes.Completion to 25.0 / 1000.0,
+             TokenTypes.CacheWrite5m to 6.25 / 1000.0,
+             TokenTypes.CacheWrite1h to 10.0 / 1000.0,
+             TokenTypes.Cached to 0.50 / 1000.0,
+         ),
+         inputModalities = setOf(ChatMessageModality.TEXT),
+         outputModalities = setOf(ChatMessageModality.TEXT),
+     )
+     @JvmStatic
+     val ClaudeFable5 = ChatModel(
+         name = "Claude Fable 5",
+         modelId = "claude-fable-5",
+         maxTotalTokens = 1000000,
+         maxOutTokens = 128000,
+         provider = CoreProviders.Anthropic,
+         tokenPricingPerK = mapOf(
+             TokenTypes.Prompt to 10.0 / 1000.0,
+             TokenTypes.Completion to 50.0 / 1000.0,
+             TokenTypes.CacheWrite5m to 12.50 / 1000.0,
+             TokenTypes.CacheWrite1h to 20.0 / 1000.0,
+             TokenTypes.Cached to 1.0 / 1000.0,
+         ),
+         inputModalities = setOf(ChatMessageModality.TEXT),
+         outputModalities = setOf(ChatMessageModality.TEXT),
+     )
+     @JvmStatic
+     val ClaudeMythos5 = ChatModel(
+         name = "Claude Mythos 5",
+         modelId = "claude-mythos-5",
+         maxTotalTokens = 1000000,
+         maxOutTokens = 128000,
+         provider = CoreProviders.Anthropic,
+         tokenPricingPerK = mapOf(
+             TokenTypes.Prompt to 10.0 / 1000.0,
+             TokenTypes.Completion to 50.0 / 1000.0,
+             TokenTypes.CacheWrite5m to 12.50 / 1000.0,
+             TokenTypes.CacheWrite1h to 20.0 / 1000.0,
+             TokenTypes.Cached to 1.0 / 1000.0,
+         ),
+         inputModalities = setOf(ChatMessageModality.TEXT),
+         outputModalities = setOf(ChatMessageModality.TEXT),
+     )
+
 
     @JvmStatic
     val values = mapOf(
@@ -247,6 +299,9 @@ object AnthropicModels {
         "Claude45Opus" to Claude45Opus,
         "Claude46Opus" to Claude46Opus,
         "Claude47Opus" to Claude47Opus,
+         "Claude48Opus" to Claude48Opus,
+         "ClaudeFable5" to ClaudeFable5,
+         "ClaudeMythos5" to ClaudeMythos5,
     )
 
 }
