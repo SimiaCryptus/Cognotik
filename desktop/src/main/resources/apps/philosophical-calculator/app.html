@@ -482,31 +482,57 @@
                     <div class="viewer" id="viewer-gametheory"></div>
                 </div>
             </div>
-
-            <!-- Narrative -->
+            <!-- Historical Figure Debate -->
             <div class="card lens-card">
                 <div class="step">
                     <div class="step-header">
-                        <span class="lens-icon">📖</span>
-                        <span class="step-title">Narrative</span>
-                        <span class="step-badge pending" id="badge-narrative">pending</span>
+                        <span class="lens-icon">🏛️</span>
+                        <span class="step-title">Historical Debate</span>
+                        <span class="step-badge pending" id="badge-debate">pending</span>
                     </div>
-                    <p class="step-desc">Dramatize the content into a compelling narrative with illustrations.</p>
+                    <p class="step-desc">Stage an in-character debate between historical figures on the core topic,
+                        with rebuttals and an impartial moderator synthesis.</p>
                     <div class="button-row">
                         <button class="btn btn-primary btn-run"
-                                data-op="ops/narrative_op.md"
-                                data-output="narrative.md"
-                                data-badge="badge-narrative"
-                                data-viewer="viewer-narrative">▶ Run
+                                data-op="ops/debate_op.md"
+                                data-output="debate.md"
+                                data-badge="badge-debate"
+                                data-viewer="viewer-debate">▶ Run
                         </button>
                         <button class="btn btn-secondary btn-view"
-                                data-file="narrative.md"
-                                data-viewer="viewer-narrative">👁 View
+                                data-file="debate.md"
+                                data-viewer="viewer-debate">👁 View
                         </button>
                     </div>
-                    <div class="viewer" id="viewer-narrative"></div>
+                    <div class="viewer" id="viewer-debate"></div>
                 </div>
             </div>
+            <!-- Unrunnable Protocol -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🧬</span>
+                        <span class="step-title">Unrunnable Protocol</span>
+                        <span class="step-badge pending" id="badge-protocol">pending</span>
+                    </div>
+                    <p class="step-desc">Analyze the core concept through dense pseudo-code "Unrunnable Protocol"
+                        frameworks, audited against pattern worship and framework fundamentalism.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/protocol_op.md"
+                                data-output="protocol.md"
+                                data-badge="badge-protocol"
+                                data-viewer="viewer-protocol">▶ Run
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="protocol.md"
+                                data-viewer="viewer-protocol">👁 View
+                        </button>
+                    </div>
+                    <div class="viewer" id="viewer-protocol"></div>
+                </div>
+            </div>
+
         </div>
         <div class="lens-category-header lens-category-output">
             <h3>📦 Output Lenses</h3>
@@ -539,11 +565,30 @@
                     <div class="viewer" id="viewer-persuasive"></div>
                 </div>
             </div>
-
-
-
-
-
+            <!-- Narrative -->
+            <div class="card lens-card lens-card-output">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">📖</span>
+                        <span class="step-title">Narrative</span>
+                        <span class="step-badge pending" id="badge-narrative">pending</span>
+                    </div>
+                    <p class="step-desc">Dramatize the content into a compelling narrative with illustrations.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/narrative_op.md"
+                                data-output="narrative.md"
+                                data-badge="badge-narrative"
+                                data-viewer="viewer-narrative">▶ Run
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="narrative.md"
+                                data-viewer="viewer-narrative">👁 View
+                        </button>
+                    </div>
+                    <div class="viewer" id="viewer-narrative"></div>
+                </div>
+            </div>
 
 
             <!-- Comic -->
@@ -634,15 +679,18 @@
                     <label><input type="checkbox" class="lens-check" value="brainstorm" checked> 💡 Brainstorm</label>
                     <label><input type="checkbox" class="lens-check" value="dialectical" checked> ⚖️ Dialectical</label>
                     <label><input type="checkbox" class="lens-check" value="socratic" checked> 🏛️ Socratic</label>
-                    <label><input type="checkbox" class="lens-check" value="perspectives" checked> 👥 Perspectives</label>
+                    <label><input type="checkbox" class="lens-check" value="perspectives" checked> 👥
+                        Perspectives</label>
                     <label><input type="checkbox" class="lens-check" value="gametheory"> 🎲 Game Theory</label>
-                    <label><input type="checkbox" class="lens-check" value="narrative"> 📖 Narrative</label>
+                    <label><input type="checkbox" class="lens-check" value="debate"> 🏛️ Historical Debate</label>
+                    <label><input type="checkbox" class="lens-check" value="protocol"> 🧬 Unrunnable Protocol</label>
                 </div>
             </div>
             <div class="lens-checkbox-group">
                 <h4 class="lens-checkbox-group-title">📦 Output Lenses</h4>
                 <div class="lens-checkboxes">
                     <label><input type="checkbox" class="lens-check" value="persuasive"> 🎯 Persuasive Essay</label>
+                    <label><input type="checkbox" class="lens-check" value="narrative"> 📖 Narrative</label>
                     <label><input type="checkbox" class="lens-check" value="comic"> 💬 Comic Book</label>
                     <label><input type="checkbox" class="lens-check" value="technical"> 🔧 Technical Tutorial</label>
                     <label><input type="checkbox" class="lens-check" value="webpage"> 🌐 HTML Webpage</label>
@@ -672,10 +720,12 @@
             <button class="results-tab" data-tab="tab-socratic">🏛️ Socratic</button>
             <button class="results-tab" data-tab="tab-perspectives">👥 Perspectives</button>
             <button class="results-tab" data-tab="tab-gametheory">🎲 Game Theory</button>
-            <button class="results-tab" data-tab="tab-narrative">📖 Narrative</button>
+            <button class="results-tab" data-tab="tab-debate">🏛️ Debate</button>
+            <button class="results-tab" data-tab="tab-protocol">🧬 Protocol</button>
             <button class="results-tab" data-tab="tab-illustration">🎨 Illustrated</button>
             <span class="results-tab-divider" title="Output Lenses">📦</span>
             <button class="results-tab" data-tab="tab-persuasive">🎯 Persuasive</button>
+            <button class="results-tab" data-tab="tab-narrative">📖 Narrative</button>
             <button class="results-tab" data-tab="tab-comic">💬 Comic Book</button>
             <button class="results-tab" data-tab="tab-technical">🔧 Technical Tutorial</button>
             <button class="results-tab" data-tab="tab-webpage">🌐 HTML Webpage</button>
@@ -789,6 +839,30 @@
                     </div>
                     <div class="result-viewer" id="result-gametheory">
                         <p class="placeholder">Run the Game Theory lens to generate analysis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-debate">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="debate.md"
+                                data-viewer="result-debate">🔄 Refresh
+                        </button>
+                    </div>
+                    <div class="result-viewer" id="result-debate">
+                        <p class="placeholder">Run the Historical Debate lens to generate the transcript.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-protocol">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="protocol.md"
+                                data-viewer="result-protocol">🔄 Refresh
+                        </button>
+                    </div>
+                    <div class="result-viewer" id="result-protocol">
+                        <p class="placeholder">Run the Unrunnable Protocol lens to generate the analysis.</p>
                     </div>
                 </div>
             </div>

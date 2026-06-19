@@ -127,6 +127,8 @@ import {
         'persuasive.md': 'viewer-persuasive',
         'gametheory.md': 'viewer-gametheory',
         'narrative.md': 'viewer-narrative',
+        'debate.md': 'viewer-debate',
+        'protocol.md': 'viewer-protocol',
         'comic.md': 'viewer-comic',
         'technical_explanation.md': 'viewer-technical',
         'illustrated_content.md': 'viewer-illustration',
@@ -179,6 +181,8 @@ import {
         'persuasive.md': 'badge-persuasive',
         'gametheory.md': 'badge-gametheory',
         'narrative.md': 'badge-narrative',
+        'debate.md': 'badge-debate',
+        'protocol.md': 'badge-protocol',
         'comic.md': 'badge-comic',
         'technical_explanation.md': 'badge-technical',
         'illustrated_content.md': 'badge-illustration',
@@ -521,18 +525,20 @@ import {
     });
 
     var lensDefinitions = [
-       // Analysis Lenses
-       { key: 'brainstorm', category: 'analysis', op: 'ops/brainstorm_op.md', output: 'brainstorm.md', badge: 'badge-brainstorm', viewer: 'viewer-brainstorm', label: 'Brainstorm' },
-       { key: 'dialectical', category: 'analysis', op: 'ops/dialectical_op.md', output: 'dialectical.md', badge: 'badge-dialectical', viewer: 'viewer-dialectical', label: 'Dialectical Analysis' },
-       { key: 'socratic', category: 'analysis', op: 'ops/socratic_op.md', output: 'socratic.md', badge: 'badge-socratic', viewer: 'viewer-socratic', label: 'Socratic Dialogue' },
-       { key: 'perspectives', category: 'analysis', op: 'ops/perspectives_op.md', output: 'perspectives.md', badge: 'badge-perspectives', viewer: 'viewer-perspectives', label: 'Multi-Perspective Analysis' },
-       { key: 'gametheory', category: 'analysis', op: 'ops/gametheory_op.md', output: 'gametheory.md', badge: 'badge-gametheory', viewer: 'viewer-gametheory', label: 'Game Theory Analysis' },
-       { key: 'narrative', category: 'analysis', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
-       // Output Lenses
-       { key: 'persuasive', category: 'output', op: 'ops/persuasive_op.md', output: 'persuasive.md', badge: 'badge-persuasive', viewer: 'viewer-persuasive', label: 'Persuasive Essay' },
-       { key: 'comic', category: 'output', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
-       { key: 'technical', category: 'output', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Tutorial' },
-       { key: 'webpage', category: 'output', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'HTML Webpage Generation' }
+        // Analysis Lenses
+        { key: 'brainstorm', category: 'analysis', op: 'ops/brainstorm_op.md', output: 'brainstorm.md', badge: 'badge-brainstorm', viewer: 'viewer-brainstorm', label: 'Brainstorm' },
+        { key: 'dialectical', category: 'analysis', op: 'ops/dialectical_op.md', output: 'dialectical.md', badge: 'badge-dialectical', viewer: 'viewer-dialectical', label: 'Dialectical Analysis' },
+        { key: 'socratic', category: 'analysis', op: 'ops/socratic_op.md', output: 'socratic.md', badge: 'badge-socratic', viewer: 'viewer-socratic', label: 'Socratic Dialogue' },
+        { key: 'perspectives', category: 'analysis', op: 'ops/perspectives_op.md', output: 'perspectives.md', badge: 'badge-perspectives', viewer: 'viewer-perspectives', label: 'Multi-Perspective Analysis' },
+        { key: 'gametheory', category: 'analysis', op: 'ops/gametheory_op.md', output: 'gametheory.md', badge: 'badge-gametheory', viewer: 'viewer-gametheory', label: 'Game Theory Analysis' },
+        { key: 'debate', category: 'analysis', op: 'ops/debate_op.md', output: 'debate.md', badge: 'badge-debate', viewer: 'viewer-debate', label: 'Historical Figure Debate' },
+        { key: 'protocol', category: 'analysis', op: 'ops/protocol_op.md', output: 'protocol.md', badge: 'badge-protocol', viewer: 'viewer-protocol', label: 'Unrunnable Protocol Analysis' },
+        // Output Lenses
+        { key: 'persuasive', category: 'output', op: 'ops/persuasive_op.md', output: 'persuasive.md', badge: 'badge-persuasive', viewer: 'viewer-persuasive', label: 'Persuasive Essay' },
+        { key: 'narrative', category: 'output', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
+        { key: 'comic', category: 'output', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
+        { key: 'technical', category: 'output', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Tutorial' },
+        { key: 'webpage', category: 'output', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'HTML Webpage Generation' }
     ];
 
     // ========================================================================
@@ -596,28 +602,28 @@ import {
     document.getElementById('deselect-all-lenses').addEventListener('click', function() {
         document.querySelectorAll('.lens-check').forEach(function(cb) { cb.checked = false; });
     });
-   var selectAllAnalysisBtn = document.getElementById('select-all-analysis');
-   if (selectAllAnalysisBtn) {
-       selectAllAnalysisBtn.addEventListener('click', function() {
-           var analysisKeys = lensDefinitions
-               .filter(function(l) { return l.category === 'analysis'; })
-               .map(function(l) { return l.key; });
-           document.querySelectorAll('.lens-check').forEach(function(cb) {
-               cb.checked = analysisKeys.indexOf(cb.value) >= 0;
-           });
-       });
-   }
-   var selectAllOutputsBtn = document.getElementById('select-all-outputs');
-   if (selectAllOutputsBtn) {
-       selectAllOutputsBtn.addEventListener('click', function() {
-           var outputKeys = lensDefinitions
-               .filter(function(l) { return l.category === 'output'; })
-               .map(function(l) { return l.key; });
-           document.querySelectorAll('.lens-check').forEach(function(cb) {
-               cb.checked = outputKeys.indexOf(cb.value) >= 0;
-           });
-       });
-   }
+    var selectAllAnalysisBtn = document.getElementById('select-all-analysis');
+    if (selectAllAnalysisBtn) {
+        selectAllAnalysisBtn.addEventListener('click', function() {
+            var analysisKeys = lensDefinitions
+                .filter(function(l) { return l.category === 'analysis'; })
+                .map(function(l) { return l.key; });
+            document.querySelectorAll('.lens-check').forEach(function(cb) {
+                cb.checked = analysisKeys.indexOf(cb.value) >= 0;
+            });
+        });
+    }
+    var selectAllOutputsBtn = document.getElementById('select-all-outputs');
+    if (selectAllOutputsBtn) {
+        selectAllOutputsBtn.addEventListener('click', function() {
+            var outputKeys = lensDefinitions
+                .filter(function(l) { return l.category === 'output'; })
+                .map(function(l) { return l.key; });
+            document.querySelectorAll('.lens-check').forEach(function(cb) {
+                cb.checked = outputKeys.indexOf(cb.value) >= 0;
+            });
+        });
+    }
 
 
     // ========================================================================
@@ -647,6 +653,8 @@ import {
             { file: 'persuasive.md', badge: 'badge-persuasive' },
             { file: 'gametheory.md', badge: 'badge-gametheory' },
             { file: 'narrative.md', badge: 'badge-narrative' },
+            { file: 'debate.md', badge: 'badge-debate' },
+            { file: 'protocol.md', badge: 'badge-protocol' },
             { file: 'comic.md', badge: 'badge-comic' },
             { file: 'technical_explanation.md', badge: 'badge-technical' },
             { file: 'illustrated_content.md', badge: 'badge-illustration' },

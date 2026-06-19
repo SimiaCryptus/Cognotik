@@ -246,6 +246,8 @@ object AnthropicModels {
              TokenTypes.CacheWrite1h to 10.0 / 1000.0,
              TokenTypes.Cached to 0.50 / 1000.0,
          ),
+         supportsTemperature = false,
+         supportsReasoning = true,
          inputModalities = setOf(ChatMessageModality.TEXT),
          outputModalities = setOf(ChatMessageModality.TEXT),
      )
@@ -263,6 +265,8 @@ object AnthropicModels {
              TokenTypes.CacheWrite1h to 20.0 / 1000.0,
              TokenTypes.Cached to 1.0 / 1000.0,
          ),
+         supportsTemperature = false,
+         supportsReasoning = true,
          inputModalities = setOf(ChatMessageModality.TEXT),
          outputModalities = setOf(ChatMessageModality.TEXT),
      )
@@ -280,6 +284,8 @@ object AnthropicModels {
              TokenTypes.CacheWrite1h to 20.0 / 1000.0,
              TokenTypes.Cached to 1.0 / 1000.0,
          ),
+         supportsTemperature = false,
+         supportsReasoning = true,
          inputModalities = setOf(ChatMessageModality.TEXT),
          outputModalities = setOf(ChatMessageModality.TEXT),
      )
