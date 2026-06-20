@@ -1,8 +1,8 @@
-package com.simiacryptus.cognotik.util.crawl.fetch
+package com.simiacryptus.cognotik.crawl.fetch
 
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.HtmlSimplifier
 import java.io.File
 import java.io.FileOutputStream

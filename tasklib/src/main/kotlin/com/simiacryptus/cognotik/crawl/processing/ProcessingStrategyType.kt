@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util.crawl.processing
+package com.simiacryptus.cognotik.crawl.processing
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize

@@ -1,14 +1,14 @@
-package com.simiacryptus.cognotik.util.crawl.fetch
+package com.simiacryptus.cognotik.crawl.fetch
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 import com.simiacryptus.cognotik.util.EnabledStrategy
-import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod.Companion.HttpClient
+import com.simiacryptus.cognotik.crawl.fetch.FetchMethod.Companion.HttpClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.util.concurrent.ExecutorService

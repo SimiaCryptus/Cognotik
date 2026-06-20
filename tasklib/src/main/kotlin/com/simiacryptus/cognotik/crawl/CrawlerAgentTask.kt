@@ -1,73 +1,76 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.crawl
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.crawl.fetch.FetchMethod
+import com.simiacryptus.cognotik.crawl.fetch.FetchStrategy
+import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy
+import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.crawl.seed.SeedMethod
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
-import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod
-import com.simiacryptus.cognotik.util.crawl.fetch.FetchStrategy
-import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy
-import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.PageProcessingResult
-import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.ProcessingContext
-import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.util.crawl.seed.SeedMethod
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import org.slf4j.LoggerFactory.getLogger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.Thread.sleep
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
-import java.util.concurrent.*
+import java.util.PriorityQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
+import kotlin.collections.iterator
 import kotlin.math.min
 import kotlin.random.Random
 
 class CrawlerAgentTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: CrawlerTaskExecutionConfigData?,
+    orchestrationConfig: OrchestrationConfig,
+    planTask: CrawlerTaskExecutionConfigData?,
 ) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
   orchestrationConfig, planTask
 ) {
 
   @Suppress("PropertyName")
   class CrawlerTaskTypeConfig(
-    @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod = SeedMethod.GoogleProxy,
-    @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod = FetchMethod.HttpClient,
-    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.DEFAULT,
-    @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
-    @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean = true,
-    @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int = 30,
-    @Description("Maximum depth to crawl from seed pages. Must be non-negative (optional, default: 3)") var max_depth: Int = 3,
-    @Description("Maximum queue size to prevent memory issues. Must be greater than 0 (optional, default: 100)") var max_queue_size: Int = 100,
-    @Description("Number of pages to process concurrently. Must be greater than 0 (optional, default: 3)") var concurrent_page_processing: Int = 3,
-    @Description("Maximum characters in final summary output. Must be greater than 0 (optional, default: 15000)") var max_final_output_size: Int = 30000,
-    @Description("Minimum content length in characters to process a page. Pages shorter than this are skipped (optional, default: 500)") var min_content_length: Int = 500,
-    @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean = true,
-    @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean = false,
-    @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean = true,
-    @Description("Path to a JSON file for persisting crawl state (link database) across runs. If not specified, defaults to .websearch/crawl_state.json relative to the task root. The file is loaded at start and saved at end, allowing editable persistence for ongoing crawls.") var crawl_state_file: String? = null,
-    @Description("Whether to use the state file for persistence. If false, the crawl state will not be loaded or saved, and the crawler will start fresh on each run. This allows you to disable persistence.") var use_state_file: Boolean = true,
-    task_type: String = "CrawlerAgent",
-    model: ApiChatModel? = null,
-    name: String? = task_type,
+      @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod = SeedMethod.GoogleProxy,
+      @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod = FetchMethod.Companion.HttpClient,
+      @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.Companion.DEFAULT,
+      @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
+      @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean = true,
+      @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int = 30,
+      @Description("Maximum depth to crawl from seed pages. Must be non-negative (optional, default: 3)") var max_depth: Int = 3,
+      @Description("Maximum queue size to prevent memory issues. Must be greater than 0 (optional, default: 100)") var max_queue_size: Int = 100,
+      @Description("Number of pages to process concurrently. Must be greater than 0 (optional, default: 3)") var concurrent_page_processing: Int = 3,
+      @Description("Maximum characters in final summary output. Must be greater than 0 (optional, default: 15000)") var max_final_output_size: Int = 30000,
+      @Description("Minimum content length in characters to process a page. Pages shorter than this are skipped (optional, default: 500)") var min_content_length: Int = 500,
+      @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean = true,
+      @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean = false,
+      @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean = true,
+      @Description("Path to a JSON file for persisting crawl state (link database) across runs. If not specified, defaults to .websearch/crawl_state.json relative to the task root. The file is loaded at start and saved at end, allowing editable persistence for ongoing crawls.") var crawl_state_file: String? = null,
+      @Description("Whether to use the state file for persistence. If false, the crawl state will not be loaded or saved, and the crawler will start fresh on each run. This allows you to disable persistence.") var use_state_file: Boolean = true,
+      task_type: String = "CrawlerAgent",
+      model: ApiChatModel? = null,
+      name: String? = task_type,
   ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
     override fun validate(): String? {
       if (max_depth < 0) {
@@ -76,7 +79,7 @@ class CrawlerAgentTask(
       if (min_content_length < 0) {
         min_content_length = 0
       }
-      return ValidatedObject.validateFields(this)
+      return ValidatedObject.Companion.validateFields(this)
     }
   }
    /**
@@ -85,33 +88,33 @@ class CrawlerAgentTask(
     * to be resumed, inspected, and edited between runs.
     */
    data class CrawlState(
-     @Description("All links discovered during crawling, keyed by URL") var links: MutableMap<String, CrawlLinkEntry> = mutableMapOf(),
-     @Description("Timestamp of last save") var last_saved: String? = null,
-     @Description("Total number of runs that have contributed to this state") var run_count: Int = 0,
-     @Description("Search queries used across runs") var search_queries: MutableList<String> = mutableListOf()
+       @Description("All links discovered during crawling, keyed by URL") var links: MutableMap<String, CrawlLinkEntry> = mutableMapOf(),
+       @Description("Timestamp of last save") var last_saved: String? = null,
+       @Description("Total number of runs that have contributed to this state") var run_count: Int = 0,
+       @Description("Search queries used across runs") var search_queries: MutableList<String> = mutableListOf()
    )
    data class CrawlLinkEntry(
-     @Description("The URL") var url: String,
-     @Description("Title of the page") var title: String? = null,
-     @Description("Tags associated with the link") var tags: List<String>? = null,
-     @Description("Relevance score from 1 to 100") var relevance_score: Double = 50.0,
-     @Description("Crawl depth from seed") var depth: Int = 0,
-     @Description("Status: queued, completed, error, skipped") var status: String = "queued",
-     @Description("Error message if status is error") var error: String? = null,
-     @Description("Processing time in milliseconds") var processing_time_ms: Long = 0,
-     @Description("Timestamp when this entry was first discovered") var discovered_at: String? = null,
-     @Description("Timestamp when this entry was last processed") var processed_at: String? = null,
-     @Description("The run number in which this link was completed") var completed_in_run: Int? = null
+       @Description("The URL") var url: String,
+       @Description("Title of the page") var title: String? = null,
+       @Description("Tags associated with the link") var tags: List<String>? = null,
+       @Description("Relevance score from 1 to 100") var relevance_score: Double = 50.0,
+       @Description("Crawl depth from seed") var depth: Int = 0,
+       @Description("Status: queued, completed, error, skipped") var status: String = "queued",
+       @Description("Error message if status is error") var error: String? = null,
+       @Description("Processing time in milliseconds") var processing_time_ms: Long = 0,
+       @Description("Timestamp when this entry was first discovered") var discovered_at: String? = null,
+       @Description("Timestamp when this entry was last processed") var processed_at: String? = null,
+       @Description("The run number in which this link was completed") var completed_in_run: Int? = null
    )
 
 
   class CrawlerTaskExecutionConfigData(
-    @Description("The search queries to use for Google search. Either this or direct_urls must be provided.") var search_query: List<String>? = null,
-    @Description("Direct URLs to analyze. Each must be a valid http or https URL. Either this or search_query must be provided.") var direct_urls: List<String>? = null,
-    @Description("The query considered when processing the content. This should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform each page into the desired summary.") var content_queries: Any? = null,
-    task_description: String? = null,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = null,
+      @Description("The search queries to use for Google search. Either this or direct_urls must be provided.") var search_query: List<String>? = null,
+      @Description("Direct URLs to analyze. Each must be a valid http or https URL. Either this or search_query must be provided.") var direct_urls: List<String>? = null,
+      @Description("The query considered when processing the content. This should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform each page into the desired summary.") var content_queries: Any? = null,
+      task_description: String? = null,
+      task_dependencies: List<String>? = null,
+      state: TaskState? = null,
   ) : TaskExecutionConfig(
     task_type = CrawlerAgent.name,
     task_description = task_description,
@@ -132,7 +135,7 @@ class CrawlerAgentTask(
           }
         }
       }
-      return ValidatedObject.validateFields(this)
+      return ValidatedObject.Companion.validateFields(this)
     }
   }
 
@@ -157,7 +160,7 @@ class CrawlerAgentTask(
        val f = File(configuredPath)
        if (f.isAbsolute) f else File(root, configuredPath)
      } else {
-       File(File(root, ".websearch"), "crawl_state.json")
+         File(File(root, ".websearch"), "crawl_state.json")
      }
    }
    private fun loadCrawlState(stateFile: File): CrawlState {
@@ -320,7 +323,7 @@ class CrawlerAgentTask(
       val typeConfig = this@CrawlerAgentTask.typeConfig
       if (null != typeConfig) {
         when (typeConfig.processing_strategy) {
-          ProcessingStrategyType.DEFAULT -> {
+          ProcessingStrategyType.Companion.DEFAULT -> {
             // No additional notes for DefaultSummarizer
           }
 
@@ -337,10 +340,10 @@ class CrawlerAgentTask(
   }
 
   data class LinkData(
-    @Description("The URL of the link to crawl. Must be a valid http or https URL.") var url: String? = null,
-    @Description("The title of the link (optional)") var title: String? = null,
-    @Description("Tags associated with the link for categorization (optional)") var tags: List<String>? = null,
-    @Description("Relevance score from 1 to 100 indicating how relevant this link is to the query") var relevance_score: Double = 100.0
+      @Description("The URL of the link to crawl. Must be a valid http or https URL.") var url: String? = null,
+      @Description("The title of the link (optional)") var title: String? = null,
+      @Description("Tags associated with the link for categorization (optional)") var tags: List<String>? = null,
+      @Description("Relevance score from 1 to 100 indicating how relevant this link is to the query") var relevance_score: Double = 100.0
   ) : ValidatedObject {
     var started: Boolean = false
     var completed: Boolean = false
@@ -356,7 +359,7 @@ class CrawlerAgentTask(
         url = "https://$url"
       }
       relevance_score = relevance_score.coerceIn(1.0, 100.0)
-      return ValidatedObject.validateFields(this)
+      return ValidatedObject.Companion.validateFields(this)
     }
   }
 
@@ -374,25 +377,25 @@ class CrawlerAgentTask(
   }
 
   data class ParsedPage(
-    @Description("The classification of the page content. One of: Error, Irrelevant, OK") var page_type: PageType = PageType.OK,
-    @Description("Extracted information from the page, structured according to the content query") var page_information: Any? = null,
-    @Description("Tags categorizing the page content") var tags: List<String>? = null,
-    @Description("Links extracted from the page for further crawling") var link_data: List<LinkData>? = null,
+      @Description("The classification of the page content. One of: Error, Irrelevant, OK") var page_type: PageType = PageType.OK,
+      @Description("Extracted information from the page, structured according to the content query") var page_information: Any? = null,
+      @Description("Tags categorizing the page content") var tags: List<String>? = null,
+      @Description("Links extracted from the page for further crawling") var link_data: List<LinkData>? = null,
   ) : ValidatedObject {
     override fun validate(): String? {
       link_data?.forEach { linkData ->
         linkData.validate()?.let { return it }
       }
-      return ValidatedObject.validateFields(this)
+      return ValidatedObject.Companion.validateFields(this)
     }
   }
 
   override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
+      agent: TaskOrchestrator,
+      messages: List<String>,
+      task: SessionTask,
+      resultFn: (String) -> Unit,
+      orchestrationConfig: OrchestrationConfig
   ) {
     val transcriptStream = task.newUserFileStream(transcriptFile())
     try {
@@ -438,12 +441,12 @@ class CrawlerAgentTask(
   }
 
   private fun innerRun(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    orchestrationConfig: OrchestrationConfig,
-    transcriptStream: FileOutputStream?,
-    chatInterface: ChatInterface
+      agent: TaskOrchestrator,
+      messages: List<String>,
+      task: SessionTask,
+      orchestrationConfig: OrchestrationConfig,
+      transcriptStream: FileOutputStream?,
+      chatInterface: ChatInterface
   ): String {
     try {
       val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
@@ -594,19 +597,20 @@ class CrawlerAgentTask(
       log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
       val sharedProcessedCount = AtomicInteger(0)
       // Create processing context
-      val processingContext = ProcessingContext(
-        executionConfig = executionConfig ?: throw RuntimeException("Missing execution config"),
-        typeConfig = typeConfig,
-        orchestrationConfig = orchestrationConfig,
-        messages = messages,
-        task = task,
-        webSearchDir = webSearchDir,
-        processedCount = sharedProcessedCount,
-        maxPages = maxPages,
-        transcriptStream = transcriptStream
+      val processingContext = PageProcessingStrategy.ProcessingContext(
+          executionConfig = executionConfig ?: throw RuntimeException("Missing execution config"),
+          typeConfig = typeConfig,
+          orchestrationConfig = orchestrationConfig,
+          messages = messages,
+          task = task,
+          webSearchDir = webSearchDir,
+          processedCount = sharedProcessedCount,
+          maxPages = maxPages,
+          transcriptStream = transcriptStream,
+          reprioritizeQueue = { scorer -> this@CrawlerAgentTask.reprioritizeQueue(scorer) }
       )
       // Track all page results for strategy
-      val allPageResults = ConcurrentHashMap<Int, PageProcessingResult>()
+      val allPageResults = ConcurrentHashMap<Int, PageProcessingStrategy.PageProcessingResult>()
 
 
       val activeTasks = ConcurrentHashMap.newKeySet<String>()
@@ -615,7 +619,7 @@ class CrawlerAgentTask(
       val maxErrors = maxPages / 2 // Stop if too many errors
       log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
       val fetchStrategy =
-        (this@CrawlerAgentTask.typeConfig?.fetch_method ?: FetchMethod.HttpClient).createStrategy(
+        (this@CrawlerAgentTask.typeConfig?.fetch_method ?: FetchMethod.Companion.HttpClient).createStrategy(
           this@CrawlerAgentTask
         )
 
@@ -678,7 +682,7 @@ class CrawlerAgentTask(
           // This allows in-progress tasks to add new links to the queue
           if (activeTasks.isNotEmpty()) {
             try {
-              sleep(1000)
+                Thread.sleep(1000)
             } catch (e: Exception) {
               log.error("Interrupted while waiting for tasks", e)
             }
@@ -1024,15 +1028,60 @@ class CrawlerAgentTask(
     }
     nextPage
   }
+  /**
+   * Re-prioritize the pending crawl queue using a strategy-supplied scorer function.
+   * The scorer receives a snapshot of all currently-queued links and returns a map of
+   * URL -> new relevance score for any links whose priority should change.
+   *
+   * Because the underlying PriorityQueue orders by relevance score, we must remove and
+   * re-add modified entries to trigger re-ordering.
+   */
+  fun reprioritizeQueue(
+    scorer: (List<PageProcessingStrategy.QueuedLinkInfo>) -> Map<String, Double>
+  ) = synchronized(pageQueueLock) {
+    if (pageQueue.isEmpty()) return@synchronized
+    val snapshot = pageQueue.map { linkData ->
+      PageProcessingStrategy.QueuedLinkInfo(
+        url = linkData.url ?: "",
+        title = linkData.title,
+        tags = linkData.tags,
+        relevanceScore = linkData.relevance_score,
+        depth = linkData.depth
+      )
+    }
+    val newScores = try {
+      scorer(snapshot)
+    } catch (e: Exception) {
+      log.error("Strategy scorer threw exception during queue re-prioritization", e)
+      return@synchronized
+    }
+    if (newScores.isEmpty()) return@synchronized
+    var changed = 0
+    // Collect entries to modify, then rebuild the queue to ensure correct ordering
+    val current = pageQueue.toList()
+    pageQueue.clear()
+    current.forEach { linkData ->
+      val newScore = linkData.url?.let { newScores[it] }
+      if (newScore != null) {
+        linkData.relevance_score = newScore.coerceIn(1.0, 100.0)
+        changed++
+      }
+      pageQueue.add(linkData)
+    }
+    if (changed > 0) {
+      log.info("Re-prioritized crawl queue: $changed of ${current.size} links re-scored by strategy")
+    }
+  }
+
 
   private fun shouldContinue(
-    maxPages: Int,
-    errorCount: AtomicInteger,
-    maxErrors: Int,
-    loopIterations: AtomicInteger,
-    activeTasks: MutableSet<String>,
-    maxIterations: Int,
-    processedCount: AtomicInteger
+      maxPages: Int,
+      errorCount: AtomicInteger,
+      maxErrors: Int,
+      loopIterations: AtomicInteger,
+      activeTasks: MutableSet<String>,
+      maxIterations: Int,
+      processedCount: AtomicInteger
   ): Boolean = synchronized(pageQueueLock) {
     val completed = processedCount.get()
     val unstarted = pageQueue.size
@@ -1053,23 +1102,23 @@ class CrawlerAgentTask(
   }
 
   private fun addCrawlTask(
-    queueStats: String,
-    activeTasks: MutableSet<String>,
-    errorCount: AtomicInteger,
-    maxErrors: Int,
-    task: SessionTask,
-    processedCount: AtomicInteger,
-    maxPages: Int,
-    maxDepth: Int,
-    maxQueueSize: Int,
-    webSearchDir: File,
-    agent: TaskOrchestrator,
-    fetchStrategy: FetchStrategy,
-    analysisResultsMap: ConcurrentHashMap<Int, String>,
-    transcriptStream: FileOutputStream?,
-    processingStrategy: PageProcessingStrategy,
-    processingContext: ProcessingContext,
-    allPageResults: ConcurrentHashMap<Int, PageProcessingResult>
+      queueStats: String,
+      activeTasks: MutableSet<String>,
+      errorCount: AtomicInteger,
+      maxErrors: Int,
+      task: SessionTask,
+      processedCount: AtomicInteger,
+      maxPages: Int,
+      maxDepth: Int,
+      maxQueueSize: Int,
+      webSearchDir: File,
+      agent: TaskOrchestrator,
+      fetchStrategy: FetchStrategy,
+      analysisResultsMap: ConcurrentHashMap<Int, String>,
+      transcriptStream: FileOutputStream?,
+      processingStrategy: PageProcessingStrategy,
+      processingContext: PageProcessingStrategy.ProcessingContext,
+      allPageResults: ConcurrentHashMap<Int, PageProcessingStrategy.PageProcessingResult>
   ): Boolean {
     log.info("Status before queuing next page: $queueStats, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
     val page = getNextPage() ?: return true
@@ -1131,22 +1180,22 @@ class CrawlerAgentTask(
   }
 
   private fun crawlPage(
-    processedCount: AtomicInteger,
-    link: String,
-    page: LinkData,
-    maxPages: Int,
-    maxDepth: Int,
-    maxQueueSize: Int,
-    webSearchDir: File,
-    agent: TaskOrchestrator,
-    fetchStrategy: FetchStrategy,
-    errorCount: AtomicInteger,
-    task: SessionTask,
-    analysisResultsMap: ConcurrentHashMap<Int, String>,
-    transcriptStream: FileOutputStream?,
-    processingStrategy: PageProcessingStrategy,
-    processingContext: ProcessingContext,
-    allPageResults: ConcurrentHashMap<Int, PageProcessingResult>
+      processedCount: AtomicInteger,
+      link: String,
+      page: LinkData,
+      maxPages: Int,
+      maxDepth: Int,
+      maxQueueSize: Int,
+      webSearchDir: File,
+      agent: TaskOrchestrator,
+      fetchStrategy: FetchStrategy,
+      errorCount: AtomicInteger,
+      task: SessionTask,
+      analysisResultsMap: ConcurrentHashMap<Int, String>,
+      transcriptStream: FileOutputStream?,
+      processingStrategy: PageProcessingStrategy,
+      processingContext: PageProcessingStrategy.ProcessingContext,
+      allPageResults: ConcurrentHashMap<Int, PageProcessingStrategy.PageProcessingResult>
   ) {
     val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
     val pageStartTime = System.currentTimeMillis()
@@ -1170,7 +1219,7 @@ class CrawlerAgentTask(
     if (typeConfig.respect_robots_txt == true) {
       robotsTxtParser.getCrawlDelay(link)?.let { delay ->
         log.debug("Applying robots.txt crawl delay of ${delay}ms for: $link")
-        sleep(delay)
+          Thread.sleep(delay)
       }
     }
 
@@ -1218,13 +1267,13 @@ class CrawlerAgentTask(
               this.appendLine("*Content too short (${content.length} chars), skipping this result*")
               this.appendLine()
               // Record as irrelevant for strategy
-              val pageResult = PageProcessingResult(
-                url = url,
-                pageType = PageType.Irrelevant,
-                content = "*Content too short*",
-                summary = null,
-                extractedLinks = null,
-                metadata = mapOf("content_length" to content.length)
+              val pageResult = PageProcessingStrategy.PageProcessingResult(
+                  url = url,
+                  pageType = PageType.Irrelevant,
+                  content = "*Content too short*",
+                  summary = null,
+                  extractedLinks = null,
+                  metadata = mapOf("content_length" to content.length)
               )
               allPageResults[currentIndex] = pageResult
               task.add(
@@ -1240,6 +1289,15 @@ class CrawlerAgentTask(
             log.debug("Processing page with strategy: ${processingStrategy.javaClass.simpleName}")
             val pageResult = processingStrategy.processPage(url, content, processingContext)
             allPageResults[currentIndex] = pageResult
+            // Allow the strategy to re-prioritize the pending crawl queue based on this result
+            try {
+              processingStrategy.reprioritizeQueue(
+                pageResult, allPageResults.values.toList(), processingContext
+              )
+            } catch (e: Exception) {
+              log.error("Error during strategy queue re-prioritization for '$url'", e)
+            }
+
 
             // Handle different page types
             if (pageResult.pageType == PageType.Error) {
@@ -1603,8 +1661,8 @@ class CrawlerAgentTask(
       appendLine("Keep your response under ${typeConfig.max_final_output_size / 1000}K characters.")
     }
     val summary = ChatAgent(
-      prompt = summaryPrompt,
-      model = chatInterface,
+        prompt = summaryPrompt,
+        model = chatInterface,
     ).answer(
       listOf(
         "Here are summaries of each analyzed page:\n${analysisResults}"
@@ -1628,7 +1686,7 @@ class CrawlerAgentTask(
   }
 
   private fun addPageQueueDetailsTab(
-    tabs: TabbedDisplay, processedCount: Int, errorCount: Int
+      tabs: TabbedDisplay, processedCount: Int, errorCount: Int
   ) {
     try {
       val queueDetailsTask = tabs.task.newTask()
@@ -1712,7 +1770,7 @@ class CrawlerAgentTask(
   }
 
   private fun fetchAndProcessUrl(
-    url: String, webSearchDir: File, index: Int, pool: ExecutorService, fetchStrategy: FetchStrategy
+      url: String, webSearchDir: File, index: Int, pool: ExecutorService, fetchStrategy: FetchStrategy
   ): String {
     val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
     if (url.isBlank()) {
@@ -1799,7 +1857,7 @@ class CrawlerAgentTask(
   }
 
   private fun saveStrategyResult(
-    webSearchDir: File, url: String, result: PageProcessingResult, index: Int
+      webSearchDir: File, url: String, result: PageProcessingStrategy.PageProcessingResult, index: Int
   ) {
     try {
       val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
@@ -1831,27 +1889,27 @@ class CrawlerAgentTask(
   }
 
   companion object {
-    private val log = getLogger(CrawlerAgentTask::class.java)
+    private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
     private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
     private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
 
     @JvmStatic
     val CrawlerAgent = TaskType(
-      "CrawlerAgent",
-      "Online & Search",
-      CrawlerAgentTask::class.java,
-      CrawlerTaskExecutionConfigData::class.java,
-      CrawlerTaskTypeConfig::class.java,
-      "Search Google, fetch top results, and analyze content",
-      buildString {
-        append("Searches Google for specified queries and analyzes the top results.")
-        append("<ul>")
-        append("<li>Performs Google searches</li>")
-        append("<li>Fetches top search results</li>")
-        append("<li>Analyzes content for specific goals</li>")
-        append("<li>Generates detailed analysis reports</li>")
-        append("</ul>")
-      },
+        "CrawlerAgent",
+        "Online & Search",
+        CrawlerAgentTask::class.java,
+        CrawlerTaskExecutionConfigData::class.java,
+        CrawlerTaskTypeConfig::class.java,
+        "Search Google, fetch top results, and analyze content",
+        buildString {
+            append("Searches Google for specified queries and analyzes the top results.")
+            append("<ul>")
+            append("<li>Performs Google searches</li>")
+            append("<li>Fetches top search results</li>")
+            append("<li>Analyzes content for specific goals</li>")
+            append("<li>Generates detailed analysis reports</li>")
+            append("</ul>")
+        },
     )
 
   }

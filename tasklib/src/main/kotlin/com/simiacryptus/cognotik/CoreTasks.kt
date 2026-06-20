@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.*
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.SeleniumFetchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.HistoricalFigureDebateTask

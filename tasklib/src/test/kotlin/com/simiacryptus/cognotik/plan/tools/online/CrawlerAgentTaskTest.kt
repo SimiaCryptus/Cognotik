@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskTypeConfig
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask.CrawlerTaskExecutionConfigData
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask.CrawlerTaskTypeConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
-import com.simiacryptus.cognotik.util.crawl.processing.DefaultSummarizerStrategy
-import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.processing.DefaultSummarizerStrategy
+import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit

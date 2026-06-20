@@ -1,6 +1,6 @@
-package com.simiacryptus.cognotik.util.crawl.processing
+package com.simiacryptus.cognotik.crawl.processing
 
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.PageType
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask.PageType
 import java.net.URI
 
 /**

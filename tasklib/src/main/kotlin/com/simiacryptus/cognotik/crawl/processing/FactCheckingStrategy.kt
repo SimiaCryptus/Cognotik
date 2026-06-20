@@ -1,9 +1,9 @@
-package com.simiacryptus.cognotik.util.crawl.processing
+package com.simiacryptus.cognotik.crawl.processing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
@@ -218,6 +218,80 @@ class FactCheckingStrategy : PageProcessingStrategy {
       }
     )
   }
+  /**
+   * Re-prioritize the crawl queue based on which claims still need evidence.
+   *
+   * Claims that already have sufficient evidence (per the config thresholds) are
+   * considered "resolved", and queued links relevant only to those claims are
+   * de-prioritized. Links relevant to claims that still need evidence are boosted,
+   * weighted by how far each claim is from resolution.
+   */
+  override fun reprioritizeQueue(
+    latestResult: PageProcessingStrategy.PageProcessingResult,
+    allResults: List<PageProcessingStrategy.PageProcessingResult>,
+    context: PageProcessingStrategy.ProcessingContext
+  ) {
+    val reprioritize = context.reprioritizeQueue ?: return
+    val config = context.executionConfig.content_queries
+      ?.parserCast<FactCheckingConfig>(context.orchestrationConfig.defaultFast)
+      ?: return
+    // Compute a "need" weight per claim: higher means more evidence still required.
+    val claimNeed: Map<String, Double> = config.claims_to_verify.associateWith { claim ->
+      val results = verificationResults[claim] ?: emptyList()
+      val supportCount = results.count { it.verdict == FactVerdict.SUPPORTED }
+      val contradictCount = results.count { it.verdict == FactVerdict.CONTRADICTED }
+      val resolved = supportCount >= config.required_sources ||
+          contradictCount >= config.contradiction_threshold
+      if (resolved) {
+        0.0
+      } else {
+        // Remaining fraction toward the support threshold (in [0,1])
+        val remaining = (config.required_sources - supportCount)
+          .coerceAtLeast(0)
+          .toDouble() / config.required_sources.coerceAtLeast(1)
+        remaining.coerceIn(0.1, 1.0)
+      }
+    }
+    // If every claim is resolved there's nothing useful to boost.
+    if (claimNeed.values.all { it == 0.0 }) {
+      log.debug("All claims resolved; no queue re-prioritization performed")
+      return
+    }
+    reprioritize { queued ->
+      val newScores = mutableMapOf<String, Double>()
+      queued.forEach { link ->
+        val haystack = buildString {
+          link.title?.let { append(it).append(' ') }
+          link.tags?.let { append(it.joinToString(" ")).append(' ') }
+          append(link.url)
+        }.lowercase()
+        // Find the maximum claim-relevance for this link.
+        var bestNeed = 0.0
+        var matchedAnyClaim = false
+        config.claims_to_verify.forEach { claim ->
+          val claimMatches = claim.split(" ")
+            .filter { it.length > 3 }
+            .any { word -> haystack.contains(word.lowercase()) }
+          if (claimMatches) {
+            matchedAnyClaim = true
+            bestNeed = maxOf(bestNeed, claimNeed[claim] ?: 0.0)
+          }
+        }
+        if (matchedAnyClaim) {
+          // Boost links relevant to under-evidenced claims; de-prioritize those
+          // whose only relevant claims are already resolved.
+          val boosted = if (bestNeed > 0.0) {
+            (link.relevanceScore + bestNeed * 30.0).coerceAtMost(100.0)
+          } else {
+            (link.relevanceScore * 0.5).coerceAtLeast(1.0)
+          }
+          newScores[link.url] = boosted
+        }
+      }
+      newScores
+    }
+  }
+
 
   override fun generateFinalOutput(
     results: List<PageProcessingStrategy.PageProcessingResult>,
