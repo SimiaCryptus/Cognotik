@@ -11,10 +11,13 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.ErbTemplateEngine
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.jsonCast
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 
 class RenderErbTemplateTask(
   orchestrationConfig: OrchestrationConfig,
@@ -268,7 +271,7 @@ All required (non-optional) fields must be populated with appropriate values ext
                       Use the content to infer any relevant details that could be useful for rendering the template.
                     """.trimIndent(),
             model = model,
-            parsingChatter = model,
+            parsingModel = model,
             temperature = 0.0,
             singleStage = true,
           )
@@ -282,27 +285,27 @@ All required (non-optional) fields must be populated with appropriate values ext
   override fun getOutputFile(extension: String) = null
 
   companion object {
-    private val log = LoggerFactory.getLogger(RenderErbTemplateTask::class.java)
+      private val log = getLogger(RenderErbTemplateTask::class.java)
 
     @JvmStatic
     val RenderErbTemplate = TaskType(
-      "RenderErbTemplate",
-      "Writing",
-      RenderErbTemplateTask::class.java,
-      RenderErbTemplateTaskExecutionConfig::class.java,
-      RenderErbTemplateTaskTypeConfig::class.java,
-      "Render ERB-style templates with dynamic data for document generation",
-      """
-                Renders ERB-style templates using a powerful template engine.
-                <ul>
-                    <li>Supports variable interpolation with <%= expression %></li>
-                    <li>Control structures: for loops and if/else conditionals</li>
-                    <li>Built-in filters: escape, markdown, upper, lower, join, default</li>
-                    <li>Optional TypeScript-style schema validation</li>
-                    <li>Can output to file or return rendered content</li>
-                    <li>Useful for generating reports, documents, LaTeX files, etc.</li>
-                </ul>
-            """
+        name = "RenderErbTemplate",
+        category = "Writing",
+        taskClass = RenderErbTemplateTask::class.java,
+        executionConfigClass = RenderErbTemplateTaskExecutionConfig::class.java,
+        taskSettingsClass = RenderErbTemplateTaskTypeConfig::class.java,
+        description = "Render ERB-style templates with dynamic data for document generation",
+        tooltipHtml = """
+                        Renders ERB-style templates using a powerful template engine.
+                        <ul>
+                            <li>Supports variable interpolation with <%= expression %></li>
+                            <li>Control structures: for loops and if/else conditionals</li>
+                            <li>Built-in filters: escape, markdown, upper, lower, join, default</li>
+                            <li>Optional TypeScript-style schema validation</li>
+                            <li>Can output to file or return rendered content</li>
+                            <li>Useful for generating reports, documents, LaTeX files, etc.</li>
+                        </ul>
+                    """
     )
   }
 }

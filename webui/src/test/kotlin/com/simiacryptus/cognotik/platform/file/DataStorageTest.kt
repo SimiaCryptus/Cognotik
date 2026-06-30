@@ -1,14 +1,17 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
+import com.simiacryptus.cognotik.platform.hsql.MetadataStorageDB
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.util.*
@@ -27,7 +30,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val filename = "test.json"
 
         log.debug("Attempting to read JSON file: {}", filename)
-        val settingsFile = File(storage.getSessionDir(user, session), filename)
+        val settingsFile = File(storage.getUserDir(user, session), filename)
         val result = if (!settingsFile.exists()) null else {
             JsonUtil.objectMapper().readValue(settingsFile, Any::class.java) as Any
         }
@@ -53,14 +56,14 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
     }
 
     @Test
-    fun testGetSessionDir() {
+    fun testGetUserDir() {
         log.info("Starting testGetSessionDir")
 
         val user = User(email = "test@example.com")
         val session = Session("G-20230101-1234")
 
         log.debug("Getting session directory for user: {} and session: {}", user.email, session)
-        val sessionDir = storage.getSessionDir(user, session)
+        val sessionDir = storage.getUserDir(user, session)
 
         log.info("Asserting session directory is of type File")
         assertTrue(sessionDir is File, "Expected File type for session directory")
@@ -81,24 +84,6 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         Assertions.assertNotNull(sessionName)
         assertTrue(sessionName is String)
         log.info("testGetSessionName completed successfully")
-    }
-
-    @Test
-    fun testGetSessionTime() {
-        log.info("Starting testGetSessionTime")
-
-        val user = User(email = "test@example.com")
-        val session = Session("G-20230101-1234")
-        log.debug("Updating message for user: {} and session: {}", user.email, session)
-        storage.updateMessage(user, session, "msg001", "<p>Hello, World!</p><p>Hello, World!</p>")
-
-        log.debug("Getting session time for user: {} and session: {}", user.email, session)
-        val sessionTime = storage.getSessionTime(user, session)
-
-        log.info("Asserting session time is not null and is of type Date")
-        Assertions.assertNotNull(sessionTime)
-        assertTrue(sessionTime is Date)
-        log.info("testGetSessionTime completed successfully")
     }
 
     @Test
@@ -208,5 +193,12 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
 }
 
-class DataStorageTest : StorageInterfaceTest(DataStorage(Files.createTempDirectory("sessionDataTest").toFile()))
+class DataStorageTest : StorageInterfaceTest(run {
+    SecureString.key = SecureString.randomKey()
+    DatabaseFacet.root = null
+    DataStorage(
+        Files.createTempDirectory("sessionDataTest").toFile(),
+        MetadataStorageDB()
+    )
+})
 

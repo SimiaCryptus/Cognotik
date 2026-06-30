@@ -20,7 +20,7 @@ import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -44,7 +44,7 @@ class AnalyzeProblemAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project: Project = e.project ?: return
-        val item = e.getData(PlatformDataKeys.SELECTED_ITEM) as ProblemNode? ?: return
+        val item = e.getData(PlatformDataKeys.SELECTED_ITEM) as? ProblemNode? ?: return
         val file: VirtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
         val gitRoot = findGitRoot(file)
 
@@ -52,7 +52,7 @@ class AnalyzeProblemAction : AnAction() {
             try {
                 val problemInfo = buildString {
                     appendLine("File: ${file.path}")
-                    appendLine("Problem: ${item.text}")
+                    appendLine("Problem: ${item.getText()}")
 
                     val psiFile = PsiManager.getInstance(project).findFile(file)
                     val fileType = if (psiFile != null) {
@@ -65,8 +65,8 @@ class AnalyzeProblemAction : AnAction() {
 
                     val document = FileDocumentManager.getInstance().getDocument(file)
                     if (document != null) {
-                        val lineNumber = item.line
-                        val column = item.column
+                        val lineNumber = item.getLine()
+                        val column = item.getColumn()
                         appendLine("Position: Line ${lineNumber + 1}, Column ${column + 1}")
 
                         val startLine = maxOf(0, lineNumber - 2)
@@ -99,7 +99,7 @@ class AnalyzeProblemAction : AnAction() {
     }
 
     private fun openAnalysisSession(project: Project, problemInfo: String, gitRoot: VirtualFile?) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.chats[session] = ProblemAnalysisApp(session, problemInfo, gitRoot)
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
@@ -173,7 +173,7 @@ class AnalyzeProblemAction : AnAction() {
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatClient,
-                        parsingChatter = AppSettingsState.instance.fastChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
                     ).answer(listOf(problemInfo))
 
                   val map = mapOf(

@@ -9,12 +9,12 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -1092,7 +1092,7 @@ The perspective field in your response should be: "$perspective"
         model = api,
         temperature = 0.4,
         name = "PerspectiveEvaluator_$perspective",
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       ).answer(
         listOf(
           """
@@ -1266,7 +1266,7 @@ The strategy field should be: "$strategy"
         model = api,
         temperature = 0.8,
         name = "PoliticalMutationGenerator",
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       ).answer(
         listOf(
           """
@@ -1338,7 +1338,7 @@ Generate the crossover variant.
         model = api,
         temperature = 0.7,
         name = "PoliticalCrossoverGenerator",
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       ).answer(
         listOf(
           """

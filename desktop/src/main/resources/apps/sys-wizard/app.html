@@ -371,6 +371,26 @@
                     </div>
                 </div>
             </div>
+             <!-- Code Directory Files -->
+             <div class="card" id="card-code-files">
+                 <div class="card-header">
+                     <h3>📁 Code Directory Files</h3>
+                     <div class="button-row button-row-compact">
+                         <button class="btn btn-secondary btn-sm" id="refresh-code-files">
+                             <span class="btn-icon">🔄</span> Refresh
+                         </button>
+                     </div>
+                 </div>
+                 <p class="hint">All files in the <code>code/</code> directory. Click a file to view its contents.</p>
+                 <div class="code-files-list" id="code-files-list">
+                     <div class="empty-state">
+                         <div class="empty-icon">📁</div>
+                         <p class="empty-title">No files yet</p>
+                         <p class="empty-desc">Run the pipeline to generate files in the <code>code/</code> directory.</p>
+                     </div>
+                 </div>
+                 <div class="viewer" id="code-files-viewer"></div>
+             </div>
         </section>
         <!-- ==================== USAGE SECTION ==================== -->
         <section id="section-usage" class="section" role="tabpanel" aria-labelledby="tab-usage">
@@ -540,7 +560,7 @@
     <div class="toast-container" id="toast-container"></div>
 </div>
 
-<script src="marked.min.js"></script>
-<script src="app.js"></script>
+<script src="utils/marked.min.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

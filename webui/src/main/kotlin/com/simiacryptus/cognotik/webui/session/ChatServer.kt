@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.DefaultServlet
@@ -15,6 +14,7 @@ import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.JettyServerUpgradeRequest
 import org.eclipse.jetty.websocket.server.JettyWebSocketServlet
 import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -51,6 +51,9 @@ abstract class ChatServer(
             val sessionManager = sessions.computeIfAbsent(session) { s ->
               val user =
                 authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
+              if (user == null) {
+                throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
+              }
               trafficLog.debug(
                 "Creating new session manager for session: {}, user: {}",
                 s,
@@ -86,15 +89,27 @@ abstract class ChatServer(
       }
     }
   private val newSessionServlet by lazy { NewSessionServlet() }
-  private val webSocketHandler by lazy { WebSocketHandler() }
-  private val defaultServlet by lazy { DefaultServlet() }
+  open val webSocketHandler : JettyWebSocketServlet by lazy { WebSocketHandler() }
+  val defaultServlet by lazy { DefaultServlet() }
 
   open fun configure(webAppContext: WebAppContext) {
     trafficLog.info("Configuring web app context for ${javaClass.simpleName}")
-    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
-    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
-    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
+    configure_home(webAppContext)
+    configure_ws(webAppContext)
+    configure_newSession(webAppContext)
     trafficLog.debug("Servlets registered: default(/), ws(/ws), newSession(/newSession)")
+  }
+
+  protected open fun configure_home(webAppContext: WebAppContext) {
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
+  }
+
+  protected open fun configure_newSession(webAppContext: WebAppContext) {
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
+  }
+
+  protected open fun configure_ws(webAppContext: WebAppContext) {
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
   }
 
   companion object {

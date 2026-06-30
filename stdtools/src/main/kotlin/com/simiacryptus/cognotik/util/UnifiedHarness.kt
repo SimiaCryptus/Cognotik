@@ -13,14 +13,10 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
@@ -28,6 +24,7 @@ import com.simiacryptus.cognotik.webui.session.ServerlessSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.server.Server
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.Desktop
 import java.io.File
 import java.io.OutputStream
@@ -55,14 +52,8 @@ open class UnifiedHarness(
         throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}")
       })!!,
       base = api.apiBase,
-      onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-          session = session,
-          user,
-          model,
-          usage
-        )
-      },
+      session = session,
+      user = user,
     )
   },
   val smartModel: ChatModel,
@@ -105,11 +96,11 @@ open class UnifiedHarness(
     }
   }
 
-  var session = Session.newGlobalID()
+  var session = Session.newUserID()
     private set
 
   fun resetSession() {
-    session = Session.newGlobalID()
+    session = Session.newUserID()
   }
 
   open fun runPlan(
@@ -137,7 +128,7 @@ open class UnifiedHarness(
     ) {
       override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
-        val usageManager = ApplicationServices.fileApplicationServices().usageManager
+        val usageManager = ApplicationServices.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         super.onComplete(mode, task)
       }
@@ -247,12 +238,12 @@ open class UnifiedHarness(
     ) {
       override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
 
-      override fun initOrchestrationConfig(session: Session, user: User) = initSettings(session)
+      override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
       override fun onTaskComplete(result: String, task: SessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
-        val usageManager = ApplicationServices.fileApplicationServices().usageManager
+        val usageManager = ApplicationServices.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         completionLatch.countDown()
         onComplete(result, task)
@@ -373,8 +364,8 @@ open class UnifiedHarness(
   ): File {
     val tempDirectory = createTempDirectory(name)
     log.info("Running task in workspace: ${tempDirectory.absolutePath}")
-    DataStorage.sessionPaths[session] = tempDirectory
-    if (redirectData) DataStorage.dataPaths[session] = tempDirectory
+    DataStorage.userPaths[session] = tempDirectory
+    if (redirectData) DataStorage.systemPaths[session] = tempDirectory
     return workspace ?: tempDirectory
   }
 
@@ -396,7 +387,7 @@ open class UnifiedHarness(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(UnifiedHarness::class.java)
+    private val log = getLogger(UnifiedHarness::class.java)
     fun time(): String {
       val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
       return sdf.format(System.currentTimeMillis())
@@ -408,6 +399,7 @@ open class UnifiedHarness(
       PlanHarness.initDynamicEnums()
       ApplicationServices.authenticationManager = object : AuthenticationInterface {
         override fun getUser(accessToken: String?) = user
+        override fun getAccessToken(user: User) = "test-token"
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
         override fun logout(accessToken: String, user: User) {}
       }

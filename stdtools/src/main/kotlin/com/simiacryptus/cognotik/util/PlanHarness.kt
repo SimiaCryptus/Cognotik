@@ -10,9 +10,10 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlin.random.Random
@@ -27,14 +28,8 @@ open class PlanHarness(
     model.instance(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
       base = api.apiBase ?: throw IllegalArgumentException("No API base found for provider: ${model.provider?.name}"),
-      onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-          session = session,
-          user,
-          model,
-          usage
-        )
-      },
+      session = session,
+      user = user,
     )
   },
   val port: Int = Random.nextInt(1024, 65535),
@@ -123,14 +118,8 @@ open class PlanHarness(
         key = api?.key
           ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
         base = api.apiBase,
-        onUsage = { model, usage ->
-          ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-            session = session,
-            user,
-            model,
-            usage
-          )
-        },
+        session = session,
+        user = user,
       )
     }
 
@@ -143,7 +132,7 @@ open class PlanHarness(
       require(CodeRuntimes.values().isNotEmpty())
     }
 
-    private val log = LoggerFactory.getLogger(PlanHarness::class.java)
+    private val log = getLogger(PlanHarness::class.java)
     fun now(): String? = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
     var fix: (Exception) -> Unit = { e ->
       log.error("Error during task execution", e)

@@ -12,12 +12,12 @@ import com.simiacryptus.cognotik.plan.TRIPLE_TILDE
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
@@ -43,7 +43,7 @@ open class WaterfallMode(
   ) : CognitiveModeConfig(type = CoreTasks.Waterfall)
 
 
-  private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
+  private val log = getLogger(WaterfallMode::class.java)
   private var transcriptStream: FileOutputStream? = null
 
   override fun initialize(task: SessionTask) {
@@ -74,7 +74,7 @@ open class WaterfallMode(
         session = session,
         dataStorage = task.ui.dataStorage,
         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-          ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+          ?: task.ui.dataStorage.getUserDir(user, session).toPath()
           ?: File(".").toPath(),
         transcriptStream = transcriptStream
       )
@@ -315,7 +315,7 @@ Available JSON files:
 $availableFiles
             """,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = 0.1,
       describer = describer
     )

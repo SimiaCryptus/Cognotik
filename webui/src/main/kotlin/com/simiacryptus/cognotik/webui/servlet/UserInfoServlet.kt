@@ -10,7 +10,7 @@ class UserInfoServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.contentType = "text/json"
     response.status = HttpServletResponse.SC_OK
-    val user = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     response.writer.write(JsonUtil.objectMapper().writeValueAsString(user))
   }
 }

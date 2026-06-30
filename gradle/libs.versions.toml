@@ -7,7 +7,7 @@ slf4j = "2.0.17"
 logback = "1.5.23"
 jackson = "2.19.0"
 aws = "2.41.24"
-kotlin = "2.3.0"
+kotlin = "2.3.20"
 commons-text = "1.13.1"
 commons-io = "2.21.0"
 httpclient5 = "5.6"
@@ -16,8 +16,8 @@ gson = "2.13.2"
 hsqldb = "2.7.4"
 antlr = "4.13.2"
 asm = "9.8"
-kotlinx-coroutines = "1.10.2"
-kotlinx-collections-immutable = "0.3.8"
+kotlinx-coroutines = "1.11.0"
+kotlinx-collections-immutable = "0.4.0"
 mockito = "5.17.0"
 mockk = "1.13.5"
 flexmark = "0.64.8"
@@ -80,6 +80,7 @@ jetty-webapp = { group = "org.eclipse.jetty", name = "jetty-webapp", version.ref
 jetty-websocket-servlet = { group = "org.eclipse.jetty.websocket", name = "websocket-servlet", version.ref = "jetty" }
 jetty-websocket-server = { group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version.ref = "jetty" }
 jetty-websocket-client = { group = "org.eclipse.jetty.websocket", name = "websocket-jetty-client", version.ref = "jetty" }
+jetty-proxy = { group = "org.eclipse.jetty", name = "jetty-proxy", version.ref = "jetty" }
 jetty-servlet = { group = "org.eclipse.jetty", name = "jetty-servlet", version.ref = "jetty" }
 jetty-annotations = { group = "org.eclipse.jetty", name = "jetty-annotations", version.ref = "jetty" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
@@ -96,6 +97,11 @@ aws-bedrock = { group = "software.amazon.awssdk", name = "bedrock", version.ref 
 aws-bedrockruntime = { group = "software.amazon.awssdk", name = "bedrockruntime", version.ref = "aws" }
 aws-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "aws" }
 aws-kms = { group = "software.amazon.awssdk", name = "kms", version.ref = "aws" }
+aws-cloudwatch = { group = "software.amazon.awssdk", name = "cloudwatch", version.ref = "aws" }
+aws-secretsmanager = { group = "software.amazon.awssdk", name = "secretsmanager", version.ref = "aws" }
+aws-ecs = { group = "software.amazon.awssdk", name = "ecs", version.ref = "aws" }
+aws-ec2 = { group = "software.amazon.awssdk", name = "ec2", version.ref = "aws" }
+aws-efs = { group = "software.amazon.awssdk", name = "efs", version.ref = "aws" }
 commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpclient5" }
@@ -125,8 +131,6 @@ selenium-java = { group = "org.seleniumhq.selenium", name = "selenium-java", ver
 pty4j = { group = "org.jetbrains.pty4j", name = "pty4j", version = "0.13.11" }
 webdrivermanager = { group = "io.github.bonigarcia", name = "webdrivermanager", version.ref = "webdrivermanager" }
 remoterobot-fixtures = { group = "com.intellij.remoterobot", name = "remote-fixtures", version.ref = "remoterobot" }
-remoterobot-robot = { group = "com.intellij.remoterobot", name = "remote-robot", version.ref = "remoterobot" }
-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 batik-transcoder = { group = "org.apache.xmlgraphics", name = "batik-transcoder", version.ref = "batik" }
 batik-codec = { group = "org.apache.xmlgraphics", name = "batik-codec", version.ref = "batik" }
 httpclient5-fluent = { group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version.ref = "httpclient5" }
@@ -156,19 +160,6 @@ google-http-client-gson = { group = "com.google.http-client", name = "google-htt
 commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
 commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commonsCsv" }
 odfdom-java = { group = "org.odftoolkit", name = "odfdom-java", version.ref = "odftoolkit" }
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
-androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "androidx-swiperefreshlayout" }
-androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidx-webkit" }
-androidx-emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "androidx-emoji2" }
-androidx-emoji2-bundled = { group = "androidx.emoji2", name = "emoji2-bundled", version.ref = "androidx-emoji2" }
-slf4jandroid = { group = "org.slf4j", name = "slf4j-android", version.ref = "slf4jandroid" }
-androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext" }
-androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-test-espresso" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }

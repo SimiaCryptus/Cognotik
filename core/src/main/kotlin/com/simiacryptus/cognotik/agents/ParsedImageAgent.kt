@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
+import org.slf4j.LoggerFactory
 
 open class ParsedImageAgent<T : Any>(
   var resultClass: Class<T>? = null,
@@ -69,9 +69,9 @@ ${describer.describe(resultClass!!)}
         try {
           val responseContent = model.chat(
             ChatRequest(
-              model = model.modelType.modelId,
+              model = model.model.modelId,
               messages = messages.toList(),
-              temperature = model.temperature,
+              temperature = temperature,
               audio = model.audio,
             )
           ).choices.firstOrNull()?.message?.content

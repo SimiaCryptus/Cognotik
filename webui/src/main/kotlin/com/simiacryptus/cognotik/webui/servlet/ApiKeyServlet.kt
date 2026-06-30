@@ -1,13 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.platform.model.toApiList
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
@@ -47,7 +43,7 @@ class ApiKeyServlet : HttpServlet() {
       "edit" -> {
         val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
         if (record != null) {
-          serveEditPage(request, response, record)
+          serveEditPage(response, record)
         } else {
           response.writer.write("API Key record not found")
         }
@@ -68,7 +64,6 @@ class ApiKeyServlet : HttpServlet() {
       "create" -> {
         val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
         serveEditPage(
-          request,
           response,
           ApiKeyRecord(
             owner = user.email,
@@ -207,11 +202,7 @@ class ApiKeyServlet : HttpServlet() {
     )
   }
 
-  private fun serveEditPage(request: HttpServletRequest, response: HttpServletResponse, record: ApiKeyRecord) {
-    val userinfo = authenticate(request, response)
-    val usageSummary: Map<String, ModelSchema.Usage> =
-      ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user = userinfo!!)
-
+  private fun serveEditPage(response: HttpServletResponse, record: ApiKeyRecord) {
     response.writer.write(
       """
       <html>
@@ -277,19 +268,6 @@ class ApiKeyServlet : HttpServlet() {
           <textarea id="welcomeMessage" name="welcomeMessage">${record.welcomeMessage}</textarea>
           <input type="submit" value="Submit">
       </form>
-      <!-- Usage Summary -->
-      <h2>Usage Summary</h2>
-      ${
-        usageSummary.entries.joinToString { (model: String, usage: ModelSchema.Usage) ->
-          """
-          <div>
-            <h3>${model}</h3>
-            <p>total_tokens: ${usage.total_tokens}</p>
-            <p>Cost: ${usage.cost}</p>
-          </div>
-          """
-        }
-      }
        <!-- Invite Link -->
        <div class="invite-link">
            <h2>Invite Link</h2>

@@ -1,8 +1,8 @@
 import org.jetbrains.changelog.Changelog
- import org.jetbrains.changelog.markdownToHTML
- import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
- plugins {
+plugins {
     kotlin("jvm")
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
@@ -21,28 +21,15 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
+
     implementation(project(":core")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":groovy")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
-        exclude(group = "com.fasterxml.jackson.core")
-    }
-    implementation(project(":kotlin")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":webui")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
@@ -50,27 +37,18 @@ dependencies {
     }
 
     implementation(project(":providers")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
     implementation(project(":tasklib")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
     implementation(project(":stdtools")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
@@ -124,6 +102,9 @@ kotlin {
 }
 
 tasks {
+    buildSearchableOptions {
+        enabled = false
+    }
     withType<KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)

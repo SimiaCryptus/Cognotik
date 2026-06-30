@@ -4,17 +4,20 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -440,7 +443,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = factPrompt,
             model = smartApi,
             temperature = 0.3,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val factChecks = factAgent.answer(listOf("Verify facts")).obj.facts
@@ -566,7 +569,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = perspectivePrompt,
             model = smartApi,
             temperature = 0.5,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val perspectives = perspectiveAgent.answer(listOf("Identify perspectives")).obj.sources
@@ -669,7 +672,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = contextPrompt,
             model = smartApi,
             temperature = 0.5,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val context = contextAgent.answer(listOf("Analyze context")).obj
@@ -763,7 +766,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = biasPrompt,
             model = smartApi,
             temperature = 0.4,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val biasAnalysis = biasAgent.answer(listOf("Analyze biases")).obj
@@ -870,7 +873,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = anglesPrompt,
             model = smartApi,
             temperature = 0.7,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val angles = anglesAgent.answer(listOf("Explore angles")).obj.angles
@@ -987,7 +990,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             prompt = gapsPrompt,
             model = smartApi,
             temperature = 0.5,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val gaps = gapsAgent.answer(listOf("Find gaps")).obj.gaps

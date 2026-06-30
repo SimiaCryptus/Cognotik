@@ -4,20 +4,18 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -621,7 +619,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.3,
         name = "InitialStateAnalyzer",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Analyze the initial state")).obj
     } catch (e: Exception) {
       log.warn("Failed to analyze initial state", e)
@@ -785,7 +783,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.4,
         name = "StepGenerator",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Generate the next step")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate next step", e)
@@ -819,7 +817,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.2,
         name = "StepVerifier",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Verify this step")).obj
     } catch (e: Exception) {
       log.warn("Failed to verify step", e)
@@ -853,7 +851,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.2,
         name = "GoalChecker",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Check if goal is reached")).obj
     } catch (e: Exception) {
       log.warn("Failed to check goal", e)
@@ -890,7 +888,7 @@ class MathematicalReasoningTask(
         model = smartApi,
         temperature = 0.6,
         name = "AlternativeGenerator",
-        parsingChatter = fastApi
+        parsingModel = fastApi
       ).answer(listOf("Generate alternatives")).obj
     } catch (e: Exception) {
       log.warn("Failed to generate alternatives", e)

@@ -6,8 +6,8 @@ import com.google.genai.types.GenerateImagesConfig
 import com.google.genai.types.GenerateImagesResponse
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.*
@@ -85,10 +85,6 @@ class GeminiImageClient(
         onUsage(
           model, Usage(
             completion_tokens = imageData.size.toLong(),
-            cost = model.pricing(
-              width = dims?.get(0)?.toInt() ?: 1024,
-              height = dims?.get(1)?.toInt() ?: 1024
-            ) * imageData.size
           )
         )
       }

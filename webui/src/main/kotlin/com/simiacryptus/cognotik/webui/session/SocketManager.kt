@@ -2,14 +2,14 @@ package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.OutputStream
 import java.net.URLDecoder
@@ -28,7 +28,7 @@ abstract class SocketManager(
 ) {
   private val messageStates = Collections.synchronizedMap(
     try {
-      dataStorage?.getMessages(owner, sessionId) ?: LinkedHashMap()
+        dataStorage.getMessages(owner, sessionId)
     } catch (e: Exception) {
       log.error("Failed to load messages from storage for session: {}, using empty map", sessionId, e)
       LinkedHashMap()
@@ -38,10 +38,10 @@ abstract class SocketManager(
   fun resolveSystemFile(relativePath: String): File? {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-    return dataStorage?.getDataDir(
+    return dataStorage.getSystemDir(
       owner,
       sessionId
-    )?.let { dir ->
+    ).let { dir ->
       if (!dir.exists() && !dir.mkdirs()) {
         throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
       }
@@ -56,15 +56,15 @@ abstract class SocketManager(
     }
   }
 
-  fun resolveUserFile(relativePath: String): File? {
+  fun resolveUserFile(relativePath: String): File {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     require(!relativePath.contains("..")) {
       "Invalid file path: path traversal not allowed"
     }
-    return dataStorage?.getSessionDir(
+    return dataStorage.getUserDir(
       owner,
       sessionId
-    )?.let { dir ->
+    ).let { dir ->
       val resolve = if (dir.exists()) {
         dir.resolve(relativePath).apply { parentFile.mkdirs() }
       } else {
@@ -103,7 +103,7 @@ abstract class SocketManager(
       "Removing socket: {} (id: {}), user: {}",
       socket,
       System.identityHashCode(socket),
-      socket.user?.name ?: "anonymous"
+      socket.user.name ?: "anonymous"
     )
 
     try {
@@ -126,7 +126,7 @@ abstract class SocketManager(
       "Adding socket: {} (id: {}), user: {}, remote: {}",
       socket,
       System.identityHashCode(socket),
-      user?.name ?: "anonymous",
+      user.name ?: "anonymous",
       session.remoteAddress
     )
 
@@ -138,7 +138,7 @@ abstract class SocketManager(
     ) {
       log.warn(
         "Unauthorized access attempt from user: {}, remote: {}",
-        user?.name ?: "anonymous",
+        user.name ?: "anonymous",
         session.remoteAddress
       )
       throw IllegalArgumentException("Unauthorized")
@@ -148,7 +148,7 @@ abstract class SocketManager(
       sockets[socket] = session
       sendQueues[socket] = ConcurrentLinkedDeque()
     } catch (e: Exception) {
-      log.error("Error adding socket for user: {}", user?.name ?: "anonymous", e)
+      log.error("Error adding socket for user: {}", user.name ?: "anonymous", e)
       throw e
     }
     trafficLog.debug("Socket added, active connections: {}", sockets.size)
@@ -611,7 +611,7 @@ abstract class SocketManager(
       return ApplicationServices.authenticationManager.getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
-          ?.value)
+          ?.value) ?: throw RuntimeException("User must be authenticated to connect to WebSocket")
     }
   }
 }

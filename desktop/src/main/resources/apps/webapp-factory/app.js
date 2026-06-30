@@ -1,33 +1,103 @@
+import {
+    parseSessionUrl,
+    getProxyUrl,
+    getAppRoot
+} from './utils/session.js';
+import {
+    readFile,
+    writeFile,
+    fileExists,
+    listFiles
+} from './utils/fileIO.js';
+import {
+    runDocOp,
+    fetchDocopsStatus,
+    waitForTask,
+    createStatusPoller
+} from './utils/docops.js';
+import {
+    loadApiProviders,
+    populateModelDropdowns,
+    saveModelSelections,
+    loadModelSelections
+} from './utils/models.js';
+import {
+    renderMarkdown,
+    escapeHtml,
+    setStatus,
+    setBadge,
+    createBatchLogger,
+    getFileIcon
+} from './utils/ui.js';
+import {
+    gitApiCall,
+    getStatus as gitGetStatus,
+    initRepository as gitInit,
+    commit as gitCommit,
+    getBranches as gitGetBranches,
+    checkout as gitCheckout,
+    getLog as gitGetLog
+} from './utils/git.js';
+import {
+    fetchUsageData,
+    aggregateUsage,
+    formatTokenCount,
+    formatCost,
+    renderUsageSummary,
+    createUsageTableHtml
+} from './utils/usage.js';
+import {
+    createSessionLinkManager
+} from './utils/sessionLinks.js';
+
 (function() {
     'use strict';
-    // === Utility: Determine base path from current URL ===
-    const pathParts = window.location.pathname.split('/');
-    const fileIndexIdx = pathParts.indexOf('fileIndex');
-    let basePath = '';
-    let sessionId = '';
-    let appId = '';
-    if (fileIndexIdx >= 0 && fileIndexIdx + 1 < pathParts.length) {
-        sessionId = pathParts[fileIndexIdx + 1];
-        basePath = pathParts.slice(0, fileIndexIdx + 2).join('/');
-        appId = pathParts[fileIndexIdx - 1] || 'webapp-factory';
-    } else {
-        // Fallback: try to detect basePath from the current directory
-        // Remove trailing filename (e.g. /app.html) to get the directory
-        const currentPath = window.location.pathname;
-        basePath = currentPath.replace(/\/[^/]*\.[^/]*$/, '') || currentPath.replace(/\/+$/, '');
-        console.warn('Could not determine session from URL path. Using basePath:', basePath);
-    }
+
+    // === Session / URL setup ===
+    const { basePath, sessionId, appId } = parseSessionUrl();
+    const appBase = getAppRoot();
     const proxyBase = '/proxy/';
-     // === Model management state ===
-     let availableModels = {};
-    // === Compute app base path (e.g. /webapp-factory) for ZIP/Git endpoints ===
-    const appBase = fileIndexIdx >= 2 ? pathParts.slice(0, fileIndexIdx).join('/') : '';
-    // === Usage tracking state ===
+
+    // === Computed URLs ===
+    const appIndexUrl = basePath + (basePath.endsWith('/') ? '' : '/') + 'code/index.html';
+    const codeBaseAbsoluteUrl = window.location.origin + basePath + (basePath.endsWith('/') ? '' : '/') + 'code/';
+
+    // === App state ===
+    const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel'];
+    const MODEL_STORAGE_PREFIX = 'webappFactory';
+    let availableModels = {};
     let knownTaskSessionIds = new Set();
     let lastUsageData = null;
+
     // === Render mode state ===
     const DEFAULT_RENDER_OP = 'ops/render_op.md';
     const VALID_RENDER_OPS = ['ops/render_op.md', 'ops/render_simple_op.md'];
+
+    // === Session link manager ===
+    const linkManager = createSessionLinkManager(getProxyUrl);
+
+    // === Batch logger ===
+    const batchLogger = createBatchLogger('batch-log');
+    const batchLog = document.getElementById('batch-log');
+    function logBatch(message, type) {
+        if (batchLog) batchLog.classList.add('visible');
+        batchLogger.log(message, type);
+    }
+    function logBatchHtml(html, type) {
+        if (batchLog) batchLog.classList.add('visible');
+        batchLogger.logHtml(html, type);
+    }
+
+    // === Status tracking for code/ target ===
+    let activeCodeBadge = 'badge-render';
+    let activeCodeTaskSessionId = null;
+    let codeOperationInFlight = false;
+    let activeTestTaskSessionId = null;
+    let statusPoller = null;
+
+    // ==================================================
+    // === Render Mode helpers ===
+    // ==================================================
     function getSelectedRenderOp() {
         const checked = document.querySelector('input[name="render-mode"]:checked');
         const val = checked ? checked.value : '';
@@ -42,8 +112,6 @@
         updateRenderModeUI(opToUse);
     }
     function updateRenderModeUI(opPath) {
-        // Update the data-op attribute on the per-step "Run" button so it
-        // uses the currently selected render mode.
         const runBtn = document.querySelector('.btn-run[data-badge="badge-render"]');
         if (runBtn) runBtn.dataset.op = opPath;
     }
@@ -60,135 +128,108 @@
             });
         });
     }
-    function getSelectedRenderOp() {
-        const checked = document.querySelector('input[name="render-mode"]:checked');
-        const val = checked ? checked.value : '';
-        if (VALID_RENDER_OPS.indexOf(val) >= 0) return val;
-        return DEFAULT_RENDER_OP;
+
+    // ==================================================
+    // === Model management ===
+    // ==================================================
+    async function initApiProviders() {
+        try {
+            availableModels = await loadApiProviders();
+            refreshModelDropdowns();
+        } catch (e) {
+            console.warn('Failed to load API providers:', e);
+            setModelDropdownsError('Failed to load models');
+        }
     }
-    function loadRenderModePreference() {
-        const saved = localStorage.getItem('webappFactory_renderOp');
-        const opToUse = (saved && VALID_RENDER_OPS.indexOf(saved) >= 0) ? saved : DEFAULT_RENDER_OP;
-        const radio = document.querySelector('input[name="render-mode"][value="' + opToUse + '"]');
-        if (radio) radio.checked = true;
-        updateRenderModeUI(opToUse);
+    function refreshModelDropdowns() {
+        const smartSelect = document.getElementById('model-smart');
+        const fastSelect = document.getElementById('model-fast');
+        const imageSelect = document.getElementById('model-image');
+        const selects = [smartSelect, fastSelect, imageSelect].filter(Boolean);
+        if (selects.length === 0) return;
+        const saved = loadModelSelections(MODEL_STORAGE_PREFIX, MODEL_KEYS);
+        // Convert saved object keyed by role -> object keyed by select id so each
+        // dropdown picks up its own saved value.
+        const savedByElement = {
+            smartModel: saved.smartModel,
+            fastModel: saved.fastModel,
+            imageModel: saved.imageModel
+        };
+        try {
+            populateModelDropdowns(availableModels, selects, savedByElement);
+        } catch (e) {
+            console.warn('populateModelDropdowns failed, falling back to manual fill:', e);
+            manualPopulateModelDropdowns(smartSelect, fastSelect, imageSelect, saved);
+        }
+        // After population, restore selections manually (defensive — populateModelDropdowns
+        // may key by element ID rather than role).
+        if (smartSelect && saved.smartModel &&
+            Array.from(smartSelect.options).some(o => o.value === saved.smartModel)) {
+            smartSelect.value = saved.smartModel;
+        }
+        if (fastSelect && saved.fastModel &&
+            Array.from(fastSelect.options).some(o => o.value === saved.fastModel)) {
+            fastSelect.value = saved.fastModel;
+        }
+        if (imageSelect && saved.imageModel &&
+            Array.from(imageSelect.options).some(o => o.value === saved.imageModel)) {
+            imageSelect.value = saved.imageModel;
+        }
     }
-    function updateRenderModeUI(opPath) {
-        // Update the data-op attribute on the per-step "Run" button so it
-        // uses the currently selected render mode.
-        const runBtn = document.querySelector('.btn-run[data-badge="badge-render"]');
-        if (runBtn) runBtn.dataset.op = opPath;
+    function manualPopulateModelDropdowns(smartSelect, fastSelect, imageSelect, saved) {
+        [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => { sel.innerHTML = ''; });
+        const addedModels = new Set();
+        let totalModels = 0;
+        for (const [provider, models] of Object.entries(availableModels)) {
+            models.forEach(model => {
+                if (addedModels.has(model.id)) return;
+                [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = `${model.name} (${provider})`;
+                    sel.appendChild(option);
+                });
+                addedModels.add(model.id);
+                totalModels++;
+            });
+        }
+        if (totalModels === 0) {
+            [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No models available — configure API keys first';
+                sel.appendChild(option);
+            });
+        }
+    }
+    function setModelDropdownsError(message) {
+        ['model-smart', 'model-fast', 'model-image'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            sel.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = message;
+            sel.appendChild(option);
+        });
+    }
+    function getSelectedModels() {
+        const smartSelect = document.getElementById('model-smart');
+        const fastSelect = document.getElementById('model-fast');
+        const imageSelect = document.getElementById('model-image');
+        const models = {};
+        // Only include non-empty values — empty-string optional model keys
+        // are rejected by the server.
+        if (smartSelect && smartSelect.value) models.smartModel = smartSelect.value;
+        if (fastSelect && fastSelect.value) models.fastModel = fastSelect.value;
+        if (imageSelect && imageSelect.value) models.imageModel = imageSelect.value;
+        return models;
     }
 
-    // === Compute the URL for the generated app's index.html ===
-    const appIndexUrl = basePath + (basePath.endsWith('/') ? '' : '/') + 'code/index.html';
-    // Compute the absolute base URL for the code directory (used in iframe <base> tag)
-    const codeBaseAbsoluteUrl = window.location.origin + basePath + (basePath.endsWith('/') ? '' : '/') + 'code/';
-     // === Model loading and selection ===
-     async function loadApiProviders() {
-         try {
-             const response = await fetch('/apiProviders/?format=json');
-             if (response.status >= 400) {
-                 console.warn('Could not load API providers (status ' + response.status + ')');
-                 return;
-             }
-             const providersResponse = await response.json();
-             const providers = providersResponse.configuredProviders || [];
-             availableModels = {};
-             providers.forEach(provider => {
-                 if (provider.models && provider.models.length > 0) {
-                     availableModels[provider.name] = provider.models.map(model => ({
-                         id: model.name,
-                         name: model.name,
-                         description: model.maxTokens
-                             ? `Max tokens: ${model.maxTokens}`
-                             : ''
-                     }));
-                 }
-             });
-             populateModelDropdowns();
-         } catch (e) {
-             console.warn('Failed to load API providers:', e);
-             setModelDropdownsError('Failed to load models');
-         }
-     }
-     function populateModelDropdowns() {
-         const smartSelect = document.getElementById('model-smart');
-         const fastSelect = document.getElementById('model-fast');
-         const imageSelect = document.getElementById('model-image');
-         if (!smartSelect || !fastSelect) return;
-         [smartSelect, fastSelect].forEach(sel => { sel.innerHTML = ''; });
-         if (imageSelect) imageSelect.innerHTML = '';
-         const addedModels = new Set();
-         let totalModels = 0;
-         for (const [provider, models] of Object.entries(availableModels)) {
-             models.forEach(model => {
-                 if (!addedModels.has(model.id)) {
-                     [smartSelect, fastSelect].forEach(sel => {
-                         const option = document.createElement('option');
-                         option.value = model.id;
-                         option.textContent = `${model.name} (${provider})`;
-                         sel.appendChild(option);
-                     });
-                     if (imageSelect) {
-                         const option = document.createElement('option');
-                         option.value = model.id;
-                         option.textContent = `${model.name} (${provider})`;
-                         imageSelect.appendChild(option);
-                     }
-                     addedModels.add(model.id);
-                     totalModels++;
-                 }
-             });
-         }
-         if (totalModels === 0) {
-             [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
-                 const option = document.createElement('option');
-                 option.value = '';
-                 option.textContent = 'No models available — configure API keys first';
-                 sel.appendChild(option);
-             });
-             return;
-         }
-         // Restore saved selections
-         const savedSmart = localStorage.getItem('webappFactory_smartModel');
-         const savedFast = localStorage.getItem('webappFactory_fastModel');
-         const savedImage = localStorage.getItem('webappFactory_imageModel');
-         if (savedSmart && Array.from(smartSelect.options).some(o => o.value === savedSmart)) {
-             smartSelect.value = savedSmart;
-         }
-         if (savedFast && Array.from(fastSelect.options).some(o => o.value === savedFast)) {
-             fastSelect.value = savedFast;
-         }
-         if (savedImage && imageSelect && Array.from(imageSelect.options).some(o => o.value === savedImage)) {
-             imageSelect.value = savedImage;
-         }
-     }
-     function setModelDropdownsError(message) {
-         const smartSelect = document.getElementById('model-smart');
-         const fastSelect = document.getElementById('model-fast');
-         const imageSelect = document.getElementById('model-image');
-         [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
-             if (!sel) return;
-             sel.innerHTML = '';
-             const option = document.createElement('option');
-             option.value = '';
-             option.textContent = message;
-             sel.appendChild(option);
-         });
-     }
-     function getSelectedModels() {
-         const smartSelect = document.getElementById('model-smart');
-         const fastSelect = document.getElementById('model-fast');
-         const imageSelect = document.getElementById('model-image');
-         return {
-             smartModel: smartSelect ? smartSelect.value : '',
-             fastModel: fastSelect ? fastSelect.value : '',
-             imageModel: imageSelect ? imageSelect.value : '',
-         };
-     }
-
-      function updateLaunchLinks() {
+    // ==================================================
+    // === Launch link wiring ===
+    // ==================================================
+    function updateLaunchLinks() {
         const links = [
             document.getElementById('nav-launch-app'),
             document.getElementById('btn-launch-app-banner'),
@@ -199,8 +240,10 @@
             if (el) el.href = appIndexUrl;
         });
     }
-    updateLaunchLinks();
+
+    // ==================================================
     // === Console Capture & Live Preview ===
+    // ==================================================
     const consoleOutput = document.getElementById('console-output');
     const consoleCounts = document.getElementById('console-counts');
     const previewIframe = document.getElementById('preview-iframe');
@@ -208,72 +251,73 @@
     const btnFixErrors = document.getElementById('btn-fix-errors');
     let capturedLogs = [];
     let consoleStat = { logs: 0, warnings: 0, errors: 0 };
-    // The script we inject into the iframe to capture console output
+
     const CONSOLE_CAPTURE_SCRIPT = `
-<script>
-(function() {
-    var _origConsole = {
-        log: console.log,
-        warn: console.warn,
-        error: console.error,
-        info: console.info,
-        debug: console.debug
-    };
-    function send(level, args) {
-        try {
-            var parts = [];
-            for (var i = 0; i < args.length; i++) {
-                try {
-                    parts.push(typeof args[i] === 'object' ? JSON.stringify(args[i], null, 2) : String(args[i]));
-                } catch(e) {
-                    parts.push(String(args[i]));
+    <script>
+    (function() {
+        var _origConsole = {
+            log: console.log,
+            warn: console.warn,
+            error: console.error,
+            info: console.info,
+            debug: console.debug
+        };
+        function send(level, args) {
+            try {
+                var parts = [];
+                for (var i = 0; i < args.length; i++) {
+                    try {
+                        parts.push(typeof args[i] === 'object' ? JSON.stringify(args[i], null, 2) : String(args[i]));
+                    } catch(e) {
+                        parts.push(String(args[i]));
+                    }
                 }
+                window.parent.postMessage({
+                    type: 'console-capture',
+                    level: level,
+                    message: parts.join(' '),
+                    timestamp: Date.now()
+                }, '*');
+            } catch(e) {}
+        }
+        console.log = function() { send('log', arguments); _origConsole.log.apply(console, arguments); };
+        console.warn = function() { send('warn', arguments); _origConsole.warn.apply(console, arguments); };
+        console.error = function() { send('error', arguments); _origConsole.error.apply(console, arguments); };
+        console.info = function() { send('info', arguments); _origConsole.info.apply(console, arguments); };
+        console.debug = function() { send('log', arguments); _origConsole.debug.apply(console, arguments); };
+        window.onerror = function(msg, source, lineno, colno, error) {
+            var detail = msg;
+            if (source) detail += '\\n  at ' + source + ':' + lineno + ':' + colno;
+            if (error && error.stack) detail += '\\n' + error.stack;
+            window.parent.postMessage({
+                type: 'console-capture',
+                level: 'exception',
+                message: detail,
+                source: source,
+                lineno: lineno,
+                colno: colno,
+                timestamp: Date.now()
+            }, '*');
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            var reason = event.reason;
+            var msg = 'Unhandled Promise Rejection: ';
+            if (reason instanceof Error) {
+                msg += reason.message + (reason.stack ? '\\n' + reason.stack : '');
+            } else {
+                try { msg += JSON.stringify(reason); } catch(e) { msg += String(reason); }
             }
             window.parent.postMessage({
                 type: 'console-capture',
-                level: level,
-                message: parts.join(' '),
+                level: 'exception',
+                message: msg,
                 timestamp: Date.now()
             }, '*');
-        } catch(e) {}
-    }
-    console.log = function() { send('log', arguments); _origConsole.log.apply(console, arguments); };
-    console.warn = function() { send('warn', arguments); _origConsole.warn.apply(console, arguments); };
-    console.error = function() { send('error', arguments); _origConsole.error.apply(console, arguments); };
-    console.info = function() { send('info', arguments); _origConsole.info.apply(console, arguments); };
-    console.debug = function() { send('log', arguments); _origConsole.debug.apply(console, arguments); };
-    window.onerror = function(msg, source, lineno, colno, error) {
-        var detail = msg;
-        if (source) detail += '\\n  at ' + source + ':' + lineno + ':' + colno;
-        if (error && error.stack) detail += '\\n' + error.stack;
-        window.parent.postMessage({
-            type: 'console-capture',
-            level: 'exception',
-            message: detail,
-            source: source,
-            lineno: lineno,
-            colno: colno,
-            timestamp: Date.now()
-        }, '*');
-    };
-    window.addEventListener('unhandledrejection', function(event) {
-        var reason = event.reason;
-        var msg = 'Unhandled Promise Rejection: ';
-        if (reason instanceof Error) {
-            msg += reason.message + (reason.stack ? '\\n' + reason.stack : '');
-        } else {
-            try { msg += JSON.stringify(reason); } catch(e) { msg += String(reason); }
-        }
-        window.parent.postMessage({
-            type: 'console-capture',
-            level: 'exception',
-            message: msg,
-            timestamp: Date.now()
-        }, '*');
-    });
-    window.parent.postMessage({ type: 'console-capture', level: 'info', message: 'App loaded successfully.', timestamp: Date.now() }, '*');
-})();
-<\/script>`;
+        });
+        window.parent.postMessage({ type: 'console-capture', level: 'info', message: 'App loaded successfully.', timestamp: Date.now() }, '*');
+    })();
+    <\/script>`;
+
     function clearConsolePanel() {
         capturedLogs = [];
         consoleStat = { logs: 0, warnings: 0, errors: 0 };
@@ -291,15 +335,8 @@
     }
     function addConsoleEntry(level, message, source) {
         const ts = new Date().toLocaleTimeString();
-        const entry = {
-            level: level,
-            message: message,
-            source: source || '',
-            timestamp: ts,
-            raw: message
-        };
+        const entry = { level, message, source: source || '', timestamp: ts, raw: message };
         capturedLogs.push(entry);
-        // Update counts
         if (level === 'error' || level === 'exception') {
             consoleStat.errors++;
             if (btnFixErrors) btnFixErrors.style.display = '';
@@ -309,17 +346,15 @@
             consoleStat.logs++;
         }
         updateConsoleCounts();
-        // Add to DOM
         if (!consoleOutput) return;
-        // Remove the "waiting" placeholder if present
         const placeholder = consoleOutput.querySelector('.console-info');
         if (placeholder && placeholder.textContent.includes('Waiting for app')) {
             placeholder.remove();
         }
         const cssClass = level === 'exception' ? 'console-exception' :
-                          level === 'error' ? 'console-error' :
-                          level === 'warn' ? 'console-warn' :
-                          level === 'info' ? 'console-info' : 'console-log';
+            level === 'error' ? 'console-error' :
+                level === 'warn' ? 'console-warn' :
+                    level === 'info' ? 'console-info' : 'console-log';
         const div = document.createElement('div');
         div.className = 'console-entry ' + cssClass;
         div.innerHTML = `<span class="console-timestamp">${escapeHtml(ts)}</span>${escapeHtml(message)}`;
@@ -329,7 +364,7 @@
         consoleOutput.appendChild(div);
         consoleOutput.scrollTop = consoleOutput.scrollHeight;
     }
-    // Listen for messages from the iframe
+
     window.addEventListener('message', function(event) {
         if (!event.data || event.data.type !== 'console-capture') return;
         const { level, message, source, lineno, colno } = event.data;
@@ -341,7 +376,7 @@
         }
         addConsoleEntry(level || 'log', message || '', sourceInfo);
     });
-    // Load the app into the iframe with injected console capture
+
     async function loadPreviewIframe() {
         if (!previewIframe) return;
         const available = await checkAppAvailable();
@@ -352,15 +387,10 @@
         }
         clearConsolePanel();
         try {
-            // Fetch the generated index.html
             const resp = await fetch(appIndexUrl);
             if (!resp.ok) throw new Error('Could not fetch app');
             let html = await resp.text();
-            // Remove any existing <base> tags to avoid conflicts
             html = html.replace(/<base\s[^>]*>/gi, '');
-            // Inject <base> tag with an absolute URL so that relative resource
-            // references (CSS, JS, images) resolve correctly even inside a
-            // blob: URL document where relative paths would otherwise break.
             const baseTag = '<base href="' + codeBaseAbsoluteUrl + '">';
             const injectedHead = baseTag + '\n' + CONSOLE_CAPTURE_SCRIPT;
             if (html.includes('<head>')) {
@@ -377,10 +407,7 @@
             if (previewPlaceholder) previewPlaceholder.style.display = 'none';
             previewIframe.style.display = 'block';
             previewIframe.style.minHeight = '600px';
-            // Try using srcdoc first — it works well when the <base> tag has
-            // an absolute URL.  Fall back to blob URL if srcdoc is unavailable.
             if ('srcdoc' in HTMLIFrameElement.prototype) {
-                // Revoke any previous blob URL
                 if (previewIframe._blobUrl) {
                     URL.revokeObjectURL(previewIframe._blobUrl);
                     previewIframe._blobUrl = null;
@@ -388,12 +415,9 @@
                 previewIframe.removeAttribute('src');
                 previewIframe.srcdoc = html;
             } else {
-                // Fallback: blob URL approach
                 const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
                 const blobUrl = URL.createObjectURL(blob);
-                if (previewIframe._blobUrl) {
-                    URL.revokeObjectURL(previewIframe._blobUrl);
-                }
+                if (previewIframe._blobUrl) URL.revokeObjectURL(previewIframe._blobUrl);
                 previewIframe._blobUrl = blobUrl;
                 previewIframe.removeAttribute('srcdoc');
                 previewIframe.src = blobUrl;
@@ -401,24 +425,21 @@
         } catch (e) {
             console.warn('Failed to load preview:', e);
             addConsoleEntry('error', 'Failed to load preview: ' + e.message);
-            // Fallback: just set src directly (no console capture)
             if (previewPlaceholder) previewPlaceholder.style.display = 'none';
             previewIframe.style.display = 'block';
             previewIframe.style.minHeight = '600px';
             previewIframe.src = appIndexUrl;
         }
     }
-    // Preview controls
-    document.getElementById('btn-preview-refresh')?.addEventListener('click', function() {
-        loadPreviewIframe();
-    });
+
+    // === Preview controls ===
+    document.getElementById('btn-preview-refresh')?.addEventListener('click', loadPreviewIframe);
     document.getElementById('btn-preview-launch')?.addEventListener('click', function() {
         this.href = appIndexUrl;
     });
-    document.getElementById('btn-preview-clear-console')?.addEventListener('click', function() {
-        clearConsolePanel();
-    });
-    // "Fix Errors" button: collect errors and populate update notes
+    document.getElementById('btn-preview-clear-console')?.addEventListener('click', clearConsolePanel);
+
+    // === Fix Errors ===
     document.getElementById('btn-fix-errors')?.addEventListener('click', function() {
         const errors = capturedLogs.filter(e => e.level === 'error' || e.level === 'exception');
         if (errors.length === 0) {
@@ -431,50 +452,33 @@
         errors.forEach((err, i) => {
             notes += `## Error ${i + 1}\n`;
             notes += '```\n' + err.message + '\n```\n';
-            if (err.source) {
-                notes += `Source: \`${err.source}\`\n`;
-            }
+            if (err.source) notes += `Source: \`${err.source}\`\n`;
             notes += '\n';
         });
-        // Also include warnings if any
         const warnings = capturedLogs.filter(e => e.level === 'warn');
-          if (notesContent.trim()) {
-              notes += '## Warnings (lower priority)\n\n';
-              warnings.forEach((w, i) => {
-                  notes += `- ${w.message}\n`;
-              });
-              notes += '\n';
-          }
+        if (warnings.length > 0) {
+            notes += '## Warnings (lower priority)\n\n';
+            warnings.forEach(w => { notes += `- ${w.message}\n`; });
+            notes += '\n';
+        }
         notes += '## Instructions\n';
         notes += '- Fix all the errors listed above\n';
         notes += '- Make sure the app loads without any JavaScript exceptions\n';
         notes += '- Test that all interactive features work correctly\n';
-        // Navigate to Update tab and populate notes
         const notesEditor = document.getElementById('notes-editor');
-        if (notesEditor) {
-            notesEditor.value = notes;
-        }
-        // Switch to Update section
+        if (notesEditor) notesEditor.value = notes;
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         const updateLink = document.querySelector('[data-section="section-update"]');
         if (updateLink) updateLink.classList.add('active');
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById('section-update')?.classList.add('active');
     });
-    function getErrorsAndWarningsSummary() {
-        const errors = capturedLogs.filter(e => e.level === 'error' || e.level === 'exception');
-        const warnings = capturedLogs.filter(e => e.level === 'warn');
-        return { errors, warnings, hasIssues: errors.length > 0 || warnings.length > 0 };
-    }
 
-    // === Show/hide the app preview banner and iframe ===
+    // ==================================================
+    // === App availability / preview banner ===
+    // ==================================================
     async function checkAppAvailable() {
-        try {
-            const resp = await fetch(appIndexUrl, { method: 'HEAD' });
-            return resp.ok;
-        } catch (e) {
-            return false;
-        }
+        return await fileExists(basePath, 'code/index.html');
     }
     async function showAppPreview() {
         const available = await checkAppAvailable();
@@ -483,7 +487,6 @@
         if (available) {
             if (banner) banner.style.display = 'flex';
             if (navLaunch) navLaunch.classList.add('visible');
-            // Auto-load the iframe preview
             loadPreviewIframe();
         } else {
             if (banner) banner.style.display = 'none';
@@ -491,162 +494,68 @@
         }
     }
 
-    // === Status polling state ===
-    let statusPollTimer = null;
-    const STATUS_POLL_INTERVAL = 3000;
-    // Track which badge to update for code/ target (render vs update)
-    let activeCodeBadge = 'badge-render';
-    // Track the task session ID we initiated, so we can distinguish our task from stale status
-    let activeCodeTaskSessionId = null;
-    // Track whether any operation is currently in flight for code/
-    let codeOperationInFlight = false;
-    // Track test op session
-    let activeTestTaskSessionId = null;
-    // === File I/O helpers ===
-    async function readFile(filePath) {
-        const url = basePath + '/' + filePath;
-        const resp = await fetch(url);
-        if (!resp.ok) {
-            if (resp.status === 404) return null;
-            throw new Error(`Failed to read ${filePath}: ${resp.status} ${resp.statusText}`);
-        }
-        return await resp.text();
+    // ==================================================
+    // === Target normalization ===
+    // ==================================================
+    function normalizeTarget(target) {
+        return target.replace(/\/+$/, '') || target;
     }
-    async function writeFile(filePath, content) {
-        const url = basePath + '/' + filePath;
-        const resp = await fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-            body: content
-        });
-        if (!resp.ok) {
-            throw new Error(`Failed to write ${filePath}: ${resp.status} ${resp.statusText}`);
-        }
-        return true;
+    function findTaskByTarget(tasks, target) {
+        if (!tasks) return null;
+        if (tasks[target]) return { key: target, task: tasks[target] };
+        const normalized = normalizeTarget(target);
+        if (tasks[normalized]) return { key: normalized, task: tasks[normalized] };
+        const withSlash = target.endsWith('/') ? target : target + '/';
+        if (tasks[withSlash]) return { key: withSlash, task: tasks[withSlash] };
+        return null;
     }
-    async function listFiles(dirPath) {
-        const url = basePath + '/' + dirPath + '/_files.json';
-        const resp = await fetch(url);
-        if (!resp.ok) {
-            if (resp.status === 404) return [];
-            throw new Error(`Failed to list ${dirPath}: ${resp.status} ${resp.statusText}`);
-        }
-        const data = await resp.json();
-        return (data.entries || []).filter(e => e.type === 'file');
-    }
-    async function listAllFiles() {
-        // List files at root level
-        const url = basePath + '/_files.json';
-        const resp = await fetch(url);
-        if (!resp.ok) {
-            if (resp.status === 404) return [];
-            throw new Error(`Failed to list root: ${resp.status} ${resp.statusText}`);
-        }
-        const data = await resp.json();
-        return data.entries || [];
-    }
-    async function runDocOp(opPath, targetPath) {
-         const params = new URLSearchParams({
-             sessionId: sessionId,
-             doc: opPath,
-             target: targetPath
-         });
-         const models = getSelectedModels();
-         if (models.smartModel) params.set('smartModel', models.smartModel);
-         if (models.fastModel) params.set('fastModel', models.fastModel);
-         if (models.imageModel) params.set('imageModel', models.imageModel);
-         const url = `/docops?${params.toString()}`;
-        const resp = await fetch(url, { method: 'POST' });
-        if (!resp.ok) {
-            const errText = await resp.text().catch(() => '');
-            throw new Error(`DocOps failed for ${opPath}: ${resp.status} ${resp.statusText}\n${errText}`);
-        }
-        return await resp.text();
-    }
-     // === Normalize target path to match server status keys ===
-     // The server may strip trailing slashes from target keys
-     function normalizeTarget(target) {
-         // Remove trailing slash for comparison, but keep at least the base name
-         return target.replace(/\/+$/, '') || target;
-     }
-     function findTaskByTarget(tasks, target) {
-         if (!tasks) return null;
-         // Try exact match first
-         if (tasks[target]) return { key: target, task: tasks[target] };
-         // Try without trailing slash
-         const normalized = normalizeTarget(target);
-         if (tasks[normalized]) return { key: normalized, task: tasks[normalized] };
-         // Try with trailing slash
-         const withSlash = target.endsWith('/') ? target : target + '/';
-         if (tasks[withSlash]) return { key: withSlash, task: tasks[withSlash] };
-         return null;
-     }
 
-    // === Status polling ===
-    async function fetchDocopsStatus() {
-        try {
-            const url = basePath + '/docops.status.json';
-            const resp = await fetch(url);
-            if (!resp.ok) {
-                if (resp.status === 404) return null;
-                return null;
-            }
-            return await resp.json();
-        } catch (e) {
-            console.warn('Could not fetch docops status:', e);
-            return null;
+    // ==================================================
+    // === Task session tracking ===
+    // ==================================================
+    function trackTaskSession(taskSessionId) {
+        if (taskSessionId && /^[a-zA-Z0-9-]+$/.test(taskSessionId)) {
+            knownTaskSessionIds.add(taskSessionId);
         }
     }
-    function getProxyUrl(taskSessionId) {
-        return proxyBase + '#' + taskSessionId;
-    }
+
+    // ==================================================
+    // === Status UI updates ===
+    // ==================================================
     function updateTaskStatusUI(target, taskInfo) {
         const status = taskInfo.status;
         const taskSessionId = taskInfo.sessionId;
         let badgeId = null;
         if (target === 'code/') {
-            // If we have an active operation in flight, only update if the session matches
-            // or if we don't have a known session yet
             if (codeOperationInFlight && activeCodeTaskSessionId && taskSessionId !== activeCodeTaskSessionId) {
-                // This is a stale status from a previous operation, ignore it
                 return;
             }
             badgeId = activeCodeBadge;
-        }
-        if (!badgeId) {
-            // Unknown target, skip badge update
         }
         if (badgeId) {
             if (status === 'RUNNING') {
                 setBadge(badgeId, 'running');
             } else if (status === 'COMPLETED') {
                 setBadge(badgeId, 'done');
-                if (target === 'code/') {
-                    codeOperationInFlight = false;
-                }
+                if (target === 'code/') codeOperationInFlight = false;
             } else if (status === 'ERROR' || status === 'FAILED') {
                 setBadge(badgeId, 'error');
-                if (target === 'code/') {
-                    codeOperationInFlight = false;
-                }
+                if (target === 'code/') codeOperationInFlight = false;
             }
         }
-        updateSessionLinks(target, taskInfo);
+        updateSessionLinksUI(target, taskInfo);
     }
-    function updateSessionLinks(target, taskInfo) {
+
+    function updateSessionLinksUI(target, taskInfo) {
         const status = taskInfo.status;
         const taskSessionId = taskInfo.sessionId;
-        
         const safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
         const linkContainerId = 'session-link-' + safeTarget;
-        
         let container = document.getElementById(linkContainerId);
         if (!container) {
             container = document.createElement('div');
             container.id = linkContainerId;
             container.className = 'session-link-container';
-            
-            // Try to find the run button for this target
             const runBtn = document.querySelector(`button[data-output="${CSS.escape(target)}"]`);
             if (runBtn) {
                 const buttonRow = runBtn.closest('.button-row');
@@ -654,7 +563,6 @@
                     buttonRow.parentNode.insertBefore(container, buttonRow.nextSibling);
                 }
             } else {
-                // Fallback: insert into the batch log area or the step area
                 const viewer = document.getElementById('viewer-render');
                 if (viewer && viewer.parentElement) {
                     viewer.parentElement.insertBefore(container, viewer);
@@ -663,81 +571,97 @@
                 }
             }
         }
-        
         let actionText = 'Processing…';
         const runBtn = document.querySelector(`button[data-output="${CSS.escape(target)}"]`);
         if (runBtn) {
             const stepTitle = runBtn.closest('.step')?.querySelector('.step-title')?.textContent;
-            if (stepTitle) {
-                actionText = stepTitle + '…';
-            }
+            if (stepTitle) actionText = stepTitle + '…';
         } else if (target.includes('README')) {
             actionText = 'Rendering project…';
         }
-        
         if (status === 'RUNNING' && taskSessionId) {
             const proxyUrl = getProxyUrl(taskSessionId);
             container.innerHTML = `<div class="session-monitor-link">
-<span class="monitor-pulse">●</span>
-<span>${escapeHtml(actionText)} </span>
-<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-📡 Monitor Live Session (${escapeHtml(taskSessionId)})
-</a>
-</div>`;
+    <span class="monitor-pulse">●</span>
+    <span>${escapeHtml(actionText)} </span>
+    <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+    📡 Monitor Live Session (${escapeHtml(taskSessionId)})
+    </a>
+    </div>`;
             container.style.display = 'block';
         } else if (status === 'COMPLETED' && taskSessionId) {
             const proxyUrl = getProxyUrl(taskSessionId);
-            const completedAt = taskInfo.completedAt
-                ? new Date(taskInfo.completedAt).toLocaleTimeString()
-                : '';
+            const completedAt = taskInfo.completedAt ? new Date(taskInfo.completedAt).toLocaleTimeString() : '';
             container.innerHTML = `<div class="session-completed-link">
-<span>✅ Completed${completedAt ? ' at ' + completedAt : ''} — </span>
-<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-📋 View Session Log (${escapeHtml(taskSessionId)})
-</a>
-</div>`;
+    <span>✅ Completed${completedAt ? ' at ' + completedAt : ''} — </span>
+    <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+    📋 View Session Log (${escapeHtml(taskSessionId)})
+    </a>
+    </div>`;
             container.style.display = 'block';
         } else if (status === 'ERROR' || status === 'FAILED') {
             const proxyUrl = taskSessionId ? getProxyUrl(taskSessionId) : '#';
             container.innerHTML = `<div class="session-error-link">
-<span>❌ Failed — </span>
-${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-🔍 View Error Log (${escapeHtml(taskSessionId)})
-</a>` : '<span>No session available</span>'}
-</div>`;
+    <span>❌ Failed — </span>
+    ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+    🔍 View Error Log (${escapeHtml(taskSessionId)})
+    </a>` : '<span>No session available</span>'}
+    </div>`;
             container.style.display = 'block';
         } else {
             container.style.display = 'none';
         }
     }
-    async function pollStatus() {
-        const statusData = await fetchDocopsStatus();
-        if (!statusData || !statusData.tasks) return;
-        let anyRunning = false;
-        for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-            if (taskInfo.sessionId) {
-                trackTaskSession(taskInfo.sessionId);
-            }
-             // Normalize: check if this target matches 'code/' or 'code'
-             const effectiveTarget = (target === 'code' || target === 'code/') ? 'code/' : target;
-             updateTaskStatusUI(effectiveTarget, taskInfo);
-            if (taskInfo.status === 'RUNNING') {
-                anyRunning = true;
-            }
-            // Keep results section session link updated
-             if ((target === 'code/' || target === 'code') && taskInfo.sessionId &&
-                (!activeCodeTaskSessionId || taskInfo.sessionId === activeCodeTaskSessionId)) {
-                updateResultsSessionLink(taskInfo);
-            }
+
+    function updateResultsSessionLink(taskInfo) {
+        const container = document.getElementById('result-session-link');
+        if (!container) return;
+        const status = taskInfo.status;
+        const taskSessionId = taskInfo.sessionId;
+        if (!taskSessionId) {
+            container.style.display = 'none';
+            return;
         }
-        updatePipelineDiagram(statusData.tasks);
-        return anyRunning;
+        const proxyUrl = getProxyUrl(taskSessionId);
+        if (status === 'RUNNING') {
+            container.innerHTML = `<div class="session-monitor-link">
+    <span class="monitor-pulse">●</span>
+    <span>Rendering project… </span>
+    <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+    📡 Monitor Live Session (${escapeHtml(taskSessionId)})
+    </a>
+    </div>`;
+            container.style.display = 'block';
+        } else if (status === 'COMPLETED') {
+            const completedAt = taskInfo.completedAt ? new Date(taskInfo.completedAt).toLocaleTimeString() : '';
+            container.innerHTML = `<div class="session-completed-link">
+    <span>✅ Generated${completedAt ? ' at ' + completedAt : ''} — </span>
+    <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+    📋 View Generation Session (${escapeHtml(taskSessionId)})
+    </a>
+    </div>`;
+            container.style.display = 'block';
+        } else if (status === 'ERROR' || status === 'FAILED') {
+            container.innerHTML = `<div class="session-error-link">
+    <span>❌ Generation failed — </span>
+    <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+    🔍 View Error Log (${escapeHtml(taskSessionId)})
+    </a>
+    </div>`;
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
     }
+
+    // ==================================================
+    // === Pipeline diagram updates ===
+    // ==================================================
     function updatePipelineDiagram(tasks) {
         const stageMap = {
-            'input': { targets: ['idea.md'], el: null },
-            'render': { targets: ['code/'], el: null },
-            'output': { targets: ['code/'], el: null },
+            'input': { targets: ['idea.md'] },
+            'render': { targets: ['code/'] },
+            'output': { targets: ['code/'] },
         };
         for (const [stage, info] of Object.entries(stageMap)) {
             const el = document.querySelector(`.pipeline-stage[data-stage="${stage}"]`);
@@ -748,10 +672,9 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             let anyTarget = false;
             let activeTaskId = null;
             for (const t of info.targets) {
-                 const found = findTaskByTarget(tasks, t);
-                 if (!found) { allDone = false; continue; }
-                 const task = found.task;
-                // Skip stale sessions
+                const found = findTaskByTarget(tasks, t);
+                if (!found) { allDone = false; continue; }
+                const task = found.task;
                 if (t === 'code/' && activeCodeTaskSessionId && task.sessionId !== activeCodeTaskSessionId) {
                     allDone = false;
                     continue;
@@ -763,11 +686,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 }
                 if (task.status !== 'COMPLETED') allDone = false;
             }
-            if (anyRunning) {
-                stageStatus = 'running';
-            } else if (anyTarget && allDone) {
-                stageStatus = 'done';
-            }
+            if (anyRunning) stageStatus = 'running';
+            else if (anyTarget && allDone) stageStatus = 'done';
             el.classList.remove('active', 'done');
             const statusEl = el.querySelector('.stage-status');
             if (stageStatus === 'running') {
@@ -786,88 +706,61 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
         }
     }
+
+    // ==================================================
+    // === Status polling (using utils/docops.js poller) ===
+    // ==================================================
     function startStatusPolling() {
-        if (statusPollTimer) return;
-        statusPollTimer = setInterval(async () => {
-            await pollStatus();
-        }, STATUS_POLL_INTERVAL);
-        pollStatus();
+        if (statusPoller) return;
+        statusPoller = createStatusPoller(basePath, async (target, taskInfo) => {
+            // Track any task session IDs we encounter
+            if (taskInfo.sessionId) trackTaskSession(taskInfo.sessionId);
+            const effectiveTarget = (target === 'code' || target === 'code/') ? 'code/' : target;
+            updateTaskStatusUI(effectiveTarget, taskInfo);
+            // Update results section link if applicable
+            if ((target === 'code/' || target === 'code') && taskInfo.sessionId &&
+                (!activeCodeTaskSessionId || taskInfo.sessionId === activeCodeTaskSessionId)) {
+                updateResultsSessionLink(taskInfo);
+            }
+        }, 3000);
+        statusPoller.start();
+        // Also do an immediate pull to refresh pipeline diagram which needs full task map
+        refreshPipelineDiagram();
+        // Refresh diagram on an interval as well
+        if (!statusPoller._diagInterval) {
+            statusPoller._diagInterval = setInterval(refreshPipelineDiagram, 3000);
+        }
     }
     function stopStatusPolling() {
-        if (statusPollTimer) {
-            clearInterval(statusPollTimer);
-            statusPollTimer = null;
+        if (statusPoller) {
+            statusPoller.stop();
+            if (statusPoller._diagInterval) {
+                clearInterval(statusPoller._diagInterval);
+                statusPoller._diagInterval = null;
+            }
+            statusPoller = null;
         }
     }
-    // === Markdown rendering ===
-    function renderMarkdown(md) {
-        if (typeof marked !== 'undefined') {
-            if (typeof marked.parse === 'function') return marked.parse(md);
-            return marked(md);
-        }
-        return '<pre>' + escapeHtml(md) + '</pre>';
-    }
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    // === Status helpers ===
-    function setStatus(elemId, message, type) {
-        const el = document.getElementById(elemId);
-        if (!el) return;
-        el.textContent = message;
-        el.className = 'status-msg' + (type ? ' ' + type : '');
-        if (type === 'success' || type === 'error') {
-            setTimeout(() => {
-                el.textContent = '';
-                el.className = 'status-msg';
-            }, 5000);
+    async function refreshPipelineDiagram() {
+        const statusData = await fetchDocopsStatus(basePath);
+        if (statusData && statusData.tasks) {
+            updatePipelineDiagram(statusData.tasks);
         }
     }
-    function setBadge(badgeId, state) {
-        const el = document.getElementById(badgeId);
-        if (!el) return;
-        el.className = 'step-badge ' + state;
-        const labels = {
-            'pending': 'pending',
-            'running': 'running…',
-            'done': 'done',
-            'error': 'error',
-        };
-        el.textContent = labels[state] || state;
-    }
-    // === Batch log ===
-    const batchLog = document.getElementById('batch-log');
-    function logBatch(message, type, isHtml = false) {
-        batchLog.classList.add('visible');
-        const entry = document.createElement('div');
-        entry.className = 'log-entry log-' + (type || 'info');
-        const ts = new Date().toLocaleTimeString();
-        if (isHtml) {
-            entry.innerHTML = `[${ts}] ${message}`;
-        } else {
-            entry.textContent = `[${ts}] ${message}`;
-        }
-        batchLog.appendChild(entry);
-        batchLog.scrollTop = batchLog.scrollHeight;
-    }
-    function logBatchHtml(html, type) {
-        logBatch(html, type, true);
-    }
+
+    // ==================================================
     // === Navigation ===
+    // ==================================================
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
             const sectionId = this.dataset.section;
-            if (!sectionId) return; // skip links without a section (e.g. launch app)
+            if (!sectionId) return;
             e.preventDefault();
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             this.classList.add('active');
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
-            // Auto-load preview when switching to Results section
             if (sectionId === 'section-results') {
-                // Always reload the preview when switching to Results
                 loadPreviewIframe();
             }
         });
@@ -882,31 +775,35 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             document.getElementById(this.dataset.tab).classList.add('active');
         });
     });
-    // === Load initial files ===
+
+    // ==================================================
+    // === Initial file loading ===
+    // ==================================================
     async function loadInitialFiles() {
         try {
-            const content = await readFile('idea.md');
+            const content = await readFile(basePath, 'idea.md');
             if (content !== null) {
-                document.getElementById('idea-editor').value = content;
+                const editor = document.getElementById('idea-editor');
+                if (editor) editor.value = content;
             }
-        } catch (e) {
-            console.warn('Could not load idea.md:', e);
-        }
+        } catch (e) { console.warn('Could not load idea.md:', e); }
         try {
-            const notesContent = await readFile('notes.md');
+            const notesContent = await readFile(basePath, 'notes.md');
             if (notesContent !== null) {
-                document.getElementById('notes-editor').value = notesContent;
+                const editor = document.getElementById('notes-editor');
+                if (editor) editor.value = notesContent;
             }
-        } catch (e) {
-            console.warn('Could not load notes.md:', e);
-        }
+        } catch (e) { console.warn('Could not load notes.md:', e); }
     }
-    // === Save idea ===
-    document.getElementById('save-idea').addEventListener('click', async function() {
+
+    // ==================================================
+    // === Save handlers ===
+    // ==================================================
+    document.getElementById('save-idea')?.addEventListener('click', async function() {
         const content = document.getElementById('idea-editor').value;
         try {
             this.disabled = true;
-            await writeFile('idea.md', content);
+            await writeFile(basePath, 'idea.md', content);
             setStatus('idea-status', '✓ Saved successfully', 'success');
         } catch (e) {
             setStatus('idea-status', '✗ ' + e.message, 'error');
@@ -914,12 +811,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-    // === Save notes ===
+
     document.getElementById('save-notes')?.addEventListener('click', async function() {
         const content = document.getElementById('notes-editor').value;
         try {
             this.disabled = true;
-            await writeFile('notes.md', content);
+            await writeFile(basePath, 'notes.md', content);
             setStatus('notes-status', '✓ Saved successfully', 'success');
         } catch (e) {
             setStatus('notes-status', '✗ ' + e.message, 'error');
@@ -927,27 +824,22 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-    // === Run Update ===
+
+    // ==================================================
+    // === Update operation ===
+    // ==================================================
     document.getElementById('run-update')?.addEventListener('click', async function() {
         const notesContent = document.getElementById('notes-editor').value;
         if (!notesContent.trim()) {
             alert('Please write some update notes first describing what you\'d like to change.');
             return;
         }
-        // Auto-save notes before running
-        try {
-            await writeFile('notes.md', notesContent);
-        } catch (e) {
-            console.warn('Could not auto-save notes.md:', e);
-        }
-        // Also auto-save idea if present
+        try { await writeFile(basePath, 'notes.md', notesContent); }
+        catch (e) { console.warn('Could not auto-save notes.md:', e); }
         const ideaContent = document.getElementById('idea-editor').value;
         if (ideaContent.trim()) {
-            try {
-                await writeFile('idea.md', ideaContent);
-            } catch (e) {
-                console.warn('Could not auto-save idea.md:', e);
-            }
+            try { await writeFile(basePath, 'idea.md', ideaContent); }
+            catch (e) { console.warn('Could not auto-save idea.md:', e); }
         }
         const badgeId = 'badge-update';
         const outputPath = 'code/';
@@ -958,37 +850,33 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         this.disabled = true;
         startStatusPolling();
         try {
-            const taskId = await runDocOp('ops/update_op.md', outputPath);
+            const taskId = await runDocOp(sessionId, 'ops/update_op.md', outputPath, getSelectedModels());
             const cleanTaskId = taskId ? taskId.trim() : '';
             if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                 activeCodeTaskSessionId = cleanTaskId;
-                updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                updateSessionLinksUI(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                 logBatchHtml(`Update session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
                 trackTaskSession(cleanTaskId);
             }
-            await waitForTask(outputPath);
+            await waitForTask(basePath, outputPath, undefined, (target, task) => {
+                updateTaskStatusUI(target, task);
+            });
             setBadge(badgeId, 'done');
-            // Show updated README
             const viewer = document.getElementById('viewer-update');
             if (viewer) {
                 try {
-                    const content = await readFile('code/README.md');
+                    const content = await readFile(basePath, 'code/README.md');
                     if (content) {
                         viewer.innerHTML = renderMarkdown(content);
                         viewer.classList.add('visible');
                     }
                 } catch (e) { /* non-critical */ }
             }
-            // Refresh app preview
             await showAppPreview();
-            // Reload the iframe preview to check for remaining errors
             await loadPreviewIframe();
-            // Auto-refresh the project files list
             document.getElementById('btn-refresh-files-results')?.click();
-            // Auto-commit to Git if repo is initialized
             const updateTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
             await autoGitCommitAfterBuild('update at ' + updateTime);
-            // Refresh usage data
             await refreshAllUsage();
         } catch (e) {
             setBadge(badgeId, 'error');
@@ -997,24 +885,32 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-     // === Save model settings ===
-     document.getElementById('save-models')?.addEventListener('click', function() {
-         const models = getSelectedModels();
-         if (models.smartModel) localStorage.setItem('webappFactory_smartModel', models.smartModel);
-         if (models.fastModel) localStorage.setItem('webappFactory_fastModel', models.fastModel);
-         if (models.imageModel) localStorage.setItem('webappFactory_imageModel', models.imageModel);
-         setStatus('model-status', '✓ Model settings saved', 'success');
-     });
-     // === Refresh models ===
-     document.getElementById('refresh-models')?.addEventListener('click', async function() {
-         this.disabled = true;
-         setStatus('model-status', 'Loading models…', '');
-         await loadApiProviders();
-         setStatus('model-status', '✓ Models refreshed', 'success');
-         this.disabled = false;
-     });
 
+    // ==================================================
+    // === Model settings ===
+    // ==================================================
+    document.getElementById('save-models')?.addEventListener('click', function() {
+        const models = getSelectedModels();
+        // Always store under all model keys (omitted ones become empty)
+        const toSave = {
+            smartModel: models.smartModel || '',
+            fastModel: models.fastModel || '',
+            imageModel: models.imageModel || ''
+        };
+        saveModelSelections(MODEL_STORAGE_PREFIX, toSave);
+        setStatus('model-status', '✓ Model settings saved', 'success');
+    });
+    document.getElementById('refresh-models')?.addEventListener('click', async function() {
+        this.disabled = true;
+        setStatus('model-status', 'Loading models…', '');
+        await initApiProviders();
+        setStatus('model-status', '✓ Models refreshed', 'success');
+        this.disabled = false;
+    });
+
+    // ==================================================
     // === View file buttons ===
+    // ==================================================
     async function viewFile(filePath, viewerId) {
         const viewer = document.getElementById(viewerId);
         if (!viewer) return;
@@ -1023,7 +919,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             return;
         }
         try {
-            const content = await readFile(filePath);
+            const content = await readFile(basePath, filePath);
             if (content === null) {
                 viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
             } else {
@@ -1040,7 +936,6 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             viewFile(this.dataset.file, this.dataset.viewer);
         });
     });
-    // Refresh buttons in results section
     document.querySelectorAll('.results-content .btn-secondary[data-file]').forEach(btn => {
         btn.addEventListener('click', async function() {
             const filePath = this.dataset.file;
@@ -1048,7 +943,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             const viewer = document.getElementById(viewerId);
             if (!viewer) return;
             try {
-                const content = await readFile(filePath);
+                const content = await readFile(basePath, filePath);
                 if (content === null) {
                     viewer.innerHTML = '<p class="placeholder">File not found. Run the pipeline first.</p>';
                 } else {
@@ -1059,52 +954,26 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
         });
     });
-    // === Helper: wait for task completion by polling status ===
-    async function waitForTask(targetPath, maxWaitMs) {
-        const maxWait = maxWaitMs || 600000; // 10 min default
-        const pollInterval = 2000;
-        const startTime = Date.now();
-        while (Date.now() - startTime < maxWait) {
-            const statusData = await fetchDocopsStatus();
-             if (statusData && statusData.tasks) {
-                 const found = findTaskByTarget(statusData.tasks, targetPath);
-                 if (!found) {
-                     await new Promise(resolve => setTimeout(resolve, pollInterval));
-                     continue;
-                 }
-                 const task = found.task;
-                if (task.status === 'COMPLETED') {
-                    return task;
-                } else if (task.status === 'ERROR' || task.status === 'FAILED') {
-                    throw new Error(`Task ${targetPath} failed (session: ${task.sessionId || 'unknown'})`);
-                }
-            }
-            await new Promise(resolve => setTimeout(resolve, pollInterval));
-        }
-        throw new Error(`Task ${targetPath} timed out after ${maxWait / 1000}s`);
-    }
-    // === Run operation buttons ===
+
+    // ==================================================
+    // === Generic run buttons ===
+    // ==================================================
     document.querySelectorAll('.btn-run').forEach(btn => {
         btn.addEventListener('click', async function() {
             const opPath = this.dataset.op;
             const badgeId = this.dataset.badge;
             const outputPath = this.dataset.output;
             const viewerId = this.dataset.viewer;
-            // Track which badge is active for this target
             if (outputPath === 'code/') {
                 activeCodeBadge = badgeId;
                 codeOperationInFlight = true;
                 activeCodeTaskSessionId = null;
             }
-            // Auto-save idea before running
-            const ideaContent = document.getElementById('idea-editor').value;
+            const ideaContent = document.getElementById('idea-editor')?.value || '';
             if (ideaContent.trim()) {
-                try {
-                    await writeFile('idea.md', ideaContent);
-                } catch (e) {
-                    console.warn('Could not auto-save idea.md:', e);
-                }
-            } else {
+                try { await writeFile(basePath, 'idea.md', ideaContent); }
+                catch (e) { console.warn('Could not auto-save idea.md:', e); }
+            } else if (this.id !== 'run-test' && this.id !== 'run-review') {
                 alert('Please describe your webapp idea first.');
                 return;
             }
@@ -1112,21 +981,23 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = true;
             startStatusPolling();
             try {
-                const taskId = await runDocOp(opPath, outputPath);
+                const taskId = await runDocOp(sessionId, opPath, outputPath, getSelectedModels());
                 const cleanTaskId = taskId ? taskId.trim() : '';
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                     if (outputPath === 'code/') activeCodeTaskSessionId = cleanTaskId;
-                    updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                    updateSessionLinksUI(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                     logBatchHtml(`Session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
                     trackTaskSession(cleanTaskId);
                 }
-                await waitForTask(outputPath);
+                await waitForTask(basePath, outputPath, undefined, (target, task) => {
+                    updateTaskStatusUI(target, task);
+                });
                 setBadge(badgeId, 'done');
                 if (viewerId) {
                     const viewer = document.getElementById(viewerId);
                     if (viewer) {
                         try {
-                            const content = await readFile(outputPath + 'README.md');
+                            const content = await readFile(basePath, outputPath + 'README.md');
                             if (content) {
                                 viewer.innerHTML = renderMarkdown(content);
                                 viewer.classList.add('visible');
@@ -1142,19 +1013,21 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
         });
     });
+
+    // ==================================================
     // === Run All ===
-    document.getElementById('run-all').addEventListener('click', async function() {
+    // ==================================================
+    document.getElementById('run-all')?.addEventListener('click', async function() {
         this.disabled = true;
         startStatusPolling();
         activeCodeBadge = 'badge-render';
         codeOperationInFlight = true;
         activeCodeTaskSessionId = null;
-        batchLog.innerHTML = '';
-        // Auto-save idea
+        if (batchLog) batchLog.innerHTML = '';
         const ideaContent = document.getElementById('idea-editor').value;
         if (ideaContent.trim()) {
             try {
-                await writeFile('idea.md', ideaContent);
+                await writeFile(basePath, 'idea.md', ideaContent);
                 logBatch('Saved idea.md', 'success');
             } catch (e) {
                 logBatch('Warning: Could not save idea.md: ' + e.message, 'warn');
@@ -1166,35 +1039,34 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         }
         try {
             logBatch('Starting: Render Project', 'info');
-            // Note: "Render Project" -> "Build Project" in UI, but op path unchanged
             setBadge('badge-render', 'running');
             const renderOp = getSelectedRenderOp();
             const modeLabel = renderOp === 'ops/render_simple_op.md' ? 'Simple Mode' : 'Full Pipeline (SubPlan)';
             logBatch('Render mode: ' + modeLabel + ' (' + renderOp + ')', 'info');
-            const taskId = await runDocOp(renderOp, 'code/');
+            const taskId = await runDocOp(sessionId, renderOp, 'code/', getSelectedModels());
             const cleanTaskId = taskId ? taskId.trim() : '';
             if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                 activeCodeTaskSessionId = cleanTaskId;
                 const proxyUrl = getProxyUrl(cleanTaskId);
                 logBatchHtml(`Session started: <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
-                updateSessionLinks('code/', { status: 'RUNNING', sessionId: cleanTaskId });
+                updateSessionLinksUI('code/', { status: 'RUNNING', sessionId: cleanTaskId });
                 trackTaskSession(cleanTaskId);
             }
-            await waitForTask('code/');
+            await waitForTask(basePath, 'code/', undefined, (target, task) => {
+                updateTaskStatusUI(target, task);
+            });
             setBadge('badge-render', 'done');
-            // Fetch final status to get session ID for completed link
-            const finalStatus = await fetchDocopsStatus();
-             const completedTaskFound = finalStatus?.tasks ? findTaskByTarget(finalStatus.tasks, 'code/') : null;
-             const completedTask = completedTaskFound?.task;
+            const finalStatus = await fetchDocopsStatus(basePath);
+            const completedTaskFound = finalStatus?.tasks ? findTaskByTarget(finalStatus.tasks, 'code/') : null;
+            const completedTask = completedTaskFound?.task;
             if (completedTask && completedTask.sessionId) {
                 const proxyUrl = getProxyUrl(completedTask.sessionId);
                 logBatchHtml(`✓ Completed: Build Project — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📋 View Session Log (${escapeHtml(completedTask.sessionId)})</a>`, 'success');
             } else {
                 logBatch('✓ Completed: Build Project', 'success');
             }
-            // Show the README
             try {
-                const content = await readFile('code/README.md');
+                const content = await readFile(basePath, 'code/README.md');
                 if (content) {
                     const viewer = document.getElementById('viewer-render');
                     if (viewer) {
@@ -1204,33 +1076,24 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 }
             } catch (e) { /* non-critical */ }
             logBatch('🎉 Pipeline complete! Check the Results tab for output.', 'success');
-            // Show the app preview
             await showAppPreview();
-            // Switch to preview tab in results if we're on results section
             logBatch('🖥️ Live preview loaded — check the Results tab to see your app and console output.', 'info');
-            // Auto-refresh the project files list
             document.getElementById('btn-refresh-files-results')?.click();
-            // Auto-commit to Git if repo is initialized
             const buildTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
             await autoGitCommitAfterBuild('initial build at ' + buildTime);
-            // Refresh usage data
             await refreshAllUsage();
-            // Auto-load the README in results
             try {
-                const readmeContent = await readFile('code/README.md');
+                const readmeContent = await readFile(basePath, 'code/README.md');
                 if (readmeContent) {
                     const resultReadme = document.getElementById('result-readme');
-                    if (resultReadme) {
-                        resultReadme.innerHTML = renderMarkdown(readmeContent);
-                    }
+                    if (resultReadme) resultReadme.innerHTML = renderMarkdown(readmeContent);
                 }
             } catch (e) { /* non-critical */ }
         } catch (e) {
             setBadge('badge-render', 'error');
-            // Try to get session link for the failed task
-            const failStatus = await fetchDocopsStatus().catch(() => null);
-             const failedTaskFound = failStatus?.tasks ? findTaskByTarget(failStatus.tasks, 'code/') : null;
-             const failedTask = failedTaskFound?.task;
+            const failStatus = await fetchDocopsStatus(basePath).catch(() => null);
+            const failedTaskFound = failStatus?.tasks ? findTaskByTarget(failStatus.tasks, 'code/') : null;
+            const failedTask = failedTaskFound?.task;
             if (failedTask && failedTask.sessionId) {
                 const proxyUrl = getProxyUrl(failedTask.sessionId);
                 logBatchHtml(`Pipeline failed: ${escapeHtml(e.message)} — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">🔍 View Error Log (${escapeHtml(failedTask.sessionId)})</a>`, 'error');
@@ -1241,11 +1104,16 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-    // === Results section: refresh project files ===
+
+    // ==================================================
+    // === Project file listing (Results tab) ===
+    // ==================================================
     document.getElementById('btn-refresh-files-results')?.addEventListener('click', async function() {
         const container = document.getElementById('files-results-container');
+        if (!container) return;
         try {
-            const projectFiles = await listFiles('code');
+            const allEntries = await listFiles(basePath, 'code');
+            const projectFiles = allEntries.filter(e => e.type === 'file' || !e.type);
             if (projectFiles.length === 0) {
                 container.innerHTML = '<p class="placeholder">No project files found. Run the pipeline first.</p>';
                 return;
@@ -1262,30 +1130,30 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 const body = document.createElement('div');
                 body.className = 'result-file-body';
                 body.style.display = 'none';
-                    header.addEventListener('click', async function() {
-                        if (body.style.display === 'none') {
-                            if (!body.dataset.loaded) {
-                                try {
-                                    const content = await readFile('code/' + entry.name);
-                                    if (content) {
-                                        if (entry.name.endsWith('.md')) {
-                                            body.innerHTML = renderMarkdown(content);
-                                        } else {
-                                            body.innerHTML = '<pre><code>' + escapeHtml(content) + '</code></pre>';
-                                        }
+                header.addEventListener('click', async function() {
+                    if (body.style.display === 'none') {
+                        if (!body.dataset.loaded) {
+                            try {
+                                const content = await readFile(basePath, 'code/' + entry.name);
+                                if (content) {
+                                    if (entry.name.endsWith('.md')) {
+                                        body.innerHTML = renderMarkdown(content);
                                     } else {
-                                        body.innerHTML = '<p class="placeholder">Empty file.</p>';
+                                        body.innerHTML = '<pre><code>' + escapeHtml(content) + '</code></pre>';
                                     }
-                                } catch (e) {
-                                    body.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error loading.</p>';
+                                } else {
+                                    body.innerHTML = '<p class="placeholder">Empty file.</p>';
                                 }
-                                body.dataset.loaded = 'true';
+                            } catch (e) {
+                                body.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error loading.</p>';
                             }
-                            body.style.display = 'block';
-                        } else {
-                            body.style.display = 'none';
+                            body.dataset.loaded = 'true';
                         }
-                    });
+                        body.style.display = 'block';
+                    } else {
+                        body.style.display = 'none';
+                    }
+                });
                 section.appendChild(header);
                 section.appendChild(body);
                 container.appendChild(section);
@@ -1294,48 +1162,17 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             container.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
         }
     });
-    function getFileIcon(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        const icons = {
-            'md': '📝',
-            'html': '🌐',
-            'htm': '🌐',
-            'css': '🎨',
-            'js': '⚡',
-            'ts': '⚡',
-            'json': '📋',
-            'xml': '📋',
-            'yaml': '📋',
-            'yml': '📋',
-            'py': '🐍',
-            'java': '☕',
-            'kt': '☕',
-            'rb': '💎',
-            'go': '🔵',
-            'rs': '🦀',
-            'sh': '🖥️',
-            'bash': '🖥️',
-            'txt': '📄',
-            'svg': '🖼️',
-            'png': '🖼️',
-            'jpg': '🖼️',
-            'gif': '🖼️',
-            'toml': '⚙️',
-            'ini': '⚙️',
-            'cfg': '⚙️',
-            'dockerfile': '🐳',
-        };
-        return icons[ext] || '📄';
-    }
-    // === Check existing files on load ===
+
+    // ==================================================
+    // === Existing file/state check on load ===
+    // ==================================================
     async function checkExistingFiles() {
-        const statusData = await fetchDocopsStatus();
+        const statusData = await fetchDocopsStatus(basePath);
         let anyRunning = false;
         if (statusData && statusData.tasks) {
             for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-                 if (target === 'code/' || target === 'code') {
-                    // On page load, accept whatever status is there
-                    // since we don't know if it was render or update
+                if (taskInfo.sessionId) trackTaskSession(taskInfo.sessionId);
+                if (target === 'code/' || target === 'code') {
                     const status = taskInfo.status;
                     if (status === 'RUNNING') {
                         anyRunning = true;
@@ -1347,22 +1184,17 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                     } else if (status === 'ERROR' || status === 'FAILED') {
                         setBadge('badge-render', 'error');
                     }
-                     updateSessionLinks('code/', taskInfo);
-                    if (taskInfo.sessionId) {
-                        updateResultsSessionLink(taskInfo);
-                    }
+                    updateSessionLinksUI('code/', taskInfo);
+                    if (taskInfo.sessionId) updateResultsSessionLink(taskInfo);
                 } else {
-                     const effectiveTarget = target;
-                     updateTaskStatusUI(effectiveTarget, taskInfo);
-                    if (taskInfo.status === 'RUNNING') {
-                        anyRunning = true;
-                    }
+                    updateTaskStatusUI(target, taskInfo);
+                    if (taskInfo.status === 'RUNNING') anyRunning = true;
                 }
             }
+            updatePipelineDiagram(statusData.tasks);
         }
-        // Check if idea.md exists and mark input stage accordingly
         try {
-            const ideaContent = await readFile('idea.md');
+            const ideaContent = await readFile(basePath, 'idea.md');
             if (ideaContent !== null && ideaContent.trim().length > 0) {
                 const inputStage = document.querySelector('.pipeline-stage[data-stage="input"]');
                 if (inputStage) {
@@ -1373,7 +1205,6 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
         } catch (e) { /* ignore */ }
 
-        // Fall back to file existence checks
         const checks = [
             { files: ['code/index.html', 'code/README.md'], badge: 'badge-render' },
         ];
@@ -1384,7 +1215,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             try {
                 let found = false;
                 for (const file of check.files) {
-                    const content = await readFile(file);
+                    const content = await readFile(basePath, file);
                     if (content !== null && content.trim().length > 0) {
                         found = true;
                         break;
@@ -1392,7 +1223,6 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 }
                 if (found) {
                     setBadge(check.badge, 'done');
-                    // Also update pipeline diagram stage
                     const renderStage = document.querySelector('.pipeline-stage[data-stage="render"]');
                     if (renderStage) {
                         renderStage.classList.add('done');
@@ -1408,56 +1238,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 }
             } catch (e) { /* leave as pending */ }
         }
-        if (anyRunning) {
-            startStatusPolling();
-        }
+        if (anyRunning) startStatusPolling();
     }
-    // === Update results section session link ===
-    function updateResultsSessionLink(taskInfo) {
-        const container = document.getElementById('result-session-link');
-        if (!container) return;
-        const status = taskInfo.status;
-        const taskSessionId = taskInfo.sessionId;
-        if (!taskSessionId) {
-            container.style.display = 'none';
-            return;
-        }
-        const proxyUrl = getProxyUrl(taskSessionId);
-        if (status === 'RUNNING') {
-            container.innerHTML = `<div class="session-monitor-link">
-<span class="monitor-pulse">●</span>
-<span>Rendering project… </span>
-<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-📡 Monitor Live Session (${escapeHtml(taskSessionId)})
-</a>
-</div>`;
-            container.style.display = 'block';
-        } else if (status === 'COMPLETED') {
-            const completedAt = taskInfo.completedAt
-                ? new Date(taskInfo.completedAt).toLocaleTimeString()
-                : '';
-            container.innerHTML = `<div class="session-completed-link">
-<span>✅ Generated${completedAt ? ' at ' + completedAt : ''} — </span>
-<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-📋 View Generation Session (${escapeHtml(taskSessionId)})
-</a>
-</div>`;
-            container.style.display = 'block';
-        } else if (status === 'ERROR' || status === 'FAILED') {
-            container.innerHTML = `<div class="session-error-link">
-<span>❌ Generation failed — </span>
-<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-🔍 View Error Log (${escapeHtml(taskSessionId)})
-</a>
-</div>`;
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
-        }
-    }
-    // =========================================================
+
+    // ==================================================
     // === ZIP Download Helpers ===
-    // =========================================================
+    // ==================================================
     function downloadZip(path) {
         if (!sessionId) {
             alert('No session ID available. Cannot download ZIP.');
@@ -1466,70 +1252,36 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         const encodedPath = encodeURIComponent(path || '/');
         window.location.href = `${appBase}/fileZip?session=${encodeURIComponent(sessionId)}&path=${encodedPath}`;
     }
-
-    // ZIP buttons in Pipeline section
-    document.getElementById('btn-zip-project-pipeline')?.addEventListener('click', function() {
-        downloadZip('/code');
-    });
-
-    // ZIP button in Results > Files tab
-    document.getElementById('btn-zip-from-results')?.addEventListener('click', function() {
-        downloadZip('/code');
-    });
-
-    // ZIP buttons in Results > Download tab
-    document.getElementById('btn-zip-whole-project')?.addEventListener('click', function() {
-        downloadZip('/');
-    });
-    document.getElementById('btn-zip-code-only')?.addEventListener('click', function() {
-        downloadZip('/code');
-    });
+    document.getElementById('btn-zip-project-pipeline')?.addEventListener('click', () => downloadZip('/code'));
+    document.getElementById('btn-zip-from-results')?.addEventListener('click', () => downloadZip('/code'));
+    document.getElementById('btn-zip-whole-project')?.addEventListener('click', () => downloadZip('/'));
+    document.getElementById('btn-zip-code-only')?.addEventListener('click', () => downloadZip('/code'));
     document.getElementById('btn-zip-custom')?.addEventListener('click', function() {
         const customPath = document.getElementById('zip-custom-path')?.value?.trim() || '/';
         downloadZip(customPath);
     });
 
-    // =========================================================
-    // === Git REST API Helpers ===
-    // =========================================================
-    const gitApiBase = basePath + '/.git/api';
-
-    async function gitApiCall(action, options) {
-        const url = gitApiBase + '/' + action;
-        const resp = await fetch(url, {
-            credentials: 'include',
-            ...options
-        });
-        if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Git API ${action} failed: ${resp.status} ${resp.statusText}\n${text}`);
-        }
-        const data = await resp.json();
-        if (data.success === false) {
-            throw new Error(data.error || `Git ${action} failed`);
-        }
-        return data;
-    }
-
-    // --- Git Status ---
+    // ==================================================
+    // === Git Operations (using utils/git.js) ===
+    // ==================================================
     async function refreshGitStatus() {
         const display = document.getElementById('git-status-display');
-        if (!display) return;
+        if (!display) return null;
         display.style.display = 'block';
         display.innerHTML = '<p class="placeholder">Loading status…</p>';
         try {
-            const data = await gitApiCall('status');
+            const data = await gitGetStatus(basePath);
             if (!data.initialized) {
                 display.innerHTML = `
-                    <div class="git-status-box">
-                        <div class="git-status-header">
-                            <span class="git-status-indicator uninit">⚪ Not Initialized</span>
-                        </div>
-                        <p style="color:var(--color-text-muted); font-size:0.9rem;">
-                            ${escapeHtml(data.message || 'No Git repository found.')}
-                            Click <strong>Initialize Repository</strong> to start tracking changes.
-                        </p>
-                    </div>`;
+                        <div class="git-status-box">
+                            <div class="git-status-header">
+                                <span class="git-status-indicator uninit">⚪ Not Initialized</span>
+                            </div>
+                            <p style="color:var(--color-text-muted); font-size:0.9rem;">
+                                ${escapeHtml(data.message || 'No Git repository found.')}
+                                Click <strong>Initialize Repository</strong> to start tracking changes.
+                            </p>
+                        </div>`;
                 return data;
             }
             const cleanClass = data.clean ? 'clean' : 'dirty';
@@ -1542,26 +1294,25 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                     return `<li><span class="git-change-badge ${badgeClass}">${escapeHtml(c.status)}</span> <span>${escapeHtml(c.file)}</span> <span style="color:var(--color-text-muted);font-size:0.75rem;">${escapeHtml(label)}</span></li>`;
                 }).join('');
                 changesHtml = `
-                    <div>
-                        <strong style="font-size:0.88rem; color:var(--color-text-muted);">Changes (${data.changes.length}):</strong>
-                        <ul class="git-changes-list" style="margin-top:0.4rem;">${changeItems}</ul>
-                    </div>`;
+                        <div>
+                            <strong style="font-size:0.88rem; color:var(--color-text-muted);">Changes (${data.changes.length}):</strong>
+                            <ul class="git-changes-list" style="margin-top:0.4rem;">${changeItems}</ul>
+                        </div>`;
             }
             display.innerHTML = `
-                <div class="git-status-box">
-                    <div class="git-status-header">
-                        <span class="git-status-indicator ${cleanClass}">${cleanLabel}</span>
-                        <span class="git-branch-badge">🌿 ${escapeHtml(data.currentBranch || 'unknown')}</span>
-                    </div>
-                    ${changesHtml}
-                </div>`;
+                    <div class="git-status-box">
+                        <div class="git-status-header">
+                            <span class="git-status-indicator ${cleanClass}">${cleanLabel}</span>
+                            <span class="git-branch-badge">🌿 ${escapeHtml(data.currentBranch || 'unknown')}</span>
+                        </div>
+                        ${changesHtml}
+                    </div>`;
             return data;
         } catch (e) {
             display.innerHTML = `<p class="placeholder" style="color:var(--color-danger);">Error: ${escapeHtml(e.message)}</p>`;
             return null;
         }
     }
-
     function getChangeBadgeClass(status) {
         switch (status) {
             case 'M': return 'modified';
@@ -1582,15 +1333,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             default: return status;
         }
     }
-
     document.getElementById('btn-git-status')?.addEventListener('click', refreshGitStatus);
-
-    // --- Git Init ---
     document.getElementById('btn-git-init')?.addEventListener('click', async function() {
         this.disabled = true;
         setStatus('git-status-msg', 'Initializing repository…', '');
         try {
-            const data = await gitApiCall('init', { method: 'POST' });
+            const data = await gitInit(basePath);
             setStatus('git-status-msg', '✓ ' + (data.message || 'Repository initialized'), 'success');
             await refreshGitStatus();
         } catch (e) {
@@ -1599,21 +1347,13 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-
-    // --- Git Commit ---
     document.getElementById('btn-git-commit')?.addEventListener('click', async function() {
         const messageInput = document.getElementById('git-commit-message');
         const message = messageInput?.value?.trim() || '';
         this.disabled = true;
         setStatus('git-commit-status', 'Committing…', '');
         try {
-            const body = {};
-            if (message) body.message = message;
-            const data = await gitApiCall('commit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+            const data = await gitCommit(basePath, message);
             const commitHash = data.commitHash ? ` (${data.commitHash.substring(0, 8)})` : '';
             setStatus('git-commit-status', '✓ ' + (data.message || 'Committed') + commitHash, 'success');
             if (messageInput) messageInput.value = '';
@@ -1624,15 +1364,13 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-
-    // --- Git Branches ---
     async function refreshGitBranches() {
         const display = document.getElementById('git-branches-display');
-        if (!display) return;
+        if (!display) return null;
         display.style.display = 'block';
         display.innerHTML = '<p class="placeholder">Loading branches…</p>';
         try {
-            const data = await gitApiCall('branches');
+            const data = await gitGetBranches(basePath);
             if (!data.branches || data.branches.length === 0) {
                 display.innerHTML = '<p class="placeholder">No branches found. Initialize the repository first.</p>';
                 return data;
@@ -1641,13 +1379,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 const currentClass = b.current ? ' current' : '';
                 const currentTag = b.current ? '<span class="branch-current-tag">● current</span>' : '';
                 return `<li class="git-branch-item${currentClass}" data-branch="${escapeHtml(b.name)}">
-                    <span>🌿</span>
-                    <span class="branch-name">${escapeHtml(b.name)}</span>
-                    ${currentTag}
-                </li>`;
+                        <span>🌿</span>
+                        <span class="branch-name">${escapeHtml(b.name)}</span>
+                        ${currentTag}
+                    </li>`;
             }).join('');
             display.innerHTML = `<ul class="git-branch-list">${branchItems}</ul>`;
-            // Click to switch branch
             display.querySelectorAll('.git-branch-item:not(.current)').forEach(item => {
                 item.addEventListener('click', async function() {
                     const branchName = this.dataset.branch;
@@ -1655,11 +1392,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                     if (!confirm(`Switch to branch "${branchName}"?`)) return;
                     setStatus('git-branch-status', 'Switching…', '');
                     try {
-                        await gitApiCall('checkout', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ branch: branchName, create: false })
-                        });
+                        await gitCheckout(basePath, branchName, false);
                         setStatus('git-branch-status', '✓ Switched to ' + branchName, 'success');
                         await refreshGitBranches();
                         await refreshGitStatus();
@@ -1674,10 +1407,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             return null;
         }
     }
-
     document.getElementById('btn-git-branches')?.addEventListener('click', refreshGitBranches);
-
-    // Switch to existing branch
     document.getElementById('btn-git-checkout')?.addEventListener('click', async function() {
         const branchName = document.getElementById('git-branch-name')?.value?.trim();
         if (!branchName) {
@@ -1687,11 +1417,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         this.disabled = true;
         setStatus('git-branch-status', 'Switching…', '');
         try {
-            const data = await gitApiCall('checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ branch: branchName, create: false })
-            });
+            const data = await gitCheckout(basePath, branchName, false);
             setStatus('git-branch-status', '✓ ' + (data.message || 'Switched to ' + branchName), 'success');
             document.getElementById('git-branch-name').value = '';
             await refreshGitBranches();
@@ -1702,8 +1428,6 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-
-    // Create and switch to new branch
     document.getElementById('btn-git-create-branch')?.addEventListener('click', async function() {
         const branchName = document.getElementById('git-branch-name')?.value?.trim();
         if (!branchName) {
@@ -1713,11 +1437,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         this.disabled = true;
         setStatus('git-branch-status', 'Creating branch…', '');
         try {
-            const data = await gitApiCall('checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ branch: branchName, create: true })
-            });
+            const data = await gitCheckout(basePath, branchName, true);
             setStatus('git-branch-status', '✓ ' + (data.message || 'Created and switched to ' + branchName), 'success');
             document.getElementById('git-branch-name').value = '';
             await refreshGitBranches();
@@ -1728,16 +1448,14 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-
-    // --- Git Log ---
     async function refreshGitLog() {
         const display = document.getElementById('git-log-display');
         if (!display) return;
         display.style.display = 'block';
         display.innerHTML = '<p class="placeholder">Loading commit history…</p>';
-        const maxCount = document.getElementById('git-log-count')?.value || '20';
+        const maxCount = parseInt(document.getElementById('git-log-count')?.value, 10) || 20;
         try {
-            const data = await gitApiCall('log?maxCount=' + encodeURIComponent(maxCount));
+            const data = await gitGetLog(basePath, maxCount);
             if (!data.commits || data.commits.length === 0) {
                 display.innerHTML = '<p class="placeholder">No commits found. Make your first commit!</p>';
                 return;
@@ -1746,41 +1464,28 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 const shortHash = (c.hash || '').substring(0, 8);
                 const date = c.date ? new Date(c.date).toLocaleString() : '';
                 return `<div class="git-commit-entry">
-                    <span class="git-commit-hash" title="${escapeHtml(c.hash || '')}">${escapeHtml(shortHash)}</span>
-                    <div class="git-commit-info">
-                        <div class="git-commit-message">${escapeHtml(c.message || '(no message)')}</div>
-                        <div class="git-commit-meta">${escapeHtml(c.author || '')} · ${escapeHtml(date)}</div>
-                    </div>
-                </div>`;
+                        <span class="git-commit-hash" title="${escapeHtml(c.hash || '')}">${escapeHtml(shortHash)}</span>
+                        <div class="git-commit-info">
+                            <div class="git-commit-message">${escapeHtml(c.message || '(no message)')}</div>
+                            <div class="git-commit-meta">${escapeHtml(c.author || '')} · ${escapeHtml(date)}</div>
+                        </div>
+                    </div>`;
             }).join('');
             display.innerHTML = `<div class="git-commit-list">${commitItems}</div>`;
         } catch (e) {
             display.innerHTML = `<p class="placeholder" style="color:var(--color-danger);">Error: ${escapeHtml(e.message)}</p>`;
         }
     }
-
     document.getElementById('btn-git-log')?.addEventListener('click', refreshGitLog);
 
-    // =========================================================
     // === Git Quick Actions ===
-    // =========================================================
-
-    // Quick Snapshot: init if needed, then commit with timestamp
     document.getElementById('quick-snapshot')?.addEventListener('click', async function() {
         setStatus('git-quick-status', 'Taking snapshot…', '');
         try {
-            // Ensure initialized
-            const status = await gitApiCall('status');
-            if (!status.initialized) {
-                await gitApiCall('init', { method: 'POST' });
-            }
-            // Commit
+            const status = await gitGetStatus(basePath);
+            if (!status.initialized) await gitInit(basePath);
             const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-            const data = await gitApiCall('commit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: 'Snapshot ' + timestamp })
-            });
+            const data = await gitCommit(basePath, 'Snapshot ' + timestamp);
             const commitHash = data.commitHash ? ` (${data.commitHash.substring(0, 8)})` : '';
             setStatus('git-quick-status', '✓ Snapshot taken' + commitHash, 'success');
             await refreshGitStatus();
@@ -1789,31 +1494,16 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             setStatus('git-quick-status', '✗ ' + e.message, 'error');
         }
     });
-
-    // Quick Experiment: commit current, create experiment branch
     document.getElementById('quick-branch-experiment')?.addEventListener('click', async function() {
         setStatus('git-quick-status', 'Setting up experiment…', '');
         try {
-            // Ensure initialized
-            const status = await gitApiCall('status');
-            if (!status.initialized) {
-                await gitApiCall('init', { method: 'POST' });
-            }
-            // Commit current work
+            const status = await gitGetStatus(basePath);
+            if (!status.initialized) await gitInit(basePath);
             if (!status.clean) {
-                await gitApiCall('commit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: 'Save before experiment' })
-                });
+                await gitCommit(basePath, 'Save before experiment');
             }
-            // Create experiment branch
             const expName = 'experiment-' + Date.now().toString(36);
-            await gitApiCall('checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ branch: expName, create: true })
-            });
+            await gitCheckout(basePath, expName, true);
             setStatus('git-quick-status', '✓ Switched to branch: ' + expName, 'success');
             await refreshGitBranches();
             await refreshGitStatus();
@@ -1821,28 +1511,16 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             setStatus('git-quick-status', '✗ ' + e.message, 'error');
         }
     });
-
-    // Quick Backup & Download: commit then ZIP
     document.getElementById('quick-backup-zip')?.addEventListener('click', async function() {
         setStatus('git-quick-status', 'Backing up…', '');
         try {
-            // Ensure initialized
-            const status = await gitApiCall('status');
-            if (!status.initialized) {
-                await gitApiCall('init', { method: 'POST' });
-            }
-            // Commit
+            const status = await gitGetStatus(basePath);
+            if (!status.initialized) await gitInit(basePath);
             const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-            await gitApiCall('commit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: 'Backup ' + timestamp })
-            });
+            await gitCommit(basePath, 'Backup ' + timestamp);
             setStatus('git-quick-status', '✓ Committed. Downloading ZIP…', 'success');
-            // Download ZIP
             downloadZip('/');
         } catch (e) {
-            // If "nothing to commit", still download
             if (e.message && e.message.includes('Nothing to commit')) {
                 setStatus('git-quick-status', '✓ Already up to date. Downloading ZIP…', 'success');
                 downloadZip('/');
@@ -1852,257 +1530,178 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         }
     });
 
-    // =========================================================
-    // === Auto-commit after successful pipeline runs ===
-    // =========================================================
+    // === Auto-commit after build ===
     async function autoGitCommitAfterBuild(message) {
         try {
-            const status = await gitApiCall('status');
+            const status = await gitGetStatus(basePath);
             if (!status.initialized) {
-                await gitApiCall('init', { method: 'POST' });
+                await gitInit(basePath);
                 logBatch('📌 Auto-initialized Git repository', 'info');
             }
-            // Re-check status after potential init
-            const currentStatus = status.initialized ? status : await gitApiCall('status');
+            const currentStatus = status.initialized ? status : await gitGetStatus(basePath);
             if (currentStatus.initialized && !currentStatus.clean) {
-                await gitApiCall('commit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message || 'Auto-commit after build' })
-                });
+                await gitCommit(basePath, message || 'Auto-commit after build');
                 logBatch('📌 Auto-committed changes to Git: ' + message, 'success');
             }
         } catch (e) {
-            // Non-critical, just log
             console.warn('Auto-commit failed:', e);
         }
     }
 
-    // === Usage Tracking ===
-    // =========================================================
-
-    async function fetchUsageData(taskSessionId) {
-        try {
-            const url = `/proxy/usage?sessionId=${encodeURIComponent(taskSessionId)}&format=json`;
-            const resp = await fetch(url);
-            if (!resp.ok) {
-                if (resp.status === 404) return null;
-                return null;
-            }
-            return await resp.json();
-        } catch (e) {
-            console.warn('Could not fetch usage for session ' + taskSessionId + ':', e);
-            return null;
-        }
-    }
-
-    function formatCost(cost) {
-        if (cost === null || cost === undefined) return '$0.00';
-        if (cost < 0.01) return '$' + cost.toFixed(4);
-        return '$' + cost.toFixed(4);
-    }
-
-    function formatTokens(tokens) {
-        if (!tokens) return '0';
-        if (tokens >= 1000000) return (tokens / 1000000).toFixed(1) + 'M';
-        if (tokens >= 1000) return (tokens / 1000).toFixed(1) + 'K';
-        return tokens.toLocaleString();
-    }
-
+    // ==================================================
+    // === Usage Tracking (using utils/usage.js) ===
+    // ==================================================
     function renderUsageTable(usageData, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-
         if (!usageData || !usageData.models || usageData.models.length === 0) {
             container.innerHTML = '<p class="placeholder">No usage data available.</p>';
             return;
         }
-
-        let html = `<table class="usage-table">
-            <thead>
-                <tr>
-                    <th>Model</th>
-                    <th>Prompt Tokens</th>
-                    <th>Completion Tokens</th>
-                    <th>Total Tokens</th>
-                    <th>Cost</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
-        usageData.models.forEach(model => {
-            const totalTokens = (model.prompt_tokens || 0) + (model.completion_tokens || 0);
-            html += `<tr>
-                <td><code>${escapeHtml(model.model)}</code></td>
-                <td>${formatTokens(model.prompt_tokens)}</td>
-                <td>${formatTokens(model.completion_tokens)}</td>
-                <td>${formatTokens(totalTokens)}</td>
-                <td class="usage-cost-cell">${formatCost(model.cost)}</td>
-            </tr>`;
-        });
-
-        if (usageData.totals) {
-            const totalTokens = (usageData.totals.prompt_tokens || 0) + (usageData.totals.completion_tokens || 0);
-            html += `<tr class="usage-totals-row">
-                <td><strong>Total</strong></td>
-                <td><strong>${formatTokens(usageData.totals.prompt_tokens)}</strong></td>
-                <td><strong>${formatTokens(usageData.totals.completion_tokens)}</strong></td>
-                <td><strong>${formatTokens(totalTokens)}</strong></td>
-                <td class="usage-cost-cell"><strong>${formatCost(usageData.totals.cost)}</strong></td>
-            </tr>`;
-        }
-
-        html += '</tbody></table>';
-        container.innerHTML = html;
+        container.innerHTML = createUsageTableHtml(usageData.models, usageData.totals);
     }
-
     function updateUsageSummaryBanner(usageData) {
         const banner = document.getElementById('usage-summary-banner');
         if (!banner) return;
-
         if (!usageData || !usageData.totals) {
             banner.style.display = 'none';
             return;
         }
-
         banner.style.display = 'flex';
-        const promptEl = document.getElementById('usage-total-prompt');
-        const completionEl = document.getElementById('usage-total-completion');
-        const costEl = document.getElementById('usage-total-cost');
-
-        if (promptEl) promptEl.textContent = formatTokens(usageData.totals.prompt_tokens);
-        if (completionEl) completionEl.textContent = formatTokens(usageData.totals.completion_tokens);
-        if (costEl) costEl.textContent = formatCost(usageData.totals.cost);
+        renderUsageSummary(usageData.totals, {
+            prompt: document.getElementById('usage-total-prompt'),
+            completion: document.getElementById('usage-total-completion'),
+            cost: document.getElementById('usage-total-cost')
+        });
     }
-
     async function refreshAllUsage() {
         setStatus('usage-status', 'Loading usage data…', '');
-
-        // Collect all known task session IDs
-        const statusData = await fetchDocopsStatus();
+        // Discover any new task session IDs from status file
+        const statusData = await fetchDocopsStatus(basePath);
         if (statusData && statusData.tasks) {
             for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-                if (taskInfo.sessionId) {
-                    knownTaskSessionIds.add(taskInfo.sessionId);
-                }
+                if (taskInfo.sessionId) trackTaskSession(taskInfo.sessionId);
             }
         }
-
         if (knownTaskSessionIds.size === 0) {
             setStatus('usage-status', 'No task sessions found yet.', '');
             return;
         }
-
-        // Aggregate usage across all task sessions
-        const allModels = {};
-        const taskUsageList = [];
-        let totalPrompt = 0;
-        let totalCompletion = 0;
-        let totalCost = 0;
-
-        for (const taskId of knownTaskSessionIds) {
-            const usage = await fetchUsageData(taskId);
-            if (usage && usage.models) {
-                taskUsageList.push({ sessionId: taskId, usage: usage });
-                usage.models.forEach(m => {
-                    if (!allModels[m.model]) {
-                        allModels[m.model] = { model: m.model, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
-                    }
-                    allModels[m.model].prompt_tokens += (m.prompt_tokens || 0);
-                    allModels[m.model].completion_tokens += (m.completion_tokens || 0);
-                    allModels[m.model].cost += (m.cost || 0);
-                });
+        const sessionIds = Array.from(knownTaskSessionIds);
+        let aggregated;
+        try {
+            const result = await aggregateUsage(sessionIds);
+            aggregated = {
+                models: result.models || [],
+                totals: result.totals || { prompt_tokens: 0, completion_tokens: 0, cost: 0 }
+            };
+            // Build per-task list from sessionUsageMap if provided
+            const taskUsageList = [];
+            if (result.sessionUsageMap) {
+                for (const [sid, usage] of Object.entries(result.sessionUsageMap)) {
+                    if (usage) taskUsageList.push({ sessionId: sid, usage });
+                }
             }
-            if (usage && usage.totals) {
-                totalPrompt += (usage.totals.prompt_tokens || 0);
-                totalCompletion += (usage.totals.completion_tokens || 0);
-                totalCost += (usage.totals.cost || 0);
+            renderTaskUsageList(taskUsageList);
+        } catch (e) {
+            console.warn('aggregateUsage failed, falling back to per-session fetches:', e);
+            // Fallback: manual aggregation
+            const allModels = {};
+            const taskUsageList = [];
+            let totalPrompt = 0, totalCompletion = 0, totalCost = 0;
+            for (const taskId of sessionIds) {
+                const usage = await fetchUsageData(taskId);
+                if (usage && usage.models) {
+                    taskUsageList.push({ sessionId: taskId, usage });
+                    usage.models.forEach(m => {
+                        if (!allModels[m.model]) {
+                            allModels[m.model] = { model: m.model, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+                        }
+                        allModels[m.model].prompt_tokens += (m.prompt_tokens || 0);
+                        allModels[m.model].completion_tokens += (m.completion_tokens || 0);
+                        allModels[m.model].cost += (m.cost || 0);
+                    });
+                }
+                if (usage && usage.totals) {
+                    totalPrompt += (usage.totals.prompt_tokens || 0);
+                    totalCompletion += (usage.totals.completion_tokens || 0);
+                    totalCost += (usage.totals.cost || 0);
+                }
             }
+            aggregated = {
+                models: Object.values(allModels),
+                totals: {
+                    prompt_tokens: totalPrompt,
+                    completion_tokens: totalCompletion,
+                    cost: totalCost
+                }
+            };
+            renderTaskUsageList(taskUsageList);
         }
-
-        const aggregated = {
-            models: Object.values(allModels),
-            totals: {
-                prompt_tokens: totalPrompt,
-                completion_tokens: totalCompletion,
-                cost: totalCost
-            }
-        };
-
         lastUsageData = aggregated;
-
-        // Render the main usage table
         renderUsageTable(aggregated, 'usage-table-container');
         updateUsageSummaryBanner(aggregated);
-
-        // Render the tab version too
         renderUsageTable(aggregated, 'usage-tab-container');
-
-        // Render per-task usage
-        renderTaskUsageList(taskUsageList);
-
         if (aggregated.models.length > 0) {
             setStatus('usage-status', `✓ Loaded usage from ${knownTaskSessionIds.size} session(s)`, 'success');
         } else {
             setStatus('usage-status', 'No usage data recorded yet.', '');
         }
     }
-
     function renderTaskUsageList(taskUsageList) {
         const container = document.getElementById('task-usage-container');
         if (!container) return;
-
         if (taskUsageList.length === 0) {
             container.innerHTML = '<p class="placeholder">No task usage data available.</p>';
             return;
         }
-
         let html = '';
         taskUsageList.forEach(item => {
             const proxyUrl = getProxyUrl(item.sessionId);
             const totals = item.usage.totals || {};
-            const totalTokens = (totals.prompt_tokens || 0) + (totals.completion_tokens || 0);
             html += `<div class="task-usage-entry">
-                <div class="task-usage-header">
-                    <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 ${escapeHtml(item.sessionId)}</a>
-                    <span class="task-usage-cost">${formatCost(totals.cost)}</span>
-                </div>
-                <div class="task-usage-details">`;
-
+                    <div class="task-usage-header">
+                        <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 ${escapeHtml(item.sessionId)}</a>
+                        <span class="task-usage-cost">${formatCost(totals.cost)}</span>
+                    </div>
+                    <div class="task-usage-details">`;
             if (item.usage.models) {
                 item.usage.models.forEach(m => {
                     html += `<span class="task-usage-model">
-                        <code>${escapeHtml(m.model)}</code>:
-                        ${formatTokens((m.prompt_tokens || 0) + (m.completion_tokens || 0))} tokens,
-                        ${formatCost(m.cost)}
-                    </span>`;
+                            <code>${escapeHtml(m.model)}</code>:
+                            ${formatTokenCount((m.prompt_tokens || 0) + (m.completion_tokens || 0))} tokens,
+                            ${formatCost(m.cost)}
+                        </span>`;
                 });
             }
-
             html += `</div></div>`;
         });
-
         container.innerHTML = html;
     }
-
-    // Track task session IDs as they appear
-    function trackTaskSession(taskSessionId) {
-        if (taskSessionId && /^[a-zA-Z0-9-]+$/.test(taskSessionId)) {
-            knownTaskSessionIds.add(taskSessionId);
+    document.getElementById('btn-refresh-usage')?.addEventListener('click', refreshAllUsage);
+    document.getElementById('btn-refresh-task-usage')?.addEventListener('click', refreshAllUsage);
+    document.getElementById('btn-refresh-usage-tab')?.addEventListener('click', refreshAllUsage);
+    document.getElementById('btn-usage-json')?.addEventListener('click', function() {
+        if (lastUsageData) {
+            const jsonStr = JSON.stringify(lastUsageData, null, 2);
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.write('<pre>' + escapeHtml(jsonStr) + '</pre>');
+                win.document.title = 'Usage Data (JSON)';
+            }
+        } else {
+            alert('No usage data loaded yet. Click "Refresh Usage" first.');
         }
-    }
-    // =========================================================
-    // === Test (Selenium) artifact loading ===
-    // =========================================================
+    });
+
+    // ==================================================
+    // === Test (Selenium) artifacts ===
+    // ==================================================
     async function listTestArtifacts() {
         try {
-            const url = basePath + '/code/_files.json';
-            const resp = await fetch(url);
-            if (!resp.ok) return [];
-            const data = await resp.json();
-            // Test artifacts are stored in /code/ alongside the app, prefixed with "test."
-            return (data.entries || []).filter(e =>
-                e.type === 'file' && /^test\./i.test(e.name)
+            const entries = await listFiles(basePath, 'code');
+            return entries.filter(e =>
+                (e.type === 'file' || !e.type) && /^test\./i.test(e.name)
             );
         } catch (e) {
             return [];
@@ -2110,41 +1709,35 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     }
     async function loadTestArtifacts() {
         const screenshotContainer = document.getElementById('test-screenshot-container');
-        const consoleOutput = document.getElementById('test-console-output');
+        const consoleOutputEl = document.getElementById('test-console-output');
         const networkContainer = document.getElementById('test-network-container');
         const htmlContainer = document.getElementById('test-html-container');
         const entries = await listTestArtifacts();
-        if (entries.length === 0) {
-            return;
-        }
-        // Find artifacts by name — they're prefixed with "test."
+        if (entries.length === 0) return;
         const screenshot = entries.find(e => /^test\.png$/i.test(e.name));
         const consoleLog = entries.find(e => /^test\.console\.log$/i.test(e.name));
         const networkLog = entries.find(e => /^test\.network\.log$/i.test(e.name));
         const htmlFile = entries.find(e => /^test\.html?$/i.test(e.name));
-        // Screenshot
         if (screenshot && screenshotContainer) {
             const imgUrl = basePath + '/code/' + screenshot.name + '?t=' + Date.now();
             screenshotContainer.innerHTML = `
-                <a href="${escapeHtml(imgUrl)}" target="_blank" rel="noopener">
-                    <img src="${escapeHtml(imgUrl)}" alt="Page screenshot"
-                         style="max-width:100%; border:1px solid var(--color-border); border-radius:var(--radius); display:block;">
-                </a>
-                <p class="help-text" style="margin-top:0.5rem;">
-                    📁 <code>${escapeHtml(screenshot.name)}</code>
-                    — <a href="${escapeHtml(imgUrl)}" target="_blank" class="monitor-link">open full size</a>
-                </p>`;
+                    <a href="${escapeHtml(imgUrl)}" target="_blank" rel="noopener">
+                        <img src="${escapeHtml(imgUrl)}" alt="Page screenshot"
+                             style="max-width:100%; border:1px solid var(--color-border); border-radius:var(--radius); display:block;">
+                    </a>
+                    <p class="help-text" style="margin-top:0.5rem;">
+                        📁 <code>${escapeHtml(screenshot.name)}</code>
+                        — <a href="${escapeHtml(imgUrl)}" target="_blank" class="monitor-link">open full size</a>
+                    </p>`;
         } else if (screenshotContainer) {
             screenshotContainer.innerHTML = '<p class="placeholder">No screenshot found.</p>';
         }
-        // Console log
-        if (consoleLog && consoleOutput) {
+        if (consoleLog && consoleOutputEl) {
             try {
-                const content = await readFile('code/' + consoleLog.name);
+                const content = await readFile(basePath, 'code/' + consoleLog.name);
                 if (content && content.trim().length > 0) {
-                    consoleOutput.innerHTML = '';
-                    const lines = content.split('\n');
-                    lines.forEach(line => {
+                    consoleOutputEl.innerHTML = '';
+                    content.split('\n').forEach(line => {
                         if (!line.trim()) return;
                         let cssClass = 'console-log';
                         const lower = line.toLowerCase();
@@ -2158,21 +1751,20 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                         const div = document.createElement('div');
                         div.className = 'console-entry ' + cssClass;
                         div.textContent = line;
-                        consoleOutput.appendChild(div);
+                        consoleOutputEl.appendChild(div);
                     });
                 } else {
-                    consoleOutput.innerHTML = '<div class="console-entry console-info">Console log was empty.</div>';
+                    consoleOutputEl.innerHTML = '<div class="console-entry console-info">Console log was empty.</div>';
                 }
             } catch (e) {
-                consoleOutput.innerHTML = '<div class="console-entry console-error">Failed to load console log: ' + escapeHtml(e.message) + '</div>';
+                consoleOutputEl.innerHTML = '<div class="console-entry console-error">Failed to load console log: ' + escapeHtml(e.message) + '</div>';
             }
-        } else if (consoleOutput) {
-            consoleOutput.innerHTML = '<div class="console-entry console-info">No console log captured.</div>';
+        } else if (consoleOutputEl) {
+            consoleOutputEl.innerHTML = '<div class="console-entry console-info">No console log captured.</div>';
         }
-        // Network log
         if (networkLog && networkContainer) {
             try {
-                const content = await readFile('code/' + networkLog.name);
+                const content = await readFile(basePath, 'code/' + networkLog.name);
                 if (content && content.trim().length > 0) {
                     networkContainer.innerHTML = '<pre style="white-space:pre-wrap; font-family:\'JetBrains Mono\', \'Fira Code\', monospace; font-size:0.82rem; max-height:400px; overflow:auto;">'
                         + escapeHtml(content) + '</pre>';
@@ -2185,10 +1777,9 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         } else if (networkContainer) {
             networkContainer.innerHTML = '<pre class="placeholder">No network log captured.</pre>';
         }
-        // Rendered HTML
         if (htmlFile && htmlContainer) {
             try {
-                const content = await readFile('code/' + htmlFile.name);
+                const content = await readFile(basePath, 'code/' + htmlFile.name);
                 if (content && content.trim().length > 0) {
                     htmlContainer.innerHTML = '<pre style="white-space:pre-wrap; font-family:\'JetBrains Mono\', \'Fira Code\', monospace; font-size:0.82rem; max-height:500px; overflow:auto;"><code>'
                         + escapeHtml(content) + '</code></pre>';
@@ -2202,32 +1793,26 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             htmlContainer.innerHTML = '<pre class="placeholder">No rendered HTML captured.</pre>';
         }
     }
-    // Hook the test run button — augment the standard .btn-run behavior to also load artifacts
+
     document.getElementById('run-test')?.addEventListener('click', async function() {
-        // Validate that there's something to test
         const indexResp = await fetch(appIndexUrl, { method: 'HEAD' }).catch(() => null);
         if (!indexResp || !indexResp.ok) {
             alert('No generated webapp found. Build the project first using the Pipeline tab.');
             return;
         }
-        // The generic .btn-run handler also fires; in addition, we wait and load artifacts.
-        // We don't disable here because the generic handler does. We just queue artifact loading.
         const checkAndLoad = async () => {
-            // Poll until the test target task transitions out of RUNNING
             const maxWait = 600000;
             const start = Date.now();
             while (Date.now() - start < maxWait) {
-                const statusData = await fetchDocopsStatus();
+                const statusData = await fetchDocopsStatus(basePath);
                 if (statusData && statusData.tasks) {
-                    // The test op writes to code/, but we look up by the most recent task
-                    // that's running and has a sessionId we don't already know about.
                     const found = findTaskByTarget(statusData.tasks, 'code/');
                     if (found) {
                         const task = found.task;
                         if (task.sessionId) {
                             activeTestTaskSessionId = task.sessionId;
                             trackTaskSession(task.sessionId);
-                            updateSessionLinks('code/test', task);
+                            updateSessionLinksUI('code/test', task);
                         }
                         if (task.status === 'COMPLETED') {
                             await loadTestArtifacts();
@@ -2243,10 +1828,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
         };
         setStatus('test-status', 'Test running…', '');
-        // Run polling alongside the generic handler
         setTimeout(checkAndLoad, 500);
     });
-    // Manual refresh of test artifacts
     document.getElementById('btn-refresh-test-artifacts')?.addEventListener('click', async function() {
         this.disabled = true;
         setStatus('test-status', 'Loading artifacts…', '');
@@ -2259,9 +1842,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
-    // === Review Test Results: runs review_op.md to write findings to notes.md ===
+    document.querySelectorAll('.nav-link[data-section="section-test"]').forEach(link => {
+        link.addEventListener('click', () => setTimeout(loadTestArtifacts, 100));
+    });
+
+    // === Review Test Results ===
     document.getElementById('run-review')?.addEventListener('click', async function() {
-        // Verify test artifacts exist before running review
         const artifacts = await listTestArtifacts();
         if (artifacts.length === 0) {
             alert('No test artifacts found. Please run the test first.');
@@ -2273,57 +1859,53 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         setStatus('review-status', 'Reviewing test results…', '');
         startStatusPolling();
         try {
-            const taskId = await runDocOp('ops/review_op.md', 'notes.md');
+            const taskId = await runDocOp(sessionId, 'ops/review_op.md', 'notes.md', getSelectedModels());
             const cleanTaskId = taskId ? taskId.trim() : '';
             if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                 trackTaskSession(cleanTaskId);
                 const linkContainer = document.getElementById('review-session-link');
                 if (linkContainer) {
                     linkContainer.innerHTML = `<div class="session-monitor-link">
-<span class="monitor-pulse">●</span>
-<span>Reviewing… </span>
-<a href="${escapeHtml(getProxyUrl(cleanTaskId))}" target="_blank" rel="noopener" class="monitor-link">
-📡 Monitor Live Session (${escapeHtml(cleanTaskId)})
-</a>
-</div>`;
+    <span class="monitor-pulse">●</span>
+    <span>Reviewing… </span>
+    <a href="${escapeHtml(getProxyUrl(cleanTaskId))}" target="_blank" rel="noopener" class="monitor-link">
+    📡 Monitor Live Session (${escapeHtml(cleanTaskId)})
+    </a>
+    </div>`;
                     linkContainer.style.display = 'block';
                 }
             }
-            await waitForTask('notes.md');
+            await waitForTask(basePath, 'notes.md', undefined, (target, task) => {
+                updateTaskStatusUI(target, task);
+            });
             setBadge(badgeId, 'done');
             setStatus('review-status', '✓ Review complete — findings written to notes.md', 'success');
-            // Update the session link to show completed state
             if (cleanTaskId) {
                 const linkContainer = document.getElementById('review-session-link');
                 if (linkContainer) {
                     const completedAt = new Date().toLocaleTimeString();
                     linkContainer.innerHTML = `<div class="session-completed-link">
-<span>✅ Completed at ${escapeHtml(completedAt)} — </span>
-<a href="${escapeHtml(getProxyUrl(cleanTaskId))}" target="_blank" rel="noopener" class="monitor-link">
-📋 View Session Log (${escapeHtml(cleanTaskId)})
-</a>
-</div>`;
+    <span>✅ Completed at ${escapeHtml(completedAt)} — </span>
+    <a href="${escapeHtml(getProxyUrl(cleanTaskId))}" target="_blank" rel="noopener" class="monitor-link">
+    📋 View Session Log (${escapeHtml(cleanTaskId)})
+    </a>
+    </div>`;
                 }
             }
-            // Load the updated notes.md into the viewer and the notes editor
             try {
-                const notesContent = await readFile('notes.md');
+                const notesContent = await readFile(basePath, 'notes.md');
                 if (notesContent !== null) {
                     const viewer = document.getElementById('viewer-review');
                     if (viewer) {
                         viewer.innerHTML = renderMarkdown(notesContent);
                         viewer.classList.add('visible');
                     }
-                    // Also populate the notes editor in the Update tab
                     const notesEditor = document.getElementById('notes-editor');
-                    if (notesEditor) {
-                        notesEditor.value = notesContent;
-                    }
+                    if (notesEditor) notesEditor.value = notesContent;
                 }
             } catch (e) {
                 console.warn('Could not load notes.md:', e);
             }
-            // Refresh usage data
             await refreshAllUsage();
         } catch (e) {
             setBadge(badgeId, 'error');
@@ -2333,41 +1915,24 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         }
     });
 
-
-    // Usage button handlers
-    document.getElementById('btn-refresh-usage')?.addEventListener('click', refreshAllUsage);
-    document.getElementById('btn-refresh-task-usage')?.addEventListener('click', refreshAllUsage);
-    document.getElementById('btn-refresh-usage-tab')?.addEventListener('click', refreshAllUsage);
-    // Auto-load test artifacts when navigating to the Test section
-    document.querySelectorAll('.nav-link[data-section="section-test"]').forEach(link => {
-        link.addEventListener('click', function() {
-            // Defer slightly so the section is visible before fetches
-            setTimeout(loadTestArtifacts, 100);
-        });
-    });
-
-
-    document.getElementById('btn-usage-json')?.addEventListener('click', async function() {
-        if (lastUsageData) {
-            const jsonStr = JSON.stringify(lastUsageData, null, 2);
-            const win = window.open('', '_blank');
-            if (win) {
-                win.document.write('<pre>' + escapeHtml(jsonStr) + '</pre>');
-                win.document.title = 'Usage Data (JSON)';
-            }
-        } else {
-            alert('No usage data loaded yet. Click "Refresh Usage" first.');
-        }
-    });
-
+    // ==================================================
     // === Initialize ===
+    // ==================================================
+    updateLaunchLinks();
     loadInitialFiles();
     checkExistingFiles();
     showAppPreview();
     startStatusPolling();
-     loadApiProviders();
+    initApiProviders();
     setupRenderModeListeners();
     loadRenderModePreference();
-    // Delay usage refresh slightly to allow status polling to discover task sessions first
     setTimeout(refreshAllUsage, 2000);
+
+    // Surface unhandled errors in batch log for debugging
+    window.addEventListener('error', function(e) {
+        console.error('Unhandled error:', e.error || e.message);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('Unhandled promise rejection:', e.reason);
+    });
 })();

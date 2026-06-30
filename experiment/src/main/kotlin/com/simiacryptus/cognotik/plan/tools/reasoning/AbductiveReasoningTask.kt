@@ -6,13 +6,20 @@ import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
@@ -721,7 +728,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       prompt = prompt.toString(),
       model = api,
       temperature = 0.7,
-      parsingChatter = defaultFast
+      parsingModel = defaultFast
     )
 
     val response = parsedAgent.answer(listOf(prompt.toString())).obj
@@ -778,7 +785,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       prompt = prompt.toString(),
       model = api,
       temperature = 0.5,
-      parsingChatter = defaultFast
+      parsingModel = defaultFast
     )
 
     val response = parsedAgent.answer(listOf(prompt.toString())).obj
@@ -921,7 +928,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)
+    private val log: Logger = getLogger(AbductiveReasoningTask::class.java)
 
     @JvmStatic
     val AbductiveReasoning = TaskType(

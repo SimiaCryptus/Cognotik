@@ -57,7 +57,8 @@ public record DocumentationUpdater(
                 true,
                 defaultUser,
                 null,
-                Collections.emptyMap()
+                Collections.emptyMap(),
+                false
         ).run();
     }
 }

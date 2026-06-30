@@ -6,16 +6,20 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
@@ -531,7 +535,7 @@ For endings, define:
 - Optional epilogue
 
 Ensure the structure supports ${gameConfig.player_agency_level} player agency with meaningful choices.
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.7, parsingModel = defaultFast
         )
 
         val gameNarrative = gameStructureAgent.answer(listOf("Generate game structure")).obj
@@ -640,7 +644,7 @@ Design the following:
 4. **Unique Mechanics**: Specific mechanics that reinforce the narrative themes.
 5. **Ludonarrative Harmony**: How gameplay reinforces the story.
 Ensure mechanics fit the '${gameConfig.genre}' genre and '${gameConfig.tone}' tone.
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.7, parsingModel = defaultFast
           )
           val mechanics = mechanicsAgent.answer(listOf("Design game mechanics")).obj
           gameDesignData = gameDesignData.copy(mechanics = mechanics)
@@ -818,7 +822,7 @@ Make dialogue:
 - Support different playstyles
 
 Ensure each character's dialogue matches their established style.
-          """.trimIndent(), model = api, temperature = 0.8, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.8, parsingModel = defaultFast
           )
 
           val dialogueTrees = dialogueAgent.answer(listOf("Generate dialogue trees")).obj.trees
@@ -995,7 +999,7 @@ For each quest:
 - What unlocks it (optional)
 
 Make quests feel meaningful, not just filler content.
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+          """.trimIndent(), model = api, temperature = 0.7, parsingModel = defaultFast
           )
 
           val sideQuests = sideQuestAgent.answer(listOf("Generate side quests")).obj.quests
@@ -1427,7 +1431,7 @@ Provide specific examples and recommendations for improvement.
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(GameNarrativeDesignTask::class.java)
+    private val log: Logger = getLogger(GameNarrativeDesignTask::class.java)
 
     @JvmStatic
     val GameNarrativeDesign = TaskType(

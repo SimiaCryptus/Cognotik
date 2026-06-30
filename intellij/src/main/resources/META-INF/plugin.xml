@@ -21,12 +21,12 @@
                 implementation="com.simiacryptus.cognotik.SettingsWidgetFactory"
                 id="cognotik.ui.SettingsWidgetFactory"
                 order="first"/>
-<!--        <statusBarWidgetFactory-->
-<!--                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"-->
-<!--                id="Cognotik.SpeechToTextWidget"-->
-<!--                order="first"/>-->
-<!--        <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"-->
-<!--                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>-->
+        <!--        <statusBarWidgetFactory-->
+        <!--                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"-->
+        <!--                id="Cognotik.SpeechToTextWidget"-->
+        <!--                order="first"/>-->
+        <!--        <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"-->
+        <!--                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>-->
     </extensions>
 
     <actions>
@@ -88,11 +88,11 @@
                     text="✏️ _Edit Code..."
                     description="Edit code...">
             </action>
-            <group class="cognotik.actions.task.DocProcessorActionGroup"
-                   id="cognotik.ui.EditorMenu.DocProcessor"
-                   description="Process markdown documentation files with frontmatter specifications"
-                   popup="true">
-            </group>
+            <action class="cognotik.actions.task.DocProcessorAction"
+                    id="cognotik.ui.EditorMenu.DocProcessor"
+                    text="📋 Build Related"
+                    description="Process markdown documentation files with frontmatter specifications">
+            </action>
         </group>
         <group id="cognotik.ui.ProjectMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -101,6 +101,28 @@
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
+
+            <action class="cognotik.actions.chat.ModifyFilesAction"
+                    text="📝 Edit"
+                    description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
+            </action>
+            <action class="cognotik.actions.task.DocProcessorAction"
+                    id="cognotik.ui.ProjectMenu.DocProcessor"
+                    text="📋 Build Related"
+                    description="Process markdown documentation files with frontmatter specifications">
+            </action>
+            <action class="cognotik.actions.agent.CommandAutofixAction"
+                    text="🔄 Run ... and Fix"
+                    description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
+            </action>
+            <action class="cognotik.actions.generate.GenerateRelatedFileAction"
+                    text="📄 Generate Related File"
+                    description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
+            </action>
+            <action class="cognotik.actions.plan.UnifiedPlanAction"
+                    text="🧠 Task Planning"
+                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+            </action>
 
             <group id="cognotik.ui.ProjectMenu.Chat"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -111,40 +133,29 @@
                         text="💬 Simple"
                         description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
                 </action>
-
-                <action class="cognotik.actions.chat.ModifyFilesAction"
-                        text="📝 Edit"
-                        description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
-                </action>
-                <action class="cognotik.actions.chat.SmartCodeChatAction"
-                        text="🧠 Adaptive"
-                        description="Enhanced code chat with automatic history summarization and intelligent query elevation for complex code analysis">
-                </action>
                 <action class="cognotik.actions.chat.ImageChatAction"
                         text="💬 Image"
                         description="Initiate an interactive dialogue session to discuss and analyze multiple image files simultaneously">
                 </action>
             </group>
-            <action class="cognotik.actions.plan.UnifiedPlanAction"
-                    text="🧠 Task Planning"
-                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+
+            <action class="cognotik.actions.dev.ApplyPatchAction"
+                    text="🔧 Apply Patch"
+                    description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
             </action>
-            <action class="cognotik.actions.agent.CommandAutofixAction"
-                    text="🔄 Run ... and Fix"
-                    description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
-            </action>
+
             <group id="cognotik.ui.ProjectMenu.Tasks.More"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="⚡ More"
                    description="Additional single-task actions">
+                <action class="cognotik.actions.task.RenderErbTemplateAction"
+                        text="📝 Render ERB Template"
+                        description="Render ERB templates with JSON data files, automatically determining output format from template naming">
+                </action>
                 <action class="cognotik.actions.analysis.SymbolExtractionAction"
                         text="📊 Extract Symbols"
                         description="Extract symbol definitions and references across the project into a JSON report">
-                </action>
-                <action class="cognotik.actions.task.FileModificationTaskAction"
-                        text="📝 File Modification"
-                        description="Modify or create files with AI assistance using custom configuration">
                 </action>
                 <action class="cognotik.actions.task.WriteHtmlAction"
                         text="🌐 Generate HTML Page"
@@ -154,23 +165,11 @@
                         text="🖼️ Illustrate Document"
                         description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
                 </action>
-                <action class="cognotik.actions.task.NarrativeGenerationAction"
-                        text="📖 Narrative Generation"
-                        description="Create engaging narratives or stories based on provided themes, characters, or settings">
-                </action>
-                <action class="cognotik.actions.task.PersuasiveEssayAction"
-                        text="📝 Persuasive Essay"
-                        description="Craft a compelling persuasive essay on a given topic, incorporating strong arguments and evidence to support your viewpoint">
-                </action>
                 <action class="cognotik.actions.generate.OCRAction"
                         text="📄 OCR"
                         description="Extract text from image files using Optical Character Recognition (OCR) and save to a new markdown file">
                 </action>
 
-                <action class="cognotik.actions.generate.GenerateRelatedFileAction"
-                        text="📄 Generate Related File"
-                        description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
-                </action>
                 <action class="cognotik.actions.generate.CreateFileFromDescriptionAction"
                         text="✨ Create File from Description"
                         description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
@@ -183,25 +182,12 @@
                         text="✨ Create ERB Template"
                         description="Create a new ERB template with AI assistance, specifying the purpose, format, and data structure">
                 </action>
-            </group>
-            <action class="cognotik.actions.task.RenderErbTemplateAction"
-                    text="📝 Render ERB Template"
-                    description="Render ERB templates with JSON data files, automatically determining output format from template naming">
-            </action>
-            <action class="cognotik.actions.task.PermdocAction"
-                    text="📄 Permdoc"
-                    description="Create a permanent documentation file for selected files/folders with auto-generated frontmatter">
-            </action>
-            <group class="cognotik.actions.task.DocProcessorActionGroup"
-                   id="cognotik.ui.ProjectMenu.DocProcessor"
-                   description="Process markdown documentation files with frontmatter specifications"
-                   popup="true">
+                <action class="cognotik.actions.task.PermdocAction"
+                        text="📄 Permdoc"
+                        description="Create a permanent documentation file for selected files/folders with auto-generated frontmatter">
+                </action>
             </group>
 
-            <action class="cognotik.actions.dev.ApplyPatchAction"
-                    text="🔧 Apply Patch"
-                    description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
-            </action>
         </group>
 
         <group id="cognotik.ui.VcsMenu"

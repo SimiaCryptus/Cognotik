@@ -9,10 +9,9 @@ import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.EventDispatcher
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import javax.sound.sampled.AudioFormat
 
 open class DictationState {

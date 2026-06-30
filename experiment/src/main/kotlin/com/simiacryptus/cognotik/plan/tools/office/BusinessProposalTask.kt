@@ -6,14 +6,17 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.tools.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.truncateForDisplay
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -532,7 +535,7 @@ Identify 3-5 key stakeholders who will influence the decision.
           """.trimIndent(),
           model = api,
           temperature = 0.6,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
 
@@ -641,7 +644,7 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
           """.trimIndent(),
             model = api,
             temperature = 0.5,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
 
@@ -747,7 +750,7 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
           """.trimIndent(),
             model = api,
             temperature = 0.6,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
 
@@ -841,7 +844,7 @@ Be fair to alternatives but make a compelling case for this proposal.
           """.trimIndent(),
             model = api,
             temperature = 0.6,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
 
@@ -942,7 +945,7 @@ Ensure phases flow logically and dependencies are clear.
           """.trimIndent(),
             model = api,
             temperature = 0.5,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
 
@@ -1051,7 +1054,7 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
         """.trimIndent(),
           model = api,
           temperature = 0.6,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
 
@@ -1151,7 +1154,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
         """.trimIndent(),
           model = api,
           temperature = 0.7,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
 
@@ -1292,7 +1295,7 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
           """.trimIndent(),
             model = api,
             temperature = 0.7,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           var sectionContent = sectionAgent.answer(listOf("Write section")).obj
@@ -1374,7 +1377,7 @@ Make it action-oriented and compelling. The reader should feel motivated to move
         """.trimIndent(),
           model = api,
           temperature = 0.7,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
 

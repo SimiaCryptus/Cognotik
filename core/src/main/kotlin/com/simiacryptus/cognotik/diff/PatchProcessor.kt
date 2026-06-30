@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.diff.FileValidators.DIFF_PATTERN
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 interface PatchProcessor : PatchParser {
   val label: String

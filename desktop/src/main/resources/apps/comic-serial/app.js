@@ -1,394 +1,311 @@
+// Comic Serial App — refactored to use utils/ modules
+import { parseSessionUrl, getProxyUrl, getAppRoot } from './utils/session.js';
+import { readFile, writeFile, fileExists, listFiles } from './utils/fileIO.js';
+import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from './utils/docops.js';
+import { loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections } from './utils/models.js';
+import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLinks.js';
+import {
+    renderMarkdown,
+    escapeHtml,
+    setStatus,
+    setBadge,
+    showToast,
+    createBatchLogger
+} from './utils/ui.js';
+import {
+    fetchUsageData,
+    formatTokenCount,
+    formatCost,
+    aggregateUsage,
+    renderUsageSummary,
+    createUsageTableHtml
+} from './utils/usage.js';
+
 (function() {
     'use strict';
 
     // ========================================
-    // URL Parsing & Session Setup
+    // Session Setup
     // ========================================
-    const pathParts = window.location.pathname.split('/');
-    const fileIndexIdx = pathParts.indexOf('fileIndex');
-    let basePath = '';
-    let sessionId = '';
-    let appId = '';
-
-    if (fileIndexIdx >= 0 && fileIndexIdx + 1 < pathParts.length) {
-        sessionId = pathParts[fileIndexIdx + 1];
-        basePath = pathParts.slice(0, fileIndexIdx + 2).join('/');
-        appId = pathParts[fileIndexIdx - 1] || 'comic-serial';
-    } else {
+    const { basePath, sessionId, appId } = parseSessionUrl();
+    if (!sessionId) {
         console.warn('Could not determine session from URL path.');
-        basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     }
 
-    const proxyBase = '/proxy/';
+    const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel'];
+    const MODEL_PREFIX = 'comic';
+    // Legacy localStorage keys used by the old app — we'll migrate from these if present
+    const LEGACY_MODEL_KEYS = {
+        smartModel: 'comicSmartModel',
+        fastModel: 'comicFastModel',
+        imageModel: 'comicImageModel'
+    };
 
-    function getProxyUrl(id) {
-        return proxyBase + '#' + id;
-    }
-     // ========================================
-     // Model Management
-     // ========================================
-     var availableModels = {};
-     async function loadApiProviders() {
-         try {
-             var response = await fetch('/apiProviders/?format=json');
-             if (response.status >= 400) {
-                 console.warn('Could not load API providers (status ' + response.status + ')');
-                 return;
-             }
-             var providersResponse = await response.json();
-             var providers = providersResponse.configuredProviders || [];
-             availableModels = {};
-             providers.forEach(function(provider) {
-                 if (provider.models && provider.models.length > 0) {
-                     availableModels[provider.name] = provider.models.map(function(model) {
-                         return {
-                             id: model.name,
-                             name: model.name,
-                             description: model.maxTokens
-                                 ? 'Max tokens: ' + model.maxTokens
-                                 : 'No token limit specified'
-                         };
-                     });
-                 }
-             });
-             populateModelDropdowns();
-         } catch (e) {
-             console.warn('Failed to load API providers:', e);
-         }
-     }
-     function populateModelDropdowns() {
-         var smartSelect = document.getElementById('comic-smart-model');
-         var fastSelect = document.getElementById('comic-fast-model');
-         var imageSelect = document.getElementById('comic-image-model');
-         if (!smartSelect || !fastSelect || !imageSelect) return;
-         [smartSelect, fastSelect, imageSelect].forEach(function(sel) {
-             sel.innerHTML = '';
-         });
-         var addedModels = new Set();
-         var hasModels = false;
-         for (var provider in availableModels) {
-             if (!availableModels.hasOwnProperty(provider)) continue;
-             availableModels[provider].forEach(function(model) {
-                 if (!addedModels.has(model.id)) {
-                     [smartSelect, fastSelect, imageSelect].forEach(function(sel) {
-                         var option = document.createElement('option');
-                         option.value = model.id;
-                         option.textContent = model.name + ' (' + provider + ')';
-                         if (model.description) {
-                             option.title = model.description;
-                         }
-                         sel.appendChild(option);
-                     });
-                     addedModels.add(model.id);
-                     hasModels = true;
-                 }
-             });
-         }
-         if (!hasModels) {
-             [smartSelect, fastSelect, imageSelect].forEach(function(sel) {
-                 var option = document.createElement('option');
-                 option.value = '';
-                 option.textContent = 'No models available — check API provider settings';
-                 sel.appendChild(option);
-             });
-         }
-         // Restore saved selections
-         var savedSmart = localStorage.getItem('comicSmartModel');
-         var savedFast = localStorage.getItem('comicFastModel');
-         var savedImage = localStorage.getItem('comicImageModel');
-         if (savedSmart && Array.from(smartSelect.options).some(function(o) { return o.value === savedSmart; })) {
-             smartSelect.value = savedSmart;
-         }
-         if (savedFast && Array.from(fastSelect.options).some(function(o) { return o.value === savedFast; })) {
-             fastSelect.value = savedFast;
-         }
-         if (savedImage && Array.from(imageSelect.options).some(function(o) { return o.value === savedImage; })) {
-             imageSelect.value = savedImage;
-         }
-         updateModelSummary();
-     }
-     function getSelectedModels() {
-         var smartSelect = document.getElementById('comic-smart-model');
-         var fastSelect = document.getElementById('comic-fast-model');
-         var imageSelect = document.getElementById('comic-image-model');
-         return {
-             smartModel: smartSelect ? smartSelect.value : '',
-             fastModel: fastSelect ? fastSelect.value : '',
-             imageModel: imageSelect ? imageSelect.value : ''
-         };
-     }
-     function updateModelSummary() {
-         var summaryEl = document.getElementById('model-summary');
-         if (!summaryEl) return;
-         var models = getSelectedModels();
-         var rows = [
-             { label: '🧠 Smart Model', value: models.smartModel },
-             { label: '⚡ Fast Model', value: models.fastModel },
-             { label: '🎨 Image Model', value: models.imageModel }
-         ];
-         var html = '';
-         rows.forEach(function(row) {
-             var valueClass = row.value ? 'model-summary-value' : 'model-summary-value not-set';
-             var valueText = row.value || 'Not set';
-             var indicatorClass = row.value ? 'model-indicator' : 'model-indicator no-model';
-             html +=
-                 '<div class="model-summary-row">' +
-                 '<span class="model-summary-label">' + row.label + '</span>' +
-                 '<span class="' + valueClass + '">' + escapeHtml(valueText) + '</span>' +
-                 '<span class="' + indicatorClass + '"><span class="model-dot"></span>' + (row.value ? 'Active' : 'None') + '</span>' +
-                 '</div>';
-         });
-         summaryEl.innerHTML = html;
-     }
-     // Save model settings
-     var saveModelBtn = document.getElementById('save-model-settings');
-     if (saveModelBtn) {
-         saveModelBtn.addEventListener('click', function() {
-             var models = getSelectedModels();
-             if (models.smartModel) localStorage.setItem('comicSmartModel', models.smartModel);
-             else localStorage.removeItem('comicSmartModel');
-             if (models.fastModel) localStorage.setItem('comicFastModel', models.fastModel);
-             else localStorage.removeItem('comicFastModel');
-             if (models.imageModel) localStorage.setItem('comicImageModel', models.imageModel);
-             else localStorage.removeItem('comicImageModel');
-             updateModelSummary();
-             setStatus('model-status', '✓ Model settings saved', 'success');
-         });
-     }
-     // Reset model settings
-     var resetModelBtn = document.getElementById('reset-model-settings');
-     if (resetModelBtn) {
-         resetModelBtn.addEventListener('click', function() {
-             localStorage.removeItem('comicSmartModel');
-             localStorage.removeItem('comicFastModel');
-             localStorage.removeItem('comicImageModel');
-             var smartSelect = document.getElementById('comic-smart-model');
-             var fastSelect = document.getElementById('comic-fast-model');
-             var imageSelect = document.getElementById('comic-image-model');
-             if (smartSelect && smartSelect.options.length > 0) smartSelect.selectedIndex = 0;
-             if (fastSelect && fastSelect.options.length > 0) fastSelect.selectedIndex = 0;
-             if (imageSelect && imageSelect.options.length > 0) imageSelect.selectedIndex = 0;
-             updateModelSummary();
-             setStatus('model-status', '✓ Model settings reset to defaults', 'success');
-         });
-     }
-     // Update summary when dropdowns change
-     ['comic-smart-model', 'comic-fast-model', 'comic-image-model'].forEach(function(id) {
-         var el = document.getElementById(id);
-         if (el) {
-             el.addEventListener('change', function() {
-                 updateModelSummary();
-             });
-         }
-     });
-
-
-    // ========================================
-    // File I/O
-    // ========================================
-    async function readFile(filePath) {
-        const resp = await fetch(basePath + '/' + filePath);
-        if (!resp.ok) {
-            if (resp.status === 404) return null;
-            throw new Error('Failed to read ' + filePath + ': ' + resp.status);
-        }
-        return await resp.text();
-    }
-
-    async function writeFile(filePath, content) {
-        const resp = await fetch(basePath + '/' + filePath, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-            body: content
-        });
-        if (!resp.ok) throw new Error('Failed to write ' + filePath + ': ' + resp.status);
-        return true;
-    }
-
-    async function fileExists(filePath) {
-        const resp = await fetch(basePath + '/' + filePath, { method: 'HEAD' });
-        return resp.ok;
-    }
-
-    async function listFiles(dirPath) {
-        const url = basePath + '/' + dirPath + '/_files.json';
-        const resp = await fetch(url);
-        if (!resp.ok) {
-            if (resp.status === 404) return [];
-            throw new Error('Failed to list ' + dirPath + ': ' + resp.status);
-        }
-        const data = await resp.json();
-        return (data.entries || []).filter(function(e) {
-            return e.type === 'file';
-        });
-    }
-
-    async function runDocOp(opPath, targetPath) {
-         var params = new URLSearchParams({
-             sessionId: sessionId,
-             doc: opPath,
-             target: targetPath
-         });
-
-         // Add model overrides
-         var models = getSelectedModels();
-         if (models.smartModel) params.set('smartModel', models.smartModel);
-         if (models.fastModel) params.set('fastModel', models.fastModel);
-         if (models.imageModel) params.set('imageModel', models.imageModel);
-
-         var url = '/docops?' + params.toString();
-        var resp = await fetch(url, { method: 'POST' });
-        if (!resp.ok) {
-            var errText = await resp.text().catch(function() {
-                return '';
+    // Migrate legacy keys to the new prefix-based storage if necessary
+    (function migrateLegacyModelKeys() {
+        try {
+            const existing = loadModelSelections(MODEL_PREFIX, MODEL_KEYS);
+            const migrated = {};
+            let didMigrate = false;
+            MODEL_KEYS.forEach(function(k) {
+                if (!existing[k]) {
+                    const legacy = localStorage.getItem(LEGACY_MODEL_KEYS[k]);
+                    if (legacy) {
+                        migrated[k] = legacy;
+                        didMigrate = true;
+                    }
+                } else {
+                    migrated[k] = existing[k];
+                }
             });
-            throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
+            if (didMigrate) {
+                saveModelSelections(MODEL_PREFIX, migrated);
+            }
+        } catch (e) { /* ignore */ }
+    })();
+
+    // ========================================
+    // Model Management
+    // ========================================
+    var availableModels = {};
+
+    async function initModels() {
+        try {
+            availableModels = await loadApiProviders();
+            populateModels();
+        } catch (e) {
+            console.warn('Failed to load API providers:', e);
         }
-     var responseText = await resp.text();
-     // The response may be JSON with session info, or a plain session ID
-     try {
-         var jsonResp = JSON.parse(responseText);
-         // Extract session ID from JSON response if available
-         if (jsonResp.sessionId) return jsonResp.sessionId;
-         if (jsonResp.sessions && typeof jsonResp.sessions === 'object') {
-             // If sessions is an array or has entries, try to get the first one
-             var sessionKeys = Object.keys(jsonResp.sessions);
-             if (sessionKeys.length > 0) return sessionKeys[0];
-         }
-         // If JSON has a taskId field
-         if (jsonResp.taskId) return jsonResp.taskId;
-         // Could not find a session ID in the JSON
-         return '';
-     } catch (e) {
-         // Not JSON — treat as plain text (possibly a session ID)
-         return responseText;
-     }
+    }
+
+    function getModelSelectElements() {
+        return {
+            smartModel: document.getElementById('comic-smart-model'),
+            fastModel: document.getElementById('comic-fast-model'),
+            imageModel: document.getElementById('comic-image-model')
+        };
+    }
+
+    function populateModels() {
+        var selects = getModelSelectElements();
+        var selectArray = MODEL_KEYS.map(function(k) { return selects[k]; }).filter(Boolean);
+        if (selectArray.length === 0) return;
+        var saved = loadModelSelections(MODEL_PREFIX, MODEL_KEYS);
+        // populateModelDropdowns iterates the array & assigns saved values by key index in some impls;
+        // we explicitly build a savedByKey map matching MODEL_KEYS order.
+        var savedByKey = {};
+        MODEL_KEYS.forEach(function(k) { if (saved[k]) savedByKey[k] = saved[k]; });
+        populateModelDropdowns(availableModels, selectArray, savedByKey);
+
+        // Fallback: if the helper didn't restore selections (older signature),
+        // restore them manually.
+        MODEL_KEYS.forEach(function(k) {
+            var sel = selects[k];
+            if (sel && savedByKey[k]) {
+                var has = Array.from(sel.options).some(function(o) { return o.value === savedByKey[k]; });
+                if (has) sel.value = savedByKey[k];
+            }
+        });
+
+        updateModelSummary();
+    }
+
+    function getSelectedModels() {
+        var selects = getModelSelectElements();
+        return {
+            smartModel: selects.smartModel ? selects.smartModel.value : '',
+            fastModel: selects.fastModel ? selects.fastModel.value : '',
+            imageModel: selects.imageModel ? selects.imageModel.value : ''
+        };
+    }
+
+    // Build an object with ONLY non-empty model keys (per utils README best practice).
+    function getNonEmptyModels() {
+        var all = getSelectedModels();
+        var out = {};
+        MODEL_KEYS.forEach(function(k) {
+            if (all[k]) out[k] = all[k];
+        });
+        return out;
+    }
+
+    function updateModelSummary() {
+        var summaryEl = document.getElementById('model-summary');
+        if (!summaryEl) return;
+        var models = getSelectedModels();
+        var rows = [
+            { label: '🧠 Smart Model', value: models.smartModel },
+            { label: '⚡ Fast Model', value: models.fastModel },
+            { label: '🎨 Image Model', value: models.imageModel }
+        ];
+        var html = '';
+        rows.forEach(function(row) {
+            var valueClass = row.value ? 'model-summary-value' : 'model-summary-value not-set';
+            var valueText = row.value || 'Not set';
+            var indicatorClass = row.value ? 'model-indicator' : 'model-indicator no-model';
+            html +=
+                '<div class="model-summary-row">' +
+                '<span class="model-summary-label">' + row.label + '</span>' +
+                '<span class="' + valueClass + '">' + escapeHtml(valueText) + '</span>' +
+                '<span class="' + indicatorClass + '"><span class="model-dot"></span>' + (row.value ? 'Active' : 'None') + '</span>' +
+                '</div>';
+        });
+        summaryEl.innerHTML = html;
+    }
+
+    // Save model settings
+    var saveModelBtn = document.getElementById('save-model-settings');
+    if (saveModelBtn) {
+        saveModelBtn.addEventListener('click', function() {
+            var models = getSelectedModels();
+            saveModelSelections(MODEL_PREFIX, models);
+            updateModelSummary();
+            setStatus('model-status', '✓ Model settings saved', 'success');
+        });
+    }
+
+    // Reset model settings
+    var resetModelBtn = document.getElementById('reset-model-settings');
+    if (resetModelBtn) {
+        resetModelBtn.addEventListener('click', function() {
+            saveModelSelections(MODEL_PREFIX, { smartModel: '', fastModel: '', imageModel: '' });
+            // Also clean up legacy keys
+            Object.values(LEGACY_MODEL_KEYS).forEach(function(k) {
+                try { localStorage.removeItem(k); } catch (e) { /* ignore */ }
+            });
+            var selects = getModelSelectElements();
+            MODEL_KEYS.forEach(function(k) {
+                var sel = selects[k];
+                if (sel && sel.options.length > 0) sel.selectedIndex = 0;
+            });
+            updateModelSummary();
+            setStatus('model-status', '✓ Model settings reset to defaults', 'success');
+        });
+    }
+
+    // Update summary when dropdowns change
+    ['comic-smart-model', 'comic-fast-model', 'comic-image-model'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function() {
+                updateModelSummary();
+            });
+        }
+    });
+
+    // ========================================
+    // DocOps Wrapper
+    // ========================================
+    async function runOp(opPath, targetPath) {
+        var models = getNonEmptyModels();
+        return await runDocOp(sessionId, opPath, targetPath, models);
+    }
+
+    // ========================================
+    // Session Link Tracking (persistent — see utils/README best practices)
+    // ========================================
+    var linkManager = createSessionLinkManager(getProxyUrl);
+    // Persistent map of every task we've ever seen, so links stay visible
+    // even after tasks complete.
+    var trackedTasks = {}; // target -> taskInfo
+
+    // Legacy task->session storage (used by usage tracking)
+    var taskSessionMap = {};
+    try {
+        var savedTaskSessions = sessionStorage.getItem('comicTaskSessions');
+        if (savedTaskSessions) {
+            taskSessionMap = JSON.parse(savedTaskSessions);
+        }
+    } catch (e) { /* ignore */ }
+
+    function trackSession(target, taskInfo) {
+        if (!target || !taskInfo) return;
+        trackedTasks[target] = taskInfo;
+        if (taskInfo.sessionId) {
+            taskSessionMap[target] = taskInfo.sessionId;
+            try {
+                sessionStorage.setItem('comicTaskSessions', JSON.stringify(taskSessionMap));
+            } catch (e) { /* ignore */ }
+        }
+        // Render via sessionLinks util (handles its own container resolution)
+        updateSessionLinks(target, taskInfo, getProxyUrl);
+        linkManager.update(target, taskInfo);
+        // Determine an appropriate container near the relevant viewer
+        ensureContainerNearViewer(target);
+    }
+
+    function ensureContainerNearViewer(target) {
+        var safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
+        var containerId = 'session-link-' + safeTarget;
+        // The sessionLinks util may have already created/used a container with a
+        // different id. We additionally place a data-session-links container near
+        // the relevant viewer for this app, if one doesn't already exist.
+        if (document.querySelector('[data-session-links="' + target + '"]')) return;
+        if (document.getElementById(containerId)) return;
+
+        var viewer = null;
+        if (target === 'comicbook.html') {
+            viewer = document.getElementById('viewer-htmlbook');
+        } else {
+            var episodeMatch = target.match(/comic_(\d+)/);
+            if (episodeMatch) {
+                var epNum = episodeMatch[1];
+                viewer = document.getElementById('viewer-comic-' + epNum) || document.getElementById('viewer-sequel');
+            } else {
+                viewer = document.getElementById('viewer-sequel');
+            }
+        }
+        if (viewer && viewer.parentElement) {
+            var container = document.createElement('div');
+            container.id = containerId;
+            container.className = 'session-link-container';
+            container.setAttribute('data-session-links', target);
+            viewer.parentElement.insertBefore(container, viewer);
+            // Re-render now that the container exists
+            updateSessionLinks(target, trackedTasks[target], getProxyUrl);
+        }
     }
 
     // ========================================
     // Status Polling
     // ========================================
-    async function fetchDocopsStatus() {
-        try {
-            var resp = await fetch(basePath + '/docops.status.json');
-            if (!resp.ok) return null;
-            return await resp.json();
-        } catch (e) {
-            return null;
-        }
-    }
-
-    async function waitForTask(targetPath, maxWaitMs) {
-        var maxWait = maxWaitMs || 600000;
-        var pollInterval = 2000;
-        var startTime = Date.now();
-
-
-        while (Date.now() - startTime < maxWait) {
-            // Check status endpoint first
-            var statusData = await fetchDocopsStatus();
-            if (statusData && statusData.tasks && statusData.tasks[targetPath]) {
-                var taskInfo = statusData.tasks[targetPath];
-                updateSessionLinks(targetPath, taskInfo);
-                if (taskInfo.status === 'COMPLETED') {
-                    return { status: 'COMPLETED', detectedByStatus: true };
-                }
-                if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') {
-                    throw new Error('Task ' + targetPath + ' failed');
-                }
-            }
-            // Also check file existence as fallback
-            var outExists = await fileExists(targetPath);
-            if (outExists) {
-                return { status: 'COMPLETED', detectedByFile: true };
-            }
-            var htmlVariant = targetPath.replace(/\.md$/, '.html');
-            if (htmlVariant !== targetPath) {
-                var htmlExists = await fileExists(htmlVariant);
-                if (htmlExists) {
-                    return { status: 'COMPLETED', detectedByFile: true };
-                }
-            }
-
-            await new Promise(function(r) {
-                setTimeout(r, pollInterval);
-            });
-        }
-        throw new Error('Task ' + targetPath + ' timed out');
-    }
-
-    var statusPollTimer = null;
-    var STATUS_POLL_INTERVAL = 3000;
     var activeTasks = {};
+    var statusPoller = null;
 
-    function startStatusPolling() {
-        if (statusPollTimer) return;
-        statusPollTimer = setInterval(function() {
-            pollStatus();
-        }, STATUS_POLL_INTERVAL);
-        pollStatus();
-    }
-
-    function stopStatusPolling() {
-        if (statusPollTimer) {
-            clearInterval(statusPollTimer);
-            statusPollTimer = null;
-        }
-    }
-    function registerActiveTask(targetPath) {
-        activeTasks[targetPath] = true;
-        startStatusPolling();
-    }
-    function unregisterActiveTask(targetPath) {
-        delete activeTasks[targetPath];
-        // Stop polling if no active tasks remain
-        if (Object.keys(activeTasks).length === 0) {
-            stopStatusPolling();
-        }
-    }
-
-
-    async function pollStatus() {
-        var statusData = await fetchDocopsStatus();
-
-
-        if (statusData && statusData.tasks) {
-            for (var target in statusData.tasks) {
-                if (!statusData.tasks.hasOwnProperty(target)) continue;
-                var taskInfo = statusData.tasks[target];
-
-
-                updateSessionLinks(target, taskInfo);
+    function getStatusPoller() {
+        if (!statusPoller) {
+            statusPoller = createStatusPoller(basePath, function(target, taskInfo) {
+                trackSession(target, taskInfo);
                 // Auto-unregister completed/failed tasks
                 if (activeTasks[target] && (taskInfo.status === 'COMPLETED' || taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED')) {
                     unregisterActiveTask(target);
                 }
-            }
+            }, 3000);
         }
-        // If no active tasks remain, stop polling
+        return statusPoller;
+    }
+
+    function registerActiveTask(targetPath) {
+        activeTasks[targetPath] = true;
+        try {
+            getStatusPoller().start();
+        } catch (e) { /* ignore */ }
+    }
+
+    function unregisterActiveTask(targetPath) {
+        delete activeTasks[targetPath];
         if (Object.keys(activeTasks).length === 0) {
-            stopStatusPolling();
+            try {
+                getStatusPoller().stop();
+            } catch (e) { /* ignore */ }
         }
     }
 
-
-
     // ========================================
-    // UI Helpers
+    // Comic Display (HTML iframe with toolbar)
     // ========================================
-    function renderMarkdown(md) {
-        if (typeof marked !== 'undefined') {
-            if (typeof marked.parse === 'function') return marked.parse(md);
-            return marked(md);
-        }
-        return '<pre>' + escapeHtml(md) + '</pre>';
-    }
+    var comicDisplayCounter = 0;
 
-    function escapeHtml(text) {
-        var div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
     function renderHtmlFile(filePath) {
         var url = basePath + '/' + filePath + '?t=' + Date.now();
         var id = 'comic-display-' + (++comicDisplayCounter);
@@ -403,8 +320,6 @@
             '<div class="resize-hint"><svg viewBox="0 0 16 16"><path d="M14 14H10L14 10V14ZM14 6L6 14H2L14 2V6Z"/></svg></div>' +
             '</div>';
     }
-
-    var comicDisplayCounter = 0;
 
     // ========================================
     // Comic Display Controls (resize / fullscreen)
@@ -428,7 +343,6 @@
     }
 
     function enterFullscreen(displayEl) {
-        // Try native Fullscreen API first
         if (displayEl.requestFullscreen) {
             displayEl.requestFullscreen().catch(function() {
                 fallbackFullscreen(displayEl);
@@ -478,7 +392,6 @@
         }
     }
 
-    // Listen for native fullscreen exit (e.g. pressing Escape)
     document.addEventListener('fullscreenchange', function() {
         if (!document.fullscreenElement && activeFullscreenDisplay) {
             activeFullscreenDisplay.classList.remove('fullscreen');
@@ -487,21 +400,17 @@
         }
     });
 
-    // Escape key handler for fallback fullscreen
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && activeFullscreenDisplay && !document.fullscreenElement) {
             exitFullscreen(activeFullscreenDisplay);
         }
     });
 
-    // Delegate click events for comic display toolbar buttons
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.comic-display-toolbar button');
         if (!btn) return;
-
         var displayEl = btn.closest('.comic-display');
         if (!displayEl) return;
-
         var action = btn.dataset.action;
         if (action === 'fullscreen') {
             toggleFullscreen(displayEl);
@@ -520,7 +429,6 @@
         }
     });
 
-    // Update size labels on resize (handles manual CSS resize drag)
     var resizeObserver = new ResizeObserver(function(entries) {
         for (var i = 0; i < entries.length; i++) {
             var el = entries[i].target;
@@ -530,7 +438,6 @@
         }
     });
 
-    // Observe new comic displays as they appear
     var bodyObserver = new MutationObserver(function(mutations) {
         for (var i = 0; i < mutations.length; i++) {
             var added = mutations[i].addedNodes;
@@ -540,7 +447,6 @@
                     resizeObserver.observe(added[j]);
                     updateSizeLabel(added[j]);
                 }
-                // Also check children
                 var nested = added[j].querySelectorAll ? added[j].querySelectorAll('.comic-display') : [];
                 for (var k = 0; k < nested.length; k++) {
                     resizeObserver.observe(nested[k]);
@@ -551,33 +457,9 @@
     });
     bodyObserver.observe(document.body, { childList: true, subtree: true });
 
-
-    function setStatus(elemId, message, type) {
-        var el = document.getElementById(elemId);
-        if (!el) return;
-        el.textContent = message;
-        el.className = 'status-msg' + (type ? ' ' + type : '');
-        if (type === 'success' || type === 'error') {
-            setTimeout(function() {
-                el.textContent = '';
-                el.className = 'status-msg';
-            }, 5000);
-        }
-    }
-
-    function setBadge(badgeId, state) {
-        var el = document.getElementById(badgeId);
-        if (!el) return;
-        el.className = 'step-badge ' + state;
-        var labels = {
-            pending: 'pending',
-            running: 'running…',
-            done: 'done',
-            error: 'error'
-        };
-        el.textContent = labels[state] || state;
-    }
-
+    // ========================================
+    // Loading Overlay
+    // ========================================
     function showLoading(text) {
         var overlay = document.getElementById('loading-overlay');
         var loadingText = document.getElementById('loading-text');
@@ -591,128 +473,30 @@
     }
 
     // ========================================
-    // Session Monitor Links
+    // Batch Logger
     // ========================================
-    var taskSessionMap = {};
-    try {
-        var savedTaskSessions = sessionStorage.getItem('comicTaskSessions');
-        if (savedTaskSessions) {
-            taskSessionMap = JSON.parse(savedTaskSessions);
-        }
-    } catch (e) { /* ignore */ }
-    var taskSessionMap = {}; // target -> sessionId (for usage tracking)
-    // Load persisted task sessions
-    try {
-        var savedTaskSessions = sessionStorage.getItem('comicTaskSessions');
-        if (savedTaskSessions) {
-            taskSessionMap = JSON.parse(savedTaskSessions);
-        }
-    } catch (e) { /* ignore */ }
-
-
-    function updateSessionLinks(target, taskInfo) {
-        var status = taskInfo.status;
-        var taskSessionId = taskInfo.sessionId;
-        // Record session for usage tracking
-        if (taskSessionId) {
-            taskSessionMap[target] = taskSessionId;
-            try {
-                sessionStorage.setItem('comicTaskSessions', JSON.stringify(taskSessionMap));
-            } catch (e) { /* ignore */ }
-        }
-        // Record session for usage tracking
-        if (taskSessionId) {
-            try {
-                sessionStorage.setItem('comicTaskSessions', JSON.stringify(taskSessionMap));
-            } catch (e) { /* ignore */ }
-        }
-
-
-        var safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
-        var linkContainerId = 'session-link-' + safeTarget;
-        var container = document.getElementById(linkContainerId);
-
-        if (!container) {
-            container = document.createElement('div');
-            container.id = linkContainerId;
-            container.className = 'session-link-container';
-            // Try to insert near a relevant viewer based on the target
-            var viewer = null;
-            if (target === 'comicbook.html') {
-                viewer = document.getElementById('viewer-htmlbook');
-            } else {
-                var episodeMatch = target.match(/comic_(\d+)/);
-                if (episodeMatch) {
-                    var epNum = episodeMatch[1];
-                    viewer = document.getElementById('viewer-comic-' + epNum) || document.getElementById('viewer-sequel');
-                } else {
-                    viewer = document.getElementById('viewer-sequel');
-                }
-            }
-            if (viewer && viewer.parentElement) {
-                viewer.parentElement.insertBefore(container, viewer);
-            }
-        }
-
-        if (!container) return;
-
-        if (status === 'RUNNING' && taskSessionId) {
-            var proxyUrl = getProxyUrl(taskSessionId);
-            container.innerHTML =
-                '<div class="session-monitor-link">' +
-                '<span class="monitor-pulse">●</span>' +
-                '<span>Processing… </span>' +
-                '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" rel="noopener" class="monitor-link">' +
-                '📡 Monitor Live Session (' + escapeHtml(taskSessionId) + ')' +
-                '</a></div>';
-            container.style.display = 'block';
-        } else if (status === 'COMPLETED' && taskSessionId) {
-            var proxyUrl2 = getProxyUrl(taskSessionId);
-            container.innerHTML =
-                '<div class="session-completed-link">' +
-                '<span>✅ Completed — </span>' +
-                '<a href="' + escapeHtml(proxyUrl2) + '" target="_blank" rel="noopener" class="monitor-link">' +
-                '📋 View Session Log (' + escapeHtml(taskSessionId) + ')' +
-                '</a></div>';
-            container.style.display = 'block';
-        } else if (status === 'ERROR' || status === 'FAILED') {
-            var proxyUrl3 = taskSessionId ? getProxyUrl(taskSessionId) : '#';
-            container.innerHTML =
-                '<div class="session-error-link">' +
-                '<span>❌ Failed — </span>' +
-                (taskSessionId
-                    ? '<a href="' + escapeHtml(proxyUrl3) + '" target="_blank" class="monitor-link">🔍 View Error Log (' + escapeHtml(taskSessionId) + ')</a>'
-                    : '<span>No session available</span>') +
-                '</div>';
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
-        }
-    }
-
-    // ========================================
-    // Batch Log
-    // ========================================
-    var batchLog = document.getElementById('batch-log');
-
+    var batchLogger = createBatchLogger('batch-log');
     function logBatch(message, type) {
-        batchLog.classList.add('visible');
-        var entry = document.createElement('div');
-        entry.className = 'log-entry log-' + (type || 'info');
-        var ts = new Date().toLocaleTimeString();
-        entry.textContent = '[' + ts + '] ' + message;
-        batchLog.appendChild(entry);
-        batchLog.scrollTop = batchLog.scrollHeight;
+        // Also ensure the log element is visible (the util may not handle this).
+        var logEl = document.getElementById('batch-log');
+        if (logEl) logEl.classList.add('visible');
+        batchLogger.log(message, type);
     }
-
     function logBatchHtml(html, type) {
-        batchLog.classList.add('visible');
-        var entry = document.createElement('div');
-        entry.className = 'log-entry log-' + (type || 'info');
-        var ts = new Date().toLocaleTimeString();
-        entry.innerHTML = '[' + ts + '] ' + html;
-        batchLog.appendChild(entry);
-        batchLog.scrollTop = batchLog.scrollHeight;
+        var logEl = document.getElementById('batch-log');
+        if (logEl) logEl.classList.add('visible');
+        if (typeof batchLogger.logHtml === 'function') {
+            batchLogger.logHtml(html, type);
+        } else {
+            // Fallback if util doesn't expose logHtml
+            if (!logEl) return;
+            var entry = document.createElement('div');
+            entry.className = 'log-entry log-' + (type || 'info');
+            var ts = new Date().toLocaleTimeString();
+            entry.innerHTML = '[' + ts + '] ' + html;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
     }
 
     // ========================================
@@ -720,13 +504,10 @@
     // ========================================
     async function countEpisodes() {
         var count = 0;
-        // Check comic_1.md (or comic_1.html), comic_2.md, ... up to a reasonable limit
-        // Canonical state: the file exists on disk
         for (var i = 1; i <= 100; i++) {
-            var exists = await fileExists('comic_' + i + '.md');
+            var exists = await fileExists(basePath, 'comic_' + i + '.md');
             if (!exists) {
-                // Also check for .html variant in case .md was cleaned up
-                exists = await fileExists('comic_' + i + '.html');
+                exists = await fileExists(basePath, 'comic_' + i + '.html');
             }
             if (exists) {
                 count = i;
@@ -760,17 +541,15 @@
                 s.classList.remove('active');
             });
             this.classList.add('active');
-            document.getElementById(sectionId).classList.add('active');
+            var section = document.getElementById(sectionId);
+            if (section) section.classList.add('active');
 
-            // Refresh series when switching to that tab
             if (sectionId === 'section-series') {
                 loadSeries();
             }
-            // Refresh count when switching to pipeline
             if (sectionId === 'section-pipeline') {
                 updateEpisodeCount();
             }
-            // Refresh usage when switching to usage tab
             if (sectionId === 'section-usage') {
                 refreshUsage();
             }
@@ -780,22 +559,25 @@
     // ========================================
     // Save Idea
     // ========================================
-    document.getElementById('save-idea').addEventListener('click', async function() {
-        var content = document.getElementById('idea-editor').value;
-        if (!content.trim()) {
-            setStatus('idea-status', '✗ Please enter an idea first', 'error');
-            return;
-        }
-        try {
-            this.disabled = true;
-            await writeFile('idea.md', content);
-            setStatus('idea-status', '✓ Saved successfully', 'success');
-        } catch (e) {
-            setStatus('idea-status', '✗ ' + e.message, 'error');
-        } finally {
-            this.disabled = false;
-        }
-    });
+    var saveIdeaBtn = document.getElementById('save-idea');
+    if (saveIdeaBtn) {
+        saveIdeaBtn.addEventListener('click', async function() {
+            var content = document.getElementById('idea-editor').value;
+            if (!content.trim()) {
+                setStatus('idea-status', '✗ Please enter an idea first', 'error');
+                return;
+            }
+            try {
+                this.disabled = true;
+                await writeFile(basePath, 'idea.md', content);
+                setStatus('idea-status', '✓ Saved successfully', 'success');
+            } catch (e) {
+                setStatus('idea-status', '✗ ' + e.message, 'error');
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
 
     // ========================================
     // View File Buttons
@@ -813,13 +595,12 @@
         try {
             var htmlPath = filePath.replace(/\.md$/, '.html');
             var isHtml = filePath.endsWith('.html');
-            var exists = isHtml ? await fileExists(filePath) : await fileExists(htmlPath);
+            var exists = isHtml ? await fileExists(basePath, filePath) : await fileExists(basePath, htmlPath);
             if (exists) {
                 viewer.innerHTML = renderHtmlFile(isHtml ? filePath : htmlPath);
             } else {
                 if (!isHtml) {
-                    // Fallback: try the .md file directly
-                    var mdContent = await readFile(filePath);
+                    var mdContent = await readFile(basePath, filePath);
                     if (mdContent !== null) {
                         viewer.innerHTML = renderMarkdown(mdContent);
                     } else {
@@ -852,34 +633,34 @@
             var outputPath = this.dataset.output;
             var viewerId = this.dataset.viewer;
 
-            // Auto-save idea first
             var ideaContent = document.getElementById('idea-editor').value;
             if (!ideaContent.trim()) {
                 alert('Please enter and save your idea first!');
                 return;
             }
-            await writeFile('idea.md', ideaContent);
+            await writeFile(basePath, 'idea.md', ideaContent);
 
             setBadge(badgeId, 'running');
             this.disabled = true;
             registerActiveTask(outputPath);
 
             try {
-                var taskId = await runDocOp(opPath, outputPath);
-                var cleanTaskId = taskId ? taskId.trim() : '';
-             if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
-                    updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                var taskId = await runOp(opPath, outputPath);
+                var cleanTaskId = taskId ? String(taskId).trim() : '';
+                if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    trackSession(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                 }
 
-                await waitForTask(outputPath);
+                await waitForTask(basePath, outputPath, 600000, function(target, taskInfo) {
+                    trackSession(target, taskInfo);
+                });
                 setBadge(badgeId, 'done');
 
-                // Auto-show result
                 if (viewerId) {
                     var viewer = document.getElementById(viewerId);
                     if (viewer) {
                         var htmlPath = outputPath.replace(/\.md$/, '.html');
-                        var exists = await fileExists(htmlPath);
+                        var exists = await fileExists(basePath, htmlPath);
                         if (exists) {
                             viewer.innerHTML = renderHtmlFile(htmlPath);
                             viewer.classList.add('visible');
@@ -903,9 +684,7 @@
     // ========================================
     async function generateSequel() {
         var count = await countEpisodes();
-
         if (count === 0) {
-            // No comics yet — need to generate the first one
             alert('No episodes exist yet. Please generate Comic #1 first!');
             return null;
         }
@@ -917,26 +696,26 @@
         registerActiveTask(outputPath);
 
         try {
-            var taskId = await runDocOp('ops/sequel_op.md', outputPath);
-            var cleanTaskId = taskId ? taskId.trim() : '';
-         if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
-                updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+            var taskId = await runOp('ops/sequel_op.md', outputPath);
+            var cleanTaskId = taskId ? String(taskId).trim() : '';
+            if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                trackSession(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
             }
 
-            await waitForTask(outputPath);
+            await waitForTask(basePath, outputPath, 600000, function(target, taskInfo) {
+                trackSession(target, taskInfo);
+            });
             setBadge('badge-sequel', 'done');
 
-            // Show in viewer
             var viewer = document.getElementById('viewer-sequel');
             if (viewer) {
                 var htmlPath = outputPath.replace(/\.md$/, '.html');
-                var exists = await fileExists(htmlPath);
+                var exists = await fileExists(basePath, htmlPath);
                 if (exists) {
                     viewer.innerHTML = '<h4>Comic #' + nextNum + '</h4>' + renderHtmlFile(htmlPath);
                     viewer.classList.add('visible');
                 } else {
-                    // Fallback: try the .md file
-                    var mdContent = await readFile(outputPath);
+                    var mdContent = await readFile(basePath, outputPath);
                     if (mdContent) {
                         viewer.innerHTML = renderMarkdown(mdContent);
                         viewer.classList.add('visible');
@@ -953,25 +732,31 @@
         }
     }
 
-    document.getElementById('generate-sequel').addEventListener('click', async function() {
-        this.disabled = true;
-        try {
-            await generateSequel();
-        } catch (e) {
-            alert('Failed to generate sequel: ' + e.message);
-        } finally {
-            this.disabled = false;
-        }
-    });
+    var generateSequelBtn = document.getElementById('generate-sequel');
+    if (generateSequelBtn) {
+        generateSequelBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                await generateSequel();
+            } catch (e) {
+                alert('Failed to generate sequel: ' + e.message);
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
 
-    document.getElementById('refresh-count').addEventListener('click', async function() {
-        this.disabled = true;
-        try {
-            await updateEpisodeCount();
-        } finally {
-            this.disabled = false;
-        }
-    });
+    var refreshCountBtn = document.getElementById('refresh-count');
+    if (refreshCountBtn) {
+        refreshCountBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                await updateEpisodeCount();
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
 
     // ========================================
     // Generate HTML Book
@@ -985,21 +770,22 @@
         setBadge('badge-htmlbook', 'running');
         registerActiveTask('comicbook.html');
         try {
-            var taskId = await runDocOp('ops/html_book_op.md', 'comicbook.html');
-            var cleanTaskId = taskId ? taskId.trim() : '';
-         if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
-                updateSessionLinks('comicbook.html', { status: 'RUNNING', sessionId: cleanTaskId });
+            var taskId = await runOp('ops/html_book_op.md', 'comicbook.html');
+            var cleanTaskId = taskId ? String(taskId).trim() : '';
+            if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                trackSession('comicbook.html', { status: 'RUNNING', sessionId: cleanTaskId });
             }
-            await waitForTask('comicbook.html', 600000);
+            await waitForTask(basePath, 'comicbook.html', 600000, function(target, taskInfo) {
+                trackSession(target, taskInfo);
+            });
             setBadge('badge-htmlbook', 'done');
             unregisterActiveTask('comicbook.html');
             if (cleanTaskId) {
-                updateSessionLinks('comicbook.html', { status: 'COMPLETED', sessionId: cleanTaskId });
+                trackSession('comicbook.html', { status: 'COMPLETED', sessionId: cleanTaskId });
             }
-            // Auto-show result
             var viewer = document.getElementById('viewer-htmlbook');
             if (viewer) {
-                var exists = await fileExists('comicbook.html');
+                var exists = await fileExists(basePath, 'comicbook.html');
                 if (exists) {
                     viewer.innerHTML = renderHtmlFile('comicbook.html');
                     viewer.classList.add('visible');
@@ -1011,138 +797,153 @@
             throw e;
         }
     }
-    document.getElementById('generate-htmlbook').addEventListener('click', async function() {
-        this.disabled = true;
-        try {
-            await generateHtmlBook();
-        } catch (e) {
-            alert('Failed to generate HTML book: ' + e.message);
-        } finally {
-            this.disabled = false;
-        }
-    });
-    document.getElementById('open-htmlbook-tab').addEventListener('click', async function() {
-        try {
-            var exists = await fileExists('comicbook.html');
-            if (exists) {
+
+    var generateHtmlbookBtn = document.getElementById('generate-htmlbook');
+    if (generateHtmlbookBtn) {
+        generateHtmlbookBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                await generateHtmlBook();
+            } catch (e) {
+                alert('Failed to generate HTML book: ' + e.message);
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
+
+    var openHtmlbookBtn = document.getElementById('open-htmlbook-tab');
+    if (openHtmlbookBtn) {
+        openHtmlbookBtn.addEventListener('click', async function() {
+            try {
+                var exists = await fileExists(basePath, 'comicbook.html');
+                if (exists) {
+                    var url = basePath + '/comicbook.html?t=' + Date.now();
+                    window.open(url, '_blank');
+                } else {
+                    alert('HTML book has not been generated yet. Click "Generate HTML Book" first.');
+                }
+            } catch (e) {
                 var url = basePath + '/comicbook.html?t=' + Date.now();
                 window.open(url, '_blank');
-            } else {
-                alert('HTML book has not been generated yet. Click "Generate HTML Book" first.');
             }
-        } catch (e) {
-            // Fallback: just try to open it directly
-            var url = basePath + '/comicbook.html?t=' + Date.now();
-            window.open(url, '_blank');
-        }
-    });
+        });
+    }
+
     // ========================================
     // Batch Generation
     // ========================================
-    document.getElementById('run-batch').addEventListener('click', async function() {
-        var batchCountInput = document.getElementById('batch-count');
-        var totalEpisodes = parseInt(batchCountInput.value, 10);
-        if (isNaN(totalEpisodes) || totalEpisodes < 1) {
-            alert('Please enter a valid number of episodes (1 or more).');
-            return;
-        }
-
-        // Auto-save idea
-        var ideaContent = document.getElementById('idea-editor').value;
-        if (!ideaContent.trim()) {
-            alert('Please enter and save your idea first!');
-            return;
-        }
-        await writeFile('idea.md', ideaContent);
-
-        this.disabled = true;
-        batchLog.innerHTML = '';
-
-        try {
-            var currentCount = await countEpisodes();
-            logBatch('Current episodes: ' + currentCount, 'info');
-            logBatch('Target: generate ' + totalEpisodes + ' new episode(s)', 'info');
-
-            // Step 1: Ensure comic_1 exists
-            if (currentCount === 0) {
-                logBatch('Generating Comic #1 from idea...', 'info');
-                setBadge('badge-comic-1', 'running');
-                registerActiveTask('comic_1.md');
-
-                var taskId = await runDocOp('ops/comic_op.md', 'comic_1.md');
-                var cleanTaskId = taskId ? taskId.trim() : '';
-             if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
-                    logBatchHtml('Session: <a href="' + getProxyUrl(cleanTaskId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanTaskId + ')</a>', 'info');
-                    updateSessionLinks('comic_1.md', { status: 'RUNNING', sessionId: cleanTaskId });
-                }
-
-                await waitForTask('comic_1.md');
-                setBadge('badge-comic-1', 'done');
-                unregisterActiveTask('comic_1.md');
-                logBatch('✓ Comic #1 generated', 'success');
-                currentCount = 1;
-                totalEpisodes--; // One less sequel needed
-
-                await updateEpisodeCount();
+    var batchRunBtn = document.getElementById('run-batch');
+    if (batchRunBtn) {
+        batchRunBtn.addEventListener('click', async function() {
+            var batchCountInput = document.getElementById('batch-count');
+            var totalEpisodes = parseInt(batchCountInput.value, 10);
+            if (isNaN(totalEpisodes) || totalEpisodes < 1) {
+                alert('Please enter a valid number of episodes (1 or more).');
+                return;
             }
 
-            // Step 2: Generate sequels
-            for (var i = 0; i < totalEpisodes; i++) {
-                var nextNum = currentCount + 1 + i;
-                var outputPath = 'comic_' + nextNum + '.md';
-
-                logBatch('Generating Comic #' + nextNum + '...', 'info');
-                setBadge('badge-sequel', 'running');
-                registerActiveTask(outputPath);
-
-                var seqTaskId = await runDocOp('ops/sequel_op.md', outputPath);
-                var cleanSeqId = seqTaskId ? seqTaskId.trim() : '';
-             if (cleanSeqId && cleanSeqId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanSeqId)) {
-                    logBatchHtml('Session: <a href="' + getProxyUrl(cleanSeqId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanSeqId + ')</a>', 'info');
-                    updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanSeqId });
-                }
-
-                await waitForTask(outputPath);
-                setBadge('badge-sequel', 'done');
-                unregisterActiveTask(outputPath);
-                logBatch('✓ Comic #' + nextNum + ' generated', 'success');
-
-                await updateEpisodeCount();
+            var ideaContent = document.getElementById('idea-editor').value;
+            if (!ideaContent.trim()) {
+                alert('Please enter and save your idea first!');
+                return;
             }
+            await writeFile(basePath, 'idea.md', ideaContent);
 
-            logBatch('🎉 Series generation complete!', 'success');
-            // Offer to compile the book
-            logBatch('Compiling HTML comicbook...', 'info');
+            this.disabled = true;
+            var logEl = document.getElementById('batch-log');
+            if (logEl) logEl.innerHTML = '';
+
             try {
-                setBadge('badge-htmlbook', 'running');
-                registerActiveTask('comicbook.html');
-                var bookTaskId = await runDocOp('ops/html_book_op.md', 'comicbook.html');
-                var cleanBookId = bookTaskId ? bookTaskId.trim() : '';
-             if (cleanBookId && cleanBookId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanBookId)) {
-                    logBatchHtml('Session: <a href="' + getProxyUrl(cleanBookId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanBookId + ')</a>', 'info');
-                    updateSessionLinks('comicbook.html', { status: 'RUNNING', sessionId: cleanBookId });
+                var currentCount = await countEpisodes();
+                logBatch('Current episodes: ' + currentCount, 'info');
+                logBatch('Target: generate ' + totalEpisodes + ' new episode(s)', 'info');
+
+                if (currentCount === 0) {
+                    logBatch('Generating Comic #1 from idea...', 'info');
+                    setBadge('badge-comic-1', 'running');
+                    registerActiveTask('comic_1.md');
+
+                    var taskId = await runOp('ops/comic_op.md', 'comic_1.md');
+                    var cleanTaskId = taskId ? String(taskId).trim() : '';
+                    if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                        logBatchHtml('Session: <a href="' + getProxyUrl(cleanTaskId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanTaskId + ')</a>', 'info');
+                        trackSession('comic_1.md', { status: 'RUNNING', sessionId: cleanTaskId });
+                    }
+
+                    await waitForTask(basePath, 'comic_1.md', 600000, function(target, taskInfo) {
+                        trackSession(target, taskInfo);
+                    });
+                    setBadge('badge-comic-1', 'done');
+                    unregisterActiveTask('comic_1.md');
+                    logBatch('✓ Comic #1 generated', 'success');
+                    currentCount = 1;
+                    totalEpisodes--;
+
+                    await updateEpisodeCount();
                 }
-                await waitForTask('comicbook.html', 600000);
-                setBadge('badge-htmlbook', 'done');
-                unregisterActiveTask('comicbook.html');
-                logBatch('✓ HTML comicbook compiled', 'success');
-            } catch (bookErr) {
-                setBadge('badge-htmlbook', 'error');
-                unregisterActiveTask('comicbook.html');
-                logBatch('⚠ Could not compile HTML book: ' + bookErr.message, 'warn');
+
+                for (var i = 0; i < totalEpisodes; i++) {
+                    var nextNum = currentCount + 1 + i;
+                    var outputPath = 'comic_' + nextNum + '.md';
+
+                    logBatch('Generating Comic #' + nextNum + '...', 'info');
+                    setBadge('badge-sequel', 'running');
+                    registerActiveTask(outputPath);
+
+                    var seqTaskId = await runOp('ops/sequel_op.md', outputPath);
+                    var cleanSeqId = seqTaskId ? String(seqTaskId).trim() : '';
+                    if (cleanSeqId && cleanSeqId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanSeqId)) {
+                        logBatchHtml('Session: <a href="' + getProxyUrl(cleanSeqId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanSeqId + ')</a>', 'info');
+                        trackSession(outputPath, { status: 'RUNNING', sessionId: cleanSeqId });
+                    }
+
+                    await waitForTask(basePath, outputPath, 600000, function(target, taskInfo) {
+                        trackSession(target, taskInfo);
+                    });
+                    setBadge('badge-sequel', 'done');
+                    unregisterActiveTask(outputPath);
+                    logBatch('✓ Comic #' + nextNum + ' generated', 'success');
+
+                    await updateEpisodeCount();
+                }
+
+                logBatch('🎉 Series generation complete!', 'success');
+                logBatch('Compiling HTML comicbook...', 'info');
+                try {
+                    setBadge('badge-htmlbook', 'running');
+                    registerActiveTask('comicbook.html');
+                    var bookTaskId = await runOp('ops/html_book_op.md', 'comicbook.html');
+                    var cleanBookId = bookTaskId ? String(bookTaskId).trim() : '';
+                    if (cleanBookId && cleanBookId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanBookId)) {
+                        logBatchHtml('Session: <a href="' + getProxyUrl(cleanBookId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanBookId + ')</a>', 'info');
+                        trackSession('comicbook.html', { status: 'RUNNING', sessionId: cleanBookId });
+                    }
+                    await waitForTask(basePath, 'comicbook.html', 600000, function(target, taskInfo) {
+                        trackSession(target, taskInfo);
+                    });
+                    setBadge('badge-htmlbook', 'done');
+                    unregisterActiveTask('comicbook.html');
+                    logBatch('✓ HTML comicbook compiled', 'success');
+                } catch (bookErr) {
+                    setBadge('badge-htmlbook', 'error');
+                    unregisterActiveTask('comicbook.html');
+                    logBatch('⚠ Could not compile HTML book: ' + bookErr.message, 'warn');
+                }
+            } catch (e) {
+                logBatch('✗ Error: ' + e.message, 'error');
+            } finally {
+                this.disabled = false;
             }
-        } catch (e) {
-            logBatch('✗ Error: ' + e.message, 'error');
-        } finally {
-            this.disabled = false;
-        }
-    });
+        });
+    }
 
     // ========================================
     // Series Display
     // ========================================
     async function loadSeries() {
         var container = document.getElementById('series-container');
+        if (!container) return;
         var count = await countEpisodes();
 
         if (count === 0) {
@@ -1170,7 +971,6 @@
 
         container.innerHTML = html;
 
-        // Attach toggle handlers
         container.querySelectorAll('.episode-header').forEach(function(header) {
             header.addEventListener('click', function() {
                 var epNum = this.dataset.episode;
@@ -1178,7 +978,6 @@
             });
         });
 
-        // Auto-expand the latest episode
         toggleEpisode(count);
     }
 
@@ -1193,16 +992,14 @@
             return;
         }
 
-        // Load content if empty
         if (!contentEl.innerHTML.trim()) {
             try {
                 var htmlPath = 'comic_' + num + '.html';
-                var exists = await fileExists(htmlPath);
+                var exists = await fileExists(basePath, htmlPath);
                 if (exists) {
                     contentEl.innerHTML = renderHtmlFile(htmlPath);
                 } else {
-                    // Fallback: try the .md file
-                    var mdContent = await readFile('comic_' + num + '.md');
+                    var mdContent = await readFile(basePath, 'comic_' + num + '.md');
                     if (mdContent !== null) {
                         contentEl.innerHTML = renderMarkdown(mdContent);
                     } else {
@@ -1218,185 +1015,69 @@
         if (toggleEl) toggleEl.classList.add('open');
     }
 
-    document.getElementById('refresh-series').addEventListener('click', function() {
-        loadSeries();
-    });
+    var refreshSeriesBtn = document.getElementById('refresh-series');
+    if (refreshSeriesBtn) {
+        refreshSeriesBtn.addEventListener('click', function() {
+            loadSeries();
+        });
+    }
 
-    document.getElementById('series-add-episode').addEventListener('click', async function() {
-        this.disabled = true;
-        try {
-            var result = await generateSequel();
-            if (result) {
-                await loadSeries();
+    var seriesAddEpisodeBtn = document.getElementById('series-add-episode');
+    if (seriesAddEpisodeBtn) {
+        seriesAddEpisodeBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                var result = await generateSequel();
+                if (result) {
+                    await loadSeries();
+                }
+            } catch (e) {
+                alert('Failed to generate episode: ' + e.message);
+            } finally {
+                this.disabled = false;
             }
-        } catch (e) {
-            alert('Failed to generate episode: ' + e.message);
-        } finally {
-            this.disabled = false;
-        }
-    });
-    document.getElementById('series-compile-book').addEventListener('click', async function() {
-        this.disabled = true;
-        try {
-            await generateHtmlBook();
-            setStatus('idea-status', '✓ Book compiled', 'success');
-        } catch (e) {
-            alert('Failed to compile book: ' + e.message);
-        } finally {
-            this.disabled = false;
-        }
-    });
-    document.getElementById('series-view-book').addEventListener('click', async function() {
-        try {
-            var exists = await fileExists('comicbook.html');
-            if (exists) {
+        });
+    }
+
+    var seriesCompileBookBtn = document.getElementById('series-compile-book');
+    if (seriesCompileBookBtn) {
+        seriesCompileBookBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                await generateHtmlBook();
+                setStatus('idea-status', '✓ Book compiled', 'success');
+            } catch (e) {
+                alert('Failed to compile book: ' + e.message);
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
+
+    var seriesViewBookBtn = document.getElementById('series-view-book');
+    if (seriesViewBookBtn) {
+        seriesViewBookBtn.addEventListener('click', async function() {
+            try {
+                var exists = await fileExists(basePath, 'comicbook.html');
+                if (exists) {
+                    var url = basePath + '/comicbook.html?t=' + Date.now();
+                    window.open(url, '_blank');
+                } else {
+                    alert('HTML book has not been generated yet. Click "Compile Book" first.');
+                }
+            } catch (e) {
                 var url = basePath + '/comicbook.html?t=' + Date.now();
                 window.open(url, '_blank');
-            } else {
-                alert('HTML book has not been generated yet. Click "Compile Book" first.');
             }
-        } catch (e) {
-            var url = basePath + '/comicbook.html?t=' + Date.now();
-            window.open(url, '_blank');
-        }
-    });
-
-
-    // ========================================
-    // Initialization
-    // ========================================
-    async function loadInitialFiles() {
-        try {
-            var content = await readFile('idea.md');
-            if (content !== null) {
-                document.getElementById('idea-editor').value = content;
-            }
-        } catch (e) {
-            console.warn('Could not load idea.md:', e);
-        }
+        });
     }
 
-    async function checkExistingFiles() {
-        // Check for existing comic files and update badges accordingly
-
-        try {
-            var comic1Exists = await fileExists('comic_1.md');
-            if (comic1Exists) {
-                setBadge('badge-comic-1', 'done');
-            }
-        } catch (e) { /* leave as pending */ }
-
-        var episodeCount = await updateEpisodeCount();
-        if (episodeCount > 1) {
-            setBadge('badge-sequel', 'done');
-        }
-        try {
-            var bookExists = await fileExists('comicbook.html');
-            if (bookExists) {
-                setBadge('badge-htmlbook', 'done');
-            }
-        } catch (e) { /* leave as pending */ }
-
-
-        var statusData = await fetchDocopsStatus();
-
-        if (statusData && statusData.tasks) {
-            for (var target in statusData.tasks) {
-                if (!statusData.tasks.hasOwnProperty(target)) continue;
-                var taskInfo = statusData.tasks[target];
-                if (taskInfo.status === 'RUNNING') {
-                    registerActiveTask(target);
-                }
-                updateSessionLinks(target, taskInfo);
-            }
-        }
-
-
-
-    }
-
-    // Run initialization
-    loadInitialFiles();
-    checkExistingFiles();
-     loadApiProviders();
     // ========================================
     // Usage Tracking
     // ========================================
     var usageJsonMode = false;
     var lastUsageData = null;
-    // Note: fetchUsageForSession, formatTokenCount, formatCost, renderUsageSummary,
-    // renderUsageTable, renderUsageJson, renderTaskSessions, and refreshUsage are
-    // defined once below. The duplicate block has been removed.
-    async function fetchUsageForSession(sid) {
-        try {
-            var resp = await fetch('/proxy/usage?sessionId=' + encodeURIComponent(sid) + '&format=json');
-            if (!resp.ok) return null;
-            return await resp.json();
-        } catch (e) {
-            console.warn('Failed to fetch usage for session ' + sid + ':', e);
-            return null;
-        }
-    }
-    function formatTokenCount(n) {
-        if (n === null || n === undefined || isNaN(n)) return '—';
-        if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
-        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-        return n.toLocaleString();
-    }
-    function formatCost(c) {
-        if (c === null || c === undefined || isNaN(c)) return '—';
-        if (c === 0) return '$0.00';
-        if (c < 0.01) return '$' + c.toFixed(4);
-        return '$' + c.toFixed(4);
-    }
-    function renderUsageSummary(totals) {
-        var promptEl = document.getElementById('usage-total-prompt');
-        var completionEl = document.getElementById('usage-total-completion');
-        var totalTokensEl = document.getElementById('usage-total-tokens');
-        var costEl = document.getElementById('usage-total-cost');
-        if (totals) {
-            var prompt = totals.prompt_tokens || 0;
-            var completion = totals.completion_tokens || 0;
-            if (promptEl) promptEl.textContent = formatTokenCount(prompt);
-            if (completionEl) completionEl.textContent = formatTokenCount(completion);
-            if (totalTokensEl) totalTokensEl.textContent = formatTokenCount(prompt + completion);
-            if (costEl) costEl.textContent = formatCost(totals.cost);
-        } else {
-            if (promptEl) promptEl.textContent = '—';
-            if (completionEl) completionEl.textContent = '—';
-            if (totalTokensEl) totalTokensEl.textContent = '—';
-            if (costEl) costEl.textContent = '—';
-        }
-    }
-    function renderUsageTable(models) {
-        var container = document.getElementById('usage-table-container');
-        if (!container) return;
-        if (!models || models.length === 0) {
-            container.innerHTML = '<p class="placeholder">No model usage data available.</p>';
-            return;
-        }
-        var html = '<table class="usage-table">';
-        html += '<thead><tr>';
-        html += '<th>Model</th>';
-        html += '<th class="num-col">Prompt Tokens</th>';
-        html += '<th class="num-col">Completion Tokens</th>';
-        html += '<th class="num-col">Total Tokens</th>';
-        html += '<th class="num-col">Cost</th>';
-        html += '</tr></thead><tbody>';
-        models.forEach(function(m) {
-            var prompt = m.prompt_tokens || 0;
-            var completion = m.completion_tokens || 0;
-            html += '<tr>';
-            html += '<td class="model-name-cell">' + escapeHtml(m.model || 'Unknown') + '</td>';
-            html += '<td class="num-col">' + formatTokenCount(prompt) + '</td>';
-            html += '<td class="num-col">' + formatTokenCount(completion) + '</td>';
-            html += '<td class="num-col">' + formatTokenCount(prompt + completion) + '</td>';
-            html += '<td class="num-col cost-cell">' + formatCost(m.cost) + '</td>';
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    }
+
     function renderUsageJson(data) {
         var jsonEl = document.getElementById('usage-json-output');
         if (!jsonEl) return;
@@ -1406,6 +1087,7 @@
             jsonEl.textContent = '// No usage data available';
         }
     }
+
     function renderTaskSessions(taskUsageMap) {
         var container = document.getElementById('task-sessions-container');
         if (!container) return;
@@ -1446,15 +1128,13 @@
         html += '</div>';
         container.innerHTML = html;
     }
+
     async function refreshUsage() {
         setStatus('usage-status', 'Loading…', '');
-        var allModels = {};
-        var taskUsageMap = {};
-        var sessionIds = [];
-        // Collect unique child task session IDs only.
-        // We intentionally exclude the parent sessionId to avoid double-counting,
-        // since the parent session's usage typically includes all child session usage.
+
+        // Collect unique child task session IDs only (avoid parent double-count)
         var seenSessions = new Set();
+        var sessionIds = [];
         for (var target in taskSessionMap) {
             if (!taskSessionMap.hasOwnProperty(target)) continue;
             var sid = taskSessionMap[target];
@@ -1463,29 +1143,79 @@
                 sessionIds.push(sid);
             }
         }
-        // Only fall back to the parent session if we have no child task sessions at all.
-        // This avoids double-counting since parent usage includes child usage.
+        // Fall back to parent session only if there are no child sessions
         if (sessionIds.length === 0 && sessionId) {
-             seenSessions.add(sessionId);
-             sessionIds.push(sessionId);
+            sessionIds.push(sessionId);
         }
+
         if (sessionIds.length === 0) {
-            renderUsageSummary(null);
-            renderUsageTable([]);
+            renderUsageSummary(null, {
+                prompt: document.getElementById('usage-total-prompt'),
+                completion: document.getElementById('usage-total-completion'),
+                total: document.getElementById('usage-total-tokens'),
+                cost: document.getElementById('usage-total-cost')
+            });
+            var tableContainer = document.getElementById('usage-table-container');
+            if (tableContainer) tableContainer.innerHTML = '<p class="placeholder">No model usage data available.</p>';
             renderUsageJson(null);
             renderTaskSessions({});
             setStatus('usage-status', 'No sessions to query', '');
             return;
         }
-        var fetchPromises = sessionIds.map(function(sid) {
-            return fetchUsageForSession(sid).then(function(data) {
-                return { sid: sid, data: data };
-            });
+
+        var aggregated;
+        try {
+            aggregated = await aggregateUsage(sessionIds);
+        } catch (e) {
+            console.warn('aggregateUsage failed, falling back to per-session fetch:', e);
+            aggregated = await fallbackAggregate(sessionIds);
+        }
+
+        var models = aggregated.models || [];
+        var totals = aggregated.totals || { prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+        var sessionUsageMap = aggregated.sessionUsageMap || {};
+
+        // Sort by cost descending
+        models.sort(function(a, b) { return (b.cost || 0) - (a.cost || 0); });
+
+        lastUsageData = { models: models, totals: totals };
+
+        renderUsageSummary(totals, {
+            prompt: document.getElementById('usage-total-prompt'),
+            completion: document.getElementById('usage-total-completion'),
+            total: document.getElementById('usage-total-tokens'),
+            cost: document.getElementById('usage-total-cost')
         });
-        var results = await Promise.all(fetchPromises);
+
+        var tableContainer = document.getElementById('usage-table-container');
+        if (tableContainer) {
+            if (models.length === 0) {
+                tableContainer.innerHTML = '<p class="placeholder">No model usage data available.</p>';
+            } else {
+                tableContainer.innerHTML = createUsageTableHtml(models, totals);
+            }
+        }
+
+        renderUsageJson(lastUsageData);
+        renderTaskSessions(sessionUsageMap);
+
+        setStatus('usage-status', '✓ Loaded from ' + sessionIds.length + ' session(s), ' + models.length + ' model(s)', 'success');
+    }
+
+    // Fallback aggregator in case aggregateUsage is unavailable or fails
+    async function fallbackAggregate(sessionIds) {
+        var allModels = {};
+        var sessionUsageMap = {};
+        var results = await Promise.all(sessionIds.map(function(sid) {
+            return fetchUsageData(sid).then(function(data) {
+                return { sid: sid, data: data };
+            }).catch(function() {
+                return { sid: sid, data: null };
+            });
+        }));
         results.forEach(function(result) {
             if (!result.data) return;
-            taskUsageMap[result.sid] = result.data;
+            sessionUsageMap[result.sid] = result.data;
             if (result.data.models) {
                 result.data.models.forEach(function(m) {
                     var key = m.model || 'unknown';
@@ -1499,30 +1229,19 @@
             }
         });
         var modelList = Object.values(allModels);
-        modelList.sort(function(a, b) { return b.cost - a.cost; });
         var totalPrompt = 0, totalCompletion = 0, totalCost = 0;
         modelList.forEach(function(m) {
             totalPrompt += m.prompt_tokens;
             totalCompletion += m.completion_tokens;
             totalCost += m.cost;
         });
-        var aggregated = {
+        return {
             models: modelList,
-            totals: {
-                prompt_tokens: totalPrompt,
-                completion_tokens: totalCompletion,
-                cost: totalCost
-            }
+            totals: { prompt_tokens: totalPrompt, completion_tokens: totalCompletion, cost: totalCost },
+            sessionUsageMap: sessionUsageMap
         };
-        lastUsageData = aggregated;
-        renderUsageSummary(aggregated.totals);
-        renderUsageTable(aggregated.models);
-        renderUsageJson(aggregated);
-        renderTaskSessions(taskUsageMap);
-        var sessionCount = sessionIds.length;
-        var modelCount = modelList.length;
-        setStatus('usage-status', '✓ Loaded from ' + sessionCount + ' session(s), ' + modelCount + ' model(s)', 'success');
     }
+
     var refreshUsageBtn = document.getElementById('refresh-usage');
     if (refreshUsageBtn) {
         refreshUsageBtn.addEventListener('click', function() {
@@ -1533,6 +1252,7 @@
             });
         });
     }
+
     var toggleJsonBtn = document.getElementById('toggle-usage-format');
     if (toggleJsonBtn) {
         toggleJsonBtn.addEventListener('click', function() {
@@ -1550,5 +1270,86 @@
             }
         });
     }
+
+    // ========================================
+    // Initialization
+    // ========================================
+    async function loadInitialFiles() {
+        try {
+            var content = await readFile(basePath, 'idea.md');
+            if (content !== null) {
+                var editor = document.getElementById('idea-editor');
+                if (editor) editor.value = content;
+            }
+        } catch (e) {
+            console.warn('Could not load idea.md:', e);
+        }
+    }
+
+    async function checkExistingFiles() {
+        try {
+            var comic1Exists = await fileExists(basePath, 'comic_1.md');
+            if (comic1Exists) {
+                setBadge('badge-comic-1', 'done');
+            }
+        } catch (e) { /* leave as pending */ }
+
+        var episodeCount = await updateEpisodeCount();
+        if (episodeCount > 1) {
+            setBadge('badge-sequel', 'done');
+        }
+        try {
+            var bookExists = await fileExists(basePath, 'comicbook.html');
+            if (bookExists) {
+                setBadge('badge-htmlbook', 'done');
+            }
+        } catch (e) { /* leave as pending */ }
+
+        // Pull initial docops status & register running tasks
+        try {
+            var statusData = await fetchDocopsStatus(basePath);
+            if (statusData && statusData.tasks) {
+                for (var target in statusData.tasks) {
+                    if (!statusData.tasks.hasOwnProperty(target)) continue;
+                    var taskInfo = statusData.tasks[target];
+                    if (taskInfo.status === 'RUNNING') {
+                        registerActiveTask(target);
+                    }
+                    trackSession(target, taskInfo);
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to fetch initial docops status:', e);
+        }
+    }
+
+    // Periodic recovery poll — mirrors goal-planner best practice
+    function startRecoveryPoll() {
+        setInterval(async function() {
+            try {
+                var statusData = await fetchDocopsStatus(basePath);
+                if (statusData && statusData.tasks) {
+                    for (var target in statusData.tasks) {
+                        if (!statusData.tasks.hasOwnProperty(target)) continue;
+                        trackSession(target, statusData.tasks[target]);
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }, 15000);
+    }
+
+    // Global error logging
+    window.addEventListener('error', function(ev) {
+        console.error('Uncaught error:', ev.error || ev.message);
+    });
+    window.addEventListener('unhandledrejection', function(ev) {
+        console.error('Unhandled rejection:', ev.reason);
+    });
+
+    // Bootstrap
+    loadInitialFiles();
+    checkExistingFiles();
+    initModels();
+    startRecoveryPoll();
 
 })();

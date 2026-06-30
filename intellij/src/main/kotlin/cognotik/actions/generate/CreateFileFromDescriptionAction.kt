@@ -120,7 +120,7 @@ class CreateFileFromDescriptionAction :
             val response = run {
               model.chat(
                 ChatRequest(
-                  model = model.modelType.modelId,
+                  model = model.model.modelId,
                   messages = listOf(
                     ChatMessage(
                       Role.system, """
@@ -139,7 +139,7 @@ class CreateFileFromDescriptionAction :
                                 """.trimIndent().toContentList()
                     )
                   ),
-                  temperature = model.temperature,
+                  temperature = AppSettingsState.instance.temperature,
                   audio = model.audio,
                 )
               ).choices.firstOrNull()?.message?.content?.trim()

@@ -5,10 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class User(
   @get:JsonProperty("email") val email: String,
-  @get:JsonProperty("name") val name: String? = null,
-  @get:JsonProperty("id") val id: String? = null,
-  @get:JsonProperty("picture") val picture: String? = null,
-  @get:JsonIgnore val credential: Any? = null,
+  @get:JsonProperty("name") val name: String = email,
+  @get:JsonProperty("id") val id: String = email,
 ) {
   override fun toString() = email
 
@@ -22,6 +20,13 @@ data class User(
   override fun hashCode(): Int {
     return email.hashCode()
   }
+
+    companion object {
+        val NULL: User = User(
+            id = "0",
+            email = "null@localhost"
+        )
+    }
 
 }
 @JvmField

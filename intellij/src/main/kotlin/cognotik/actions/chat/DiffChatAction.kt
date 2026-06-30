@@ -11,18 +11,21 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.InMemoryFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
-import com.simiacryptus.cognotik.util.*
-
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.CodeChatSocketManager
+import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.intellij.lang.annotations.Language
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import com.intellij.openapi.application.ApplicationManager as IntellijAppManager
@@ -42,7 +45,7 @@ class DiffChatAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         try {
             val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             val language = ComputerLanguage.getComputerLanguage(e)?.name ?: ""
             val document = editor.document
             val filename = FileDocumentManager.getInstance().getFile(document)?.name ?: return
@@ -173,6 +176,6 @@ class DiffChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(DiffChatAction::class.java)
+        private val log = getLogger(DiffChatAction::class.java)
     }
 }

@@ -5,15 +5,24 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -185,19 +194,30 @@ class BrainstormingTask(
     log.info("Input files: ${executionConfig.related_files?.joinToString(", ") ?: "none"}")
 
     val ui = task.ui
-    val transcriptStream = task.newUserFileStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile().removeSuffix(".md")+".details.md")
+    val transcript_detailed = task.newUserFileStream(transcriptFile())
+    transcript?.write("# Brainstorming Session Transcript\n\n".toByteArray())
+    transcript?.write("**Input Files:** ${executionConfig.related_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
+    transcript?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
+    transcript?.write(
+      "**Started:** ${
+        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+      }\n\n".toByteArray()
+    )
+    transcript?.write("---\n\n".toByteArray())
+    transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
     try {
       // Initialize transcript
-      transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
-      transcriptStream?.write("**Input Files:** ${executionConfig.related_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
-      transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
-      transcriptStream?.write(
+      transcript?.write("# Brainstorming Session Transcript\n\n".toByteArray())
+      transcript?.write("**Input Files:** ${executionConfig.related_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
+      transcript?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
+      transcript?.write(
         "**Started:** ${
           LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         }\n\n".toByteArray()
       )
-      transcriptStream?.write("---\n\n".toByteArray())
-      transcriptStream?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+      transcript?.write("---\n\n".toByteArray())
+      transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
 
       // Create tabbed display for organized output
       val tabs = TabbedDisplay(task)
@@ -290,22 +310,25 @@ class BrainstormingTask(
         prompt = brainstormPrompt,
         model = defaultChatter,
         temperature = if (includeCreative) 0.8 else 0.6,
-        parsingChatter = parsingChatter
+        parsingModel = parsingChatter
       )
 
       val brainstormResult = brainstormAgent.answer(listOf(brainstormPrompt))
       val options = brainstormResult.obj.options
 
       log.info("Generated ${options.size} options")
-      // Write to transcript
-      transcriptStream?.write("\n## Generated Options\n\n".toByteArray())
-      options.forEachIndexed { index, option ->
-        transcriptStream?.write("### ${index + 1}. ${option.title}\n".toByteArray())
-        if (option.category != null) {
-          transcriptStream?.write("**Category:** ${option.category}\n\n".toByteArray())
+      val generatedOptionsString = buildStringStream { transcript->
+        // Write to transcript
+        transcript?.write("\n## Generated Options\n\n".toByteArray())
+        options.forEachIndexed { index, option ->
+          transcript?.write("### ${index + 1}. ${option.title}\n".toByteArray())
+          if (option.category != null) {
+            transcript?.write("**Category:** ${option.category}\n\n".toByteArray())
+          }
+          transcript?.write("${option.description}\n\n".toByteArray())
         }
-        transcriptStream?.write("${option.description}\n\n".toByteArray())
       }
+      transcript?.write(generatedOptionsString.toByteArray())
 
       // Display generated options
       optionsTask.add(
@@ -369,23 +392,23 @@ class BrainstormingTask(
           prompt = analysisPrompt,
           model = defaultChatter,
           temperature = 0.3,
-          parsingChatter = parsingChatter
+          parsingModel = parsingChatter
         )
         val analysis = perOptionAgent.answer(listOf(analysisPrompt))
         analyses[optionNumber] = analysis.obj
         // Write analysis to transcript
-        transcriptStream?.write("\n## Option $optionNumber Analysis: ${option.title}\n\n".toByteArray())
-        transcriptStream?.write("### ✅ Pros\n".toByteArray())
-        analysis.obj.pros.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
-        transcriptStream?.write("\n### ❌ Cons\n".toByteArray())
-        analysis.obj.cons.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
-        transcriptStream?.write("\n### 📊 Feasibility\n${analysis.obj.feasibility}\n\n".toByteArray())
-        transcriptStream?.write("### 💥 Impact\n${analysis.obj.impact}\n\n".toByteArray())
-        transcriptStream?.write("### ⚠️ Risks\n".toByteArray())
-        analysis.obj.risks.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
-        transcriptStream?.write("\n### 📋 Requirements\n".toByteArray())
-        analysis.obj.requirements.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
-        transcriptStream?.write("\n---\n\n".toByteArray())
+        transcript?.write("\n## Option $optionNumber Analysis: ${option.title}\n\n".toByteArray())
+        transcript?.write("### ✅ Pros\n".toByteArray())
+        analysis.obj.pros.forEach { transcript?.write("- $it\n".toByteArray()) }
+        transcript?.write("\n### ❌ Cons\n".toByteArray())
+        analysis.obj.cons.forEach { transcript?.write("- $it\n".toByteArray()) }
+        transcript?.write("\n### 📊 Feasibility\n${analysis.obj.feasibility}\n\n".toByteArray())
+        transcript?.write("### 💥 Impact\n${analysis.obj.impact}\n\n".toByteArray())
+        transcript?.write("### ⚠️ Risks\n".toByteArray())
+        analysis.obj.risks.forEach { transcript?.write("- $it\n".toByteArray()) }
+        transcript?.write("\n### 📋 Requirements\n".toByteArray())
+        analysis.obj.requirements.forEach { transcript?.write("- $it\n".toByteArray()) }
+        transcript?.write("\n---\n\n".toByteArray())
 
 
         // Display analysis
@@ -480,7 +503,7 @@ class BrainstormingTask(
         prompt = summaryPrompt,
         model = defaultChatter,
         temperature = 0.4,
-        parsingChatter = parsingChatter
+        parsingModel = parsingChatter
       )
 
       val summaryResult = summaryAgent.answer(listOf(summaryPrompt)).obj
@@ -516,9 +539,7 @@ class BrainstormingTask(
       summaryTask.complete()
       task.update()
       // Close work-details tab section in transcript
-      transcriptStream?.write("\n</div>\n\n".toByteArray())
-      // Write final output tab section in transcript
-      transcriptStream?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+      transcript?.write("\n</div>\n\n".toByteArray())
 
 
       val totalTime = System.currentTimeMillis() - startTime
@@ -543,22 +564,28 @@ class BrainstormingTask(
       }
       log.info("Saved detailed results to: $resultsLink")
 
+      // Write final output tab section in transcript
+      transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
       // Finalize transcript
-      transcriptStream?.write("\n# Brainstorming Results: $problemStatement\n\n".toByteArray())
-      transcriptStream?.write("## 🏆 Top Recommendation: ${topOption.title}\n\n".toByteArray())
-      transcriptStream?.write("${topOption.description}\n\n".toByteArray())
-      transcriptStream?.write("> ${summaryResult.selection_reasoning}\n\n".toByteArray())
-      transcriptStream?.write("## Summary\n\n${summaryResult.overview}\n\n".toByteArray())
-      transcriptStream?.write("## Session Complete\n\n".toByteArray())
-      transcriptStream?.write("**Total Time:** ${totalTime / 1000.0}s\n".toByteArray())
-      transcriptStream?.write("**Options Generated:** ${options.size}\n".toByteArray())
-      transcriptStream?.write("**Options Analyzed:** ${analyses.size}\n".toByteArray())
-      transcriptStream?.write(
-        "**Completed:** ${
-          LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        }\n".toByteArray()
-      )
-      transcriptStream?.write("\n</div>\n\n".toByteArray())
+      listOf(transcript_detailed, transcript).forEach { transcript ->
+        transcript?.write("\n# Brainstorming Results: $problemStatement\n\n".toByteArray())
+        transcript?.write("## 🏆 Top Recommendation: ${topOption.title}\n\n".toByteArray())
+        transcript?.write("${topOption.description}\n\n".toByteArray())
+        transcript?.write("> ${summaryResult.selection_reasoning}\n\n".toByteArray())
+        transcript?.write("## Summary\n\n${summaryResult.overview}\n\n".toByteArray())
+        transcript?.write("## Session Complete\n\n".toByteArray())
+        transcript?.write("**Total Time:** ${totalTime / 1000.0}s\n".toByteArray())
+        transcript?.write("**Options Generated:** ${options.size}\n".toByteArray())
+        transcript?.write("**Options Analyzed:** ${analyses.size}\n".toByteArray())
+        transcript?.write(
+          "**Completed:** ${
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+          }\n".toByteArray()
+        )
+      }
+      transcript_detailed?.write(generatedOptionsString.toByteArray())
+      
+      transcript?.write("\n</div>\n\n".toByteArray())
 
       // Build final concise output with file links
       val finalOutput = buildString {
@@ -622,10 +649,10 @@ class BrainstormingTask(
       val duration = System.currentTimeMillis() - startTime
       log.error("BrainstormingTask failed after ${duration}ms for problem: $problemStatement", e)
       // Write error to transcript
-      transcriptStream?.write("\n## ❌ Error Occurred\n\n".toByteArray())
-      transcriptStream?.write("**Error:** ${e.message}\n".toByteArray())
-      transcriptStream?.write("**Type:** ${e.javaClass.simpleName}\n".toByteArray())
-      transcriptStream?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+      transcript?.write("\n## ❌ Error Occurred\n\n".toByteArray())
+      transcript?.write("**Error:** ${e.message}\n".toByteArray())
+      transcript?.write("**Type:** ${e.javaClass.simpleName}\n".toByteArray())
+      transcript?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
 
       task.error(e)
 
@@ -643,13 +670,14 @@ class BrainstormingTask(
       resultFn(errorOutput)
     } finally {
       try {
-        transcriptStream?.flush()
-        transcriptStream?.close()
+        transcript?.flush()
+        transcript?.close()
       } catch (e: Exception) {
         log.warn("Failed to close transcript stream", e)
       }
     }
   }
+
 
   private fun buildBrainstormPrompt(
     problemStatement: String,
@@ -916,7 +944,7 @@ class BrainstormingTask(
 
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
+      private val log: Logger = getLogger(BrainstormingTask::class.java)
 
     @JvmStatic
     val Brainstorming = TaskType(
@@ -940,4 +968,10 @@ class BrainstormingTask(
       },
     )
   }
+}
+
+fun buildStringStream(builderAction: (OutputStream) -> Unit): String {
+  val outputStream = ByteArrayOutputStream()
+  builderAction(outputStream)
+  return outputStream.toString(StandardCharsets.UTF_8.name())
 }

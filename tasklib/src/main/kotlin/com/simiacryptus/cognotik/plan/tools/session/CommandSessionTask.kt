@@ -2,18 +2,17 @@ package com.simiacryptus.cognotik.plan.tools.session
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.resolveTool
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
@@ -108,9 +107,6 @@ class CommandSessionTask(
   )
 
   override fun promptSegment(): String {
-    val executables: List<String>? =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(orchestrationConfig.user)
-        .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
     val activeSessionsInfo = activeSessions.entries.joinToString("\n") { (id, state) ->
       val pendingBytes = state.outputBuffer.length
       val alive = state.process.isAlive
@@ -126,7 +122,6 @@ class CommandSessionTask(
            System Information:
            - OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})
            - Working Directory: ${System.getProperty("user.dir")}
-           - Available Tools: ${executables?.joinToString(", ") ?: "None"}
 
            Active Sessions:
            """.trimIndent() + "\n" + activeSessionsInfo
@@ -165,13 +160,7 @@ class CommandSessionTask(
             val command = executionConfig.command
             val executable = command.firstOrNull()
             val resolvedCommand = if (executable != null) {
-              val tools =
-                ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
-                  orchestrationConfig.user
-                ).tools
-              val resolvedExecutable =
-                tools.find { it.provider?.getExecutables()?.contains(executable) == true }
-                  ?.resolve(executable)
+              val resolvedExecutable = executable
               if (resolvedExecutable != null) {
                 listOf(resolvedExecutable) + command.drop(1)
               } else {

@@ -15,13 +15,13 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.awt.image.ConvolveOp
@@ -520,21 +520,21 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
 
     @JvmStatic
     val GenerateQRImage = TaskType(
-      "GenerateQRImage",
-      "Writing",
-      GenerateQRImageTask::class.java,
-      GenerateQRImageTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Generate artistic QR codes with AI styling",
-      """
-              Creates stylized QR codes using AI image processing while maintaining scannability.
-              <ul>
-                <li>Generates QR codes with high error correction (30% redundancy)</li>
-                <li>Applies artistic styles using AI image generation</li>
-                <li>Verifies the resulting QR code remains readable</li>
-                <li>Retries with more conservative styling if verification fails</li>
-              </ul>
-            """
+        name = "GenerateQRImage",
+        category = "Writing",
+        taskClass = GenerateQRImageTask::class.java,
+        executionConfigClass = GenerateQRImageTaskExecutionConfigData::class.java,
+        taskSettingsClass = TaskTypeConfig::class.java,
+        description = "Generate artistic QR codes with AI styling",
+        tooltipHtml = """
+                      Creates stylized QR codes using AI image processing while maintaining scannability.
+                      <ul>
+                        <li>Generates QR codes with high error correction (30% redundancy)</li>
+                        <li>Applies artistic styles using AI image generation</li>
+                        <li>Verifies the resulting QR code remains readable</li>
+                        <li>Retries with more conservative styling if verification fails</li>
+                      </ul>
+                    """
     )
   }
 }

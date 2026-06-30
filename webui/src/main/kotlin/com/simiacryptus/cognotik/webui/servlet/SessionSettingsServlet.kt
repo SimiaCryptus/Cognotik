@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.getCookie
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import java.io.IOException
 
 class SessionSettingsServlet(
@@ -28,9 +28,8 @@ class SessionSettingsServlet(
         val sessionId = request.getParameter("sessionId")
         logger.debug("Processing request for session: $sessionId")
         val session = Session(sessionId)
-        val cookie = request.getCookie()
-        val user = authenticate(request, response) ?: return
-        logger.debug("User identified: ${user?.id ?: "anonymous"}")
+        val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        logger.debug("User identified: ${user.id ?: "anonymous"}")
 
         try {
           val settings = server.getSettings(session, user, settingsClass)
@@ -106,9 +105,8 @@ class SessionSettingsServlet(
           }
 
           val settings = JsonUtil.fromJson<Any>(settingsJson, settingsClass)
-          val cookie = request.getCookie()
-          val user = authenticate(request, response) ?: return
-          logger.debug("User identified for settings update: ${user?.id ?: "anonymous"}")
+          val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+          logger.debug("User identified for settings update: ${user.id ?: "anonymous"}")
 
           val settingsFile = server.getSettingsFile(session, user)
           settingsFile.parentFile.mkdirs()

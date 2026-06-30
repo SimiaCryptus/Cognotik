@@ -4,8 +4,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
 import org.apache.hc.client5.http.classic.methods.HttpGet
@@ -15,6 +15,7 @@ import org.apache.hc.core5.http.HttpEntity
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
@@ -22,13 +23,14 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 
 abstract class ChatClientBase(
-  protected val provider: APIProvider,
-  val apiKey: SecureString = SecureString(""), // Default to empty, but should be provided by subclasses
-  val apiBase: String = provider.base,
-  workPool: ExecutorService,
-  logLevel: Level = Level.DEBUG,
-  logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-  scheduledPool: ListeningScheduledExecutorService,
+    protected val provider: APIProvider,
+    val apiKey: SecureString = SecureString(""), // Default to empty, but should be provided by subclasses
+    val apiBase: String = provider.base,
+    workPool: ExecutorService,
+    logLevel: Level = Level.DEBUG,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
+    override val session: Session
 ) : HttpClientManager(
   logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), ChatClientInterface {
@@ -43,7 +45,6 @@ abstract class ChatClientBase(
   }
 
 
-  var session: Any? = null
   var user: Any? = null
 
   @Throws(IOException::class, InterruptedException::class)

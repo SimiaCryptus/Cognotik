@@ -12,7 +12,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -68,7 +68,7 @@ class DocumentedMassPatchAction : BaseAction() {
         val config = getConfig(project, e)
         if (config == null) return
 
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.metadataStorage.setSessionName(
             null,
             session,

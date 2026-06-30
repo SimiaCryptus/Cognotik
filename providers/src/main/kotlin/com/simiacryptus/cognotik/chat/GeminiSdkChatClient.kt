@@ -7,16 +7,17 @@ import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.toJson
 import okio.ByteString.Companion.decodeBase64
-import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.*
@@ -37,6 +38,7 @@ class GeminiSdkChatClient(
   private val useVertexAI: Boolean = false,
   private val project: String? = null,
   private val location: String? = null,
+  session: Session,
 ) : ChatClientBase(
   provider = CoreProviders.Gemini,
   apiKey = apiKey,
@@ -45,6 +47,7 @@ class GeminiSdkChatClient(
   logLevel = logLevel,
   logStreams = logStreams,
   scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   private val client: Client = buildClient(apiKey, useVertexAI, project, location)
@@ -64,14 +67,14 @@ class GeminiSdkChatClient(
       if (useVertexAI) {
         builder.vertexAI(true)
         if (project != null && location != null) {
-          log.info("Configuring Gemini client with Vertex AI: project={}, location={}", project, location)
+          log.debug("Configuring Gemini client with Vertex AI: project={}, location={}", project, location)
           builder.project(project).location(location)
         } else {
-          log.info("Configuring Gemini client with Vertex AI using API key (project/location not provided)")
+          log.debug("Configuring Gemini client with Vertex AI using API key (project/location not provided)")
           builder.apiKey(apiKey.decrypt)
         }
       } else {
-        log.info("Configuring Gemini client with API key (Generative Language API)")
+        log.debug("Configuring Gemini client with API key (Generative Language API)")
         builder.apiKey(apiKey.decrypt)
       }
 
@@ -113,8 +116,9 @@ class GeminiSdkChatClient(
                 maxTotalTokens = it.inputTokenLimit().get() + it.outputTokenLimit().get(),
                 maxOutTokens = it.outputTokenLimit().get(),
                 provider = CoreProviders.Gemini,
-                inputTokenPricePerK = 0.0, // Default pricing - would need to be configured
-                outputTokenPricePerK = 0.0
+                outputTokenPricePerK = 0.0, // Default pricing - would need to be configured
+                inputModalities = setOf(ChatMessageModality.TEXT),
+                outputModalities = setOf(ChatMessageModality.TEXT)
               )
             } catch (e: NoSuchElementException) {
               log.warn("Skipping model {} due to missing token limits: {}", baseModelId, e.message)
@@ -148,7 +152,7 @@ class GeminiSdkChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     val requestID = UUID.randomUUID().toString()
     val startTime = System.currentTimeMillis()
@@ -175,10 +179,11 @@ class GeminiSdkChatClient(
       }
       log.debug("Request {}: built config and {} content items", requestID, contents.size)
       val sysInstruct = config?.systemInstruction()?.getOrNull()?.text()?.indent("  ")
-      val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
+      val sysText = sysInstruct?.let { "System Instruction:\n```\n$it\n```\n\n" } ?: ""
+      val inputText = contents.joinToString("\n\n") { it.toMarkdown() }
       val toJson = config?.toJson()?.indent("  ") ?: "No config"
       log(
-        "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>",
+        "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$inputText\n</details>",
         logStreams
       )
       val response = try {
@@ -227,7 +232,10 @@ class GeminiSdkChatClient(
       }
       if (chatResponse.usage != null) {
         try {
-          usageHandler?.invoke(model, chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,)
+          usageHandler.onUsage(model, chatResponse.usage!!, ModelSchema.UsageData(
+            input_text = sysText + "\n\n" + inputText,
+            output_text = chatResponse.choices.joinToString("\n\n") { choice -> choice.message?.content ?: "" },
+          ))
         } catch (e: Exception) {
           log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }
@@ -271,9 +279,6 @@ class GeminiSdkChatClient(
 
   private fun Content.toMarkdown(): CharSequence {
     val sb = StringBuilder()
-
-
-
     try {
       this.role().getOrNull()?.let { role ->
         sb.append("**Role:** ").append(role).append("\n\n")
@@ -657,9 +662,6 @@ class GeminiSdkChatClient(
 
   private fun convertFromGeminiResponse(response: GenerateContentResponse): ModelSchema.ChatResponse {
     val choices = response.candidates().orElse(emptyList()).mapIndexed { index, candidate ->
-
-
-
       try {
         val content = candidate.content().orElse(null)
         val text = content?.parts()?.orElse(emptyList())
@@ -758,9 +760,16 @@ class GeminiSdkChatClient(
 
     val usage = try {
       response.usageMetadata().orElse(null)?.let { metadata ->
+        val counts = mutableMapOf(
+          TokenTypes.Prompt to metadata.promptTokenCount().orElse(0).toLong(),
+          TokenTypes.Completion to metadata.candidatesTokenCount().orElse(0).toLong(),
+          TokenTypes.Cached to metadata.cachedContentTokenCount().orElse(0).toLong(),
+          TokenTypes.Thinking to metadata.thoughtsTokenCount().orElse(0).toLong(),
+          TokenTypes.Tools to metadata.toolUsePromptTokenCount().orElse(0).toLong()
+        )
+        log.info("Gemini response usage metadata: {}", counts.toJson())
         ModelSchema.Usage(
-          prompt_tokens = metadata.promptTokenCount().orElse(0).toLong(),
-          completion_tokens = metadata.candidatesTokenCount().orElse(0).toLong(),
+          counts = counts,
           total_tokens = metadata.totalTokenCount().orElse(0).toLong()
         )
       }

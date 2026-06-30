@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ExecutorService
@@ -16,7 +17,7 @@ class FixedConcurrencyProcessor(
   val concurrencyLimit: Int
 ) {
   companion object {
-    val log = LoggerFactory.getLogger(FixedConcurrencyProcessor::class.java)!!
+    val log = getLogger(FixedConcurrencyProcessor::class.java)!!
   }
 
   init {

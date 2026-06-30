@@ -1,14 +1,12 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.encrypt
+import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.application.authenticate
-import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
-import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -18,10 +16,10 @@ private const val mask = "********"
 class UserSettingsServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_OK
-    val userinfo = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
-        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(userinfo)
+        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
       val visibleSettings = UserSettings(
         apis = settings.apis.map { apiData ->
           ApiData(
@@ -34,8 +32,9 @@ class UserSettingsServlet : HttpServlet() {
             provider = apiData.provider
           )//.validate()
         }.toMutableList(),
-        tools = settings.tools.toMutableList(),
-        etc = settings.etc.toMutableMap()
+        collectSessionData = settings.collectSessionData,
+      ).jsonCast<Map<String,Any>>() + mapOf(
+        "user" to user
       )
       val json = JsonUtil.toJson(visibleSettings)
       val acceptHeader = request.getHeader("Accept") ?: ""
@@ -79,12 +78,11 @@ class UserSettingsServlet : HttpServlet() {
                         </html>
                   """.trimIndent()
       )
-      response
     }
   }
 
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
-    val user = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
     val userSettingsManager = ApplicationServices.fileApplicationServices().userSettingsManager
     val prevSettings =
@@ -102,8 +100,7 @@ class UserSettingsServlet : HttpServlet() {
     }.toMutableList()
     val reconstructedSettings = UserSettings(
       apis = reconstructedApis,
-      tools = (prevSettings.tools + settings.tools).distinctBy { it.provider?.name }.toMutableList(),
-      etc = settings.etc
+        collectSessionData = settings.collectSessionData,
     )
     userSettingsManager.updateUserSettings(
       user,

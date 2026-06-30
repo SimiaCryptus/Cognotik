@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/favicon.svg" rel="icon"/>
     <title>Login — Cognotik</title>
+     <script src="/marked.min.js"></script>
     <style>
         /* ===== Reset & Base ===== */
         *, *::before, *::after { box-sizing: border-box; }
@@ -229,6 +230,240 @@
             letter-spacing: 1px;
             font-weight: 600;
         }
+         /* ===== License Agreement ===== */
+         .license-agreement {
+             margin-top: 18px;
+             padding-top: 16px;
+             border-top: 1px solid #eef0f3;
+             font-size: 0.85em;
+             color: #6c757d;
+         }
+         .license-notice {
+             text-align: center;
+             margin-bottom: 10px;
+             font-style: italic;
+         }
+         .license-details {
+             border: 1px solid #e0e3e8;
+             border-radius: 8px;
+             background: #fafbfc;
+             overflow: hidden;
+             transition: border-color 0.2s ease;
+         }
+         .license-details[open] {
+             border-color: #c8cdd4;
+         }
+         .license-details summary {
+             padding: 10px 14px;
+             cursor: pointer;
+             font-weight: 600;
+             color: #3498db;
+             font-size: 0.9em;
+             user-select: none;
+             list-style: none;
+             display: flex;
+             align-items: center;
+             justify-content: space-between;
+             transition: background 0.2s ease;
+         }
+         .license-details summary::-webkit-details-marker { display: none; }
+         .license-details summary::after {
+             content: '▼';
+             font-size: 0.7em;
+             transition: transform 0.2s ease;
+             color: #95a5a6;
+         }
+         .license-details[open] summary::after {
+             transform: rotate(180deg);
+         }
+         .license-details summary:hover {
+             background: #f0f3f7;
+         }
+        .license-summary-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .license-maximize-btn {
+            background: transparent;
+            border: 1px solid #c8cdd4;
+            color: #3498db;
+            border-radius: 6px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            line-height: 1;
+            font-family: inherit;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .license-maximize-btn:hover {
+            background: #3498db;
+            color: #fff;
+            border-color: #3498db;
+        }
+        .license-maximize-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+        .license-maximize-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+         .license-content {
+             padding: 12px 16px 16px;
+             max-height: 320px;
+             overflow-y: auto;
+             font-size: 0.85em;
+             line-height: 1.5;
+             color: #444;
+             border-top: 1px solid #e0e3e8;
+             background: #fff;
+         }
+         .license-content h1 { font-size: 1.15em; margin: 0 0 8px; color: #2c3e50; }
+         .license-content h2 { font-size: 1.05em; margin: 14px 0 6px; color: #2c3e50; }
+         .license-content h3 { font-size: 0.98em; margin: 12px 0 6px; color: #34495e; }
+         .license-content p { margin: 6px 0; }
+         .license-content ul, .license-content ol { padding-left: 20px; margin: 6px 0; }
+         .license-content li { margin: 3px 0; }
+         .license-content strong { color: #2c3e50; }
+         .license-content blockquote {
+             margin: 8px 0;
+             padding: 8px 12px;
+             border-left: 3px solid #3498db;
+             background: #f4f8fb;
+             color: #555;
+         }
+         .license-content code {
+             background: #eef0f3;
+             padding: 1px 5px;
+             border-radius: 3px;
+             font-size: 0.9em;
+         }
+         .license-content table {
+             border-collapse: collapse;
+             width: 100%;
+             margin: 8px 0;
+             font-size: 0.9em;
+         }
+         .license-content th, .license-content td {
+             border: 1px solid #e0e3e8;
+             padding: 6px 8px;
+             text-align: left;
+         }
+         .license-content th { background: #f4f6f9; font-weight: 600; }
+         .license-content hr { border: none; border-top: 1px solid #e0e3e8; margin: 12px 0; }
+         .license-loading {
+             text-align: center;
+             color: #95a5a6;
+             font-style: italic;
+             padding: 12px;
+         }
+        /* ===== License Modal ===== */
+        .license-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeInUp 0.2s ease-out;
+        }
+        .license-modal.open {
+            display: flex;
+        }
+        .license-modal-dialog {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .license-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e0e3e8;
+            background: #fafbfc;
+        }
+        .license-modal-title {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .license-modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.4em;
+            line-height: 1;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s ease, color 0.2s ease;
+            font-family: inherit;
+        }
+        .license-modal-close:hover {
+            background: #eef0f3;
+            color: #2c3e50;
+        }
+        .license-modal-close:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+        .license-modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #333;
+            flex: 1;
+        }
+        .license-modal-body h1 { font-size: 1.4em; margin: 0 0 10px; color: #2c3e50; }
+        .license-modal-body h2 { font-size: 1.2em; margin: 16px 0 8px; color: #2c3e50; }
+        .license-modal-body h3 { font-size: 1.05em; margin: 14px 0 6px; color: #34495e; }
+        .license-modal-body p { margin: 8px 0; }
+        .license-modal-body ul, .license-modal-body ol { padding-left: 22px; margin: 8px 0; }
+        .license-modal-body li { margin: 4px 0; }
+        .license-modal-body strong { color: #2c3e50; }
+        .license-modal-body blockquote {
+            margin: 10px 0;
+            padding: 10px 14px;
+            border-left: 3px solid #3498db;
+            background: #f4f8fb;
+            color: #555;
+        }
+        .license-modal-body code {
+            background: #eef0f3;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .license-modal-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .license-modal-body th, .license-modal-body td {
+            border: 1px solid #e0e3e8;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .license-modal-body th { background: #f4f6f9; font-weight: 600; }
+        .license-modal-body hr { border: none; border-top: 1px solid #e0e3e8; margin: 14px 0; }
+        body.license-modal-open { overflow: hidden; }
 
         /* ===== Footer ===== */
         .footer {
@@ -249,72 +484,382 @@
             height: 16px;
             opacity: 0.5;
         }
+         /* ===== Theme Selector ===== */
+         .theme-selector-container {
+             position: fixed;
+             top: 16px;
+             right: 16px;
+             z-index: 10;
+             display: flex;
+             align-items: center;
+             gap: 8px;
+             background: rgba(255, 255, 255, 0.85);
+             backdrop-filter: blur(8px);
+             padding: 6px 10px;
+             border-radius: 8px;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+             border: 1px solid rgba(255, 255, 255, 0.6);
+         }
+         .theme-selector-container label {
+             margin: 0;
+             font-size: 0.78em;
+             color: #7f8c8d;
+             font-weight: 600;
+         }
+         #theme-selector {
+             padding: 4px 8px;
+             border: 1px solid #dde1e7;
+             border-radius: 6px;
+             font-size: 0.85em;
+             font-family: inherit;
+             background: #fff;
+             color: #333;
+             cursor: pointer;
+         }
+         #theme-selector:focus {
+             outline: none;
+             border-color: #3498db;
+             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+         }
 
-        /* ===== Dark Mode ===== */
-        @media (prefers-color-scheme: dark) {
+         /* ===== Dark Mode (explicit data-theme="dark") ===== */
+         [data-theme="dark"] body {
+             background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] body::before { opacity: 0.04; }
+         [data-theme="dark"] body::after { opacity: 0.04; }
+
+         [data-theme="dark"] .brand-name { color: #e0e0e0; }
+         [data-theme="dark"] .brand-tagline { color: #777; }
+
+         [data-theme="dark"] .login-container {
+             background: rgba(30, 34, 46, 0.95);
+             border-color: rgba(255,255,255,0.06);
+             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+         }
+         [data-theme="dark"] .login-container:hover {
+             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+         }
+
+         [data-theme="dark"] h2 { color: #e0e0e0; }
+         [data-theme="dark"] .subtitle { color: #666; }
+
+         [data-theme="dark"] label { color: #ccc; }
+
+         [data-theme="dark"] input[type="text"],
+         [data-theme="dark"] input[type="password"] {
+             background: #2a2e3a;
+             border-color: #3a3f4c;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] input[type="text"]:focus,
+         [data-theme="dark"] input[type="password"]:focus {
+             border-color: #3498db;
+             background: #2e3340;
+             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+         }
+         [data-theme="dark"] input[type="text"]::placeholder,
+         [data-theme="dark"] input[type="password"]::placeholder {
+             color: #555;
+         }
+
+         [data-theme="dark"] .error {
+             background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
+             color: #e74c3c;
+             border-color: #5a2a2a;
+         }
+
+         [data-theme="dark"] .links { border-top-color: #2a2e3a; }
+         [data-theme="dark"] .links a { color: #5dade2; }
+         [data-theme="dark"] .links a:hover { color: #85c1e9; }
+
+         [data-theme="dark"] .divider::before,
+         [data-theme="dark"] .divider::after { background: #333; }
+         [data-theme="dark"] .divider span { color: #555; }
+
+         [data-theme="dark"] .license-agreement {
+             border-top-color: #2a2e3a;
+             color: #888;
+         }
+         [data-theme="dark"] .license-details {
+             border-color: #3a3f4c;
+             background: #1f232d;
+         }
+         [data-theme="dark"] .license-details[open] {
+             border-color: #4a4f5c;
+         }
+         [data-theme="dark"] .license-details summary {
+             color: #5dade2;
+         }
+         [data-theme="dark"] .license-details summary:hover {
+             background: #262a35;
+         }
+         [data-theme="dark"] .license-details summary::after {
+             color: #666;
+         }
+         [data-theme="dark"] .license-content {
+             background: #1a1e28;
+             color: #c0c0c0;
+             border-top-color: #3a3f4c;
+         }
+         [data-theme="dark"] .license-content h1,
+         [data-theme="dark"] .license-content h2,
+         [data-theme="dark"] .license-content h3 { color: #e0e0e0; }
+         [data-theme="dark"] .license-content strong { color: #e0e0e0; }
+         [data-theme="dark"] .license-content blockquote {
+             background: #1f2937;
+             border-left-color: #5dade2;
+             color: #aaa;
+         }
+         [data-theme="dark"] .license-content code {
+             background: #2a2e3a;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] .license-content th,
+         [data-theme="dark"] .license-content td {
+             border-color: #3a3f4c;
+         }
+         [data-theme="dark"] .license-content th { background: #2a2e3a; }
+         [data-theme="dark"] .license-content hr { border-top-color: #3a3f4c; }
+         [data-theme="dark"] .license-maximize-btn {
+             border-color: #3a3f4c;
+             color: #5dade2;
+         }
+         [data-theme="dark"] .license-maximize-btn:hover {
+             background: #5dade2;
+             color: #1a1e28;
+             border-color: #5dade2;
+         }
+         [data-theme="dark"] .license-modal {
+             background: rgba(0, 0, 0, 0.7);
+         }
+         [data-theme="dark"] .license-modal-dialog {
+             background: #1f232d;
+             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+         }
+         [data-theme="dark"] .license-modal-header {
+             background: #262a35;
+             border-bottom-color: #3a3f4c;
+         }
+         [data-theme="dark"] .license-modal-title { color: #e0e0e0; }
+         [data-theme="dark"] .license-modal-close { color: #888; }
+         [data-theme="dark"] .license-modal-close:hover {
+             background: #2a2e3a;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] .license-modal-body { color: #c0c0c0; }
+         [data-theme="dark"] .license-modal-body h1,
+         [data-theme="dark"] .license-modal-body h2,
+         [data-theme="dark"] .license-modal-body h3 { color: #e0e0e0; }
+         [data-theme="dark"] .license-modal-body strong { color: #e0e0e0; }
+         [data-theme="dark"] .license-modal-body blockquote {
+             background: #1f2937;
+             border-left-color: #5dade2;
+             color: #aaa;
+         }
+         [data-theme="dark"] .license-modal-body code {
+             background: #2a2e3a;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] .license-modal-body th,
+         [data-theme="dark"] .license-modal-body td { border-color: #3a3f4c; }
+         [data-theme="dark"] .license-modal-body th { background: #2a2e3a; }
+         [data-theme="dark"] .license-modal-body hr { border-top-color: #3a3f4c; }
+
+         [data-theme="dark"] .footer { color: #555; }
+         [data-theme="dark"] .footer img { opacity: 0.3; }
+
+         [data-theme="dark"] button[type="submit"] {
+             box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+         }
+         [data-theme="dark"] button[type="submit"]:hover {
+             box-shadow: 0 6px 20px rgba(52, 152, 219, 0.25);
+         }
+
+         [data-theme="dark"] .theme-selector-container {
+             background: rgba(30, 34, 46, 0.85);
+             border-color: rgba(255, 255, 255, 0.06);
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+         }
+         [data-theme="dark"] .theme-selector-container label {
+             color: #888;
+         }
+         [data-theme="dark"] #theme-selector {
+             background: #2a2e3a;
+             border-color: #3a3f4c;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] #theme-selector:focus {
+             border-color: #3498db;
+             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+         }
+
+         /* ===== Dark Mode (auto via prefers-color-scheme when no explicit theme set) ===== */
+         @media (prefers-color-scheme: dark) {
+             :root:not([data-theme="light"]) body {
             body {
                 background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
                 color: #e0e0e0;
             }
-            body::before { opacity: 0.04; }
-            body::after { opacity: 0.04; }
+             :root:not([data-theme="light"]) body::before { opacity: 0.04; }
+             :root:not([data-theme="light"]) body::after { opacity: 0.04; }
 
-            .brand-name { color: #e0e0e0; }
-            .brand-tagline { color: #777; }
+             :root:not([data-theme="light"]) .brand-name { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .brand-tagline { color: #777; }
 
-            .login-container {
+             :root:not([data-theme="light"]) .login-container {
                 background: rgba(30, 34, 46, 0.95);
                 border-color: rgba(255,255,255,0.06);
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
             }
-            .login-container:hover {
+             :root:not([data-theme="light"]) .login-container:hover {
                 box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
             }
 
-            h2 { color: #e0e0e0; }
-            .subtitle { color: #666; }
+             :root:not([data-theme="light"]) h2 { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .subtitle { color: #666; }
 
-            label { color: #ccc; }
+             :root:not([data-theme="light"]) label { color: #ccc; }
 
-            input[type="text"],
-            input[type="password"] {
+             :root:not([data-theme="light"]) input[type="text"],
+             :root:not([data-theme="light"]) input[type="password"] {
                 background: #2a2e3a;
                 border-color: #3a3f4c;
                 color: #e0e0e0;
             }
-            input[type="text"]:focus,
-            input[type="password"]:focus {
+             :root:not([data-theme="light"]) input[type="text"]:focus,
+             :root:not([data-theme="light"]) input[type="password"]:focus {
                 border-color: #3498db;
                 background: #2e3340;
                 box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
             }
-            input[type="text"]::placeholder,
-            input[type="password"]::placeholder {
+             :root:not([data-theme="light"]) input[type="text"]::placeholder,
+             :root:not([data-theme="light"]) input[type="password"]::placeholder {
                 color: #555;
             }
 
-            .error {
+             :root:not([data-theme="light"]) .error {
                 background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
                 color: #e74c3c;
                 border-color: #5a2a2a;
             }
 
-            .links { border-top-color: #2a2e3a; }
-            .links a { color: #5dade2; }
-            .links a:hover { color: #85c1e9; }
+             :root:not([data-theme="light"]) .links { border-top-color: #2a2e3a; }
+             :root:not([data-theme="light"]) .links a { color: #5dade2; }
+             :root:not([data-theme="light"]) .links a:hover { color: #85c1e9; }
 
-            .divider::before, .divider::after { background: #333; }
-            .divider span { color: #555; }
+             :root:not([data-theme="light"]) .divider::before,
+             :root:not([data-theme="light"]) .divider::after { background: #333; }
+             :root:not([data-theme="light"]) .divider span { color: #555; }
+              :root:not([data-theme="light"]) .license-agreement {
+                 border-top-color: #2a2e3a;
+                 color: #888;
+             }
+              :root:not([data-theme="light"]) .license-details {
+                 border-color: #3a3f4c;
+                 background: #1f232d;
+             }
+              :root:not([data-theme="light"]) .license-details[open] {
+                 border-color: #4a4f5c;
+             }
+              :root:not([data-theme="light"]) .license-details summary {
+                 color: #5dade2;
+             }
+              :root:not([data-theme="light"]) .license-details summary:hover {
+                 background: #262a35;
+             }
+              :root:not([data-theme="light"]) .license-details summary::after {
+                 color: #666;
+             }
+              :root:not([data-theme="light"]) .license-content {
+                 background: #1a1e28;
+                 color: #c0c0c0;
+                 border-top-color: #3a3f4c;
+             }
+              :root:not([data-theme="light"]) .license-content h1,
+              :root:not([data-theme="light"]) .license-content h2,
+              :root:not([data-theme="light"]) .license-content h3 { color: #e0e0e0; }
+              :root:not([data-theme="light"]) .license-content strong { color: #e0e0e0; }
+              :root:not([data-theme="light"]) .license-content blockquote {
+                 background: #1f2937;
+                 border-left-color: #5dade2;
+                 color: #aaa;
+             }
+              :root:not([data-theme="light"]) .license-content code {
+                 background: #2a2e3a;
+                 color: #e0e0e0;
+             }
+              :root:not([data-theme="light"]) .license-content th,
+              :root:not([data-theme="light"]) .license-content td {
+                 border-color: #3a3f4c;
+             }
+              :root:not([data-theme="light"]) .license-content th { background: #2a2e3a; }
+              :root:not([data-theme="light"]) .license-content hr { border-top-color: #3a3f4c; }
+             :root:not([data-theme="light"]) .license-maximize-btn {
+                border-color: #3a3f4c;
+                color: #5dade2;
+            }
+             :root:not([data-theme="light"]) .license-maximize-btn:hover {
+                background: #5dade2;
+                color: #1a1e28;
+                border-color: #5dade2;
+            }
+             :root:not([data-theme="light"]) .license-modal {
+                background: rgba(0, 0, 0, 0.7);
+            }
+             :root:not([data-theme="light"]) .license-modal-dialog {
+                background: #1f232d;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            }
+             :root:not([data-theme="light"]) .license-modal-header {
+                background: #262a35;
+                border-bottom-color: #3a3f4c;
+            }
+             :root:not([data-theme="light"]) .license-modal-title { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .license-modal-close { color: #888; }
+             :root:not([data-theme="light"]) .license-modal-close:hover {
+                background: #2a2e3a;
+                color: #e0e0e0;
+            }
+             :root:not([data-theme="light"]) .license-modal-body { color: #c0c0c0; }
+             :root:not([data-theme="light"]) .license-modal-body h1,
+             :root:not([data-theme="light"]) .license-modal-body h2,
+             :root:not([data-theme="light"]) .license-modal-body h3 { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .license-modal-body strong { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .license-modal-body blockquote {
+                background: #1f2937;
+                border-left-color: #5dade2;
+                color: #aaa;
+            }
+             :root:not([data-theme="light"]) .license-modal-body code {
+                background: #2a2e3a;
+                color: #e0e0e0;
+            }
+             :root:not([data-theme="light"]) .license-modal-body th,
+             :root:not([data-theme="light"]) .license-modal-body td { border-color: #3a3f4c; }
+             :root:not([data-theme="light"]) .license-modal-body th { background: #2a2e3a; }
+             :root:not([data-theme="light"]) .license-modal-body hr { border-top-color: #3a3f4c; }
 
-            .footer { color: #555; }
-            .footer img { opacity: 0.3; }
+             :root:not([data-theme="light"]) .footer { color: #555; }
+             :root:not([data-theme="light"]) .footer img { opacity: 0.3; }
 
-            button[type="submit"] {
+             :root:not([data-theme="light"]) button[type="submit"] {
                 box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
             }
-            button[type="submit"]:hover {
+             :root:not([data-theme="light"]) button[type="submit"]:hover {
                 box-shadow: 0 6px 20px rgba(52, 152, 219, 0.25);
             }
+             :root:not([data-theme="light"]) .theme-selector-container {
+                 background: rgba(30, 34, 46, 0.85);
+                 border-color: rgba(255, 255, 255, 0.06);
+             }
+             :root:not([data-theme="light"]) .theme-selector-container label { color: #888; }
+             :root:not([data-theme="light"]) #theme-selector {
+                 background: #2a2e3a;
+                 border-color: #3a3f4c;
+                 color: #e0e0e0;
+             }
         }
 
         /* ===== Responsive ===== */
@@ -323,6 +868,12 @@
             .login-container { padding: 28px 22px 22px; }
             .brand img { width: 40px; height: 40px; }
             .brand-name { font-size: 1.5em; }
+             .theme-selector-container {
+                 top: 8px;
+                 right: 8px;
+                 padding: 4px 8px;
+             }
+             .theme-selector-container label { display: none; }
         }
 
         /* ===== Animations ===== */
@@ -336,6 +887,14 @@
     </style>
 </head>
 <body>
+     <div class="theme-selector-container">
+         <label for="theme-selector">Theme:</label>
+         <select id="theme-selector" aria-label="Select theme">
+             <option value="auto">Auto</option>
+             <option value="light">Light</option>
+             <option value="dark">Dark</option>
+         </select>
+     </div>
     <div class="brand">
         <div class="brand-logo-row">
             <img alt="Cognotik Logo" src="/logo.svg">
@@ -348,23 +907,44 @@
         <h2>Welcome Back</h2>
         <p class="subtitle">Sign in to your account to continue</p>
         <!--ERROR_BLOCK-->
-        <form id="loginForm" name="loginForm" method="POST" action="/login/" autocomplete="on">
-            <input type="hidden" name="formAction" value="login">
-            <!--TARGET_HIDDEN_FIELD-->
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" autocomplete="username webauthn" placeholder="Enter your username" required autofocus>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" autocomplete="current-password webauthn" placeholder="Enter your password" required>
-            </div>
-            <button type="submit" name="login" value="Sign In">Sign In</button>
-        </form>
+        <!--LOGIN_METHODS-->
         <div class="links">
             <a href="<!--REGISTER_LINK-->">Don't have an account? <strong>Create one</strong></a>
         </div>
+         <div class="license-agreement">
+             <p class="license-notice">By logging in, you agree to the terms of the license below.</p>
+             <details class="license-details">
+                 <summary>
+                     <span>View License Agreement</span>
+                     <span class="license-summary-actions">
+                         <button type="button" class="license-maximize-btn" id="license-maximize-btn" title="Maximize" aria-label="Maximize license view">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                 <polyline points="15 3 21 3 21 9"></polyline>
+                                 <polyline points="9 21 3 21 3 15"></polyline>
+                                 <line x1="21" y1="3" x2="14" y2="10"></line>
+                                 <line x1="3" y1="21" x2="10" y2="14"></line>
+                             </svg>
+                         </button>
+                     </span>
+                 </summary>
+                 <div class="license-content" id="license-content">
+                     <div class="license-loading">Loading license…</div>
+                 </div>
+             </details>
+         </div>
     </div>
+    <div class="license-modal" id="license-modal" role="dialog" aria-modal="true" aria-labelledby="license-modal-title">
+        <div class="license-modal-dialog">
+            <div class="license-modal-header">
+                <h3 class="license-modal-title" id="license-modal-title">License Agreement</h3>
+                <button type="button" class="license-modal-close" id="license-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="license-modal-body" id="license-modal-body">
+                <div class="license-loading">Loading license…</div>
+            </div>
+        </div>
+    </div>
+
 
     <div class="footer">
         <div class="footer-content">
@@ -372,5 +952,95 @@
             <span>Cognotik &copy; 2026 SimiaCryptus Software</span>
         </div>
     </div>
+     <script>
+         (function() {
+             var loaded = false;
+             var cachedHtml = null;
+             var details = document.querySelector('.license-details');
+             var target = document.getElementById('license-content');
+             var maximizeBtn = document.getElementById('license-maximize-btn');
+             var modal = document.getElementById('license-modal');
+             var modalBody = document.getElementById('license-modal-body');
+             var modalClose = document.getElementById('license-modal-close');
+             function renderInto(el, md) {
+                 if (typeof marked !== 'undefined' && marked.parse) {
+                     el.innerHTML = marked.parse(md);
+                 } else {
+                     var pre = document.createElement('pre');
+                     pre.textContent = md;
+                     el.innerHTML = '';
+                     el.appendChild(pre);
+                 }
+             }
+
+             function loadLicense() {
+                 if (loaded) return Promise.resolve(cachedHtml);
+                 loaded = true;
+                 return fetch('/LICENSE.md', { credentials: 'same-origin' })
+                     .then(function(resp) {
+                         if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                         return resp.text();
+                     })
+                     .then(function(md) {
+                         renderInto(target, md);
+                         cachedHtml = target.innerHTML;
+                         return cachedHtml;
+                     })
+                     .catch(function(err) {
+                         var msg = '<div class="license-loading">Unable to load license: ' +
+                             (err && err.message ? err.message : 'unknown error') + '</div>';
+                         target.innerHTML = msg;
+                         loaded = false;
+                         throw err;
+                     });
+             }
+             function openModal() {
+                 modal.classList.add('open');
+                 document.body.classList.add('license-modal-open');
+                 if (cachedHtml) {
+                     modalBody.innerHTML = cachedHtml;
+                 } else {
+                     modalBody.innerHTML = '<div class="license-loading">Loading license…</div>';
+                     loadLicense().then(function(html) {
+                         if (html) modalBody.innerHTML = html;
+                     }).catch(function(err) {
+                         modalBody.innerHTML = '<div class="license-loading">Unable to load license: ' +
+                             (err && err.message ? err.message : 'unknown error') + '</div>';
+                     });
+                 }
+                 if (modalClose) modalClose.focus();
+             }
+             function closeModal() {
+                 modal.classList.remove('open');
+                 document.body.classList.remove('license-modal-open');
+             }
+
+             if (details) {
+                 details.addEventListener('toggle', function() {
+                     if (details.open) loadLicense();
+                 });
+             }
+             if (maximizeBtn) {
+                 maximizeBtn.addEventListener('click', function(e) {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     openModal();
+                 });
+             }
+             if (modalClose) {
+                 modalClose.addEventListener('click', closeModal);
+             }
+             if (modal) {
+                 modal.addEventListener('click', function(e) {
+                     if (e.target === modal) closeModal();
+                 });
+             }
+             document.addEventListener('keydown', function(e) {
+                 if (e.key === 'Escape' && modal.classList.contains('open')) {
+                     closeModal();
+                 }
+             });
+         })();
+     </script>
 </body>
 </html>

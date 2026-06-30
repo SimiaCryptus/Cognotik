@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
@@ -49,6 +49,9 @@ class CancelThreadsServlet : HttpServlet() {
     } else {
       val session = Session(request.getParameter("sessionId"))
       val user = authenticate(request, response)
+      if (user == null) {
+        throw RuntimeException("User must be authenticated to cancel sessions")
+      }
       require(
         ApplicationServices.authorizationManager.isAuthorized(
           javaClass,

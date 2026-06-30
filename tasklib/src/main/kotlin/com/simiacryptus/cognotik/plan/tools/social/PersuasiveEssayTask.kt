@@ -6,11 +6,13 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -18,6 +20,7 @@ import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
@@ -389,7 +392,7 @@ Ensure the outline:
           """.trimIndent(),
             model = api,
             temperature = 0.7,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           val outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -509,7 +512,7 @@ Speak directly to the ${executionConfig.target_audience}.
           """.trimIndent(),
             model = api,
             temperature = 0.8,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           var introduction = introAgent.answer(listOf("Write introduction")).obj
@@ -621,7 +624,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
           """.trimIndent(),
               model = api,
               temperature = 0.8,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             var argumentSection = argumentAgent.answer(listOf("Write argument")).obj
@@ -719,7 +722,7 @@ Aim for approximately $counterargumentWords words.
           """.trimIndent(),
               model = api,
               temperature = 0.7,
-              parsingChatter = defaultFast
+              parsingModel = defaultFast
             )
 
             var counterSection = counterAgent.answer(listOf("Write counterarguments")).obj
@@ -823,7 +826,7 @@ End on a strong note that reinforces your position.
           """.trimIndent(),
             model = api,
             temperature = 0.8,
-            parsingChatter = defaultFast
+            parsingModel = defaultFast
           )
 
           var conclusion = conclusionAgent.answer(listOf("Write conclusion")).obj

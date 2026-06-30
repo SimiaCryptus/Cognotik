@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -48,10 +48,37 @@ interface ModelSchema {
   }
 
   data class Usage(
-    var prompt_tokens: Long = 0,
-    var completion_tokens: Long = 0,
-    var total_tokens: Long = prompt_tokens + completion_tokens,
-    var cost: Double? = null
+    val counts: MutableMap<TokenTypes, Long> = mutableMapOf(),
+    var total_tokens: Long = counts.values.sum(),
+    var cost: Double = 0.0,
+  ) {
+    constructor(
+      prompt_tokens: Long = 0,
+      completion_tokens: Long = 0,
+      total_tokens: Long = prompt_tokens + completion_tokens,
+      cost: Double = 0.0
+    ) : this(
+      counts = mutableMapOf(
+        TokenTypes.Prompt to prompt_tokens,
+        TokenTypes.Completion to completion_tokens
+      ), total_tokens = total_tokens, cost = cost
+    )
+  }
+
+  enum class TokenTypes(val parent: TokenTypes? = null) {
+    Prompt,
+    Completion,
+    Cached(Prompt),
+    Thinking(Completion),
+    Tools(Completion),
+    Image(Completion),
+    CacheWrite5m(),
+    CacheWrite1h(),
+  }
+
+  data class UsageData(
+    val input_text: String? = null,
+    val output_text: String? = null,
   )
 
   data class TranscriptionPacket(
@@ -136,7 +163,11 @@ interface ModelSchema {
     var modalities: List<String>? = null,
     var audio: Map<String, String>? = null,
     var reasoning_effort: String? = null,
-  )
+  ) {
+    fun toRequestData() = UsageData(
+        input_text = messages.joinToString("\n") { "${it.role}: ${it.content?.joinToString(" ") { part -> part.text ?: "" }}" }
+      )
+  }
 
   data class GroqChatRequest(
     var messages: List<GroqChatMessage> = listOf(),

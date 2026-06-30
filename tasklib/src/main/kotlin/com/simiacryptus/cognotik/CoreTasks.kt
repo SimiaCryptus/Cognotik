@@ -5,10 +5,12 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.*
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.SeleniumFetchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.HistoricalFigureDebateTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.UnrunnableProtocolDialogTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
@@ -38,6 +40,9 @@ object CoreTasks : CognotikPlugin {
     TaskType.registerTaskType(AudioGenerationTask.GenerateAudio)
     TaskType.registerTaskType(GenerateAudioFilesTask.GenerateAudioFiles)
     TaskType.registerTaskType(BrainstormingTask.Brainstorming)
+    TaskType.registerTaskType(HistoricalFigureDebateTask.HistoricalFigureDebate)
+    TaskType.registerTaskType(UnrunnableProtocolDialogTask.UnrunnableProtocolDialog)
+
     TaskType.registerTaskType(ComicBookGenerationTask.ComicBookGeneration)
     TaskType.registerTaskType(CreateErbTemplateTask.CreateErbTemplate)
     TaskType.registerTaskType(CrawlerAgentTask.CrawlerAgent)
@@ -71,7 +76,9 @@ object CoreTasks : CognotikPlugin {
         "1" to AutoFixTask.AutoFixTaskExecutionConfigData(
           task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
             AutoFixTask.CommandWithWorkingDir(
-              command = mutableListOf("echo", "Hello, World!"), working_dir = "."
+              executable = "echo",
+              arguments = mutableListOf("Hello, World!"),
+              working_dir = "."
             )
           )
         ), "2" to FileModificationTask.FileModificationTaskExecutionConfigData(

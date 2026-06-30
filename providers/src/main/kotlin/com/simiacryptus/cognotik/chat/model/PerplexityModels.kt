@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
 
 object PerplexityModels {
@@ -8,52 +7,56 @@ object PerplexityModels {
   val SonarSmallChat128k = run {
     val maxTotalTokens = 128 * 1024
     ChatModel(
-      name = "SonarSmallChat128k",
-      modelId = "llama-3.1-sonar-small-128k-chat",
-      maxTotalTokens = maxTotalTokens,
-      maxOutTokens = maxTotalTokens,
-      provider = CoreProviders.Perplexity,
-      inputTokenPricePerK = 0.0005,
-      outputTokenPricePerK = 0.0015
+        name = "SonarSmallChat128k",
+        modelId = "llama-3.1-sonar-small-128k-chat",
+        maxTotalTokens = maxTotalTokens,
+        provider = CoreProviders.Perplexity,
+        inputTokenPricePerK = 0.0005,
+        outputTokenPricePerK = 0.0015,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
 
   val SonarSmallOnline128k = run {
     val maxTotalTokens = 128 * 1024
     ChatModel(
-      name = "SonarSmallOnline128k",
-      modelId = "llama-3.1-sonar-small-128k-online",
-      maxTotalTokens = maxTotalTokens,
-      maxOutTokens = maxTotalTokens,
-      provider = CoreProviders.Perplexity,
-      inputTokenPricePerK = 0.0005,
-      outputTokenPricePerK = 0.0015
+        name = "SonarSmallOnline128k",
+        modelId = "llama-3.1-sonar-small-128k-online",
+        maxTotalTokens = maxTotalTokens,
+        provider = CoreProviders.Perplexity,
+        inputTokenPricePerK = 0.0005,
+        outputTokenPricePerK = 0.0015,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
 
   val SonarLargeChat128k = run {
     val maxTotalTokens = 128 * 1024
     ChatModel(
-      name = "SonarLargeChat128k",
-      modelId = "llama-3.1-sonar-large-128k-chat",
-      maxTotalTokens = maxTotalTokens,
-      maxOutTokens = maxTotalTokens,
-      provider = CoreProviders.Perplexity,
-      inputTokenPricePerK = 0.0005,
-      outputTokenPricePerK = 0.0015
+        name = "SonarLargeChat128k",
+        modelId = "llama-3.1-sonar-large-128k-chat",
+        maxTotalTokens = maxTotalTokens,
+        provider = CoreProviders.Perplexity,
+        inputTokenPricePerK = 0.0005,
+        outputTokenPricePerK = 0.0015,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
 
   val SonarLargeOnline128k = run {
     val maxTotalTokens = 128 * 1024
     ChatModel(
-      name = "SonarLargeOnline128k",
-      modelId = "llama-3.1-sonar-large-128k-online",
-      maxTotalTokens = maxTotalTokens,
-      maxOutTokens = maxTotalTokens,
-      provider = CoreProviders.Perplexity,
-      inputTokenPricePerK = 0.0005,
-      outputTokenPricePerK = 0.0015
+        name = "SonarLargeOnline128k",
+        modelId = "llama-3.1-sonar-large-128k-online",
+        maxTotalTokens = maxTotalTokens,
+        provider = CoreProviders.Perplexity,
+        inputTokenPricePerK = 0.0005,
+        outputTokenPricePerK = 0.0015,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
   val values = mapOf(

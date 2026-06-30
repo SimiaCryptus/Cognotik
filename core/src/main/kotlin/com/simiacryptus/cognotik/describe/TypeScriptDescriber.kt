@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.describe.DescriptorUtil.componentType
 import com.simiacryptus.cognotik.describe.DescriptorUtil.getAllAnnotations
 import com.simiacryptus.cognotik.describe.DescriptorUtil.isArray
 import com.simiacryptus.cognotik.util.DynamicEnum
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType

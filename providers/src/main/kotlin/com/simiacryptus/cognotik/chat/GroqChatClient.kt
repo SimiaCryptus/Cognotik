@@ -2,15 +2,17 @@ package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GroqModels
-import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ConcurrentHashMap
@@ -23,6 +25,7 @@ class GroqChatClient(
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   apiBase: String,
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.Groq,
   apiKey = apiKey,
@@ -30,11 +33,12 @@ class GroqChatClient(
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GroqChatClient::class.java)
+    private val log = getLogger(GroqChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
     const val HEADER_CONTENT_TYPE = "Content-Type"
@@ -94,10 +98,11 @@ class GroqChatClient(
           ChatModel(
             name = groqModel.id,
             modelId = groqModel.id,
-            provider = CoreProviders.Groq,
             maxTotalTokens = groqModel.context_window,
-            inputTokenPricePerK = 0.0, // Groq doesn't publicly list token pricing as of now
-            outputTokenPricePerK = 0.0
+            provider = CoreProviders.Groq,
+            outputTokenPricePerK = 0.0, // Groq doesn't publicly list token pricing as of now
+            inputModalities = setOf(ChatMessageModality.TEXT),
+            outputModalities = setOf(ChatMessageModality.TEXT)
           )
         } else {
           null
@@ -124,7 +129,7 @@ class GroqChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     log.info("Starting Groq chat with model: ${model.modelId}")
     return withPerformanceLogging {
@@ -132,7 +137,7 @@ class GroqChatClient(
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(groqRequest)
       val result =
-        post("${apiBase}/openai/chat/completions", json)
+        post("${apiBase}/chat/completions", json)
       checkError(result)
       val response = JsonUtil.objectMapper().readValue(
         result,
@@ -140,7 +145,7 @@ class GroqChatClient(
       )
 
       if (response.usage != null) {
-        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!,)
+        usageHandler.onUsage(model, response.usage!!)
       }
 
       response

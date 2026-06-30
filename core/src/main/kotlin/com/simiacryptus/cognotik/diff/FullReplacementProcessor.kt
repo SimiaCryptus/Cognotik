@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 /**
  * A processor that handles full file replacement instead of patching.

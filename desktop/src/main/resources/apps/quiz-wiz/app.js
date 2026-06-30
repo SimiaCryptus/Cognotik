@@ -263,7 +263,7 @@ import {
             const statusClass = status === 'COMPLETED' ? 'status-success' :
                 (status === 'ERROR' || status === 'FAILED') ? 'status-error' :
                     status === 'RUNNING' ? 'status-info' : 'status-warning';
-            const proxyUrl = id ? getProxyUrl(id) : '#';
+            const proxyUrl = id ? getProxyUrl(id) : '?session=';
             rows.push(`
                     <div class="session-row">
                         <span class="target-name">${escapeHtml(target)}</span>

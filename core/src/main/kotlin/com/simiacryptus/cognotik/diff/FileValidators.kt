@@ -3,10 +3,11 @@ package com.simiacryptus.cognotik.diff
 import com.simiacryptus.cognotik.util.GrammarValidator
 import com.simiacryptus.cognotik.util.KotlinGrammarValidator
 import com.simiacryptus.cognotik.util.ParenMatchingValidator
+import org.slf4j.LoggerFactory.getLogger
 
 object FileValidators {
 
-  val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(FileValidators::class.java)
+  val log = getLogger(FileValidators::class.java)
 
   const val MAX_DIFF_SIZE_CHARS = 100000
 

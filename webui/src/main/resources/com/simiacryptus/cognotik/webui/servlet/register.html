@@ -273,73 +273,189 @@
             height: 16px;
             opacity: 0.5;
         }
+         /* ===== Theme Selector ===== */
+         .theme-selector-container {
+             position: fixed;
+             top: 16px;
+             right: 16px;
+             z-index: 10;
+             display: flex;
+             align-items: center;
+             gap: 8px;
+             background: rgba(255, 255, 255, 0.85);
+             backdrop-filter: blur(8px);
+             padding: 6px 10px;
+             border-radius: 8px;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+             border: 1px solid rgba(255, 255, 255, 0.6);
+         }
+         .theme-selector-container label {
+             margin: 0;
+             font-size: 0.78em;
+             color: #7f8c8d;
+             font-weight: 600;
+         }
+         #theme-selector {
+             padding: 4px 8px;
+             border: 1px solid #dde1e7;
+             border-radius: 6px;
+             font-size: 0.85em;
+             font-family: inherit;
+             background: #fff;
+             color: #333;
+             cursor: pointer;
+         }
+         #theme-selector:focus {
+             outline: none;
+             border-color: #8e44ad;
+             box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2);
+         }
+         /* ===== Dark Mode (explicit data-theme="dark") ===== */
+         [data-theme="dark"] body {
+             background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] body::before { opacity: 0.04; }
+         [data-theme="dark"] body::after { opacity: 0.04; }
+         [data-theme="dark"] .brand-name { color: #e0e0e0; }
+         [data-theme="dark"] .brand-tagline { color: #777; }
+         [data-theme="dark"] .login-container {
+             background: rgba(30, 34, 46, 0.95);
+             border-color: rgba(255,255,255,0.06);
+             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+         }
+         [data-theme="dark"] .login-container:hover {
+             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+         }
+         [data-theme="dark"] h2 { color: #e0e0e0; }
+         [data-theme="dark"] .subtitle { color: #666; }
+         [data-theme="dark"] label { color: #ccc; }
+         [data-theme="dark"] input[type="text"],
+         [data-theme="dark"] input[type="password"] {
+             background: #2a2e3a;
+             border-color: #3a3f4c;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] input[type="text"]:focus,
+         [data-theme="dark"] input[type="password"]:focus {
+             border-color: #8e44ad;
+             background: #2e3340;
+             box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
+         }
+         [data-theme="dark"] input[type="text"]::placeholder,
+         [data-theme="dark"] input[type="password"]::placeholder {
+             color: #555;
+         }
+         [data-theme="dark"] .error {
+             background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
+             color: #e74c3c;
+             border-color: #5a2a2a;
+         }
+         [data-theme="dark"] .strength-meter { background: #333; }
+         [data-theme="dark"] .links { border-top-color: #2a2e3a; }
+         [data-theme="dark"] .links a { color: #bb8fce; }
+         [data-theme="dark"] .links a:hover { color: #d2b4de; }
+         [data-theme="dark"] .feature-item { color: #666; }
+         [data-theme="dark"] .footer { color: #555; }
+         [data-theme="dark"] .footer img { opacity: 0.3; }
+         [data-theme="dark"] button[type="submit"] {
+             box-shadow: 0 4px 12px rgba(142, 68, 173, 0.15);
+         }
+         [data-theme="dark"] button[type="submit"]:hover {
+             box-shadow: 0 6px 20px rgba(142, 68, 173, 0.25);
+         }
+         [data-theme="dark"] .theme-selector-container {
+             background: rgba(30, 34, 46, 0.85);
+             border-color: rgba(255, 255, 255, 0.06);
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+         }
+         [data-theme="dark"] .theme-selector-container label { color: #888; }
+         [data-theme="dark"] #theme-selector {
+             background: #2a2e3a;
+             border-color: #3a3f4c;
+             color: #e0e0e0;
+         }
+         [data-theme="dark"] #theme-selector:focus {
+             border-color: #8e44ad;
+             box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.3);
+         }
 
-        /* ===== Dark Mode ===== */
+         /* ===== Dark Mode (auto via prefers-color-scheme when no explicit theme set) ===== */
         @media (prefers-color-scheme: dark) {
-            body {
+             :root:not([data-theme="light"]) body {
                 background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
                 color: #e0e0e0;
             }
-            body::before { opacity: 0.04; }
-            body::after { opacity: 0.04; }
+             :root:not([data-theme="light"]) body::before { opacity: 0.04; }
+             :root:not([data-theme="light"]) body::after { opacity: 0.04; }
 
-            .brand-name { color: #e0e0e0; }
-            .brand-tagline { color: #777; }
+             :root:not([data-theme="light"]) .brand-name { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .brand-tagline { color: #777; }
 
-            .login-container {
+             :root:not([data-theme="light"]) .login-container {
                 background: rgba(30, 34, 46, 0.95);
                 border-color: rgba(255,255,255,0.06);
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
             }
-            .login-container:hover {
+             :root:not([data-theme="light"]) .login-container:hover {
                 box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
             }
 
-            h2 { color: #e0e0e0; }
-            .subtitle { color: #666; }
+             :root:not([data-theme="light"]) h2 { color: #e0e0e0; }
+             :root:not([data-theme="light"]) .subtitle { color: #666; }
 
-            label { color: #ccc; }
+             :root:not([data-theme="light"]) label { color: #ccc; }
 
-            input[type="text"],
-            input[type="password"] {
+             :root:not([data-theme="light"]) input[type="text"],
+             :root:not([data-theme="light"]) input[type="password"] {
                 background: #2a2e3a;
                 border-color: #3a3f4c;
                 color: #e0e0e0;
             }
-            input[type="text"]:focus,
-            input[type="password"]:focus {
+             :root:not([data-theme="light"]) input[type="text"]:focus,
+             :root:not([data-theme="light"]) input[type="password"]:focus {
                 border-color: #8e44ad;
                 background: #2e3340;
                 box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
             }
-            input[type="text"]::placeholder,
-            input[type="password"]::placeholder {
+             :root:not([data-theme="light"]) input[type="text"]::placeholder,
+             :root:not([data-theme="light"]) input[type="password"]::placeholder {
                 color: #555;
             }
 
-            .error {
+             :root:not([data-theme="light"]) .error {
                 background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
                 color: #e74c3c;
                 border-color: #5a2a2a;
             }
 
-            .strength-meter { background: #333; }
+             :root:not([data-theme="light"]) .strength-meter { background: #333; }
 
-            .links { border-top-color: #2a2e3a; }
-            .links a { color: #bb8fce; }
-            .links a:hover { color: #d2b4de; }
+             :root:not([data-theme="light"]) .links { border-top-color: #2a2e3a; }
+             :root:not([data-theme="light"]) .links a { color: #bb8fce; }
+             :root:not([data-theme="light"]) .links a:hover { color: #d2b4de; }
 
-            .feature-item { color: #666; }
+             :root:not([data-theme="light"]) .feature-item { color: #666; }
 
-            .footer { color: #555; }
-            .footer img { opacity: 0.3; }
+             :root:not([data-theme="light"]) .footer { color: #555; }
+             :root:not([data-theme="light"]) .footer img { opacity: 0.3; }
 
-            button[type="submit"] {
+             :root:not([data-theme="light"]) button[type="submit"] {
                 box-shadow: 0 4px 12px rgba(142, 68, 173, 0.15);
             }
-            button[type="submit"]:hover {
+             :root:not([data-theme="light"]) button[type="submit"]:hover {
                 box-shadow: 0 6px 20px rgba(142, 68, 173, 0.25);
             }
+             :root:not([data-theme="light"]) .theme-selector-container {
+                 background: rgba(30, 34, 46, 0.85);
+                 border-color: rgba(255, 255, 255, 0.06);
+             }
+             :root:not([data-theme="light"]) .theme-selector-container label { color: #888; }
+             :root:not([data-theme="light"]) #theme-selector {
+                 background: #2a2e3a;
+                 border-color: #3a3f4c;
+                 color: #e0e0e0;
+             }
         }
 
         /* ===== Responsive ===== */
@@ -349,6 +465,12 @@
             .brand img { width: 40px; height: 40px; }
             .brand-name { font-size: 1.5em; }
             .features { flex-direction: column; align-items: center; gap: 8px; }
+             .theme-selector-container {
+                 top: 8px;
+                 right: 8px;
+                 padding: 4px 8px;
+             }
+             .theme-selector-container label { display: none; }
         }
 
         /* ===== Animations ===== */
@@ -363,6 +485,14 @@
     </style>
 </head>
 <body>
+     <div class="theme-selector-container">
+         <label for="theme-selector">Theme:</label>
+         <select id="theme-selector" aria-label="Select theme">
+             <option value="auto">Auto</option>
+             <option value="light">Light</option>
+             <option value="dark">Dark</option>
+         </select>
+     </div>
     <div class="brand">
         <div class="brand-logo-row">
             <img alt="Cognotik Logo" src="/logo.svg">

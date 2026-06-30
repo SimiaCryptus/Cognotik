@@ -120,7 +120,7 @@ class PluginManagerServlet(
       request.requestURI,
       request.queryString
     )
-    val user = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user: {}", user)
     if (!ApplicationServices.authorizationManager.isAuthorized(
         PluginManagerServlet::class.java, user, OperationType.Admin
@@ -205,7 +205,7 @@ class PluginManagerServlet(
       request.requestURI,
       request.contentType
     )
-    val user = authenticate(request, response) ?: return
+    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user for POST: {}", user)
     if (!ApplicationServices.authorizationManager.isAuthorized(
         PluginManagerServlet::class.java, user, OperationType.Admin

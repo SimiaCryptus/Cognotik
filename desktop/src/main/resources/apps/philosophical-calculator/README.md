@@ -1,71 +1,118 @@
-# Philosophical Calculator
+# 🧮 Philosophical Calculator
 
-A multi-perspective analytical toolkit that transforms content through various philosophical, rhetorical, and creative
-lenses.
+**Transform your ideas into polished, multi-dimensional content — through the power of AI and philosophical thinking.**
 
-## Overview
+Whether you have a pile of rough notes, a half-formed idea, or a transcript from a meeting or lecture, the Philosophical Calculator helps you turn it into something remarkable. It's a writing and thinking toolkit that looks at your content from every angle — logical, creative, rhetorical, narrative, and more — so you never miss a dimension of your ideas.
 
-The Philosophical Calculator takes input content (notes, articles, essays) and processes it through a rich set of
-analytical operations to deepen understanding, strengthen arguments, and explore ideas from multiple angles.
+---
 
-## Operations
+## ✨ What It Does
 
-| Operation                 | Output                     | Description                                                                      |
-|---------------------------|----------------------------|----------------------------------------------------------------------------------|
-| **Summarize**             | `summary.md`               | Thematic/conceptual distillation of notes into a structured summary              |
-| **Draft Article**         | `content.md`               | Full article or essay based on instructions, summary, and notes                  |
-| **Update Article**        | `content.md`               | Synthesizes insights from all analytical outputs back into the main content      |
-| **Brainstorm**            | `brainstorm.md`            | Divergent ideation — generates broad ideas, extensions, and applications         |
-| **Dialectical**           | `dialectical.md`           | Thesis/antithesis/synthesis analysis of core themes                              |
-| **Socratic**              | `socratic.md`              | Transforms content into a rigorous Socratic dialogue                             |
-| **Perspectives**          | `perspectives.md`          | Multi-stakeholder perspective analysis                                           |
-| **Persuasive**            | `persuasive.md`            | Reframes content as a compelling persuasive essay                                |
-| **Game Theory**           | `gametheory.md`            | Analyzes concepts through game theory (players, strategies, payoffs, equilibria) |
-| **Narrative**             | `narrative.md`             | Dramatizes the content with illustrations                                        |
-| **Comic**                 | `comic.md`                 | Generates a comic book representation of the content                             |
-| **Technical Explanation** | `technical_explanation.md` | Precise, in-depth technical breakdown with examples and definitions              |
+The Philosophical Calculator takes your raw notes or source material and runs them through a series of AI-powered analytical "lenses." Each lens transforms your content in a different way:
 
-## Workflow
+- 📝 **Summarize** your notes into a clear, thematic overview
+- ✍️ **Draft a polished article** ready to share or publish
+- 💡 **Brainstorm** new ideas, extensions, and applications
+- ⚖️ **Explore contradictions** using dialectical (thesis/antithesis/synthesis) analysis
+- 🏛️ **Stress-test your arguments** through Socratic dialogue
+- 👥 **See all sides** with multi-stakeholder perspective analysis
+- 🎯 **Make your case** with a persuasive essay rewrite
+- 🎲 **Uncover strategic dynamics** using game theory
+- 📖 **Bring it to life** as a narrative story with illustrations
+- 💬 **Make it visual** as a comic book
+- 🔧 **Go deep** with a technical explanation
+- 🌐 **Publish it** as a standalone webpage
+
+---
+
+## 🚀 How to Use It
+
+### Step 1 — Add Your Notes
+Go to the **📝 Input** tab and paste your raw notes, ideas, or transcripts into the notes area. You can also drag and drop files (text, Word documents, PDFs, and more). Don't worry about formatting — rough is fine!
+
+Optionally, add **Instructions** to guide the writing style, length, or focus of the final article.
+
+### Step 2 — Choose Your AI Models
+Head to the **🤖 Models** tab to select which AI models power the analysis. The defaults work great, but you can swap them out if you have preferences.
+
+### Step 3 — Run the Core Pipeline
+Switch to the **⚙️ Pipeline** tab and click **▶ Run Core Pipeline**. This will:
+1. **Summarize** your notes into key themes
+2. **Draft** a full, polished article
+
+You can also run each step individually, or manually write/edit the article using the built-in editor.
+
+### Step 4 — Apply Analytical Lenses
+Go to the **🔬 Lenses** tab to run any combination of analytical perspectives on your content. Each lens produces its own independent output — you can run one, a few, or all of them.
+
+Use the **Batch Lenses** panel at the bottom to select and run multiple lenses in one click.
+
+### Step 5 — Synthesize & Enhance
+Back in the **⚙️ Pipeline** tab, run **Update Article** to weave all the insights from your chosen lenses back into the main article. Then optionally run **Illustrate Article** to add AI-generated images inline.
+
+### Step 6 — Review Your Results
+The **📊 Results** tab gives you a clean view of every output — article, summary, all lenses — in one place. Switch between tabs to read, compare, and copy your content.
+
+---
+
+## 🗂️ What You Can Upload
+
+Drop any of these into the notes area and the app will use them as source material:
+
+- Plain text (`.txt`, `.md`)
+- Word documents (`.doc`, `.docx`)
+- PDFs (`.pdf`)
+- Rich text (`.rtf`)
+- HTML files
+- And more
+
+---
+
+## 💡 Tips for Best Results
+
+- **More notes = better output.** The richer your source material, the more the AI has to work with.
+- **Use Instructions** to set the tone, length, or structure you want (e.g. *"Write a 1500-word blog post in a conversational tone"*).
+- **Mix and match lenses.** The Dialectical and Socratic lenses are great for sharpening arguments; Narrative and Comic are great for making ideas accessible and engaging.
+- **Iterate freely.** Run Update Article multiple times as you add more lenses. The app is designed for exploration.
+- **Edit at any time.** Use the built-in article editor to make manual tweaks at any stage of the pipeline.
+
+---
+
+## 💰 Tracking Usage & Costs
+
+The **💰 Usage** tab shows a live breakdown of how many AI tokens have been used and the estimated cost for your session. Auto-refresh keeps it up to date as you work.
+
+---
+
+## 🔄 The Full Pipeline at a Glance
 
 ```
-notes.* ──► summarize_op ──► summary.md
-                                  │
-                                  ▼
-              instruct.md ──► draft_article_op ──► content.md
-                                                      │
-                    ┌─────────────────────────────────┤
-                    ▼                                  ▼
-             brainstorm_op                     dialectical_op
-             socratic_op                       perspectives_op
-             persuasive_op                     gametheory_op
-             narrative_op                      comic_op
-             technical_explanation_op
-                    │                                  │
-                    └─────────────┬────────────────────┘
-                                  ▼
-                          update_article_op ──► content.md (enhanced)
+Your Notes
+    │
+    ▼
+Summarize ──► Summary
+    │
+    ▼
+Draft Article ──► Article
+    │
+    ├──► 💡 Brainstorm
+    ├──► ⚖️ Dialectical
+    ├──► 🏛️ Socratic
+    ├──► 👥 Perspectives
+    ├──► 🎯 Persuasive
+    ├──► 🎲 Game Theory
+    ├──► 📖 Narrative
+    ├──► 💬 Comic
+    ├──► 🔧 Technical
+    └──► 🌐 Webpage
+         │
+         ▼
+Update Article ──► Enriched Article
+         │
+         ▼
+Illustrate ──► Illustrated Article ✨
 ```
 
-### Typical Usage
+---
 
-1. **Start with notes** — Upload raw notes, transcripts, or ideas to `notes/*`; supports text, docx, pdx, etc
-2. **Summarize** — Run `summarize_op` to distill key themes into `summary.md`
-3. **Draft** — Run `draft_article_op` to produce a polished first draft in `content.md`
-4. **Analyze** — Run any combination of analytical operations (dialectical, socratic, game theory, etc.) to explore the
-   content from different angles
-5. **Update** — Run `update_article_op` to weave analytical insights back into the main article
-
-## Input Files
-
-| File          | Purpose                                                               |
-|---------------|-----------------------------------------------------------------------|
-| `notes/*`    | Raw notes, transcripts, or source material (canonical/authoritative). Supports file upload via drag-and-drop or file picker.  |
-| `instruct.md` | Structural and thematic directives for article generation             |
-| `content.md`  | The main article — both an output and an input for further refinement |
-
-## Design Principles
-
-- **Notes are canonical** — The raw notes are always the authoritative source of truth
-- **Iterative refinement** — Content improves through repeated analysis and synthesis cycles
-- **Non-destructive integration** — Updates weave new insights naturally rather than appending
-- **Voice preservation** — The original tone and core message are maintained through transformations
+*Built for thinkers, writers, researchers, and anyone who wants to squeeze every insight out of their ideas.*

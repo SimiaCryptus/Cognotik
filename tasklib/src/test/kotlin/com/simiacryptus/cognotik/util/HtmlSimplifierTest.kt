@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.util
 
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class HtmlSimplifierTest {
@@ -99,7 +99,8 @@ class HtmlSimplifierTest {
 
         @Test
         fun `should remove form elements by default`() {
-            val html = "<html><body><form action='/submit'><input type='text'/><button>Submit</button></form></body></html>"
+            val html =
+                "<html><body><form action='/submit'><input type='text'/><button>Submit</button></form></body></html>"
             val result = HtmlSimplifier.scrubHtml(html)
             assertFalse(result.contains("<form"), "Form tags should be removed")
             assertFalse(result.contains("<input"), "Input tags should be removed")
@@ -125,7 +126,10 @@ class HtmlSimplifierTest {
         fun `should keep interactive elements when keepInteractiveElements is true`() {
             val html = "<html><body><form action='/submit'><input type='text'/></form></body></html>"
             val result = HtmlSimplifier.scrubHtml(html, keepInteractiveElements = true)
-            assertTrue(result.contains("<form") || result.contains("<input"), "Interactive elements should be preserved")
+            assertTrue(
+                result.contains("<form") || result.contains("<input"),
+                "Interactive elements should be preserved"
+            )
         }
     }
 
@@ -184,7 +188,8 @@ class HtmlSimplifierTest {
 
         @Test
         fun `should remove object and embed tags`() {
-            val html = "<html><body><object data='flash.swf'></object><embed src='flash.swf'/><p>Hello</p></body></html>"
+            val html =
+                "<html><body><object data='flash.swf'></object><embed src='flash.swf'/><p>Hello</p></body></html>"
             val result = HtmlSimplifier.scrubHtml(html)
             assertFalse(result.contains("<object"), "Object tags should be removed")
             assertFalse(result.contains("<embed"), "Embed tags should be removed")
@@ -329,7 +334,7 @@ class HtmlSimplifierTest {
         @Test
         fun `should preserve href attribute`() {
             val html = "<html><body><a href='https://example.com'>Link</a></body></html>"
-            val result = HtmlSimplifier.scrubHtml(html)
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = false)
             assertTrue(result.contains("href"), "href attribute should be preserved")
             assertTrue(result.contains("https://example.com"), "href value should be preserved")
         }
@@ -392,7 +397,10 @@ class HtmlSimplifierTest {
         fun `should preserve id attribute when keepObjectIds is true`() {
             val html = "<html><body><div id='main'><p>Hello</p></div></body></html>"
             val result = HtmlSimplifier.scrubHtml(html, keepObjectIds = true)
-            assertTrue(result.contains("id=") || result.contains("id=\"main\""), "id attribute should be preserved when keepObjectIds is true")
+            assertTrue(
+                result.contains("id=") || result.contains("id=\"main\""),
+                "id attribute should be preserved when keepObjectIds is true"
+            )
         }
 
         @Test
@@ -526,7 +534,7 @@ class HtmlSimplifierTest {
         @Test
         fun `should convert relative href to absolute when baseUrl provided`() {
             val html = "<html><body><a href='/page'>Link</a></body></html>"
-            val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com")
+            val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com", treeIndexLinks = false)
             assertTrue(result.contains("https://example.com/page"), "Relative href should be converted to absolute")
         }
 
@@ -534,20 +542,23 @@ class HtmlSimplifierTest {
         fun `should convert relative img src to absolute when baseUrl provided`() {
             val html = "<html><body><img src='/images/photo.jpg' alt='photo'/></body></html>"
             val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com")
-            assertTrue(result.contains("https://example.com/images/photo.jpg"), "Relative src should be converted to absolute")
+            assertTrue(
+                result.contains("https://example.com/images/photo.jpg"),
+                "Relative src should be converted to absolute"
+            )
         }
 
         @Test
         fun `should not modify absolute URLs`() {
             val html = "<html><body><a href='https://other.com/page'>Link</a></body></html>"
-            val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com")
+            val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com", treeIndexLinks = false)
             assertTrue(result.contains("https://other.com/page"), "Absolute URLs should not be modified")
         }
 
         @Test
         fun `should not convert URLs when no baseUrl provided`() {
             val html = "<html><body><a href='/page'>Link</a></body></html>"
-            val result = HtmlSimplifier.scrubHtml(html)
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = false)
             assertTrue(result.contains("/page"), "Relative URLs should remain when no baseUrl")
         }
     }
@@ -600,11 +611,12 @@ class HtmlSimplifierTest {
         @Test
         fun `should simplify redundant nested elements`() {
             val html = "<html><body><div><div><div><p>Deep content</p></div></div></div></body></html>"
-            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true)
+            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true, treeIndexLinks = false)
             assertTrue(result.contains("Deep content"), "Content should be preserved after simplification")
             // The redundant wrapper divs should be removed, leaving just the <p> tag
-            assertFalse(result.contains("<div"), "Redundant wrapper divs should be removed")
+            assertFalse(result.contains("<div"), "Redundant wrapper divs should be removed: $result")
         }
+
         @Test
         fun `should simplify nested divs wrapping different child elements`() {
             val html = """
@@ -614,11 +626,12 @@ class HtmlSimplifierTest {
                 </div></div></div></div></div></div></div>
                 </body></html>
             """.trimIndent()
-            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true)
+            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true, treeIndexLinks = false)
             assertTrue(result.contains("Title"), "Content should be preserved")
             assertTrue(result.contains("<h1>"), "h1 should be preserved")
-            assertFalse(result.contains("<div"), "Unnecessary wrapper divs should be removed")
+            assertFalse(result.contains("<div"), "Unnecessary wrapper divs should be removed: $result")
         }
+
         @Test
         fun `should not unwrap elements that have attributes`() {
             val html = """<html><body><div role="main"><p>Content</p></div></body></html>"""
@@ -626,6 +639,7 @@ class HtmlSimplifierTest {
             assertTrue(result.contains("Content"), "Content should be preserved")
             assertTrue(result.contains("role=\"main\""), "Div with attributes should be preserved")
         }
+
         @Test
         fun `should not unwrap elements with multiple children`() {
             val html = """<html><body><div><p>First</p><p>Second</p></div></body></html>"""
@@ -684,7 +698,12 @@ class HtmlSimplifierTest {
                 </body>
                 </html>
             """.trimIndent()
-            val result = HtmlSimplifier.scrubHtml(html, baseUrl = "https://example.com")
+            // Disable navigational-element removal so we can assert nav-link content is preserved.
+            val result = HtmlSimplifier.scrubHtml(
+                html,
+                baseUrl = "https://example.com",
+                removeNavigationalElements = false
+            )
 
             // Content should be preserved
             assertTrue(result.contains("Welcome"), "Heading content should be preserved")
@@ -821,8 +840,10 @@ class HtmlSimplifierTest {
         fun `should handle malformed HTML gracefully`() {
             val html = "<html><body><p>Unclosed paragraph<div>Nested wrong</p></div></body></html>"
             val result = HtmlSimplifier.scrubHtml(html)
-            assertTrue(result.contains("Unclosed paragraph") || result.contains("Nested wrong"),
-                "Should handle malformed HTML without throwing")
+            assertTrue(
+                result.contains("Unclosed paragraph") || result.contains("Nested wrong"),
+                "Should handle malformed HTML without throwing"
+            )
         }
 
         @Test
@@ -849,8 +870,10 @@ class HtmlSimplifierTest {
         fun `should handle self-closing tags`() {
             val html = "<html><body><br/><hr/><img src='https://example.com/img.png' alt='test'/></body></html>"
             val result = HtmlSimplifier.scrubHtml(html)
-            assertTrue(result.contains("<br") || result.contains("<hr") || result.contains("<img"),
-                "Self-closing tags should be handled")
+            assertTrue(
+                result.contains("<br") || result.contains("<hr") || result.contains("<img"),
+                "Self-closing tags should be handled"
+            )
         }
 
         @Test
@@ -931,10 +954,394 @@ class HtmlSimplifierTest {
             val result = HtmlSimplifier.scrubHtml(
                 html,
                 baseUrl = "https://example.com",
-                includeCssData = true
+                includeCssData = true, treeIndexLinks = false
             )
             assertTrue(result.contains("style"), "Style should be preserved")
             assertTrue(result.contains("https://example.com/page"), "URL should be absolute")
+        }
+    }
+
+    // ─── Boilerplate Removal (Content Extraction) ───────────────────────
+    @Nested
+    inner class BoilerplateRemoval {
+        @Test
+        fun `should remove template elements by default`() {
+            val html = """
+               <html><body>
+                 <p>Main content</p>
+                 <template><div>No results found</div></template>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Main content"), "Real content should be preserved")
+            assertFalse(result.contains("No results found"), "Template content should be removed")
+            assertFalse(result.contains("<template"), "Template tags should be removed")
+        }
+
+        @Test
+        fun `should keep template elements when disabled`() {
+            val html = """
+               <html><body>
+                 <p>Main</p>
+                 <template><span>placeholder</span></template>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, removeTemplateElements = false)
+            assertTrue(result.contains("Main"), "Content should be preserved")
+        }
+
+        @Test
+        fun `should remove navigational chrome by default`() {
+            val html = """
+               <html><body>
+                 <header><a href="/login">Log in</a></header>
+                 <nav><a href="/a">A</a><a href="/b">B</a></nav>
+                 <main><h1>Article</h1><p>Body</p></main>
+                 <aside><p>Promo</p></aside>
+                 <footer><p>Copyright</p></footer>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Article"), "Main heading should be preserved")
+            assertTrue(result.contains("Body"), "Main body should be preserved")
+            assertFalse(result.contains("Log in"), "Header should be removed")
+            assertFalse(result.contains("Promo"), "Aside should be removed")
+            assertFalse(result.contains("Copyright"), "Footer should be removed")
+        }
+
+        @Test
+        fun `should remove transient UI role containers`() {
+            val html = """
+               <html><body>
+                 <div role="tooltip">Hover help</div>
+                 <div role="alert">Saved!</div>
+                 <p>Real content</p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Real content"), "Content should be preserved")
+            assertFalse(result.contains("Hover help"), "Tooltip should be removed")
+            assertFalse(result.contains("Saved!"), "Alert should be removed")
+        }
+
+        @Test
+        fun `should remove empty anchors`() {
+            val html = """
+               <html><body>
+                 <a href="/x"></a>
+                 <a href="/y">Real link</a>
+                 <p>Content</p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = false)
+            assertTrue(result.contains("Real link"), "Real link should be preserved")
+            assertTrue(result.contains("Content"), "Content should be preserved")
+            // Empty anchor should be gone; the only href left should be /y
+            val hrefCount = "href".toRegex().findAll(result).count()
+            assertEquals(1, hrefCount, "Only the non-empty anchor's href should remain")
+        }
+
+        @Test
+        fun `should collapse boilerplate link lists`() {
+            val html = buildString {
+                append("<html><body><h1>Jobs</h1>")
+                append("<div><p>Top Staff Engineer Jobs</p></div>")
+                append("<div>")
+                for (i in 1..20) {
+                    append("<a href=\"/cat/$i\">Category $i</a>")
+                }
+                append("</div>")
+                append("<p>End of page</p>")
+                append("</body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Jobs"), "Heading should be preserved")
+            assertTrue(result.contains("End of page"), "Content after list should be preserved")
+            assertTrue(
+                result.contains("navigational links omitted") || result.contains("omitted"),
+                "Long link list should be collapsed to a placeholder"
+            )
+            assertFalse(
+                result.contains("Category 1") && result.contains("Category 20"),
+                "Individual category links should be collapsed away"
+            )
+        }
+
+        @Test
+        fun `should not collapse short link lists`() {
+            val html = """
+               <html><body>
+                 <ul>
+                   <li><a href="/a">Alpha</a></li>
+                   <li><a href="/b">Beta</a></li>
+                 </ul>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Alpha"), "Short list anchor text should remain")
+            assertTrue(result.contains("Beta"), "Short list anchor text should remain")
+        }
+
+        @Test
+        fun `should not collapse list when collapseLinkLists is false`() {
+            val html = buildString {
+                append("<html><body><div>")
+                for (i in 1..15) {
+                    append("<a href=\"/cat/$i\">Category $i</a>")
+                }
+                append("</div></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html, collapseLinkLists = false)
+            assertTrue(result.contains("Category 1"), "Links should remain when collapsing disabled")
+            assertTrue(result.contains("Category 15"), "Links should remain when collapsing disabled")
+        }
+
+        @Test
+        fun `should preserve job-listing-like content while removing chrome`() {
+            val html = """
+               <html><body>
+                 <nav><a href="/cities/austin">Austin</a><a href="/cities/seattle">Seattle</a></nav>
+                 <main>
+                   <h1>Staff Software Engineer Jobs</h1>
+                   <div>
+                     <h2><a href="/job/1">Senior Staff Software Engineer</a></h2>
+                     <span>Remote</span><span>180K-240K</span>
+                     <p>Lead backend dev with Python and Kubernetes.</p>
+                   </div>
+                 </main>
+                 <template><div>No Results Found</div></template>
+                 <footer><a href="/x">x</a></footer>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("Senior Staff Software Engineer"), "Job title preserved")
+            assertTrue(result.contains("180K-240K"), "Salary preserved")
+            assertTrue(result.contains("Python"), "Tech preserved")
+            assertFalse(result.contains("Austin"), "Nav city links removed")
+            assertFalse(result.contains("No Results Found"), "Template chrome removed")
+        }
+    }
+
+    // ─── Link Summarization ─────────────────────────────────────────────
+    @Nested
+    inner class LinkSummarization {
+        @Test
+        fun `should produce link index header and replace hrefs with indices`() {
+            val html = """
+               <html><body>
+                 <p>See <a href="https://example.com/a">Alpha</a> and
+                    <a href="https://example.com/b">Beta</a>.</p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, summarizeLinks = true)
+            assertTrue(result.startsWith("Links:"), "Output should begin with a Links header")
+            assertTrue(result.contains("[1] https://example.com/a"), "First URL should be indexed")
+            assertTrue(result.contains("[2] https://example.com/b"), "Second URL should be indexed")
+            assertTrue(result.contains("Alpha [1]"), "Anchor text should be followed by its index")
+            assertTrue(result.contains("Beta [2]"), "Anchor text should be followed by its index")
+            assertFalse(result.contains("<a "), "Anchor tags should be removed when summarizing")
+            assertFalse(result.contains("href="), "href attributes should be removed when summarizing")
+        }
+
+        @Test
+        fun `should deduplicate repeated URLs`() {
+            val html = """
+               <html><body>
+                 <p><a href="https://example.com/x">One</a>
+                    <a href="https://example.com/x">Two</a>
+                    <a href="https://example.com/y">Three</a></p>
+               </body></html>
+           """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, summarizeLinks = true)
+            assertTrue(result.contains("[1] https://example.com/x"), "First URL indexed at 1")
+            assertTrue(result.contains("[2] https://example.com/y"), "Second unique URL indexed at 2")
+            assertFalse(result.contains("[3] https://example.com/x"), "Duplicate URL should not be re-indexed")
+            assertTrue(result.contains("One [1]"), "First anchor uses index 1")
+            assertTrue(result.contains("Two [1]"), "Duplicate anchor reuses index 1")
+            assertTrue(result.contains("Three [2]"), "Different URL uses index 2")
+        }
+
+        @Test
+        fun `should omit header when no links present`() {
+            val html = "<html><body><p>No links here</p></body></html>"
+            val result = HtmlSimplifier.scrubHtml(html, summarizeLinks = true)
+            assertFalse(result.startsWith("Links:"), "No header when there are no links")
+            assertTrue(result.contains("No links here"))
+        }
+
+        @Test
+        fun `should not summarize when flag is false`() {
+            val html = """<html><body><a href="https://example.com">Link</a></body></html>"""
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = false)
+            assertFalse(result.startsWith("Links:"), "No header by default")
+            assertTrue(result.contains("href"), "Anchor href preserved by default")
+        }
+    }
+
+    // ─── Tree-Based Link Index ──────────────────────────────────────────
+    @Nested
+    inner class TreeIndexLinks {
+        @Test
+        fun `should prepend single-line JSON tree index`() {
+            val html = """
+             <html><body>
+               <p>See <a href="https://example.com/a">Alpha</a> and
+                  <a href="https://example.com/b">Beta</a>.</p>
+             </body></html>
+         """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = true)
+            val firstLine = result.lineSequence().first()
+            assertTrue(firstLine.startsWith("{"), "Output should begin with a JSON object")
+            assertTrue(firstLine.endsWith("}"), "JSON tree should be single-line")
+            assertFalse(firstLine.contains("\n"), "Tree index must be single-line")
+            assertTrue(firstLine.contains("https://example.com"), "Origin should be a tree key")
+            assertTrue(firstLine.contains("\"a\""), "Path segment 'a' should be a tree key")
+            assertTrue(firstLine.contains("\"b\""), "Path segment 'b' should be a tree key")
+        }
+
+        @Test
+        fun `should deduplicate substrings via shared origin node`() {
+            val html = """
+             <html><body>
+               <a href="https://example.com/jobs/1">One</a>
+               <a href="https://example.com/jobs/2">Two</a>
+               <a href="https://example.com/jobs/3">Three</a>
+             </body></html>
+         """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = true)
+            val firstLine = result.lineSequence().first()
+            // The origin should appear exactly once despite three links.
+            val originOccurrences = Regex("https://example\\.com").findAll(firstLine).count()
+            assertEquals(1, originOccurrences, "Origin should be deduplicated to a single tree key")
+            // The shared 'jobs' segment should also appear once.
+            val jobsOccurrences = Regex("\"jobs\"").findAll(firstLine).count()
+            assertEquals(1, jobsOccurrences, "Shared path segment should appear once")
+        }
+
+        @Test
+        fun `should replace anchors with compact id markers`() {
+            val html = """
+             <html><body>
+               <p><a href="https://example.com/x">First</a></p>
+             </body></html>
+         """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = true)
+            assertTrue(result.contains("First {0}"), "Anchor text should be followed by its id marker")
+            assertFalse(result.contains("<a "), "Anchor tags should be removed")
+            assertFalse(result.contains("href="), "href attributes should be removed")
+        }
+
+        @Test
+        fun `should reuse id for duplicate URLs`() {
+            val html = """
+             <html><body>
+               <a href="https://example.com/x">A</a>
+               <a href="https://example.com/x">B</a>
+               <a href="https://example.com/y">C</a>
+             </body></html>
+         """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = true)
+            assertTrue(result.contains("A {0}"), "First occurrence gets id 0")
+            assertTrue(result.contains("B {0}"), "Duplicate URL reuses id 0")
+            assertTrue(result.contains("C {1}"), "Distinct URL gets next id")
+        }
+
+        @Test
+        fun `should omit tree index when no links present`() {
+            val html = "<html><body><p>No links here</p></body></html>"
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = true)
+            assertFalse(result.startsWith("{"), "No JSON tree when there are no links")
+            assertTrue(result.contains("No links here"))
+        }
+
+        @Test
+        fun `should not produce tree index by default`() {
+            val html = """<html><body><a href="https://example.com">Link</a></body></html>"""
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = false)
+            assertFalse(result.startsWith("{"), "No tree index by default")
+            assertTrue(result.contains("href"), "Anchor href preserved by default")
+        }
+
+        @Test
+        fun `should record terminal id for origin-only URLs`() {
+            val html = """<html><body><a href="https://example.com">Home</a></body></html>"""
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = true)
+            val firstLine = result.lineSequence().first()
+            assertTrue(firstLine.contains("\"\$\":0"), "Origin-only URL should carry a terminal id")
+            assertTrue(result.contains("Home {0}"), "Anchor should reference the id")
+        }
+    }
+
+    // ─── Inflated Markup Collapse ───────────────────────────────────────
+    @Nested
+    inner class InlineLeafCollapse {
+        @Test
+        fun `should collapse inflated per-token span wrappers`() {
+            val html = buildString {
+                append("<html><body><pre><code>")
+                for (i in 1..208) append("<span>$i</span>")
+                append("</code></pre></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html, treeIndexLinks = false)
+            assertFalse(result.contains("<span"), "Per-token spans should be collapsed: $result")
+            assertTrue(result.contains("1"), "Token text should be preserved")
+            assertTrue(result.contains("208"), "Last token text should be preserved")
+        }
+
+        @Test
+        fun `should collapse mixed inline styling leaves`() {
+            val html = buildString {
+                append("<html><body><p>")
+                for (i in 1..10) append("<b>word$i</b>")
+                append("</p></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertFalse(result.contains("<b>"), "Repeated inline leaves should be collapsed")
+            assertTrue(result.contains("word1"), "Text content preserved")
+            assertTrue(result.contains("word10"), "Text content preserved")
+        }
+
+        @Test
+        fun `should not collapse a small number of inline elements`() {
+            val html = "<html><body><p><b>One</b> <i>Two</i></p></body></html>"
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("One"), "Content preserved")
+            assertTrue(result.contains("Two"), "Content preserved")
+        }
+
+        @Test
+        fun `should not collapse inline leaves with attributes`() {
+            val html = buildString {
+                append("<html><body><p>")
+                for (i in 1..10) append("<span title=\"t$i\">$i</span>")
+                append("</p></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html)
+            // title is an important attribute; spans carrying it should survive.
+            assertTrue(result.contains("title"), "Spans with meaningful attributes should be preserved")
+        }
+
+        @Test
+        fun `should not collapse when collapseInlineLeaves is false`() {
+            val html = buildString {
+                append("<html><body><pre><code>")
+                for (i in 1..20) append("<span>$i</span>")
+                append("</code></pre></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html, collapseInlineLeaves = false)
+            assertTrue(result.contains("<span"), "Spans should remain when collapsing disabled")
+        }
+
+        @Test
+        fun `should not collapse parents with substantial non-leaf content`() {
+            val html = buildString {
+                append("<html><body><div>")
+                append("<p>A real paragraph with meaningful prose content here.</p>")
+                for (i in 1..3) append("<span>$i</span>")
+                append("</div></body></html>")
+            }
+            val result = HtmlSimplifier.scrubHtml(html)
+            assertTrue(result.contains("real paragraph"), "Prose content preserved")
         }
     }
 }

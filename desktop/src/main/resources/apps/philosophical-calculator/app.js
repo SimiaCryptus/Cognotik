@@ -1,181 +1,109 @@
-(function () {
+import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from './utils/docops.js';
+import { readFile, writeFile, deleteFile, listFiles } from './utils/fileIO.js';
+import { parseSessionUrl, getProxyUrl } from './utils/session.js';
+import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLinks.js';
+import {
+    renderMarkdown,
+    escapeHtml,
+    setStatus,
+    setBadge,
+    createBatchLogger,
+    getFileIcon
+} from './utils/ui.js';
+import {
+    loadApiProviders,
+    populateModelDropdowns,
+    saveModelSelections,
+    loadModelSelections
+} from './utils/models.js';
+import {
+    fetchUsageData,
+    renderUsageSummary,
+    createUsageTableHtml
+} from './utils/usage.js';
+
+(function() {
     'use strict';
-     // ========================================================================
-     // Model Management
-     // ========================================================================
-     var availableModels = {};
-     async function loadApiProviders() {
-         try {
-             var response = await fetch('/apiProviders/?format=json');
-             if (response.status >= 400) {
-                 console.warn('Could not load API providers:', response.status);
-                 return;
-             }
-             var providersResponse = await response.json();
-             var providers = providersResponse.configuredProviders || [];
-             availableModels = {};
-             providers.forEach(function (provider) {
-                 if (provider.models && provider.models.length > 0) {
-                     availableModels[provider.name] = provider.models.map(function (model) {
-                         return {
-                             id: model.name,
-                             name: model.name,
-
-                             description: model.maxTokens
-                                 ? 'Max tokens: ' + model.maxTokens
-                                 : 'No token limit specified'
-                         };
-                     });
-                 }
-             });
-
-             populateModelDropdowns();
-             renderProviderInfo();
-         } catch (e) {
-             console.warn('Failed to load API providers:', e);
-         }
-     }
-
-     function populateModelDropdowns() {
-         var smartSelect = document.getElementById('smart-model-select');
-         var fastSelect = document.getElementById('fast-model-select');
-         var imageSelect = document.getElementById('image-model-select');
-
-         if (!smartSelect || !fastSelect || !imageSelect) return;
-
-         var selects = [smartSelect, fastSelect, imageSelect];
-         selects.forEach(function (sel) { sel.innerHTML = ''; });
-
-         // Add default/empty option
-         selects.forEach(function (sel) {
-             var opt = document.createElement('option');
-             opt.value = '';
-             opt.textContent = '— Server Default —';
-             sel.appendChild(opt);
-         });
-
-         var addedModels = {};
-         var totalModels = 0;
-
-         for (var provider in availableModels) {
-             if (!availableModels.hasOwnProperty(provider)) continue;
-             var models = availableModels[provider];
-
-             // Create optgroup for each provider
-             var groups = selects.map(function () {
-                 var group = document.createElement('optgroup');
-                 group.label = provider;
-                 return group;
-             });
-
-             var groupHasModels = false;
-
-             models.forEach(function (model) {
-                 if (addedModels[model.id]) return;
-                 addedModels[model.id] = true;
-                 groupHasModels = true;
-                 totalModels++;
-
-                 groups.forEach(function (group) {
-                     var option = document.createElement('option');
-                     option.value = model.id;
-                     option.textContent = model.name;
-                     if (model.description) {
-                         option.title = model.description;
-                     }
-                     group.appendChild(option);
-                 });
-             });
-
-             if (groupHasModels) {
-                 selects.forEach(function (sel, idx) {
-                     sel.appendChild(groups[idx]);
-                 });
-             }
-         }
-
-         if (totalModels === 0) {
-             selects.forEach(function (sel) {
-                 var opt = document.createElement('option');
-                 opt.value = '';
-                 opt.textContent = 'No models available — configure API keys';
-                 opt.disabled = true;
-                 sel.appendChild(opt);
-             });
-         }
-
-         // Restore saved selections
-         var savedSmart = localStorage.getItem('philcalc_smartModel');
-         var savedFast = localStorage.getItem('philcalc_fastModel');
-         var savedImage = localStorage.getItem('philcalc_imageModel');
-
-         if (savedSmart && hasOption(smartSelect, savedSmart)) smartSelect.value = savedSmart;
-         if (savedFast && hasOption(fastSelect, savedFast)) fastSelect.value = savedFast;
-         if (savedImage && hasOption(imageSelect, savedImage)) imageSelect.value = savedImage;
-     }
-
-     function hasOption(selectEl, value) {
-         for (var i = 0; i < selectEl.options.length; i++) {
-             if (selectEl.options[i].value === value) return true;
-         }
-         return false;
-     }
-
-     function renderProviderInfo() {
-         var container = document.getElementById('provider-info');
-         if (!container) return;
-
-         var providerNames = Object.keys(availableModels);
-         if (providerNames.length === 0) {
-             container.innerHTML = '<p class="placeholder">No API providers configured. Please set up API keys in the main application settings.</p>';
-             return;
-         }
-
-         var html = '<div class="provider-list">';
-         providerNames.forEach(function (name) {
-             var models = availableModels[name];
-             html += '<div class="provider-item">';
-             html += '<div class="provider-name">🔌 ' + escapeHtml(name) + ' <span class="provider-model-count">(' + models.length + ' model' + (models.length !== 1 ? 's' : '') + ')</span></div>';
-             html += '<div class="provider-models">';
-             models.forEach(function (model) {
-                 html += '<span class="provider-model-tag" title="' + escapeHtml(model.description) + '">' + escapeHtml(model.name) + '</span>';
-             });
-             html += '</div>';
-             html += '</div>';
-         });
-         html += '</div>';
-         container.innerHTML = html;
-     }
-
-     function getSelectedModels() {
-         var smartSelect = document.getElementById('smart-model-select');
-         var fastSelect = document.getElementById('fast-model-select');
-         var imageSelect = document.getElementById('image-model-select');
-         return {
-             smartModel: smartSelect ? smartSelect.value : '',
-             fastModel: fastSelect ? fastSelect.value : '',
-             imageModel: imageSelect ? imageSelect.value : ''
-         };
-     }
 
     // ========================================================================
-    // URL Parsing & Session Setup
+    // Session & URL Setup
     // ========================================================================
-    const pathParts = window.location.pathname.split('/');
-    const fileIndexIdx = pathParts.indexOf('fileIndex');
-    let basePath = '';
-    let sessionId = '';
-
-    if (fileIndexIdx >= 0 && fileIndexIdx + 1 < pathParts.length) {
-        sessionId = pathParts[fileIndexIdx + 1];
-        basePath = pathParts.slice(0, fileIndexIdx + 2).join('/');
-    } else {
+    const { basePath, sessionId } = parseSessionUrl();
+    if (!sessionId) {
         console.warn('Could not determine session from URL path.');
-        basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     }
 
-    const proxyBase = '/proxy/';
-    function getProxyUrl(id) { return proxyBase + '#' + id; }
+    // ========================================================================
+    // Model Management
+    // ========================================================================
+    const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel'];
+    const MODEL_STORAGE_PREFIX = 'philcalc';
+    var availableModels = {};
+
+    function getModelSelectElements() {
+        return {
+            smartModel: document.getElementById('smart-model-select'),
+            fastModel: document.getElementById('fast-model-select'),
+            imageModel: document.getElementById('image-model-select')
+        };
+    }
+
+    async function reloadApiProviders() {
+        try {
+            availableModels = await loadApiProviders();
+            refreshModelDropdowns();
+            renderProviderInfo();
+        } catch (e) {
+            console.warn('Failed to load API providers:', e);
+        }
+    }
+
+    function refreshModelDropdowns() {
+        var selectMap = getModelSelectElements();
+        var selectArray = MODEL_KEYS.map(function(k) { return selectMap[k]; }).filter(Boolean);
+        if (selectArray.length === 0) return;
+        var saved = loadModelSelections(MODEL_STORAGE_PREFIX, MODEL_KEYS);
+        populateModelDropdowns(availableModels, selectArray, saved);
+    }
+
+    function renderProviderInfo() {
+        var container = document.getElementById('provider-info');
+        if (!container) return;
+
+        var providerNames = Object.keys(availableModels);
+        if (providerNames.length === 0) {
+            container.innerHTML = '<p class="placeholder">No API providers configured. Please set up API keys in the main application settings.</p>';
+            return;
+        }
+
+        var html = '<div class="provider-list">';
+        providerNames.forEach(function(name) {
+            var models = availableModels[name];
+            html += '<div class="provider-item">';
+            html += '<div class="provider-name">🔌 ' + escapeHtml(name) + ' <span class="provider-model-count">(' + models.length + ' model' + (models.length !== 1 ? 's' : '') + ')</span></div>';
+            html += '<div class="provider-models">';
+            models.forEach(function(model) {
+                var desc = model.description || '';
+                html += '<span class="provider-model-tag" title="' + escapeHtml(desc) + '">' + escapeHtml(model.name) + '</span>';
+            });
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function getSelectedModels() {
+        var selectMap = getModelSelectElements();
+        // Per best practice: only include non-empty model keys
+        var result = {};
+        MODEL_KEYS.forEach(function(k) {
+            var el = selectMap[k];
+            if (el && el.value) result[k] = el.value;
+        });
+        return result;
+    }
+
     // ========================================================================
     // Viewer State (declared early so all handlers can access)
     // ========================================================================
@@ -183,85 +111,66 @@
     var viewerModes = {};      // viewerId -> 'rendered' | 'markdown'
     var zoomedViewerId = null;
 
+    // ========================================================================
+    // Session Link Manager
+    // ========================================================================
+    var linkManager = createSessionLinkManager(getProxyUrl);
 
-    // ========================================================================
-    // File I/O
-    // ========================================================================
-    async function readFile(filePath) {
-        const resp = await fetch(basePath + '/' + filePath);
-        if (!resp.ok) {
-            if (resp.status === 404) return null;
-            throw new Error('Failed to read ' + filePath + ': ' + resp.status);
+    // Map of output file -> viewer ID for session-link container injection
+    var targetToViewer = {
+        'summary.md': 'viewer-summary',
+        'content.md': 'viewer-content',
+        'brainstorm.md': 'viewer-brainstorm',
+        'dialectical.md': 'viewer-dialectical',
+        'socratic.md': 'viewer-socratic',
+        'perspectives.md': 'viewer-perspectives',
+        'persuasive.md': 'viewer-persuasive',
+        'gametheory.md': 'viewer-gametheory',
+        'narrative.md': 'viewer-narrative',
+        'debate.md': 'viewer-debate',
+        'protocol.md': 'viewer-protocol',
+        'comic.md': 'viewer-comic',
+        'technical_explanation.md': 'viewer-technical',
+        'illustrated_content.md': 'viewer-illustration',
+        'page.html': 'viewer-webpage'
+    };
+
+    function ensureSessionLinkContainer(target) {
+        var safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
+        var containerId = 'session-link-' + safeTarget;
+        var container = document.getElementById(containerId);
+        if (container) return containerId;
+        container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'session-link-container';
+        container.setAttribute('data-session-links', target);
+        var viewerIdGuess = targetToViewer[target] ||
+            ('viewer-' + target.replace(/\.(md|html)$/, '').replace(/[^a-zA-Z0-9]/g, '-'));
+        var viewer = document.getElementById(viewerIdGuess);
+        if (viewer && viewer.parentElement) {
+            viewer.parentElement.insertBefore(container, viewer);
         }
-        return await resp.text();
+        return containerId;
     }
 
-    async function writeFile(filePath, content) {
-        const resp = await fetch(basePath + '/' + filePath, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-            body: content
-        });
-        if (!resp.ok) throw new Error('Failed to write ' + filePath + ': ' + resp.status);
-        return true;
-    }
-
-    async function runDocOp(opPath, targetPath) {
-         var models = getSelectedModels();
-         var url = '/docops?sessionId=' + encodeURIComponent(sessionId) +
-            '&doc=' + encodeURIComponent(opPath) +
-            '&target=' + encodeURIComponent(targetPath);
-         if (models.smartModel) url += '&smartModel=' + encodeURIComponent(models.smartModel);
-         if (models.fastModel) url += '&fastModel=' + encodeURIComponent(models.fastModel);
-         if (models.imageModel) url += '&imageModel=' + encodeURIComponent(models.imageModel);
-        var resp = await fetch(url, { method: 'POST' });
-        if (!resp.ok) {
-            const errText = await resp.text().catch(function () { return ''; });
-            throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
-        }
-        return await resp.text();
+    function updateLinks(target, taskInfo) {
+        var containerId = ensureSessionLinkContainer(target);
+        linkManager.update(target, taskInfo);
+        // Also explicitly call updateSessionLinks targeting our container
+        updateSessionLinks(target, taskInfo, getProxyUrl, containerId);
     }
 
     // ========================================================================
-    // Status Polling
+    // DocOps Wrapper
     // ========================================================================
-    async function fetchDocopsStatus() {
-        try {
-            const resp = await fetch(basePath + '/docops.status.json');
-            if (!resp.ok) return null;
-            return await resp.json();
-        } catch (e) { return null; }
+    async function execDocOp(opPath, targetPath) {
+        var models = getSelectedModels();
+        return await runDocOp(sessionId, opPath, targetPath, models);
     }
 
-    async function waitForTask(targetPath, maxWaitMs) {
-        var maxWait = maxWaitMs || 600000;
-        var pollInterval = 2000;
-        var startTime = Date.now();
-        while (Date.now() - startTime < maxWait) {
-            var statusData = await fetchDocopsStatus();
-            if (statusData && statusData.tasks) {
-                var task = statusData.tasks[targetPath];
-                if (!task) {
-                    // Try matching by filename only
-                    var filename = targetPath.split('/').pop();
-                    task = statusData.tasks[filename];
-                }
-                if (task) {
-                    if (task.status === 'COMPLETED') return task;
-                    if (task.status === 'ERROR' || task.status === 'FAILED') {
-                        throw new Error('Task ' + targetPath + ' failed');
-                    }
-                }
-            }
-            await new Promise(function (r) { setTimeout(r, pollInterval); });
-        }
-        throw new Error('Task ' + targetPath + ' timed out');
-    }
-
-    var statusPollTimer = null;
-    var STATUS_POLL_INTERVAL = 3000;
-
-    // Map of output file -> badge ID
+    // ========================================================================
+    // Status Polling & Badge Mapping
+    // ========================================================================
     var badgeMap = {
         'summary.md': 'badge-summary',
         'content.md': 'badge-content',
@@ -272,249 +181,92 @@
         'persuasive.md': 'badge-persuasive',
         'gametheory.md': 'badge-gametheory',
         'narrative.md': 'badge-narrative',
+        'debate.md': 'badge-debate',
+        'protocol.md': 'badge-protocol',
         'comic.md': 'badge-comic',
         'technical_explanation.md': 'badge-technical',
-         'illustrated_content.md': 'badge-illustration',
-         'page.html': 'badge-webpage'
+        'illustrated_content.md': 'badge-illustration',
+        'page.html': 'badge-webpage'
     };
 
-    function startStatusPolling() {
-        if (statusPollTimer) return;
-        statusPollTimer = setInterval(function () { pollStatus(); }, STATUS_POLL_INTERVAL);
-        pollStatus();
-    }
-
-    function stopStatusPolling() {
-        if (statusPollTimer) {
-            clearInterval(statusPollTimer);
-            statusPollTimer = null;
+    function handleStatusUpdate(target, taskInfo) {
+        var bid = badgeMap[target];
+        if (bid) {
+            if (taskInfo.status === 'RUNNING') setBadge(bid, 'running');
+            else if (taskInfo.status === 'COMPLETED') setBadge(bid, 'done');
+            else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') setBadge(bid, 'error');
         }
+        updateLinks(target, taskInfo);
     }
 
-    async function pollStatus() {
-        var statusData = await fetchDocopsStatus();
-        if (!statusData || !statusData.tasks) return;
-        var anyRunning = false;
-        for (var target in statusData.tasks) {
-            if (!statusData.tasks.hasOwnProperty(target)) continue;
-            var taskInfo = statusData.tasks[target];
-            var bid = badgeMap[target];
-            if (bid) {
-                if (taskInfo.status === 'RUNNING') { setBadge(bid, 'running'); anyRunning = true; }
-                else if (taskInfo.status === 'COMPLETED') setBadge(bid, 'done');
-                else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') setBadge(bid, 'error');
-            }
-            updateSessionLinks(target, taskInfo);
-        }
-        if (!anyRunning) {
-            // Check if we should stop polling
-            var allDone = true;
-            for (var t in statusData.tasks) {
-                if (statusData.tasks[t].status === 'RUNNING' || statusData.tasks[t].status === 'PENDING') {
-                    allDone = false;
-                    break;
-                }
-            }
-            // Keep polling anyway for responsiveness
-        }
-    }
+    var statusPoller = createStatusPoller(basePath, handleStatusUpdate, 3000);
 
-    // ========================================================================
-    // UI Helpers
-    // ========================================================================
-    function renderMarkdown(md) {
-        if (typeof marked !== 'undefined') {
-            return typeof marked.parse === 'function' ? marked.parse(md) : marked(md);
-        }
-        return '<pre>' + escapeHtml(md) + '</pre>';
-    }
-
-    function escapeHtml(text) {
-        var div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function setStatus(elemId, message, type) {
-        var el = document.getElementById(elemId);
-        if (!el) return;
-        el.textContent = message;
-        el.className = 'status-msg' + (type ? ' ' + type : '');
-        if (type === 'success' || type === 'error') {
-            setTimeout(function () {
-                el.textContent = '';
-                el.className = 'status-msg';
-            }, 5000);
-        }
-    }
-
-    function setBadge(badgeId, state) {
-        var el = document.getElementById(badgeId);
-        if (!el) return;
-        el.className = 'step-badge ' + state;
-        var labels = {
-            pending: 'pending',
-            running: 'running…',
-            done: 'done',
-            error: 'error'
-        };
-        el.textContent = labels[state] || state;
-    }
-
-    // ========================================================================
-    // Session Monitor Links
-    // ========================================================================
-    function updateSessionLinks(target, taskInfo) {
-        var status = taskInfo.status;
-        var taskSessionId = taskInfo.sessionId;
-        var safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
-        var linkContainerId = 'session-link-' + safeTarget;
-        var container = document.getElementById(linkContainerId);
-
-        if (!container) {
-            container = document.createElement('div');
-            container.id = linkContainerId;
-            container.className = 'session-link-container';
-            // Map target file -> viewer ID
-            var targetToViewer = {
-                'summary.md': 'viewer-summary',
-                'content.md': 'viewer-content',
-                'brainstorm.md': 'viewer-brainstorm',
-                'dialectical.md': 'viewer-dialectical',
-                'socratic.md': 'viewer-socratic',
-                'perspectives.md': 'viewer-perspectives',
-                'persuasive.md': 'viewer-persuasive',
-                'gametheory.md': 'viewer-gametheory',
-                'narrative.md': 'viewer-narrative',
-                'comic.md': 'viewer-comic',
-                'technical_explanation.md': 'viewer-technical',
-                'illustrated_content.md': 'viewer-illustration',
-                'page.html': 'viewer-webpage'
-            };
-            var viewerIdGuess = targetToViewer[target] ||
-                ('viewer-' + target.replace(/\.(md|html)$/, '').replace(/[^a-zA-Z0-9]/g, '-'));
-            var viewer = document.getElementById(viewerIdGuess);
-            if (viewer && viewer.parentElement) {
-                viewer.parentElement.insertBefore(container, viewer);
-            }
-        }
-        if (!container) return;
-
-        if (status === 'RUNNING' && taskSessionId) {
-            var proxyUrl = getProxyUrl(taskSessionId);
-            container.innerHTML =
-                '<div class="session-monitor-link">' +
-                '<span class="monitor-pulse">●</span>' +
-                '<span>Processing… </span>' +
-                '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" rel="noopener" class="monitor-link">' +
-                '📡 Monitor Live Session (' + escapeHtml(taskSessionId.substring(0, 12)) + '…)</a>' +
-                '</div>';
-            container.style.display = 'block';
-        } else if (status === 'COMPLETED' && taskSessionId) {
-            var proxyUrl2 = getProxyUrl(taskSessionId);
-            container.innerHTML =
-                '<div class="session-completed-link">' +
-                '<span>✅ Completed — </span>' +
-                '<a href="' + escapeHtml(proxyUrl2) + '" target="_blank" rel="noopener" class="monitor-link">' +
-                '📋 View Session Log</a>' +
-                '</div>';
-            container.style.display = 'block';
-        } else if (status === 'ERROR' || status === 'FAILED') {
-            var proxyUrl3 = taskSessionId ? getProxyUrl(taskSessionId) : '#';
-            container.innerHTML =
-                '<div class="session-error-link">' +
-                '<span>❌ Failed — </span>' +
-                (taskSessionId
-                    ? '<a href="' + escapeHtml(proxyUrl3) + '" target="_blank" class="monitor-link">🔍 View Error Log</a>'
-                    : '<span>No session available</span>') +
-                '</div>';
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
-        }
-    }
-
-    // ========================================================================
-    // Batch Logging
-    // ========================================================================
-    function getLogEl(logId) {
-        return document.getElementById(logId || 'batch-log');
-    }
-
-    function logBatch(message, type, logId) {
-        var logEl = getLogEl(logId);
-        if (!logEl) return;
-        logEl.classList.add('visible');
-        var entry = document.createElement('div');
-        entry.className = 'log-entry log-' + (type || 'info');
-        var ts = new Date().toLocaleTimeString();
-        entry.textContent = '[' + ts + '] ' + message;
-        logEl.appendChild(entry);
-        logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    function logBatchHtml(html, type, logId) {
-        var logEl = getLogEl(logId);
-        if (!logEl) return;
-        logEl.classList.add('visible');
-        var entry = document.createElement('div');
-        entry.className = 'log-entry log-' + (type || 'info');
-        var ts = new Date().toLocaleTimeString();
-        entry.innerHTML = '[' + ts + '] ' + html;
-        logEl.appendChild(entry);
-        logEl.scrollTop = logEl.scrollHeight;
-    }
+    function startStatusPolling() { statusPoller.start(); }
+    function stopStatusPolling() { statusPoller.stop(); }
 
     // ========================================================================
     // Navigation
     // ========================================================================
-    document.querySelectorAll('.nav-link').forEach(function (link) {
-        link.addEventListener('click', function (e) {
+    document.querySelectorAll('.nav-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
             e.preventDefault();
             var sectionId = this.dataset.section;
-            document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
-            document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+            document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); });
+            document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
             this.classList.add('active');
-            document.getElementById(sectionId).classList.add('active');
+            var section = document.getElementById(sectionId);
+            if (section) section.classList.add('active');
         });
     });
 
     // ========================================================================
     // Results Tabs
     // ========================================================================
-    document.querySelectorAll('.results-tab').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            document.querySelectorAll('.results-tab').forEach(function (t) { t.classList.remove('active'); });
-            document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+    document.querySelectorAll('.results-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.results-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
             this.classList.add('active');
-            document.getElementById(this.dataset.tab).classList.add('active');
+            var panel = document.getElementById(this.dataset.tab);
+            if (panel) panel.classList.add('active');
         });
     });
 
     // ========================================================================
-    // Save Buttons
+    // Save Buttons - Models
     // ========================================================================
-     document.getElementById('save-model-settings').addEventListener('click', function () {
-         var models = getSelectedModels();
-         localStorage.setItem('philcalc_smartModel', models.smartModel);
-         localStorage.setItem('philcalc_fastModel', models.fastModel);
-         localStorage.setItem('philcalc_imageModel', models.imageModel);
-         setStatus('model-status', '✓ Model settings saved', 'success');
-     });
-     document.getElementById('reload-models').addEventListener('click', async function () {
-         this.disabled = true;
-         setStatus('model-status', 'Loading models…', '');
-         try {
-             await loadApiProviders();
-             setStatus('model-status', '✓ Models reloaded', 'success');
-         } catch (e) {
-             setStatus('model-status', '✗ ' + e.message, 'error');
-         } finally {
-             this.disabled = false;
-         }
-     });
+    var saveModelBtn = document.getElementById('save-model-settings');
+    if (saveModelBtn) {
+        saveModelBtn.addEventListener('click', function() {
+            var models = getSelectedModels();
+            // Make sure to also persist empty selections (server default)
+            var toSave = {};
+            MODEL_KEYS.forEach(function(k) { toSave[k] = models[k] || ''; });
+            saveModelSelections(MODEL_STORAGE_PREFIX, toSave);
+            setStatus('model-status', '✓ Model settings saved', 'success');
+        });
+    }
 
-    document.getElementById('save-notes').addEventListener('click', async function () {
+    var reloadModelBtn = document.getElementById('reload-models');
+    if (reloadModelBtn) {
+        reloadModelBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            setStatus('model-status', 'Loading models…', '');
+            try {
+                await reloadApiProviders();
+                setStatus('model-status', '✓ Models reloaded', 'success');
+            } catch (e) {
+                setStatus('model-status', '✗ ' + e.message, 'error');
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
+
+    // ========================================================================
+    // Save Notes / Instruct
+    // ========================================================================
+    document.getElementById('save-notes').addEventListener('click', async function() {
         var content = document.getElementById('notes-editor').value;
         if (!content.trim()) {
             setStatus('notes-status', '✗ Notes cannot be empty', 'error');
@@ -522,7 +274,7 @@
         }
         try {
             this.disabled = true;
-            await writeFile('notes/notes.md', content);
+            await writeFile(basePath, 'notes/notes.md', content);
             setStatus('notes-status', '✓ Notes saved', 'success');
         } catch (e) {
             setStatus('notes-status', '✗ ' + e.message, 'error');
@@ -531,11 +283,11 @@
         }
     });
 
-    document.getElementById('save-instruct').addEventListener('click', async function () {
+    document.getElementById('save-instruct').addEventListener('click', async function() {
         var content = document.getElementById('instruct-editor').value;
         try {
             this.disabled = true;
-            await writeFile('instruct.md', content);
+            await writeFile(basePath, 'instruct.md', content);
             setStatus('instruct-status', '✓ Instructions saved', 'success');
         } catch (e) {
             setStatus('instruct-status', '✗ ' + e.message, 'error');
@@ -555,7 +307,7 @@
             return;
         }
         try {
-            var content = await readFile(filePath);
+            var content = await readFile(basePath, filePath);
             if (content === null) {
                 viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
                 viewerRawContent[viewerId] = null;
@@ -573,20 +325,20 @@
         }
     }
 
-    document.querySelectorAll('.btn-view').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+    document.querySelectorAll('.btn-view').forEach(function(btn) {
+        btn.addEventListener('click', function() {
             viewFile(this.dataset.file, this.dataset.viewer);
         });
     });
 
     // Results refresh buttons
-    document.querySelectorAll('.btn-refresh[data-file]').forEach(function (btn) {
-        btn.addEventListener('click', async function () {
+    document.querySelectorAll('.btn-refresh[data-file]').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
             var viewerId = this.dataset.viewer;
             var viewer = document.getElementById(viewerId);
             if (!viewer) return;
             try {
-                var content = await readFile(this.dataset.file);
+                var content = await readFile(basePath, this.dataset.file);
                 if (content === null) {
                     viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
                     viewerRawContent[viewerId] = null;
@@ -602,10 +354,10 @@
             }
         });
     });
+
     // Auto-load results when switching to Results tab
-    document.querySelectorAll('.results-tab').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            // After switching tab, auto-refresh the active panel's viewer if it has no content
+    document.querySelectorAll('.results-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
             var tabId = this.dataset.tab;
             var panel = document.getElementById(tabId);
             if (!panel) return;
@@ -623,21 +375,21 @@
     // ========================================================================
     // Run Single Operation
     // ========================================================================
-    document.querySelectorAll('.btn-run').forEach(function (btn) {
-        btn.addEventListener('click', async function () {
+    document.querySelectorAll('.btn-run').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
             var opPath = this.dataset.op;
             var badgeId = this.dataset.badge;
             var outputPath = this.dataset.output;
             var viewerId = this.dataset.viewer;
 
-            // Auto-save notes before running
+            // Auto-save notes/instruct
             var notesContent = document.getElementById('notes-editor').value;
             if (notesContent.trim()) {
-                await writeFile('notes/notes.md', notesContent);
+                await writeFile(basePath, 'notes/notes.md', notesContent);
             }
             var instructContent = document.getElementById('instruct-editor').value;
             if (instructContent.trim()) {
-                await writeFile('instruct.md', instructContent);
+                await writeFile(basePath, 'instruct.md', instructContent);
             }
 
             setBadge(badgeId, 'running');
@@ -645,18 +397,20 @@
             startStatusPolling();
 
             try {
-                var taskId = await runDocOp(opPath, outputPath);
-                var cleanTaskId = taskId ? taskId.trim() : '';
+                var taskId = await execDocOp(opPath, outputPath);
+                var cleanTaskId = taskId ? String(taskId).trim() : '';
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
-                    updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                    updateLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                 }
-                await waitForTask(outputPath);
+                await waitForTask(basePath, outputPath, 600000, function(target, taskInfo) {
+                    handleStatusUpdate(target, taskInfo);
+                });
                 setBadge(badgeId, 'done');
 
                 if (viewerId) {
                     var viewer = document.getElementById(viewerId);
                     if (viewer) {
-                        var content = await readFile(outputPath);
+                        var content = await readFile(basePath, outputPath);
                         if (content) {
                             viewerRawContent[viewerId] = content;
                             viewerModes[viewerId] = viewerModes[viewerId] || 'rendered';
@@ -679,26 +433,29 @@
     // Sequential Batch Execution
     // ========================================================================
     async function runSequential(steps, logId) {
+        var batchLog = createBatchLogger(logId);
         for (var i = 0; i < steps.length; i++) {
             var step = steps[i];
-            logBatch('Starting: ' + step.label, 'info', logId);
+            batchLog.log('Starting: ' + step.label, 'info');
             setBadge(step.badge, 'running');
 
             try {
-                var taskId = await runDocOp(step.op, step.output);
-                var cleanTaskId = taskId ? taskId.trim() : '';
+                var taskId = await execDocOp(step.op, step.output);
+                var cleanTaskId = taskId ? String(taskId).trim() : '';
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                     var proxyUrl = getProxyUrl(cleanTaskId);
-                    logBatchHtml('Session: <a href="' + proxyUrl + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanTaskId.substring(0, 12) + '…)</a>', 'info', logId);
-                    updateSessionLinks(step.output, { status: 'RUNNING', sessionId: cleanTaskId });
+                    batchLog.logHtml('Session: <a href="' + escapeHtml(proxyUrl) + '" target="_blank" class="monitor-link">📡 Monitor (' + escapeHtml(cleanTaskId.substring(0, 12)) + '…)</a>', 'info');
+                    updateLinks(step.output, { status: 'RUNNING', sessionId: cleanTaskId });
                 }
-                await waitForTask(step.output);
+                await waitForTask(basePath, step.output, 600000, function(target, taskInfo) {
+                    handleStatusUpdate(target, taskInfo);
+                });
                 setBadge(step.badge, 'done');
-                logBatch('✓ Completed: ' + step.label, 'success', logId);
+                batchLog.log('✓ Completed: ' + step.label, 'success');
 
                 if (step.viewer) {
                     try {
-                        var content = await readFile(step.output);
+                        var content = await readFile(basePath, step.output);
                         if (content) {
                             var viewer = document.getElementById(step.viewer);
                             if (viewer) {
@@ -715,7 +472,7 @@
                 if (step.afterFn) await step.afterFn();
             } catch (e) {
                 setBadge(step.badge, 'error');
-                logBatch('✗ Failed: ' + step.label + ' — ' + e.message, 'error', logId);
+                batchLog.log('✗ Failed: ' + step.label + ' — ' + e.message, 'error');
                 throw e;
             }
         }
@@ -724,24 +481,24 @@
     // ========================================================================
     // Core Pipeline (Summarize → Draft)
     // ========================================================================
-    document.getElementById('run-core-pipeline').addEventListener('click', async function () {
-        // Auto-save
+    document.getElementById('run-core-pipeline').addEventListener('click', async function() {
         var notesContent = document.getElementById('notes-editor').value;
         if (!notesContent.trim()) {
             alert('Please enter your notes first.');
             return;
         }
-        await writeFile('notes/notes.md', notesContent);
+        await writeFile(basePath, 'notes/notes.md', notesContent);
         var instructContent = document.getElementById('instruct-editor').value;
         if (instructContent.trim()) {
-            await writeFile('instruct.md', instructContent);
+            await writeFile(basePath, 'instruct.md', instructContent);
         }
 
         this.disabled = true;
         var batchLog = document.getElementById('batch-log');
-        batchLog.innerHTML = '';
+        if (batchLog) batchLog.innerHTML = '';
         startStatusPolling();
 
+        var logger = createBatchLogger('batch-log');
         try {
             await runSequential([
                 {
@@ -759,39 +516,37 @@
                     label: 'Draft Article'
                 }
             ], 'batch-log');
-            logBatch('🎉 Core pipeline complete!', 'success', 'batch-log');
+            logger.log('🎉 Core pipeline complete!', 'success');
         } catch (e) {
-            logBatch('Pipeline stopped due to error.', 'error', 'batch-log');
+            logger.log('Pipeline stopped due to error.', 'error');
         } finally {
             this.disabled = false;
         }
     });
 
     var lensDefinitions = [
-        { key: 'brainstorm', op: 'ops/brainstorm_op.md', output: 'brainstorm.md', badge: 'badge-brainstorm', viewer: 'viewer-brainstorm', label: 'Brainstorm' },
-        { key: 'dialectical', op: 'ops/dialectical_op.md', output: 'dialectical.md', badge: 'badge-dialectical', viewer: 'viewer-dialectical', label: 'Dialectical Analysis' },
-        { key: 'socratic', op: 'ops/socratic_op.md', output: 'socratic.md', badge: 'badge-socratic', viewer: 'viewer-socratic', label: 'Socratic Dialogue' },
-        { key: 'perspectives', op: 'ops/perspectives_op.md', output: 'perspectives.md', badge: 'badge-perspectives', viewer: 'viewer-perspectives', label: 'Multi-Perspective Analysis' },
-        { key: 'persuasive', op: 'ops/persuasive_op.md', output: 'persuasive.md', badge: 'badge-persuasive', viewer: 'viewer-persuasive', label: 'Persuasive Essay' },
-        { key: 'gametheory', op: 'ops/gametheory_op.md', output: 'gametheory.md', badge: 'badge-gametheory', viewer: 'viewer-gametheory', label: 'Game Theory Analysis' },
-        { key: 'narrative', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
-        { key: 'comic', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
-        { key: 'technical', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Explanation' },
-         { key: 'webpage', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'Webpage Generation' }
+        // Analysis Lenses
+        { key: 'brainstorm', category: 'analysis', op: 'ops/brainstorm_op.md', output: 'brainstorm.md', badge: 'badge-brainstorm', viewer: 'viewer-brainstorm', label: 'Brainstorm' },
+        { key: 'dialectical', category: 'analysis', op: 'ops/dialectical_op.md', output: 'dialectical.md', badge: 'badge-dialectical', viewer: 'viewer-dialectical', label: 'Dialectical Analysis' },
+        { key: 'socratic', category: 'analysis', op: 'ops/socratic_op.md', output: 'socratic.md', badge: 'badge-socratic', viewer: 'viewer-socratic', label: 'Socratic Dialogue' },
+        { key: 'perspectives', category: 'analysis', op: 'ops/perspectives_op.md', output: 'perspectives.md', badge: 'badge-perspectives', viewer: 'viewer-perspectives', label: 'Multi-Perspective Analysis' },
+        { key: 'gametheory', category: 'analysis', op: 'ops/gametheory_op.md', output: 'gametheory.md', badge: 'badge-gametheory', viewer: 'viewer-gametheory', label: 'Game Theory Analysis' },
+        { key: 'debate', category: 'analysis', op: 'ops/debate_op.md', output: 'debate.md', badge: 'badge-debate', viewer: 'viewer-debate', label: 'Historical Figure Debate' },
+        { key: 'protocol', category: 'analysis', op: 'ops/protocol_op.md', output: 'protocol.md', badge: 'badge-protocol', viewer: 'viewer-protocol', label: 'Unrunnable Protocol Analysis' },
+        // Output Lenses
+        { key: 'persuasive', category: 'output', op: 'ops/persuasive_op.md', output: 'persuasive.md', badge: 'badge-persuasive', viewer: 'viewer-persuasive', label: 'Persuasive Essay' },
+        { key: 'narrative', category: 'output', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
+        { key: 'comic', category: 'output', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
+        { key: 'technical', category: 'output', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Tutorial' },
+        { key: 'webpage', category: 'output', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'HTML Webpage Generation' }
     ];
-
-
-
-
-
-
 
     // ========================================================================
     // Run Selected Lenses
     // ========================================================================
-    document.getElementById('run-selected-lenses').addEventListener('click', async function () {
+    document.getElementById('run-selected-lenses').addEventListener('click', async function() {
         var selectedKeys = [];
-        document.querySelectorAll('.lens-check:checked').forEach(function (cb) {
+        document.querySelectorAll('.lens-check:checked').forEach(function(cb) {
             selectedKeys.push(cb.value);
         });
 
@@ -800,19 +555,18 @@
             return;
         }
 
-        // Auto-save
         var notesContent = document.getElementById('notes-editor').value;
         if (notesContent.trim()) {
-            await writeFile('notes/notes.md', notesContent);
+            await writeFile(basePath, 'notes/notes.md', notesContent);
         }
         var instructContent = document.getElementById('instruct-editor').value;
         if (instructContent.trim()) {
-            await writeFile('instruct.md', instructContent);
+            await writeFile(basePath, 'instruct.md', instructContent);
         }
 
         this.disabled = true;
         var lensLog = document.getElementById('lens-batch-log');
-        lensLog.innerHTML = '';
+        if (lensLog) lensLog.innerHTML = '';
         startStatusPolling();
 
         var steps = [];
@@ -829,43 +583,62 @@
             }
         }
 
+        var logger = createBatchLogger('lens-batch-log');
         try {
             await runSequential(steps, 'lens-batch-log');
-            logBatch('🎉 All selected lenses complete!', 'success', 'lens-batch-log');
+            logger.log('🎉 All selected lenses complete!', 'success');
         } catch (e) {
-            logBatch('Lens execution stopped due to error: ' + e.message, 'error', 'lens-batch-log');
+            logger.log('Lens execution stopped due to error: ' + e.message, 'error');
         } finally {
             this.disabled = false;
         }
     });
 
     // Select/Deselect All
-    document.getElementById('select-all-lenses').addEventListener('click', function () {
-        document.querySelectorAll('.lens-check').forEach(function (cb) { cb.checked = true; });
+    document.getElementById('select-all-lenses').addEventListener('click', function() {
+        document.querySelectorAll('.lens-check').forEach(function(cb) { cb.checked = true; });
     });
 
-    document.getElementById('deselect-all-lenses').addEventListener('click', function () {
-        document.querySelectorAll('.lens-check').forEach(function (cb) { cb.checked = false; });
+    document.getElementById('deselect-all-lenses').addEventListener('click', function() {
+        document.querySelectorAll('.lens-check').forEach(function(cb) { cb.checked = false; });
     });
+    var selectAllAnalysisBtn = document.getElementById('select-all-analysis');
+    if (selectAllAnalysisBtn) {
+        selectAllAnalysisBtn.addEventListener('click', function() {
+            var analysisKeys = lensDefinitions
+                .filter(function(l) { return l.category === 'analysis'; })
+                .map(function(l) { return l.key; });
+            document.querySelectorAll('.lens-check').forEach(function(cb) {
+                cb.checked = analysisKeys.indexOf(cb.value) >= 0;
+            });
+        });
+    }
+    var selectAllOutputsBtn = document.getElementById('select-all-outputs');
+    if (selectAllOutputsBtn) {
+        selectAllOutputsBtn.addEventListener('click', function() {
+            var outputKeys = lensDefinitions
+                .filter(function(l) { return l.category === 'output'; })
+                .map(function(l) { return l.key; });
+            document.querySelectorAll('.lens-check').forEach(function(cb) {
+                cb.checked = outputKeys.indexOf(cb.value) >= 0;
+            });
+        });
+    }
+
 
     // ========================================================================
     // Check Existing Files on Load
     // ========================================================================
     async function checkExistingFiles() {
-        var statusData = await fetchDocopsStatus();
+        var statusData = await fetchDocopsStatus(basePath);
         var anyRunning = false;
 
         if (statusData && statusData.tasks) {
             for (var target in statusData.tasks) {
                 if (!statusData.tasks.hasOwnProperty(target)) continue;
                 var taskInfo = statusData.tasks[target];
-                var bid = badgeMap[target];
-                if (bid) {
-                    if (taskInfo.status === 'RUNNING') { setBadge(bid, 'running'); anyRunning = true; }
-                    else if (taskInfo.status === 'COMPLETED') setBadge(bid, 'done');
-                    else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') setBadge(bid, 'error');
-                }
-                updateSessionLinks(target, taskInfo);
+                handleStatusUpdate(target, taskInfo);
+                if (taskInfo.status === 'RUNNING') anyRunning = true;
             }
         }
 
@@ -880,10 +653,12 @@
             { file: 'persuasive.md', badge: 'badge-persuasive' },
             { file: 'gametheory.md', badge: 'badge-gametheory' },
             { file: 'narrative.md', badge: 'badge-narrative' },
+            { file: 'debate.md', badge: 'badge-debate' },
+            { file: 'protocol.md', badge: 'badge-protocol' },
             { file: 'comic.md', badge: 'badge-comic' },
             { file: 'technical_explanation.md', badge: 'badge-technical' },
-             { file: 'illustrated_content.md', badge: 'badge-illustration' },
-             { file: 'page.html', badge: 'badge-webpage' }
+            { file: 'illustrated_content.md', badge: 'badge-illustration' },
+            { file: 'page.html', badge: 'badge-webpage' }
         ];
 
         for (var i = 0; i < fileChecks.length; i++) {
@@ -891,7 +666,7 @@
             var badge = document.getElementById(check.badge);
             if (badge && (badge.classList.contains('running') || badge.textContent === 'done')) continue;
             try {
-                var content = await readFile(check.file);
+                var content = await readFile(basePath, check.file);
                 if (content !== null && content.trim().length > 0) {
                     setBadge(check.badge, 'done');
                 }
@@ -906,14 +681,14 @@
     // ========================================================================
     async function loadInitialFiles() {
         try {
-            var notes = await readFile('notes/notes.md');
+            var notes = await readFile(basePath, 'notes/notes.md');
             if (notes !== null) {
                 document.getElementById('notes-editor').value = notes;
             }
         } catch (e) { console.warn('Could not load notes:', e); }
 
         try {
-            var instruct = await readFile('instruct.md');
+            var instruct = await readFile(basePath, 'instruct.md');
             if (instruct !== null) {
                 document.getElementById('instruct-editor').value = instruct;
             }
@@ -926,46 +701,51 @@
     loadInitialFiles();
     checkExistingFiles();
     startStatusPolling();
-     loadApiProviders();
+    reloadApiProviders();
+
     // ========================================================================
     // File Upload
     // ========================================================================
     var uploadZone = document.getElementById('upload-zone');
     var fileInput = document.getElementById('file-input');
     var uploadedFilesList = document.getElementById('uploaded-files-list');
+
     // Prevent default drag behaviors on the whole document
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (eventName) {
-        document.body.addEventListener(eventName, function (e) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
+        document.body.addEventListener(eventName, function(e) {
             e.preventDefault();
             e.stopPropagation();
         }, false);
     });
-    // Highlight drop zone on drag
-    ['dragenter', 'dragover'].forEach(function (eventName) {
-        uploadZone.addEventListener(eventName, function () {
-            uploadZone.classList.add('drag-over');
+
+    if (uploadZone) {
+        ['dragenter', 'dragover'].forEach(function(eventName) {
+            uploadZone.addEventListener(eventName, function() {
+                uploadZone.classList.add('drag-over');
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(function(eventName) {
+            uploadZone.addEventListener(eventName, function() {
+                uploadZone.classList.remove('drag-over');
+            }, false);
+        });
+        uploadZone.addEventListener('drop', function(e) {
+            var files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                handleFileUpload(files);
+            }
         }, false);
-    });
-    ['dragleave', 'drop'].forEach(function (eventName) {
-        uploadZone.addEventListener(eventName, function () {
-            uploadZone.classList.remove('drag-over');
-        }, false);
-    });
-    // Handle drop
-    uploadZone.addEventListener('drop', function (e) {
-        var files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            handleFileUpload(files);
-        }
-    }, false);
-    // Handle file input change
-    fileInput.addEventListener('change', function () {
-        if (this.files && this.files.length > 0) {
-            handleFileUpload(this.files);
-        }
-        // Reset so the same file can be re-uploaded
-        this.value = '';
-    });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFileUpload(this.files);
+            }
+            this.value = '';
+        });
+    }
+
     async function handleFileUpload(files) {
         var totalFiles = files.length;
         var completed = 0;
@@ -989,10 +769,10 @@
         }
         await refreshUploadedFileList();
     }
+
     async function uploadSingleFile(file) {
         var fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         var filePath = 'notes/' + fileName;
-        // Determine content type
         var contentType = file.type || 'application/octet-stream';
         var resp = await fetch(basePath + '/' + filePath, {
             method: 'PUT',
@@ -1004,34 +784,24 @@
         }
         return true;
     }
+
     async function refreshUploadedFileList() {
+        if (!uploadedFilesList) return;
         try {
-            var resp = await fetch(basePath + '/notes/_files.json');
-            if (!resp.ok) {
-                uploadedFilesList.innerHTML = '';
-                return;
-            }
+            var entries = await listFiles(basePath, 'notes');
             var files = [];
-            try {
-                var json = await resp.json();
-                var entries = json.entries || json.files || json.children || [];
-                if (Array.isArray(entries)) {
-                    files = entries.filter(function (e) {
-                        // Only include files, not directories
-                        if (typeof e === 'string') return true;
-                        if (e && e.type === 'file') return true;
-                        if (e && !e.type && e.name) return true; // assume file if no type
-                        return false;
-                    }).map(function (e) {
-                        if (typeof e === 'string') return e;
-                        return e.name || e.fileName || String(e);
-                    });
-                }
-            } catch (e) {
-                console.warn('Could not parse _files.json response:', e);
+            if (Array.isArray(entries)) {
+                files = entries.filter(function(e) {
+                    if (typeof e === 'string') return true;
+                    if (e && e.type === 'file') return true;
+                    if (e && !e.type && e.name) return true;
+                    return false;
+                }).map(function(e) {
+                    if (typeof e === 'string') return e;
+                    return e.name || e.fileName || String(e);
+                });
             }
-            // Filter out meta files
-            files = files.filter(function (f) {
+            files = files.filter(function(f) {
                 return f && f !== '.' && f !== '..' && f !== '_files.json' && f !== '.gitignore';
             });
             renderFileList(files);
@@ -1040,7 +810,9 @@
             uploadedFilesList.innerHTML = '';
         }
     }
+
     function renderFileList(files) {
+        if (!uploadedFilesList) return;
         if (!files || files.length === 0) {
             uploadedFilesList.innerHTML = '';
             uploadedFilesList.style.display = 'none';
@@ -1051,8 +823,7 @@
         html += '<div class="file-list-items">';
         for (var i = 0; i < files.length; i++) {
             var fname = escapeHtml(files[i]);
-            var ext = files[i].split('.').pop().toLowerCase();
-            var icon = getFileIcon(ext);
+            var icon = getFileIcon(files[i]);
             html += '<div class="file-list-item">' +
                 '<span class="file-item-icon">' + icon + '</span>' +
                 '<span class="file-item-name">' + fname + '</span>' +
@@ -1061,18 +832,13 @@
         }
         html += '</div>';
         uploadedFilesList.innerHTML = html;
-        // Attach delete handlers
-        uploadedFilesList.querySelectorAll('.file-delete-btn').forEach(function (btn) {
-            btn.addEventListener('click', async function () {
+
+        uploadedFilesList.querySelectorAll('.file-delete-btn').forEach(function(btn) {
+            btn.addEventListener('click', async function() {
                 var filename = this.dataset.filename;
                 if (!confirm('Delete notes/' + filename + '?')) return;
                 try {
-                    var resp = await fetch(basePath + '/notes/' + encodeURIComponent(filename), {
-                        method: 'DELETE'
-                    });
-                    if (!resp.ok && resp.status !== 404) {
-                        throw new Error('Delete failed: ' + resp.status);
-                    }
+                    await deleteFile(basePath, 'notes/' + filename);
                     setStatus('notes-status', '✓ Deleted ' + filename, 'success');
                     await refreshUploadedFileList();
                 } catch (e) {
@@ -1081,25 +847,15 @@
             });
         });
     }
-    function getFileIcon(ext) {
-        var icons = {
-            'md': '📝', 'txt': '📄', 'text': '📄',
-            'pdf': '📕', 'doc': '📘', 'docx': '📘',
-            'rtf': '📃', 'odt': '📃',
-            'html': '🌐', 'htm': '🌐',
-            'json': '📋', 'xml': '📋', 'csv': '📊',
-            'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'svg': '🖼️',
-            'mp3': '🎵', 'wav': '🎵', 'mp4': '🎬',
-            'zip': '📦', 'tar': '📦', 'gz': '📦'
-        };
-        return icons[ext] || '📎';
+
+    var refreshFileListBtn = document.getElementById('refresh-file-list');
+    if (refreshFileListBtn) {
+        refreshFileListBtn.addEventListener('click', function() {
+            refreshUploadedFileList();
+        });
     }
-    // Refresh file list button
-    document.getElementById('refresh-file-list').addEventListener('click', function () {
-        refreshUploadedFileList();
-    });
-    // Load file list on startup
     refreshUploadedFileList();
+
     // ========================================================================
     // Viewer Mode Toggle (Markdown source vs Rendered HTML) & Zoom
     // ========================================================================
@@ -1113,12 +869,11 @@
         var raw = viewerRawContent[viewerId];
         if (raw === undefined || raw === null) return;
         var mode = viewerModes[viewerId] || 'rendered';
-        // For HTML files (page.html), render in iframe or show source
+
         if (isHtmlViewer(viewerId)) {
             if (mode === 'markdown' || mode === 'source') {
                 viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
             } else {
-                // Render HTML in a sandboxed iframe
                 var iframe = document.createElement('iframe');
                 iframe.className = 'html-preview-iframe';
                 iframe.setAttribute('sandbox', 'allow-same-origin');
@@ -1128,7 +883,6 @@
                 iframe.style.background = '#fff';
                 viewer.innerHTML = '';
                 viewer.appendChild(iframe);
-                // Write content after attaching to DOM
                 try {
                     var doc = iframe.contentDocument || iframe.contentWindow.document;
                     doc.open();
@@ -1140,18 +894,19 @@
             }
             return;
         }
+
         if (mode === 'markdown') {
             viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
         } else {
             var html = renderMarkdown(raw);
             if (!html || html.trim() === '') {
-                // Fallback: if renderMarkdown returns empty, show as pre-formatted text
                 viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
             } else {
                 viewer.innerHTML = html;
             }
         }
     }
+
     function ensureViewerToolbar(viewerId) {
         var toolbar = document.getElementById('toolbar-' + viewerId);
         if (toolbar) return toolbar;
@@ -1177,8 +932,8 @@
         }
         toolbar.innerHTML = toolbarHtml;
         viewer.parentElement.insertBefore(toolbar, viewer);
-        // Attach toggle handler
-        toolbar.querySelector('.btn-toggle-mode').addEventListener('click', function () {
+
+        toolbar.querySelector('.btn-toggle-mode').addEventListener('click', function() {
             var vid = this.dataset.viewer;
             var current = viewerModes[vid] || 'rendered';
             viewerModes[vid] = current === 'rendered' ? 'markdown' : 'rendered';
@@ -1189,47 +944,51 @@
                 this.textContent = viewerModes[vid] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
             }
             renderViewerContent(vid);
-            // Also update zoom overlay if open
             if (zoomedViewerId === vid) {
-                var zoomBody = document.getElementById('zoom-overlay-body');
-                if (zoomBody) {
-                    var raw = viewerRawContent[vid];
-                    if (isHtmlViewer(vid)) {
-                        if (viewerModes[vid] === 'markdown') {
-                            zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
-                        } else {
-                            zoomBody.innerHTML = '';
-                            var zIframe = document.createElement('iframe');
-                            zIframe.className = 'html-preview-iframe';
-                            zIframe.setAttribute('sandbox', 'allow-same-origin');
-                            zIframe.style.width = '100%';
-                            zIframe.style.height = '100%';
-                            zIframe.style.minHeight = '600px';
-                            zIframe.style.border = 'none';
-                            zIframe.style.background = '#fff';
-                            zoomBody.appendChild(zIframe);
-                            try {
-                                var zDoc = zIframe.contentDocument || zIframe.contentWindow.document;
-                                zDoc.open();
-                                zDoc.write(raw);
-                                zDoc.close();
-                            } catch (e) { /* ignore */ }
-                        }
-                    } else if (viewerModes[vid] === 'markdown') {
-                        zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
-                    } else {
-                        zoomBody.innerHTML = renderMarkdown(raw);
-                    }
-                }
+                refreshZoomBody(vid);
             }
         });
-        // Attach zoom handler
-        toolbar.querySelector('.btn-zoom').addEventListener('click', function () {
+
+        toolbar.querySelector('.btn-zoom').addEventListener('click', function() {
             var vid = this.dataset.viewer;
             openZoomOverlay(vid);
         });
         return toolbar;
     }
+
+    function refreshZoomBody(vid) {
+        var zoomBody = document.getElementById('zoom-overlay-body');
+        if (!zoomBody) return;
+        var raw = viewerRawContent[vid];
+        var isH = isHtmlViewer(vid);
+        if (isH) {
+            if (viewerModes[vid] === 'markdown') {
+                zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+            } else {
+                zoomBody.innerHTML = '';
+                var zIframe = document.createElement('iframe');
+                zIframe.className = 'html-preview-iframe';
+                zIframe.setAttribute('sandbox', 'allow-same-origin');
+                zIframe.style.width = '100%';
+                zIframe.style.height = '100%';
+                zIframe.style.minHeight = '600px';
+                zIframe.style.border = 'none';
+                zIframe.style.background = '#fff';
+                zoomBody.appendChild(zIframe);
+                try {
+                    var zDoc = zIframe.contentDocument || zIframe.contentWindow.document;
+                    zDoc.open();
+                    zDoc.write(raw);
+                    zDoc.close();
+                } catch (e) { /* ignore */ }
+            }
+        } else if (viewerModes[vid] === 'markdown') {
+            zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+        } else {
+            zoomBody.innerHTML = renderMarkdown(raw);
+        }
+    }
+
     function openZoomOverlay(viewerId) {
         var raw = viewerRawContent[viewerId];
         if (raw === undefined || raw === null) return;
@@ -1250,10 +1009,10 @@
                 '</div>' +
                 '<div class="zoom-overlay-body" id="zoom-overlay-body"></div>';
             document.body.appendChild(overlay);
-            document.getElementById('zoom-close-btn').addEventListener('click', function () {
+            document.getElementById('zoom-close-btn').addEventListener('click', function() {
                 closeZoomOverlay();
             });
-            document.getElementById('zoom-toggle-mode').addEventListener('click', function () {
+            document.getElementById('zoom-toggle-mode').addEventListener('click', function() {
                 if (!zoomedViewerId) return;
                 var current = viewerModes[zoomedViewerId] || 'rendered';
                 viewerModes[zoomedViewerId] = current === 'rendered' ? 'markdown' : 'rendered';
@@ -1263,37 +1022,8 @@
                 } else {
                     this.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
                 }
-                // Update both zoom and inline viewer
                 renderViewerContent(zoomedViewerId);
-                var zoomBody = document.getElementById('zoom-overlay-body');
-                var raw2 = viewerRawContent[zoomedViewerId];
-                if (isH) {
-                    if (viewerModes[zoomedViewerId] === 'markdown') {
-                        zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw2) + '</pre>';
-                    } else {
-                        zoomBody.innerHTML = '';
-                        var zIframe2 = document.createElement('iframe');
-                        zIframe2.className = 'html-preview-iframe';
-                        zIframe2.setAttribute('sandbox', 'allow-same-origin');
-                        zIframe2.style.width = '100%';
-                        zIframe2.style.height = '100%';
-                        zIframe2.style.minHeight = '600px';
-                        zIframe2.style.border = 'none';
-                        zIframe2.style.background = '#fff';
-                        zoomBody.appendChild(zIframe2);
-                        try {
-                            var zDoc2 = zIframe2.contentDocument || zIframe2.contentWindow.document;
-                            zDoc2.open();
-                            zDoc2.write(raw2);
-                            zDoc2.close();
-                        } catch (e) { /* ignore */ }
-                    }
-                } else if (viewerModes[zoomedViewerId] === 'markdown') {
-                    zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw2) + '</pre>';
-                } else {
-                    zoomBody.innerHTML = renderMarkdown(raw2);
-                }
-                // Sync inline toolbar button text
+                refreshZoomBody(zoomedViewerId);
                 var inlineBtn = document.querySelector('#toolbar-' + zoomedViewerId + ' .btn-toggle-mode');
                 if (inlineBtn) {
                     if (isH) {
@@ -1303,13 +1033,11 @@
                     }
                 }
             });
-            // Close on Escape
-            document.addEventListener('keydown', function (e) {
+            document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && zoomedViewerId) closeZoomOverlay();
             });
         }
         var mode = viewerModes[viewerId] || 'rendered';
-        var zoomBody = document.getElementById('zoom-overlay-body');
         var zoomTitle = document.getElementById('zoom-overlay-title');
         var zoomToggle = document.getElementById('zoom-toggle-mode');
         var zoomOpenNewtab = document.getElementById('zoom-open-newtab');
@@ -1323,122 +1051,110 @@
             }
         } else {
             zoomToggle.textContent = mode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
-            if (zoomOpenNewtab) {
-                zoomOpenNewtab.style.display = 'none';
-            }
+            if (zoomOpenNewtab) zoomOpenNewtab.style.display = 'none';
         }
-        if (isHtml) {
-            if (mode === 'markdown') {
-                zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
-            } else {
-                zoomBody.innerHTML = '';
-                var zIframe3 = document.createElement('iframe');
-                zIframe3.className = 'html-preview-iframe';
-                zIframe3.setAttribute('sandbox', 'allow-same-origin');
-                zIframe3.style.width = '100%';
-                zIframe3.style.height = '100%';
-                zIframe3.style.minHeight = '600px';
-                zIframe3.style.border = 'none';
-                zIframe3.style.background = '#fff';
-                zoomBody.appendChild(zIframe3);
-                try {
-                    var zDoc3 = zIframe3.contentDocument || zIframe3.contentWindow.document;
-                    zDoc3.open();
-                    zDoc3.write(raw);
-                    zDoc3.close();
-                } catch (e) { /* ignore */ }
-            }
-        } else if (mode === 'markdown') {
-            zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
-        } else {
-            zoomBody.innerHTML = renderMarkdown(raw);
-        }
+        refreshZoomBody(viewerId);
         overlay.classList.add('visible');
         document.body.style.overflow = 'hidden';
     }
+
     function closeZoomOverlay() {
         var overlay = document.getElementById('zoom-overlay');
-        if (overlay) {
-            overlay.classList.remove('visible');
-        }
+        if (overlay) overlay.classList.remove('visible');
         document.body.style.overflow = '';
         zoomedViewerId = null;
     }
+
     // ========================================================================
     // Content Editor (content.md)
     // ========================================================================
     var contentEditorEl = document.getElementById('content-editor');
     var contentEditorContainer = document.getElementById('content-editor-container');
-    document.getElementById('edit-content-btn').addEventListener('click', async function () {
-        // Load current content.md into editor
-        try {
-            var content = await readFile('content.md');
-            contentEditorEl.value = content || '';
-        } catch (e) {
-            contentEditorEl.value = '';
-        }
-        contentEditorContainer.classList.add('visible');
-    });
-    document.getElementById('save-content-btn').addEventListener('click', async function () {
-        var content = contentEditorEl.value;
-        try {
-            this.disabled = true;
-            await writeFile('content.md', content);
-            setStatus('content-editor-status', '✓ Saved content.md', 'success');
-            // Refresh any open viewers showing content.md
-            var viewerIds = ['viewer-content', 'viewer-update', 'result-content'];
-            for (var i = 0; i < viewerIds.length; i++) {
-                var vid = viewerIds[i];
-                viewerRawContent[vid] = content;
-                var viewer = document.getElementById(vid);
-                if (viewer && viewer.classList.contains('visible')) {
-                    renderViewerContent(vid);
-                }
+
+    var editContentBtn = document.getElementById('edit-content-btn');
+    if (editContentBtn) {
+        editContentBtn.addEventListener('click', async function() {
+            try {
+                var content = await readFile(basePath, 'content.md');
+                contentEditorEl.value = content || '';
+            } catch (e) {
+                contentEditorEl.value = '';
             }
-        } catch (e) {
-            setStatus('content-editor-status', '✗ ' + e.message, 'error');
-        } finally {
-            this.disabled = false;
-        }
-    });
-    document.getElementById('close-content-editor-btn').addEventListener('click', function () {
-        contentEditorContainer.classList.remove('visible');
-    });
+            contentEditorContainer.classList.add('visible');
+        });
+    }
+
+    var saveContentBtn = document.getElementById('save-content-btn');
+    if (saveContentBtn) {
+        saveContentBtn.addEventListener('click', async function() {
+            var content = contentEditorEl.value;
+            try {
+                this.disabled = true;
+                await writeFile(basePath, 'content.md', content);
+                setStatus('content-editor-status', '✓ Saved content.md', 'success');
+                var viewerIds = ['viewer-content', 'viewer-update', 'result-content'];
+                for (var i = 0; i < viewerIds.length; i++) {
+                    var vid = viewerIds[i];
+                    viewerRawContent[vid] = content;
+                    var viewer = document.getElementById(vid);
+                    if (viewer && viewer.classList.contains('visible')) {
+                        renderViewerContent(vid);
+                    }
+                }
+            } catch (e) {
+                setStatus('content-editor-status', '✗ ' + e.message, 'error');
+            } finally {
+                this.disabled = false;
+            }
+        });
+    }
+
+    var closeContentEditorBtn = document.getElementById('close-content-editor-btn');
+    if (closeContentEditorBtn) {
+        closeContentEditorBtn.addEventListener('click', function() {
+            contentEditorContainer.classList.remove('visible');
+        });
+    }
+
     // ========================================================================
     // Pipeline Manual Article Editor
     // ========================================================================
     var pipelineEditorEl = document.getElementById('pipeline-content-editor');
     var pipelineEditorContainer = document.getElementById('pipeline-content-editor-container');
     var pipelineEditorDirty = false;
-    // Open editor
-    document.getElementById('pipeline-edit-content-btn').addEventListener('click', async function () {
-        if (pipelineEditorContainer.classList.contains('visible')) {
-            // Toggle off
-            if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
-            pipelineEditorContainer.classList.remove('visible');
+
+    var pipelineEditBtn = document.getElementById('pipeline-edit-content-btn');
+    if (pipelineEditBtn) {
+        pipelineEditBtn.addEventListener('click', async function() {
+            if (pipelineEditorContainer.classList.contains('visible')) {
+                if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
+                pipelineEditorContainer.classList.remove('visible');
+                pipelineEditorDirty = false;
+                return;
+            }
+            try {
+                var content = await readFile(basePath, 'content.md');
+                pipelineEditorEl.value = content || '';
+            } catch (e) {
+                pipelineEditorEl.value = '';
+            }
+            pipelineEditorContainer.classList.add('visible');
             pipelineEditorDirty = false;
-            return;
-        }
-        try {
-            var content = await readFile('content.md');
-            pipelineEditorEl.value = content || '';
-        } catch (e) {
-            pipelineEditorEl.value = '';
-        }
-        pipelineEditorContainer.classList.add('visible');
-        pipelineEditorDirty = false;
-        updatePipelineWordCount();
-        pipelineEditorEl.focus();
-    });
-    // Track dirty state
-    pipelineEditorEl.addEventListener('input', function () {
-        pipelineEditorDirty = true;
-        updatePipelineWordCount();
-    });
-    // Word count
+            updatePipelineWordCount();
+            pipelineEditorEl.focus();
+        });
+    }
+
+    if (pipelineEditorEl) {
+        pipelineEditorEl.addEventListener('input', function() {
+            pipelineEditorDirty = true;
+            updatePipelineWordCount();
+        });
+    }
+
     function updatePipelineWordCount() {
         var el = document.getElementById('pipeline-editor-wordcount');
-        if (!el) return;
+        if (!el || !pipelineEditorEl) return;
         var text = pipelineEditorEl.value.trim();
         if (!text) {
             el.textContent = '0 words';
@@ -1448,19 +1164,18 @@
         var chars = text.length;
         el.textContent = words.toLocaleString() + ' words · ' + chars.toLocaleString() + ' chars';
     }
-    // Save function (shared)
+
     async function savePipelineContent(closeAfter) {
+        if (!pipelineEditorEl) return;
         var content = pipelineEditorEl.value;
         try {
-            await writeFile('content.md', content);
+            await writeFile(basePath, 'content.md', content);
             pipelineEditorDirty = false;
             setStatus('pipeline-editor-status', '✓ Saved content.md', 'success');
             setStatus('pipeline-editor-status-bottom', '✓ Saved content.md', 'success');
-            // Update badge
             if (content.trim().length > 0) {
                 setBadge('badge-content', 'done');
             }
-            // Sync all viewers that show content.md
             var viewerIds = ['viewer-content', 'viewer-update', 'viewer-manual-content', 'result-content'];
             for (var i = 0; i < viewerIds.length; i++) {
                 var vid = viewerIds[i];
@@ -1471,7 +1186,6 @@
                     renderViewerContent(vid);
                 }
             }
-            // Also sync the Results tab editor if it exists
             if (contentEditorEl) {
                 contentEditorEl.value = content;
             }
@@ -1483,30 +1197,31 @@
             setStatus('pipeline-editor-status-bottom', '✗ ' + e.message, 'error');
         }
     }
-    // Save buttons (top and bottom)
-    document.getElementById('pipeline-save-content-btn').addEventListener('click', function () {
-        savePipelineContent(false);
-    });
-    document.getElementById('pipeline-save-content-btn-bottom').addEventListener('click', function () {
-        savePipelineContent(false);
-    });
-    document.getElementById('pipeline-save-close-content-btn').addEventListener('click', function () {
-        savePipelineContent(true);
-    });
-    document.getElementById('pipeline-save-close-content-btn-bottom').addEventListener('click', function () {
-        savePipelineContent(true);
-    });
-    // Close button
-    document.getElementById('pipeline-close-editor-btn').addEventListener('click', function () {
-        if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
-        pipelineEditorContainer.classList.remove('visible');
-        pipelineEditorDirty = false;
-    });
+
+    var pipelineSaveBtn = document.getElementById('pipeline-save-content-btn');
+    if (pipelineSaveBtn) pipelineSaveBtn.addEventListener('click', function() { savePipelineContent(false); });
+    var pipelineSaveBtnBottom = document.getElementById('pipeline-save-content-btn-bottom');
+    if (pipelineSaveBtnBottom) pipelineSaveBtnBottom.addEventListener('click', function() { savePipelineContent(false); });
+    var pipelineSaveCloseBtn = document.getElementById('pipeline-save-close-content-btn');
+    if (pipelineSaveCloseBtn) pipelineSaveCloseBtn.addEventListener('click', function() { savePipelineContent(true); });
+    var pipelineSaveCloseBtnBottom = document.getElementById('pipeline-save-close-content-btn-bottom');
+    if (pipelineSaveCloseBtnBottom) pipelineSaveCloseBtnBottom.addEventListener('click', function() { savePipelineContent(true); });
+
+    var pipelineCloseBtn = document.getElementById('pipeline-close-editor-btn');
+    if (pipelineCloseBtn) {
+        pipelineCloseBtn.addEventListener('click', function() {
+            if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
+            pipelineEditorContainer.classList.remove('visible');
+            pipelineEditorDirty = false;
+        });
+    }
+
     // Markdown formatting toolbar
-    document.querySelectorAll('.pipeline-editor-tool').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+    document.querySelectorAll('.pipeline-editor-tool').forEach(function(btn) {
+        btn.addEventListener('click', function() {
             var action = this.dataset.action;
             var ta = pipelineEditorEl;
+            if (!ta) return;
             var start = ta.selectionStart;
             var end = ta.selectionEnd;
             var selected = ta.value.substring(start, end);
@@ -1529,7 +1244,7 @@
                     break;
                 case 'bullet':
                     if (selected) {
-                        insert = selected.split('\n').map(function (line) {
+                        insert = selected.split('\n').map(function(line) {
                             return '- ' + line;
                         }).join('\n');
                     } else {
@@ -1539,7 +1254,7 @@
                     break;
                 case 'quote':
                     if (selected) {
-                        insert = selected.split('\n').map(function (line) {
+                        insert = selected.split('\n').map(function(line) {
                             return '> ' + line;
                         }).join('\n');
                     } else {
@@ -1564,18 +1279,22 @@
             updatePipelineWordCount();
         });
     });
-    // Keyboard shortcut: Ctrl+S / Cmd+S to save
-    pipelineEditorEl.addEventListener('keydown', function (e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            savePipelineContent(false);
-        }
-    });
+
+    if (pipelineEditorEl) {
+        pipelineEditorEl.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                savePipelineContent(false);
+            }
+        });
+    }
+
     // ========================================================================
     // Usage Tracking
     // ========================================================================
     var usagePollTimer = null;
     var USAGE_POLL_INTERVAL = 10000;
+
     function getUsageUrls() {
         if (!sessionId) return { html: null, json: null };
         return {
@@ -1583,6 +1302,7 @@
             json: '/proxy/usage?sessionId=' + encodeURIComponent(sessionId) + '&format=json'
         };
     }
+
     function updateUsageLinks() {
         var urls = getUsageUrls();
         var htmlLink = document.getElementById('usage-html-link');
@@ -1606,97 +1326,38 @@
             }
         }
     }
-    async function fetchUsageData() {
-        var urls = getUsageUrls();
-        if (!urls.json) {
-            setStatus('usage-status', 'No session ID available', 'error');
-            return null;
-        }
-        try {
-            var resp = await fetch(urls.json, {
-                headers: { 'Accept': 'application/json' }
-            });
-            if (!resp.ok) {
-                if (resp.status === 404) return null;
-                throw new Error('HTTP ' + resp.status);
-            }
-            return await resp.json();
-        } catch (e) {
-            console.warn('Failed to fetch usage data:', e);
-            return null;
-        }
-    }
-    function formatTokenCount(n) {
-        if (n === undefined || n === null) return '—';
-        return Number(n).toLocaleString();
-    }
-    function formatCost(n) {
-        if (n === undefined || n === null) return '—';
-        if (n === 0) return '$0.00';
-        if (n < 0.01) return '$' + n.toFixed(4);
-        return '$' + n.toFixed(4);
-    }
+
     function renderUsageData(data) {
-        var promptEl = document.getElementById('usage-total-prompt');
-        var completionEl = document.getElementById('usage-total-completion');
-        var costEl = document.getElementById('usage-total-cost');
         var tableContainer = document.getElementById('usage-table-container');
+        var elements = {
+            prompt: document.getElementById('usage-total-prompt'),
+            completion: document.getElementById('usage-total-completion'),
+            cost: document.getElementById('usage-total-cost')
+        };
         if (!data) {
-            if (promptEl) promptEl.textContent = '—';
-            if (completionEl) completionEl.textContent = '—';
-            if (costEl) costEl.textContent = '—';
+            if (elements.prompt) elements.prompt.textContent = '—';
+            if (elements.completion) elements.completion.textContent = '—';
+            if (elements.cost) elements.cost.textContent = '—';
             if (tableContainer) tableContainer.innerHTML = '<p class="placeholder">No usage data available yet. Run some operations first.</p>';
             return;
         }
-        // Update summary cards
         var totals = data.totals || {};
-        if (promptEl) promptEl.textContent = formatTokenCount(totals.prompt_tokens);
-        if (completionEl) completionEl.textContent = formatTokenCount(totals.completion_tokens);
-        if (costEl) costEl.textContent = formatCost(totals.cost);
-        // Update table
+        renderUsageSummary(totals, elements);
+
         var models = data.models || [];
         if (models.length === 0) {
             if (tableContainer) tableContainer.innerHTML = '<p class="placeholder">No model usage recorded yet.</p>';
             return;
         }
-        var html = '<table class="usage-table">';
-        html += '<thead><tr>';
-        html += '<th>Model</th>';
-        html += '<th>Prompt Tokens</th>';
-        html += '<th>Completion Tokens</th>';
-        html += '<th>Total Tokens</th>';
-        html += '<th>Cost</th>';
-        html += '</tr></thead>';
-        html += '<tbody>';
-        for (var i = 0; i < models.length; i++) {
-            var m = models[i];
-            var totalTokens = (m.prompt_tokens || 0) + (m.completion_tokens || 0);
-            html += '<tr>';
-            html += '<td class="usage-model-cell">' + escapeHtml(m.model || 'Unknown') + '</td>';
-            html += '<td class="usage-number-cell">' + formatTokenCount(m.prompt_tokens) + '</td>';
-            html += '<td class="usage-number-cell">' + formatTokenCount(m.completion_tokens) + '</td>';
-            html += '<td class="usage-number-cell">' + formatTokenCount(totalTokens) + '</td>';
-            html += '<td class="usage-cost-cell">' + formatCost(m.cost) + '</td>';
-            html += '</tr>';
-        }
-        // Totals row
-        var totalAllTokens = (totals.prompt_tokens || 0) + (totals.completion_tokens || 0);
-        html += '<tr class="usage-totals-row">';
-        html += '<td class="usage-model-cell"><strong>Total</strong></td>';
-        html += '<td class="usage-number-cell"><strong>' + formatTokenCount(totals.prompt_tokens) + '</strong></td>';
-        html += '<td class="usage-number-cell"><strong>' + formatTokenCount(totals.completion_tokens) + '</strong></td>';
-        html += '<td class="usage-number-cell"><strong>' + formatTokenCount(totalAllTokens) + '</strong></td>';
-        html += '<td class="usage-cost-cell"><strong>' + formatCost(totals.cost) + '</strong></td>';
-        html += '</tr>';
-        html += '</tbody></table>';
-        // Add last-updated timestamp
+        var html = createUsageTableHtml(models, totals);
         html += '<div class="usage-last-updated">Last updated: ' + new Date().toLocaleTimeString() + '</div>';
         if (tableContainer) tableContainer.innerHTML = html;
     }
+
     async function refreshUsage() {
         setStatus('usage-status', 'Loading…', '');
         try {
-            var data = await fetchUsageData();
+            var data = await fetchUsageData(sessionId);
             renderUsageData(data);
             if (data) {
                 setStatus('usage-status', '✓ Updated', 'success');
@@ -1707,57 +1368,60 @@
             setStatus('usage-status', '✗ ' + e.message, 'error');
         }
     }
+
     function startUsagePolling() {
         if (usagePollTimer) return;
         var autoRefresh = document.getElementById('usage-auto-refresh');
         if (autoRefresh && !autoRefresh.checked) return;
-        usagePollTimer = setInterval(function () {
-            var autoRefresh = document.getElementById('usage-auto-refresh');
-            if (autoRefresh && !autoRefresh.checked) {
+        usagePollTimer = setInterval(function() {
+            var auto = document.getElementById('usage-auto-refresh');
+            if (auto && !auto.checked) {
                 stopUsagePolling();
                 return;
             }
-            // Only refresh if the usage section is visible
             var section = document.getElementById('section-usage');
             if (section && section.classList.contains('active')) {
                 refreshUsage();
             }
         }, USAGE_POLL_INTERVAL);
     }
+
     function stopUsagePolling() {
         if (usagePollTimer) {
             clearInterval(usagePollTimer);
             usagePollTimer = null;
         }
     }
-    // Refresh button
-    document.getElementById('refresh-usage').addEventListener('click', function () {
-        refreshUsage();
-    });
-    // Auto-refresh checkbox
-    document.getElementById('usage-auto-refresh').addEventListener('change', function () {
-        if (this.checked) {
-            startUsagePolling();
-        } else {
-            stopUsagePolling();
-        }
-    });
-    // Load usage when switching to Usage tab
-    document.querySelectorAll('.nav-link').forEach(function (link) {
-        link.addEventListener('click', function () {
+
+    var refreshUsageBtn = document.getElementById('refresh-usage');
+    if (refreshUsageBtn) {
+        refreshUsageBtn.addEventListener('click', function() {
+            refreshUsage();
+        });
+    }
+
+    var usageAutoRefresh = document.getElementById('usage-auto-refresh');
+    if (usageAutoRefresh) {
+        usageAutoRefresh.addEventListener('change', function() {
+            if (this.checked) startUsagePolling();
+            else stopUsagePolling();
+        });
+    }
+
+    document.querySelectorAll('.nav-link').forEach(function(link) {
+        link.addEventListener('click', function() {
             if (this.dataset.section === 'section-usage') {
                 refreshUsage();
                 startUsagePolling();
             }
         });
     });
-    // Initialize usage links
-    updateUsageLinks();
-     // Initialize webpage open link
-     var webpageOpenLink = document.getElementById('webpage-open-link');
-     if (webpageOpenLink) {
-         webpageOpenLink.href = basePath + '/page.html';
-     }
 
+    updateUsageLinks();
+
+    var webpageOpenLink = document.getElementById('webpage-open-link');
+    if (webpageOpenLink) {
+        webpageOpenLink.href = basePath + '/page.html';
+    }
 
 })();

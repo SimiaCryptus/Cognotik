@@ -14,9 +14,15 @@ class AppEntry(
     val path: String = "/$name",
     val appId: String? = null,
     val resource_path: String?,
+    val category: String? = null,
+    val tags: List<String> = emptyList(),
     val cardClass: String? = null,
-     val readme: String? = null,
+    val readme: String? = null,
+    val hasBackground: Boolean = false,
+    val hasIcon: Boolean = false,
     val classLoader: ClassLoader = this.javaClass.classLoader,
+    val videoUrl: String? = null,
+    val exampleSessions: Map<String, String>? = null,
 ) : DynamicEnum<AppEntry>(name) {
 
     companion object {

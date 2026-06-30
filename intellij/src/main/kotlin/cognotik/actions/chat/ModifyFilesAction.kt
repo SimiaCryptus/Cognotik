@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.net.URI
@@ -56,7 +57,7 @@ open class ModifyFilesAction(
                 FileSelectionUtils.expandFileList(*virtualFiles?.map { it.toFile }?.toTypedArray() ?: arrayOf()).map {
                     it.toPath().relativeTo(root)
                 }.toSet()
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
                 session,
@@ -202,6 +203,6 @@ open class ModifyFilesAction(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
+        private val log = getLogger(ModifyFilesAction::class.java)
     }
 }

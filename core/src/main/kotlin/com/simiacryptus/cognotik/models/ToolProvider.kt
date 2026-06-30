@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.TimeUnit
 

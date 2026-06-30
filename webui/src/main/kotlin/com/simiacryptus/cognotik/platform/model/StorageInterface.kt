@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.model
 
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import java.io.File
 import java.util.*
 
@@ -42,7 +42,7 @@ interface StorageInterface {
    * @return The File object representing the session directory
    */
 
-  fun getSessionDir(
+  fun getUserDir(
     user: User?,
     session: Session
   ): File
@@ -60,7 +60,7 @@ interface StorageInterface {
    * @throws IllegalArgumentException if the session ID format is invalid
    */
 
-  fun getDataDir(
+  fun getSystemDir(
     user: User?,
     session: Session
   ): File

@@ -16,6 +16,8 @@ interface CognotikPlugin {
         // Optional cleanup logic when the plugin is unloaded
     }
 
+    fun initializePlugin() {}
+
     /**
      * A human-readable name for this plugin.
      */

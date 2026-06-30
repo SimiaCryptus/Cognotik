@@ -16,15 +16,12 @@ abstract class AuthenticationInterfaceTest(
         email = "newuser@example.com",
         name = "Jane Smith",
         id = "2",
-        picture = "http://example.com/newpicture.jpg"
     )
 
     @Test
     fun `getUser should return null when no user is associated with access token`() {
-        val user = try { authInterface.getUser(validAccessToken) } catch (e: Throwable) {
-            com.simiacryptus.cognotik.platform.model.defaultUser
-        }
-        assertEquals(user, com.simiacryptus.cognotik.platform.model.defaultUser)
+        val user = authInterface.getUser(validAccessToken)
+        assertEquals(user, null)
     }
 
     @Test
@@ -40,17 +37,20 @@ abstract class AuthenticationInterfaceTest(
         assertNotNull(user)
         assertEquals(newUser, user)
     }
-
+/*
+*
+loving the new user and return the user`() {
+        val returnedUser = authInterface.putUser(validAccessToken, newUser)
+        assertEquals(newUser, returnedUser)
+*
+* */
     @Test
     fun `logout should remove the user associated with the access token`() {
         authInterface.putUser(validAccessToken, newUser)
         assertNotNull(authInterface.getUser(validAccessToken))
 
         authInterface.logout(validAccessToken, newUser)
-        assertEquals(try { authInterface.getUser(validAccessToken) } catch (e: Throwable) {
-            com.simiacryptus.cognotik.platform.model.defaultUser
-        }, com.simiacryptus.cognotik.platform.model.defaultUser
-        )
+        assertEquals(authInterface.getUser(validAccessToken), null)
     }
 
 }

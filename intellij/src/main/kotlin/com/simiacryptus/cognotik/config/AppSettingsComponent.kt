@@ -22,8 +22,8 @@ import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.BrowseUtil
+import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*
@@ -80,19 +80,17 @@ class AppSettingsComponent : Disposable {
     @Name("Model")
     val imageChatModel = ComboBox<String>()
 
-
     @Name("Main Image Model")
     val mainImageModel = ComboBox<String>()
+
     @Name("Audio Model")
     val audioModel = ComboBox<String>()
-
 
     @Name("Embedding Model")
     val embeddingModel = ComboBox<String>()
 
     @Name("Patch Processor")
     val patchProcessor = ComboBox<String>()
-
 
     @Suppress("unused")
     @Name("Enable API Log")
@@ -386,162 +384,8 @@ class AppSettingsComponent : Disposable {
         add(buttonPanel, BorderLayout.SOUTH)
     }
 
-    @Name("Tools")
-    val tools = JBTable(DefaultTableModel(arrayOf("Tool", "Path"), 0)).apply {
-        columnModel.getColumn(0).preferredWidth = 100
-        columnModel.getColumn(1).preferredWidth = 400
-    }
-
-    @Name("Tool Management")
-    val toolManagementPanel = JPanel(BorderLayout()).apply {
-        val scrollPane = JScrollPane(tools)
-        scrollPane.preferredSize = Dimension(600, 300)
-        add(scrollPane, BorderLayout.CENTER)
-        val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val addButton = JButton("Add Tool")
-        val removeButton = JButton("Remove")
-        val editButton = JButton("Edit")
-        val autoDetectButton = JButton("Auto-Detect")
-        removeButton.isEnabled = false
-        editButton.isEnabled = false
-        addButton.addActionListener {
-            val model = tools.model as DefaultTableModel
-            val dialog = JDialog(null as Frame?, "Add Tool Configuration", true)
-            dialog.layout = GridBagLayout()
-            val gbc = GridBagConstraints()
-            gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
-            dialog.add(JLabel("Tool Type:"), gbc)
-            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
-            val providerCombo = ComboBox(ToolProvider.values().map { it.name }.toTypedArray())
-            dialog.add(providerCombo, gbc)
-            gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
-            dialog.add(JLabel("Path:"), gbc)
-            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
-            val pathField = JBTextField(30)
-            dialog.add(pathField, gbc)
-            val browseButton = JButton("Browse")
-            browseButton.addActionListener {
-                val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                FileChooser.chooseFile(descriptor, null, null) { file ->
-                    pathField.text = file.path
-                }
-            }
-            gbc.gridx = 2; gbc.weightx = 0.0
-            dialog.add(browseButton, gbc)
-            gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.NONE
-            val buttonPanel = JPanel(FlowLayout())
-            val okButton = JButton("OK")
-            val cancelButton = JButton("Cancel")
-            okButton.addActionListener {
-                val provider = providerCombo.selectedItem as? String
-                val path = pathField.text
-                if (!provider.isNullOrBlank() && path.isNotBlank()) {
-                    model.addRow(arrayOf(provider, path))
-                    dialog.dispose()
-                }
-            }
-            cancelButton.addActionListener { dialog.dispose() }
-            buttonPanel.add(okButton)
-            buttonPanel.add(cancelButton)
-            dialog.add(buttonPanel, gbc)
-            dialog.pack()
-            dialog.setLocationRelativeTo(this)
-            dialog.isVisible = true
-        }
-        removeButton.addActionListener {
-            val selectedRows = tools.selectedRows
-            if (selectedRows.isNotEmpty()) {
-                val model = tools.model as DefaultTableModel
-                for (i in selectedRows.reversed()) {
-                    model.removeRow(i)
-                }
-            }
-        }
-        editButton.addActionListener {
-            val selectedRow = tools.selectedRow
-            if (selectedRow != -1) {
-                val model = tools.model as DefaultTableModel
-                val currentProvider = model.getValueAt(selectedRow, 0) as String
-                val currentPath = model.getValueAt(selectedRow, 1) as String
-                val dialog = JDialog(null as Frame?, "Edit Tool Configuration", true)
-                dialog.layout = GridBagLayout()
-                val gbc = GridBagConstraints()
-                gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
-                dialog.add(JLabel("Tool Type:"), gbc)
-                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
-                val providerCombo = ComboBox(ToolProvider.values().map { it.name }.toTypedArray())
-                providerCombo.selectedItem = currentProvider
-                dialog.add(providerCombo, gbc)
-                gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
-                dialog.add(JLabel("Path:"), gbc)
-                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
-                val pathField = JBTextField(currentPath, 30)
-                dialog.add(pathField, gbc)
-                val browseButton = JButton("Browse")
-                browseButton.addActionListener {
-                    val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                    FileChooser.chooseFile(descriptor, null, null) { file ->
-                        pathField.text = file.path
-                    }
-                }
-                gbc.gridx = 2; gbc.weightx = 0.0
-                dialog.add(browseButton, gbc)
-                gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.NONE
-                val buttonPanel = JPanel(FlowLayout())
-                val okButton = JButton("OK")
-                val cancelButton = JButton("Cancel")
-                okButton.addActionListener {
-                    val provider = providerCombo.selectedItem as? String
-                    val path = pathField.text
-                    if (!provider.isNullOrBlank() && path.isNotBlank()) {
-                        model.setValueAt(provider, selectedRow, 0)
-                        model.setValueAt(path, selectedRow, 1)
-                        dialog.dispose()
-                    }
-                }
-                cancelButton.addActionListener { dialog.dispose() }
-                buttonPanel.add(okButton)
-                buttonPanel.add(cancelButton)
-                dialog.add(buttonPanel, gbc)
-                dialog.pack()
-                dialog.setLocationRelativeTo(this)
-                dialog.isVisible = true
-            }
-        }
-        autoDetectButton.addActionListener {
-            val model = tools.model as DefaultTableModel
-            val detected = ToolProvider.discoverAllToolsFromPath()
-            var addedCount = 0
-            detected.forEach { tool ->
-                var exists = false
-                for (i in 0 until model.rowCount) {
-                    if (model.getValueAt(i, 0) == tool.provider?.name && model.getValueAt(i, 1) == tool.path) {
-                        exists = true
-                        break
-                    }
-                }
-                if (!exists) {
-                    model.addRow(arrayOf(tool.provider?.name, tool.path))
-                    addedCount++
-                }
-            }
-            JOptionPane.showMessageDialog(this, "Detected and added $addedCount tools.")
-        }
-        tools.selectionModel.addListSelectionListener {
-            val hasSelection = tools.selectedRow != -1
-            removeButton.isEnabled = hasSelection
-            editButton.isEnabled = hasSelection
-        }
-        buttonPanel.add(addButton)
-        buttonPanel.add(removeButton)
-        buttonPanel.add(editButton)
-        buttonPanel.add(autoDetectButton)
-        add(buttonPanel, BorderLayout.SOUTH)
-    }
-
-
     @Name("Editor Actions")
-    var usage = UsageTable(fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager)
+    var usage = UsageTable(fileApplicationServices(AppSettingsState.Companion.pluginHome).usageDB)
 
     init {
         log.debug("Initializing AppSettingsComponent")
@@ -557,7 +401,6 @@ class AppSettingsComponent : Disposable {
         try {
             // Populate API table first
             populateApiTable()
-            populateToolsTable()
         } catch (e: Exception) {
             log.error("Error populating API table: ${e.message}", e)
         }
@@ -600,7 +443,7 @@ class AppSettingsComponent : Disposable {
                 }.flatMap { api ->
                     try {
                         val imageModels: List<ImageModel>? =
-                            api.provider?.getImageModels(api.key!!, api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${api.provider?.name}"))
+                            api.provider?.getImageModels(api.key!!, api.apiBase)
                         imageModels?.filter { model ->
                             isVisible(model)
                         }?.map { it.modelId to it } ?: emptyList()
@@ -626,7 +469,7 @@ class AppSettingsComponent : Disposable {
                 }.flatMap { api ->
                     try {
                         val embeddingModels: List<EmbeddingModel>? =
-                            api.provider?.getEmbeddingModels(api.key!!, api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${api.provider?.name}"))
+                            api.provider?.getEmbeddingModels(api.key!!, api.apiBase)
                         embeddingModels?.filter { model ->
                             isVisible(model)
                         }?.map { it.modelId to it } ?: emptyList()
@@ -672,7 +515,7 @@ class AppSettingsComponent : Disposable {
                 emptyMap()
             }
             availableAudioModels.forEach {
-                this.audioModel.addItem(it.value.modelId)
+             this.audioModel.addItem(it.value.modelId as String)
             }
         } catch (e: Exception) {
             log.error("Error loading audio models: ${e.message}", e)
@@ -681,7 +524,7 @@ class AppSettingsComponent : Disposable {
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == modelItem }
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.find { it.modelId == modelItem }
             }
             if (chatModel == null) {
                 false
@@ -693,18 +536,18 @@ class AppSettingsComponent : Disposable {
             val model =
                 apis.filter { it.key?.decrypt != null }
                     .find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.any { it.modelId == modelItem } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.find { it.modelId == modelItem }
                     }!!
             "${model.provider?.name} - ${model.modelId}"
         }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == modelItem }
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.find { it.modelId == modelItem }
             }
             if (chatModel == null) {
                 false
@@ -717,11 +560,11 @@ class AppSettingsComponent : Disposable {
                 //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
                 apis.filter { it.key?.decrypt != null }
                     .find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.any { it.modelId == modelItem } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.find { it.modelId == modelItem }
                     }
             "${model?.provider?.name} - ${model?.modelId}"
@@ -729,7 +572,7 @@ class AppSettingsComponent : Disposable {
         val imageChatModelItems =
             (0 until imageChatModel.itemCount).map { imageChatModel.getItemAt(it) }.filter { modelItem ->
                 val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
-                    apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == modelItem }
+                    apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.find { it.modelId == modelItem }
                 }
                 if (chatModel == null) {
                     false
@@ -741,11 +584,11 @@ class AppSettingsComponent : Disposable {
                 val model =
                     apis.filter { it.key?.decrypt != null }
                         .find { apiData ->
-                            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                                 ?.any { it.modelId == modelItem } == true
                         }
                         ?.let { apiData ->
-                            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                                 ?.find { it.modelId == modelItem }
                         }
                 "${model?.provider?.name} - ${model?.modelId}"
@@ -783,8 +626,8 @@ class AppSettingsComponent : Disposable {
         AppSettingsState.instance.embeddingModel?.let { model ->
             this.embeddingModel.selectedItem = model
         }
-        AppSettingsState.instance.audioModel?.model?.let { modelId ->
-            this.audioModel.selectedItem = modelId
+        AppSettingsState.instance.audioModel?.model?.modelId?.let { modelId ->
+             this.audioModel.selectedItem = modelId as String
         }
         AppSettingsState.instance.processor.let { processor ->
             this.patchProcessor.selectedItem = processor.label
@@ -820,26 +663,6 @@ class AppSettingsComponent : Disposable {
         }
     }
 
-    private fun populateToolsTable() {
-        try {
-            log.debug("Populating Tools table")
-            val model = tools.model as DefaultTableModel
-            model.rowCount = 0
-          val userSettings = fileApplicationServices(
-            AppSettingsState.Companion.pluginHome
-          ).userSettingsManager.getUserSettings(localUser)
-            userSettings.tools.forEach { tool ->
-                val providerName = tool.provider?.name ?: ""
-                val path = tool.path ?: ""
-                model.addRow(arrayOf(providerName, path))
-            }
-            log.debug("Successfully populated Tools table with ${userSettings.tools.size} entries")
-        } catch (e: Exception) {
-            log.error("Failed to populate Tools table: ${e.message}", e)
-        }
-    }
-
-
     private fun getModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
         override fun customize(
             list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean
@@ -852,11 +675,11 @@ class AppSettingsComponent : Disposable {
                 val model = userSettings.apis
                     .filter { it.key?.decrypt != null }
                     .find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.any { it.modelId == value } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == value }
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.find { it.modelId == value }
                     }
                 text = "${model?.provider?.name} - $value"
             }

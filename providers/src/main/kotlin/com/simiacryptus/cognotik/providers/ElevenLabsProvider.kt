@@ -4,11 +4,9 @@ package com.simiacryptus.cognotik.providers
     import com.simiacryptus.cognotik.audio.AudioModels
     import com.simiacryptus.cognotik.chat.ChatClientInterface
     import com.simiacryptus.cognotik.chat.ElevenLabsChatClient
-    import com.simiacryptus.cognotik.chat.model.ChatModel
-    import com.simiacryptus.cognotik.chat.model.ElevenLabsModels
     import com.simiacryptus.cognotik.models.APIProvider
+    import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.util.SecureString
-    import org.apache.hc.core5.http.HttpRequest
     import org.slf4j.LoggerFactory
     import org.slf4j.event.Level
     import java.io.BufferedOutputStream
@@ -22,11 +20,11 @@ package com.simiacryptus.cognotik.providers
 
         override fun getChatClient(
             key: SecureString,
-            base: String,
             workPool: ExecutorService,
             logLevel: Level,
             logStreams: MutableList<BufferedOutputStream>,
-            scheduledPool: ListeningScheduledExecutorService
+            scheduledPool: ListeningScheduledExecutorService,
+            session: Session
         ): ChatClientInterface {
             log.debug("Creating ElevenLabs chat client (TTS-only) for base={}", base)
             return ElevenLabsChatClient(
@@ -35,7 +33,8 @@ package com.simiacryptus.cognotik.providers
                 workPool = workPool,
                 logLevel = logLevel,
                 logStreams = logStreams,
-                scheduledPool = scheduledPool
+                scheduledPool = scheduledPool,
+                session = session,
             )
         }
 

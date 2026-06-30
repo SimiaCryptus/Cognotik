@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -13,6 +12,7 @@ import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -188,36 +188,7 @@ open class ChatSocketManager(
       // Write assistant response to transcript
       transcriptStream?.write("## Assistant\n$response\n\n".transcriptFilter().toByteArray())
       transcriptStream?.flush()
-
-      try {
-        val answer = extractTopics(response, model)
-        val topicsText = try {
-          answer.topics.let { topics ->
-            if (topics?.isNotEmpty() == true) {
-              topics.forEach { (topicType, entities) ->
-                val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
-                synchronized(topicList) {
-                  topicList.addAll(entities)
-                }
-              }
-              val joinToString =
-                topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
-              task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
-              "\n\n" + joinToString
-            } else {
-              ""
-            }
-          }
-        } catch (e: Exception) {
-          task.error(e)
-          log.error("Error in topic extraction", e)
-          ""
-        }
-        response + topicsText
-      } catch (e: Exception) {
-        log.error("Error in topic extraction", e)
-        response
-      }
+      response
     }
   }
 
@@ -231,22 +202,6 @@ open class ChatSocketManager(
         function1(target)
       }
     }.forEach { it.get() }
-  }
-
-  private fun extractTopics(response: String, model: ChatInterface): Topics {
-    val topicsParsedActor = ParsedAgent(
-      resultClass = Topics::class.java,
-      prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
-      model = model,
-      temperature = temperature,
-      name = "Topics",
-      parsingChatter = fastModel,
-    )
-    return if (fastTopicParsing) {
-      topicsParsedActor.getParser().apply(response)
-    } else {
-      topicsParsedActor.answer(listOf(response)).obj
-    }
   }
 
   protected open fun chatMessages(): List<ModelSchema.ChatMessage> = synchronized(messagesLock) {
@@ -331,9 +286,9 @@ open class ChatSocketManager(
       try {
         val chatResponse = model.chat(
           ChatRequest(
-            model = model.modelType.modelId,
+            model = model.model.modelId,
             messages = finalMessages,
-            temperature = model.temperature,
+            temperature = temperature,
             audio = model.audio,
           )
         )
@@ -457,7 +412,7 @@ open class ChatSocketManager(
   open fun renderResponse(response: String, task: SessionTask) = """<div>${response.renderMarkdown(true)}</div>"""
 
   companion object {
-    private val log = LoggerFactory.getLogger(ChatSocketManager::class.java)
+    private val log = getLogger(ChatSocketManager::class.java)
   }
 }
 

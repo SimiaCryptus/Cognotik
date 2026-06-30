@@ -8,14 +8,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.annotate.FileAnnotation
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.simiacryptus.cognotik.apps.SymbolGraphService
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 

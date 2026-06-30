@@ -10,10 +10,8 @@ import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
 import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
-import com.simiacryptus.cognotik.util.crawl.processing.DataTableAccumulationStrategy
-import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.Companion.register
-import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
+import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType.Companion.register
 
 @Suppress("unused") class ExperimentalStuff : CognotikPlugin {
 
@@ -22,7 +20,6 @@ import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
         require(com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy.values().isNotEmpty())
 
         // --- Data & File Task Types ---
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.DataIngest)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileAppendTask.FileAppend)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileSearchTask.FileSearch)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DecisionTreeTask.DecisionTree)
@@ -110,10 +107,6 @@ import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
         CognitiveModeType.registerCognitiveMode(Coding) { config, session, user -> com.simiacryptus.cognotik.plan.cognitive.CodingMode(config, session, user) }
 
         ResourceApps("apps/experimental_apps.json", ExperimentalStuff::class.java.classLoader).init()
-
-
-        register(ProcessingStrategyType("SchemaExtraction") { SchemaExtractionStrategy() })
-        register(ProcessingStrategyType("DataTableAccumulation") { DataTableAccumulationStrategy() })
 
     }
 

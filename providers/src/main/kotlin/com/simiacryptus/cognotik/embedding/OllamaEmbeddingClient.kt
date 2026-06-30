@@ -86,7 +86,6 @@ class OllamaEmbeddingClient(
         `object` = "list",
         usage = ModelSchema.Usage(
           prompt_tokens = estimateTokens(request.input.toString()).toLong(),
-          total_tokens = estimateTokens(request.input.toString()).toLong(),
           completion_tokens = 0
         )
       )

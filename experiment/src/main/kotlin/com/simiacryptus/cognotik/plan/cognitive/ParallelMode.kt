@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -8,12 +7,12 @@ import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -41,7 +40,7 @@ open class ParallelMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(ParallelMode::class.java)
+  private val log = getLogger(ParallelMode::class.java)
 
 
   override fun contextData(): List<String> = emptyList()
@@ -61,7 +60,7 @@ open class ParallelMode(
       transcript?.write("User Message: $userMessage\n".toByteArray())
 
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
+        ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
         ?: File(".").toPath()
       val parser = createParserAgent(task)
       val plan = if (orchestrationConfig.autoFix) {
@@ -201,7 +200,7 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
         "\nAvailable files:\n\n" + FileSelectionUtils.getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
       } ?: ""),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = 0.1,
       describer = describer
     )

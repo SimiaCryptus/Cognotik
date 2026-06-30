@@ -50,8 +50,14 @@ class OrchestrationConfig(
   var processor: PatchProcessor = PatchProcessors.Fuzzy
 
   @get:JsonIgnore
-  val defaultSmart get() = (smartModel?.instance(user)
-    ?: throw IllegalStateException("Default model not set")).instance(user)
+  val defaultSmart: ChatInterface
+      get() {
+        val instance = smartModel?.instance(user)
+        if (instance == null) {
+            throw IllegalStateException("Default model not set")
+        }
+        return (instance).instance(user)
+      }
 
   @get:JsonIgnore
   val defaultFast get() = (fastModel?.instance(user) ?: smartModel?.instance(user)
@@ -166,7 +172,7 @@ class OrchestrationConfig(
               (Remember: the JSON file content is already loaded by the platform.)
               """.trimIndent(),
       model = model,
-      parsingChatter = fastModel,
+      parsingModel = fastModel,
       temperature = temperature,
       describer = describer,
       parserPrompt = ("\nTask Subtype Schema:\n\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
@@ -190,11 +196,11 @@ class OrchestrationConfig(
     )
 
     @JsonIgnore
-    var instanceFn: ((ApiChatModel, User) -> ChatInterface)? = null
+    var instanceFn: ((ApiChatModel, User) -> ChatInterface) = { _,_->throw IllegalStateException("Instance function not set") }
 
     @JsonIgnore
     fun ApiChatModel.instance(user: User) =
-      instanceFn?.let { it(this, user) } ?: throw IllegalStateException("Instance function not set")
+        instanceFn(this, user)
   }
 
   /**
@@ -209,8 +215,8 @@ class OrchestrationConfig(
 fun String.instance(user: User): ApiChatModel? {
   val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
   val chatModel = userSettings.apis
-    .filter { it.provider != null && it.key != null && it.baseUrl != null }
-    .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
+    .filter { it.provider != null && it.key != null }
+    .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider.base) }
     .firstOrNull { it.modelId == this }
   val toApiChatModel = chatModel?.toApiChatModel(user)
   return toApiChatModel

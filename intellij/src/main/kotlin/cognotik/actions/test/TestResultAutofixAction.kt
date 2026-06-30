@@ -9,7 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -18,18 +18,18 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 
 class TestResultAutofixAction : BaseAction() {
     companion object {
-        private val log = LoggerFactory.getLogger(TestResultAutofixAction::class.java)
+        private val log = getLogger(TestResultAutofixAction::class.java)
         val tripleTilde = "`" + "``"
 
 
@@ -125,7 +125,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.metadataStorage.setSessionName(
             null,
             session,
@@ -199,7 +199,7 @@ class TestResultAutofixAction : BaseAction() {
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatClient,
-                        parsingChatter = AppSettingsState.instance.fastChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
                     ).answer(listOf(testInfo))
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")

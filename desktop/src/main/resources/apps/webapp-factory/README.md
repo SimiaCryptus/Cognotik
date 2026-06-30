@@ -1,147 +1,133 @@
 # 🏗️ Webapp Builder
 
-**Webapp Builder** is an AI-powered web application factory that transforms natural language descriptions into complete,
-runnable web applications. Describe your idea, and the AI generates a full project with HTML, CSS, and JavaScript —
-ready to launch in your browser.
+Turn your ideas into real, working web apps — no coding required.
 
-## Overview
+**Webapp Builder** is an AI-powered tool that takes a plain-English description of the app you want and builds it for you. Describe what you need, click a button, and within minutes you'll have a fully functional web application you can open in your browser, share, or download.
 
-Webapp Builder provides a streamlined pipeline for going from concept to working prototype:
+---
 
-1. **Describe** your webapp idea in plain text or Markdown
-2. **Run** the AI-powered build pipeline
-3. **Launch** your generated webapp directly in the browser
-   No backend setup, no build tools, no configuration — just describe what you want and let the AI handle the rest.
+## ✨ What Can It Do?
 
-## Features
+Whether you want a task tracker, a budget calculator, a quiz game, a portfolio page, or anything in between — Webapp Builder can create it. Just describe your idea the way you'd explain it to a friend, and the AI takes care of the rest.
 
-### 💡 Idea Editor
+**You get:**
+- A complete, ready-to-run web application
+- Clean, modern design out of the box
+- All the files you need — HTML, CSS, and JavaScript — bundled and ready to go
+- A live preview right inside the tool, so you can see your app immediately
+- The ability to download your project as a ZIP file and keep it forever
 
-- Rich textarea for describing your webapp in detail
-- Supports Markdown formatting for structured descriptions
-- Auto-saves before pipeline execution
-- Persists your idea across sessions
+---
 
-### ⚙️ AI Build Pipeline
+## 🚀 How to Use It
 
-- **Single-step pipeline**: Takes your idea and renders a complete project
-- Uses a `Waterfall` cognitive mode for structured, sequential code generation
-- Generates game design docs, spec documents, and full implementation
-- Real-time status polling with live session monitoring
-- Visual pipeline diagram showing progress through each stage
+### Step 1 — Describe Your Idea
+Head to the **💡 Idea** tab and write a description of the app you want to build. The more detail you include, the better the result. You can describe:
 
-### 🚀 Live Preview & Launch
+- What the app does
+- Who it's for
+- Key features you want
+- How you'd like it to look and feel
 
-- **Embedded iframe preview** of the generated webapp directly in the Results tab
-- **One-click launch** to open the webapp in a new browser tab
-- Preview banner appears automatically when the app is ready
-- Refresh controls for updating the preview after regeneration
+Don't worry about being too technical — write it the way you'd explain it to someone. You can even use bullet points or headings to organize your thoughts.
 
-### 📊 Results Dashboard
+> **Example:** *"A simple expense tracker for personal use. Users can add expenses with a name, amount, and category. Show a running total and a breakdown by category. Clean, minimal design with a dark mode option."*
 
-- **Live Preview** tab with embedded iframe of the generated app
-- **README** tab showing the generated project documentation
-- **Project Files** tab with an expandable file browser
-- Syntax-highlighted code viewing for all generated files
-- Directory browsing with file-type icons
-- Inline file viewer for quick inspection
+### Step 2 — Choose Your Build Mode
+Pick how you'd like the AI to work:
 
-### 📡 Session Monitoring
+- **🏗️ Full Pipeline** — The AI plans the project carefully before building. Best for complex or feature-rich apps.
+- **⚡ Simple Mode** — The AI builds in one pass. Faster and great for straightforward apps.
 
-- Links to monitor live AI sessions in real-time
-- Session logs for completed and failed tasks
-- Error diagnostics with direct links to error logs
+### Step 3 — Run the Pipeline
+Click **▶ Run Pipeline** in the **⚙️ Pipeline** tab. The AI gets to work — you'll see live progress updates as it builds your app.
 
-## Architecture
+### Step 4 — See Your App
+Once it's done, a **🚀 Launch App** button appears. Click it to open your app in a new browser tab. You can also see a live preview directly inside the **📊 Results** tab without leaving the tool.
 
-### File Structure
+### Step 5 — Refine and Improve
+Not quite right? Use the **✏️ Update** tab to describe what you'd like to change — fix a bug, add a feature, tweak the design. The AI will update your app based on your feedback. You can repeat this as many times as you like.
 
-```
-webapp-factory/
-├── app.html              # Main application UI
-├── app.js                # Client-side application logic
-├── style.css             # Dark-themed UI styles
-├── marked.min.js         # Markdown rendering library
-├── ops/
-│   ├── render_op.md      # Pipeline operation definition
-│   └── render_project.json  # Task configuration for the SubPlan
-├── idea.md               # User's webapp description (created on save)
-├── code/                 # Generated webapp output directory
-│   ├── index.html        # Generated app entry point
-│   ├── README.md         # Generated project documentation
-│   └── ...               # Other generated files (CSS, JS, etc.)
-└── README.md             # This file
-```
+---
 
-### Pipeline Flow
+## 🧪 Testing & Quality Checks
 
-```
-💡 Idea (idea.md)  →  🏗️ Render Project (SubPlan)  →  📄 Output (code/)
-```
+Webapp Builder includes a built-in **testing tool** that automatically loads your app in a headless browser and captures:
 
-1. **Input**: The user's idea is saved to `idea.md`
-2. **Render**: The `render_op.md` operation triggers a `SubPlan` task that:
+- 📸 A **screenshot** of how your app looks
+- 🖥️ The **browser console output** (useful for spotting errors)
+- 🌐 A **network log** of all resources loaded
+- 📄 The **fully rendered HTML** of your page
 
-- Reads the idea from `idea.md`
-- Plans the project architecture
-- Generates design/spec documents
-- Implements all HTML, CSS, and JavaScript files
-- Produces a `README.md` for the generated project
+After testing, you can ask the AI to **review the results** and automatically write up a list of issues and suggestions — which you can then apply with a single click using the Update feature.
 
-3. **Output**: All generated files are written to the `code/` directory
+---
 
-### Technology Stack
+## 📦 Download Your Project
 
-- **Frontend**: Vanilla HTML, CSS, JavaScript (no framework dependencies)
-- **Styling**: Custom dark theme with CSS custom properties
-- **Markdown**: [marked.js](https://marked.js.org/) for rendering Markdown content
-- **Backend Integration**: DocOps API for file I/O and AI task execution
-- **AI Engine**: SubPlan task type with Waterfall cognitive mode
+Your app is yours to keep. Download it anytime as a **ZIP archive** from the **Results** tab. You'll get all the source files — ready to host anywhere, share with anyone, or continue editing on your own.
 
-### Key API Endpoints Used
+---
 
-| Endpoint                        | Method | Purpose                      |
-|---------------------------------|--------|------------------------------|
-| `{basePath}/{file}`             | `GET`  | Read file contents           |
-| `{basePath}/{file}`             | `PUT`  | Write file contents          |
-| `{basePath}/{dir}/_files.json`  | `GET`  | List directory contents      |
-| `/docops`                       | `POST` | Execute a pipeline operation |
-| `{basePath}/docops.status.json` | `GET`  | Poll task execution status   |
-| `/proxy/#{sessionId}`           | `GET`  | Monitor live AI sessions     |
+## 🔀 Version Control (Git)
 
-## UI Design
+Webapp Builder automatically tracks your project's history using Git. Every time you build or update your app, your changes are saved as a snapshot. From the **🔀 Git** tab you can:
 
-- **Dark theme** with a modern, minimal aesthetic
-- **Sticky navigation** with section tabs: Idea, Pipeline, Results, and Launch
-- **Responsive layout** that works on both desktop and mobile
-- **Visual feedback** throughout:
-- Animated badges for task status (pending, running, done, error)
-- Pulsing indicators for active sessions
-- Gradient accents and glow effects for key actions
-- **Color palette**:
-- Primary: `#6c8cff` (blue)
-- Accent: `#f59e42` (orange)
-- Success: `#4ade80` (green)
-- Launch: `#38bdf8` (sky blue)
+- View what's changed
+- Browse your commit history
+- Create branches to experiment safely
+- Take a manual snapshot at any time
+- Back up and download in one click
 
-## Usage
+This means you can always go back to an earlier version if something goes wrong.
 
-1. **Open** the Webapp Builder in your browser
-2. **Write** a detailed description of your webapp in the Idea tab
+---
 
-- Include target users, key features, design preferences, and tech requirements
-- Use Markdown headers and bullet points for clarity
+## 💰 Usage & Cost Tracking
 
-3. **Click** "💾 Save Idea" or go directly to the Pipeline tab
-4. **Click** "▶ Run Pipeline" to start the AI build process
-5. **Monitor** progress via the pipeline diagram and session links
-6. **View** results in the Results tab once the build completes
-7. **Launch** your webapp using the 🚀 Launch App button in the navigation bar
+The **💰 Usage** tab shows you exactly how many AI tokens were used and the estimated cost for each operation. There are no surprises — you can see a full breakdown by model and by task, so you always know what's being used.
 
-## Tips for Best Results
+---
 
-- **Be specific**: The more detail you provide about features, layout, and behavior, the better the output
-- **Describe the UI**: Mention specific UI patterns (e.g., "Kanban board", "sidebar navigation", "modal dialogs")
-- **Specify constraints**: Note if you want vanilla JS only, specific color schemes, or responsive breakpoints
-- **Include examples**: Reference well-known apps or design patterns for clarity
-- **Iterate**: Run the pipeline multiple times with refined descriptions to improve results
+## 💡 Tips for Great Results
+
+- **Be specific.** Instead of "make it look nice," say "use a dark background with blue accent colors and rounded cards."
+- **Describe the user experience.** Mention how people will interact with the app — clicking buttons, filling forms, seeing results.
+- **List your must-have features.** Prioritize the things that matter most so the AI focuses on what's important to you.
+- **Iterate.** The best apps are built in rounds. Start with the core idea, see what you get, then refine from there.
+- **Use the Update tab freely.** You can run as many update cycles as you need — each one brings your app closer to what you envisioned.
+
+---
+
+## 🤖 Choosing AI Models
+
+In the **💡 Idea** tab, you can choose which AI models power your build:
+
+- **Smart Model** — Used for the main code generation. A more capable model here means better, more complex apps.
+- **Fast Model** — Used for quick supporting tasks. A faster model here keeps things snappy.
+- **Image Model** — Used if your app needs image generation or vision features.
+
+Your model choices are saved automatically, so you only need to set them once.
+
+---
+
+## 🙋 Frequently Asked Questions
+
+**Do I need to know how to code?**
+Not at all. Webapp Builder is designed for anyone with an idea. Just describe what you want in plain English.
+
+**What kind of apps can it build?**
+Single-page web applications — things like tools, games, dashboards, calculators, trackers, portfolios, and more. Apps that run entirely in the browser without needing a server.
+
+**Can I edit the code myself?**
+Yes! Download the ZIP and open the files in any text editor. The generated code is clean and well-organized.
+
+**What happens if I don't like the result?**
+Use the **✏️ Update** tab to describe what you'd like changed. The AI will revise the app based on your feedback.
+
+**Is my app saved?**
+Yes — your idea, notes, and generated files are all saved in your session. You can also download a ZIP at any time for a permanent local copy.
+
+---
+
+Ready to build something? Head to the **💡 Idea** tab and start describing your app. 🚀

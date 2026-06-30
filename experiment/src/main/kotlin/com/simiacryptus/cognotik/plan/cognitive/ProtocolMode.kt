@@ -9,12 +9,12 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -30,7 +30,7 @@ open class ProtocolMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(ProtocolMode::class.java)
+  private val log = getLogger(ProtocolMode::class.java)
   private var isRunning = false
   private val history = mutableListOf<String>()
 
@@ -62,7 +62,7 @@ open class ProtocolMode(
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         } ?: throw IllegalStateException("Coordinator could not be initialized")
 
@@ -234,7 +234,7 @@ open class ProtocolMode(
       resultClass = ProtocolDefinition::class.java,
       prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(messages).obj
@@ -261,7 +261,7 @@ open class ProtocolMode(
       resultClass = Tasks::class.java,
       prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
@@ -304,7 +304,7 @@ open class ProtocolMode(
       resultClass = ValidationResult::class.java,
       prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     ).answer(messages).obj
@@ -345,7 +345,7 @@ open class ProtocolMode(
                 $availableFiles
             """.trimIndent(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = 0.1,
       describer = describer
     )

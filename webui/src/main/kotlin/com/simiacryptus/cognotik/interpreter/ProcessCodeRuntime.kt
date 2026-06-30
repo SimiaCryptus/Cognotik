@@ -11,7 +11,7 @@ open class ProcessCodeRuntime(
   val workingDir: File,
   val env: Map<String, String>?,
   val lang: String,
-  val commandResolver: (User) -> List<String>?,
+  val commandResolver: (User) -> List<File>?,
 ) : CodeRuntime {
 
   override val symbols: Map<String, Any> = emptyMap()
@@ -27,7 +27,7 @@ open class ProcessCodeRuntime(
       throw IllegalArgumentException("No command specified in defs")
     }
     val wrappedCode = wrapCode(code.trim())
-    val processBuilder = ProcessBuilder(*command.toTypedArray<String>()).directory(workingDir)
+    val processBuilder = ProcessBuilder(*command.map { it.absolutePath }.toTypedArray()).directory(workingDir)
     env?.let { env -> processBuilder.environment().putAll(env) }
     val process = processBuilder.start()
 

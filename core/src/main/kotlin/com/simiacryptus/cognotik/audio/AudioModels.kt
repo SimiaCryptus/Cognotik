@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.audio
 
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("unused")

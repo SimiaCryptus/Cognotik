@@ -21,7 +21,7 @@ class OCRAction : BaseAction() {
     override fun handle(event: AnActionEvent) {
         val project = event.project ?: return
         val root = File(project.basePath ?: return).toPath()
-        val files = ImageChatAction.Companion.getFiles(
+        val files = ImageChatAction.getFiles(
             PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext),
             root
         ).map { root.resolve(it).toFile() }
@@ -40,9 +40,10 @@ class OCRAction : BaseAction() {
                                 progress.fraction = page.toDouble() / pageCount
 
                                 val image = reader.renderImage(page, 150f)
-                                val response = AppSettingsState.Companion.instance.imageChatClient.chat(
+                                val appSettingsState = AppSettingsState.instance
+                                val response = appSettingsState.imageChatClient.chat(
                                   ChatRequest(
-                                    model = AppSettingsState.Companion.instance.imageChatClient.modelType.modelId,
+                                    model = appSettingsState.imageChatClient.model.modelId,
                                     messages = listOfNotNull(
                                       ModelSchema.ChatMessage(
                                         ModelSchema.Role.system,
@@ -55,8 +56,8 @@ class OCRAction : BaseAction() {
                                             .apply { this.image = image })
                                       )
                                                                   ),
-                                    temperature = AppSettingsState.Companion.instance.imageChatClient.temperature,
-                                    audio = AppSettingsState.Companion.instance.imageChatClient.audio,
+                                    temperature = appSettingsState.temperature,
+                                    audio = appSettingsState.imageChatClient.audio,
                                   )
                                 ).choices.first().message?.content ?: ""
                                 sb.append(response).append("\n\n")

@@ -1,8 +1,7 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 object AWSModels {
   private val log = LoggerFactory.getLogger(AWSModels::class.java)
@@ -12,221 +11,269 @@ object AWSModels {
   }
 
   val AWSLLaMA31_405bChat = ChatModel(
-    name = "AWSLLaMA31_405bChat",
-    modelId = "meta.llama3-1-405b-instruct-v1:0",
-    maxTotalTokens = 128 * 1024 - 1,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00195,
-    outputTokenPricePerK = 0.00256
+      name = "AWSLLaMA31_405bChat",
+      modelId = "meta.llama3-1-405b-instruct-v1:0",
+      maxTotalTokens = 128 * 1024 - 1,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00195,
+      outputTokenPricePerK = 0.00256,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val AWSLLaMA31_70bChat = ChatModel(
-    name = "AWSLLaMA31_70bChat",
-    modelId = "meta.llama3-1-70b-instruct-v1:0",
-    maxTotalTokens = 128 * 1024 - 1,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00195,
-    outputTokenPricePerK = 0.00256
+      name = "AWSLLaMA31_70bChat",
+      modelId = "meta.llama3-1-70b-instruct-v1:0",
+      maxTotalTokens = 128 * 1024 - 1,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00195,
+      outputTokenPricePerK = 0.00256,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val AWSLLaMA31_8bChat = ChatModel(
-    name = "AWSLLaMA31_8bChat",
-    modelId = "meta.llama3-1-8b-instruct-v1:0",
-    maxTotalTokens = 128 * 1024 - 1,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00195,
-    outputTokenPricePerK = 0.00256
+      name = "AWSLLaMA31_8bChat",
+      modelId = "meta.llama3-1-8b-instruct-v1:0",
+      maxTotalTokens = 128 * 1024 - 1,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00195,
+      outputTokenPricePerK = 0.00256,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val Mistral7bInstructV02 = ChatModel(
-    name = "Mistral7bInstructV02",
-    modelId = "mistral.mistral-7b-instruct-v0:2",
-    maxTotalTokens = 32 * 1024,
-    maxOutTokens = 2 * 1024,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00015,
-    outputTokenPricePerK = 0.0002
+      name = "Mistral7bInstructV02",
+      modelId = "mistral.mistral-7b-instruct-v0:2",
+      maxTotalTokens = 32 * 1024,
+      maxOutTokens = 2 * 1024,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00015,
+      outputTokenPricePerK = 0.0002,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Mixtral8x7bInstructV01AWS = ChatModel(
-    name = "Mixtral8x7bInstructV01AWS",
-    modelId = "mistral.mixtral-8x7b-instruct-v0:1",
-    maxTotalTokens = 32 * 1024,
-    maxOutTokens = 2 * 1024,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00045,
-    outputTokenPricePerK = 0.0007
+      name = "Mixtral8x7bInstructV01AWS",
+      modelId = "mistral.mixtral-8x7b-instruct-v0:1",
+      maxTotalTokens = 32 * 1024,
+      maxOutTokens = 2 * 1024,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00045,
+      outputTokenPricePerK = 0.0007,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val MistralLarge2402 = ChatModel(
-    name = "MistralLarge2402",
-    modelId = "mistral.mistral-large-2402-v1:0",
-    maxTotalTokens = 32 * 1024,
-    maxOutTokens = 4000,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.008,
-    outputTokenPricePerK = 0.024
+      name = "MistralLarge2402",
+      modelId = "mistral.mistral-large-2402-v1:0",
+      maxTotalTokens = 32 * 1024,
+      maxOutTokens = 4000,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.008,
+      outputTokenPricePerK = 0.024,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val MistralLarge2407 = ChatModel(
-    name = "MistralLarge2407",
-    modelId = "mistral.mistral-large-2407-v1:0",
-    maxTotalTokens = 32 * 1024,
-    maxOutTokens = 4000,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.008,
-    outputTokenPricePerK = 0.024
+      name = "MistralLarge2407",
+      modelId = "mistral.mistral-large-2407-v1:0",
+      maxTotalTokens = 32 * 1024,
+      maxOutTokens = 4000,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.008,
+      outputTokenPricePerK = 0.024,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val AmazonTitanTextLiteV1 = ChatModel(
-    name = "AmazonTitanTextLiteV1",
-    modelId = "amazon.titan-text-lite-v1",
-    maxTotalTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0003,
-    outputTokenPricePerK = 0.0004
+      name = "AmazonTitanTextLiteV1",
+      modelId = "amazon.titan-text-lite-v1",
+      maxTotalTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0003,
+      outputTokenPricePerK = 0.0004,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val AmazonTitanTextExpressV1 = ChatModel(
-    name = "AmazonTitanTextExpressV1",
-    modelId = "amazon.titan-text-express-v1",
-    maxTotalTokens = 8192,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0008,
-    outputTokenPricePerK = 0.0016
+      name = "AmazonTitanTextExpressV1",
+      modelId = "amazon.titan-text-express-v1",
+      maxTotalTokens = 8192,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0008,
+      outputTokenPricePerK = 0.0016,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Claude3OpusAWS = ChatModel(
-    name = "Claude3OpusAWS",
-    modelId = "anthropic.claude-3-opus-20240229-v1:0",
-    maxTotalTokens = 200000,
-    maxOutTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 15.0 / 1000.0,
-    outputTokenPricePerK = 75.0 / 1000.0
+      name = "Claude3OpusAWS",
+      modelId = "anthropic.claude-3-opus-20240229-v1:0",
+      maxTotalTokens = 200000,
+      maxOutTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 15.0 / 1000.0,
+      outputTokenPricePerK = 75.0 / 1000.0,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val CohereCommandTextV14 = ChatModel(
-    name = "CohereCommandTextV14",
-    modelId = "cohere.command-text-v14",
-    maxTotalTokens = 4000,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0015,
-    outputTokenPricePerK = 0.002
+      name = "CohereCommandTextV14",
+      modelId = "cohere.command-text-v14",
+      maxTotalTokens = 4000,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0015,
+      outputTokenPricePerK = 0.002,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val AI21J2UltraV1 = ChatModel(
-    name = "AI21J2UltraV1",
-    modelId = "ai21.j2-ultra-v1",
-    maxTotalTokens = 8191,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0125,
-    outputTokenPricePerK = 0.0125
+      name = "AI21J2UltraV1",
+      modelId = "ai21.j2-ultra-v1",
+      maxTotalTokens = 8191,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0125,
+      outputTokenPricePerK = 0.0125,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val AI21J2MidV1 = ChatModel(
-    name = "AI21J2MidV1",
-    modelId = "ai21.j2-mid-v1",
-    maxTotalTokens = 8191,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0188,
-    outputTokenPricePerK = 0.0188
+      name = "AI21J2MidV1",
+      modelId = "ai21.j2-mid-v1",
+      maxTotalTokens = 8191,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0188,
+      outputTokenPricePerK = 0.0188,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Claude35Sonnet = ChatModel(
-    name = "Claude3SonnetAWS",
-    modelId = "anthropic.claude-3-5-sonnet-20240620-v1:0",
-    maxTotalTokens = 200000,
-    maxOutTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.003,
-    outputTokenPricePerK = 0.015
+      name = "Claude3SonnetAWS",
+      modelId = "anthropic.claude-3-5-sonnet-20240620-v1:0",
+      maxTotalTokens = 200000,
+      maxOutTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.003,
+      outputTokenPricePerK = 0.015,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Claude37Sonnet = ChatModel(
-    name = "Claude37SonnetAWS",
-    modelId = "anthropic.claude-3-7-sonnet-20250219-v1:0",
-    maxTotalTokens = 200000,
-    maxOutTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.003,
-    outputTokenPricePerK = 0.015
+      name = "Claude37SonnetAWS",
+      modelId = "anthropic.claude-3-7-sonnet-20250219-v1:0",
+      maxTotalTokens = 200000,
+      maxOutTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.003,
+      outputTokenPricePerK = 0.015,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Claude3Sonnet = ChatModel(
-    name = "Claude3SonnetAWS",
-    modelId = "anthropic.claude-3-sonnet-20240229-v1:0",
-    maxTotalTokens = 200000,
-    maxOutTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.003,
-    outputTokenPricePerK = 0.015
+      name = "Claude3SonnetAWS",
+      modelId = "anthropic.claude-3-sonnet-20240229-v1:0",
+      maxTotalTokens = 200000,
+      maxOutTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.003,
+      outputTokenPricePerK = 0.015,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Claude3Haiku = ChatModel(
-    name = "Claude3HaikuAWS",
-    modelId = "anthropic.claude-3-haiku-20240307-v1:0",
-    maxTotalTokens = 200000,
-    maxOutTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00025,
-    outputTokenPricePerK = 0.000125
+      name = "Claude3HaikuAWS",
+      modelId = "anthropic.claude-3-haiku-20240307-v1:0",
+      maxTotalTokens = 200000,
+      maxOutTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00025,
+      outputTokenPricePerK = 0.000125,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val Claude35Haiku = ChatModel(
-    name = "Claude35HaikuAWS",
-    modelId = "anthropic.claude-3-5-haiku-20241022-v1:0",
-    maxTotalTokens = 200000,
-    maxOutTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00025,
-    outputTokenPricePerK = 0.000125
+      name = "Claude35HaikuAWS",
+      modelId = "anthropic.claude-3-5-haiku-20241022-v1:0",
+      maxTotalTokens = 200000,
+      maxOutTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00025,
+      outputTokenPricePerK = 0.000125,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val LLaMA38bInstructAWS = ChatModel(
-    name = "LLaMA38bInstructAWS",
-    modelId = "meta.llama3-8b-instruct-v1:0",
-    maxTotalTokens = 8192,
-    maxOutTokens = 2048,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0005,
+      name = "LLaMA38bInstructAWS",
+      modelId = "meta.llama3-8b-instruct-v1:0",
+      maxTotalTokens = 8192,
+      maxOutTokens = 2048,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0005,
 
-    outputTokenPricePerK = 0.0015
+      outputTokenPricePerK = 0.0015,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
 
   )
   val LLaMA370bInstructAWS = ChatModel(
-    name = "LLaMA370bInstructAWS",
-    modelId = "meta.llama3-70b-instruct-v1:0",
-    maxTotalTokens = 8192,
-    maxOutTokens = 2048,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0005,
+      name = "LLaMA370bInstructAWS",
+      modelId = "meta.llama3-70b-instruct-v1:0",
+      maxTotalTokens = 8192,
+      maxOutTokens = 2048,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0005,
 
-    outputTokenPricePerK = 0.0015
+      outputTokenPricePerK = 0.0015,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
 
   )
   val AmazonNovaProV1 = ChatModel(
-    name = "AmazonNovaProV1",
-    modelId = "amazon.nova-pro-v1:0",
-    maxTotalTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.001,
+      name = "AmazonNovaProV1",
+      modelId = "amazon.nova-pro-v1:0",
+      maxTotalTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.001,
 
-    outputTokenPricePerK = 0.002
+      outputTokenPricePerK = 0.002,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
 
   )
   val AmazonNovaLiteV1 = ChatModel(
-    name = "AmazonNovaLiteV1",
-    modelId = "amazon.nova-lite-v1:0",
-    maxTotalTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0005,
+      name = "AmazonNovaLiteV1",
+      modelId = "amazon.nova-lite-v1:0",
+      maxTotalTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0005,
 
-    outputTokenPricePerK = 0.001
+      outputTokenPricePerK = 0.001,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
 
   )
   val AmazonNovaMicroV1 = ChatModel(
-    name = "AmazonNovaMicroV1",
-    modelId = "amazon.nova-micro-v1:0",
-    maxTotalTokens = 4096,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.00025,
+      name = "AmazonNovaMicroV1",
+      modelId = "amazon.nova-micro-v1:0",
+      maxTotalTokens = 4096,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.00025,
 
-    outputTokenPricePerK = 0.0005
+      outputTokenPricePerK = 0.0005,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
 
   )
   val DeepseekLLMR1DistillQwen32b = ChatModel(
-    name = "DeepseekLLMR1DistillQwen32b",
-    modelId = "deepseek-llm-r1-distill-qwen-32b",
-    maxTotalTokens = 8192,
-    provider = CoreProviders.AWS,
-    inputTokenPricePerK = 0.0010,
+      name = "DeepseekLLMR1DistillQwen32b",
+      modelId = "deepseek-llm-r1-distill-qwen-32b",
+      maxTotalTokens = 8192,
+      provider = CoreProviders.AWS,
+      inputTokenPricePerK = 0.0010,
 
-    outputTokenPricePerK = 0.0020
+      outputTokenPricePerK = 0.0020,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
 
   )
   val values = mapOf(

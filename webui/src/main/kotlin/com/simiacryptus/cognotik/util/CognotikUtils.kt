@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.defaultUser
 import org.slf4j.Logger
@@ -72,16 +72,10 @@ object CognotikUtils {
       mutableListOf(),
       Executors.newCachedThreadPool(),
       1.0,
-      MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
-    ) { m: LLMModel?, usage: ModelSchema.Usage? ->
-      fileApplicationServices().usageManager.incrementUsage(
-        session,
-        user(),
-        m!!,
-        usage!!
-      )
-      Unit
-    }
+      MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+      session = session,
+      user = user(),
+    )
   }
 
   @JvmStatic

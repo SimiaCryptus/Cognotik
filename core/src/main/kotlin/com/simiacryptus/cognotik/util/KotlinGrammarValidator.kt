@@ -4,10 +4,11 @@ import KotlinLexer
 import KotlinParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.slf4j.LoggerFactory.getLogger
 
 class KotlinGrammarValidator : GrammarValidator {
   companion object {
-    private val log = LoggerFactory.getLogger(KotlinGrammarValidator::class.java)
+    private val log = getLogger(KotlinGrammarValidator::class.java)
   }
 
   override fun validateGrammar(code: String): List<GrammarValidator.ValidationError> {

@@ -5,21 +5,19 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
@@ -52,7 +50,7 @@ open class AdaptivePlanningMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
+  private val log = getLogger(AdaptivePlanningMode::class.java)
   private val currentUserMessage = AtomicReference<String?>(null)
   private val executionRecords = mutableListOf<ExecutionRecord>()
   private val reasoningState = AtomicReference<Any?>(null)
@@ -91,7 +89,7 @@ open class AdaptivePlanningMode(
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
         log.debug("Created plan coordinator")
@@ -351,7 +349,7 @@ open class AdaptivePlanningMode(
         }
       },
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)

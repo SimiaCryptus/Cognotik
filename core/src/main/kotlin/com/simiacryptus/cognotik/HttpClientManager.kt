@@ -1,10 +1,6 @@
 package com.simiacryptus.cognotik
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.exceptions.*
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
@@ -15,16 +11,14 @@ import org.apache.hc.core5.http.io.SocketConfig
 import org.apache.hc.core5.http.message.BasicHeader
 import org.apache.hc.core5.util.Timeout
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
-import java.io.IOException
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.time.Duration
 import java.util.*
-import java.util.concurrent.*
-import java.util.function.Function
-import kotlin.math.pow
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 
 abstract class HttpClientManager(
   val logLevel: Level = Level.DEBUG,

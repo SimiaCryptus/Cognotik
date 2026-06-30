@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.text
 
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 class FullTextSearcher(
   val text: String,

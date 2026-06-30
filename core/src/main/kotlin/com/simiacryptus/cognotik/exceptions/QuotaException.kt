@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.exceptions
 
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.LoggerFactory
 
 class QuotaException : AIServiceException("Quota exceeded", isFatal = true) {
   companion object {

@@ -10,11 +10,12 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.*
@@ -141,7 +142,7 @@ open class HierarchicalPlanningMode(
       dataStorage = task.ui.dataStorage
         ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
       root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getSessionDir(
+        ?: task.ui.dataStorage?.getUserDir(
           user,
           session
         )?.toPath() ?: File(".").toPath())
@@ -607,7 +608,7 @@ open class HierarchicalPlanningMode(
                         ${availableTaskTypes.joinToString("\n") { it.name }}
                     """.trimIndent(),
       model = chatInterface,
-      parsingChatter = orchestrationConfig.defaultFast,
+      parsingModel = orchestrationConfig.defaultFast,
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
@@ -715,7 +716,7 @@ open class HierarchicalPlanningMode(
                 Return a list of goal objects with unique IDs and descriptions.
             """.trimIndent(),
       model = chatInterface,
-      parsingChatter = orchestrationConfig.defaultFast,
+      parsingModel = orchestrationConfig.defaultFast,
       temperature = orchestrationConfig.temperature,
       describer = describer
     )
@@ -803,7 +804,7 @@ open class HierarchicalPlanningMode(
       promptStr
     },
     model = chatInterface,
-    parsingChatter = orchestrationConfig.defaultFast,
+    parsingModel = orchestrationConfig.defaultFast,
     temperature = orchestrationConfig.temperature,
     describer = describer
   )
@@ -1243,7 +1244,7 @@ open class HierarchicalPlanningMode(
   )
 
   private fun getStateFile(task: SessionTask) =
-    File(task.ui.dataStorage.getSessionDir(user, session), "planning_state.json")
+    File(task.ui.dataStorage.getUserDir(user, session), "planning_state.json")
 
   private fun saveState(task: SessionTask) {
     try {
@@ -1293,7 +1294,7 @@ open class HierarchicalPlanningMode(
   companion object {
     val inputCnt = 1
 
-    private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
+    private val log = getLogger(HierarchicalPlanningMode::class.java)
 
     // ThreadLocal to track visited nodes during rendering to prevent infinite recursion
     private val renderingInProgress = ThreadLocal.withInitial { mutableSetOf<String>() }

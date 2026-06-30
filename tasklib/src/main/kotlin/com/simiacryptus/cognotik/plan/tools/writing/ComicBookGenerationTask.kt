@@ -6,15 +6,21 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Semaphore
 import javax.imageio.ImageIO
@@ -281,7 +287,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           resultClass = ComicScript::class.java,
           prompt = scriptPrompt,
           model = api,
-          parsingChatter = parsingChatter,
+          parsingModel = parsingChatter,
           temperature = 0.7
         )
 
@@ -601,7 +607,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(ComicBookGenerationTask::class.java)
+    private val log: Logger = getLogger(ComicBookGenerationTask::class.java)
 
     @JvmStatic
     val ComicBookGeneration = TaskType(

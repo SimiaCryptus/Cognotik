@@ -37,12 +37,13 @@ class ApiProviderServlet : HttpServlet() {
 
   data class ModelInfo(
     val name: String,
-    val maxTokens: Int? = null
+    val inputModalities: Set<String> = emptySet(),
+    val outputModalities: Set<String> = emptySet()
   )
 
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
-      val user = authenticate(request, response) ?: return
+      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       val userSettings = user.userSettings()
       val providers = userSettings.providerInfos()
       val availableProviders = userSettings.getAvailableProviders()
@@ -93,7 +94,6 @@ class ApiProviderServlet : HttpServlet() {
         """
                 <li>
                     ${model.name}
-                    ${model.maxTokens?.let { " (max tokens: $it)" } ?: ""}
                 </li>
                 """.trimIndent()
       }
@@ -117,6 +117,7 @@ class ApiProviderServlet : HttpServlet() {
         <head>
             <title>API Providers</title>
             <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+            <script src="/modules/theme.js"></script>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -195,9 +196,31 @@ class ApiProviderServlet : HttpServlet() {
                 li:last-child {
                     border-bottom: none;
                 }
+                .theme-controls {
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: white;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    z-index: 1000;
+                }
+                .theme-controls label {
+                    margin-right: 6px;
+                    font-size: 0.9em;
+                }
             </style>
         </head>
         <body>
+            <div class="theme-controls">
+                <label for="theme-selector">Theme:</label>
+                <select id="theme-selector">
+                    <option value="auto">Auto</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </div>
             <h1>Available API Providers</h1>
            <h2>All Available Providers</h2>
            <table>
@@ -228,6 +251,15 @@ class ApiProviderServlet : HttpServlet() {
            </table>
            <h2>Configured Providers with Models</h2>
             $providersHtml
+            <script>
+                (function() {
+                    if (typeof ThemeManager !== 'undefined') {
+                        ThemeManager.init();
+                        var sel = document.getElementById('theme-selector');
+                        if (sel) ThemeManager.bindSelector(sel);
+                    }
+                })();
+            </script>
         </body>
         </html>
         """.trimIndent()
@@ -282,7 +314,7 @@ class ApiProviderServlet : HttpServlet() {
               provider.getChatModels(
                 key = apiConfig.key,
                 baseUrl = apiConfig.apiBase
-              )?.filter { !it.deprecated } ?: emptyList()
+              ).filter { !it.deprecated } ?: emptyList()
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -291,20 +323,25 @@ class ApiProviderServlet : HttpServlet() {
             providers.add(
               ProviderInfo(
                 name = provider.name,
-                baseUrl = apiConfig.apiBase
-                  ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
+                baseUrl = apiConfig.apiBase,
                 models = models.map { model ->
-                  ModelInfo(
-                    name = model.modelId,
-                    maxTokens = model.maxTotalTokens
-                  )
+                  if (model is ChatModel) {
+                    ModelInfo(
+                      name = model.modelId,
+                      inputModalities = model.inputModalities.map { it.name }.toSet(),
+                      outputModalities = model.outputModalities.map { it.name }.toSet(),
+                    )
+                  } else {
+                    ModelInfo(
+                      name = model.modelId,
+                    )
+                  }
                 },
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = try {
                   provider.getEmbeddingClient(
                     key = apiConfig.key,
-                    base = apiConfig.apiBase
-                      ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
+                    base = apiConfig.apiBase,
                     workPool = MoreExecutors.newDirectExecutorService(),
                     scheduledPool = MoreExecutors.listeningDecorator(
                       Executors.newScheduledThreadPool(1)

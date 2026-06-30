@@ -3,18 +3,16 @@ package com.simiacryptus.cognotik.plan.tools.online
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.mcp.MCPServerRegistry
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -291,24 +289,24 @@ class MCPToolTask(
 
     @JvmStatic
     val MCPTool = TaskType(
-      "MCPTool",
-      "Online & Search",
-      MCPToolTask::class.java,
-      MCPToolTaskExecutionConfigData::class.java,
-      MCPToolTaskTypeConfig::class.java,
-      "Execute tools from Model Context Protocol servers",
-      """
-              Executes tools from MCP (Model Context Protocol) servers.
-              <ul>
-                <li>Connect to MCP servers via various transports</li>
-                <li>Execute tools with custom arguments</li>
-                <li>Configurable timeouts and retry logic</li>
-                <li>Support for multiple MCP server integrations</li>
-                <li>Structured result handling</li>
-                <li>Automatic tool discovery and validation</li>
-                <li>Exponential backoff retry strategy</li>
-              </ul>
-            """,
+        name = "MCPTool",
+        category = "Online & Search",
+        taskClass = MCPToolTask::class.java,
+        executionConfigClass = MCPToolTaskExecutionConfigData::class.java,
+        taskSettingsClass = MCPToolTaskTypeConfig::class.java,
+        description = "Execute tools from Model Context Protocol servers",
+        tooltipHtml = """
+                      Executes tools from MCP (Model Context Protocol) servers.
+                      <ul>
+                        <li>Connect to MCP servers via various transports</li>
+                        <li>Execute tools with custom arguments</li>
+                        <li>Configurable timeouts and retry logic</li>
+                        <li>Support for multiple MCP server integrations</li>
+                        <li>Structured result handling</li>
+                        <li>Automatic tool discovery and validation</li>
+                        <li>Exponential backoff retry strategy</li>
+                      </ul>
+                    """,
     )
   }
 }

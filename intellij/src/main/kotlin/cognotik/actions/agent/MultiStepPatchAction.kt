@@ -1,6 +1,5 @@
 package cognotik.actions.agent
 
-import ai.grazie.utils.mpp.UUID
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -17,7 +16,7 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
@@ -30,9 +29,11 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
+import java.util.UUID
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
@@ -51,10 +52,10 @@ class MultiStepPatchAction : BaseAction() {
         UITools.runAsync(project, "Initializing Auto Dev Assistant", true) { progress ->
             progress.isIndeterminate = true
             try {
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 val selectedFile = e.getSelectedFolder()
                 if (null != selectedFile) {
-                    DataStorage.sessionPaths[session] = selectedFile.toFile
+                    DataStorage.userPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
@@ -151,7 +152,7 @@ class MultiStepPatchAction : BaseAction() {
           For each task, provide a list of files to be modified and a description of the changes to be made.
         """.trimIndent(),
                 model = model,
-                parsingChatter = fastModel,
+                parsingModel = fastModel,
             ),
             ActorTypes.TaskCodingActor to ChatAgent(
                 prompt = "Implement the changes to the codebase as described in the task list.\n\n" + processor.patchFormatPrompt,
@@ -218,7 +219,7 @@ class MultiStepPatchAction : BaseAction() {
             try {
                 val taskTabs = TabbedDisplay(task)
                 architectureResponse?.obj?.tasks?.map { (paths, description) ->
-                    var description = (description ?: UUID.random().toString()).trim()
+                    var description = (description ?: UUID.randomUUID().toString()).trim()
 
                     while (description.startsWith("#")) {
                         description = description.substring(1)
@@ -285,7 +286,7 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiStepPatchAction::class.java)
+        private val log = getLogger(MultiStepPatchAction::class.java)
         val root: File get() = File(AppSettingsState.Companion.pluginHome, "code_chat")
 
         data class TaskList(

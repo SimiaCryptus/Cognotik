@@ -14,7 +14,7 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -51,7 +51,7 @@ class FindResultsChatAction(
                     ?: throw RuntimeException("No file selected")
             )
 
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
                 session,

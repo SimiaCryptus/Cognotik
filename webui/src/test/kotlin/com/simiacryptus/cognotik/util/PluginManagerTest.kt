@@ -331,7 +331,12 @@ class PluginManagerTest {
         manifestFile.writeText("""[{"jarPath":"${jarFile.canonicalPath.replace("\\", "\\\\")}"}]""")
 
         val newManager = PluginManager(root = tempDir)
-        assertTrue(newManager.isLoaded(jarFile))
+         // PluginManager performs restore asynchronously after a 1s delay; wait for it.
+         val deadline = System.currentTimeMillis() + 5000
+         while (!newManager.isLoaded(jarFile) && System.currentTimeMillis() < deadline) {
+             Thread.sleep(50)
+         }
+         assertTrue(newManager.isLoaded(jarFile), "Plugin JAR should be loaded after restore")
     }
 
     // ---- Helper to create JAR in a specific directory ----

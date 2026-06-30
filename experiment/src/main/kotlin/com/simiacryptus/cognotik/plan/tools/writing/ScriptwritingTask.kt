@@ -5,16 +5,19 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -357,7 +360,7 @@ class ScriptwritingTask(
         prompt = outlinePrompt,
         model = api,
         temperature = 0.7,
-        parsingChatter = fastApi
+        parsingModel = fastApi
       )
 
       val outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -488,7 +491,7 @@ class ScriptwritingTask(
           prompt = hookPrompt,
           model = api,
           temperature = 0.8,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val hookSegment = hookAgent.answer(listOf("Write opening")).obj
@@ -632,7 +635,7 @@ class ScriptwritingTask(
           prompt = sectionPrompt,
           model = api,
           temperature = 0.8,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val sectionSegment = sectionAgent.answer(listOf("Write section")).obj
@@ -751,7 +754,7 @@ class ScriptwritingTask(
         prompt = closingPrompt,
         model = api,
         temperature = 0.8,
-        parsingChatter = fastApi
+        parsingModel = fastApi
       )
 
       val closingSegment = closingAgent.answer(listOf("Write closing")).obj

@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
@@ -20,6 +19,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
@@ -76,6 +76,7 @@ FileModification - Modify existing files or create new files
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    this.orchestrationConfig = orchestrationConfig
     val defaultFile = getDefaultFile()
     val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
     val chatInterface = (typeConfig.model?.instance(orchestrationConfig.user) ?: defaultSmart).getChildClient(task)
@@ -273,25 +274,25 @@ $codeResult
 
     @JvmStatic
     val FileModification = TaskType(
-      "FileModification",
-      "File",
-      FileModificationTask::class.java,
-      FileModificationTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Create new files or modify existing code with AI-powered assistance",
-      """
-                      Creates or modifies source files with AI assistance while maintaining code quality.
-                      <ul>
-                        <li>Shows proposed changes in diff format for easy review</li>
-                        <li>Supports both automated application and manual approval modes</li>
-                        <li>Maintains project coding standards and style consistency</li>
-                        <li>Handles complex multi-file operations and refactoring</li>
-                        <li>Provides clear documentation of all changes with rationale</li>
-                        <li>Implements proper error handling and edge cases</li>
-                        <li>Updates imports and dependencies automatically</li>
-                        <li>Preserves existing code formatting and structure</li>
-                      </ul>
-                    """,
+        name = "FileModification",
+        category = "File",
+        taskClass = FileModificationTask::class.java,
+        executionConfigClass = FileModificationTaskExecutionConfigData::class.java,
+        taskSettingsClass = TaskTypeConfig::class.java,
+        description = "Create new files or modify existing code with AI-powered assistance",
+        tooltipHtml = """
+                              Creates or modifies source files with AI assistance while maintaining code quality.
+                              <ul>
+                                <li>Shows proposed changes in diff format for easy review</li>
+                                <li>Supports both automated application and manual approval modes</li>
+                                <li>Maintains project coding standards and style consistency</li>
+                                <li>Handles complex multi-file operations and refactoring</li>
+                                <li>Provides clear documentation of all changes with rationale</li>
+                                <li>Implements proper error handling and edge cases</li>
+                                <li>Updates imports and dependencies automatically</li>
+                                <li>Preserves existing code formatting and structure</li>
+                              </ul>
+                            """,
     )
 
     fun String.getGitDiff(): String? {

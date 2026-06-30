@@ -13,12 +13,12 @@ import com.simiacryptus.cognotik.plan.instance
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.Thread.sleep
@@ -273,7 +273,7 @@ open class PersonaChatMode(
           session = session,
           dataStorage = ui.dataStorage!!,
           root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-            ?: ui.dataStorage.getSessionDir(user, session).toPath()
+            ?: ui.dataStorage.getUserDir(user, session).toPath()
             ?: File(".").toPath()),
         messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
         task = this,
@@ -430,7 +430,7 @@ open class PersonaChatMode(
   companion object {
     val inputCnt: Int = 1
     private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()
-    private val log = LoggerFactory.getLogger(PersonaChatMode::class.java)
+    private val log = getLogger(PersonaChatMode::class.java)
 
     fun requestToTaskWithPersona(
       defaultModel: ChatInterface,
@@ -474,7 +474,7 @@ open class PersonaChatMode(
           append("\nChoose the most suitable task type and provide details of how it should be executed.")
         },
         model = defaultModel,
-        parsingChatter = fastModel,
+        parsingModel = fastModel,
         temperature = orchestrationConfig.temperature,
         describer = describer,
         parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->

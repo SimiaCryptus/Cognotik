@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -22,6 +21,7 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.chrome.ChromeOptions.LOGGING_PREFS
 import org.openqa.selenium.logging.LogType
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Duration
 import java.util.concurrent.TimeUnit

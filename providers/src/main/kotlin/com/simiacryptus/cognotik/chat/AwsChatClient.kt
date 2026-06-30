@@ -2,15 +2,16 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
-import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
@@ -35,6 +36,7 @@ class AwsChatClient(
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   provider = CoreProviders.AWS,
   apiKey = apiKey,
@@ -42,7 +44,8 @@ class AwsChatClient(
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
 
   override fun authorize(get: HttpRequest) {
@@ -136,7 +139,9 @@ class AwsChatClient(
               maxOutTokens = specs.maxOutTokens,
               provider = CoreProviders.AWS,
               inputTokenPricePerK = specs.inputTokenPricePerK,
-              outputTokenPricePerK = specs.outputTokenPricePerK
+              outputTokenPricePerK = specs.outputTokenPricePerK,
+              inputModalities = setOf(ChatMessageModality.TEXT),
+              outputModalities = setOf(ChatMessageModality.TEXT)
             )
           }
         } catch (e: Exception) {
@@ -178,7 +183,9 @@ class AwsChatClient(
       maxOutTokens = maxOutTokens,
       provider = CoreProviders.AWS,
       inputTokenPricePerK = inputPrice,
-      outputTokenPricePerK = outputPrice
+      outputTokenPricePerK = outputPrice,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
 
@@ -243,7 +250,9 @@ class AwsChatClient(
         maxOutTokens = 4096,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.003,
-        outputTokenPricePerK = 0.015
+        outputTokenPricePerK = 0.015,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Claude 3 Haiku",
@@ -252,7 +261,9 @@ class AwsChatClient(
         maxOutTokens = 4096,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.00025,
-        outputTokenPricePerK = 0.00125
+        outputTokenPricePerK = 0.00125,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Llama 3 70B Instruct",
@@ -261,7 +272,9 @@ class AwsChatClient(
         maxOutTokens = 2048,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.00265,
-        outputTokenPricePerK = 0.0035
+        outputTokenPricePerK = 0.0035,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Mistral 7B Instruct",
@@ -270,7 +283,9 @@ class AwsChatClient(
         maxOutTokens = 4096,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.00015,
-        outputTokenPricePerK = 0.0002
+        outputTokenPricePerK = 0.0002,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       ),
       ChatModel(
         name = "Amazon Titan Text Express",
@@ -279,7 +294,9 @@ class AwsChatClient(
         maxOutTokens = 8192,
         provider = CoreProviders.AWS,
         inputTokenPricePerK = 0.0002,
-        outputTokenPricePerK = 0.0006
+        outputTokenPricePerK = 0.0006,
+        inputModalities = setOf(ChatMessageModality.TEXT),
+        outputModalities = setOf(ChatMessageModality.TEXT)
       )
     )
   }
@@ -288,7 +305,7 @@ class AwsChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
 
@@ -330,10 +347,24 @@ class AwsChatClient(
       val response = fromConverseResponse(converseResponse)
 
       if (response.usage != null) {
-        log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
-        usageHandler?.invoke(
+        log.debug("Usage for model ${model.modelId}: prompt_tokens=${
+          response.usage?.let {
+            it.counts.getOrDefault(
+              TokenTypes.Prompt,
+              0
+            )
+          }
+        }, completion_tokens=${
+          response.usage?.let {
+            it.counts.getOrDefault(
+              TokenTypes.Completion,
+              0
+            )
+          }
+        }, total_tokens=${response.usage?.total_tokens}")
+        usageHandler.onUsage(
           model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          response.usage!!
         )
       }
 

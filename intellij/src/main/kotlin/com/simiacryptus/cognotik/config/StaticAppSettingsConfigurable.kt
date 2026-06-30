@@ -90,19 +90,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         } catch (e: Exception) {
             log.warn("Error building Configuration", e)
         }
-        try {
-            tabbedPane.addTab("Tools", JPanel(BorderLayout()).apply {
-                add(JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(JPanel(BorderLayout()).apply {
-                        add(JLabel("Configured Tools:"), BorderLayout.NORTH)
-                        add(component.toolManagementPanel, BorderLayout.CENTER)
-                    })
-                }, BorderLayout.NORTH)
-            })
-        } catch (e: Exception) {
-            log.warn("Error building Tools Settings", e)
-        }
 
 
         tabbedPane.addTab("Advanced Settings", JPanel(BorderLayout()).apply {
@@ -440,7 +427,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
             settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
             settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelId }
-            settings.audioModel?.model?.let { component.audioModel.selectedItem = it }
+             settings.audioModel?.model?.let { component.audioModel.selectedItem = it.modelId }
             component.devActions.isSelected = settings.devActions
             component.temperature.text = settings.temperature.toString()
             component.embeddingModel.selectedItem = settings.embeddingModel
@@ -479,7 +466,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val smartModelName = component.smartModel.selectedItem as String?
             val imageChatModelName = component.imageChatModel.selectedItem as String?
             val imageModelName = component.mainImageModel.selectedItem as String?
-            val audioModelName = component.audioModel.selectedItem as String?
+             val audioModelName = component.audioModel.selectedItem?.let {
+                 when (it) {
+                     is String -> it
+                     else -> try {
+                         it.javaClass.getMethod("getModelId").invoke(it) as? String
+                             ?: it.javaClass.getMethod("getName").invoke(it) as? String
+                             ?: it.toString()
+                     } catch (e: Exception) {
+                         it.toString()
+                     }
+                 }
+             }
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName, audio: $audioModelName")
 
             val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->
@@ -570,25 +568,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     }
                 } catch (e: Exception) {
                     log.error("Failed to read API configuration from row $row", e)
-                }
-            }
-            val toolsModel = component.tools.model as DefaultTableModel
-            log.debug("Reading Tools from table with ${toolsModel.rowCount} rows")
-            userSettings.tools.clear()
-            for (row in 0 until toolsModel.rowCount) {
-                try {
-                    val providerName = (toolsModel.getValueAt(row, 0) as? String) ?: ""
-                    val path = (toolsModel.getValueAt(row, 1) as? String) ?: ""
-                    if (providerName.isNotBlank()) {
-                        try {
-                            val provider = ToolProvider.valueOf(providerName)
-                            userSettings.tools.add(ToolData(provider, path))
-                        } catch (e: Exception) {
-                            log.warn("Unknown tool provider: $providerName")
-                        }
-                    }
-                } catch (e: Exception) {
-                    log.error("Failed to read tool configuration from row $row", e)
                 }
             }
             ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(

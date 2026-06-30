@@ -21,12 +21,13 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
@@ -79,10 +80,6 @@ class CommandAutofixAction : BaseAction() {
                                     cmdPanel.commandField.selectedItem?.toString()
                                         ?: throw IllegalArgumentException("No executable selected")
                                 )
-                                val tools =
-                                  ApplicationServices.fileApplicationServices().userSettingsManager
-                                    .getUserSettings(localUser).tools
-                                tools.addAll(ToolProvider.scanRecursive(File(executable.absolutePath)))
                                 val argument = cmdPanel.argumentsField.selectedItem?.toString() ?: ""
                                 AppSettingsState.instance.recentArguments?.remove(argument)
                                 AppSettingsState.instance.recentArguments?.add(0, argument)
@@ -121,11 +118,11 @@ class CommandAutofixAction : BaseAction() {
                     root = root,
                     settings = settings,
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartChatClient.getChildClient(),
-                    fastModel = AppSettingsState.instance.fastChatClient.getChildClient(),
+                    model = AppSettingsState.instance.smartChatClient,
+                    fastModel = AppSettingsState.instance.fastChatClient,
                     processor = AppSettingsState.instance.processor
                 )
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
@@ -169,7 +166,7 @@ class CommandAutofixAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CommandAutofixAction::class.java)
+        private val log = getLogger(CommandAutofixAction::class.java)
         private const val MAX_RECENT_ARGUMENTS = 10
         private const val MAX_RECENT_DIRS = 10
         private const val TEXT_AREA_ROWS = 6
@@ -477,10 +474,7 @@ class CommandAutofixAction : BaseAction() {
                     selectedItem = workingDirectory.absolutePath
                     preferredSize = Dimension(400, preferredSize.height)
                 }
-                val executables: List<String>? =
-                  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser)
-                    .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
-                val commandField = ComboBox(executables?.toTypedArray() ?: emptyArray()).apply {
+                val commandField = ComboBox(emptyArray<String>()).apply {
                     isEditable = true
                     preferredSize = Dimension(400, preferredSize.height)
                 }

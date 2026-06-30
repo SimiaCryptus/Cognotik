@@ -9,9 +9,9 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.toContentList
+import org.slf4j.LoggerFactory
 import java.lang.reflect.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
@@ -192,15 +192,15 @@ open class ProxyAgent<T : Any>(
             )
       )
     )
-    request = request.copy(model = model.modelType.modelId)
+    request = request.copy(model = model.model.modelId)
     request = request.copy(temperature = temperature)
     val json = JsonUtil.toJson(request)
     log.info("Request JSON: {}", json)
     val completion = model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = request.messages,
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     ).choices.first().message?.content.orEmpty()

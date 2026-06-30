@@ -273,7 +273,7 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
     ) = run {
       model.chat(
         ChatRequest(
-          model = model.modelType.modelId,
+          model = model.model.modelId,
           messages = listOf(
             ModelSchema.ChatMessage(
               ModelSchema.Role.system,
@@ -286,7 +286,7 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
               "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
             ),
           ),
-          temperature = model.temperature,
+          temperature = AppSettingsState.instance.temperature,
           audio = model.audio,
         )
       ).choices.first().message?.content?.trim()

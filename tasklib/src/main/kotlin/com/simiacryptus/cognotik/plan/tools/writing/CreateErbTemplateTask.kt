@@ -4,8 +4,6 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -13,12 +11,12 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.util.concurrent.Semaphore
 
 class CreateErbTemplateTask(
@@ -350,28 +348,28 @@ $extractedTemplate
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(CreateErbTemplateTask::class.java)
+      private val log = LoggerFactory.getLogger(CreateErbTemplateTask::class.java)
 
     @JvmStatic
     val CreateErbTemplate = TaskType(
-      "CreateErbTemplate",
-      "Writing",
-      CreateErbTemplateTask::class.java,
-      CreateErbTemplateTaskExecutionConfigData::class.java,
-      CreateErbTemplateTaskTypeConfig::class.java,
-      "Generate ERB-style templates for dynamic document generation",
-      """
-                Creates ERB-style templates with AI assistance for generating dynamic documents.
-                <ul>
-                    <li>Supports variable interpolation with <%= expression %></li>
-                    <li>Includes control structures (for loops, if/else conditionals)</li>
-                    <li>Provides built-in filters (escape, markdown, upper, lower, join, default)</li>
-                    <li>Optional TypeScript-style schema preambles for data validation</li>
-                    <li>Supports multiple output formats (LaTeX, HTML, Markdown, text)</li>
-                    <li>Generates well-documented, maintainable templates</li>
-                    <li>Handles complex nested data structures</li>
-                </ul>
-            """
+        name = "CreateErbTemplate",
+        category = "Writing",
+        taskClass = CreateErbTemplateTask::class.java,
+        executionConfigClass = CreateErbTemplateTaskExecutionConfigData::class.java,
+        taskSettingsClass = CreateErbTemplateTaskTypeConfig::class.java,
+        description = "Generate ERB-style templates for dynamic document generation",
+        tooltipHtml = """
+                        Creates ERB-style templates with AI assistance for generating dynamic documents.
+                        <ul>
+                            <li>Supports variable interpolation with <%= expression %></li>
+                            <li>Includes control structures (for loops, if/else conditionals)</li>
+                            <li>Provides built-in filters (escape, markdown, upper, lower, join, default)</li>
+                            <li>Optional TypeScript-style schema preambles for data validation</li>
+                            <li>Supports multiple output formats (LaTeX, HTML, Markdown, text)</li>
+                            <li>Generates well-documented, maintainable templates</li>
+                            <li>Handles complex nested data structures</li>
+                        </ul>
+                    """
     )
   }
 }

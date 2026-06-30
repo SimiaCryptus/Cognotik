@@ -12,13 +12,13 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
@@ -250,7 +250,7 @@ $dependencyContext
       resultClass = ModificationPlan::class.java,
       prompt = planningPrompt,
       model = defaultChatter,
-      parsingChatter = parsingChatter
+      parsingModel = parsingChatter
     )
 
     val planningInput = buildString {
@@ -540,24 +540,24 @@ After the code changes, provide a brief summary of what was implemented.
 
     @JvmStatic
     val IterativeFileModification = TaskType(
-      "IterativeFileModification",
-      "File",
-      IterativeFileModificationTask::class.java,
-      IterativeFileModificationTaskExecutionConfigData::class.java,
-      IterativeFileModificationTypeConfig::class.java,
-      "Multi-phase file modification with planning and iterative implementation",
-      """
-                Performs complex file modifications through a two-phase approach:
-                <ul>
-                    <li><b>Planning Phase:</b> An AI agent analyzes the modification goal and generates a list of discrete, ordered changes</li>
-                    <li><b>Implementation Phase:</b> Each change is implemented iteratively by a separate AI agent</li>
-                    <li>Supports optional user approval between each change iteration</li>
-                    <li>Maintains context of previously implemented changes for coherent modifications</li>
-                    <li>Ideal for complex refactoring, multi-step modifications, or large-scale code changes</li>
-                    <li>Provides detailed transcripts and progress tracking for each phase</li>
-                    <li>Configurable models for planning and implementation phases</li>
-                </ul>
-            """,
+        name = "IterativeFileModification",
+        category = "File",
+        taskClass = IterativeFileModificationTask::class.java,
+        executionConfigClass = IterativeFileModificationTaskExecutionConfigData::class.java,
+        taskSettingsClass = IterativeFileModificationTypeConfig::class.java,
+        description = "Multi-phase file modification with planning and iterative implementation",
+        tooltipHtml = """
+                        Performs complex file modifications through a two-phase approach:
+                        <ul>
+                            <li><b>Planning Phase:</b> An AI agent analyzes the modification goal and generates a list of discrete, ordered changes</li>
+                            <li><b>Implementation Phase:</b> Each change is implemented iteratively by a separate AI agent</li>
+                            <li>Supports optional user approval between each change iteration</li>
+                            <li>Maintains context of previously implemented changes for coherent modifications</li>
+                            <li>Ideal for complex refactoring, multi-step modifications, or large-scale code changes</li>
+                            <li>Provides detailed transcripts and progress tracking for each phase</li>
+                            <li>Configurable models for planning and implementation phases</li>
+                        </ul>
+                    """,
     )
   }
 }

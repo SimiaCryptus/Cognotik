@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.authenticate
@@ -51,6 +51,9 @@ class DeleteSessionServlet(
     } else {
       val session = Session(request.getParameter("sessionId"))
       val user = authenticate(request, response)
+      if (user == null) {
+        throw RuntimeException("User must be authenticated to delete sessions")
+      }
       require(authorizationManager.isAuthorized(javaClass, user, OperationType.Delete))
       { "User $user is not authorized to delete sessions" }
       if (session.isGlobal()) {

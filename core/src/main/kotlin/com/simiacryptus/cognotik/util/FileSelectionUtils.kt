@@ -1,17 +1,17 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.docs.isDocumentFile
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.name
 
 private const val MAX_TEXT_SIZE = 1024 * 1024
 
 object FileSelectionUtils {
-  val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
+  val log = getLogger(FileSelectionUtils::class.java)
 
   fun getAvailableFiles(
     path: Path,
@@ -351,104 +351,22 @@ object FileSelectionUtils {
     }
   }
 
-  private data class IgnoreCache(
-    val patterns: List<Regex>, val lastModified: Long
-  )
 
-  private val ignorePatternCache = ConcurrentHashMap<File, IgnoreCache>()
-  private fun compileIgnorePatterns(ignoreFile: File): List<Regex> {
-    val lastModified = ignoreFile.lastModified()
-    val cached = ignorePatternCache[ignoreFile]
-    if (cached != null && cached.lastModified == lastModified) {
-      return cached.patterns
-    }
 
-    val patterns = try {
-      ignoreFile.readLines()
-    } catch (e: Exception) {
-      log.warn("Error reading ignore file: ${ignoreFile.absolutePath}", e)
-      emptyList()
-    }.map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.mapNotNull { pattern ->
-      try {
-        // Handle negation patterns (starting with !)
-        val isNegation = pattern.startsWith("!")
-        val cleanPattern = if (isNegation) pattern.substring(1) else pattern
 
-        val regexPattern = buildString {
-          append("^")
-          cleanPattern.forEach { char ->
-            when (char) {
-              '*' -> append(".*")
-              '?' -> append(".")
-              '.' -> append("\\.")
-              '/' -> append("[/\\\\]") // Handle both forward and back slashes
-              else -> append(Regex.escape(char.toString()))
-            }
-          }
-          append("$")
-        }
-        Regex(regexPattern)
-      } catch (e: Exception) {
-        log.warn("Invalid ignore pattern: $pattern", e)
-        null
-      }
-    }
-    ignorePatternCache[ignoreFile] = IgnoreCache(patterns, lastModified)
-    return patterns
-  }
 
-  private fun isIgnored(path: Path, ignoreFileName: String, markerFileName: String): Boolean {
-    // Check common ignored directories
-    when (path.name) {
-      "node_modules", "target", "build", ".gradle", "dist", "out", ".logs" -> return true
-      ".git" -> return markerFileName == ".git" // Only ignore .git for gitignore
-    }
 
-    var currentDir = path.toFile().parentFile ?: return false
-    val checkedDirs = mutableSetOf<File>() // Prevent infinite loops
 
-    // Walk up directory tree until we find the marker file
-    while (!currentDir.resolve(markerFileName).exists() && currentDir !in checkedDirs) {
-      checkedDirs.add(currentDir)
-      val ignoreFile = currentDir.resolve(ignoreFileName)
-      if (ignoreFile.exists()) {
-        val patterns = compileIgnorePatterns(ignoreFile)
-        val relativePath = try {
-          currentDir.toPath().relativize(path).toString()
-        } catch (e: Exception) {
-          path.fileName.toString()
-        }
-        if (patterns.any { it.matches(relativePath) || it.matches(path.fileName.toString()) }) {
-          return true
-        }
-      }
-      currentDir = currentDir.parentFile ?: break
-    }
 
-    // Check ignore file in the root directory
-    val rootIgnoreFile = currentDir.resolve(ignoreFileName)
-    if (rootIgnoreFile.exists()) {
-      val patterns = compileIgnorePatterns(rootIgnoreFile)
-      val relativePath = try {
-        currentDir.toPath().relativize(path).toString()
-      } catch (e: Exception) {
-        path.fileName.toString()
-      }
-      if (patterns.any { it.matches(relativePath) || it.matches(path.fileName.toString()) }) {
-        return true
-      }
-    }
-    return false
-  }
 
   fun isLLMIgnored(path: Path): Boolean {
     if (path.toFile().name == ".llmignore") return true
-    return isIgnored(path, ".llmignore", ".llm")
+     return IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.LLMIGNORE)
   }
 
   fun isGitignore(path: Path): Boolean {
     if (path.fileName.toString() == ".gitignore") return true
-    return isIgnored(path, ".gitignore", ".git")
+     return IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.GITIGNORE)
   }
 
   fun String.relativizeFrom(root: Path) = try {

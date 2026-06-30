@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -61,7 +61,7 @@ class ReplicateCommitAction : BaseAction() {
             val virtualFiles1 = event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
             val files = expand(virtualFiles1)
             val changes = event.getData(VcsDataKeys.CHANGES)
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
 
             UITools.run(project, "Replicating Commit", true) { progress ->
                 progress.text = "Generating diff info..."
@@ -232,7 +232,7 @@ class ReplicateCommitAction : BaseAction() {
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
                     model = AppSettingsState.instance.smartChatClient,
-                    parsingChatter = AppSettingsState.instance.fastChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"

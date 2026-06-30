@@ -3,11 +3,12 @@ package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.util.*
@@ -79,7 +80,7 @@ open class SessionTask(
 
     log.debug("Saving file at path: {}", relativePath)
 
-    ui.dataStorage?.getSessionDir(ui.owner, ui.sessionId)?.let { dir ->
+    ui.dataStorage?.getUserDir(ui.owner, ui.sessionId)?.let { dir ->
       if (!dir.exists() && !dir.mkdirs()) {
         throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
       }
@@ -301,7 +302,7 @@ Stack Trace:
     image: BufferedImage
   ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
 
-  fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManager {
+  fun newSession(session: Session = Session.newUserID(), appname: String = session.toString()): SocketManager {
     SessionProxyServer.setParentSession(session, ui.sessionId)
     val linkedManager = ui.createLinkedManager(session)
     SessionProxyServer.agents[session] = linkedManager
@@ -325,7 +326,7 @@ Stack Trace:
   }
 
   companion object {
-    val log = LoggerFactory.getLogger(SessionTask::class.java)
+    val log = getLogger(SessionTask::class.java)
 
     const val spinner =
       """<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>"""
@@ -383,8 +384,4 @@ val Throwable.stackTraceTxt: String
     return sw.toString()
   }
 
-fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
-  val childClient = this.getChildClient()
-  childClient.logStreams += task.newLogStream()
-  return childClient
-}
+fun ChatInterface.getChildClient(task: SessionTask) = getChildClient(task.ui.sessionId).apply { logStreams += task.newLogStream() }

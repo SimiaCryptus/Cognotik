@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
@@ -21,6 +21,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path
@@ -46,7 +47,7 @@ class MultiCodeChatAction : BaseAction() {
             UITools.runAsync(event.project, "Initializing Chat", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Setting up chat session..."
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,
@@ -175,7 +176,7 @@ class MultiCodeChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiCodeChatAction::class.java)
+        private val log = getLogger(MultiCodeChatAction::class.java)
 
         fun getFiles(
             virtualFiles: Array<out VirtualFile>?,

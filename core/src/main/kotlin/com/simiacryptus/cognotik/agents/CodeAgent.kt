@@ -6,11 +6,10 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FailedToImplementException
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
+import org.slf4j.LoggerFactory
 import javax.script.ScriptException
 import kotlin.reflect.KClass
 
@@ -435,9 +434,9 @@ Correct the code and try again.
   private fun chat(request: ChatRequest, model: ChatInterface): String {
     return model.chat(
       ChatRequest(
-        model = model.modelType.modelId,
+        model = model.model.modelId,
         messages = request.messages,
-        temperature = model.temperature,
+        temperature = temperature,
         audio = model.audio,
       )
     )

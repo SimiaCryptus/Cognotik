@@ -25,6 +25,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -67,7 +68,7 @@ object UITools {
         ReadAction.run<RuntimeException> { Messages.showWarningDialog(project, message, title) }
     }
 
-    val log = LoggerFactory.getLogger(UITools::class.java)
+    val log = getLogger(UITools::class.java)
 
     private val threadFactory: ThreadFactory = ThreadFactoryBuilder().setNameFormat("API Thread %d").build()
     val pool: ListeningExecutorService by lazy {

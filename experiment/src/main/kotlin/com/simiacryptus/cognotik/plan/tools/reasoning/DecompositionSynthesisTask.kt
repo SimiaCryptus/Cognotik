@@ -4,8 +4,6 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -14,6 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -29,7 +28,7 @@ class DecompositionSynthesisTask(
   val maxDescriptionLength = 1000
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
+    private val log: Logger = getLogger(DecompositionSynthesisTask::class.java)
 
     @JvmStatic
     val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
@@ -783,7 +782,7 @@ class DecompositionSynthesisTask(
       resultClass = ProblemDecomposition::class.java,
       prompt = prompt,
       model = api,
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     return decompositionAgent.answer(listOf(problem)).obj
@@ -857,7 +856,7 @@ class DecompositionSynthesisTask(
         resultClass = SubproblemSolution::class.java,
         prompt = prompt,
         model = api,
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
       )
 
       val solution = solutionAgent.answer(listOf(subproblem.description)).obj
@@ -964,7 +963,7 @@ class DecompositionSynthesisTask(
       resultClass = SynthesizedSolution::class.java,
       prompt = prompt,
       model = api,
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
     return synthesisAgent.answer(listOf(problem)).obj
   }
@@ -1005,7 +1004,7 @@ class DecompositionSynthesisTask(
       resultClass = CoherenceValidation::class.java,
       prompt = prompt,
       model = api,
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     return validationAgent.answer(listOf(synthesized.solution)).obj

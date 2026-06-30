@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -11,12 +10,16 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
 import java.util.*
@@ -45,7 +48,7 @@ open class CouncilMode(
   user
 ) {
 
-  private val log = LoggerFactory.getLogger(CouncilMode::class.java)
+  private val log = getLogger(CouncilMode::class.java)
   private val currentUserMessage = AtomicReference<String?>(null)
   private val executionRecords = mutableListOf<AdaptivePlanningMode.ExecutionRecord>()
   private val reasoningStates = mutableMapOf<String, Any>()
@@ -86,7 +89,7 @@ open class CouncilMode(
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
 
@@ -338,7 +341,7 @@ ${JsonUtil.toJson(taskConfig)}
             .joinToString("\n\n"))
       },
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     )
@@ -387,7 +390,7 @@ ${JsonUtil.toJson(taskConfig)}
         exampleInstance = Voting(listOf(1, 3), "Tasks 1 and 3 align with goals."),
         prompt = "Vote for the best tasks.",
         model = orchestrationConfig.defaultSmart.getChildClient(task),
-        parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+        parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
         temperature = orchestrationConfig.temperature
       )
       val vote = voter.answer(

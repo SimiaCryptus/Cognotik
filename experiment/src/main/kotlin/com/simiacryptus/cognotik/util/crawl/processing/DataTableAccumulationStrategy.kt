@@ -4,7 +4,9 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
+import com.simiacryptus.cognotik.crawl.processing.DefaultSummarizerStrategy
+import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -227,7 +229,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
       prompt = prompt,
       resultClass = ExtractedTableData::class.java,
       model = model,
-      parsingChatter = model
+      parsingModel = model
     ).answer(listOf(content.take(50000))).obj
 
     // Apply row limit if configured

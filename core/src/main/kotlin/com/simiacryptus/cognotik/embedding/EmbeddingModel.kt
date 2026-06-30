@@ -14,9 +14,10 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
+import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -40,8 +41,13 @@ open class EmbeddingModel(
   private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
   override fun toString() = modelId
 
-  fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
-    .also { log.info("Calculated pricing for model: $modelId with prompt tokens: ${usage.prompt_tokens}, price: $it") }
+  override fun pricing(usage: ModelSchema.Usage) = usage.counts.getOrDefault(key = TokenTypes.Prompt, 0) * tokenPricePerK / 1000.0
+    .also { log.info("Calculated pricing for model: $modelId with prompt tokens: ${
+        usage.counts.getOrDefault(
+            TokenTypes.Prompt,
+            0
+        )
+    }, price: $it") }
 
   fun instance(
     key: SecureString = "".encrypt,

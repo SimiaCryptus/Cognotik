@@ -1,17 +1,16 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.String
 
@@ -25,6 +24,9 @@ class BasicChatApp(
   path = root.absolutePath,
   root = root
 ) {
+  companion object {
+    private val log = LoggerFactory.getLogger(BasicChatApp::class.java)
+  }
   override val stickyInput: Boolean
     get() = true
   override val inputCnt get() = 0
@@ -65,14 +67,8 @@ class BasicChatApp(
           workPool = threadPoolManager.getPool(session, user),
           temperature = settings.temperature,
           scheduledPool = threadPoolManager.getScheduledPool(session, user),
-          onUsage = { model: LLMModel, usage : Usage ->
-            fileApplicationServices().usageManager.incrementUsage(
-              session,
-              user,
-              model,
-              usage
-            )
-          },
+          session = session,
+          user = user,
         )
       } else {
         log.warn("No API key found for model ${model} for user ${user.name}. This model will not be available in the chat session.")

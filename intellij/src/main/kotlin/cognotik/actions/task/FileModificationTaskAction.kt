@@ -25,7 +25,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
@@ -75,9 +75,9 @@ class FileModificationTaskAction : BaseAction() {
         root: File
     ) {
         progress.text = "Setting up session..."
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
 
-        DataStorage.sessionPaths[session] = root
+        DataStorage.userPaths[session] = root
 
         progress.text = "Starting server..."
         setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
@@ -287,7 +287,7 @@ class FileModificationTaskAction : BaseAction() {
 
         private fun getVisibleModels() =
           ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                     model.provider == apiData.provider && model.modelId?.isNotBlank() == true && PlanConfigDialog.isVisible(
                         model
                     )

@@ -1,20 +1,26 @@
 package com.simiacryptus.cognotik.chat
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-  import com.simiacryptus.cognotik.CoreProviders
-  import com.simiacryptus.cognotik.chat.model.AnthropicModels
-  import com.simiacryptus.cognotik.chat.model.ChatModel
-  import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
+import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.ChatModel.ReasoningLevel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.LLMModel
-  import com.simiacryptus.cognotik.models.ModelSchema
-  import com.simiacryptus.cognotik.util.JsonUtil
-  import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
-  import org.slf4j.event.Level
-  import java.io.BufferedOutputStream
-  import java.net.URLEncoder
-  import java.util.concurrent.ConcurrentHashMap
-  import java.util.concurrent.ExecutorService
+import org.slf4j.LoggerFactory.getLogger
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.net.URLEncoder
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 
 class AnthropicChatClient(
   apiKey: SecureString,
@@ -23,6 +29,7 @@ class AnthropicChatClient(
   logLevel: Level,
   logStreams: MutableList<BufferedOutputStream>,
   scheduledPool: ListeningScheduledExecutorService,
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.Anthropic,
   apiKey = apiKey,
@@ -30,7 +37,8 @@ class AnthropicChatClient(
   workPool = workPool,
   logLevel = logLevel,
   logStreams = logStreams,
-  scheduledPool = scheduledPool
+  scheduledPool = scheduledPool,
+  session = session,
 ) {
   override fun authorize(request: HttpRequest) {
     request.addHeader("Content-Type", "application/json")
@@ -45,7 +53,7 @@ class AnthropicChatClient(
 
     return try {
       val modelsResponse = fetchAllModels()
-      val models = modelsResponse.mapNotNull { modelInfo ->
+      val models = modelsResponse.flatMap { modelInfo ->
         val models = AnthropicModels.values.values
           .filter { it.name == modelInfo.id || it.modelId == modelInfo.id }
         when {
@@ -55,13 +63,30 @@ class AnthropicChatClient(
             ChatModel(
               name = modelInfo.display_name,
               modelId = modelInfo.id,
-              provider = CoreProviders.Anthropic,
               maxTotalTokens = 200000,
               maxOutTokens = 64000,
-              inputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
-              outputTokenPricePerK = 0.0 // TODO: Set actual pricing if known
+              provider = CoreProviders.Anthropic,
+              outputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
+              inputModalities = setOf(ChatMessageModality.TEXT),
+              outputModalities = setOf(ChatMessageModality.TEXT) // TODO: Set actual pricing if known
             )
           }
+        }.let { chatModel ->
+          if (chatModel.supportsReasoning) {
+            ReasoningLevel.entries.map { level ->
+              ChatModel(
+                name = "${chatModel.name} (${level})",
+                modelId = chatModel.modelId,
+                maxTotalTokens = chatModel.maxTotalTokens,
+                maxOutTokens = chatModel.maxOutTokens,
+                provider = chatModel.provider,
+                outputTokenPricePerK = chatModel.outputTokenPricePerK,
+                inputModalities = chatModel.inputModalities,
+                outputModalities = chatModel.outputModalities,
+                reasoningLevel = level
+              )
+            } + listOf(chatModel)
+          } else listOf(chatModel)
         }
       }
       // Cache the result
@@ -102,7 +127,7 @@ class AnthropicChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -110,8 +135,9 @@ class AnthropicChatClient(
         val chatMessages = chatRequest.messages
         require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
         require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+        val reasoningLevel = model.reasoningLevel
         val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
-        val temperature = if(model.supportsTemperature) chatRequest.temperature else null
+        var temperature : Double? = if (model.supportsTemperature) chatRequest.temperature else null
         val model = chatRequest.model ?: model.modelId
         val system = chatMessages
           .firstOrNull { it.role == ModelSchema.Role.system }
@@ -131,66 +157,89 @@ class AnthropicChatClient(
                   remainingMessages.takeWhile { it.role == thisRole }
                     .toTypedArray<ModelSchema.ChatMessage>()
                 remainingMessages.removeAll(toConsolidate)
-                 val contentBlocks = mutableListOf<AnthropicContentInput>()
-                 for (msg in toConsolidate) {
-                   msg.content?.forEach { part ->
-                     when {
-                       part.image_url != null -> {
-                         val imageUrl = part.image_url
-                         if (imageUrl != null && imageUrl.startsWith("data:")) {
-                           // data URI: data:<media_type>;base64,<data>
-                           val withoutScheme = imageUrl.removePrefix("data:")
-                           val semicolonIdx = withoutScheme.indexOf(';')
-                           val mediaType = if (semicolonIdx >= 0) withoutScheme.substring(0, semicolonIdx) else "image/jpeg"
-                           val base64Data = withoutScheme.substringAfter("base64,")
-                           contentBlocks += AnthropicImageContentBlock(
-                             source = AnthropicImageSource(
-                               type = "base64",
-                               media_type = mediaType,
-                               data = base64Data
-                             )
-                           )
-                         } else if (imageUrl != null) {
-                           contentBlocks += AnthropicImageContentBlock(
-                             source = AnthropicImageSource(
-                               type = "url",
-                               url = imageUrl
-                             )
-                           )
-                         }
-                       }
-                       !part.text.isNullOrBlank() -> {
-                         contentBlocks += AnthropicTextContentBlock(text = part.text ?: "")
-                       }
-                     }
-                   }
-                 }
-                 // If no structured blocks were produced, fall back to plain text
-                 if (contentBlocks.isEmpty()) {
-                   val plainText = toConsolidate.joinToString("\n\n") {
-                     it.content?.joinToString("\n") { it.text.orEmpty() }.orEmpty()
-                   }
-                   if (plainText.isNotBlank()) {
-                     contentBlocks += AnthropicTextContentBlock(text = plainText)
-                   }
-                 }
-                 if (contentBlocks.isNotEmpty()) {
-                   alternatingMessages += AnthropicMessage(
-                     role = thisRole.toString(),
-                     content = contentBlocks
-                   )
-                 }
+                val contentBlocks = mutableListOf<AnthropicContentInput>()
+                for (msg in toConsolidate) {
+                  msg.content?.forEach { part ->
+                    when {
+                      part.image_url != null -> {
+                        val imageUrl = part.image_url
+                        if (imageUrl != null && imageUrl.startsWith("data:")) {
+                          // data URI: data:<media_type>;base64,<data>
+                          val withoutScheme = imageUrl.removePrefix("data:")
+                          val semicolonIdx = withoutScheme.indexOf(';')
+                          val mediaType =
+                            if (semicolonIdx >= 0) withoutScheme.substring(0, semicolonIdx) else "image/jpeg"
+                          val base64Data = withoutScheme.substringAfter("base64,")
+                          contentBlocks += AnthropicImageContentBlock(
+                            source = AnthropicImageSource(
+                              type = "base64",
+                              media_type = mediaType,
+                              data = base64Data
+                            )
+                          )
+                        } else if (imageUrl != null) {
+                          contentBlocks += AnthropicImageContentBlock(
+                            source = AnthropicImageSource(
+                              type = "url",
+                              url = imageUrl
+                            )
+                          )
+                        }
+                      }
+
+                      !part.text.isNullOrBlank() -> {
+                        contentBlocks += AnthropicTextContentBlock(text = part.text ?: "")
+                      }
+                    }
+                  }
+                }
+                // If no structured blocks were produced, fall back to plain text
+                if (contentBlocks.isEmpty()) {
+                  val plainText = toConsolidate.joinToString("\n\n") {
+                    it.content?.joinToString("\n") { it.text.orEmpty() }.orEmpty()
+                  }
+                  if (plainText.isNotBlank()) {
+                    contentBlocks += AnthropicTextContentBlock(text = plainText)
+                  }
+                }
+                if (contentBlocks.isNotEmpty()) {
+                  alternatingMessages += AnthropicMessage(
+                    role = thisRole.toString(),
+                    content = contentBlocks
+                  )
+                }
               }
               alternatingMessages
             }
           }
           .filter { !it.content.isNullOrEmpty() }
+        val thinking = reasoningLevel?.let {
+          when (it) {
+            ReasoningLevel.Low -> ThinkingConfig()
+            ReasoningLevel.Medium -> ThinkingConfig()
+            ReasoningLevel.High -> ThinkingConfig()
+            ReasoningLevel.X -> ThinkingConfig()
+          }
+        }
+        val outputConfig = reasoningLevel?.let {
+          OutputConfig(
+            effort = when (it) {
+              ReasoningLevel.Low -> EffortLevel.low
+              ReasoningLevel.Medium -> EffortLevel.medium
+              ReasoningLevel.High -> EffortLevel.high
+              ReasoningLevel.X -> EffortLevel.max
+            }
+          )
+        }
+        if(thinking != null) temperature = 1.0
         AnthropicChatRequest(
           model = model,
           system = system,
           messages = messages,
           max_tokens = max_tokens,
           temperature = temperature,
+          thinking = thinking,
+          output_config = outputConfig,
         )
       } catch (e: Exception) {
         log.error("Failed to map chat request to Anthropic format", e)
@@ -232,9 +281,6 @@ class AnthropicChatClient(
             ), usage = ModelSchema.Usage(
               prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
               completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
-              total_tokens = (response.usage?.input_tokens?.toLong()
-                ?: 0) + (response.usage?.output_tokens
-                ?: 0),
             )
           )
           JsonUtil.toJson(chatResponse)
@@ -251,10 +297,19 @@ class AnthropicChatClient(
         ModelSchema.ChatResponse::class.java
       )
       if (response.usage != null) {
-        usageHandler?.invoke(
-          model,
-          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
-        )
+        usageHandler.onUsage(
+          model, response.usage!!, ModelSchema.UsageData(
+          input_text = anthropicChatRequest.messages?.joinToString("\n\n") { msg ->
+            msg.content?.joinToString("\n") { part ->
+              when (part) {
+                is AnthropicTextContentBlock -> part.text ?: ""
+                is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
+                else -> ""
+              }
+            }.orEmpty()
+          }.orEmpty(),
+          output_text = response.choices.joinToString("\n\n") { it.message?.content.orEmpty() }
+        ))
       }
       response
     }
@@ -262,13 +317,13 @@ class AnthropicChatClient(
 
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(model.modelId.isNotBlank()) { "Model name cannot be blank" }
     require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
   }
 
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AnthropicChatClient::class.java)
+    private val log = getLogger(AnthropicChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
     data class AnthropicChatRequest(
@@ -278,35 +333,63 @@ class AnthropicChatClient(
       val max_tokens: Int? = null,
       val temperature: Double? = null,
       val top_p: Double? = null,
-      val top_k: Int? = null
+      val top_k: Int? = null,
+      val thinking: ThinkingConfig? = null,
+      val output_config: OutputConfig? = null
     )
 
-    data class AnthropicMessage(
-       val role: String? = null,
-       val content: List<AnthropicContentInput>? = null
+    data class OutputConfig(
+      val effort: EffortLevel
     )
-     @com.fasterxml.jackson.annotation.JsonTypeInfo(
-       use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME,
-       include = com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY,
-       property = "type"
-     )
-     @com.fasterxml.jackson.annotation.JsonSubTypes(
-       com.fasterxml.jackson.annotation.JsonSubTypes.Type(value = AnthropicTextContentBlock::class, name = "text"),
-       com.fasterxml.jackson.annotation.JsonSubTypes.Type(value = AnthropicImageContentBlock::class, name = "image")
-     )
-     sealed class AnthropicContentInput
-     data class AnthropicTextContentBlock(
-       val text: String
-     ) : AnthropicContentInput()
-     data class AnthropicImageContentBlock(
-       val source: AnthropicImageSource
-     ) : AnthropicContentInput()
-     data class AnthropicImageSource(
-       val type: String,                  // "base64" or "url"
-       val media_type: String? = null,    // e.g. "image/jpeg" — required for base64
-       val data: String? = null,          // base64-encoded bytes — required for base64
-       val url: String? = null            // required for url type
-     )
+
+    enum class EffortLevel {
+      low,
+      medium,
+      high,
+      xhigh,
+      max
+    }
+
+    data class ThinkingConfig(
+      val `type`: ThinkingConfigType = ThinkingConfigType.adaptive,
+      val budget_tokens: Int? = null
+    )
+
+    enum class ThinkingConfigType {
+      adaptive,
+      disabled,
+      enabled
+    }
+
+    data class AnthropicMessage(
+      val role: String? = null,
+      val content: List<AnthropicContentInput>? = null
+    )
+
+    @JsonTypeInfo(
+      use = JsonTypeInfo.Id.NAME,
+      include = JsonTypeInfo.As.PROPERTY,
+      property = "type"
+    )
+    @JsonSubTypes(
+      JsonSubTypes.Type(value = AnthropicTextContentBlock::class, name = "text"),
+      JsonSubTypes.Type(value = AnthropicImageContentBlock::class, name = "image")
+    )
+    sealed class AnthropicContentInput
+    data class AnthropicTextContentBlock(
+      val text: String
+    ) : AnthropicContentInput()
+
+    data class AnthropicImageContentBlock(
+      val source: AnthropicImageSource
+    ) : AnthropicContentInput()
+
+    data class AnthropicImageSource(
+      val type: String,                  // "base64" or "url"
+      val media_type: String? = null,    // e.g. "image/jpeg" — required for base64
+      val data: String? = null,          // base64-encoded bytes — required for base64
+      val url: String? = null            // required for url type
+    )
 
 
     data class AnthropicResponse(

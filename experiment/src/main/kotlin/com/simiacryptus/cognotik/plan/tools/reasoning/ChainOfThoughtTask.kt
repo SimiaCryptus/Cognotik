@@ -5,16 +5,18 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
 
 class ChainOfThoughtTask(
@@ -480,7 +482,7 @@ class ChainOfThoughtTask(
       model = api,
       temperature = 0.3,
       name = "ReasoningStep$stepNumber",
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     var step: ReasoningStep? = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
@@ -544,7 +546,7 @@ class ChainOfThoughtTask(
       model = api,
       temperature = 0.1,
       name = "StepValidation",
-      parsingChatter = defaultFast,
+      parsingModel = defaultFast,
     )
 
     var validation: StepValidation? = validationAgent.answer(listOf("Validate step ${step.step_number}")).obj
@@ -649,7 +651,7 @@ class ChainOfThoughtTask(
     }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(ChainOfThoughtTask::class.java)
+      private val log: Logger = getLogger(ChainOfThoughtTask::class.java)
 
     @JvmStatic
     val ChainOfThought = TaskType(

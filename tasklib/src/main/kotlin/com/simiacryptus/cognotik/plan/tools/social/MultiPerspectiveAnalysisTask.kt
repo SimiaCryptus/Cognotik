@@ -3,66 +3,68 @@ package com.simiacryptus.cognotik.plan.tools.social
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class MultiPerspectiveAnalysisTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: MultiPerspectiveAnalysisTaskExecutionConfigData?
+    orchestrationConfig: OrchestrationConfig,
+    planTask: MultiPerspectiveAnalysisTaskExecutionConfigData?
 ) : AbstractTask<MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysisTaskExecutionConfigData, TaskTypeConfig>(
-  orchestrationConfig,
-  planTask
+    orchestrationConfig,
+    planTask
 ) {
-  val maxDescriptionLength = 2000
+    val maxDescriptionLength = 2000
 
-  class MultiPerspectiveAnalysisTaskExecutionConfigData(
-    @Description("The topic or problem to analyze from multiple viewpoints")
-    var analysis_subject: String? = null,
-    @Description("List of perspectives to consider (e.g., technical, business, ethical, user)")
-    var perspectives: List<String>? = null,
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the analysis")
-    var related_files: List<String>? = null,
-    @Description("Whether to synthesize perspectives into unified conclusion")
-    var synthesize: Boolean = true,
-    @Description("Minimum confidence threshold for perspective agreement (0.0-1.0)")
-    var consensus_threshold: Double = 0.7,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
-    task_type = "MultiPerspectiveAnalysis",
-    task_description = "Analyze '${analysis_subject}' from perspectives: ${perspectives?.joinToString(", ")}",
-    task_dependencies = task_dependencies?.toMutableList(),
-    state = state
-  ), ValidatedObject {
-    override fun validate(): String? {
-      if (analysis_subject.isNullOrBlank()) {
-        return "analysis_subject cannot be null or blank"
-      }
-      if (perspectives.isNullOrEmpty()) {
-        return "perspectives list cannot be null or empty"
-      }
-      if (consensus_threshold < 0.0 || consensus_threshold > 1.0) {
-        return "consensus_threshold must be between 0.0 and 1.0, got: $consensus_threshold"
-      }
-      if (!related_files.isNullOrEmpty() && related_files!!.any { it.isBlank() }) {
-        return "related_files cannot contain blank entries"
-      }
-      // Call parent validation for nested ValidatedObject fields
-      return ValidatedObject.validateFields(this)
+    class MultiPerspectiveAnalysisTaskExecutionConfigData(
+        @Description("The topic or problem to analyze from multiple viewpoints")
+        var analysis_subject: String? = null,
+        @Description("List of perspectives to consider (e.g., technical, business, ethical, user)")
+        var perspectives: List<String>? = null,
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the analysis")
+        var related_files: List<String>? = null,
+        @Description("Whether to synthesize perspectives into unified conclusion")
+        var synthesize: Boolean = true,
+        @Description("Minimum confidence threshold for perspective agreement (0.0-1.0)")
+        var consensus_threshold: Double = 0.7,
+        task_dependencies: List<String>? = null,
+        state: TaskState? = TaskState.Pending,
+    ) : TaskExecutionConfig(
+        task_type = "MultiPerspectiveAnalysis",
+        task_description = "Analyze '${analysis_subject}' from perspectives: ${perspectives?.joinToString(", ")}",
+        task_dependencies = task_dependencies?.toMutableList(),
+        state = state
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (analysis_subject.isNullOrBlank()) {
+                return "analysis_subject cannot be null or blank"
+            }
+            if (perspectives.isNullOrEmpty()) {
+                return "perspectives list cannot be null or empty"
+            }
+            if (consensus_threshold < 0.0 || consensus_threshold > 1.0) {
+                return "consensus_threshold must be between 0.0 and 1.0, got: $consensus_threshold"
+            }
+            if (!related_files.isNullOrEmpty() && related_files!!.any { it.isBlank() }) {
+                return "related_files cannot contain blank entries"
+            }
+            // Call parent validation for nested ValidatedObject fields
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  override fun promptSegment(): String {
-    return """
+    override fun promptSegment(): String {
+        return """
  MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthesis
   ** Specify the subject to analyze in analysis_subject
   ** Provide a list of perspectives to consider (e.g., technical, business, ethical, user experience)
@@ -78,38 +80,39 @@ class MultiPerspectiveAnalysisTask(
      - Risk assessment
      - Feature evaluation
         """.trimIndent()
-  }
+    }
 
-  override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
-  ) {
-
-
-    val transcript = task.newUserFileStream(transcriptFile())
-
-    try {
+    override fun run(
+        agent: TaskOrchestrator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        orchestrationConfig: OrchestrationConfig
+    ) {
 
 
-      task.ui.pool.submit {
+        val transcript = task.newUserFileStream(transcriptFile().removeSuffix(".md") + ".details.md")
+        val final_transcript = task.newUserFileStream(transcriptFile())
+
         try {
-          val config = executionConfig ?: throw IllegalStateException("No configuration provided")
-          config.validate()?.let { throw IllegalArgumentException(it) }
 
-          val subject = config.analysis_subject!!
-          val perspectives = config.perspectives!!
-          val api = defaultSmart.getChildClient(task)
 
-          log.info("Starting MultiPerspectiveAnalysis for subject: $subject")
+            task.ui.pool.submit {
+                try {
+                    val config = executionConfig ?: throw IllegalStateException("No configuration provided")
+                    config.validate()?.let { throw IllegalArgumentException(it) }
 
-          val tabs = TabbedDisplay(task)
-          val overviewTask = tabs.newTask("Overview")
+                    val subject = config.analysis_subject!!
+                    val perspectives = config.perspectives!!
+                    val api = defaultSmart.getChildClient(task)
 
-          overviewTask.add(
-            """
+                    log.info("Starting MultiPerspectiveAnalysis for subject: $subject")
+
+                    val tabs = TabbedDisplay(task)
+                    val overviewTask = tabs.newTask("Overview")
+
+                    overviewTask.add(
+                        """
                         |## Multi-Perspective Analysis
                         |**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}
                         |
@@ -117,26 +120,31 @@ class MultiPerspectiveAnalysisTask(
                         |
                         |**Status:** 🔄 Starting analysis...
                         """.trimMargin().renderMarkdown()
-          )
+                    )
 
-          transcript?.let { stream ->
-            writeToTranscript(stream, "# Multi-Perspective Analysis Transcript\n\n")
-            writeToTranscript(stream, "**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}\n\n")
-            writeToTranscript(stream, "**Perspectives:** ${perspectives.joinToString(", ")}\n\n")
-            writeToTranscript(stream, "**Consensus Threshold:** ${config.consensus_threshold}\n\n")
-            writeToTranscript(stream, "---\n\n")
-          }
+                    transcript?.let { stream ->
+                        writeToTranscript(stream, "# Multi-Perspective Analysis Transcript\n\n")
+                        writeToTranscript(
+                            stream,
+                            "**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}\n\n"
+                        )
+                        writeToTranscript(stream, "**Perspectives:** ${perspectives.joinToString(", ")}\n\n")
+                        writeToTranscript(stream, "**Consensus Threshold:** ${config.consensus_threshold}\n\n")
+                        writeToTranscript(stream, "---\n\n")
+                    }
 
-          val contextFiles =
-            getInputFileContent((config.related_files ?: emptyList()) + (config.related_files ?: emptyList()), root)
-          val priorCode = getPriorCode(agent.executionState)
+                    val contextFiles =
+                        getInputFileContent(
+                            (config.related_files ?: emptyList()) + (config.related_files ?: emptyList()), root
+                        )
+                    val priorCode = getPriorCode(agent.executionState)
 
-          val perspectiveResults = mutableMapOf<String, String>()
+                    val perspectiveResults = mutableMapOf<String, String>()
 
-          // Analyze from each perspective
-          perspectives.forEach { perspective ->
-            val perspectiveTask = tabs.newTask(perspective)
-            val prompt = """
+                    // Analyze from each perspective
+                    perspectives.forEach { perspective ->
+                        val perspectiveTask = tabs.newTask(perspective)
+                        val prompt = """
                             You are analyzing the following subject from the **$perspective perspective**.
                             
                             ## Subject to Analyze:
@@ -157,27 +165,27 @@ class MultiPerspectiveAnalysisTask(
                             Provide a thorough analysis from the $perspective viewpoint.
                         """.trimIndent()
 
-            val chatAgent = ChatAgent(
-              prompt = "You are an expert analyst providing perspective-specific insights.",
-              model = api,
-            )
+                        val chatAgent = ChatAgent(
+                            prompt = "You are an expert analyst providing perspective-specific insights.",
+                            model = api,
+                        )
 
-            val analysis = chatAgent.answer(listOf(prompt)) ?: "No analysis generated."
-            perspectiveResults[perspective] = analysis
-            transcript?.let { stream ->
-              writeToTranscript(stream, "## $perspective Perspective\n\n$analysis\n\n---\n\n")
-            }
-            perspectiveTask.complete("### $perspective Perspective\n\n$analysis".renderMarkdown())
-          }
+                        val analysis = chatAgent.answer(listOf(prompt)) ?: "No analysis generated."
+                        perspectiveResults[perspective] = analysis
+                        transcript?.let { stream ->
+                            writeToTranscript(stream, "## $perspective Perspective\n\n$analysis\n\n---\n\n")
+                        }
+                        perspectiveTask.complete("### $perspective Perspective\n\n$analysis".renderMarkdown())
+                    }
 
-          tabs.update()
+                    tabs.update()
 
-          // Synthesize if requested
-          val finalResult = if (config.synthesize) {
-            val synthesisTask = tabs.newTask("Synthesis")
-            synthesisTask.add("## Synthesizing Perspectives...".renderMarkdown())
+                    // Synthesize if requested
+                    val finalResult = if (config.synthesize) {
+                        val synthesisTask = tabs.newTask("Synthesis")
+                        synthesisTask.add("## Synthesizing Perspectives...".renderMarkdown())
 
-            val synthesisPrompt = """
+                        val synthesisPrompt = """
                             You are synthesizing multiple perspective analyses into a unified conclusion.
                             
                             ## Subject:
@@ -195,62 +203,70 @@ class MultiPerspectiveAnalysisTask(
                             Provide a comprehensive synthesis.
                         """.trimIndent()
 
-            val synthesisAgent = ChatAgent(
-              prompt = "You are an expert at synthesizing multiple viewpoints into coherent conclusions.",
-              model = api,
-            )
+                        val synthesisAgent = ChatAgent(
+                            prompt = "You are an expert at synthesizing multiple viewpoints into coherent conclusions.",
+                            model = api,
+                        )
 
-            val synthesis = synthesisAgent.answer(listOf(synthesisPrompt)) ?: "Synthesis failed."
-            transcript?.let { stream -> writeToTranscript(stream, "## Synthesis\n\n$synthesis\n\n") }
-            synthesisTask.complete("## Synthesis\n\n$synthesis".renderMarkdown())
+                        val synthesis = synthesisAgent.answer(listOf(synthesisPrompt)) ?: "Synthesis failed."
+                        listOfNotNull(final_transcript, transcript).forEach { stream ->
+                            writeToTranscript(
+                                stream,
+                                "## Synthesis\n\n$synthesis\n\n"
+                            )
+                        }
+                        synthesisTask.complete("## Synthesis\n\n$synthesis".renderMarkdown())
 
-            buildString {
-              appendLine("# Multi-Perspective Analysis: $subject")
-              perspectiveResults.forEach { (p, a) -> appendLine("## $p Perspective\n$a\n") }
-              appendLine("## Synthesis\n$synthesis")
+                        buildString {
+                            appendLine("# Multi-Perspective Analysis: $subject")
+                            perspectiveResults.forEach { (p, a) -> appendLine("## $p Perspective\n$a\n") }
+                            appendLine("## Synthesis\n$synthesis")
+                        }
+                    } else {
+                        buildString {
+                            appendLine("# Multi-Perspective Analysis: $subject")
+                            perspectiveResults.forEach { (p, a) -> appendLine("## $p Perspective\n$a\n") }
+                        }
+                    }
+
+                    resultFn(finalResult)
+                    task.add("Multi-perspective analysis complete.".renderMarkdown())
+                } catch (e: Exception) {
+                    task.error(e)
+                    log.error("Error in MultiPerspectiveAnalysisTask", e)
+                    listOfNotNull(
+                        final_transcript,
+                        transcript
+                    ).forEach { it.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray()) }
+                    resultFn("Error: ${e.message}")
+                } finally {
+                    listOfNotNull(final_transcript, transcript).forEach { it.close() }
+                    task.complete()
+                }
+
             }
-          } else {
-            buildString {
-              appendLine("# Multi-Perspective Analysis: $subject")
-              perspectiveResults.forEach { (p, a) -> appendLine("## $p Perspective\n$a\n") }
-            }
-          }
-
-          resultFn(finalResult)
-          task.add("Multi-perspective analysis complete.".renderMarkdown())
         } catch (e: Exception) {
-          task.error(e)
-          log.error("Error in MultiPerspectiveAnalysisTask", e)
-          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
-          resultFn("Error: ${e.message}")
-        } finally {
-          transcript?.close()
-          task.complete()
+            log.error("Failed to submit task to pool", e)
+            task.error(e)
+            resultFn("Error: ${e.message}")
         }
 
-      }
-    } catch (e: Exception) {
-      log.error("Failed to submit task to pool", e)
-      task.error(e)
-      resultFn("Error: ${e.message}")
+
     }
 
 
-  }
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)
 
-
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)
-
-    @JvmStatic
-    val MultiPerspectiveAnalysis = TaskType(
-      name = "MultiPerspectiveAnalysis",
-      category = "Social",
-      taskClass = MultiPerspectiveAnalysisTask::class.java,
-      executionConfigClass = MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
-      taskSettingsClass = TaskTypeConfig::class.java,
-      description = "Analyze problems from multiple viewpoints with synthesis",
-      tooltipHtml = """
+        @JvmStatic
+        val MultiPerspectiveAnalysis = TaskType(
+            name = "MultiPerspectiveAnalysis",
+            category = "Social",
+            taskClass = MultiPerspectiveAnalysisTask::class.java,
+            executionConfigClass = MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Analyze problems from multiple viewpoints with synthesis",
+            tooltipHtml = """
                         Analyzes topics from multiple perspectives and synthesizes findings.
                         <ul>
                           <li>Examines subject from specified viewpoints</li>
@@ -262,6 +278,6 @@ class MultiPerspectiveAnalysisTask(
                           <li>Supports context from related files</li>
                         </ul>
                       """,
-    )
-  }
+        )
+    }
 }

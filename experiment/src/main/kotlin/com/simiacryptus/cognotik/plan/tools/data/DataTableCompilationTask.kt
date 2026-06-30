@@ -14,11 +14,11 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
 import java.io.StringWriter
 import java.nio.file.FileSystems
@@ -162,7 +162,7 @@ class DataTableCompilationTask(
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
         model = chatter,
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
         temperature = orchestrationConfig.temperature,
         describer = TaskContextYamlDescriber(orchestrationConfig),
       ).answer(
@@ -215,7 +215,7 @@ class DataTableCompilationTask(
                 2. List the source files that contain data for this row
             """.trimIndent(),
         model = chatter,
-        parsingChatter = defaultFast,
+        parsingModel = defaultFast,
         temperature = orchestrationConfig.temperature,
         describer = TaskContextYamlDescriber(orchestrationConfig),
       ).answer(
@@ -264,7 +264,7 @@ class DataTableCompilationTask(
               "Special Instructions:\n${executionConfig?.cell_extraction_instructions}\n\n" +
               "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
           model = chatter.getChildClient(rowTask),
-          parsingChatter = defaultFast,
+          parsingModel = defaultFast,
           temperature = orchestrationConfig.temperature,
           describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(

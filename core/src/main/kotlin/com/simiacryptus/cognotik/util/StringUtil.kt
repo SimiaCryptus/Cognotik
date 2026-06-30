@@ -1,9 +1,10 @@
 package com.simiacryptus.cognotik.util
 
+import org.slf4j.LoggerFactory.getLogger
 import java.util.*
 
 object StringUtil {
-  private val log = LoggerFactory.getLogger(StringUtil::class.java)
+  private val log = getLogger(StringUtil::class.java)
 
   @JvmStatic
   fun stripPrefix(text: CharSequence, prefix: CharSequence): CharSequence {

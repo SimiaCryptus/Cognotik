@@ -3,12 +3,11 @@ package com.simiacryptus.cognotik.apps
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
@@ -16,9 +15,10 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -111,9 +111,9 @@ Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
 
 Root: `${settings?.absoluteWorkingDir}`
 
-Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+Session Location: `${dataStorage.getUserDir(user, session).absolutePath}`
 
-Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+Data Location: `${dataStorage.getSystemDir(user, session).absolutePath}`
 
 Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
 
@@ -138,8 +138,8 @@ ${settings?.toJson()}
         log.error("Error retrieving orchestration config, using default", e)
         null
       }?.apply {
-        if (null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let {
-          DataStorage.sessionPaths[session] = File(it)
+        if (null == DataStorage.userPaths[session]) absoluteWorkingDir?.let {
+          DataStorage.userPaths[session] = File(it)
         }
       } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 

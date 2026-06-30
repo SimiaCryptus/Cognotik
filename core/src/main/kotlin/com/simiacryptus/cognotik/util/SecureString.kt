@@ -10,7 +10,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 class SecureString {
-  private val data: ByteArray
+  val data: ByteArray
 
   private constructor(data: ByteArray) {
     this.data = data
@@ -36,8 +36,23 @@ class SecureString {
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(SecureString::class.java)
     private const val PREFIX = "SECURE::"
-    private val keyFile = File(System.getProperty("user.home"), ".cognotik").resolve(".key")
-    private val key: SecretKey by lazy {
+    val possibleKeyFiles = listOf(
+      File("/var/cognotik"),
+      File(System.getProperty("user.home"), ".cognotik")
+    ).toMutableList()
+    private val keyFile = (possibleKeyFiles.firstOrNull { it.resolve(".key").exists() } ?: possibleKeyFiles.first()).resolve(".key")
+    var key: SecretKey? = null
+      get() {
+        if (field == null) {
+          field = _key
+        }
+        return field
+      }
+      set(value) {
+        field = value
+      }
+
+    private val _key: SecretKey by lazy {
       if (keyFile.exists()) {
         try {
           val keyBytes = keyFile.readBytes()
@@ -51,12 +66,19 @@ class SecureString {
         }
       } else {
         keyFile.parentFile.mkdirs()
-        val key = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
-          ?: throw RuntimeException("Unable to generate encryption key")
+        val key = randomKey()
         keyFile.writeBytes(key.encoded)
+        /* Or, as a shell script:
+        *    mkdir -p /var/cognotik
+        *    openssl rand -out /var/cognotik/.key 32
+        *
+        * */
         key
       }
     }
+
+    fun randomKey(): SecretKey = (KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
+      ?: throw RuntimeException("Unable to generate encryption key"))
 
     private fun encrypt(str: String): ByteArray {
       if (str.isEmpty()) return ByteArray(0)

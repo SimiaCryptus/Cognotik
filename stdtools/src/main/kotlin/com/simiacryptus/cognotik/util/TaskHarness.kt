@@ -6,9 +6,10 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlin.random.Random
@@ -24,14 +25,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     model.instance(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
       base = api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
-      onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
-          session,
-          user,
-          model,
-          usage
-        )
-      },
+      session = session,
+      user = user,
     )
   },
   val port: Int = Random.nextInt(1024, 65535),
@@ -104,7 +99,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(TaskHarness::class.java)
+    private val log = getLogger(TaskHarness::class.java)
     var fix: (Exception) -> Unit = { e ->
       log.error("Error during task execution", e)
     }

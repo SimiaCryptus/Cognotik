@@ -12,10 +12,14 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.FileAppendTask.FileAppendTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Semaphore
 import kotlin.io.path.appendText
 
@@ -178,7 +182,7 @@ FileAppend - Append content to the end of an existing file
 
 
   companion object {
-    private val log = LoggerFactory.getLogger(FileAppendTask::class.java)
+      private val log = getLogger(FileAppendTask::class.java)
 
     @JvmStatic
     val FileAppend = TaskType(

@@ -6,22 +6,21 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.use
 
 class ArticleGenerationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -318,7 +317,7 @@ Ensure the structure:
           """.trimIndent(),
         model = api,
         temperature = 0.6,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       val structure = structureAgent.answer(listOf("Generate structure")).obj
@@ -444,7 +443,7 @@ After writing, provide:
         prompt = writingPrompt,
         model = api,
         temperature = 0.7,
-        parsingChatter = defaultFast
+        parsingModel = defaultFast
       )
 
       var article = articleAgent.answer(listOf("Write the article")).obj
@@ -574,7 +573,7 @@ Make each snippet:
           """.trimIndent(),
           model = api,
           temperature = 0.8,
-          parsingChatter = defaultFast
+          parsingModel = defaultFast
         )
 
         val socialSnippets = socialAgent.answer(listOf("Generate snippets")).obj

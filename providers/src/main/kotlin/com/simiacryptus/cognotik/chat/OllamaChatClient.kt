@@ -3,11 +3,13 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -22,6 +24,7 @@ class OllamaChatClient(
   scheduledPool: ListeningScheduledExecutorService,
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+  session: Session,
 ) : ChatClientBase(
   CoreProviders.Ollama,
   apiKey = apiKey,
@@ -29,7 +32,8 @@ class OllamaChatClient(
   workPool = workPool,
   scheduledPool = scheduledPool,
   logLevel = logLevel,
-  logStreams = logStreams
+  logStreams = logStreams,
+  session = session,
 ) {
 
   override fun authorize(
@@ -44,7 +48,7 @@ class OllamaChatClient(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
     logStreams: MutableList<java.io.BufferedOutputStream>,
-    usageHandler: ((model: LLMModel, usage: ModelSchema.Usage) -> Unit)?
+    usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
@@ -125,13 +129,11 @@ class OllamaChatClient(
         usage = ModelSchema.Usage(
           prompt_tokens = ollamaResponse.prompt_eval_count?.toLong() ?: 0L,
           completion_tokens = ollamaResponse.eval_count?.toLong() ?: 0L,
-          total_tokens = ((ollamaResponse.prompt_eval_count ?: 0) + (ollamaResponse.eval_count
-            ?: 0)).toLong()
         )
       )
 
       if (response.usage != null) {
-        usageHandler?.invoke(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
+        usageHandler.onUsage(model, response.usage!!)
       }
 
 
@@ -151,8 +153,9 @@ class OllamaChatClient(
           maxTotalTokens = 4096, // Default, could be model-specific
           maxOutTokens = 4096,
           provider = CoreProviders.Ollama,
-          inputTokenPricePerK = 0.0, // Ollama is typically free/local
-          outputTokenPricePerK = 0.0
+          outputTokenPricePerK = 0.0, // Ollama is typically free/local
+          inputModalities = setOf(ChatMessageModality.TEXT),
+          outputModalities = setOf(ChatMessageModality.TEXT)
         )
       }
     } catch (e: Exception) {

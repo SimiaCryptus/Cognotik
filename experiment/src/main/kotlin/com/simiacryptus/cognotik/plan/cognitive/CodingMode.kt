@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
@@ -14,7 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -22,6 +21,7 @@ import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Type
@@ -65,7 +65,7 @@ open class CodingMode(
               session = session,
               dataStorage = task.ui.dataStorage,
               root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                ?: task.ui.dataStorage.getUserDir(user, session).toPath()
                 ?: File(".").toPath()
             ),
             messages = listOf(message),
@@ -215,6 +215,6 @@ open class CodingMode(
   override fun contextData(): List<String> = emptyList()
 
   companion object {
-    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodingMode::class.java)
+    private val log = getLogger(CodingMode::class.java)
   }
 }

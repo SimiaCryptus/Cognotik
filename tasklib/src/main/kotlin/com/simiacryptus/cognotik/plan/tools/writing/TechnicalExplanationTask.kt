@@ -5,14 +5,20 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -532,7 +538,7 @@ class TechnicalExplanationTask(
           prompt = outlinePrompt,
           model = api,
           temperature = typeConfig?.outline_temperature ?: 0.6,
-          parsingChatter = fastApi
+          parsingModel = fastApi
         )
 
         val outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -737,7 +743,7 @@ class TechnicalExplanationTask(
             prompt = sectionPrompt,
             model = api,
             temperature = typeConfig?.section_temperature ?: 0.7,
-            parsingChatter = fastApi
+            parsingModel = fastApi
           )
 
           val section = sectionAgent.answer(listOf("Write section")).obj
@@ -1097,7 +1103,7 @@ class TechnicalExplanationTask(
 
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
+    private val log: Logger = getLogger(TechnicalExplanationTask::class.java)
 
     @JvmStatic
     val TechnicalExplanation = TaskType(

@@ -6,14 +6,14 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.OutputStream
 
 /**
@@ -22,31 +22,31 @@ import java.io.OutputStream
  * 2. Query elevation from fast model to smart model for complex queries
  */
 open class SmartChatSocketManager(
-  session: Session,
-  useExpansionSyntax: Boolean = true,
-  smartModel: ChatInterface,
-  fastModel: ChatInterface,
-  userInterfacePrompt: String = "",
-  override val systemPrompt: String,
-  temperature: Double = 0.3,
-  applicationClass: Class<out ChatServer>,
-  storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
-  override val fastTopicParsing: Boolean = true,
-  retriable: Boolean = true,
-  budget: Double,
-  /**
+    session: Session,
+    useExpansionSyntax: Boolean = true,
+    smartModel: ChatInterface,
+    fastModel: ChatInterface,
+    userInterfacePrompt: String = "",
+    override val systemPrompt: String,
+    temperature: Double = 0.3,
+    applicationClass: Class<out ChatServer>,
+    storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+    override val fastTopicParsing: Boolean = true,
+    retriable: Boolean = true,
+    budget: Double,
+    /**
    * Maximum number of tokens in conversation history before summarization is triggered
    */
   private val maxHistoryTokens: Int = 4000,
-  /**
+    /**
    * Target number of tokens after summarization
    */
   private val targetSummaryTokens: Int = 1000,
-  /**
+    /**
    * Number of recent messages to preserve without summarization
    */
   private val preserveRecentMessages: Int = 4,
-  owner: User,
+    owner: User,
   ) : ChatSocketManager(
   session = session,
   useExpansionSyntax = useExpansionSyntax,
@@ -109,9 +109,9 @@ open class SmartChatSocketManager(
       try {
         val chatResponse = modelToUse.chat(
           ChatRequest(
-            model = modelToUse.modelType.modelId,
+            model = modelToUse.model.modelId,
             messages = finalMessages,
-            temperature = modelToUse.temperature,
+            temperature = temperature,
             audio = modelToUse.audio,
           )
         )
@@ -183,7 +183,7 @@ open class SmartChatSocketManager(
       model = model,
       temperature = temperature,
       name = "Topics",
-      parsingChatter = fastModel,
+      parsingModel = fastModel,
     )
     return if (fastTopicParsing) {
       topicsParsedActor.getParser().apply(response)
@@ -231,7 +231,7 @@ open class SmartChatSocketManager(
       model = model,
       temperature = 0.1,
       name = "QueryElevation",
-      parsingChatter = model,
+      parsingModel = model,
     ).getParser().apply(userMessage)
     log.debug("Elevation decision: shouldElevate=${decision.shouldElevate}, reason=${decision.reason}")
     decision.shouldElevate
@@ -330,9 +330,9 @@ open class SmartChatSocketManager(
       val childClient = fastModel.getChildClient(task)
       val response = childClient.chat(
         ChatRequest(
-          model = childClient.modelType.modelId,
+          model = childClient.model.modelId,
           messages = summaryMessages,
-          temperature = childClient.temperature,
+          temperature = temperature,
           audio = childClient.audio,
         )
       )

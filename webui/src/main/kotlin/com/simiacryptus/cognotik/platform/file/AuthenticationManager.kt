@@ -7,10 +7,13 @@ open class AuthenticationManager : AuthenticationInterface {
 
   private val users = HashMap<String, User>()
 
-  override fun getUser(accessToken: String?): User {
+  override fun getUser(accessToken: String?): User? {
     val user = users[accessToken]
-    return if (user != null) user else
-      throw RuntimeException("User not found for access token")
+    return if (user != null) user else null
+  }
+
+  override fun getAccessToken(user: User): String? {
+    return users.entries.firstOrNull { it.value == user }?.key
   }
 
   override fun putUser(accessToken: String, user: User): User {

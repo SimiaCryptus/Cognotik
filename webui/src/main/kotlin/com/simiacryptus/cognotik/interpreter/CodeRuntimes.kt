@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.simiacryptus.cognotik.interpreter
 
 import com.fasterxml.jackson.core.JsonParser
@@ -7,10 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.resolveTool
 import java.io.File
 import java.util.Locale.getDefault
 
@@ -88,7 +91,7 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "bash",
-          commandResolver = { listOf("bash") }
+          commandResolver = { listOf("bash").map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
         )
       }
       registerConstructor(PowerShellRuntime) { defs ->
@@ -102,7 +105,7 @@ class CodeRuntimes(
               listOf("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "-")
             } else {
               listOf("pwsh", "-NoProfile", "-Command", "-")
-            }
+            }.map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
           }
         )
       }
@@ -112,7 +115,7 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "cmd",
-          commandResolver = { listOf("cmd", "/c") }
+          commandResolver = { listOf("cmd", "/c").map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
         )
       }
       registerConstructor(PythonRuntime) { defs ->
@@ -122,11 +125,13 @@ class CodeRuntimes(
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "python",
           commandResolver = {
+            val string = when {
+              System.getProperty("os.name").lowercase(getDefault()).contains("windows") -> "python"
+              else -> "python3"
+            }
             listOf(
-              when {
-                System.getProperty("os.name").lowercase(getDefault()).contains("windows") -> "python"
-                else -> "python3"
-              }.resolveTool(it)
+              string.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException("Executable '${string}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
             )
           }
         )
@@ -137,7 +142,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "javascript",
-          commandResolver = { listOf("node".resolveTool(it)) }
+          commandResolver = { listOf(
+            "node".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"node"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
       registerConstructor(RubyRuntime) { defs ->
@@ -146,7 +154,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "ruby",
-          commandResolver = { listOf("ruby".resolveTool(it)) }
+          commandResolver = { listOf(
+            "ruby".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"ruby"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
       registerConstructor(PerlRuntime) { defs ->
@@ -155,7 +166,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "perl",
-          commandResolver = { listOf("perl".resolveTool(it)) }
+          commandResolver = { listOf(
+            "perl".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"perl"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
       registerConstructor(RRuntime) { defs ->
@@ -164,7 +178,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "r",
-          commandResolver = { listOf("Rscript".resolveTool(it)) }
+          commandResolver = { listOf(
+            "Rscript".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"Rscript"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
       registerConstructor(PhpRuntime) { defs ->
@@ -173,7 +190,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "php",
-          commandResolver = { listOf("php".resolveTool(it)) }
+          commandResolver = { listOf(
+            "php".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"php"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
       registerConstructor(LuaRuntime) { defs ->
@@ -182,7 +202,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "lua",
-          commandResolver = { listOf("lua".resolveTool(it)) }
+          commandResolver = { listOf(
+            "lua".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"lua"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
       registerConstructor(GoRuntime) { defs ->
@@ -191,7 +214,7 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "go",
-          commandResolver = { listOf("go".resolveTool(it), "run") }
+          commandResolver = { listOf("go", "run").map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
         )
       }
       registerConstructor(RustRuntime) { defs ->
@@ -200,7 +223,9 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "rust",
-          commandResolver = { listOf("rust-script".resolveTool(it)) }
+          commandResolver = { listOf(
+            "rust-script"
+          ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
         )
       }
       registerConstructor(ScalaRuntime) { defs ->
@@ -209,7 +234,10 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "scala",
-          commandResolver = { listOf("scala".resolveTool(it)) }
+          commandResolver = { listOf(
+            "scala".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              ?: throw IllegalArgumentException("Executable '${"scala"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ) }
         )
       }
     }
@@ -242,12 +270,9 @@ class CodeRuntimesSerializer : DynamicEnumSerializer<CodeRuntimes>(CodeRuntimes:
 class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRuntimes::class.java) {
   override fun deserialize(
     p: JsonParser, ctxt: DeserializationContext
-  ): CodeRuntimes {
+  ): CodeRuntimes? {
     return super.deserialize(p, ctxt)
   }
 }
 
 
-private fun String.resolveTool(user: User) =
-  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).tools
-    .find { it.provider?.getExecutables()?.contains(this) == true }?.resolve(this) ?: this

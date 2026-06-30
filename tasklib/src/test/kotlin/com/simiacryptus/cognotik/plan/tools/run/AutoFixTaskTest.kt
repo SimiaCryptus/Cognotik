@@ -29,7 +29,8 @@ object AutoFixTaskTest {
       executionConfig = AutoFixTaskExecutionConfigData(
         commands = mutableListOf(
           CommandWithWorkingDir(
-            command = mutableListOf("git", "status"),
+            executable = "echo",
+            arguments = mutableListOf("Hello, World!"),
             working_dir = "."
           )
         ),

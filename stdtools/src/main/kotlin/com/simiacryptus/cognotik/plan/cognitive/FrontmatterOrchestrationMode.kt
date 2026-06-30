@@ -5,23 +5,17 @@ import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.DocProcessor
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.UpdateModes
-import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -137,7 +131,7 @@ open class FrontmatterOrchestrationMode(
   private fun execute(userMessage: String, task: SessionTask) {
     try {
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
+        ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
         ?: File(".").toPath()
 
       val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
@@ -275,7 +269,7 @@ open class FrontmatterOrchestrationMode(
       ),
       prompt = buildSpecificationPrompt(),
       model = orchestrationConfig.defaultSmart.getChildClient(task),
-      parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+      parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer
     )
@@ -452,9 +446,9 @@ Do NOT generate the actual file contents. Generate specifications that describe 
         root = root.toFile(),
         docsFolder = specsDir.toFile(),
         updateMode = config.defaultOverwriteMode,
-        fastModel = orchestrationConfig.defaultFast.modelType,
-        smartModel = orchestrationConfig.defaultSmart.modelType,
-        imageModel = orchestrationConfig.defaultImage.modelType,
+        fastModel = orchestrationConfig.defaultFast.model,
+        smartModel = orchestrationConfig.defaultSmart.model,
+        imageModel = orchestrationConfig.defaultImage.model,
         autoFix = true,
         user = orchestrationConfig.user
       )

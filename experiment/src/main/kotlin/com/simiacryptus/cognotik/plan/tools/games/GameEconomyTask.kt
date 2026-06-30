@@ -4,13 +4,20 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -25,7 +32,7 @@ class GameEconomyTask(
   val maxOutputLengthPerField = 10000
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(GameEconomyTask::class.java)
+      private val log: Logger = getLogger(GameEconomyTask::class.java)
 
     @JvmStatic
     val GameEconomy = TaskType(
@@ -909,7 +916,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
           prompt = summaryPrompt,
           model = api,
           temperature = 0.2,
-          parsingChatter = defaultFast,
+          parsingModel = defaultFast,
         )
 
         val gameEconomy = parsedAgent.answer(toInput(summaryPrompt)).obj

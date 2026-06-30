@@ -3,13 +3,20 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.truncateForDisplay
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
 
 class MetaCognitiveReflectionTask(
@@ -260,7 +267,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       resultClass = ReflectionAnalysis::class.java,
       prompt = buildSystemPrompt() + "\n\n" + prompt,
       model = api,
-      parsingChatter = defaultFast
+      parsingModel = defaultFast
     )
 
     try {
@@ -570,7 +577,7 @@ Begin your meta-cognitive reflection now:
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(MetaCognitiveReflectionTask::class.java)
+      private val log: Logger = getLogger(MetaCognitiveReflectionTask::class.java)
 
     @JvmStatic
     val MetaCognitiveReflection = TaskType(

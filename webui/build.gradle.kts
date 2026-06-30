@@ -59,13 +59,20 @@ dependencies {
     implementation(libs.commons.codec)
     implementation(libs.slf4j.api)
     implementation(libs.tinkerpop)
-    implementation(libs.hsqldb)
+    //implementation(libs.hsqldb)
+    implementation(libs.h2)
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
     implementation(libs.selenium.java) {
         exclude(group = "com.intellij.remoterobot", module = "remote-robot")
     }
+    // Exposed DSL (jetbrains)
+    val exposed_dsl_version = "1.3.0" // Check for latest version at https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-core
+    implementation("org.jetbrains.exposed:exposed-core:$exposed_dsl_version")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposed_dsl_version")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_dsl_version")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposed_dsl_version")
 
     compileOnly(libs.eclipse.jdt.core) // Needed for Java parsing? If so, keep.
     compileOnly(libs.graalvm.js)
