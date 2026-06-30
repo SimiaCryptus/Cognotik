@@ -34,12 +34,17 @@ class ChatModel(
     val deprecated: Boolean = false,
     val inputModalities: Set<ChatMessageModality>,
     val outputModalities: Set<ChatMessageModality>,
+    val reasoningLevel: ReasoningLevel? = null,
 ) : LLMModel(
     modelId = modelId,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
     provider = provider,
 ) {
+
+    enum class ReasoningLevel {
+        Low, Medium, High, X
+    }
 
     fun priceStructure() : Map<TokenTypes, Double> {
         return TokenTypes.values().associateWith { type ->
@@ -69,6 +74,7 @@ class ChatModel(
         deprecated: Boolean = false,
         inputModalities: Set<ChatMessageModality>,
         outputModalities: Set<ChatMessageModality>,
+        reasoningLevel: ReasoningLevel? = null,
     ) : this(
         name = name,
         modelId = modelId,
@@ -84,6 +90,7 @@ class ChatModel(
         deprecated = deprecated,
         inputModalities = inputModalities,
         outputModalities = outputModalities,
+        reasoningLevel = reasoningLevel
     )
 
     /**

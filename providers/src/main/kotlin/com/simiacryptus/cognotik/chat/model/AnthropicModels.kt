@@ -289,6 +289,7 @@ object AnthropicModels {
          ),
          supportsTemperature = false,
          supportsReasoning = true,
+         deprecated = true, // Currently disabled due to political shenanigans
          inputModalities = setOf(ChatMessageModality.TEXT),
          outputModalities = setOf(ChatMessageModality.TEXT),
      )
@@ -308,6 +309,7 @@ object AnthropicModels {
          ),
          supportsTemperature = false,
          supportsReasoning = true,
+         deprecated = true, // Currently disabled due to political shenanigans
          inputModalities = setOf(ChatMessageModality.TEXT),
          outputModalities = setOf(ChatMessageModality.TEXT),
      )
