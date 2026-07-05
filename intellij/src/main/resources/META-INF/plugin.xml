@@ -5,11 +5,10 @@
     <category>Code Tools</category>
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lang</depends>
-    <depends>org.jetbrains.plugins.yaml</depends>
-    <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.simiacryptus.cognotik.PluginStartupActivity"/>
+        <notificationGroup id="Cognotik Feedback" displayType="BALLOON" isLogByDefault="false"/>
         <applicationService serviceImplementation="com.simiacryptus.cognotik.config.AppSettingsState"/>
         <applicationConfigurable
                 parentId="tools"
@@ -20,12 +19,12 @@
                 implementation="com.simiacryptus.cognotik.SettingsWidgetFactory"
                 id="cognotik.ui.SettingsWidgetFactory"
                 order="first"/>
-        <statusBarWidgetFactory
-                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"
-                id="Cognotik.SpeechToTextWidget"
-                order="first"/>
-        <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"
-                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>
+        <!--        <statusBarWidgetFactory-->
+        <!--                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"-->
+        <!--                id="Cognotik.SpeechToTextWidget"-->
+        <!--                order="first"/>-->
+        <!--        <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"-->
+        <!--                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>-->
     </extensions>
 
     <actions>
@@ -36,21 +35,31 @@
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
+            <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
+                    id="UnifiedPlan"
+                    text="🧠 Task Planning"
+                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+            </action>
             <action class="cognotik.actions.chat.GenericChatAction"
                     id="GenericChat"
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
-            <!--<action class="cognotik.actions.agent.OutlineAction"
-                    id="OutlineAction"
-                    text="🗂️ Outline Tool"
-                    description="Create and expand outlines using Cognotik assistance">
+            <action class="cognotik.actions.analysis.SymbolExtractionAction"
+                    id="SymbolExtraction"
+                    text="📊 Extract Symbols"
+                    description="Extract symbol definitions and references across the project into a JSON report">
             </action>
-            <action class="cognotik.actions.agent.EnhancedOutlineAction"
-                    id="EnhancedOutlineAction"
-                    text="📝 Enhanced Outline Tool"
-                    description="Create and expand outlines with customizable phases using Cognotik assistance">
-            </action>-->
+            <action class="cognotik.actions.SymbolGraphAction"
+                    id="SymbolGraph"
+                    text="📈 Browse Symbol Graph"
+                    description="Create a visual graph of symbol definitions and references across the project to aid in code comprehension">
+            </action>
+            <action class="cognotik.actions.chat.SmartChatAction"
+                    id="SmartChat"
+                    text="🧠 Adaptive Chat"
+                    description="Enhanced chat with automatic history summarization and intelligent query elevation for complex questions">
+            </action>
         </group>
         <group id="cognotik.ui.EditorMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -67,56 +76,21 @@
                     text="🛠️ Patch Chat"
                     description="Initiate an interactive session to discuss and apply patches to your code, with intelligent suggestions for modifications">
             </action>
-            <action class="cognotik.actions.editor.SmartPasteAction"
-                    text="📋 _Smart Paste"
-                    description="Smart paste functionality that automatically detects and converts clipboard content to match the current file's programming language">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift V"/>
-                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift V"/>
-            </action>
             <action class="cognotik.actions.editor.FastPasteAction"
-                    text="⚡ _Fast Paste"
-                    description="Fast paste functionality using a less resource-intensive model for quick conversions.">
+                    text="⚡ _Paste"
+                    description="Paste with transformations to match the current file's programming language">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt V"/>
                 <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta alt V"/>
-            </action>
-            <action class="cognotik.actions.editor.RedoLast"
-                    text="🔄 Re_do Last"
-                    description="Quickly repeat the most recent intelligent coding operation in the current editor">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift Z"/>
-                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift Z"/>
             </action>
             <action class="cognotik.actions.editor.CustomEditAction"
                     text="✏️ _Edit Code..."
                     description="Edit code...">
             </action>
-            <group id="cognotik.actions.editor.RecentCodeEditsAction"
-                   class="cognotik.actions.editor.RecentCodeEditsAction"
-                   text="⏱️ _Recent Code Edits"
-                   description="Recent code edits"
-                   popup="true">
-            </group>
-            <!--<action class="cognotik.actions.markdown.MarkdownListAction"
-                    text="📝 Add _List Items"
-                    description="Intelligently extend Markdown lists by generating contextually relevant new items">
+            <action class="cognotik.actions.task.DocProcessorAction"
+                    id="cognotik.ui.EditorMenu.DocProcessor"
+                    text="📋 Build Related"
+                    description="Process markdown documentation files with frontmatter specifications">
             </action>
-            <group id="cognotik.actions.markdown.MarkdownImplementActionGroup"
-                   class="cognotik.actions.markdown.MarkdownImplementActionGroup"
-                   text="🛠️ Imple_ment As..."
-                   description="Convert selected Markdown text into executable code snippets in various programming languages"
-                   popup="true">
-            </group>
-            <action class="cognotik.actions.editor.DescribeAction"
-                    text="📝 Describe C_ode and Prepend Comment"
-                    description="Add doc comments">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift D"/>
-                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift D"/>
-            </action>
-            <action class="cognotik.actions.dev.PrintTreeAction"
-                    text="🌳 Print PSI Tree"
-                    description="Print PSI Tree">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
-            </action>-->
         </group>
         <group id="cognotik.ui.ProjectMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -125,122 +99,93 @@
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
-            <action class="cognotik.actions.chat.MultiCodeChatAction"
-                    text="💬 Code Chat"
-                    description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
+
+            <action class="cognotik.actions.chat.ModifyFilesAction"
+                    text="📝 Edit"
+                    description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
             </action>
-            <group id="cognotik.ui.ProjectMenu.Modify"
+            <action class="cognotik.actions.task.DocProcessorAction"
+                    id="cognotik.ui.ProjectMenu.DocProcessor"
+                    text="📋 Build Related"
+                    description="Process markdown documentation files with frontmatter specifications">
+            </action>
+            <action class="cognotik.actions.agent.CommandAutofixAction"
+                    text="🔄 Run ... and Fix"
+                    description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
+            </action>
+            <action class="cognotik.actions.generate.GenerateRelatedFileAction"
+                    text="📄 Generate Related File"
+                    description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
+            </action>
+            <action class="cognotik.actions.plan.UnifiedPlanAction"
+                    text="🧠 Task Planning"
+                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+            </action>
+
+            <group id="cognotik.ui.ProjectMenu.Chat"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
-                   text="🔧 Modify"
+                   text="💬 Chat"
                    description="File modification tools">
-                <action class="cognotik.actions.chat.ModifyFilesAction"
-                        text="📝 Modify Files"
-                        description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
+                <action class="cognotik.actions.chat.MultiCodeChatAction"
+                        text="💬 Simple"
+                        description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
                 </action>
-<!--
-                <action class="cognotik.actions.chat.MultiDiffChatWithLineNumbersAction"
-                        text="📝 Modify Files (with Line Numbers)"
-                        description="Analyze and generate patches for multiple files with line numbers displayed for easier reference">
-                </action>
-                <action class="cognotik.actions.chat.CodeChangeAction"
-                        text="🎯 Smart Code Change"
-                        description="Intelligently analyze and modify code files using a two-stage approach with optimized model selection">
-                </action>
--->
-                <action class="cognotik.actions.dev.ApplyPatchAction"
-                        text="🔧 Apply Patch"
-                        description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
-                </action>
-                <action class="cognotik.actions.agent.DocumentedMassPatchAction"
-                        text="🔨 Mass Patch"
-                        description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
+                <action class="cognotik.actions.chat.ImageChatAction"
+                        text="💬 Image"
+                        description="Initiate an interactive dialogue session to discuss and analyze multiple image files simultaneously">
                 </action>
             </group>
-            <group id="cognotik.ui.ProjectMenu.Generation"
+
+            <action class="cognotik.actions.dev.ApplyPatchAction"
+                    text="🔧 Apply Patch"
+                    description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
+            </action>
+
+            <group id="cognotik.ui.ProjectMenu.Tasks.More"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
-                   text="⚡ Generate"
-                   description="File generation tools">
-                <action class="cognotik.actions.generate.GenerateRelatedFileAction"
-                        text="📄 Generate Related File"
-                        description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
+                   text="⚡ More"
+                   description="Additional single-task actions">
+                <action class="cognotik.actions.task.RenderErbTemplateAction"
+                        text="📝 Render ERB Template"
+                        description="Render ERB templates with JSON data files, automatically determining output format from template naming">
                 </action>
+                <action class="cognotik.actions.analysis.SymbolExtractionAction"
+                        text="📊 Extract Symbols"
+                        description="Extract symbol definitions and references across the project into a JSON report">
+                </action>
+                <action class="cognotik.actions.task.WriteHtmlAction"
+                        text="🌐 Generate HTML Page"
+                        description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
+                </action>
+                <action class="cognotik.actions.task.IllustrateDocumentAction"
+                        text="🖼️ Illustrate Document"
+                        description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
+                </action>
+                <action class="cognotik.actions.generate.OCRAction"
+                        text="📄 OCR"
+                        description="Extract text from image files using Optical Character Recognition (OCR) and save to a new markdown file">
+                </action>
+
                 <action class="cognotik.actions.generate.CreateFileFromDescriptionAction"
                         text="✨ Create File from Description"
                         description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
                 </action>
                 <action class="cognotik.actions.generate.CreateImageAction"
-                        text="🖌️ Create Image"
-                        description="Generate visual representations of code structure, algorithms, or data flow based on selected code or project files">
+                        text="🖼️ Create Image from Description"
+                        description="Generate an image based on a natural language description, with customizable styles and formats">
                 </action>
-                <action class="cognotik.actions.generate.GenerateDocumentationAction"
-                        text="📚 Generate Documentation"
-                        description="Automatically generate comprehensive documentation for selected files or entire project, with customizable output formats">
+                <action class="cognotik.actions.task.CreateErbTemplateAction"
+                        text="✨ Create ERB Template"
+                        description="Create a new ERB template with AI assistance, specifying the purpose, format, and data structure">
                 </action>
-            </group>
-            <group id="cognotik.ui.ProjectMenu.Agents"
-                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                   popup="true"
-                   text="🤖 Agents"
-                   description="Cognotik-powered automation agents">
-                <action class="cognotik.actions.plan.UnifiedPlanAction"
-                        text="🧠 Task Planning"
-                        description="Choose from multiple planning strategies in a unified interface with customizable task settings">
-                </action>
-                <action class="cognotik.actions.agent.CommandAutofixAction"
-                        text="🔄 Run ... and Fix"
-                        description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
-                </action>
-                <action class="cognotik.actions.agent.ValidateCodeAction"
-                        text="✓ Validate Code"
-                        description="Validate code syntax and structure using Cognotik-powered analysis">
-                </action>
-<!--
-                <action class="cognotik.actions.agent.SimpleCommandAction"
-                        text="✨ Do Something"
-                        description="Execute custom coding tasks with intelligent assistance, analyzing project structure and context">
-                </action>
-                <action class="cognotik.actions.agent.MultiStepPatchAction"
-                        text="📝 Multi-Step Editor"
-                        description="Break down complex code modifications into a series of manageable steps, with intelligent suggestions for each stage">
-                </action>
--->
-<!--
-                <action id="CognotikShellCommand"
-                        class="cognotik.actions.agent.ShellCommandAction"
-                        text="🐚 Shell Agent"
-                        description="Execute shell commands in the selected directory via a coding agent">
-                </action>
--->
-<!--
-                <action class="cognotik.actions.agent.WebDevelopmentAssistantAction"
-                        text="🌐 Web Dev"
-                        description="Comprehensive tool for web application development, assisting with file generation, code writing, and project structure">
-                </action>
--->
-            </group>
-<!--
-            <group id="cognotik.ui.ProjectMenu.Knowledge"
-                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                   popup="true"
-                   text="📚 Knowledge Mgmt"
-                   description="Knowledge management and analysis tools">
-                <action class="cognotik.actions.knowledge.DocumentDataExtractorAction"
-                        text="📄 Extract Document Data"
-                        description="Comprehensive tool for extracting and analyzing text and images from various document formats (PDF, TXT, MD, HTML)">
-                </action>
-                <action id="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
-                        class="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
-                        text="🔮 View Projector"
-                        description="View Vectors using Tensorflow Projector">
-                </action>
-                <action class="cognotik.actions.knowledge.SaveAsQueryIndexAction"
-                        text="💾 Save as Query DB"
-                        description="Convert selected parsed JSON files into an optimized binary index for efficient querying and data retrieval">
+                <action class="cognotik.actions.task.PermdocAction"
+                        text="📄 Permdoc"
+                        description="Create a permanent documentation file for selected files/folders with auto-generated frontmatter">
                 </action>
             </group>
--->
+
         </group>
 
         <group id="cognotik.ui.VcsMenu"

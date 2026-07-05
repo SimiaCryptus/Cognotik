@@ -1,7 +1,6 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -10,23 +9,24 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.InMemoryFileSystem
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.AddApplyDiffLinks.Companion.addApplyDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.models.chatModel
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import com.intellij.openapi.application.ApplicationManager as IntellijAppManager
 
@@ -34,6 +34,7 @@ class DiffChatAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     val path = "/diffChat"
+
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return false
@@ -44,7 +45,7 @@ class DiffChatAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         try {
             val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             val language = ComputerLanguage.getComputerLanguage(e)?.name ?: ""
             val document = editor.document
             val filename = FileDocumentManager.getInstance().getFile(document)?.name ?: return
@@ -67,7 +68,7 @@ class DiffChatAction : BaseAction() {
         val selectedText = primaryCaret.selectedText
         return if (selectedText != null) {
             Triple(
-                selectedText.toString(),
+                selectedText,
                 primaryCaret.selectionStart,
                 primaryCaret.selectionEnd
             )
@@ -112,12 +113,10 @@ class DiffChatAction : BaseAction() {
             language = language,
             codeSelection = rawText,
             filename = filename,
-            api = api,
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-            storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
+            model = AppSettingsState.instance.smartChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
+            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         ) {
-
             override val systemPrompt: String
                 @Language("Markdown")
                 get() = super.systemPrompt + """
@@ -130,40 +129,53 @@ class DiffChatAction : BaseAction() {
                   - If a line is part of the original code and hasn't been modified, simply include it without '+' or '-'.
                   - Lines starting with "@@" or "---" or "+++" are treated as headers and are ignored.
 
-                """.trimIndent() + patchFormatPrompt
+                """.trimIndent() + AppSettingsState.instance.processor.patchFormatPrompt
 
             override fun renderResponse(response: String, task: SessionTask): String = """<div>${
-                renderMarkdown(
-                    addApplyDiffLinks(
-                        this,
-                        code = {
-                            editor.document.getText(TextRange(selectionStart, selectionEnd))
-                        },
-                        response = response,
-                        handle = { newCode: String ->
-                            WriteCommandAction.runWriteCommandAction(editor.project) {
-                                selectionEnd = selectionStart + newCode.length
-                                document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
-                            }
-                        },
-                        task = task,
-                        ui = ui
-                    )
-                )
+                renderMarkdown(response, tabs=true) {
+                  val virtualFs = InMemoryFileSystem()
+                  val virtualRoot = Paths.get("/virtual")
+                  val virtualFile = virtualRoot.resolve("file.txt")
+                  virtualFs.putFile(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
+                  val renderer = SessionRenderer(task)
+                  val instrumentor = DiffInstrumentor(
+                    processor = AppSettingsState.instance.processor,
+                    renderer = renderer,
+                    fs = virtualFs,
+                  )
+                  instrumentor.instrument(
+                    root = virtualRoot,
+                    response = response,
+                    handle = { changes ->
+                      changes.values.firstOrNull()?.let { newCode ->
+                        WriteCommandAction.runWriteCommandAction(editor.project) {
+                          selectionEnd = selectionStart + newCode.length
+                          document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
+                        }
+                        virtualFs.putFile(virtualFile, newCode)
+                      }
+                    },
+                    shouldAutoApply = { false },
+                    defaultFile = "file.txt",
+                    resolver = { root, _ -> "file.txt" },
+                  )
+                }                
             }</div>"""
         }
     }
 
     private fun openBrowserWindow(e: AnActionEvent, session: Session) {
         IntellijAppManager.getApplication().executeOnPooledThread {
-            val server = CognotikAppServer.getServer(e.project)
-            val uri = server.server.uri.resolve("/#$session")
+            val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                AppSettingsState.instance.listeningEndpoint,
+                AppSettingsState.instance.listeningPort
+            ).server.uri.resolve("/#$session")
             BaseAction.log.info("Opening browser to $uri")
             browse(uri)
         }
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(DiffChatAction::class.java)
+        private val log = getLogger(DiffChatAction::class.java)
     }
 }

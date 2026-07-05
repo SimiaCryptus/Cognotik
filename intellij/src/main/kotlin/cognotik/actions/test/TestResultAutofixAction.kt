@@ -1,40 +1,35 @@
 package cognotik.actions.test
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.execution.testframework.AbstractTestProxy
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.util.JsonUtil
-import org.jetbrains.annotations.NotNull
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 
 class TestResultAutofixAction : BaseAction() {
     companion object {
-        private val log = LoggerFactory.getLogger(TestResultAutofixAction::class.java)
+        private val log = getLogger(TestResultAutofixAction::class.java)
         val tripleTilde = "`" + "``"
 
 
@@ -66,23 +61,12 @@ class TestResultAutofixAction : BaseAction() {
                 .map { root.relativize(it) ?: it }.toSet()
             val str = codeFiles
                 .asSequence()
-                .filter { root.resolve(it)?.toFile()?.exists() == true }
+                .filter { root.resolve(it).toFile().exists() }
                 .distinct().sorted()
                 .joinToString("\n") { path ->
-                    "* ${path} - ${root.resolve(path)?.toFile()?.length() ?: "?"} bytes".trim()
+                    "* ${path} - ${root.resolve(path).toFile().length()} bytes".trim()
                 }
             return str
-        }
-
-        fun findGitRoot(path: Path?): Path? {
-            var current: Path? = path
-            while (current != null) {
-                if (current.resolve(".git").toFile().exists()) {
-                    return current
-                }
-                current = current.parent
-            }
-            return null
         }
 
         fun findGitRoot(virtualFile: VirtualFile?): VirtualFile? {
@@ -115,7 +99,8 @@ class TestResultAutofixAction : BaseAction() {
         }
     }
 
-    override fun isEnabled(@NotNull e: AnActionEvent): Boolean {
+    override fun isEnabled(e: AnActionEvent): Boolean {
+        if (!super.isEnabled(e)) return false
         val testProxy = e.getData(AbstractTestProxy.DATA_KEY)
         return testProxy != null
     }
@@ -140,7 +125,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.metadataStorage.setSessionName(
             null,
             session,
@@ -156,12 +141,13 @@ class TestResultAutofixAction : BaseAction() {
             showMenubar = false
         )
 
-        val server = CognotikAppServer.getServer(e.project)
-
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {
@@ -182,22 +168,23 @@ class TestResultAutofixAction : BaseAction() {
     ) {
         override val inputCnt = 1
         override val stickyInput = false
-        override fun newSession(user: User?, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)
-            val ui = (socketManager as ApplicationSocketManager).applicationInterface
-            val task = ui.newTask()
+        override fun newSession(user: User, session: Session): SocketManager {
+            val socketManager = super.newSession(user, session)!!
+            val task = socketManager.newTask(cancelable = false)
             task.add("Analyzing test result and suggesting fixes...")
             Thread {
-                runAutofix(ui, task)
+                runAutofix(task, socketManager)
             }.start()
             return socketManager
         }
 
-        private fun runAutofix(ui: ApplicationInterface, task: SessionTask) {
-            Retryable(ui, task) {
+        private fun runAutofix(
+            task: SessionTask, socketManager: SocketManager
+        ) {
+            Retryable(task) {
                 try {
-                    val task = ui.newTask(false)
-                    val plan = ParsedActor(
+                    val task = socketManager.newTask(cancelable = false, root = false)
+                    val plan = ParsedAgent(
                         resultClass = ParsedErrors::class.java,
                         prompt = """
                         You are a helpful AI that helps people with coding.
@@ -211,26 +198,31 @@ class TestResultAutofixAction : BaseAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModel(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-                    ).answer(listOf(testInfo), api = IdeaChatClient.instance)
+                        model = AppSettingsState.instance.smartChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
+                    ).answer(listOf(testInfo))
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
                         return@Retryable task.placeholder
                     }
 
-                    task.add(
-                        AgentPatterns.displayMapInTabs(
-                            mapOf(
-                              "Text" to plan.text.renderMarkdown,
-                              "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
-                            )
-                        )
+                  val map = mapOf(
+                    "Text" to plan.text.renderMarkdown(true),
+                    "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
+                      true
+                    ),
+                  )
+                  task.add(
+                    TabbedDisplay.displayMapInTabs(
+                      map,
+                      null,
+                      map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                    )
                     )
 
                     plan.obj.errors?.forEach { error ->
-                        Retryable(ui, task) {
-                            val task = ui.newTask(false)
+                        Retryable(task) {
+                            val task = socketManager.newTask(cancelable = false, root = false)
                             val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
                             val summary = filesToFix.joinToString("\n\n") { filePath ->
                                 val file = File(projectPath, filePath)
@@ -245,28 +237,27 @@ class TestResultAutofixAction : BaseAction() {
                                     "# $filePath\nFile not found"
                                 }
                             }
-                            generateAndAddResponse(ui, task, error, summary, filesToFix)
+                            generateAndAddResponse(task, error, summary, socketManager)
                             return@Retryable task.placeholder
                         }
                     }
                     return@Retryable task.placeholder
                 } catch (e: Exception) {
                     log.error("Error in autofix process: ${e.message}", e)
-                    task.error(ui, e)
+                    task.error(e)
                     throw e
                 }
             }
         }
 
         private fun generateAndAddResponse(
-            ui: ApplicationInterface,
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            filesToFix: List<String>
+            socketManager: SocketManager
         ) {
             task.add("Generating fix suggestions...")
-            val response = SimpleActor(
+            val response = ChatAgent(
                 prompt = """
                 You are a helpful AI that helps people with coding.
                 Suggest fixes for the following test failure:
@@ -283,24 +274,25 @@ $projectStructure
                 The diff format should use + for line additions, - for line deletions.
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel()
-            ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
+                model = AppSettingsState.instance.smartChatClient
+            ).answer(listOf(error.message ?: ""))
             task.add("Processing suggested fixes...")
 
-            var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                ui.socketManager!!,
-                root = root.toPath(),
-                response = response,
-                handle = { newCodeMap ->
-                    newCodeMap.forEach { (path, newCode) ->
-                        task.add("Applying changes to $path...")
-                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                    }
-                },
-                ui = ui,
-                api = api,
+          val markdown = DiffInstrumentor(
+            AppSettingsState.instance.processor,
+            SessionRenderer(task),
+          ).instrument(
+              root = root.toPath(),
+              response = response,
+              handle = { newCodeMap: Map<Path, String> ->
+                newCodeMap.forEach { (path, newCode) ->
+                  task.add("Applying changes to $path...")
+                  task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                }
+              },
+            resolver = ::resolveToRelativePath,
             )
-            task.add("<div>${renderMarkdown(markdown!!)}</div>")
+            task.add("<div>${renderMarkdown(markdown)}</div>")
         }
     }
 

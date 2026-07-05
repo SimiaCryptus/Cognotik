@@ -1,24 +1,23 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class CancelThreadsServlet : HttpServlet() {
-    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        resp.contentType = "text/html"
-        resp.status = HttpServletResponse.SC_OK
-        if (req.parameterMap.containsKey("sessionId")) {
-            val session = Session(req.getParameter("sessionId"))
+  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+    resp.contentType = "text/html"
+    resp.status = HttpServletResponse.SC_OK
+    if (req.parameterMap.containsKey("sessionId")) {
+      val session = Session(req.getParameter("sessionId"))
 
-            resp.writer.write(
-                """
+      resp.writer.write(
+        """
         <html>
         <head>
             <title>Cancel Session</title>
@@ -33,45 +32,48 @@ class CancelThreadsServlet : HttpServlet() {
         </body>
         </html>
         """.trimIndent()
-            )
-        } else {
-            resp.status = HttpServletResponse.SC_BAD_REQUEST
-            resp.writer.write("Session ID is required")
-        }
+      )
+    } else {
+      resp.status = HttpServletResponse.SC_BAD_REQUEST
+      resp.writer.write("Session ID is required")
     }
+  }
 
-    override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        require(req.getParameter("confirm").lowercase() == "confirm") { "Confirmation text is required" }
-        resp.contentType = "text/html"
-        resp.status = HttpServletResponse.SC_OK
-        if (!req.parameterMap.containsKey("sessionId")) {
-            resp.status = HttpServletResponse.SC_BAD_REQUEST
-            resp.writer.write("Session ID is required")
-        } else {
-            val session = Session(req.getParameter("sessionId"))
-            val user = authenticationManager.getUser(req.getCookie())
-            require(
-                ApplicationServices.authorizationManager.isAuthorized(
-                    javaClass,
-                    user,
-                    AuthorizationInterface.OperationType.Delete
-                )
-            )
-            { "User $user is not authorized to cancel sessions" }
-            if (session.isGlobal()) {
-                require(
-                    ApplicationServices.authorizationManager.isAuthorized(
-                        javaClass,
-                        user,
-                        AuthorizationInterface.OperationType.Public
-                    )
-                )
-                { "User $user is not authorized to cancel global sessions" }
-            }
-            val pool = clientManager.getPool(session, user)
-            pool.shutdownNow()
-            resp.sendRedirect("/")
-        }
+  override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    require(request.getParameter("confirm").lowercase() == "confirm") { "Confirmation text is required" }
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
+    if (!request.parameterMap.containsKey("sessionId")) {
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("Session ID is required")
+    } else {
+      val session = Session(request.getParameter("sessionId"))
+      val user = authenticate(request, response)
+      if (user == null) {
+        throw RuntimeException("User must be authenticated to cancel sessions")
+      }
+      require(
+        ApplicationServices.authorizationManager.isAuthorized(
+          javaClass,
+          user,
+          AuthorizationInterface.OperationType.Delete
+        )
+      )
+      { "User $user is not authorized to cancel sessions" }
+      if (session.isGlobal()) {
+        require(
+          ApplicationServices.authorizationManager.isAuthorized(
+            javaClass,
+            user,
+            AuthorizationInterface.OperationType.Public
+          )
+        )
+        { "User $user is not authorized to cancel global sessions" }
+      }
+      val pool = threadPoolManager.getPool(session, user ?: return)
+      pool.shutdownNow()
+      response.sendRedirect("/")
     }
+  }
 
 }

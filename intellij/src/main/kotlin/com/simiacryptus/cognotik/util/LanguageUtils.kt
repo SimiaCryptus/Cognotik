@@ -18,7 +18,7 @@ object LanguageUtils {
                 FileDocumentManager.getInstance().getFile(editor.document) ?: return@runReadAction null
             val file = PsiManager.getInstance(e.project!!).findFile(virtualFile)?.virtualFile?.toFile
                 ?: return@runReadAction null
-            val extension = if (file.extension != null) file.extension.lowercase(Locale.getDefault()) else ""
+            val extension = file.extension.lowercase(Locale.getDefault())
             return@runReadAction ComputerLanguage.findByExtension(extension)
         }
     }

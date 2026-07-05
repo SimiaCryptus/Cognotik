@@ -3,10 +3,15 @@ log/
 *.key*
 reports/
 build/
+# Android
+android/local.properties
+*.iml
+.externalNativeBuild
+.cxx
 .gradle/
 .idea/
 openai.key
-*.log
+*.log*
 # Cypress
 cypress/videos/
 cypress/screenshots/
@@ -29,3 +34,12 @@ node_modules/
 metadata.*
 .DS_Store
 test_config.json
+/experiment/search_lambda/terraform/.terraform/
+symbol_graph.json
+workspaces
+demo-cognotik-buildtool
+transcript/
+plugins/
+Cognotik-Jobs/
+.doc-processor-cache/
+

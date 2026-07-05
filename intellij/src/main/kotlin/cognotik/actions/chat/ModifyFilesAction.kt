@@ -1,35 +1,29 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
-import cognotik.actions.agent.MultiStepPatchAction.AutoDevApp.Settings
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
+import java.io.OutputStream
+import java.net.URI
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import kotlin.io.path.relativeTo
@@ -38,12 +32,20 @@ open class ModifyFilesAction(
     protected val showLineNumbers: Boolean = false
 ) : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     override fun isEnabled(event: AnActionEvent): Boolean {
-        if (FileSelectionUtils.expandFileList(
-                *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>()
-                    ?: arrayOf()
-            ).isEmpty()
-        ) return false
+        if (!super.isEnabled(event)) return false
+        try {
+            val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
+            val files = virtualFiles?.map { it.toFile }?.toTypedArray<File>()
+            val expandFileList = FileSelectionUtils.expandFileList(*files ?: arrayOf())
+            if (expandFileList.isEmpty()) {
+                return false
+            }
+        } catch (e: Exception) {
+            log.error("Error checking if action is enabled", e)
+            return false
+        }
         return super.isEnabled(event)
     }
 
@@ -55,18 +57,16 @@ open class ModifyFilesAction(
                 FileSelectionUtils.expandFileList(*virtualFiles?.map { it.toFile }?.toTypedArray() ?: arrayOf()).map {
                     it.toPath().relativeTo(root)
                 }.toSet()
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
                 session,
                 "${getActionName()} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
             )
-            val model = AppSettingsState.instance.smartModel.chatModel()
-            val parsingModel = AppSettingsState.instance.fastModel.chatModel()
             SessionProxyServer.agents[session] = PatchChatManager(
                 session = session,
-                model = model,
-                parsingModel = parsingModel,
+                model = AppSettingsState.instance.smartChatClient,
+                fastModel = AppSettingsState.instance.fastChatClient,
                 root = root.toFile(),
                 files = initialFiles,
                 showLineNumbers = showLineNumbers
@@ -78,8 +78,10 @@ open class ModifyFilesAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer(e.project)
-            launchBrowser(server, session.toString())
+            launchBrowser(session.toString(), com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                AppSettingsState.instance.listeningEndpoint,
+                AppSettingsState.instance.listeningPort
+            ).server.uri)
         } catch (e: Exception) {
 
             log.error("Error in MultiDiffChatAction", e)
@@ -91,19 +93,19 @@ open class ModifyFilesAction(
         if (showLineNumbers) "MultiDiffChatWithLineNumbers" else "MultiDiffChat"
 
     private fun getRoot(event: AnActionEvent): Path? {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         return if (null != folder) {
             folder.toFile.toPath()
         } else {
-            getModuleRootForFile(UITools.getSelectedFile(event)?.parent?.toFile ?: return null).toPath()
+            getModuleRootForFile(event.getSelectedFile()?.parent?.toFile ?: return null).toPath()
         }
     }
 
-    private fun launchBrowser(server: CognotikAppServer, session: String) {
+    private fun launchBrowser(session: String, uri: URI) {
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = uri.resolve("/#$session")
                 BaseAction.log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {
@@ -114,20 +116,19 @@ open class ModifyFilesAction(
 
     inner class PatchChatManager(
         session: Session,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: ChatInterface,
+        fastModel: ChatInterface,
         val root: File,
         private val files: Set<Path>,
         private val showLineNumbers: Boolean = false
     ) : ChatSocketManager(
-        session = session,
-        model = model,
-        parsingModel = parsingModel,
-        systemPrompt = "",
-        api = api,
-        applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
-        budget = 2.0,
+      session = session,
+      smartModel = model,
+      fastModel = fastModel,
+      systemPrompt = "",
+      applicationClass = ApplicationServer::class.java,
+      budget = 2.0,
+      owner = localUser,
     ) {
         override val systemPrompt: String
             get() = """
@@ -135,7 +136,7 @@ open class ModifyFilesAction(
         You will be answering questions about the following code:
         ${codeSummary()}
         ${if (showLineNumbers) "\nNote: Line numbers are shown at the beginning of each line in the format 'NUMBER | CODE'. These are for reference only and should not be included in any patches or code modifications.\n" else ""}
-        ${patchFormatPrompt}
+        ${AppSettingsState.instance.processor.patchFormatPrompt}
       """.trimIndent()
 
         private fun getCodeFiles(): Set<Path> {
@@ -154,8 +155,7 @@ open class ModifyFilesAction(
         private fun codeSummary(): String {
             return getCodeFiles().associateWith { root.toPath().resolve(it).toFile().readText(Charsets.UTF_8) }
                 .entries.joinToString("\n\n") { (path, code) ->
-                    val extension =
-                        path.toString().split('.').lastOrNull()?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }
+                    val extension = path.toString().split('.').lastOrNull()
                     if (showLineNumbers) {
                         val lines = code.lines()
                         val lineNumberWidth = lines.size.toString().length
@@ -169,44 +169,40 @@ open class ModifyFilesAction(
                 }
         }
 
-        override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response) { html ->
-            AddApplyFileDiffLinks.instrumentFileDiffs(
-                this,
+        override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
+            DiffInstrumentor(
+                AppSettingsState.instance.processor,
+                SessionRenderer(task),
+            )
+              .instrument(
                 root = root.toPath(),
                 response = html,
-                handle = { newCodeMap ->
+                handle = { newCodeMap: Map<Path, String> ->
                     newCodeMap.forEach { (path, newCode) ->
-                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                        task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                     }
                 },
-                ui = ui,
-                api = api,
-                defaultFile = if (files.size == 1) files.first().let {
-                    root.toPath().resolve(it).toFile().absolutePath
-                } else null,
-            )
+            defaultFile = if (files.size == 1) files.first().let {
+              root.toPath().resolve(it).toFile().absolutePath
+            } else null,
+                resolver = ::resolveToRelativePath,
+          )
         }
 
-        override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
-
-            val codex = GPT4Tokenizer()
+        override fun respond(
+            task: SessionTask,
+            userMessage: String,
+            currentChatMessages: List<ModelSchema.ChatMessage>,
+            transcriptStream: OutputStream?
+        ): String {
             task.verbose((getCodeFiles().joinToString("\n") { path ->
-                "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
+                "* $path - ${root.resolve(path.toFile()).length()} bytes"
             }).renderMarkdown())
-
-            val settings = Settings()
-            api.budget = settings.budget ?: 2.00
-
-            return super.respond(api, task, userMessage, currentChatMessages)
+            return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
-
+        private val log = getLogger(ModifyFilesAction::class.java)
     }
-}
-
-class ModifyFilesWithLineNumbersAction : ModifyFilesAction(showLineNumbers = true) {
-    override fun getActionName(): String = "MultiDiffChatWithLineNumbers"
 }

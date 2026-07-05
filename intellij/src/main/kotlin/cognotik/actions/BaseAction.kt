@@ -7,10 +7,8 @@ package cognotik.actions
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.ChatClient
 import org.slf4j.LoggerFactory
 import javax.swing.Icon
 
@@ -21,14 +19,6 @@ abstract class BaseAction(
 ) : AnAction(name, description, icon) {
 
     private val log by lazy { LoggerFactory.getLogger(javaClass) }
-
-    /**
-     * Primary API client for chat interactions
-     */
-
-    val api: ChatClient
-        @JvmName("getChatClient") get() = IdeaChatClient.instance
-    val api2 = IdeaOpenAIClient.instance
 
     final override fun update(event: AnActionEvent) {
         val currentThread = Thread.currentThread()
@@ -60,7 +50,7 @@ abstract class BaseAction(
         UITools.logAction(
             "Action: ${javaClass.simpleName}".trim()
         )
-        IdeaChatClient.lastEvent = e
+        AppSettingsState.lastEvent = e
         try {
             handle(e)
         } catch (e: IllegalStateException) {
@@ -72,7 +62,11 @@ abstract class BaseAction(
         }
     }
 
-    open fun isEnabled(event: AnActionEvent): Boolean = true
+    open fun isEnabled(event: AnActionEvent): Boolean {
+        if (AppSettingsState.instance.smartModel == null) return false
+        if (AppSettingsState.instance.fastModel == null) return false
+        return true
+    }
 
     companion object {
         val log by lazy { LoggerFactory.getLogger(javaClass) }

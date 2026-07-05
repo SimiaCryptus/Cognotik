@@ -1,0 +1,8 @@
+{
+  "filename": "test_prepend_line.txt",
+  "originalCode": "line1\nline2\nline3",
+  "diff": "+newLine\nline1\nline2\nline3",
+  "newCode": "newLine\nline1\nline2\nline3",
+  "isValid": true,
+  "errors": ""
+}

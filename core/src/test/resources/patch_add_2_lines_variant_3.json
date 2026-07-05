@@ -1,0 +1,8 @@
+{
+  "filename": "test_add_2_lines_v3.txt",
+  "originalCode": "line1\n\nline2\nline3",
+  "diff": "line1\n\n+ lineA\n+ lineB\n\nline2\nline3",
+  "newCode": "line1\nlineA\nlineB\n\nline2\nline3",
+  "isValid": true,
+  "errors": ""
+}

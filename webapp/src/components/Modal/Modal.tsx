@@ -27,10 +27,10 @@ const ModalContent = styled.div`
     }
 
     border-radius: ${({theme}) => theme.sizing.borderRadius.md};
-    min-width: 300px;
+    min-width: 50vw;
     max-width: 80vw;
     max-height: 80vh;
-    min-height: 200px;
+    min-height: 50vh;
     overflow: auto;
     box-shadow: 0 4px 16px ${({theme}) => `${theme.colors.primary}20`};
 

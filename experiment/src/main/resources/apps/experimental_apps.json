@@ -1,0 +1,46 @@
+[
+  {
+    "id": "app-health-improvement",
+    "name": "Health Improvement",
+    "icon": "🏥",
+    "description": "Multi-round health analysis from symptom intake through differential diagnosis to action plans.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/health-improvement",
+    "appId": "health-improvement"
+  },
+  {
+    "id": "app-puppy-finder",
+    "name": "Puppy Finder",
+    "icon": "🐶",
+    "description": "Find your perfect puppy match with AI-powered breed recommendations and search.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/puppy-finder",
+    "appId": "puppy-finder"
+  },
+  {
+    "id": "app-vacation-planner",
+    "name": "Vacation Planner",
+    "icon": "🌴",
+    "description": "AI-powered brainstorming, planning, and organizing for the perfect weekend vacation with detailed itineraries.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/vacation-planner",
+    "appId": "vacation-planner"
+  },
+  {
+    "id": "app-npm-project",
+    "name": "npm Project Factory",
+    "icon": "📦",
+    "description": "Design, scaffold, build, and test client-side web applications managed with npm — from architecture to passing tests.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/npm-project",
+    "appId": "npm-project"
+  }
+]

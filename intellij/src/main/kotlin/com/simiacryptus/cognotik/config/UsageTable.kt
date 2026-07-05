@@ -2,13 +2,16 @@
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Font
 import java.awt.event.ActionEvent
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.swing.AbstractAction
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -24,18 +27,22 @@ class UsageTable(
     val columnNames = arrayOf("Model", "Prompt", "Completion", "Cost")
 
     val rowData by lazy {
-        val usageData = usage.getUserUsageSummary(IdeaChatClient.localUser).map { entry ->
+      val usageData = usage.getUserUsageSummary(
+          AppSettingsState.localUser,
+          from = Date().toInstant().minusSeconds(TimeUnit.DAYS.toSeconds(30)).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
+          to = Date().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+      ).map { entry ->
             listOf(
-                entry.key.modelName,
-                entry.value.prompt_tokens.toString(),
-                entry.value.completion_tokens.toString(),
+                entry.key,
+                entry.value.counts.getOrDefault(TokenTypes.Prompt, 0).toString(),
+                entry.value.counts.getOrDefault(TokenTypes.Completion, 0).toString(),
                 String.format("%.2f", entry.value.cost)
             ).toMutableList()
         }
 
-        val totalPromptTokens = usageData.sumOf { it[1].toString().toInt() }
-        val totalCompletionTokens = usageData.sumOf { it[2].toString().toInt() }
-        val totalCost = usageData.sumOf { it[3].toString().toDouble() }
+        val totalPromptTokens = usageData.sumOf { it[1].toInt() }
+        val totalCompletionTokens = usageData.sumOf { it[2].toInt() }
+        val totalCost = usageData.sumOf { it[3].toDouble() }
 
         (usageData + listOf(
             listOf(
@@ -49,8 +56,12 @@ class UsageTable(
 
     private val dataModel by lazy {
         object : AbstractTableModel() {
+            init {
+                checkUsageThreshold()
+            }
+
             override fun getColumnName(column: Int): String {
-                return columnNames.get(column).toString()
+                return columnNames.get(column)
             }
 
             override fun getValueAt(row: Int, col: Int): Any {
@@ -76,6 +87,7 @@ class UsageTable(
                 val strings = rowData[row]
                 strings[col] = value.toString()
                 fireTableCellUpdated(row, col)
+                checkUsageThreshold()
             }
 
         }
@@ -108,7 +120,7 @@ class UsageTable(
             ): Component {
                 val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
                 if (row == table?.model?.rowCount?.minus(1)) {
-                    font = font.deriveFont(font.style or java.awt.Font.BOLD)
+                    font = font.deriveFont(font.style or Font.BOLD)
                 }
                 return c
             }
@@ -149,6 +161,20 @@ class UsageTable(
         add(buttonPanel, BorderLayout.SOUTH)
     }
 
+    private fun checkUsageThreshold() {
+        val settings = AppSettingsState.instance
+        if (settings.feedbackOptOut || settings.feedbackRequested) {
+            return
+        }
+        val totalTokens = rowData.dropLast(1).sumOf {
+            (it[1].toIntOrNull() ?: 0) + (it[2].toIntOrNull() ?: 0)
+        }
+        if (totalTokens >= 1000000) {
+            settings.feedbackRequested = true
+        }
+    }
+
+
     private fun initCol(idx: Int) {
         val headerRenderer = jtable.tableHeader.defaultRenderer
         val headerValue = jtable.columnModel.getColumn(idx).headerValue
@@ -156,5 +182,4 @@ class UsageTable(
         jtable.columnModel.getColumn(idx).preferredWidth = headerComp.preferredSize.width
     }
 
-    companion object
 }

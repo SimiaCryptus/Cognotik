@@ -400,14 +400,13 @@ enum class ComputerLanguage(configuration: Configuration) {
             .setFileExtensions("zsh")
     );
 
-    val extensions: List<CharSequence>
+    val extensions: List<CharSequence> = listOf(*configuration.fileExtensions)
     val docStyle: String
     val lineComment: TextBlockFactory<*>
     val blockComment: TextBlockFactory<*>
     private val docComment: TextBlockFactory<*>
 
     init {
-        extensions = listOf(*configuration.fileExtensions)
         docStyle = configuration.documentationStyle
         lineComment = configuration.lineComments!!
         blockComment = configuration.getBlockComments()!!
@@ -428,9 +427,9 @@ enum class ComputerLanguage(configuration: Configuration) {
             return this
         }
 
-        fun setFileExtensions(vararg fileExtensions: CharSequence): Configuration {
+        fun setFileExtensions(vararg extensions: CharSequence): Configuration {
             @Suppress("UNCHECKED_CAST")
-            this.fileExtensions = fileExtensions as Array<CharSequence>
+            this.fileExtensions = extensions as Array<CharSequence>
             return this
         }
 
@@ -461,7 +460,7 @@ enum class ComputerLanguage(configuration: Configuration) {
     companion object {
         @JvmStatic
         fun findByExtension(extension: CharSequence): ComputerLanguage? {
-            return Arrays.stream(values()).filter { x: ComputerLanguage ->
+            return Arrays.stream(entries.toTypedArray()).filter { x: ComputerLanguage ->
                 x.extensions.contains(
                     extension
                 )

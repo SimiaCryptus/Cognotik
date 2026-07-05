@@ -8,8 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.UITools
-import org.slf4j.LoggerFactory
+import com.simiacryptus.cognotik.util.*
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -32,7 +32,7 @@ abstract class FileContextAction<T : Any>(
             log.warn("No configuration found for ${javaClass.simpleName}")
             return
         }
-        val virtualFile = UITools.getSelectedFile(e) ?: UITools.getSelectedFolder(e) ?: run {
+        val virtualFile = e.getSelectedFile() ?: e.getSelectedFolder() ?: run {
             log.warn("No file or folder selected")
             return
         }
@@ -44,7 +44,7 @@ abstract class FileContextAction<T : Any>(
         val projectRoot = File(projectBasePath).toPath()
         Thread {
             try {
-                UITools.redoableTask(e) {
+                e.redoableTask {
                     UITools.run(e.project, templateText!!, true) { progress ->
                         val newFiles = try {
                             processSelection(
@@ -70,7 +70,7 @@ abstract class FileContextAction<T : Any>(
                             refreshedFile = fileSystem.refreshAndFindFileByIoFile(firstFile)
                             Thread.sleep(500)
                         }
-                        UITools.writeableFn(e) {
+                        e.writeableFn {
                             val files = newFiles.mapNotNull { file ->
                                 val generatedFile = fileSystem.refreshAndFindFileByIoFile(file)
                                 if (generatedFile == null) {
@@ -98,12 +98,12 @@ abstract class FileContextAction<T : Any>(
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
         if (isDevAction && !AppSettingsState.instance.devActions) return false
-        val virtualFile = UITools.getSelectedFile(event) ?: UITools.getSelectedFolder(event) ?: return false
+        val virtualFile = event.getSelectedFile() ?: event.getSelectedFolder() ?: return false
         return if (virtualFile.isDirectory) supportsFolders else supportsFiles
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(FileContextAction::class.java)
+        private val log = getLogger(FileContextAction::class.java)
 
         fun open(project: Project, outputPath: Path) {
             log.info("Opening file: $outputPath")

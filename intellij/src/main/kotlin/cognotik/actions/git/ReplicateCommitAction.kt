@@ -1,7 +1,6 @@
 package cognotik.actions.git
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -13,26 +12,23 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -55,8 +51,8 @@ class ReplicateCommitAction : BaseAction() {
 
             val dataContext = event.dataContext
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-            val folder = UITools.getSelectedFolder(event)
-            var root = if (null != folder) {
+            val folder = event.getSelectedFolder()
+            val root = if (null != folder) {
                 folder.toFile.toPath()
             } else {
                 project.basePath?.let { File(it).toPath() }
@@ -65,7 +61,7 @@ class ReplicateCommitAction : BaseAction() {
             val virtualFiles1 = event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
             val files = expand(virtualFiles1)
             val changes = event.getData(VcsDataKeys.CHANGES)
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
 
             UITools.run(project, "Replicating Commit", true) { progress ->
                 progress.text = "Generating diff info..."
@@ -119,8 +115,10 @@ class ReplicateCommitAction : BaseAction() {
             ApplicationManager.getApplication().executeOnPooledThread {
                 Thread.sleep(500)
                 try {
-                    val server = CognotikAppServer.getServer(project)
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {
@@ -136,7 +134,6 @@ class ReplicateCommitAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val project = event.project ?: return false
         val changes = event.getData(VcsDataKeys.CHANGES)
         return changes != null && changes.isNotEmpty()
     }
@@ -168,7 +165,7 @@ class ReplicateCommitAction : BaseAction() {
                     "\n",
                     "\n  "
                 )
-                val diff = IterativePatchUtil.generatePatch(before, after)
+                val diff = AppSettingsState.instance.processor.generatePatch(before, after)
                 "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
             } ?: "No changes found"
     }
@@ -190,10 +187,9 @@ class ReplicateCommitAction : BaseAction() {
 
         override fun userMessage(
             session: Session,
-            user: User?,
+            user: User,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: API
+            ui: SocketManager
         ) {
             val task = ui.newTask()
             task.echo(userMessage)
@@ -206,7 +202,7 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     private fun PatchApp.run(
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         session: Session,
         settings: Settings,
@@ -216,9 +212,9 @@ class ReplicateCommitAction : BaseAction() {
         try {
             val planTxt = projectSummary()
             task.add(renderMarkdown(planTxt))
-            Retryable(ui, task) {
+            Retryable(task) {
                 val task = ui.newTask(false)
-                val plan = ParsedActor(
+                val plan = ParsedAgent(
                     resultClass = ParsedTasks::class.java,
                     prompt = """
                       You are a helpful AI that helps people with coding.
@@ -235,38 +231,41 @@ class ReplicateCommitAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.smartChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
-                    ), api = api
+                    ),
                 )
-                task.add(
-                    AgentPatterns.displayMapInTabs(
-                        mapOf(
-                          "Text" to plan.text.renderMarkdown,
-                          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
-                        )
-                    )
+              val map = mapOf(
+                "Text" to plan.text.renderMarkdown(true),
+                "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(true),
+              )
+              task.add(
+                TabbedDisplay.displayMapInTabs(
+                  map,
+                  null,
+                  map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                )
                 )
                 plan.obj.errors?.map { planTask ->
-                    Retryable(ui, task) {
+                    Retryable(task) {
                         val task = ui.newTask(false)
                         val paths =
                             ((planTask.fixFiles ?: emptyList()) + (planTask.relatedFiles ?: emptyList())).flatMap {
                                 toPaths(settings.workingDirectory.toPath(), it)
                             }
                         val codeSummary = codeSummary(paths)
-                        val response = SimpleActor(
+                        val response = ChatAgent(
                             prompt = """
                   You are a helpful AI that helps people with coding.
 
                   You will be answering questions about the following code:
 
-                  """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
+                  """.trimIndent() + codeSummary + "\n" + { AppSettingsState.instance.processor.patchFormatPrompt } +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
-                            model = AppSettingsState.instance.smartModel.chatModel()
+                            model = AppSettingsState.instance.smartChatClient
                         ).answer(
                             listOf(
                                 """
@@ -278,20 +277,22 @@ class ReplicateCommitAction : BaseAction() {
 
                               Focus on the task at hand:
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
-                            ), api = api
+                            ),
                         )
-                        var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                            ui.socketManager!!,
+                        val markdown =
+                            DiffInstrumentor(
+                                AppSettingsState.instance.processor,
+                                SessionRenderer(task),
+                            ).instrument(
                             root = root.toPath(),
                             response = response,
-                            handle = { newCodeMap ->
-                                newCodeMap.forEach { (path, newCode) ->
-                                    task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                }
+                            handle = { newCodeMap: Map<Path, String> ->
+                              newCodeMap.forEach { (path, newCode) ->
+                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                              }
                             },
-                            ui = ui,
-                            api = api,
-                        )
+                                resolver = ::resolveToRelativePath,
+                          )
                         task.add(renderMarkdown(markdown))
                         task.placeholder
                     }
@@ -300,7 +301,7 @@ class ReplicateCommitAction : BaseAction() {
                 task.placeholder
             }
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
         }
     }
 
@@ -339,12 +340,12 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     private fun getUserSettings(event: AnActionEvent?): Settings? {
-        val root = UITools.getSelectedFolder(event ?: return null)?.toNioPath() ?: event.project?.basePath?.let {
+        val root = (event ?: return null).getSelectedFolder()?.toNioPath() ?: event.project?.basePath?.let {
             File(
                 it
             ).toPath()
         }
-        val files = UITools.getSelectedFiles(event).map { it.path.let { File(it).toPath() } }.toMutableSet()
+        val files = event.getSelectedFiles().map { it.path.let { File(it).toPath() } }.toMutableSet()
         if (files.isEmpty()) Files.walk(root)
             .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }
             .toList().filterNotNull().forEach { files.add(it) }

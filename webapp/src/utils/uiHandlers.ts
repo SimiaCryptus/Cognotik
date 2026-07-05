@@ -5,6 +5,7 @@ import {debounce} from './tabHandling';
 
 export const setupUIHandlers = () => {
 
+    // @ts-expect-error TS2345
     const handleKeyboardShortcut = debounce((event: KeyboardEvent) => {
         if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'V') {
             event.preventDefault();

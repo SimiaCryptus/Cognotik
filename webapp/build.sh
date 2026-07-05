@@ -1,4 +1,8 @@
 #!/bin/bash
+# This script is now deprecated - use Gradle build instead
+echo "Warning: This script is deprecated. Use 'gradle build' from the webui directory instead."
+echo "Continuing with legacy build..."
+
 
 rm -rf build
 rm -rf ../webui/src/main/resources/application/*

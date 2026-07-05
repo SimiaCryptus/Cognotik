@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik
 
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -11,84 +10,154 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.UsageTable
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import icons.MyIcons
-import java.awt.BorderLayout
-import java.awt.Component
-import java.awt.FlowLayout
-import java.awt.GridLayout
-import java.awt.Toolkit
+import org.slf4j.LoggerFactory.getLogger
+import java.awt.*
 import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
 import java.net.URI
-import java.util.ResourceBundle
+import java.util.*
 import javax.accessibility.AccessibleContext
-import javax.swing.DefaultListModel
-import javax.swing.JButton
-import javax.swing.JComboBox
-import javax.swing.JLabel
-import javax.swing.JList
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JSlider
-import javax.swing.JTabbedPane
-import javax.swing.JTree
-import javax.swing.KeyStroke
-import javax.swing.ListCellRenderer
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
-import kotlin.collections.iterator
 
 class SettingsWidgetFactory : StatusBarWidgetFactory {
+    companion object {
+        private val log = getLogger(SettingsWidgetFactory::class.java)
+    }
 
     class SettingsWidget : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {
 
         private var statusBar: StatusBar? = null
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
-        private var project: Project? = null
+        private var imageChatModelTree: Tree? = null
+        private var audioModelTree: Tree? = null
+        private var patchProcessorList: JBList<PatchProcessor>? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
-        private fun getSmartModelTree(): Tree {
+        private fun getSmartModelTree(settings: UserSettings): Tree {
             if (smartModelTree == null) {
-                smartModelTree = createModelTree("Smart Model", AppSettingsState.Companion.instance.smartModel)
+                smartModelTree = createModelTree(
+                    "Smart Model", AppSettingsState.instance.smartModel, settings, DefaultMutableTreeNode("Smart Model")
+                )
             }
             return smartModelTree!!
         }
-        private fun getFastModelTree(): Tree {
+        val settings: UserSettings get() = ApplicationServices.fileApplicationServices(
+                AppSettingsState.pluginHome
+            ).userSettingsManager.getUserSettings(
+                localUser
+            )
+
+        private fun getFastModelTree(settings: UserSettings): Tree {
             if (fastModelTree == null) {
-                fastModelTree = createModelTree("Fast Model", AppSettingsState.Companion.instance.fastModel)
+                fastModelTree = createModelTree(
+                    "Fast Model", AppSettingsState.instance.fastModel, settings, DefaultMutableTreeNode("Fast Model")
+                )
             }
             return fastModelTree!!
         }
-        private fun recreateModelTrees() {
-            smartModelTree = null
-            fastModelTree = null
+
+        private fun getImageChatModelTree(settings: UserSettings): Tree {
+            if (imageChatModelTree == null) {
+                imageChatModelTree = createModelTree(
+                    "Image Chat Model", AppSettingsState.instance.imageChatModel, settings, DefaultMutableTreeNode("Image Chat Model")
+                )
+            }
+            return imageChatModelTree!!
+        }
+        private fun getAudioModelTree(settings: UserSettings): Tree {
+            if (audioModelTree == null) {
+                audioModelTree = createModelTree(
+                    "Audio Model", AppSettingsState.instance.audioModel, settings, DefaultMutableTreeNode("Audio Model")
+                )
+            }
+            return audioModelTree!!
         }
 
-        private fun createModelTree(title: String, selectedModel: String?): Tree {
-            val root = DefaultMutableTreeNode(title)
 
-            val providers = models()
-                .filter { model ->
-                    val providerName = model.second.provider.name
-                    AppSettingsState.Companion.instance.apiKeys?.get(providerName)?.isNotEmpty() == true
+        private fun getPatchProcessorList(): JBList<PatchProcessor> {
+            if (patchProcessorList == null) {
+                val listModel = DefaultListModel<PatchProcessor>()
+                PatchProcessors.values().forEach { listModel.addElement(it) }
+                patchProcessorList = JBList(listModel).apply {
+                    cellRenderer = object : DefaultListCellRenderer() {
+                        override fun getListCellRendererComponent(
+                            list: JList<*>?,
+                            value: Any?,
+                            index: Int,
+                            isSelected: Boolean,
+                            cellHasFocus: Boolean
+                        ): Component {
+                            val component =
+                                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                            if (value is PatchProcessor) {
+                                text = value.label
+                            }
+                            return component
+                        }
+                    }
+                    selectionMode = ListSelectionModel.SINGLE_SELECTION
+                    addListSelectionListener {
+                        val selected = selectedValue
+                        if (selected != null) {
+                            AppSettingsState.instance.processor = selected
+                            statusBar?.updateWidget(ID())
+                        }
+                    }
                 }
+            }
+            patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
+            return patchProcessorList!!
+        }
+
+
+        private fun recreateModelTrees() {
+            smartModelTree = null
+            patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
+            fastModelTree = null
+            imageChatModelTree = null
+            audioModelTree = null
+        }
+
+        private fun createModelTree(
+            title: String, selectedModel: ApiChatModel?, settings: UserSettings, root: DefaultMutableTreeNode
+        ): Tree {
+            val pairs = settings.apis.flatMap { apiData ->
+                try {
+                    (apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")) ?: listOf())
+                        .filter { !it.deprecated }.map { model -> apiData.provider?.name!! to model }
+                } catch (e: Exception) {
+                    log.warn("Failed to retrieve models for provider: ${apiData.provider?.name}", e)
+                    listOf()
+                }
+            }
+            val providers = pairs
+                .filter { settings.isVisible(it) }
+                .sortedBy { "${it.second.provider?.name} - ${it.second.name}" }
                 .groupBy { it.second.provider }
 
             for ((provider, models) in providers) {
-                val providerNode = DefaultMutableTreeNode(provider.name)
+                val providerNode = DefaultMutableTreeNode(provider?.name)
                 for (model in models) {
-                    val modelNode = DefaultMutableTreeNode(model.second.modelName)
+                    val modelNode = DefaultMutableTreeNode(model.second.name)
                     providerNode.add(modelNode)
                 }
 
@@ -121,40 +190,46 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
+                    val apis = settings.apis
+                    val apiData = apis.find { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
+                            ?.find { modelName == it.name } != null
+                    }
+                    val chatModel = apiData?.provider?.getChatModels(apiData.key!!, apiData.apiBase)
+                        ?.find { it.name == modelName }
                     when (title) {
-                        "Smart Model" -> AppSettingsState.Companion.instance.smartModel = modelName
-                        "Fast Model" -> AppSettingsState.Companion.instance.fastModel = modelName
+                        "Smart Model" -> AppSettingsState.instance.smartModel =
+                            ApiChatModel(chatModel, apiData)
+
+                        "Fast Model" -> AppSettingsState.instance.fastModel =
+                            ApiChatModel(chatModel, apiData)
+
+                        "Image Chat Model" -> AppSettingsState.instance.imageChatModel =
+                            ApiChatModel(chatModel, apiData)
+                        "Audio Model" -> AppSettingsState.instance.audioModel =
+                            ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
                 }
             }
 
-            if (selectedModel != null) {
+            if (selectedModel?.model != null) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(tree, selectedModel)
+                    setSelectedModel(tree, selectedModel.model!!.name ?: "")
                 }
             }
             return tree
         }
 
         private val temperatureSlider by lazy {
-            val slider = JSlider(0, 100, (AppSettingsState.Companion.instance.temperature * 100).toInt())
+            val slider = JSlider(0, 100, (AppSettingsState.instance.temperature * 100).toInt())
             slider.accessibleContext.accessibleDescription = getMessage("slider.description")
             slider.majorTickSpacing = 10
             slider.minorTickSpacing = 1
             slider.snapToTicks = true
             val panel = JPanel(BorderLayout(5, 5))
-            val reasoningPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-            val reasoningLabel = JLabel(getMessage("label.reasoningEffort"))
-            val reasoningCombo = JComboBox(arrayOf("Low", "Medium", "High"))
-            reasoningCombo.selectedItem = AppSettingsState.Companion.instance.reasoningEffort
-            reasoningCombo.addActionListener {
-                AppSettingsState.Companion.instance.reasoningEffort = reasoningCombo.selectedItem as String
-            }
-            reasoningPanel.add(reasoningLabel)
-            reasoningPanel.add(reasoningCombo)
 
-            val label = JLabel(String.format("%.2f", AppSettingsState.Companion.instance.temperature))
+            val label = JLabel(String.format("%.2f", AppSettingsState.instance.temperature))
             label.accessibleContext.accessibleDescription = getMessage("label.temperature")
             slider.addChangeListener {
                 slider.accessibleContext.firePropertyChange(
@@ -162,12 +237,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     null,
                     getMessage("slider.value", slider.value / 100.0)
                 )
-                AppSettingsState.Companion.instance.temperature = slider.value / 100.0
+                AppSettingsState.instance.temperature = slider.value / 100.0
                 label.text = String.format("%.2f", slider.value / 100.0)
             }
 
             panel.add(slider, BorderLayout.CENTER)
-            panel.add(reasoningPanel, BorderLayout.SOUTH)
             panel.add(label, BorderLayout.EAST)
             panel
         }
@@ -189,13 +263,19 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             stopButton.isEnabled = CognotikAppServer.isRunning()
 
             startButton.addActionListener {
-                CognotikAppServer.getServer(project)
+                CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                )
                 startButton.isEnabled = false
                 stopButton.isEnabled = true
                 updateSessionsList()
             }
             stopButton.addActionListener {
-                CognotikAppServer.getServer(project).server.stop()
+                CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.stop()
                 startButton.isEnabled = true
                 stopButton.isEnabled = false
                 updateSessionsList()
@@ -210,17 +290,20 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             sessionPanel.add(JLabel(getMessage("label.activeSessions")), BorderLayout.NORTH)
             sessionPanel.add(JScrollPane(sessionsList), BorderLayout.CENTER)
 
-            val actionPanel = JPanel(GridLayout(1, 2))
+            val actionPanel = JPanel(GridLayout(1, 3))
             val copyButton = JButton(getMessage("action.copyLink"))
             val openButton = JButton(getMessage("action.openLink"))
+            val killButton = JButton(getMessage("action.killSession"))
 
             copyButton.isEnabled = false
             openButton.isEnabled = false
+            killButton.isEnabled = false
 
             sessionsList.addListSelectionListener {
                 val hasSelection = sessionsList.selectedValue != null
                 copyButton.isEnabled = hasSelection
                 openButton.isEnabled = hasSelection
+                killButton.isEnabled = hasSelection
             }
 
             copyButton.addActionListener {
@@ -237,16 +320,40 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     BrowseUtil.browse(URI(getSessionLink(session)))
                 }
             }
+            killButton.addActionListener {
+                val session = sessionsList.selectedValue
+                if (session != null) {
+                    val result = JOptionPane.showConfirmDialog(
+                        panel,
+                        getMessage("dialog.killSession.message", session.sessionId.take(8)),
+                        getMessage("dialog.killSession.title"),
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                    )
+                    if (result == JOptionPane.YES_OPTION) {
+                        kill(session)
+                        updateSessionsList()
+                    }
+                }
+            }
             actionPanel.add(copyButton)
             actionPanel.add(openButton)
+            actionPanel.add(killButton)
             sessionPanel.add(actionPanel, BorderLayout.SOUTH)
             panel.add(sessionPanel, BorderLayout.CENTER)
             return panel
         }
 
+        private fun kill(session: Session) {
+          ApplicationServices.threadPoolManager.getPool(session, localUser)
+            .shutdownNow()
+          ApplicationServices.threadPoolManager.getScheduledPool(session, localUser)
+            .shutdownNow()
+        }
+
         fun updateSessionsList() {
             sessionsListModel.clear()
-            (SessionProxyServer.Companion.chats.keys + SessionProxyServer.Companion.agents.keys).distinct().forEach {
+            (SessionProxyServer.chats.keys + SessionProxyServer.agents.keys).distinct().forEach {
                 sessionsListModel.addElement(it)
             }
         }
@@ -263,12 +370,27 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ApplicationServices.metadataStorageFactory(ApplicationServicesConfig.dataStorageRoot).getSessionName(null, value)
+                            ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).metadataDB.getSessionName(
+                                null,
+                                value
+                            )
+
+                      val threadFactory = ApplicationServices.threadPoolManager.getPool(
+                        value,
+                        localUser
+                      ).threadFactory
+                        val activeThreads = threadFactory.threads.filter {
+                            when (it.state) {
+                                Thread.State.RUNNABLE -> true
+                                Thread.State.BLOCKED, Thread.State.WAITING, Thread.State.TIMED_WAITING -> true
+                                else -> false
+                            }
+                        }.size
                         when {
-                            sessionName.isNullOrBlank() -> getDefaultSessionLabel(value)
-                            else -> "$sessionName (${value.sessionId.take(8)})"
+                            sessionName.isBlank() -> getDefaultSessionLabel(value)
+                            else -> "$sessionName (${value.sessionId.take(8)}) [$activeThreads threads]"
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         getDefaultSessionLabel(value)
                     }
                 } else {
@@ -294,34 +416,54 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         init {
-            AppSettingsState.Companion.onSettingsLoadedListeners.add {
-                statusBar?.updateWidget(ID())
-                // Recreate model trees when settings are loaded
-                recreateModelTrees()
-               SwingUtilities.invokeLater {
-                   if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
-                       setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
-                   }
-                   if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
-                       setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
-                   }
-               }
+//            require(TaskType.values().isNotEmpty())
+//            require(ToolProvider.values().isNotEmpty())
+            AppSettingsState.onSettingsLoadedListeners.add {
+                Thread {
+                    statusBar?.updateWidget(ID())
+                    // Recreate model trees when settings are loaded
+                    recreateModelTrees()
+                    val settings = this@SettingsWidget.settings
+                    SwingUtilities.invokeLater {
+                        AppSettingsState.instance.smartModel?.model.let { model ->
+                            setSelectedModel(getSmartModelTree(settings), model?.name ?: "")
+                        }
+                        AppSettingsState.instance.fastModel?.model.let { model ->
+                            setSelectedModel(getFastModelTree(settings), model?.name ?: "")
+                        }
+                        AppSettingsState.instance.imageChatModel?.model.let { model ->
+                            setSelectedModel(getImageChatModelTree(settings), model?.name ?: "")
+                        }
+                        AppSettingsState.instance.audioModel?.model.let { model ->
+                            setSelectedModel(getAudioModelTree(settings), model?.name ?: "")
+                        }
+                    }
+                }.start()
             }
-
-            if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
-                SwingUtilities.invokeLater {
-                    setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
+            Thread {
+                val settings = this@SettingsWidget.settings
+                AppSettingsState.instance.smartModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
+                        setSelectedModel(getSmartModelTree(settings), model?.name ?: "")
+                    }
                 }
-            }
-            if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
-                SwingUtilities.invokeLater {
-                    setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
+                AppSettingsState.instance.fastModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
+                        setSelectedModel(getFastModelTree(settings), model?.name ?: "")
+                    }
                 }
-            }
+                AppSettingsState.instance.imageChatModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
+                        setSelectedModel(getImageChatModelTree(settings), model?.name ?: "")
+                    }
+                }
+                AppSettingsState.instance.audioModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
+                        setSelectedModel(getAudioModelTree(settings), model?.name ?: "")
+                    }
+                }
+            }.start()
         }
-
-        fun models() = ChatModel.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
-            .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
             return "AICodingAssistant.SettingsWidget"
@@ -344,19 +486,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             appname.add(JLabel("Cognotik"), FlowLayout.LEFT)
             appname.add(JLabel(MyIcons.icon), FlowLayout.LEFT)
             return appname
-            /*
-                  val header = JPanel(BorderLayout())
-                  header.add(appname, BorderLayout.WEST)
-                  header.add(JLabel(String.format("<html><a href=\"\">%s</a></html>", getMessage("header.rateUs"))).apply {
-                    cursor = Cursor(Cursor.HAND_CURSOR)
-                    addMouseListener(object : MouseAdapter() {
-                      override fun mouseClicked(e: MouseEvent) = browse(
-                        URI("https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant/edit/reviews")
-                      )
-                    })
-                  }, BorderLayout.EAST)
-                  return header
-            */
         }
 
         private fun setSelectedModel(tree: JTree, modelName: String) {
@@ -377,28 +506,39 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getPopup(): JBPopup {
-
             updateSessionsList()
-
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("popup.description")
             panel.add(createHeader(), BorderLayout.NORTH)
 
             val tabbedPane = JTabbedPane()
-
             tabbedPane.accessibleContext.accessibleDescription = getMessage("tabs.description")
 
             val smartModelPanel = JPanel(BorderLayout())
-            smartModelPanel.add(JScrollPane(getSmartModelTree()), BorderLayout.CENTER)
+            val settings = this@SettingsWidget.settings
+            smartModelPanel.add(JScrollPane(getSmartModelTree(settings)), BorderLayout.CENTER)
 
             val fastModelPanel = JPanel(BorderLayout())
-            fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
+            fastModelPanel.add(JScrollPane(getFastModelTree(settings)), BorderLayout.CENTER)
+            val imageChatModelPanel = JPanel(BorderLayout())
+            imageChatModelPanel.add(JScrollPane(getImageChatModelTree(settings)), BorderLayout.CENTER)
+            val audioModelPanel = JPanel(BorderLayout())
+            audioModelPanel.add(JScrollPane(getAudioModelTree(settings)), BorderLayout.CENTER)
+            val patchProcessorPanel = JPanel(BorderLayout())
+            patchProcessorPanel.add(JScrollPane(getPatchProcessorList()), BorderLayout.CENTER)
+
 
             val usagePanel = JPanel(BorderLayout())
-            usagePanel.add(UsageTable(ApplicationServices.usageManager), BorderLayout.CENTER)
+            usagePanel.add(
+                UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).usageDB),
+                BorderLayout.CENTER
+            )
 
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
+            tabbedPane.addTab(getMessage("tab.imageChatModel"), imageChatModelPanel)
+            tabbedPane.addTab("Audio Model", audioModelPanel)
+            tabbedPane.addTab("Patch Processor", patchProcessorPanel)
             tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel())
             tabbedPane.addTab(getMessage("tab.usage"), usagePanel)
 
@@ -418,26 +558,24 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getSelectedValue(): String {
-            return AppSettingsState.Companion.instance.smartModel
+            return AppSettingsState.instance.smartModel?.model?.name ?: "Uninitialized"
         }
 
-        override fun getTooltipText(): String {
-            val serverStatus = if (CognotikAppServer.isRunning()) {
-                "Server running on ${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}"
+        override fun getTooltipText() = """
+    Smart Model: ${AppSettingsState.instance.smartModel?.model?.name ?: "Not configured"}<br/>
+    Fast Model: ${AppSettingsState.instance.fastModel?.model?.name ?: "Not configured"}<br/>
+    Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.name ?: "Not configured"}<br/>
+    Audio Model: ${AppSettingsState.instance.audioModel?.model?.name ?: "Not configured"}<br/>
+    Patch Processor: ${AppSettingsState.instance.processor.label}<br/>
+    Temperature: ${AppSettingsState.instance.temperature}<br/>
+    ${
+            if (CognotikAppServer.isRunning()) {
+                "Server running on ${AppSettingsState.instance.listeningEndpoint}:${AppSettingsState.instance.listeningPort}"
             } else {
                 "Server stopped"
             }
-            return """
-        Smart Model: ${AppSettingsState.Companion.instance.smartModel}<br/>
-        Fast Model: ${AppSettingsState.Companion.instance.fastModel}<br/>
-        Temperature: ${AppSettingsState.Companion.instance.temperature}<br/>
-        $serverStatus
-        """.trimIndent().trim()
         }
-
-        private fun isVisible(it: ChatModel): Boolean {
-            return true
-        }
+    """.trimIndent().trim()
 
         companion object {
             private val messages = ResourceBundle.getBundle("messages.SettingsWidget")
@@ -445,7 +583,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 String.format(messages.getString(key), *args)
 
             fun getSessionLink(session: Session) =
-                "http://${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}/#${session.sessionId}"
+                "http://${AppSettingsState.instance.listeningEndpoint}:${AppSettingsState.instance.listeningPort}/#${session}"
+
+            fun UserSettings.isVisible(
+                model: Pair<String, ChatModel>
+            ): Boolean = apis.any { api ->
+                api.provider?.name == model.second.provider?.name && api.key?.decrypt != null
+            }
         }
 
     }

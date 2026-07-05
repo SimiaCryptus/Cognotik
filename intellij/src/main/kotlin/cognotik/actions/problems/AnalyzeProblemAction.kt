@@ -1,6 +1,5 @@
 package cognotik.actions.problems
 
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.toFile
 import cognotik.actions.test.TestResultAutofixAction.Companion.findGitRoot
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
@@ -18,28 +17,23 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.AgentPatterns
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.util.JsonUtil
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.JOptionPane
 
@@ -50,7 +44,7 @@ class AnalyzeProblemAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project: Project = e.project ?: return
-        val item = e.getData(PlatformDataKeys.SELECTED_ITEM) as ProblemNode? ?: return
+        val item = e.getData(PlatformDataKeys.SELECTED_ITEM) as? ProblemNode? ?: return
         val file: VirtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
         val gitRoot = findGitRoot(file)
 
@@ -58,7 +52,7 @@ class AnalyzeProblemAction : AnAction() {
             try {
                 val problemInfo = buildString {
                     appendLine("File: ${file.path}")
-                    appendLine("Problem: ${item.text}")
+                    appendLine("Problem: ${item.getText()}")
 
                     val psiFile = PsiManager.getInstance(project).findFile(file)
                     val fileType = if (psiFile != null) {
@@ -71,8 +65,8 @@ class AnalyzeProblemAction : AnAction() {
 
                     val document = FileDocumentManager.getInstance().getDocument(file)
                     if (document != null) {
-                        val lineNumber = item.line
-                        val column = item.column
+                        val lineNumber = item.getLine()
+                        val column = item.getColumn()
                         appendLine("Position: Line ${lineNumber + 1}, Column ${column + 1}")
 
                         val startLine = maxOf(0, lineNumber - 2)
@@ -105,7 +99,7 @@ class AnalyzeProblemAction : AnAction() {
     }
 
     private fun openAnalysisSession(project: Project, problemInfo: String, gitRoot: VirtualFile?) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.chats[session] = ProblemAnalysisApp(session, problemInfo, gitRoot)
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
@@ -120,12 +114,13 @@ class AnalyzeProblemAction : AnAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(project)
-
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {
@@ -152,22 +147,23 @@ class AnalyzeProblemAction : AnAction() {
         override val inputCnt = 1
         override val stickyInput = false
 
-        override fun newSession(user: User?, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)
-            val ui = (socketManager as ApplicationSocketManager).applicationInterface
-            val task = ui.newTask()
+        override fun newSession(user: User, session: Session): SocketManager {
+            val socketManager = super.newSession(user, session)!!
+            val task = socketManager.newTask(cancelable = false)
             task.add("Analyzing problem and suggesting fixes...")
             Thread {
-                analyzeProblem(ui, task, api = IdeaChatClient.instance)
+                analyzeProblem(task, socketManager)
             }.start()
             return socketManager
         }
 
-        private fun analyzeProblem(ui: ApplicationInterface, task: SessionTask, api: API) {
+        private fun analyzeProblem(
+            task: SessionTask, socketManager: SocketManager
+        ) {
             try {
-                Retryable(ui, task) {
-                    val task = ui.newTask(false)
-                    val plan = ParsedActor(
+                Retryable(task) {
+                    val task = socketManager.newTask(cancelable = false, root = false)
+                    val plan = ParsedAgent(
                         resultClass = ParsedErrors::class.java,
                         prompt = """
                         You are a helpful AI that helps people with coding.
@@ -176,22 +172,27 @@ class AnalyzeProblemAction : AnAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModel(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-                    ).answer(listOf(problemInfo), api = IdeaChatClient.instance)
+                        model = AppSettingsState.instance.smartChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
+                    ).answer(listOf(problemInfo))
 
-                    task.add(
-                        AgentPatterns.displayMapInTabs(
-                            mapOf(
-                                "Text" to plan.text.renderMarkdown,
-                                "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
-                            )
-                        )
+                  val map = mapOf(
+                    "Text" to plan.text.renderMarkdown(true),
+                    "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
+                      true
+                    ),
+                  )
+                  task.add(
+                    TabbedDisplay.displayMapInTabs(
+                      map,
+                      null,
+                      map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                    )
                     )
 
                     plan.obj.errors?.forEach { error ->
-                        Retryable(ui, task) {
-                            val task = ui.newTask(false)
+                        Retryable(task) {
+                            val task = socketManager.newTask(cancelable = false, root = false)
                             val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
                             val summary = filesToFix.joinToString("\n\n") { filePath ->
                                 val file = gitRoot?.toFile?.resolve(filePath)
@@ -206,25 +207,24 @@ class AnalyzeProblemAction : AnAction() {
                                     "# $filePath\nFile not found"
                                 }
                             }
-                            task.add(generateAndAddResponse(ui, task, error, summary, api))
+                            task.add(generateAndAddResponse(task, error, summary, socketManager))
                             task.placeholder
                         }
                     }
                     task.placeholder
                 }
             } catch (e: Exception) {
-                task.error(ui, e)
+                task.error(e)
             }
         }
 
         private fun generateAndAddResponse(
-            ui: ApplicationInterface,
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            api: API
+            socketManager: SocketManager
         ): String {
-            val response = SimpleActor(
+            val response = ChatAgent(
                 prompt = """
             You are a helpful AI that helps people with coding.
             Suggest fixes for the following problem:
@@ -238,23 +238,24 @@ class AnalyzeProblemAction : AnAction() {
             The diff format should use + for line additions, - for line deletions.
             The diff should include 2 lines of context before and after every change.
             """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel()
-            ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
+                model = AppSettingsState.instance.smartChatClient
+            ).answer(listOf(error.message ?: ""))
 
             return "<div>${
                 renderMarkdown(
-                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                        self = ui.socketManager!!,
-                        root = root.toPath(),
-                        response = response,
-                        handle = { newCodeMap ->
-                            newCodeMap.forEach { (path, newCode) ->
-                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                            }
-                        },
-                        ui = ui,
-                        api = api,
-                    )
+                  DiffInstrumentor(
+                    AppSettingsState.instance.processor,
+                    SessionRenderer(task),
+                  ).instrument(
+                    root = root.toPath(),
+                    response = response,
+                    handle = { newCodeMap: Map<Path, String> ->
+                      newCodeMap.forEach { (path, newCode) ->
+                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                      }
+                    },
+                    resolver = ::resolveToRelativePath,
+                  )
                 )
             }</div>"
         }

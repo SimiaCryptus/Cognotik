@@ -10,12 +10,10 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.agents.ProxyAgent
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.proxy.ChatProxy
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.slf4j.Logger
@@ -27,7 +25,8 @@ import java.awt.datatransfer.DataFlavor.*
  * Base class for paste actions that convert clipboard content to appropriate code format
  * Supports both text and HTML clipboard content with automatic language detection
  */
-abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatModel) : SelectionAction<String>(false) {
+abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInterface) :
+    SelectionAction<String>(false) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     /**
@@ -200,9 +199,8 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
             }
         } ?: false
 
-        fun converter(chatClient: ChatClient, chatModel: ChatModel, temp: Double) = ChatProxy(
+        fun converter(chatModel: ChatInterface, temp: Double) = ProxyAgent(
             clazz = VirtualAPI::class.java,
-            api = chatClient,
             model = chatModel,
             temperature = temp
         ).create()
@@ -219,7 +217,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
         val text = clipboardContent.toString().trim()
         if (text.isEmpty()) return ""
         progress?.text = "Converting code format..."
-        val converter = converter(api, model(AppSettingsState.instance), AppSettingsState.instance.temperature)
+        val converter = converter(model(AppSettingsState.instance), AppSettingsState.instance.temperature)
         val convert = converter.convert(text, state.language?.name ?: state.editor?.virtualFile?.extension ?: "")
         return convert.converted_text ?: ""
     }
@@ -243,12 +241,10 @@ private fun String.makeAbsolute(): String {
     }
 }
 
-class SmartPasteAction : PasteActionBase({ it.smartModel.chatModel() })
-
 /**
  * Fast paste action using faster but simpler model
  */
-class FastPasteAction : PasteActionBase({ it.fastModel.chatModel() }) {
+class FastPasteAction : PasteActionBase({ it.fastChatClient }) {
     companion object {
     }
 

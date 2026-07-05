@@ -3,13 +3,65 @@ import {useSelector} from 'react-redux';
 import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
 import {isArchive} from '../services/appConfig';
-import {debounce, getAllTabStates, initNewCollapsibleElements, restoreTabStates, updateTabs} from '../utils/tabHandling';
+import {
+    debounce,
+    getAllTabStates,
+    initNewCollapsibleElements,
+    restoreTabStates,
+    updateTabs
+} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
 import mermaid from 'mermaid';
 import {Message} from "../types/messages";
 import Spinner from './common/Spinner';
 import './MessageList.css';
+// MathJax configuration
+declare global {
+    interface Window {
+        MathJax: any;
+    }
+}
+// Initialize MathJax
+if (typeof window !== 'undefined' && !window.MathJax) {
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true,
+            processEnvironments: true,
+            tags: 'ams',
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            ignoreHtmlClass: 'tex2jax_ignore',
+            processHtmlClass: 'tex2jax_process',
+            renderActions: {
+                addMenu: [0, '', '']
+            }
+        },
+        startup: {
+            ready: () => {
+                if (DEBUG_LOGGING) {
+                    console.debug('[MathJax] MathJax is ready');
+                }
+                window.MathJax.startup.defaultReady();
+                // Dispatch event when MathJax is ready
+                window.dispatchEvent(new Event('mathjax-ready'));
+            }
+        },
+        svg: {
+            fontCache: 'global'
+        },
+    };
+    // Load MathJax script
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+    script.async = true;
+    script.id = 'MathJax-script';
+    document.head.appendChild(script);
+}
+
 
 const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
 const DEBUG_TAB_SYSTEM = process.env.NODE_ENV === 'development';
@@ -183,7 +235,57 @@ const renderMermaidDiagrams = (container: HTMLElement | null) => {
     }
 };
 
+const renderMathJax = (container: HTMLElement | null) => {
+    if (!container) return;
 
+    const doTypeset = () => {
+        if (!window.MathJax?.typesetPromise) {
+            if (DEBUG_LOGGING) {
+                console.debug('[MathJax] MathJax not ready, skipping typeset');
+            }
+            return;
+        }
+        try {
+            if (DEBUG_LOGGING) {
+                console.debug('[MathJax] Typesetting container');
+            }
+            // Reset MathJax state for the container to allow re-processing
+            if (window.MathJax.typesetClear) {
+                window.MathJax.typesetClear([container]);
+            }
+            window.MathJax.typesetPromise([container])
+                .then(() => {
+                    if (DEBUG_LOGGING) {
+                        console.debug('[MathJax] Typesetting complete');
+                    }
+                })
+                .catch((err: Error) => {
+                    console.warn('[MathJax] Typesetting failed:', err?.message || 'Unknown error');
+                });
+        } catch (error) {
+            console.error('[MathJax] Failed to render math:', error);
+        }
+    };
+
+    // Check if MathJax is ready
+    if (window.MathJax?.typesetPromise) {
+        doTypeset();
+    } else {
+        // Wait for MathJax to be ready
+        const handleMathJaxReady = () => {
+            doTypeset();
+            window.removeEventListener('mathjax-ready', handleMathJaxReady);
+        };
+        window.addEventListener('mathjax-ready', handleMathJaxReady);
+        // Also set a timeout fallback in case the event was already fired
+        setTimeout(() => {
+            if (window.MathJax?.typesetPromise) {
+                window.removeEventListener('mathjax-ready', handleMathJaxReady);
+                doTypeset();
+            }
+        }, 1000);
+    }
+};
 const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
 
     const currentTheme = useSelector((state: RootState) => state.ui.theme);
@@ -297,7 +399,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         };
     }, [finalMessages]);
 
-    const debouncedPostRenderUpdate = React.useCallback(
+const debouncedPostRenderUpdate = React.useCallback(
         debounce(() => {
             try {
                 if (!messageListRef.current) return;
@@ -318,6 +420,10 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                     }
                 });
                 renderMermaidDiagrams(messageListRef.current);
+                // Delay MathJax rendering slightly to ensure DOM is fully updated
+                setTimeout(() => {
+                    renderMathJax(messageListRef.current);
+                }, 100);
             } catch (updateError) {
                 console.error('[MessageList] Error during post-render update:', updateError, 'Container:', CONTAINER_ID);
             }

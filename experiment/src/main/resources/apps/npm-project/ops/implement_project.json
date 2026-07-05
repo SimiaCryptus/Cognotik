@@ -1,0 +1,19 @@
+{
+  "cognitiveSettings": {
+    "variables": {},
+    "type": "Waterfall"
+  },
+  "taskSettings": {
+    "FileModification_FileModification": {
+      "task_type": "FileModification",
+      "name": "FileModification",
+      "verbose": false
+    }
+  },
+  "purpose": "",
+  "summaryPrompt": "Summarize the implementation results.\n\nOriginal Goal: {goal}\n\nList all files created or modified, describe the features implemented, and note any issues or follow-up items.",
+  "name": "SubPlan",
+  "task_type": "SubPlan",
+  "verbose": false,
+  "cognitiveMode": "Waterfall"
+}

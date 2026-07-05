@@ -1,34 +1,29 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
-import cognotik.actions.agent.MultiStepPatchAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.docs.getDocumentReader
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 
@@ -52,18 +47,16 @@ class MultiCodeChatAction : BaseAction() {
             UITools.runAsync(event.project, "Initializing Chat", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Setting up chat session..."
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                val model = AppSettingsState.instance.smartModel.chatModel()
-                val parsingModel = AppSettingsState.instance.fastModel.chatModel()
                 SessionProxyServer.agents[session] = CodeChatManager(
                     session = session,
-                    model = model,
-                    parsingModel = parsingModel,
+                    model = AppSettingsState.instance.smartChatClient,
+                    fastModel = AppSettingsState.instance.fastChatClient,
                     root = root.toFile(),
                     codeFiles = codeFiles
                 )
@@ -74,8 +67,19 @@ class MultiCodeChatAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(event.project)
-                launchBrowser(server, session.toString())
+                Thread {
+                    Thread.sleep(500)
+                    try {
+                        val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                            AppSettingsState.instance.listeningEndpoint,
+                            AppSettingsState.instance.listeningPort
+                        ).server.uri.resolve("/#${session.toString()}")
+                        BaseAction.log.info("Opening browser to $uri")
+                        BrowseUtil.browse(uri)
+                    } catch (e: Throwable) {
+                        log.warn("Error opening browser", e)
+                    }
+                }.start()
             }
         } catch (e: Throwable) {
             UITools.error(log, "Failed to initialize chat session", e)
@@ -83,50 +87,28 @@ class MultiCodeChatAction : BaseAction() {
     }
 
     private fun getRoot(event: AnActionEvent): Path? {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         return if (null != folder) {
             folder.toFile.toPath()
         } else {
-            getModuleRootForFile(UITools.getSelectedFile(event)?.parent?.toFile ?: return null).toPath()
+            getModuleRootForFile(event.getSelectedFile()?.parent?.toFile ?: return null).toPath()
         }
     }
 
-    private fun launchBrowser(server: CognotikAppServer, session: String) {
-        Thread {
-            Thread.sleep(500)
-            try {
-                val uri = server.server.uri.resolve("/#$session")
-                BaseAction.log.info("Opening browser to $uri")
-                BrowseUtil.browse(uri)
-            } catch (e: Throwable) {
-                log.warn("Error opening browser", e)
-            }
-        }.start()
-    }
-
-    override fun isEnabled(event: AnActionEvent): Boolean {
-        val root = getRoot(event) ?: return false
-        val files = getFiles(PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(), root)
-        if (files.isEmpty()) return false
-        return super.isEnabled(event)
-    }
-
-    /** Chat manager that handles the chat interface and code modifications */
     inner class CodeChatManager(
         session: Session,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: ChatInterface,
+        fastModel: ChatInterface,
         val root: File,
         private val codeFiles: Set<Path>
     ) : ChatSocketManager(
-        session = session,
-        model = model,
-        parsingModel = parsingModel,
-        systemPrompt = "",
-        api = api,
-        applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
-        budget = 2.0,
+      session = session,
+      smartModel = model,
+      fastModel = fastModel,
+      systemPrompt = "",
+      applicationClass = ApplicationServer::class.java,
+      budget = 2.0,
+      owner = localUser,
     ) {
 
         override val systemPrompt: String
@@ -138,61 +120,105 @@ class MultiCodeChatAction : BaseAction() {
       """.trimIndent()
 
         private fun codeSummary(): String {
-            return codeFiles.filter { path ->
+            return codeFiles.mapNotNull { path ->
                 val file = root.toPath().resolve(path).toFile()
                 val exists = file.exists()
                 if (!exists) log.warn("File does not exist: $file")
-                exists
-            }.associateWith { root.toPath().resolve(it).toFile().readText(Charsets.UTF_8) }
-                .entries.joinToString("\n\n") { (path, code) ->
-                    val extension = path.toString().split('.').lastOrNull()?.let { it }
-                    "# $path\n```$extension\n$code\n```"
+                if (!exists) return@mapNotNull null
+
+                val content = try {
+                    readFileContent(file)
+                } catch (e: Exception) {
+                    log.warn("Failed to read file: $file", e)
+                    return@mapNotNull null
                 }
+                path to content
+            }.joinToString("\n\n") { (path, content) ->
+                val extension = path.toString().split('.').lastOrNull()?.let { it }
+                "# $path\n```$extension\n$content\n```"
+            }
         }
 
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
-            renderMarkdown(response) { html ->
-                AddApplyFileDiffLinks.instrumentFileDiffs(
-                    this,
-                    root = root.toPath(),
-                    response = html,
-                    handle = { newCodeMap ->
-                        newCodeMap.forEach { (path, newCode) ->
-                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                        }
-                    },
-                    ui = ui,
-                    api = api,
-                )
+            renderMarkdown(response, tabs=true) { html ->
+                DiffInstrumentor(
+                    AppSettingsState.instance.processor,
+                    SessionRenderer(task),
+                ).instrument(
+                root = root.toPath(),
+                response = html,
+                handle = { newCodeMap: Map<Path, String> ->
+                  newCodeMap.forEach { (path, newCode) ->
+                    task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
+                  }
+                },
+                    resolver = ::resolveToRelativePath,
+              )
             }
         }</div>"""
 
-        override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
-
-            val codex = GPT4Tokenizer()
-            task.verbose((codeFiles.joinToString("\n") { path ->
-                "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
-            }).renderMarkdown())
-
-            val settings = MultiStepPatchAction.AutoDevApp.Settings()
-            api.budget = settings.budget ?: 2.00
-
-            return super.respond(api, task, userMessage, currentChatMessages)
+        override fun respond(
+            task: SessionTask,
+            userMessage: String,
+            currentChatMessages: List<ModelSchema.ChatMessage>,
+            transcriptStream: OutputStream?
+        ): String {
+            task.verbose((codeFiles.mapNotNull { path ->
+                val file = root.resolve(path.toFile())
+                if (!file.exists()) {
+                    log.warn("File does not exist: $file")
+                    return@mapNotNull null
+                }
+                "* $path - ${file.length()} bytes"
+            }.joinToString("\n")).renderMarkdown())
+            return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiCodeChatAction::class.java)
+        private val log = getLogger(MultiCodeChatAction::class.java)
 
         fun getFiles(
             virtualFiles: Array<out VirtualFile>?,
             root: Path
-        ): Set<Path> = virtualFiles?.flatMap { file ->
+        ): Set<Path> = virtualFiles?.filter { file ->
+            // Include all files that can be read by DocumentReader or are code files
+            !file.name.startsWith(".") && (file.isDirectory || isSupportedFile(file))
+        }?.flatMap { file ->
             if (file.isDirectory && !file.name.startsWith(".")) {
                 getFiles(file.children, root)
             } else {
                 setOf(root.relativize(file.toNioPath()))
             }
         }?.toSet() ?: emptySet()
+
+        fun isSupportedFile(file: VirtualFile): Boolean {
+            val name = file.name.lowercase()
+            return when {
+                name.endsWith(".pdf") ||
+                        name.endsWith(".docx") || name.endsWith(".doc") ||
+                        name.endsWith(".xlsx") || name.endsWith(".xls") ||
+                        name.endsWith(".pptx") || name.endsWith(".ppt") ||
+                        name.endsWith(".odt") ||
+                        name.endsWith(".rtf") ||
+                        name.endsWith(".html") || name.endsWith(".htm") ||
+                        name.endsWith(".eml") -> true
+
+                file.inputStream.use { it.isBinary } -> true
+                else -> false
+            }
+        }
+
+        fun readFileContent(file: File): String {
+            return try {
+                file.getDocumentReader().use { reader ->
+                    reader.getText()
+                }
+            } catch (e: Exception) {
+                log.debug("Failed to read as document, falling back to text: ${file.name}", e)
+                // Fallback to reading as plain text
+                file.readText(Charsets.UTF_8)
+            }
+        }
     }
 }

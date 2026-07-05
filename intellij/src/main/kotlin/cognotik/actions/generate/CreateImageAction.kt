@@ -10,15 +10,11 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.ui.JBUI
+import com.simiacryptus.cognotik.agents.ImageAndText
+import com.simiacryptus.cognotik.agents.ImageGenerationAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.actors.ImageActor
-import com.simiacryptus.cognotik.actors.ImageResponse
-import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.jopenai.models.chatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.cognotik.util.*
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.io.ByteArrayOutputStream
@@ -88,8 +84,7 @@ class CreateImageAction : BaseAction() {
                 }.associateWith { rootRef.get()?.resolve(it)?.toFile()?.readText(Charsets.UTF_8) }.entries.joinToString(
                     "\n\n"
                 ) { (path, code) ->
-                    val extension =
-                        path.toString().split('.').lastOrNull()?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }
+                    val extension = path.toString().split('.').lastOrNull()
                     "# $path\n```$extension\n${code}\n```"
                 }
 
@@ -97,18 +92,18 @@ class CreateImageAction : BaseAction() {
                 val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
                 log.debug("Found ${virtualFiles?.size ?: 0} virtual files")
                 progress.text = "Determining root directory..."
-                val folder = UITools.getSelectedFolder(e)
+                val folder = e.getSelectedFolder()
                 rootRef.set(
                     if (null != folder) {
-                        log.debug("Using selected folder as root: ${folder.toFile}")
+                        log.debug("Using selected folder as root: {}", folder.toFile)
                         folder.toFile.toPath()
                     } else if (1 == virtualFiles?.size) {
                         log.debug("Using parent of single file as root")
-                        UITools.getSelectedFile(e)?.parent?.toNioPath()
+                        e.getSelectedFile()?.parent?.toNioPath()
                     } else {
                         log.debug("Using module root as root directory")
                         getModuleRootForFile(
-                            UITools.getSelectedFile(e)?.parent?.toFile ?: throw RuntimeException("No file selected")
+                            e.getSelectedFile()?.parent?.toFile ?: throw RuntimeException("No file selected")
                         ).toPath()
                     }
                 )
@@ -124,18 +119,19 @@ class CreateImageAction : BaseAction() {
                 log.debug("Collected ${codeFiles.size} code files")
                 progress.text = "Generating image..."
                 log.info("Starting image generation with ${codeFiles.size} files")
-                val imageActor = ImageActor(
+                val imageActor = ImageGenerationAgent(
                     prompt = """
                     You are a technical drawing assistant.
                     You will be composing an image about the following code:
                     ${codeSummary()}
                     Special instructions: ${dialog.getInstructions()}
                     """.trimIndent(),
-                    textModel = AppSettingsState.instance.smartModel.chatModel(),
-                    imageModel = AppSettingsState.instance.mainImageModel.imageModel()
-                ).apply { setImageAPI(IdeaOpenAIClient.instance) }
+                    textModel = AppSettingsState.instance.smartChatClient,
+                    imageModel = AppSettingsState.instance.imageModel?.model,
+                    imageClient = AppSettingsState.instance.imageClient
+                )
                 log.debug("Sending request to image generation API")
-                val response = imageActor.answer(listOf(codeSummary(), dialog.getInstructions()), api)
+                val response = imageActor.answer(listOf(codeSummary(), dialog.getInstructions()))
                 log.debug("Image generation completed successfully")
                 val imagePath = root.resolve(dialog.getFileName())
                 write(response, imagePath)
@@ -157,9 +153,9 @@ class CreateImageAction : BaseAction() {
     }
 
     private fun write(
-        code: ImageResponse, path: Path
+        code: ImageAndText, path: Path
     ) = try {
-        log.debug("Creating parent directories for: $path")
+        log.debug("Creating parent directories for: {}", path)
         path.parent?.toFile()?.mkdirs()
         val format = path.toString().split(".").last()
         log.debug("Writing image in format: $format")
@@ -201,11 +197,13 @@ class CreateImageAction : BaseAction() {
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
-        UITools.getSelectedFile(event) ?: return false
+        if (!super.isEnabled(event)) return false
+        event.getSelectedFile() ?: return false
+        AppSettingsState.instance.imageModel ?: return false
         return true
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CreateImageAction::class.java)
+        private val log = getLogger(CreateImageAction::class.java)
     }
 }

@@ -2,22 +2,56 @@ fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
 
+plugins {
+    kotlin("jvm") // Version is applied globally via settings.gradle.kts
+    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
+    jacoco
+    id("io.github.gradle-nexus.publish-plugin")
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
+            username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
+            password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
+        }
+    }
+}
+
 subprojects {
-    apply(plugin = "java")
-    apply(plugin = "kotlin")
     apply(plugin = "jacoco")
     repositories {
+        google()
         mavenCentral()
+        gradlePluginPortal()
+    }
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */
+        }
+
+        else -> {
+            apply(plugin = "java")
+            apply(plugin = "kotlin")
+            // Explicitly configure Java toolchain
+            extensions.configure<JavaPluginExtension> {
+                toolchain {
+                    languageVersion.set(JavaLanguageVersion.of(21))
+                }
+            }
+        }
     }
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
+        options.release.set(21)
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_17.toString()
-            freeCompilerArgs = listOf("-Xjsr305=strict")
-            javaParameters = true
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            freeCompilerArgs.set(listOf("-Xjsr305=strict"))
+            javaParameters.set(true)
         }
     }
     // Configure JaCoCo for code coverage
@@ -53,7 +87,7 @@ subprojects {
             excludes = listOf("jdk.internal.*")
         }
     }
-    
+
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
         doLast {
@@ -72,29 +106,47 @@ subprojects {
 }
 
 allprojects {
-    apply(plugin = "java")
-    java {
-        toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    // Only apply Java plugin to non-Android projects
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */
+        }
+
+        else -> {
+            apply(plugin = "java")
+            java {
+                toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+                sourceCompatibility = JavaVersion.VERSION_21
+                targetCompatibility = JavaVersion.VERSION_21
+            }
+        }
     }
+
+
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
     }
     configurations.all {
-        // Apply resolution strategy to all configurations in all projects
         resolutionStrategy {
             force(
                 "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}",
-                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}",
-                "org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}"
+                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}"
             )
+            if (project.name != "android") {
+                force("org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}")
+            } else {
+                // For Android, force slf4j-android and exclude other implementations
+                force("org.slf4j:slf4j-android:1.7.36")
+                exclude(group = "org.slf4j", module = "slf4j-simple")
+                exclude(group = "ch.qos.logback")
+            }
             preferProjectModules()
         }
     }
 
     tasks.withType<Test> {
-        useJUnitPlatform()
+        useJUnitPlatform {
+            excludeTags("demo", "integration", "research")
+        }
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
         maxHeapSize = "2g"
         jvmArgs(
@@ -111,6 +163,28 @@ allprojects {
     }
 
 }
+
+// Configure the ben-manes versions plugin
+tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
+    // Check for updates in the version catalog specifically
+    checkConstraints = true
+
+    // Define what constitutes a stable version
+    fun isNonStable(version: String): Boolean {
+        val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+        val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+        val isStable = stableKeyword || regex.matches(version)
+        return isStable.not()
+    }
+
+    rejectVersionIf {
+        isNonStable(candidate.version) && !isNonStable(currentVersion)
+    }
+
+    // Generate output in formats easy for CI tools to parse
+    outputFormatter = "json,xml,plain"
+}
+
 // Add a task to generate an aggregated report for the entire project
 tasks.register<JacocoReport>("jacocoRootReport") {
     description = "Generates an aggregate report from all subprojects"
@@ -144,6 +218,7 @@ tasks.register<JacocoReport>("jacocoRootReport") {
 }
 
 
+
 tasks {
     wrapper {
         gradleVersion = properties("gradleVersion")
@@ -154,10 +229,4 @@ tasks {
 repositories {
     gradlePluginPortal()
     mavenCentral()
-}
-
-plugins {
-    kotlin("jvm") // Version is applied globally via settings.gradle.kts
-    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
-    jacoco
 }

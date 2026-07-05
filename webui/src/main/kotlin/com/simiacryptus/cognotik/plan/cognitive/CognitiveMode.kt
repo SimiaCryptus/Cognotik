@@ -1,60 +1,58 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-// Register the new mode in the package
-import com.simiacryptus.cognotik.plan.PlanSettings
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.describe.TypeDescriber
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * The CognitiveMode interface defines the “cognitive” strategy
  * which handles user input, initial planning, execution and iterative
  * thought updates.
  */
-interface CognitiveMode {
-    val ui: ApplicationInterface
-    val api: API
-    val planSettings: PlanSettings
-    val session: Session
-    val user: User?
+abstract class CognitiveMode<U : CognitiveModeConfig>(
+  val orchestrationConfig: OrchestrationConfig,
+  val session: Session,
+  val user: User,
+) {
+  val config: U?
+    get() = orchestrationConfig.cognitiveSettings as? U
 
-    /**
-     * Initialize the internal cognitive state.
-     */
-    fun initialize()
+  val enabledTasks get() = TaskType.getAvailableTaskTypes(orchestrationConfig)
 
-    /**
-     * Handle a user message and trigger the appropriate planning or execution.
-     */
-    fun handleUserMessage(userMessage: String, task: SessionTask)
+  /**
+   * Initialize the internal cognitive state.
+   */
+  open fun initialize(task: SessionTask) {}
 
-    fun contextData(): List<String>
+  /**
+   * Handle a user message and trigger the appropriate planning or execution.
+   */
+  abstract fun handleUserMessage(userMessage: String, task: SessionTask)
+
+  /**
+   * Get the context data accumulated during execution.
+   * This is useful for sub-planning tasks to collect results.
+   */
+  abstract fun contextData(): List<String>
+
+  val name: String? = (this@CognitiveMode.config?.type?.name ?: this.javaClass.simpleName)
+
+  fun SessionTask.transcript(name: String? = this@CognitiveMode.name): FileOutputStream? {
+    val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
+    val markdownTranscript = file?.outputStream()
+    add("[${name?.let { it + " " } ?: ""}Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+    return markdownTranscript
+  }
 }
 
-// Optionally, you can add a static registry for all available modes
-object CognitiveModes {
-    val allModes: Map<String, CognitiveModeStrategy> = mapOf(
-        "AutoPlan" to AutoPlanMode,
-        "PlanAhead" to PlanAheadMode,
-        "TaskChat" to TaskChatMode,
-        "GoalOriented" to GoalOrientedMode,
-        // Add others as needed
-    )
-}
-
-interface CognitiveModeStrategy {
-    val inputCnt: Int
-
-    fun getCognitiveMode(
-        ui: ApplicationInterface,
-        api: API,
-        planSettings: PlanSettings,
-        session: Session,
-        user: User?,
-        describer: TypeDescriber
-    ): CognitiveMode
-}
+class CognitiveModeTypeSerializer : DynamicEnumSerializer<CognitiveModeType<*>>(CognitiveModeType::class.java)
+class CognitiveModeTypeDeserializer : DynamicEnumDeserializer<CognitiveModeType<*>>(CognitiveModeType::class.java)

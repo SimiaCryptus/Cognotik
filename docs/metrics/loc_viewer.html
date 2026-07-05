@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>LOC Index Viewer</title>
+    <style>
+        :root {
+          --bg: #0f1115;
+          --panel: #161a22;
+          --panel-2: #1d2230;
+          --border: #2a3140;
+          --text: #e6e9ef;
+          --muted: #8b94a7;
+          --accent: #4fb3ff;
+          --accent-2: #7ee787;
+          --warn: #ffb454;
+          --danger: #ff6b6b;
+        }
+        * { box-sizing: border-box; }
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: var(--bg);
+          color: var(--text);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+            Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+          font-size: 14px;
+        }
+        header {
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--border);
+          background: var(--panel);
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+        header h1 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+        }
+        header .controls {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        input[type="text"], select, button, input[type="file"] {
+          background: var(--panel-2);
+          color: var(--text);
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          padding: 6px 10px;
+          font-size: 13px;
+          outline: none;
+        }
+        input[type="text"]:focus, select:focus {
+          border-color: var(--accent);
+        }
+        button {
+          cursor: pointer;
+        }
+        button:hover {
+          border-color: var(--accent);
+        }
+        main {
+          padding: 16px 20px;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .summary {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 10px;
+        }
+        .card {
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 12px 14px;
+        }
+        .card .label {
+          color: var(--muted);
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .card .value {
+          font-size: 20px;
+          font-weight: 600;
+          margin-top: 4px;
+        }
+        .section-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--muted);
+          margin: 8px 0 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .ext-bars {
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 12px 14px;
+        }
+        .ext-bar {
+          display: grid;
+          grid-template-columns: 60px 1fr 120px;
+          align-items: center;
+          gap: 10px;
+          margin: 4px 0;
+          cursor: pointer;
+          padding: 4px 6px;
+          border-radius: 4px;
+        }
+        .ext-bar:hover {
+          background: var(--panel-2);
+        }
+        .ext-bar.active {
+          background: var(--panel-2);
+          outline: 1px solid var(--accent);
+        }
+        .ext-bar .name {
+          font-weight: 600;
+          color: var(--accent);
+        }
+        .bar-track {
+          height: 14px;
+          background: var(--panel-2);
+          border-radius: 7px;
+          overflow: hidden;
+          display: flex;
+        }
+        .bar-seg {
+          height: 100%;
+        }
+        .bar-code { background: var(--accent); }
+        .bar-cmt  { background: var(--warn); }
+        .bar-blk  { background: #4a5468; }
+        .ext-bar .meta {
+          font-size: 12px;
+          color: var(--muted);
+          text-align: right;
+          font-variant-numeric: tabular-nums;
+        }
+       .folder-tree {
+         background: var(--panel);
+         border: 1px solid var(--border);
+         border-radius: 8px;
+         padding: 8px 6px;
+         max-height: 480px;
+         overflow: auto;
+         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         font-size: 12px;
+       }
+       .tree-row {
+         display: grid;
+         grid-template-columns: 1fr 70px 90px 90px 90px 90px;
+         gap: 8px;
+         align-items: center;
+         padding: 3px 6px;
+         border-radius: 4px;
+         cursor: pointer;
+         user-select: none;
+       }
+       .tree-row:hover {
+         background: var(--panel-2);
+       }
+       .tree-row.file {
+         cursor: default;
+       }
+       .tree-row.file:hover {
+         background: var(--panel-2);
+       }
+       .tree-row .label {
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+       }
+       .tree-row.dir .label {
+         color: var(--accent);
+         font-weight: 600;
+       }
+       .tree-row.file .label {
+         color: var(--text);
+       }
+       .tree-row .twisty {
+         display: inline-block;
+         width: 12px;
+         color: var(--muted);
+         transition: transform 0.1s;
+       }
+       .tree-row.expanded .twisty {
+         transform: rotate(90deg);
+       }
+       .tree-row.file .twisty {
+         visibility: hidden;
+       }
+       .tree-row .num {
+         text-align: right;
+         color: var(--muted);
+         font-variant-numeric: tabular-nums;
+       }
+       .tree-row .num.lines {
+         color: var(--text);
+       }
+       .tree-header {
+         display: grid;
+         grid-template-columns: 1fr 70px 90px 90px 90px 90px;
+         gap: 8px;
+         padding: 6px 6px;
+         font-size: 11px;
+         text-transform: uppercase;
+         color: var(--muted);
+         letter-spacing: 0.04em;
+         border-bottom: 1px solid var(--border);
+         margin-bottom: 4px;
+       }
+       .tree-header .num { text-align: right; }
+       .tree-actions {
+         display: flex;
+         gap: 6px;
+         margin-bottom: 6px;
+       }
+        .legend {
+          display: flex;
+          gap: 12px;
+          font-size: 12px;
+          color: var(--muted);
+          margin-top: 8px;
+        }
+        .legend .sw {
+          display: inline-block;
+          width: 10px;
+          height: 10px;
+          border-radius: 2px;
+          margin-right: 4px;
+          vertical-align: middle;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        thead th {
+          text-align: left;
+          background: var(--panel-2);
+          padding: 8px 10px;
+          font-size: 12px;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          cursor: pointer;
+          user-select: none;
+          border-bottom: 1px solid var(--border);
+          position: sticky;
+          top: 64px;
+        }
+        thead th.sort-asc::after  { content: " ▲"; color: var(--accent); }
+        thead th.sort-desc::after { content: " ▼"; color: var(--accent); }
+        tbody td {
+          padding: 6px 10px;
+          border-bottom: 1px solid var(--border);
+          font-variant-numeric: tabular-nums;
+        }
+        tbody tr:hover {
+          background: var(--panel-2);
+        }
+        td.path {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-size: 12px;
+          color: var(--text);
+          max-width: 600px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        td.ext {
+          color: var(--accent);
+          font-weight: 600;
+        }
+        td.num {
+          text-align: right;
+        }
+        .empty {
+          padding: 40px;
+          text-align: center;
+          color: var(--muted);
+        }
+        .pill {
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 10px;
+          background: var(--panel-2);
+          border: 1px solid var(--border);
+          font-size: 11px;
+          color: var(--muted);
+        }
+        footer {
+          padding: 12px 20px;
+          color: var(--muted);
+          font-size: 12px;
+          border-top: 1px solid var(--border);
+        }
+        .row-count {
+          color: var(--muted);
+          font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>📊 Lines of Code — Index Viewer</h1>
+    <div class="controls">
+        <input type="text" id="search" placeholder="Filter by path…" style="width: 240px;"/>
+        <select id="extFilter">
+            <option value="">All extensions</option>
+        </select>
+        <input type="file" id="fileInput" accept=".json,application/json"/>
+        <button id="reloadBtn" title="Reload loc_index.json">↻ Reload</button>
+    </div>
+</header>
+
+<main>
+    <section class="summary" id="summary"></section>
+
+    <div>
+        <div class="section-title">By Extension <span class="pill" id="legendHint">click a row to filter</span></div>
+        <div class="ext-bars" id="extBars"></div>
+        <div class="legend">
+            <span><span class="sw bar-code"></span>code</span>
+            <span><span class="sw bar-cmt"></span>comment</span>
+            <span><span class="sw bar-blk"></span>blank</span>
+        </div>
+    </div>
+   <div>
+       <div class="section-title">
+           By Folder <span class="pill">click a folder to expand · click name to filter</span>
+       </div>
+       <div class="tree-actions">
+           <button id="expandAllBtn">⊞ Expand all</button>
+           <button id="collapseAllBtn">⊟ Collapse all</button>
+           <button id="expandTopBtn">↳ Expand top level</button>
+       </div>
+       <div class="folder-tree" id="folderTree">
+           <div class="tree-header">
+               <div>Path</div>
+               <div class="num">Files</div>
+               <div class="num">Lines</div>
+               <div class="num">Code</div>
+               <div class="num">Comment</div>
+               <div class="num">Size</div>
+           </div>
+           <div id="folderTreeBody"></div>
+       </div>
+   </div>
+
+
+    <div>
+        <div class="section-title">
+            Files <span class="row-count" id="rowCount"></span>
+        </div>
+        <div style="overflow-x: auto;">
+            <table id="filesTable">
+                <thead>
+                <tr>
+                    <th data-key="path">Path</th>
+                    <th data-key="ext">Ext</th>
+                    <th data-key="lines" class="num">Lines</th>
+                    <th data-key="code" class="num">Code</th>
+                    <th data-key="comment" class="num">Comment</th>
+                    <th data-key="blank" class="num">Blank</th>
+                    <th data-key="bytes" class="num">Bytes</th>
+                </tr>
+                </thead>
+                <tbody id="filesBody"></tbody>
+            </table>
+        </div>
+        <div id="empty" class="empty" style="display:none;">No files match your filters.</div>
+    </div>
+</main>
+
+<footer>
+    Drop a <code>loc_index.json</code> file via the file picker, or serve this page from <code>docs/reports/</code> to
+    auto-load.
+</footer>
+
+<script>
+    const state = {
+      data: [],
+      filtered: [],
+      sortKey: "lines",
+      sortDir: "desc",
+      extFilter: "",
+      search: "",
+     pathFilter: "",
+     expandedDirs: new Set([""]),
+    };
+
+    const els = {
+      search:    document.getElementById("search"),
+      extFilter: document.getElementById("extFilter"),
+      fileInput: document.getElementById("fileInput"),
+      reloadBtn: document.getElementById("reloadBtn"),
+      summary:   document.getElementById("summary"),
+      extBars:   document.getElementById("extBars"),
+      filesBody: document.getElementById("filesBody"),
+      rowCount:  document.getElementById("rowCount"),
+      empty:     document.getElementById("empty"),
+      table:     document.getElementById("filesTable"),
+     folderTreeBody:  document.getElementById("folderTreeBody"),
+     expandAllBtn:    document.getElementById("expandAllBtn"),
+     collapseAllBtn:  document.getElementById("collapseAllBtn"),
+     expandTopBtn:    document.getElementById("expandTopBtn"),
+    };
+
+    function fmt(n) {
+      if (n === undefined || n === null || isNaN(n)) return "—";
+      return n.toLocaleString();
+    }
+    function fmtBytes(n) {
+      if (!n && n !== 0) return "—";
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(2) + " MB";
+    }
+
+    async function tryAutoLoad() {
+      try {
+        const r = await fetch("loc_index.json", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = await r.json();
+        loadData(data);
+      } catch (e) {
+        els.empty.style.display = "block";
+        els.empty.textContent =
+          "Could not auto-load loc_index.json (" + e.message + "). Use the file picker above.";
+      }
+    }
+
+    function loadData(data) {
+      if (!Array.isArray(data)) {
+        alert("Expected a JSON array of file entries.");
+        return;
+      }
+      state.data = data.map(d => ({
+        path: d.path || "",
+        ext: d.ext || "(none)",
+        lines: +d.lines || 0,
+        blank: +d.blank || 0,
+        comment: +d.comment || 0,
+        code: +d.code || 0,
+        bytes: +d.bytes || 0,
+      }));
+      populateExtFilter();
+      render();
+    }
+
+    function populateExtFilter() {
+      const exts = Array.from(new Set(state.data.map(d => d.ext))).sort();
+      els.extFilter.innerHTML =
+        '<option value="">All extensions</option>' +
+        exts.map(e => `<option value="${e}">${e}</option>`).join("");
+      els.extFilter.value = state.extFilter;
+    }
+
+    function applyFilters() {
+      const q = state.search.toLowerCase();
+     const pf = state.pathFilter.toLowerCase();
+      state.filtered = state.data.filter(d => {
+        if (state.extFilter && d.ext !== state.extFilter) return false;
+        if (q && !d.path.toLowerCase().includes(q)) return false;
+       if (pf && !d.path.toLowerCase().startsWith(pf)) return false;
+        return true;
+      });
+      const { sortKey, sortDir } = state;
+      const dir = sortDir === "asc" ? 1 : -1;
+      state.filtered.sort((a, b) => {
+        const va = a[sortKey], vb = b[sortKey];
+        if (typeof va === "string") return va.localeCompare(vb) * dir;
+        return (va - vb) * dir;
+      });
+    }
+
+    function render() {
+      applyFilters();
+      renderSummary();
+      renderExtBars();
+     renderFolderTree();
+      renderTable();
+      renderSortIndicators();
+    }
+
+    function aggregate(rows) {
+      const agg = { files: rows.length, lines: 0, code: 0, comment: 0, blank: 0, bytes: 0 };
+      for (const r of rows) {
+        agg.lines += r.lines;
+        agg.code += r.code;
+        agg.comment += r.comment;
+        agg.blank += r.blank;
+        agg.bytes += r.bytes;
+      }
+      return agg;
+    }
+
+    function renderSummary() {
+      const a = aggregate(state.filtered);
+      const cards = [
+        ["Files", fmt(a.files)],
+        ["Total Lines", fmt(a.lines)],
+        ["Code", fmt(a.code)],
+        ["Comments", fmt(a.comment)],
+        ["Blank", fmt(a.blank)],
+        ["Size", fmtBytes(a.bytes)],
+      ];
+      els.summary.innerHTML = cards
+        .map(([l, v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`)
+        .join("");
+    }
+
+    function renderExtBars() {
+      const byExt = {};
+      for (const r of state.filtered) {
+        if (!byExt[r.ext]) byExt[r.ext] = { ext: r.ext, files: 0, lines: 0, code: 0, comment: 0, blank: 0, bytes: 0 };
+        const b = byExt[r.ext];
+        b.files++; b.lines += r.lines; b.code += r.code;
+        b.comment += r.comment; b.blank += r.blank; b.bytes += r.bytes;
+      }
+      const arr = Object.values(byExt).sort((a, b) => b.lines - a.lines);
+      const max = arr.reduce((m, x) => Math.max(m, x.lines), 0) || 1;
+
+      els.extBars.innerHTML = arr.map(b => {
+        const w = (b.lines / max) * 100;
+        const codePct = b.lines ? (b.code / b.lines) * 100 : 0;
+        const cmtPct  = b.lines ? (b.comment / b.lines) * 100 : 0;
+        const blkPct  = b.lines ? (b.blank / b.lines) * 100 : 0;
+        const active = state.extFilter === b.ext ? "active" : "";
+        return `
+          <div class="ext-bar ${active}" data-ext="${b.ext}">
+            <div class="name">.${b.ext}</div>
+            <div class="bar-track" style="width: ${w}%; min-width: 40px;">
+              <div class="bar-seg bar-code" style="width:${codePct}%"></div>
+              <div class="bar-seg bar-cmt"  style="width:${cmtPct}%"></div>
+              <div class="bar-seg bar-blk"  style="width:${blkPct}%"></div>
+            </div>
+            <div class="meta">${fmt(b.files)} files · ${fmt(b.lines)} lines</div>
+          </div>`;
+      }).join("");
+
+      els.extBars.querySelectorAll(".ext-bar").forEach(el => {
+        el.addEventListener("click", () => {
+          const ext = el.dataset.ext;
+          state.extFilter = state.extFilter === ext ? "" : ext;
+          els.extFilter.value = state.extFilter;
+          render();
+        });
+      });
+    }
+   // --- Folder tree ---
+   function buildFolderTree(rows) {
+     // Root node represents project root ("")
+     const root = {
+       name: "",
+       path: "",
+       isDir: true,
+       children: {},
+       files: 0, lines: 0, code: 0, comment: 0, blank: 0, bytes: 0,
+     };
+     for (const r of rows) {
+       const parts = r.path.split(/[\/\\]/).filter(Boolean);
+       let node = root;
+       node.files++; node.lines += r.lines; node.code += r.code;
+       node.comment += r.comment; node.blank += r.blank; node.bytes += r.bytes;
+       let acc = "";
+       for (let i = 0; i < parts.length; i++) {
+         const part = parts[i];
+         const isLast = i === parts.length - 1;
+         acc = acc ? acc + "/" + part : part;
+         if (!node.children[part]) {
+           node.children[part] = isLast
+             ? { name: part, path: acc, isDir: false, entry: r,
+                 files: 1, lines: r.lines, code: r.code, comment: r.comment, blank: r.blank, bytes: r.bytes }
+             : { name: part, path: acc, isDir: true, children: {},
+                 files: 0, lines: 0, code: 0, comment: 0, blank: 0, bytes: 0 };
+         }
+         node = node.children[part];
+         if (!isLast) {
+           node.files++; node.lines += r.lines; node.code += r.code;
+           node.comment += r.comment; node.blank += r.blank; node.bytes += r.bytes;
+         }
+       }
+     }
+     return root;
+   }
+   function renderFolderTree() {
+     const root = buildFolderTree(state.filtered);
+     const out = [];
+     function emit(node, depth) {
+       if (node !== root) {
+         const expanded = state.expandedDirs.has(node.path);
+         const indent = depth * 16;
+         const cls = node.isDir ? "dir" : "file";
+         const expCls = expanded ? "expanded" : "";
+         const twisty = node.isDir ? "▶" : "•";
+         const labelPrefix = node.isDir ? "📁 " : "📄 ";
+         out.push(`
+           <div class="tree-row ${cls} ${expCls}" data-path="${escapeHtml(node.path)}" data-isdir="${node.isDir}" style="padding-left:${6 + indent}px;">
+             <div class="label"><span class="twisty">${twisty}</span> ${labelPrefix}${escapeHtml(node.name)}</div>
+             <div class="num">${node.isDir ? fmt(node.files) : ""}</div>
+             <div class="num lines">${fmt(node.lines)}</div>
+             <div class="num">${fmt(node.code)}</div>
+             <div class="num">${fmt(node.comment)}</div>
+             <div class="num">${fmtBytes(node.bytes)}</div>
+           </div>`);
+       }
+       if (node.isDir && (node === root || state.expandedDirs.has(node.path))) {
+         const kids = Object.values(node.children).sort((a, b) => {
+           // Directories first, then by lines desc
+           if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+           return b.lines - a.lines;
+         });
+         for (const k of kids) emit(k, node === root ? 0 : depth + 1);
+       }
+     }
+     emit(root, 0);
+     els.folderTreeBody.innerHTML = out.join("") ||
+       `<div style="padding:20px;text-align:center;color:var(--muted);">No folders match.</div>`;
+     els.folderTreeBody.querySelectorAll(".tree-row").forEach(el => {
+       const path = el.dataset.path;
+       const isDir = el.dataset.isdir === "true";
+       const labelEl = el.querySelector(".label");
+       if (isDir) {
+         // Click twisty/row toggles expansion.
+         el.addEventListener("click", (e) => {
+           if (e.target.closest(".label") && e.shiftKey) {
+             // Shift-click on label filters instead.
+             state.pathFilter = state.pathFilter === path + "/" ? "" : path + "/";
+             render();
+             return;
+           }
+           if (state.expandedDirs.has(path)) state.expandedDirs.delete(path);
+           else state.expandedDirs.add(path);
+           renderFolderTree();
+         });
+         // Double-click on dir label filters file table.
+         labelEl.addEventListener("dblclick", (e) => {
+           e.stopPropagation();
+           state.pathFilter = state.pathFilter === path + "/" ? "" : path + "/";
+           render();
+         });
+       }
+     });
+   }
+   function collectAllDirPaths(rows) {
+     const dirs = new Set([""]);
+     for (const r of rows) {
+       const parts = r.path.split(/[\/\\]/).filter(Boolean);
+       let acc = "";
+       for (let i = 0; i < parts.length - 1; i++) {
+         acc = acc ? acc + "/" + parts[i] : parts[i];
+         dirs.add(acc);
+       }
+     }
+     return dirs;
+   }
+   function collectTopLevelDirs(rows) {
+     const dirs = new Set([""]);
+     for (const r of rows) {
+       const parts = r.path.split(/[\/\\]/).filter(Boolean);
+       if (parts.length > 1) dirs.add(parts[0]);
+     }
+     return dirs;
+   }
+
+
+    function renderTable() {
+      const rows = state.filtered;
+      els.rowCount.textContent = `(${rows.length} of ${state.data.length})`;
+      if (!rows.length) {
+        els.filesBody.innerHTML = "";
+        els.empty.style.display = "block";
+        els.empty.textContent = "No files match your filters.";
+        return;
+      }
+      els.empty.style.display = "none";
+      // Limit to 2000 rows for performance.
+      const MAX = 2000;
+      const slice = rows.slice(0, MAX);
+      els.filesBody.innerHTML = slice.map(r => `
+        <tr>
+          <td class="path" title="${escapeHtml(r.path)}">${escapeHtml(r.path)}</td>
+          <td class="ext">${escapeHtml(r.ext)}</td>
+          <td class="num">${fmt(r.lines)}</td>
+          <td class="num">${fmt(r.code)}</td>
+          <td class="num">${fmt(r.comment)}</td>
+          <td class="num">${fmt(r.blank)}</td>
+          <td class="num">${fmtBytes(r.bytes)}</td>
+        </tr>`).join("");
+      if (rows.length > MAX) {
+        els.filesBody.innerHTML += `<tr><td colspan="7" style="text-align:center;color:var(--muted);">…${rows.length - MAX} more rows hidden (refine filter)…</td></tr>`;
+      }
+    }
+
+    function renderSortIndicators() {
+      els.table.querySelectorAll("thead th").forEach(th => {
+        th.classList.remove("sort-asc", "sort-desc");
+        if (th.dataset.key === state.sortKey) {
+          th.classList.add(state.sortDir === "asc" ? "sort-asc" : "sort-desc");
+        }
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // --- Event wiring ---
+    els.search.addEventListener("input", e => {
+      state.search = e.target.value;
+      render();
+    });
+    els.extFilter.addEventListener("change", e => {
+      state.extFilter = e.target.value;
+      render();
+    });
+    els.fileInput.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          loadData(JSON.parse(ev.target.result));
+        } catch (err) {
+          alert("Failed to parse JSON: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+    els.reloadBtn.addEventListener("click", tryAutoLoad);
+   els.expandAllBtn.addEventListener("click", () => {
+     state.expandedDirs = collectAllDirPaths(state.data);
+     renderFolderTree();
+   });
+   els.collapseAllBtn.addEventListener("click", () => {
+     state.expandedDirs = new Set([""]);
+     renderFolderTree();
+   });
+   els.expandTopBtn.addEventListener("click", () => {
+     state.expandedDirs = collectTopLevelDirs(state.data);
+     renderFolderTree();
+   });
+    els.table.querySelectorAll("thead th").forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.key;
+        if (state.sortKey === key) {
+          state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          state.sortKey = key;
+          state.sortDir = (key === "path" || key === "ext") ? "asc" : "desc";
+        }
+        render();
+      });
+    });
+
+    // Drag & drop support.
+    window.addEventListener("dragover", e => { e.preventDefault(); });
+    window.addEventListener("drop", e => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try { loadData(JSON.parse(ev.target.result)); }
+        catch (err) { alert("Failed to parse JSON: " + err.message); }
+      };
+      reader.readAsText(file);
+    });
+
+    tryAutoLoad();
+</script>
+</body>
+</html>

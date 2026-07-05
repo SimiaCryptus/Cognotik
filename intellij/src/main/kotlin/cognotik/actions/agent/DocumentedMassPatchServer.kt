@@ -1,35 +1,28 @@
 package cognotik.actions.agent
 
+import com.google.common.util.concurrent.Futures
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
 class DocumentedMassPatchServer(
-    val config: DocumentedMassPatchAction.Settings, val api: ChatClient, val autoApply: Boolean
-    /**
-     * Server for handling documented mass code patches
-     * @param config Settings containing project and file configurations
-     * @param api ChatClient for AI interactions
-     * @param autoApply Whether to automatically apply suggested patches */
+    val config: DocumentedMassPatchAction.Settings,
+    val autoApply: Boolean,
+    val processor: PatchProcessor
 ) : ApplicationServer(
     applicationName = "Documented Code Patch",
     path = "/patchChat",
@@ -40,9 +33,9 @@ class DocumentedMassPatchServer(
     override val inputCnt = 0
     override val stickyInput = true
 
-    private val mainActor: SimpleActor
+    private val mainActor: ChatAgent
         get() {
-            return SimpleActor(
+            return ChatAgent(
                 prompt = """
          You are a helpful AI that helps people with coding.
 
@@ -54,7 +47,7 @@ class DocumentedMassPatchServer(
          The diff format should use + for line additions, - for line deletions.
          The diff should include 2 lines of context before and after every change.
          """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -66,13 +59,10 @@ class DocumentedMassPatchServer(
      * @return SocketManager for managing the session
      */
 
-    override fun newSession(user: User?, session: Session): SocketManager {
-        val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
+    override fun newSession(user: User, session: Session): SocketManager {
+        val socketManager = super.newSession(user, session)!!
         _root = config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
-        val task = ui.newTask(true)
-        val api = api.getChildClient(task)
-
+        val task = socketManager.newTask(cancelable = false, root = true)
         val tabs = TabbedDisplay(task)
         val userMessage = config.settings?.transformationMessage ?: "Review and update code according to documentation"
 
@@ -85,11 +75,13 @@ class DocumentedMassPatchServer(
              """.trimIndent()
         } ?: ""
 
+        val status: StringBuilder = task.add("Starting...<br/>")!!
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, 4)
-        config.settings?.codeFilePaths?.map { path: Path ->
+        val futures = config.settings?.codeFilePaths?.map { path: Path ->
             fixedConcurrencyProcessor.submit {
                 try {
-                    task.add("Processing ${path}...")
+                    synchronized(status) { status.append("Processing ${path}...<br/>") }
+                    task.update()
                     val codeSummary = """
                              $docSummary
 
@@ -99,31 +91,31 @@ class DocumentedMassPatchServer(
                              ```
                          """.trimIndent()
 
-                    val fileTask = ui.newTask(false).apply {
+                    val fileTask = socketManager.newTask(cancelable = false, root = false).apply {
                         tabs[path.toString()] = placeholder
                     }
 
                     val toInput = { it: String -> listOf(codeSummary, it) }
                     if (autoApply) {
                         val design =
-                            mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+                            mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
                         if (design.isNotBlank()) {
-                            task.add(
-                                AddApplyFileDiffLinks.instrumentFileDiffs(
-                                    self = ui.socketManager!!,
-                                    root = _root,
-                                    response = design,
-                                    handle = { newCodeMap ->
-                                        newCodeMap.forEach { (path, newCode) ->
-                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                        }
-                                    },
-                                    ui = ui,
-                                    api = api as API,
-                                    shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastModel.chatModel(),
-                                    defaultFile = path.toString()
-                                ).renderMarkdown
+                            fileTask.add(
+                              DiffInstrumentor(
+                                processor,
+                                SessionRenderer(task),
+                              ).instrument(
+                                root = _root,
+                                response = design,
+                                handle = { newCodeMap: Map<Path, String> ->
+                                  newCodeMap.forEach { (path, newCode) ->
+                                    fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                  }
+                                },
+                                shouldAutoApply = { it: Path -> autoApply },
+                                defaultFile = path.toString(),
+                                resolver = ::resolveToRelativePath,
+                              ).renderMarkdown(true)
                             )
                         } else {
                             fileTask.complete("No changes suggested.")
@@ -134,58 +126,64 @@ class DocumentedMassPatchServer(
                             userMessage = { userMessage },
                             heading = renderMarkdown(userMessage),
                             initialResponse = {
-                                mainActor.answer(toInput(it), api = api)
+                                mainActor.answer(toInput(it))
                             },
                             outputFn = { design: String ->
                                 """<div>${
                                     renderMarkdown(design) {
-                                        AddApplyFileDiffLinks.instrumentFileDiffs(
-                                            self = ui.socketManager!!,
-                                            root = _root,
-                                            response = design,
-                                            handle = { newCodeMap ->
-                                                newCodeMap.forEach { (path, newCode) ->
-                                                    fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                                }
-                                            },
-                                            ui = ui,
-                                            api = api as API,
-                                            shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastModel.chatModel(),
-                                            defaultFile = path.toString()
-                                        )
+                                      DiffInstrumentor(
+                                        processor,
+                                        SessionRenderer(task),
+                                      ).instrument(
+                                        root = _root,
+                                        response = design,
+                                        handle = { newCodeMap: Map<Path, String> ->
+                                          newCodeMap.forEach { (path, newCode) ->
+                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                          }
+                                        },
+                                        shouldAutoApply = { it: Path -> autoApply },
+                                        defaultFile = path.toString(),
+                                        resolver = ::resolveToRelativePath,
+                                      )
                                     }
                                 }</div>"""
                             },
-                            ui = ui,
                             reviseResponse = { userMessages ->
                                 mainActor.respond(
                                     messages = userMessages.map {
-                                        ApiModel.ChatMessage(
+                                        ModelSchema.ChatMessage(
                                             it.second,
                                             it.first.toContentList()
                                         )
                                     }.toTypedArray(),
                                     input = toInput(userMessage),
-                                    api = api
                                 )
                             },
                             atomicRef = AtomicReference(),
                             semaphore = Semaphore(0),
                         ).call()
                     }
-                    task.add("Completed processing ${path}")
+                    synchronized(status) { status.append("Completed processing ${path}<br/>") }
+                    task.update()
                 } catch (e: Exception) {
                     log.warn("Error processing $path", e)
-                    task.error(ui, e)
+                    task.error(e)
                 }
             }
-        }//?.toTypedArray()?.forEach { it.get() }
+        }
+        fixedConcurrencyProcessor.submit {
+            futures?.forEach {
+                Futures.getUnchecked(it)
+            }
+            synchronized(status) { status.append("All files processed successfully.<br/>") }
+            task.update()
+        }
         return socketManager
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(DocumentedMassPatchServer::class.java)
+        private val log = getLogger(DocumentedMassPatchServer::class.java)
     }
 }
 

@@ -3,13 +3,14 @@ import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    kotlin("jvm")
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
     alias(libs.plugins.qodana)
     alias(libs.plugins.kover)
 }
 
-group = "com.simiacryptus"
+group = "com.cognotik"
 version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
@@ -20,25 +21,41 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
 
-    implementation(project(":jo-penai")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.slf4j")
+    implementation(project(":core")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
-    implementation(project(":core")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.slf4j")
+    implementation(project(":groovy")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":webui")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.slf4j")
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
+
+    implementation(project(":providers")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+    implementation(project(":tasklib")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+    implementation(project(":stdtools")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+
+
 
     implementation(libs.aws.bedrockruntime)
     implementation(libs.aws.s3)
@@ -59,6 +76,11 @@ dependencies {
     implementation(libs.jetty.websocket.client)
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
+    implementation(libs.tinkerpop)
+
+    implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
+    implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
+    implementation("org.apache.pdfbox:jbig2-imageio:3.0.4")
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
@@ -76,13 +98,16 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 tasks {
+    buildSearchableOptions {
+        enabled = false
+    }
     withType<KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
     }
 
@@ -104,7 +129,7 @@ tasks {
     }
     withType<KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
             javaParameters.set(true)
         }
     }
@@ -166,7 +191,11 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            recommended()
+            // Use specific IDE versions that are known to be available
+            ide(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
+            // Optionally add a few more specific versions for broader compatibility testing
+            // ide("IC", "2024.3")
+            // ide("IC", "2024.2")
         }
     }
 }

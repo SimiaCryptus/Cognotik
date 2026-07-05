@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.dictation
 
-import com.simiacryptus.jopenai.audio.TranscriptionProcessor
+import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import java.awt.*
 import javax.swing.*
 
@@ -12,7 +12,6 @@ class EventPanel : JPanel() {
     init {
         layout = BorderLayout()
         border = BorderFactory.createEmptyBorder(15, 15, 15, 15)
-
 
 
         val listModel = DefaultListModel<TranscriptionProcessor.TranscriptionResult>()

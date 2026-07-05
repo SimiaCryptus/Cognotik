@@ -8,15 +8,16 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
-import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.getSelectedFiles
+import com.simiacryptus.cognotik.util.toContentList
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
@@ -34,7 +35,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
     override fun isEnabled(event: AnActionEvent): Boolean {
-        return UITools.getSelectedFiles(event).size == 1 && super.isEnabled(event)
+        return event.getSelectedFiles().size == 1 && super.isEnabled(event)
     }
 
     data class ProjectFile(
@@ -127,8 +128,9 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                     path = root.relativize(selectedFile.toPath()).toString(),
                     code = IOUtils.toString(FileInputStream(selectedFile), "UTF-8")
                 ),
-                directive = config?.settings?.directive ?: "",
-                progress = progress
+                directive = config.settings.directive,
+                progress = progress,
+                model = AppSettingsState.instance.smartChatClient
             )
             progress.text = "Generating output file..."
             progress.fraction = 0.6
@@ -145,7 +147,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
             progress.fraction = 0.8
             outputPath.parent.toFile().mkdirs()
             FileUtils.write(outputPath.toFile(), analogue.code, "UTF-8")
-            open(config?.project!!, outputPath)
+            open(config.project!!, outputPath)
             return arrayOf(outputPath.toFile())
         } catch (e: Exception) {
             log.error("Failed to generate related file", e)
@@ -153,54 +155,59 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         }
     }
 
-    private fun generateFile(baseFile: ProjectFile, directive: String, progress: ProgressIndicator): ProjectFile = try {
+    private fun generateFile(
+        baseFile: ProjectFile, directive: String, progress: ProgressIndicator, model: ChatInterface
+    ): ProjectFile = try {
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
-        val model = AppSettingsState.instance.smartModel.chatModel()
-        val chatRequest = ApiModel.ChatRequest(
-            model = model.modelName,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
+        val response =
+          model.chat(
+            ChatRequest(
+              model = model.model.modelId,
+              messages = listOf(
                 ChatMessage(
-                    Role.system, """
-            You will combine natural language instructions with a user provided code example to create a new file.
-            Provide a new filename and the code to be written to the file.
-            Paths should be relative to the project root and should not exist.
-            Output the file path using the a line with the format "File: <path>".
-            Output the file code directly after the header line with no additional decoration.
-            """.trimIndent().toContentList(), null
+                  Role.system,
+                  """
+                    You will combine natural language instructions with a user provided code example to create a new file.
+                    Provide a new filename and the code to be written to the file.
+                    Paths should be relative to the project root and should not exist.
+                    Output the file path using the a line with the format "File: <path>".
+                    Output the file code directly after the header line with no additional decoration.
+                    """.trimIndent().toContentList(),
                 ),
                 ChatMessage(
-                    Role.user, ("""
-                              Create a new file based on the following directive: """.trimIndent() + directive + """
-
-                              The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
-
-                              ```
-                              """.trimIndent() + baseFile.code + """
-                              ```
-                              """.trimIndent()).toContentList(), null
+                  Role.user,
+                  ("""
+                                      Create a new file based on the following directive: """.trimIndent() + directive + """
+        
+                                      The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
+        
+                                      ```
+                                      """.trimIndent() + baseFile.code + """
+                                      ```
+                                      """.trimIndent()).toContentList(),
                 )
+              ),
+              temperature = AppSettingsState.instance.temperature,
+              audio = model.audio,
             )
-        )
-        val response =
-            api.chat(chatRequest, model).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
+          ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
                 "No response from API"
             )
         var outputPath = baseFile.path
-        val header = response?.split("\n")?.first()
-        var body = response?.split("\n")?.drop(1)?.joinToString("\n")?.trim()
-        if (body?.contains("```") == true) {
+        val header = response.split("\n").first()
+        var body = response.split("\n").drop(1).joinToString("\n").trim()
+        if (body.contains("```")) {
             body = body.split("```.*".toRegex()).drop(1).firstOrNull()?.trim() ?: body
         }
         val pathPattern = "File(?:name)?: ['\"]?([^'\"]+)['\"]?".toRegex()
-        val matcher = pathPattern.find(header ?: "")
+        val matcher = pathPattern.find(header)
         if (matcher != null) {
             outputPath = matcher.groupValues[1].trim()
         }
         ProjectFile(
             path = outputPath,
-            code = body ?: ""
+            code = body
         )
     } catch (e: Exception) {
         throw e

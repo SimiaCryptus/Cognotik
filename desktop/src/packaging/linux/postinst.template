@@ -6,16 +6,17 @@ if [ -f "/usr/share/applications/Cognotik.desktop" ]; then
   rm -f "/usr/share/applications/Cognotik.desktop"
 fi
 
-
 # Update desktop database after jpackage/dpkg installs the .desktop files
 # from the resource-dir into /usr/share/applications.
 update-desktop-database /usr/share/applications || true
+
 # Update icon cache after dpkg installs the icon file
 # into /usr/share/icons/hicolor/*/apps/cognotik.png
 gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 
 # Create /usr/local/bin if it doesn't exist
 mkdir -p /usr/local/bin
+
 # Create symlink for the executable
 # This makes 'cognotik' available in the system PATH.
 ln -sf /opt/cognotik/bin/Cognotik /usr/local/bin/cognotik

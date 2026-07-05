@@ -1,8 +1,6 @@
 package cognotik.actions.find
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
-import cognotik.actions.agent.MultiStepPatchAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -13,24 +11,18 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.chatModel
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -55,11 +47,11 @@ class FindResultsChatAction(
 
         try {
             val root = getModuleRootForFile(
-                UITools.getSelectedFile(event)?.parent?.toFile
+                event.getSelectedFile()?.parent?.toFile
                     ?: throw RuntimeException("No file selected")
             )
 
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
                 session,
@@ -81,11 +73,13 @@ class FindResultsChatAction(
                 showMenubar = false
             )
 
-            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {
@@ -109,6 +103,7 @@ class FindResultsChatAction(
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
+        if (!super.isEnabled(event)) return false
         val usageView = event.getData(UsageView.USAGE_VIEW_KEY)
         return usageView != null && usageView.usages.isNotEmpty()
     }
@@ -175,32 +170,25 @@ class FindResultsChatAction(
 
         override fun userMessage(
             session: Session,
-            user: User?,
+            user: User,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: API
+            ui: SocketManager
         ) {
-            val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ChatClient) api.budget = settings.budget ?: 2.00
-
             val task = ui.newTask()
-            val api = (api as ChatClient).getChildClient(task)
-
             task.echo(renderMarkdown(userMessage))
-
             task.verbose((getCodeContext()).renderMarkdown())
-
-            Retryable(ui = ui, task = task) { content ->
+            val model = AppSettingsState.instance.smartChatClient.getChildClient(task)
+            Retryable(task = task) { content ->
                 val task = ui.newTask(false)
                 task.add(
                     "<div>" + renderMarkdown(
-                        SimpleActor(
+                        ChatAgent(
                             prompt = """
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
-                            model = AppSettingsState.instance.smartModel.chatModel()
-                        ).answer(listOf(userMessage), api = api)
+                            model = model
+                        ).answer(listOf(userMessage))
                     ) + "</div>"
                 )
                 task.placeholder

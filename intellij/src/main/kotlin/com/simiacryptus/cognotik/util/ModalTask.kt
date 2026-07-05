@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -15,7 +15,7 @@ import java.util.function.Supplier
 class ModalTask<T>(
     project: Project, title: String, canBeCancelled: Boolean, val task: (ProgressIndicator) -> T
 ) : Task.WithResult<T, Exception>(project, title, canBeCancelled), Supplier<T> {
-    private val taskLog = LoggerFactory.getLogger(ModalTask::class.java)
+    private val taskLog = getLogger(ModalTask::class.java)
     private val result = AtomicReference<T>()
     private val isError = AtomicBoolean(false)
     private val error = AtomicReference<Throwable>()
@@ -125,7 +125,7 @@ class ModalTask<T>(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ModalTask::class.java)
+        private val log = getLogger(javaClass)
     }
 
 }

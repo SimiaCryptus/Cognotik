@@ -3,17 +3,20 @@ package com.simiacryptus.cognotik.dictation
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.audio.AudioPacket
+import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.audio.AudioPacket
-import com.simiacryptus.jopenai.audio.DictationManager
-import com.simiacryptus.jopenai.audio.TranscriptionProcessor
-import com.simiacryptus.jopenai.models.AudioModels
-import com.simiacryptus.jopenai.util.EventDispatcher
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.util.EventDispatcher
+import org.slf4j.LoggerFactory
 import javax.sound.sampled.AudioFormat
 
 open class DictationState {
     companion object : DictationState() {
-        val log = org.slf4j.LoggerFactory.getLogger(DictationState::class.java)
+        val log = LoggerFactory.getLogger(DictationState::class.java)
     }
 
     val configuration = EventDispatcher()
@@ -71,7 +74,7 @@ open class DictationState {
         channels = AppSettingsState.instance.channels
         selectedMicLine = AppSettingsState.instance.selectedMicLine
         talkTime = AppSettingsState.instance.talkTime
-        transcriptionModel = AudioModels.find(AppSettingsState.instance.transcriptionModel) ?: AudioModels.Whisper
+        transcriptionModel = findAudioModel(AppSettingsState.instance.transcriptionModel) ?: throw IllegalStateException("Transcription model not found: ${AppSettingsState.instance.transcriptionModel}")
     }
 
     val onPacket: (AudioPacket) -> Unit = {
@@ -79,21 +82,21 @@ open class DictationState {
         iec61672Max = it.iec61672.coerceAtLeast(iec61672Max)
         iec61672Level = (((it.iec61672 / iec61672Max) * 100).toInt())
         rmsLevel = (((it.rms / rmsMax) * 100).toInt())
-        talkTime = DictationManager.discriminator.talkTime
+        talkTime = dictationManager.discriminator.talkTime
         configuration.notifyListeners()
     }
 
     fun resetState() {
         rmsMax = 0.0
         iec61672Max = 0.0
-        DictationManager.audioFormat = AudioFormat(
+        dictationManager.audioFormat = AudioFormat(
             /* sampleRate = */ sampleRate.toFloat(),
             /* sampleSizeInBits = */ sampleSize,
             /* channels = */ channels,
             /* signed = */ true,
             /* bigEndian = */ false
         )
-        DictationManager.transcriptionModel = transcriptionModel
+        dictationManager.transcriptionModel = transcriptionModel
     }
 
     fun setRecordingState(isRecording: Boolean) {
@@ -127,18 +130,25 @@ open class DictationState {
         if (value == selectedMicLine) return
         selectedMicLine = value
         AppSettingsState.instance.selectedMicLine = value
-        DictationManager.selectedMicLine = value
+        dictationManager.selectedMicLine = value
         configuration.notifyListeners()
     }
 
     fun setTranscriptionModel(model: AudioModels) {
         if (model == transcriptionModel) return
         transcriptionModel = model
-        AppSettingsState.instance.transcriptionModel = model.modelName
-        DictationManager.transcriptionModel = model
+        AppSettingsState.instance.transcriptionModel = model.modelId
+        dictationManager.transcriptionModel = model
         configuration.notifyListeners()
     }
 }
+
+fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == model }
+
+fun audioModels(): List<AudioModels> =
+  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap {
+        it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.apiBase) ?: listOf()
+    }
 
 private fun Project.currentEditor() = FileEditorManager
     .getInstance(this)

@@ -1,7 +1,6 @@
 package cognotik.actions.find
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -14,25 +13,21 @@ import com.intellij.psi.PsiFile
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.PsiUtil
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.util.*
+
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.models.chatModel
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -46,12 +41,12 @@ class FindResultsModificationAction(
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(event: AnActionEvent) {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         val root: Path = if (null != folder) {
             folder.toFile.toPath()
         } else {
             getModuleRootForFile(
-                UITools.getSelectedFile(event)?.parent?.toFile
+                event.getSelectedFile()?.parent?.toFile
                     ?: throw RuntimeException("No file or folder selected")
             ).toPath()
         }
@@ -64,7 +59,7 @@ class FindResultsModificationAction(
         }
         val modificationParams = showModificationDialog(project, *usages) ?: return
         try {
-            val session = Session.newGlobalID()
+            val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
                 session,
@@ -84,11 +79,13 @@ class FindResultsModificationAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {
@@ -125,14 +122,12 @@ class FindResultsModificationAction(
         override val inputCnt = 1
         override val stickyInput = false
 
-        override fun newSession(user: User?, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)
-            val ui = (socketManager as ApplicationSocketManager).applicationInterface
-            val task = ui.newTask()
-            val api = api.getChildClient(task)
+        override fun newSession(user: User, session: Session): SocketManager {
+            val socketManager = super.newSession(user, session)!!
+            val task = socketManager.newTask(cancelable = false)
             val tabs = TabbedDisplay(task)
             usages.entries.map { (file, usages) ->
-                val task = ui.newTask(false)
+                val task = socketManager.newTask(cancelable = false, root = false)
                 tabs[file?.name ?: "Unknown"] = task.placeholder
                 lateinit var fileListingMarkdown: String
                 lateinit var prompt: String
@@ -146,33 +141,34 @@ class FindResultsModificationAction(
                     Your task is to suggest appropriate modifications based on the replacement text provided.
                     Usage locations:
                     """.trimIndent() + usages.joinToString("\n") { "* `${it.presentation.plainText}`" } +
-                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + patchFormatPrompt
+                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + AppSettingsState.instance.processor.patchFormatPrompt
                 }
-                ui.socketManager!!.pool.submit {
-                    val api = api.getChildClient(task)
-                    val response = SimpleActor(
+                socketManager.pool.submit {
+                    //val api = api.getChildClient(task)
+                    val response = ChatAgent(
                         prompt = prompt,
-                        model = AppSettingsState.instance.smartModel.chatModel()
+                        model = AppSettingsState.instance.smartChatClient.getChildClient(task)
                     ).answer(
                         listOf(
                             fileListingMarkdown
-                        ), api
+                        ),
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
-                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                        ui.socketManager!!,
-                        root = root.toPath(),
-                        response = response,
-                        handle = { newCodeMap ->
-                            newCodeMap.forEach { (path, newCode) ->
-                                task.complete("Updated $path")
-                            }
-                        },
-                        ui = ui,
-                        api = api,
-                        shouldAutoApply = { modificationParams.autoApply },
-                        defaultFile = file?.toFile?.path
-                    )?.apply {
+                    DiffInstrumentor(
+                        AppSettingsState.instance.processor,
+                        SessionRenderer(task),
+                    ).instrument(
+                    root = root.toPath(),
+                    response = response,
+                    handle = { newCodeMap: Map<Path, String> ->
+                      newCodeMap.forEach { (path, newCode) ->
+                        task.complete("Updated $path")
+                      }
+                    },
+                    shouldAutoApply = { it: Path -> modificationParams.autoApply },
+                        defaultFile = file?.toFile?.path,
+                        resolver = ::resolveToRelativePath,
+                  ).apply {
                         task.complete(renderMarkdown(this))
                     }
                 }
@@ -239,12 +235,13 @@ class FindResultsModificationAction(
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
+        if (!super.isEnabled(event)) return false
         val usageView = event.getData(UsageView.USAGE_VIEW_KEY)
         return usageView != null && usageView.usages.isNotEmpty()
     }
 
     private fun showModificationDialog(project: Project, vararg usages: Usage): ModificationParams? {
-        val dialog = FindResultsModificationDialog(project, usages.size)
+        val dialog = FindResultsModificationDialog(project)
         val config = dialog.showAndGetConfig()
         return if (config != null) {
             ModificationParams(

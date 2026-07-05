@@ -57,7 +57,7 @@ export const useModal = () => {
             logger.debug('Creating iframe modal for fileIndex with URL:', iframeSrc);
             // Use requestAnimationFrame to ensure the loading message is rendered before setting iframe
             requestAnimationFrame(() => {
-                const iframeContent = `<iframe src="${iframeSrc}" style="width:100%; height:100%; border:none; min-height: 450px;" title="File Index"></iframe>`;
+                const iframeContent = `<iframe src="${iframeSrc}" style="width:90vw; height:80vh; border:none;" title="File Index"></iframe>`;
                 dispatch(setModalContent(iframeContent));
                 // highlightCode() is not called here as content is sandboxed in an iframe
             });

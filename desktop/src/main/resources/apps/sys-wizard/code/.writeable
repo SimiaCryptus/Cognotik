@@ -1,0 +1,11 @@
+# .writeable - Whitelist of files and directories writable by the application
+# Uses .gitignore-style patterns (whitelist mode)
+
+# Allow the fix log to be written
+fix_log.md
+
+# Allow the script itself to be modified during autofix
+script.sh
+
+# Allow this writeable manifest to be updated
+.writeable

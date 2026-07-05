@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.kotlin
 
-import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.platform.model.defaultUser
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -10,14 +11,14 @@ abstract class InterpreterTestBase {
     @Test
     fun `test run with valid code`() {
         val interpreter = newInterpreter(mapOf())
-        val result = interpreter.run("2 + 2")
+        val result = interpreter.run("2 + 2", defaultUser)
         Assertions.assertEquals(4, result)
     }
 
     @Test
     fun `test run with invalid code`() {
         val interpreter = newInterpreter(mapOf())
-        assertThrows<Exception> { interpreter.run("2 +") }
+        assertThrows<Exception> { interpreter.run("2 +", defaultUser) }
     }
 
     @Test
@@ -36,7 +37,7 @@ abstract class InterpreterTestBase {
     @Test
     open fun `test run with variables`() {
         val interpreter = newInterpreter(mapOf("x" to (2 as Any), "y" to (3 as Any)))
-        val result = interpreter.run("x * y")
+        val result = interpreter.run("x * y", defaultUser)
         Assertions.assertEquals(6, result)
     }
 
@@ -48,13 +49,13 @@ abstract class InterpreterTestBase {
     }
 
     class FooBar {
-        fun bar() = "Foo says Hello World"
+        fun bar(): String = "Foo says Hello World"
     }
 
     @Test
     fun `test run with tool Any`() {
         val interpreter = newInterpreter(mapOf("tool" to (FooBar() as Any)))
-        val result = interpreter.run("tool.bar()")
+        val result = interpreter.run("tool.bar()", defaultUser)
         Assertions.assertEquals("Foo says Hello World", result)
     }
 
@@ -68,7 +69,7 @@ abstract class InterpreterTestBase {
     @Test
     fun `test run with tool Any and invalid code`() {
         val interpreter = newInterpreter(mapOf("tool" to (FooBar() as Any)))
-        assertThrows<Exception> { interpreter.run("tool.baz()") }
+        assertThrows<Exception> { interpreter.run("tool.baz()", defaultUser) }
     }
 
     @Test
@@ -83,5 +84,5 @@ abstract class InterpreterTestBase {
         assertThrows<Exception> { with(interpreter.validate("x * y")) { throw this!! } }
     }
 
-    abstract fun newInterpreter(map: Map<String, Any>): Interpreter
+    abstract fun newInterpreter(map: Map<String, Any>): CodeRuntime
 }

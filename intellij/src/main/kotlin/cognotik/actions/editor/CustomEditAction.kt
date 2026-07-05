@@ -5,10 +5,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.proxy.ChatProxy
 import javax.swing.JOptionPane
 
 /**
@@ -35,13 +34,12 @@ open class CustomEditAction : SelectionAction<String>(requiresSelection = true) 
 
     val proxy: VirtualAPI
         get() {
-            val chatProxy = ChatProxy(
+            val proxyAgent = ProxyAgent(
                 clazz = VirtualAPI::class.java,
-                api = api,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
             )
-            chatProxy.addExample(
+            proxyAgent.addExample(
                 VirtualAPI.EditedText(
                     """
 
@@ -57,7 +55,7 @@ open class CustomEditAction : SelectionAction<String>(requiresSelection = true) 
                     "English"
                 )
             }
-            return chatProxy.create()
+            return proxyAgent.create()
         }
 
     override fun getConfig(project: Project?): String? {

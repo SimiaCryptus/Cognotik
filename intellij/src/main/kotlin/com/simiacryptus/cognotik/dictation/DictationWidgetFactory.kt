@@ -6,11 +6,19 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.util.Consumer
-import com.simiacryptus.jopenai.audio.AudioState
-import com.simiacryptus.jopenai.audio.DictationManager
+import com.simiacryptus.cognotik.TranscriptionClient
+import com.simiacryptus.cognotik.audio.AudioState
+import com.simiacryptus.cognotik.audio.DictationManager
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
+import org.slf4j.event.Level
 import java.awt.event.MouseEvent
+import java.io.IOException
 
 class DictationWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = SpeechToTextWidget.ID
@@ -28,19 +36,19 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
             fun toggleRecording() {
                 if (DictationState.isRecording) {
                     DictationState.setRecordingState(false)
-                    DictationManager.stopRecording()
+                    dictationManager.stopRecording()
                 } else {
                     DictationState.setRecordingState(true)
                     DictationState.resetState()
-                    DictationManager.startRecording()
+                    dictationManager.startRecording()
                 }
                 statusBar?.updateWidget(ID)
             }
         }
 
         override fun install(statusBar: StatusBar) {
-            DictationManager.onTranscriptionUpdate = DictationState.onTranscriptionUpdate
-            DictationManager.handlePacket = DictationState.onPacket
+            dictationManager.onTranscriptionUpdate = DictationState.onTranscriptionUpdate
+            dictationManager.handlePacket = DictationState.onPacket
             Companion.statusBar = statusBar
             val project = statusBar.project ?: return
             DictationState.project = project
@@ -90,7 +98,7 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
 
         override fun ID(): String = ID
         override fun getPresentation() = this
-        override fun getIcon() = when (DictationManager.discriminator.currentState) {
+        override fun getIcon() = when (dictationManager.discriminator.currentState) {
             AudioState.QUIET -> when {
                 DictationState.isRecording -> MyIcons.micActive
                 else -> MyIcons.micInactive
@@ -109,6 +117,34 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
             ApplicationManager.getApplication().invokeLater { toggleRecording() }
         }
 
+    }
+
+    companion object {
+        val dictationManager = object : DictationManager() {
+            override fun transcriptionClient(): TranscriptionClient {
+                val model = AppSettingsState.instance.transcriptionModel.let {
+                    findAudioModel(it)
+                } ?: throw IOException("Transcription model not configured")
+                val apiData =
+                  fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.find { it.provider == model.provider }
+                return TranscriptionClient(
+                    key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
+                    apiBase = apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"),
+                    logLevel = Level.DEBUG,
+                    logStreams = mutableListOf(),
+                    workPool = ApplicationServices.threadPoolManager.getPool(
+                        currentSession,
+                      AppSettingsState.localUser
+                    ),
+                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+                        currentSession,
+                      AppSettingsState.localUser
+                    ),
+                    provider = model.provider
+                )
+            }
+
+        }
     }
 }
 

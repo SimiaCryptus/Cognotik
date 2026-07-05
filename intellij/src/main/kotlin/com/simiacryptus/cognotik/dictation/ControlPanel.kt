@@ -4,10 +4,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
+import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.SpeechToTextWidget.Companion.toggleRecording
-import com.simiacryptus.jopenai.audio.DictationManager
-import com.simiacryptus.jopenai.models.AudioModels
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.MouseAdapter
@@ -19,6 +19,7 @@ import javax.swing.JProgressBar
 class ControlPanel(
     val project: Project,
     val settings: DictationState = DictationState,
+    val dictationManager: DictationManager = DictationWidgetFactory.dictationManager
 ) : JPanel(), AutoCloseable {
     companion object {
     }
@@ -29,17 +30,17 @@ class ControlPanel(
         border = JBUI.Borders.emptyRight(5)
 
         addItem("Default")
-        DictationManager.availableMicLines.forEach(::addItem)
+        dictationManager.availableMicLines.forEach(::addItem)
         (AppSettingsState.instance.selectedMicLine ?: settings.selectedMicLine)?.let {
             selectedItem = it
-            DictationManager.selectedMicLine = it
+            dictationManager.selectedMicLine = it
             settings.setSelectedMicLine(it)
         }
-        addActionListener({
+        addActionListener {
             settings.setSelectedMicLine(selectedItem as String)
-            DictationManager.selectedMicLine = selectedItem as String
+            dictationManager.selectedMicLine = selectedItem as String
             AppSettingsState.instance.selectedMicLine = selectedItem as String
-        })
+        }
     }
     private val rmsProgressBar = JProgressBar(0, 100).apply {
         isStringPainted = true
@@ -52,7 +53,6 @@ class ControlPanel(
 
     private val maxTalkTimeDisplayMs = 10000
     private val talkTimeProgressBar = JProgressBar(0, maxTalkTimeDisplayMs).apply {
-
 
 
         toolTipText = "Current consecutive talk duration"
@@ -94,7 +94,7 @@ class ControlPanel(
             "${settings.sampleRate}Hz ${settings.sampleSize}-bit ${if (settings.channels == 1) "Mono" else "Stereo"}"
         selectedItem = formats.find { it == currentFormat } ?: formats[1]
 
-        addActionListener({
+        addActionListener {
             val format = (selectedItem as String).split(" ")
             val sampleRate = format[0].replace("Hz", "").toInt()
             val sampleSize = format[1].replace("-bit", "").toInt()
@@ -104,17 +104,17 @@ class ControlPanel(
             settings.setChannels(channels)
             AppSettingsState.instance.sampleSize = sampleSize
             AppSettingsState.instance.channels = channels
-        })
+        }
     }
     private val transcriptionModelComboBox = ComboBox<AudioModels>().apply {
         border = JBUI.Borders.emptyRight(5)
-        AudioModels.values().filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
+        audioModels().filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
         selectedItem = settings.transcriptionModel
-        setRenderer { _, value, _, _, _ -> JBLabel(value?.modelName ?: "N/A") }
+        setRenderer { _, value, _, _, _ -> JBLabel(value?.modelId ?: "N/A") }
         addActionListener {
             val selected = selectedItem as? AudioModels ?: return@addActionListener
             settings.setTranscriptionModel(selected)
-            AppSettingsState.instance.transcriptionModel = selected.modelName
+            AppSettingsState.instance.transcriptionModel = selected.modelId
         }
     }
 
@@ -175,13 +175,13 @@ class ControlPanel(
             add(JButton("Train Quiet").apply {
                 addMouseListener(object : MouseAdapter() {
                     override fun mousePressed(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = false
+                        dictationManager.discriminator.isTraining = false
                         text = "Training..."
                     }
 
                     override fun mouseReleased(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = null
-                        DictationManager.discriminator.clearMemory()
+                        dictationManager.discriminator.isTraining = null
+                        dictationManager.discriminator.clearMemory()
                         text = "Train Quiet"
                     }
                 })
@@ -194,13 +194,13 @@ class ControlPanel(
             add(JButton("Train Talk").apply {
                 addMouseListener(object : MouseAdapter() {
                     override fun mousePressed(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = true
+                        dictationManager.discriminator.isTraining = true
                         text = "Training..."
                     }
 
                     override fun mouseReleased(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = null
-                        DictationManager.discriminator.clearMemory()
+                        dictationManager.discriminator.isTraining = null
+                        dictationManager.discriminator.clearMemory()
                         text = "Train Talk"
                     }
                 })
@@ -212,7 +212,7 @@ class ControlPanel(
             })
             add(JButton("Reset").apply {
                 addActionListener {
-                    DictationManager.discriminator.reset()
+                    dictationManager.discriminator.reset()
                 }
             }, GridBagConstraints().apply {
                 anchor = GridBagConstraints.WEST

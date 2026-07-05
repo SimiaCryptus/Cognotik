@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -15,7 +15,7 @@ import java.util.function.Supplier
 class BgTask<T>(
     project: Project, title: String, canBeCancelled: Boolean, val task: (ProgressIndicator) -> T
 ) : Task.Backgroundable(project, title, canBeCancelled, DEAF), Supplier<T> {
-    private val taskLog = LoggerFactory.getLogger(BgTask::class.java)
+    private val taskLog = getLogger(BgTask::class.java)
 
     private val result = AtomicReference<T>()
     private val isError = AtomicBoolean(false)
@@ -139,6 +139,6 @@ class BgTask<T>(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(BgTask::class.java)
+        private val log = getLogger(javaClass)
     }
 }

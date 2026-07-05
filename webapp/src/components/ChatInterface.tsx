@@ -32,6 +32,14 @@ import React, {useEffect, useState} from 'react';
        outline: none;
      }
  `;
+
+function newSessionId() {
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.random().toString(36).substring(2, 8);
+    return `U-${datePart}-${randomPart}`;
+}
+
+
  const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                           sessionId: propSessionId,
                                                           websocket,
@@ -42,7 +50,15 @@ import React, {useEffect, useState} from 'react';
          logger.debug(`${LOG_PREFIX} ${message}`, data);
      };
      const [messages, setMessages] = useState<Message[]>([]);
-     const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || 'new');
+
+     const [sessionId] = useState(() => {
+         if (propSessionId) return propSessionId;
+         const queryParams = new URLSearchParams(window.location.search);
+         const querySessionId = queryParams.get('session');
+         if (querySessionId) return querySessionId;
+         if (window.location.hash.slice(1)) return window.location.hash.slice(1);
+         return newSessionId();
+     });
      const dispatch = useDispatch();
      const ws = useWebSocket(sessionId);
      const appConfig = useSelector((state: RootState) => state.config);

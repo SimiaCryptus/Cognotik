@@ -1,14 +1,31 @@
-# 🚀 AI Coding Assistant: Open Source Generative & Agentic Tools for IntelliJ 🌟
+# ![Cognotik Logo](https://share.simiacrypt.us/cognotik/images/public/icons/icon-64x64.png) Cognotik AI Coding Assistant ![Cognotik Logo](https://share.simiacrypt.us/cognotik/images/public/icons/icon-64x64.png)
 
-[![Build](https://github.com/SimiaCryptus/intellij-aicoder/workflows/Build/badge.svg)](https://github.com/SimiaCryptus/intellij-aicoder/actions)
-[![Version](https://img.shields.io/jetbrains/plugin/v/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
+## Open Source Generative & Agentic Tools for IntelliJ
+
+[![Build](https://github.com/SimiaCryptus/Cognotik/workflows/Build/badge.svg)](https://github.com/SimiaCryptus/Cognotik/actions)
+[![Version](https://img.shields.io/jetbrains/plugin/v/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Plugin description -->
-![Cognotik Logo](https://share.simiacrypt.us/cognotik/images/public/icons/icon-512x512.png)
 
-**Cognotik** is an open-source AI coding assistant plugin for IntelliJ IDEs, focusing on powerful, high-level agentic tools rather than just code completion. Leverage generative AI directly within your IDE using a "Bring Your Own Key" (BYOK) model for maximum control over data, costs, and model choice. Enhance your development workflow with AI-powered code editing, file manipulation, complex task automation via AI agents, and voice-to-text capabilities.
+**Cognotik** is an open-source AI coding assistant for IntelliJ IDEs, designed to go beyond simple code completion. It provides a suite of powerful, high-level **agentic tools** to automate complex development workflows. At its core is a sophisticated **Cognitive Task Planning Framework** that understands your high-level goals, breaks them down into executable steps, and intelligently carries out the plan using a "Bring Your Own Key" (BYOK) model for maximum control over data, costs, and model choice.
+
+### ✨ Why Cognotik? A Tool for Power Users
+
+The AI coding assistant landscape is crowded, but Cognotik is built on a distinct philosophy for developers who demand control, transparency, and power.
+
+| Feature           | Cognotik                                                                                              | Proprietary Tools (e.g., GitHub Copilot, JetBrains AI)                                            |
+|:------------------|:------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------|
+| **Model Control** | ✅ **Bring Your Own Key (BYOK)**: Use any compatible LLM, including local or fine-tuned models.        | ❌ **Locked-in**: Tied to the provider's specific models.                                          |
+| **Cost & Data**   | ✅ **Direct & Transparent**: You control your data and pay the LLM provider directly. No middlemen.    | ❌ **Subscription-based**: Your data passes through their servers, and you pay a subscription fee. |
+| **Source Code**   | ✅ **Open Source**: Full transparency. Inspect, modify, and contribute.                                | ❌ **Closed Source**: The inner workings are a black box.                                          |
+| **Core Focus**    | ✅ **Agentic Task Automation**: Designed for complex, multi-step workflows with explicit user control. | 🔶 **Primarily Autocomplete**: Agentic features are often secondary or less configurable.         |
+| **Philosophy**    | **Augmentation**: A powerful tool to enhance your skills and judgment.                                | **Automation**: Often aims to replace developer tasks with a more autonomous approach.            |
+
+Cognotik is for developers who want to augment their capabilities, not replace their judgment. Our explicit **Cognitive Task Planning Framework** is designed
+for user invocation and oversight, giving you precise control over complex automated tasks. If you value flexibility, privacy, and a tool that adapts to your
+workflow, Cognotik is for you.
 
 ### 🔑 Open Source & Bring Your Own Key (BYOK)
 
@@ -23,15 +40,17 @@ Our focus on providing robust *tools* rather than a managed *service* ensures a 
 
 ### 🤖 High-Level Agentic Tools (Beyond Autocomplete)
 
-Cognotik differentiates itself by focusing on **high-level agentic capabilities** that automate complex workflows and reasoning, rather than simple line-by-line code completion. It's designed to *complement* other AI assistants that excel at autocomplete. Many Cognotik actions leverage a powerful agent platform, often interacting via a web browser window to manage complex, multi-step tasks that require persistent state and sophisticated interaction flows.
+Cognotik differentiates itself by focusing on **high-level agentic capabilities** that automate complex workflows. Its "brain" is a powerful **Cognitive Task Planning Framework** that can formulate, present, and execute multi-step plans to achieve your goals. You can choose from different strategies, such as a plan-ahead **Waterfall Mode** for well-defined problems or an interactive, step-by-step **Conversational Mode** for exploratory tasks.
 
 ## Key Features
 
-* Editor Actions - Edit, Paste, and Chat about code directly in the editor to streamline your workflow
-* File actions - Create, edit, and conduct mass operations with AI assistance
-* Agentic tools - Leverage AI agents to perform complex tasks like refactoring, documentation generation, test creation, and workflow automation across multiple files.
-* Voice to Text - Dictate code, comments, and commands using your voice for hands-free coding.
-* Voice to Text - Dictate code and comments using voice commands
+*   **Advanced Task Automation:** Leverage the Cognitive Task Planning Framework to tackle complex goals. The AI agent can perform file operations, execute code, run shell commands, search the web, and even employ advanced reasoning techniques to solve problems from start to finish.
+*   **Intelligent Code Editing:** Chat about your code, apply intelligent patches, edit selections with natural language, and paste code with automatic language and style transformation, all directly within the editor.
+*   **Project-Wide Operations:** Work across multiple files simultaneously. Generate comprehensive documentation, create new files from a description, apply patches across your codebase, and perform mass refactoring with contextual awareness.
+*   **Deep IDE Integration:** Cognotik integrates seamlessly into your workflow. Interact with AI directly from the **Git Log** (to chat with commits), **Find Usages** results, the **Test Runner** (to analyze failures), and the **Problems** view.
+*   **Knowledge Management:** Build a semantic index of your codebase, enabling powerful knowledge retrieval and similarity-based searches to quickly find relevant information.
+*   **Voice to Text:** Dictate code and documents using built-in voice-to-text capabilities.
+
 <!-- Plugin description end -->
 
 ## 🚀 Getting Started
@@ -61,3 +80,5 @@ Cognotik differentiates itself by focusing on **high-level agentic capabilities*
 ---
 
 *Keywords: IntelliJ Plugin, AI Coding Assistant, Generative AI, Agentic AI, Open Source, BYOK, Developer Tools, Code Generation, Code Explanation, Refactoring, Voice Coding, JetBrains, OpenAI, Anthropic, Large Language Models (LLM)*
+You can choose from different strategies, such as a plan-ahead **Waterfall Mode** for well-defined problems, an interactive, step-by-step **Conversational Mode
+** for exploratory tasks, or a flexible **Adaptive Mode** that adjusts its plan based on real-time feedback.

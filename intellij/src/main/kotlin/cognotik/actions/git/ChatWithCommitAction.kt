@@ -1,6 +1,5 @@
 package cognotik.actions.git
 
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -8,25 +7,17 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.isBinary
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
 import java.io.File
 import java.text.SimpleDateFormat
-
-val String.isBinary: Boolean
-    get() {
-        val binary = this.toByteArray().filter { it < 0x20 || it > 0x7E }
-        return binary.size > this.length / 10
-    }
 
 class ChatWithCommitAction : AnAction() {
     private val log = Logger.getInstance(ChatWithCommitAction::class.java)
@@ -57,7 +48,7 @@ class ChatWithCommitAction : AnAction() {
                             "\n",
                             "\n  "
                         )
-                        val diff = IterativePatchUtil.generatePatch(before, after)
+                        val diff = AppSettingsState.instance.processor.generatePatch(before, after)
                         "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
                     }
 
@@ -69,16 +60,15 @@ class ChatWithCommitAction : AnAction() {
     }
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",
             codeSelection = diffInfo,
             filename = "commit_changes.diff",
-            api = IdeaChatClient.instance,
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-            storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
+            model = AppSettingsState.instance.smartChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
+            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
@@ -93,12 +83,13 @@ class ChatWithCommitAction : AnAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(e.project)
-
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

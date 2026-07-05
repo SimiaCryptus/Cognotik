@@ -4,25 +4,34 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class User(
-    @get:JsonProperty("email") val email: String,
-    @get:JsonProperty("name") val name: String? = null,
-    @get:JsonProperty("id") val id: String? = null,
-    @get:JsonProperty("picture") val picture: String? = null,
-    @get:JsonIgnore val credential: Any? = null,
+  @get:JsonProperty("email") val email: String,
+  @get:JsonProperty("name") val name: String = email,
+  @get:JsonProperty("id") val id: String = email,
 ) {
-    override fun toString() = email
+  override fun toString() = email
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    other as User
+    return email == other.email
+  }
 
-        other as User
+  override fun hashCode(): Int {
+    return email.hashCode()
+  }
 
-        return email == other.email
-    }
-
-    override fun hashCode(): Int {
-        return email.hashCode()
+    companion object {
+        val NULL: User = User(
+            id = "0",
+            email = "null@localhost"
+        )
     }
 
 }
+@JvmField
+@JsonIgnore
+var defaultUser = User(
+  id = "1",
+  email = "user@localhost"
+)

@@ -1,1534 +1,608 @@
-function generateSessionId() {
-    console.log('[generateSessionId] Called');
-    return generateSessionIdWithDate(new Date());
-}
-
-function generateSessionIdWithDate(date) {
-    const now = date;
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-
-    const randomChars = Math.random().toString(36).substring(2, 6);
-    const sessionId = `U-${year}${month}${day}-${randomChars}`;
-    console.log('[generateSessionId] Generated sessionId:', sessionId);
-    return sessionId;
-}
-
-// State management class for better testability
-class AppState {
-    constructor(dependencies = {}) {
-        this.localStorage = dependencies.localStorage || window.localStorage;
-        this.sessionId = dependencies.sessionId || null; // Don't generate here, let it be set when needed
-        this.apiSettings = {};
-        this.taskSettings = this.initializeTaskSettings();
-        this.cognitiveMode = this.localStorage.getItem('cognitiveMode') || 'single-task';
-    }
-
-    initializeTaskSettings() {
-        return {
-            defaultModel: this.localStorage.getItem('defaultModel') || 'GPT4o',
-            parsingModel: this.localStorage.getItem('parsingModel') || 'GPT4oMini',
-            workingDir: this.localStorage.getItem('workingDir') || generateTimestampedDirectory(),
-            autoFix: this.localStorage.getItem('autoFix') === 'true',
-            maxTaskHistoryChars: 20000,
-            maxTasksPerIteration: 3,
-            maxIterations: 100,
-            graphFile: '',
-            taskSettings: {},
-        };
-    }
-
-    updateTaskSetting(key, value) {
-        this.taskSettings[key] = value;
-        this.localStorage.setItem(key, value);
-    }
-
-    updateCognitiveMode(mode) {
-        this.cognitiveMode = mode;
-        this.localStorage.setItem('cognitiveMode', mode);
-    }
-}
-
-// Global instance - can be replaced for testing
-let appState = new AppState();
-
-const taskTypes = [{
-    id: 'InsightTask',
-    name: 'Insight Task',
-    description: 'Analyze code and provide detailed explanations of implementation patterns',
-    tooltip: 'Provides detailed answers and insights about code implementation by analyzing specified files.',
-}, {
-    id: 'FileModificationTask',
-    name: 'File Modification Task',
-    description: 'Create new files or modify existing code with AI-powered assistance',
-    tooltip: 'Creates or modifies source files with AI assistance while maintaining code quality.',
-}, {
-    id: 'RunShellCommandTask',
-    name: 'Run Shell Command Task',
-    description: 'Execute shell commands safely',
-    tooltip: 'Executes shell commands in a controlled environment.',
-}, {
-    id: 'RunCodeTask',
-    name: 'Run Code Task',
-    description: 'Execute code snippets with AI assistance',
-    tooltip: 'Executes code snippets with AI assistance while maintaining code quality.',
-}, {
-    id: 'CommandAutoFixTask',
-    name: 'Command Auto Fix Task',
-    description: 'Run a command and automatically fix any issues that arise',
-    tooltip: 'Executes a command and automatically fixes any issues that arise.',
-}, {
-    id: 'FileSearchTask',
-    name: 'File Search Task',
-    description: 'Search project files using patterns with contextual results',
-    tooltip: 'Performs pattern-based searches across project files with context.',
-}, {
-    id: 'CrawlerAgentTask',
-    name: 'Web Search Task',
-    description: 'Search Google, fetch top results, and analyze content',
-    tooltip: 'Searches Google for specified queries and analyzes the top results.',
-}, {
-    id: 'GitHubSearchTask',
-    name: 'GitHub Search Task',
-    description: 'Search GitHub repositories, code, issues and users',
-    tooltip: 'Performs comprehensive searches across GitHub\'s content.',
-},
-];
-
-const apiProviders = [{id: 'OpenAI', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1'}, {
-    id: 'Anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1'
-}, {id: 'Google', name: 'Google', baseUrl: 'https://generativelanguage.googleapis.com'}, {
-    id: 'Groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1'
-}, {id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1'}, {
-    id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws'
-}, {
-    id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com'
-}, {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'}, {
-    id: 'GoogleSearch', name: 'Google Search', baseUrl: ''
-},];
-
-function generateTimestampedDirectory() {
-    console.log('[generateTimestampedDirectory] Called');
-    return generateTimestampedDirectoryWithDate(new Date());
-}
-
-function generateTimestampedDirectoryWithDate(date) {
-    const now = date;
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const dir = `sessions/${year}${month}${day}${hours}${minutes}${seconds}`;
-    console.log('[generateTimestampedDirectory] Generated directory:', dir);
-    return dir;
-}
-
-const availableModels = {
-    OpenAI: [{id: 'GPT4o', name: 'GPT-4o', description: 'OpenAI\'s capable vision model'}, {
-        id: 'GPT4oMini', name: 'GPT-4o Mini', description: 'Smaller, faster version of GPT-4o'
-    }, {id: 'O1', name: 'o1', description: 'OpenAI\'s reasoning-focused model'}, {
-        id: 'O1Mini', name: 'o1-mini', description: 'Smaller version of o1'
-    }, {id: 'O1Preview', name: 'o1-preview', description: 'Preview version of o1'}, {
-        id: 'O3', name: 'o3', description: 'OpenAI\'s advanced reasoning model'
-    }, {id: 'O3Mini', name: 'o3-mini', description: 'Smaller version of o3'}, {
-        id: 'O4Mini', name: 'o4-mini', description: 'Latest mini reasoning model'
-    }, {id: 'GPT41', name: 'GPT-4.1', description: 'Latest GPT-4 series model'}, {
-        id: 'GPT41Mini', name: 'GPT-4.1 Mini', description: 'Smaller version of GPT-4.1'
-    }, {id: 'GPT41Nano', name: 'GPT-4.1 Nano', description: 'Smallest version of GPT-4.1'}, {
-        id: 'GPT45', name: 'GPT-4.5', description: 'Advanced preview model'
-    },],
-    Anthropic: [{id: 'Claude35Sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic\'s advanced model'}, {
-        id: 'Claude37Sonnet', name: 'Claude 3.7 Sonnet', description: 'Anthropic\'s latest model'
-    }, {id: 'Claude35Haiku', name: 'Claude 3.5 Haiku', description: 'Smaller, faster Claude model'}, {
-        id: 'Claude3Opus', name: 'Claude 3 Opus', description: 'Anthropic\'s most capable model'
-    }, {id: 'Claude3Sonnet', name: 'Claude 3 Sonnet', description: 'Balanced Claude model'}, {
-        id: 'Claude3Haiku', name: 'Claude 3 Haiku', description: 'Fast, efficient Claude model'
-    },],
-    Groq: [{id: 'Llama33_70bVersatile', name: 'Llama 3.3 70B Versatile', description: 'Fast Llama 3.3 inference'}, {
-        id: 'Llama33_70bSpecDec', name: 'Llama 3.3 70B SpecDec', description: 'Specialized Llama 3.3 model'
-    }, {id: 'Llama31_8bInstant', name: 'Llama 3.1 8B Instant', description: 'Fast, small Llama model'}, {
-        id: 'Gemma2_9b', name: 'Gemma 2 9B', description: 'Google\'s Gemma model on Groq'
-    }, {id: 'MistralSaba24b', name: 'Mistral Saba 24B', description: 'Mistral\'s Saba model'}, {
-        id: 'Qwen25_32b', name: 'Qwen 2.5 32B', description: 'Qwen model on Groq'
-    },],
-    Mistral: [{id: 'Mistral7B', name: 'Mistral 7B', description: 'Mistral\'s base model'}, {
-        id: 'MistralSmall', name: 'Mistral Small', description: 'Mistral\'s small model'
-    }, {id: 'MistralMedium', name: 'Mistral Medium', description: 'Mistral\'s medium model'}, {
-        id: 'MistralLarge', name: 'Mistral Large', description: 'Mistral\'s large model'
-    }, {id: 'Mixtral8x7B', name: 'Mixtral 8x7B', description: 'Mistral\'s Mixtral model'}, {
-        id: 'Mixtral8x22B', name: 'Mixtral 8x22B', description: 'Mistral\'s larger Mixtral model'
-    }, {id: 'Codestral', name: 'Codestral', description: 'Mistral\'s code-focused model'},],
-    DeepSeek: [{id: 'DeepSeekChat', name: 'DeepSeek Chat', description: 'DeepSeek\'s general chat model'}, {
-        id: 'DeepSeekCoder', name: 'DeepSeek Coder', description: 'DeepSeek\'s code-focused model'
-    }, {id: 'DeepSeekReasoner', name: 'DeepSeek Reasoner', description: 'DeepSeek\'s reasoning model'},],
-    AWS: [{id: 'AWSLLaMA31_405bChat', name: 'Llama 3.1 405B', description: 'Largest Llama model on AWS'}, {
-        id: 'AWSLLaMA31_70bChat', name: 'Llama 3.1 70B', description: 'Large Llama model on AWS'
-    }, {id: 'Claude35SonnetAWS', name: 'Claude 3.5 Sonnet (AWS)', description: 'Claude on AWS'}, {
-        id: 'Claude37SonnetAWS', name: 'Claude 3.7 Sonnet (AWS)', description: 'Latest Claude on AWS'
-    }, {id: 'MistralLarge2407', name: 'Mistral Large 2407', description: 'Latest Mistral Large on AWS'},],
-};
-
-function populateModelSelections(apiSettingsParam = null, taskSettingsParam = null) {
-    console.log('[populateModelSelections] Called');
-    const currentApiSettings = apiSettingsParam || apiSettings;
-    const currentTaskSettings = taskSettingsParam || taskSettings;
-
-    const modelSelect = document.getElementById('model-selection');
-    const parsingModelSelect = document.getElementById('parsing-model');
-    if (!modelSelect || !parsingModelSelect) {
-        console.warn('[populateModelSelections] modelSelect or parsingModelSelect element not found.');
-        return;
-    }
-    console.log('[populateModelSelections] Current taskSettings.defaultModel:', currentTaskSettings.defaultModel, 'taskSettings.parsingModel:', currentTaskSettings.parsingModel);
-
-    // Get saved values from localStorage directly to ensure we're using the latest values
-    const savedDefaultModel = localStorage.getItem('defaultModel') || currentTaskSettings.defaultModel;
-    const savedParsingModel = localStorage.getItem('parsingModel') || currentTaskSettings.parsingModel;
-    console.log('[populateModelSelections] Retrieved from localStorage - defaultModel:', savedDefaultModel, 'parsingModel:', savedParsingModel);
-
-    modelSelect.innerHTML = '';
-    parsingModelSelect.innerHTML = '';
-
-    const addedModels = new Set();
-
-    if (currentApiSettings && currentApiSettings.apiKeys) {
-        for (const [provider, key] of Object.entries(currentApiSettings.apiKeys)) {
-            console.log(`[populateModelSelections] Checking provider: ${provider}, key exists: ${!!key}`);
-            if (key && availableModels[provider]) {
-
-                availableModels[provider].forEach(model => {
-                    if (!addedModels.has(model.id)) {
-                        console.log(`[populateModelSelections] Adding model ${model.id} from provider ${provider}`);
-
-                        const option = document.createElement('option');
-                        option.value = model.id;
-                        option.textContent = `${model.name} (${provider})`;
-                        option.title = model.description;
-                        modelSelect.appendChild(option);
-
-                        const parsingOption = document.createElement('option');
-                        parsingOption.value = model.id;
-                        parsingOption.textContent = `${model.name} (${provider})`;
-                        parsingOption.title = model.description;
-                        parsingModelSelect.appendChild(parsingOption);
-                        addedModels.add(model.id);
-                    }
-                });
-            }
-        }
-    }
-
-    if (modelSelect.options.length === 0) {
-        console.log('[populateModelSelections] No models available from API keys, adding default OpenAI options.');
-        const defaultOption = document.createElement('option');
-        defaultOption.value = 'GPT4o';
-        defaultOption.textContent = 'GPT-4o (OpenAI) - Configure API key';
-        modelSelect.appendChild(defaultOption);
-        const defaultParsingOption = document.createElement('option');
-        defaultParsingOption.value = 'GPT4oMini';
-        defaultParsingOption.textContent = 'GPT-4o Mini (OpenAI) - Configure API key';
-        parsingModelSelect.appendChild(defaultParsingOption);
-    }
-
-    if (savedDefaultModel && Array.from(modelSelect.options).some(opt => opt.value === savedDefaultModel)) {
-        modelSelect.value = savedDefaultModel;
-        console.log('[populateModelSelections] Set modelSelect.value to savedDefaultModel:', savedDefaultModel);
-        // Ensure taskSettings is updated with the restored value
-        taskSettings.defaultModel = savedDefaultModel;
-        // No need to set localStorage here as it should already have the value
-    } else if (modelSelect.options.length > 0) {
-
-        modelSelect.selectedIndex = 0;
-
-        taskSettings.defaultModel = modelSelect.value;
-        localStorage.setItem('defaultModel', modelSelect.value);
-        console.log('[populateModelSelections] Set defaultModel to first option:', modelSelect.value);
-    } else {
-        console.log('[populateModelSelections] No options in modelSelect, defaultModel remains:', taskSettings.defaultModel);
-    }
-
-    if (savedParsingModel && Array.from(parsingModelSelect.options).some(opt => opt.value === savedParsingModel)) {
-        parsingModelSelect.value = savedParsingModel;
-        console.log('[populateModelSelections] Set parsingModelSelect.value to savedParsingModel:', savedParsingModel);
-        // Ensure taskSettings is updated with the restored value
-        taskSettings.parsingModel = savedParsingModel;
-        // No need to set localStorage here as it should already have the value
-    } else if (parsingModelSelect.options.length > 0) {
-
-        parsingModelSelect.selectedIndex = 0;
-
-        taskSettings.parsingModel = parsingModelSelect.value;
-        localStorage.setItem('parsingModel', parsingModelSelect.value);
-        console.log('[populateModelSelections] Set parsingModel to first option:', parsingModelSelect.value);
-    } else {
-        console.log('[populateModelSelections] No options in parsingModelSelect, parsingModel remains:', taskSettings.parsingModel);
-    }
-    console.log('[populateModelSelections] Finished. Final modelSelect.value:', modelSelect.value, 'parsingModelSelect.value:', parsingModelSelect.value);
-}
-
-function setupTooltips() {
-    console.log('[setupTooltips] Called');
-    
-    // Add click handlers to all tooltip elements
-    document.querySelectorAll('.tooltip').forEach(tooltip => {
-        tooltip.addEventListener('click', function(e) {
-            e.stopPropagation();
-            console.log('[setupTooltips] Tooltip clicked');
-            
-            // Close all other tooltips
-            document.querySelectorAll('.tooltip.active').forEach(activeTooltip => {
-                if (activeTooltip !== tooltip) {
-                    activeTooltip.classList.remove('active');
-                }
-            });
-            
-            // Toggle this tooltip
-            tooltip.classList.toggle('active');
-        });
-    });
-    
-    // Close tooltips when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.tooltip')) {
-            console.log('[setupTooltips] Clicked outside tooltip, closing all');
-            document.querySelectorAll('.tooltip.active').forEach(tooltip => {
-                tooltip.classList.remove('active');
-            });
-        }
-    });
-}
-
-// HTTP service for better testability
-class HttpService {
-    constructor(dependencies = {}) {
-      this.fetch = dependencies.fetch || window.fetch;
-    }
-
-    async getUserSettings() {
-        const response = await fetch('/userSettings/');
-        return response.text();
-    }
-
-    async saveSessionSettings(sessionId, settings, cognitiveMode) {
-        return fetch(`/taskChat/settings`, {
-            method: 'POST', headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }, body: new URLSearchParams({
-                sessionId: sessionId, action: 'save', settings: JSON.stringify(settings), cognitiveMode: cognitiveMode,
-            })
-        });
-    }
-
-}
-
-// Global instance - can be replaced for testing
-let httpService = new HttpService();
-
-function loadSettingsFromServer(dependencies = {}) {
-    const http = dependencies.httpService || httpService;
-    const state = dependencies.appState || appState;
-
-    console.log('[loadSettingsFromServer] Called');
-    http.getUserSettings()
-        .then(response => {
-            console.log('[loadSettingsFromServer] Received response:', response);
-            return response;
-        })
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const textarea = doc.querySelector('textarea[name="settings"]');
-            if (textarea) {
-                try {
-                    const settings = JSON.parse(textarea.textContent);
-                    state.apiSettings = settings;
-                    apiSettings = settings;
-                    console.log('[loadSettingsFromServer] Parsed settings:', JSON.parse(JSON.stringify(apiSettings)));
-
-                    if (apiSettings.apiKeys) {
-                        for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
-                            const input = document.getElementById(`api-key-${provider}`);
-                            console.log(`[loadSettingsFromServer] Processing API key for provider: ${provider}, key exists: ${!!key}`);
-                            if (input && key) {
-                                input.value = '********';
-                            }
-                        }
-
-                        if (settings.apiBase) {
-                            for (const [provider, baseUrl] of Object.entries(settings.apiBase)) {
-                                const baseInput = document.getElementById(`api-base-${provider}`);
-                                console.log(`[loadSettingsFromServer] Processing API base for provider: ${provider}, baseUrl: ${baseUrl}`);
-                                if (baseInput && baseUrl) {
-                                    baseInput.value = baseUrl;
-                                }
-                            }
-                        }
-                    }
-                    // Populate local tools
-                    if (settings.localTools && Array.isArray(settings.localTools)) {
-                        const toolsList = document.getElementById('local-tools-list');
-                        console.log('[loadSettingsFromServer] Populating local tools:', settings.localTools);
-                        toolsList.innerHTML = '';
-                        settings.localTools.forEach(toolPath => {
-                            const toolItem = document.createElement('div');
-                            console.log('[loadSettingsFromServer] Adding local tool:', toolPath);
-                            toolItem.className = 'tool-item';
-                            toolItem.dataset.path = toolPath;
-                            const toolText = document.createElement('span');
-                            toolText.textContent = toolPath;
-                            const removeBtn = document.createElement('button');
-                            removeBtn.className = 'remove-tool';
-                            removeBtn.textContent = '×';
-                            removeBtn.addEventListener('click', function () {
-                                toolItem.remove();
-                            });
-                            toolItem.appendChild(toolText);
-                            toolItem.appendChild(removeBtn);
-                            toolsList.appendChild(toolItem);
-                        });
-                    }
-
-                    populateModelSelections();
-                } catch (e) {
-                    console.error('[loadSettingsFromServer] Error parsing API settings:', e);
-                }
-            } else {
-                console.warn('[loadSettingsFromServer] No textarea found in response.');
-            }
-        })
-        .catch(error => {
-            console.error('[loadSettingsFromServer] Error loading API settings:', error);
-        });
-    // Removed reference to basicChatBtn here (was causing error)
-}
-
-function populateWorkingDirFromHash() {
-    console.log('[populateWorkingDirFromHash] Called');
-    if (window.location.hash) {
-        console.log('[populateWorkingDirFromHash] Found hash:', window.location.hash);
-
-        let workingDir = decodeURIComponent(window.location.hash.substring(1));
-        console.log('[populateWorkingDirFromHash] Decoded workingDir from hash:', workingDir);
-
-        const workingDirInput = document.getElementById('working-dir');
-        if (workingDirInput) {
-            workingDirInput.value = workingDir;
-
-            taskSettings.workingDir = workingDir;
-            console.log('[populateWorkingDirFromHash] Set workingDirInput value and taskSettings.workingDir to:', workingDir);
-        } else {
-            console.warn('[populateWorkingDirFromHash] working-dir input element not found.');
-        }
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    setupWizard();
-    console.log('[DOMContentLoaded] setupWizard called.');
-
-    initializeApiSettings();
-    console.log('[DOMContentLoaded] initializeApiSettings called.');
-
-    initializeTaskToggles();
-    console.log('[DOMContentLoaded] initializeTaskToggles called.');
-    // Load settings from localStorage first
-    loadSavedSettings(); // Now defined
-    console.log('[DOMContentLoaded] loadSavedSettings called.');
-
-
-    setupEventListeners();
-    console.log('[DOMContentLoaded] setupEventListeners called.');
-    setupTooltips();
-    console.log('[DOMContentLoaded] setupTooltips called.');
-
-
-    loadSettingsFromServer();
-    console.log('[DOMContentLoaded] loadSettingsFromServer called.');
-
-    populateWorkingDirFromHash();
-    console.log('[DOMContentLoaded] populateWorkingDirFromHash called.');
-
-    // populateModelSelections() is now called from loadSettingsFromServer after API keys are loaded
-    // This ensures model selections are populated with the correct available models
-
-
-    if (!taskSettings.taskSettings || Object.keys(taskSettings.taskSettings).length === 0) {
-        saveTaskSelection();
-    }
-
-    // --- Basic Chat Modal Setup ---
-    const basicChatBtn = document.getElementById('open-basic-chat');
-    const basicChatModal = document.getElementById('basic-chat-settings-modal');
-    const closeBasicChatModal = document.getElementById('close-basic-chat-modal');
-    const cancelBasicChatSettings = document.getElementById('cancel-basic-chat-settings');
-    const basicChatForm = document.getElementById('basic-chat-settings-form');
-    const tempSlider = document.getElementById('basic-chat-temperature');
-    const tempValue = document.getElementById('basic-chat-temperature-value');
-
-    basicChatBtn.addEventListener('click', function () {
-        console.log('[DOMContentLoaded] basicChatBtn clicked.');
-        // Populate model selectors with available models (same as main pipeline)
-        populateBasicChatModelSelections();
-        // Prefill using main pipeline's preferences (shared keys), fallback to legacy basicChat* keys, then default
-        const model = localStorage.getItem('defaultModel') || localStorage.getItem('basicChatModel') || 'GPT4o';
-        console.log(`[DOMContentLoaded] Basic Chat Modal: model determined as ${model} (defaultModel: ${localStorage.getItem('defaultModel')}, basicChatModel: ${localStorage.getItem('basicChatModel')})`);
-        const parsingModel = localStorage.getItem('parsingModel') || localStorage.getItem('basicChatParsingModel') || 'GPT4oMini';
-        const temperature = localStorage.getItem('temperature') || localStorage.getItem('basicChatTemperature') || '0.3';
-        const budget = localStorage.getItem('budget') || localStorage.getItem('basicChatBudget') || '2.0';
-        document.getElementById('basic-chat-model').value = model;
-        document.getElementById('basic-chat-parsing-model').value = parsingModel;
-        document.getElementById('basic-chat-temperature').value = temperature;
-        document.getElementById('basic-chat-temperature-value').textContent = temperature;
-        document.getElementById('basic-chat-budget').value = budget;
-        console.log('[DOMContentLoaded] Basic Chat Modal prefilled with: model:', model, 'parsingModel:', parsingModel, 'temperature:', temperature, 'budget:', budget);
-        basicChatModal.style.display = "block";
-    });
-
-    // Populate the Basic Chat model selectors with available models based on API keys
-    function populateBasicChatModelSelections() {
-        console.log('[populateBasicChatModelSelections] Called');
-        const modelSelect = document.getElementById('basic-chat-model');
-        const parsingModelSelect = document.getElementById('basic-chat-parsing-model');
-        if (!modelSelect || !parsingModelSelect) {
-            console.warn('[populateBasicChatModelSelections] basic-chat-model or basic-chat-parsing-model element not found.');
-            return;
-        }
-
-        // Save current values to try to preserve selection
-        const prevModel = modelSelect.value;
-        const prevParsingModel = parsingModelSelect.value;
-        console.log('[populateBasicChatModelSelections] Previous selections - model:', prevModel, 'parsingModel:', prevParsingModel);
-
-        modelSelect.innerHTML = '';
-        parsingModelSelect.innerHTML = '';
-        const addedModels = new Set();
-        if (apiSettings && apiSettings.apiKeys) {
-            for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
-                console.log(`[populateBasicChatModelSelections] Checking provider: ${provider}, key exists: ${!!key}`);
-                if (key && availableModels[provider]) {
-                    availableModels[provider].forEach(model => {
-                        if (!addedModels.has(model.id)) {
-                            console.log(`[populateBasicChatModelSelections] Adding model ${model.id} from provider ${provider}`);
-                            const option = document.createElement('option');
-                            option.value = model.id;
-                            option.textContent = `${model.name} (${provider})`;
-                            option.title = model.description;
-                            modelSelect.appendChild(option);
-
-                            const parsingOption = document.createElement('option');
-                            parsingOption.value = model.id;
-                            parsingOption.textContent = `${model.name} (${provider})`;
-                            parsingOption.title = model.description;
-                            parsingModelSelect.appendChild(parsingOption);
-                            addedModels.add(model.id);
-                        }
-                    });
-                }
-            }
-        }
-        // If no models available, show default
-        if (modelSelect.options.length === 0) {
-            console.log('[populateBasicChatModelSelections] No models available from API keys, adding default OpenAI options for basic chat.');
-            const defaultOption = document.createElement('option');
-            defaultOption.value = 'GPT4o';
-            defaultOption.textContent = 'GPT-4o (OpenAI) - Configure API key';
-            modelSelect.appendChild(defaultOption);
-            const defaultParsingOption = document.createElement('option');
-            defaultParsingOption.value = 'GPT4oMini';
-            defaultParsingOption.textContent = 'GPT-4o Mini (OpenAI) - Configure API key';
-            parsingModelSelect.appendChild(defaultParsingOption);
-        }
-        // Try to restore previous selection
-        if (prevModel && Array.from(modelSelect.options).some(opt => opt.value === prevModel)) {
-            modelSelect.value = prevModel;
-            console.log('[populateBasicChatModelSelections] Restored previous model selection:', prevModel);
-        }
-        if (prevParsingModel && Array.from(parsingModelSelect.options).some(opt => opt.value === prevParsingModel)) {
-            parsingModelSelect.value = prevParsingModel;
-            console.log('[populateBasicChatModelSelections] Restored previous parsing model selection:', prevParsingModel);
-        }
-        console.log('[populateBasicChatModelSelections] Finished. Final basic-chat-model.value:', modelSelect.value, 'basic-chat-parsing-model.value:', parsingModelSelect.value);
-    }
-
-    // Update temperature value display
-    tempSlider.addEventListener('input', function () {
-        console.log('[DOMContentLoaded] Basic Chat tempSlider input event. New value:', this.value);
-        tempValue.textContent = this.value;
-    });
-
-    closeBasicChatModal.onclick = function () {
-        console.log('[DOMContentLoaded] closeBasicChatModal clicked.');
-        basicChatModal.style.display = "none";
-    };
-    cancelBasicChatSettings.onclick = function () {
-        console.log('[DOMContentLoaded] cancelBasicChatSettings clicked.');
-        basicChatModal.style.display = "none";
-    };
-    window.addEventListener('click', function (event) {
-        if (event.target === basicChatModal) {
-            console.log('[DOMContentLoaded] Window click event, target is basicChatModal. Closing modal.');
-            basicChatModal.style.display = "none";
-        }
-    });
-    // Save to localStorage for convenience
-    basicChatForm.addEventListener('submit', function (e) {
-        console.log('[DOMContentLoaded] basicChatForm submitted.');
-        e.preventDefault();
-        // Gather settings
-        const model = document.getElementById('basic-chat-model').value;
-        const parsingModel = document.getElementById('basic-chat-parsing-model').value;
-        const temperature = parseFloat(document.getElementById('basic-chat-temperature').value);
-        const budget = parseFloat(document.getElementById('basic-chat-budget').value);
-        console.log('[DOMContentLoaded] Basic Chat Form Save - model:', model, 'parsingModel:', parsingModel, 'temperature:', temperature, 'budget:', budget);
-
-        // Save to localStorage for convenience AND sync with main pipeline preferences
-        // Always use main pipeline keys for shared params
-        localStorage.setItem('defaultModel', model);
-        localStorage.setItem('parsingModel', parsingModel);
-        localStorage.setItem('temperature', temperature);
-        localStorage.setItem('budget', budget);
-        // Also keep legacy basicChat* keys for backward compatibility if needed
-        localStorage.setItem('basicChatModel', model);
-        localStorage.setItem('basicChatParsingModel', parsingModel);
-        localStorage.setItem('basicChatTemperature', temperature);
-        localStorage.setItem('basicChatBudget', budget);
-        console.log('[DOMContentLoaded] Saved basic chat settings to localStorage.');
-        // Use the global session id to ensure consistency
-        const chatSessionId = sessionId;
-        console.log('[DOMContentLoaded] Generated chatSessionId for basic chat:', chatSessionId);
-        // Post settings to chat app endpoint
-        fetch(`/chat/settings`, {
-            method: 'POST', headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }, body: new URLSearchParams({
-                sessionId: chatSessionId, action: 'save', settings: JSON.stringify({
-                    model: model, parsingModel: parsingModel, temperature: temperature, budget: budget
-                })
-            })
-        })
-            .then(response => {
-                console.log('[DOMContentLoaded] Basic Chat Save - fetch response:', response);
-                if (response.ok) {
-                    basicChatModal.style.display = "none";
-                    console.log('[DOMContentLoaded] Basic Chat settings saved successfully. Redirecting to /chat/#', chatSessionId);
-                    window.location.href = `/chat/#${chatSessionId}`;
-                } else {
-                    console.error('[DOMContentLoaded] Failed to save chat settings. Status:', response.status);
-                    showNotification('Failed to save chat settings.', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('[DOMContentLoaded] Error saving chat settings:', error);
-                showNotification('Error saving chat settings: ' + error.message, 'error');
-            });
-    });
-});
-
-// Function to save session settings to the server, similar to welcome_old.html's saveSessionSettings
-function saveSessionSettingsToServer(dependencies = {}) {
-    const http = dependencies.httpService || httpService;
-    const state = dependencies.appState || appState;
-
-    console.log('[saveSessionSettingsToServer] Called. Saving session settings to server.');
-    console.log('[saveSessionSettingsToServer] Current cognitiveMode:', state.cognitiveMode);
-    // Ensure we're using the global sessionId consistently
-    const currentSessionId = state.sessionId || sessionId;
-    console.log('[saveSessionSettingsToServer] Using sessionId:', currentSessionId);
-    
-    // Ensure taskSettings reflects the latest from UI elements if not already handled by individual listeners
-    // For example, workingDir is directly read by launch button, but good to ensure it's in taskSettings
-    // The workingDir input listener already updates taskSettings.workingDir and localStorage.
-    // taskSettings.workingDir = document.getElementById('working-dir').value;
-    // Other settings like defaultModel, parsingModel, temperature, autoFix, auto-plan settings, graphFile
-    // are expected to be up-to-date in the global taskSettings object and localStorage
-    // due to their respective event listeners.
-    // saveTaskSelection() should be called before this if task selections need to be included and are changing.
-    console.log('[saveSessionSettingsToServer] Current taskSettings:', JSON.parse(JSON.stringify(state.taskSettings)));
-    return http.saveSessionSettings(currentSessionId, state.taskSettings, state.cognitiveMode)
-        .then(response => {
-            if (!response.ok) {
-                console.error('[saveSessionSettingsToServer] Failed to save session settings. Status:', response.status);
-                return response.text().then(text => {
-                    throw new Error(`Failed to save session settings: ${response.status} ${text}`);
-                });
-            }
-            console.log('[saveSessionSettingsToServer] Session settings saved successfully to server.');
-            return response;
-        });
-}
-
-
-function setupWizard() {
-    console.log('[setupWizard] Called');
-
-    const modal = document.getElementById('user-settings-modal');
-    const btn = document.getElementById('user-settings-btn');
-    const closeBtn = document.getElementById('close-user-settings-modal');
-
-    btn.onclick = function () {
-        console.log('[setupWizard] user-settings-btn clicked, displaying modal.');
-        modal.style.display = "block";
-    }
-
-    closeBtn.onclick = function () {
-        console.log('[setupWizard] close-user-settings-modal clicked, hiding modal.');
-        modal.style.display = "none";
-    }
-
-    window.onclick = function (event) {
-        if (event.target == modal) {
-            console.log('[setupWizard] Window click event, target is user-settings-modal. Hiding modal.');
-            modal.style.display = "none";
-        }
-    }
-    // Tab functionality
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.dataset.tab;
-            console.log(`[setupWizard] Tab button clicked: ${tabId}`);
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            // Add active class to clicked tab
-            button.classList.add('active');
-            document.getElementById(`${tabId}-tab`).classList.add('active');
-            console.log(`[setupWizard] Activated tab content: ${tabId}-tab`);
-        });
-    });
-    document.getElementById('back-to-cognitive-mode').addEventListener('click', () => {
-        console.log('[setupWizard] back-to-cognitive-mode clicked.');
-        // No specific save action needed here as per old logic flow for "Back"
-        navigateToStep('cognitive-mode');
-    });
-
-
-    document.getElementById('back-to-task-settings').addEventListener('click', () => {
-        console.log('[setupWizard] back-to-task-settings clicked.');
-        // No specific save action needed here as per old logic flow for "Back"
-        navigateToStep('task-settings');
-    });
-    document.getElementById('next-to-task-selection').addEventListener('click', () => {
-        console.log('[setupWizard] next-to-task-selection clicked.');
-        saveSessionSettingsToServer()
-            .then(() => {
-                navigateToStep('task-selection');
-            })
-            .catch(error => {
-                showNotification('Error saving task settings to server: ' + error.message, 'error');
-                // Allow navigation even if server save fails, localStorage is primary for client.
-                navigateToStep('task-selection');
-            });
-    });
-
-    document.getElementById('next-to-task-settings').addEventListener('click', () => {
-        console.log('[setupWizard] next-to-task-settings clicked.');
-        navigateToStep('task-settings');
-    });
-
-    document.getElementById('next-to-launch').addEventListener('click', () => {
-        console.log('[setupWizard] next-to-launch clicked.');
-        saveTaskSelection(); // Updates taskSettings.taskSettings and localStorage for enabled tasks.
-        saveSessionSettingsToServer()
-            .then(() => {
-                updateLaunchSummaries();
-                navigateToStep('launch');
-            })
-            .catch(error => {
-                showNotification('Error saving task selections to server: ' + error.message, 'error');
-                // Allow navigation even if server save fails.
-                updateLaunchSummaries();
-                navigateToStep('launch');
-            });
-    });
-
-    document.getElementById('back-to-task-selection').addEventListener('click', () => {
-        console.log('[setupWizard] back-to-task-selection clicked.');
-        navigateToStep('task-selection');
-    });
-}
-
-function initializeApiSettings() {
-    console.log('[initializeApiSettings] Called');
-    const container = document.getElementById('api-keys-container');
-
-    apiProviders.forEach((provider) => {
-        const keyGroup = document.createElement('div');
-        keyGroup.className = 'api-key-group';
-        const label = document.createElement('label');
-        label.textContent = provider.name + ':';
-        label.setAttribute('for', `api-key-${provider.id}`);
-        const input = document.createElement('input');
-        input.type = 'password';
-        input.id = `api-key-${provider.id}`;
-        console.log(`[initializeApiSettings] Creating input for provider: ${provider.name} (ID: ${provider.id})`);
-
-        if (provider.id === 'GoogleSearch') {
-            console.log('[initializeApiSettings] Special handling for GoogleSearch provider.');
-            input.placeholder = `Enter Google API key for search`;
-
-            const searchEngineGroup = document.createElement('div');
-            searchEngineGroup.className = 'api-key-group';
-            const searchEngineLabel = document.createElement('label');
-            searchEngineLabel.textContent = 'Search Engine ID:';
-            searchEngineLabel.setAttribute('for', `api-base-${provider.id}`);
-            const searchEngineInput = document.createElement('input');
-            searchEngineInput.type = 'text';
-            searchEngineInput.id = `api-base-${provider.id}`;
-            searchEngineInput.placeholder = 'Enter Google Search Engine ID';
-            searchEngineInput.setAttribute('aria-label', 'Google Search Engine ID');
-            searchEngineGroup.appendChild(searchEngineLabel);
-            searchEngineGroup.appendChild(searchEngineInput);
-            container.appendChild(searchEngineGroup);
-        } else {
-            input.placeholder = `Enter ${provider.name} API key`;
-        }
-
-        input.setAttribute('aria-label', `${provider.name} API key`);
-        keyGroup.appendChild(label);
-        keyGroup.appendChild(input);
-        container.appendChild(keyGroup);
-    });
-}
-
-function initializeTaskToggles() {
-    console.log('[initializeTaskToggles] Called');
-    const container = document.getElementById('task-toggles');
-    container.innerHTML = '';
-
-
-    const temperatureSlider = document.getElementById('temperature');
-    const temperatureValue = document.getElementById('temperature-value');
-    console.log('[initializeTaskToggles] Setting up temperature slider listener.');
-    temperatureSlider.addEventListener('input', function () {
-        temperatureValue.textContent = this.value;
-
-        taskSettings.temperature = parseFloat(this.value);
-        appState.taskSettings.temperature = parseFloat(this.value);
-        localStorage.setItem('temperature', this.value);
-        console.log('[initializeTaskToggles] Temperature changed to:', this.value, 'Updated taskSettings.temperature and localStorage.');
-    });
-
-    taskTypes.forEach((task) => {
-        const taskToggle = document.createElement('div');
-        taskToggle.className = 'task-toggle';
-        const toggleContent = document.createElement('div');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `task-${task.id}`;
-        checkbox.value = task.id;
-        checkbox.setAttribute('aria-label', `Enable ${task.name}`);
-        checkbox.checked = false;
-        console.log(`[initializeTaskToggles] Creating toggle for task: ${task.name} (ID: ${task.id})`);
-        const label = document.createElement('label');
-        label.textContent = task.name;
-        label.setAttribute('for', `task-${task.id}`);
-        const tooltip = document.createElement('span');
-        tooltip.className = 'tooltip';
-        tooltip.textContent = '?';
-        tooltip.setAttribute('aria-hidden', 'true');
-        const tooltipText = document.createElement('span');
-        tooltipText.className = 'tooltiptext';
-        tooltipText.innerHTML = task.tooltip;
-        tooltip.appendChild(tooltipText);
-        toggleContent.appendChild(checkbox);
-        toggleContent.appendChild(label);
-        toggleContent.appendChild(tooltip);
-
-        const description = document.createElement('span');
-        description.className = 'sr-only';
-        description.id = `desc-${task.id}`;
-        description.textContent = task.tooltip;
-        description.style.position = 'absolute';
-        description.style.width = '1px';
-        description.style.height = '1px';
-        description.style.padding = '0';
-        description.style.margin = '-1px';
-        description.style.overflow = 'hidden';
-        description.style.clip = 'rect(0, 0, 0, 0)';
-        description.style.whiteSpace = 'nowrap';
-        description.style.border = '0';
-        checkbox.setAttribute('aria-describedby', `desc-${task.id}`);
-        toggleContent.appendChild(description);
-        taskToggle.appendChild(toggleContent);
-        container.appendChild(taskToggle);
-    });
-}
-
-function generateCognotikWorkingDir() {
-    console.log('[generateCognotikWorkingDir] Called');
-    return generateCognotikWorkingDirWithDate(new Date(), navigator.platform);
-}
-
-function generateCognotikWorkingDirWithDate(date, platform) {
-    const now = date;
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${year}${month}${day}-${hours}${minutes}${seconds}`;
-    const platformLower = platform.toLowerCase();
-    let baseDir;
-    console.log(`[generateCognotikWorkingDirWithDate] Detected platform: ${platformLower}`);
-    if (platformLower.includes('win')) {
-        baseDir = '~\\Documents\\Cognotik';
-    } else if (platformLower.includes('mac')) {
-        baseDir = '~/Documents/Cognotik';
-    } else {
-        baseDir = '~/Cognotik';
-    }
-    const dir = `${baseDir}/session-${timestamp}`;
-    console.log(`[generateCognotikWorkingDirWithDate] Generated Cognotik working directory: ${dir}`);
-    return dir;
-}
-
-
-function setupEventListeners() {
-    console.log('[setupEventListeners] Called');
-    // Launch Session Button
-    const launchButton = document.getElementById('launch-session');
-    if (launchButton) {
-        launchButton.addEventListener('click', function () {
-            console.log('[launch-session] Clicked.');
-            // Ensure all current UI values are captured in taskSettings
-            const workingDirInput = document.getElementById('working-dir');
-            if (workingDirInput) {
-                taskSettings.workingDir = workingDirInput.value;
-                appState.taskSettings.workingDir = workingDirInput.value;
-            }
-            
-            // Ensure model selections are up-to-date in taskSettings
-            const modelSelect = document.getElementById('model-selection');
-            const parsingModelSelect = document.getElementById('parsing-model');
-            if (modelSelect) {
-                taskSettings.defaultModel = modelSelect.value;
-                appState.taskSettings.defaultModel = modelSelect.value;
-                localStorage.setItem('defaultModel', modelSelect.value);
-                console.log('[launch-session] Updated taskSettings.defaultModel and localStorage:', modelSelect.value);
-            }
-            if (parsingModelSelect) {
-                taskSettings.parsingModel = parsingModelSelect.value;
-                appState.taskSettings.parsingModel = parsingModelSelect.value;
-                localStorage.setItem('parsingModel', parsingModelSelect.value);
-                console.log('[launch-session] Updated taskSettings.parsingModel and localStorage:', parsingModelSelect.value);
-            }
-            // Ensure temperature is up-to-date
-            const temperatureSlider = document.getElementById('temperature');
-            if (temperatureSlider) {
-                taskSettings.temperature = parseFloat(temperatureSlider.value);
-                appState.taskSettings.temperature = parseFloat(temperatureSlider.value);
-                localStorage.setItem('temperature', temperatureSlider.value);
-            }
-            // Ensure autoFix is up-to-date
-            const autoFixCheckbox = document.getElementById('auto-fix');
-            if (autoFixCheckbox) {
-                taskSettings.autoFix = autoFixCheckbox.checked;
-                appState.taskSettings.autoFix = autoFixCheckbox.checked;
-                localStorage.setItem('autoFix', autoFixCheckbox.checked);
-            }
-            
-            saveTaskSelection(); // This updates taskSettings.taskSettings and localStorage
-            console.log('[launch-session] Current taskSettings:', JSON.parse(JSON.stringify(taskSettings)));
-            console.log('[launch-session] Current apiSettings (relevant parts might be on server):', Object.keys(apiSettings.apiKeys || {}));
-            if (!validateConfiguration()) {
-                console.log('[launch-session] Validation failed.');
-                return;
-            }
-            console.log('[launch-session] Validation passed.');
-            let targetPath;
-            let cognitiveMode = document.querySelector('input[name="cognitive-mode"]:checked')?.value || cognitiveMode;
-            switch (cognitiveMode) {
-                case 'single-task':
-                    targetPath = '/taskChat'; // Maps to TaskChatMode in UnifiedPlanApp
-                    break;
-                case 'auto-plan':
-                    targetPath = '/autoPlan';
-                    break;
-                case 'plan-ahead':
-                    targetPath = '/planAhead';
-                    break;
-                case 'goal-oriented':
-                    targetPath = '/goalOriented';
-                    break;
-                // case 'graph': // Example if graph mode is fully re-enabled
-                //     targetPath = '/graphApp'; // Adjust if needed, maps to a specific graph app
-                //     break;
-                default:
-                    console.error('[launch-session] Unknown cognitive mode:', cognitiveMode);
-                    showNotification(`Error: Unknown cognitive mode selected: ${cognitiveMode}. Please select a valid mode.`, 'error');
-                    navigateToStep('cognitive-mode'); // Navigate back to mode selection
-                    return;
-            }
-
-            document.getElementById('loading').style.display = 'block';
-
-            // 4. Save session settings to server (replicating old launchSession's call to saveSessionSettings)
-            //    and then redirect.
-            saveSessionSettingsToServer()
-                .then(() => {
-                    console.log('[launch-session] Session settings successfully saved to server before launch.');
-                    const targetUrl = `${targetPath}/#${sessionId}`;
-                    console.log('[launch-session] Redirecting to:', targetUrl);
-                    window.location.href = targetUrl;
-                    // No need to hide loading, page navigates.
-                })
-                .catch(error => {
-                    console.error('[launch-session] Failed to save session settings to server before launch:', error);
-                    showNotification('Error saving session settings before launch: ' + error.message, 'error');
-                    document.getElementById('loading').style.display = 'none';
-                });
-
-            // The old code had a setTimeout for redirect, which is now handled after the async fetch.
-            // setTimeout(() => {
-            //     window.location.href = targetUrl;
-            // }, 100);
-
-        });
-        console.log('[setupEventListeners] Attached launch-session click listener.');
-    }
-
-    console.log('[setupEventListeners] Called');
-    document.getElementById('generate-working-dir').addEventListener('click', function () {
-        console.log('[setupEventListeners] generate-working-dir button clicked.');
-        const newDir = generateCognotikWorkingDir();
-        document.getElementById('working-dir').value = newDir;
-        taskSettings.workingDir = newDir;
-        localStorage.setItem('workingDir', newDir);
-        console.log('[setupEventListeners] New working directory generated and set:', newDir);
-    });
-
-    document.getElementById('save-user-settings').addEventListener('click', saveUserSettings);
-    console.log('[setupEventListeners] Attached saveUserSettings to save-user-settings click.');
-    document.getElementById('reset-user-settings').addEventListener('click', resetUserSettings);
-    console.log('[setupEventListeners] Attached resetUserSettings to reset-user-settings click.');
-    document.getElementById('add-local-tool').addEventListener('click', addLocalTool);
-    console.log('[setupEventListeners] Attached addLocalTool to add-local-tool click.');
-
-    apiProviders.forEach(provider => {
-        const keyInput = document.getElementById(`api-key-${provider.id}`);
-        if (keyInput) {
-            console.log(`[setupEventListeners] Adding change listener for API key input: api-key-${provider.id}`);
-            keyInput.addEventListener('change', () => {
-                console.log(`[setupEventListeners] API key changed for provider: ${provider.id}. Calling populateModelSelections.`);
-                populateModelSelections();
-            });
-        }
-    });
-
-    const modelSelect = document.getElementById('model-selection');
-    if (modelSelect) {
-        console.log('[setupEventListeners] Adding change listener for model-selection.');
-        modelSelect.addEventListener('change', function () {
-            taskSettings.defaultModel = this.value;
-            appState.taskSettings.defaultModel = this.value;
-            localStorage.setItem('defaultModel', this.value);
-            console.log('[setupEventListeners] defaultModel changed to:', this.value, 'Updated taskSettings and localStorage.');
-        });
-    }
-    const parsingModelSelect = document.getElementById('parsing-model');
-    if (parsingModelSelect) {
-        console.log('[setupEventListeners] Adding change listener for parsing-model.');
-        parsingModelSelect.addEventListener('change', function () {
-            taskSettings.parsingModel = this.value;
-            appState.taskSettings.parsingModel = this.value;
-            localStorage.setItem('parsingModel', this.value);
-            console.log('[setupEventListeners] parsingModel changed to:', this.value, 'Updated taskSettings and localStorage.');
-        });
-    }
-    const autoFixCheckbox = document.getElementById('auto-fix');
-    if (autoFixCheckbox) {
-        console.log('[setupEventListeners] Adding change listener for auto-fix.');
-        autoFixCheckbox.addEventListener('change', function () {
-            taskSettings.autoFix = this.checked;
-            appState.taskSettings.autoFix = this.checked;
-            localStorage.setItem('autoFix', this.checked);
-            console.log('[setupEventListeners] autoFix changed to:', this.checked, 'Updated taskSettings and localStorage.');
-        });
-    }
-    ['max-task-history', 'max-tasks-per-iteration', 'max-iterations'].forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            console.log(`[setupEventListeners] Adding change listener for ${id}.`);
-            input.addEventListener('input', function () { // 'input' for responsiveness
-                const value = parseInt(this.value, 10);
-                let keyInTaskSettings;
-                let localStorageKey;
-                if (id === 'max-task-history') {
-                    keyInTaskSettings = 'maxTaskHistoryChars';
-                    localStorageKey = 'maxTaskHistoryChars';
-                } else if (id === 'max-tasks-per-iteration') {
-                    keyInTaskSettings = 'maxTasksPerIteration';
-                    localStorageKey = 'maxTasksPerIteration';
-                } else if (id === 'max-iterations') {
-                    keyInTaskSettings = 'maxIterations';
-                    localStorageKey = 'maxIterations';
-                }
-                if (keyInTaskSettings && !isNaN(value)) {
-                    taskSettings[keyInTaskSettings] = value;
-                    appState.taskSettings[keyInTaskSettings] = value;
-                    if (localStorageKey) {
-                        localStorage.setItem(localStorageKey, String(value));
-                    }
-                    console.log(`[setupEventListeners] ${keyInTaskSettings} changed to:`, value, 'Updated taskSettings and localStorage.');
-                }
-            });
-        }
-    });
-    const graphFileInput = document.getElementById('graph-file');
-    if (graphFileInput) {
-        console.log('[setupEventListeners] Adding change listener for graph-file.');
-        graphFileInput.addEventListener('change', function () {
-            taskSettings.graphFile = this.value;
-            appState.taskSettings.graphFile = this.value;
-            localStorage.setItem('graphFile', this.value);
-            console.log('[setupEventListeners] graphFile changed to:', this.value, 'Updated taskSettings and localStorage.');
-        });
-    }
-    const workingDirInput = document.getElementById('working-dir');
-    if (workingDirInput) {
-        console.log('[setupEventListeners] Adding change listener for working-dir.');
-        // Using 'change' instead of 'input' for file paths is usually better
-        workingDirInput.addEventListener('change', function () {
-            taskSettings.workingDir = this.value;
-            appState.taskSettings.workingDir = this.value;
-            localStorage.setItem('workingDir', this.value);
-            console.log('[setupEventListeners] workingDir changed to:', this.value, 'Updated taskSettings and localStorage.');
-        });
-    }
-
-
-    document.querySelectorAll('input[name="cognitive-mode"]').forEach(radio => {
-        console.log(`[setupEventListeners] Adding change listener for cognitive-mode radio: ${radio.value}`);
-        radio.addEventListener('change', function () {
-            console.log(`[setupEventListeners] Cognitive mode changed to: ${this.value}`);
-            document.getElementById('graph-settings').style.display = 'none';
-            document.getElementById('auto-plan-settings').style.display = 'none';
-            if (this.value === 'graph') {
-                console.log('[setupEventListeners] Displaying graph-settings.');
-                document.getElementById('graph-settings').style.display = 'block';
-            } else if (this.value === 'auto-plan') {
-                document.getElementById('auto-plan-settings').style.display = 'block';
-            }
-            cognitiveMode = this.value; // Update global cognitiveMode variable
-            appState.cognitiveMode = this.value;
-            localStorage.setItem('cognitiveMode', this.value);
-        });
-    });
-}
-
-// --- MISSING FUNCTION: saveUserSettings ---
-function saveUserSettings() {
-    console.log('[saveUserSettings] Called');
-    const settings = gatherUserSettings();
-    console.log('[saveUserSettings] Settings to save:', JSON.stringify(settings)); // Avoid logging actual keys if sensitive
-    return fetch('/userSettings/', {
-        method: 'POST', headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        }, body: new URLSearchParams({
-            action: 'save', settings: JSON.stringify(settings)
-        })
-    })
-        .then(response => {
-            console.log('[saveUserSettings] Server response:', response);
-            if (response.ok) {
-                console.log('[saveUserSettings] User settings saved successfully.');
-                console.log('[saveUserSettings] Updated apiSettings in memory.');
-                apiSettings = settings;
-                populateModelSelections();
-               showNotification('User settings saved successfully!', 'success');
-               // Close the modal
-               const modal = document.getElementById('user-settings-modal');
-               if (modal) {
-                   modal.style.display = 'none';
-               }
-                return settings;
-            } else {
-                console.error('[saveUserSettings] Failed to save user settings. Status:', response.status);
-               showNotification(`Failed to save user settings: ${response.status}`, 'error');
-                throw new Error(`Failed to save user settings: ${response.status}`);
-            }
-        })
-        .catch(error => {
-            console.error('[saveUserSettings] Error saving user settings:', error);
-           showNotification('Error saving user settings: ' + error.message, 'error');
-            throw error;
-        });
-}
-
-function gatherUserSettings() {
-    // Gather API keys
-    const apiKeys = {};
-    const apiBase = {};
-    apiProviders.forEach(provider => {
-        const keyInput = document.getElementById(`api-key-${provider.id}`);
-        if (keyInput && keyInput.value && keyInput.value !== '********') {
-            console.log(`[gatherUserSettings] Saving API key for provider: ${provider.id}`);
-            apiKeys[provider.id] = keyInput.value;
-       } else if (keyInput && keyInput.value === '********') {
-           // Keep existing key if showing masked value
-           if (apiSettings.apiKeys && apiSettings.apiKeys[provider.id]) {
-               apiKeys[provider.id] = apiSettings.apiKeys[provider.id];
-           }
-        }
-        // For GoogleSearch, also save the Search Engine ID as "apiBase"
-        const baseInput = document.getElementById(`api-base-${provider.id}`);
-        if (baseInput && baseInput.value) {
-            console.log(`[gatherUserSettings] Saving API base for provider: ${provider.id}, value: ${baseInput.value}`);
-            apiBase[provider.id] = baseInput.value;
-       } else if (apiSettings.apiBase && apiSettings.apiBase[provider.id]) {
-           // Keep existing base URL if not changed
-           apiBase[provider.id] = apiSettings.apiBase[provider.id];
-        }
-    });
-    // Gather local tools
-    const localTools = gatherLocalTools();
-    return {apiKeys, apiBase, localTools};
-}
-
-function gatherLocalTools() {
-    const localTools = [];
-    const toolsList = document.getElementById('local-tools-list');
-    if (toolsList) {
-        toolsList.querySelectorAll('.tool-item').forEach(item => {
-            if (item.dataset.path) {
-                console.log(`[gatherLocalTools] Adding local tool from dataset.path: ${item.dataset.path}`);
-                localTools.push(item.dataset.path);
-            } else if (item.textContent) {
-                // fallback if dataset not set
-                console.log(`[gatherLocalTools] Adding local tool from textContent: ${item.textContent.trim()}`);
-                localTools.push(item.textContent.trim());
-            }
-        });
-    }
-    return localTools;
-}
-
-// --- MISSING FUNCTION: resetUserSettings ---
-function resetUserSettings() {
-    console.log('[resetUserSettings] Called');
-    // Clear all API key fields
-    apiProviders.forEach(provider => {
-        const keyInput = document.getElementById(`api-key-${provider.id}`);
-        if (keyInput) {
-            console.log(`[resetUserSettings] Clearing API key for provider: ${provider.id}`);
-            keyInput.value = '';
-        }
-        const baseInput = document.getElementById(`api-base-${provider.id}`);
-        if (baseInput) {
-            console.log(`[resetUserSettings] Clearing API base for provider: ${provider.id}`);
-            baseInput.value = '';
-        }
-    });
-    // Clear local tools
-    const toolsList = document.getElementById('local-tools-list');
-    if (toolsList) toolsList.innerHTML = '';
-    console.log('[resetUserSettings] Cleared local tools list.');
-    showNotification('User settings reset. Remember to save!', 'info');
-}
-
-// --- MISSING FUNCTION: addLocalTool ---
-function addLocalTool() {
-    console.log('[addLocalTool] Called');
-    const newToolInput = document.getElementById('new-tool-path');
-    const toolsList = document.getElementById('local-tools-list');
-    if (newToolInput && toolsList && newToolInput.value.trim() !== '') {
-        const toolPath = newToolInput.value.trim();
-        const toolItem = document.createElement('div');
-        toolItem.className = 'tool-item';
-        toolItem.dataset.path = toolPath;
-        const toolText = document.createElement('span');
-        toolText.textContent = toolPath;
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-tool';
-        removeBtn.textContent = '×';
-        removeBtn.addEventListener('click', function () {
-            console.log(`[addLocalTool] Remove button clicked for tool: ${toolPath}`);
-            toolItem.remove();
-        });
-        toolItem.appendChild(toolText);
-        toolItem.appendChild(removeBtn);
-        toolsList.appendChild(toolItem);
-        newToolInput.value = '';
-        console.log(`[addLocalTool] Added new local tool: ${toolPath}`);
-    } else {
-        console.warn('[addLocalTool] Could not add tool. Input empty, or newToolInput/toolsList not found.');
-    }
-}
-
-function showNotification(message, type = 'info') {
-    console.log(`[showNotification] Called with message: "${message}", type: "${type}"`);
-    // Simple notification using alert, can be replaced with a fancier UI
-    if (type === 'error') {
-        console.error(`[showNotification] Error: ${message}`);
-        alert('❌ ' + message);
-    } else if (type === 'success') {
-        console.log(`[showNotification] Success: ${message}`);
-        alert('✅ ' + message);
-    } else {
-        console.info(`[showNotification] Info: ${message}`);
-        alert(message);
-    }
-}
-
-function navigateToStep(stepId) {
-    console.log(`[navigateToStep] Called with stepId: ${stepId}`);
-    // Hide all wizard-content
-    document.querySelectorAll('.wizard-content').forEach(el => el.classList.remove('active'));
-    // Show the selected step
-    const stepContent = document.getElementById(stepId);
-    if (stepContent) {
-        stepContent.classList.add('active');
-        console.log(`[navigateToStep] Activated content for step: ${stepId}`);
-    } else {
-        console.warn(`[navigateToStep] Content element for step ${stepId} not found.`);
-    }
-    // Update wizard-nav
-    document.querySelectorAll('.wizard-step').forEach(step => step.classList.remove('active'));
-    const navStep = document.querySelector(`.wizard-step[data-step="${stepId}"]`);
-    if (navStep) navStep.classList.add('active');
-    console.log(`[navigateToStep] Updated wizard navigation for step: ${stepId}`);
-}
-
-function updateLaunchSummaries() {
-    // Update the summary sections in the launch step
-    // Cognitive Mode
-    const mode = localStorage.getItem('cognitiveMode') || 'single-task';
-    const modeMap = {
-        'single-task': 'Chat',
-        'auto-plan': 'Autonomous',
-        'plan-ahead': 'Plan Ahead',
-        'goal-oriented': 'Goal Oriented',
-        'graph': 'Graph Mode'
-    };
-    document.getElementById('cognitive-mode-summary').textContent = modeMap[mode] || mode;
-    console.log(`[updateLaunchSummaries] Cognitive Mode Summary: ${modeMap[mode] || mode}`);
-    // Task Settings
-    let summary = '';
-    summary += 'Default Model: ' + (taskSettings.defaultModel || '-') + '\n';
-    summary += 'Parsing Model: ' + (taskSettings.parsingModel || '-') + '\n'; // Ensure parsingModel is in taskSettings
-    summary += 'Working Directory: ' + (taskSettings.workingDir || '-') + '\n';
-    summary += 'Temperature: ' + (taskSettings.temperature ?? '-') + '\n'; // Use ?? to handle 0 correctly
-    summary += 'Auto Fix: ' + (taskSettings.autoFix ? 'Enabled' : 'Disabled') + '\n';
-    document.getElementById('task-settings-summary').textContent = summary;
-    console.log(`[updateLaunchSummaries] Task Settings Summary:\n${summary}`);
-    // API Settings
-    let apiSummary = '';
-    if (apiSettings.apiKeys) {
-        for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
-            if (key) {
-                console.log(`[updateLaunchSummaries] API Key configured for: ${provider}`);
-                apiSummary += provider + ': Configured\n';
-            }
-        }
-    }
-    document.getElementById('api-settings-summary').textContent = apiSummary || 'No API keys configured.';
-    console.log(`[updateLaunchSummaries] API Settings Summary:\n${apiSummary || 'No API keys configured.'}`);
-}
-
-// Validation service for better testability
-class ValidationService {
-    constructor(dependencies = {}) {
-        this.appState = dependencies.appState || appState;
-        this.notificationService = dependencies.notificationService || {showNotification};
-    }
-
-    validateConfiguration() {
-        console.log('[validateConfiguration] Called');
-
-        let hasApiKey = false;
-        if (this.appState.apiSettings.apiKeys) {
-            console.log('[validateConfiguration] Checking API keys:', Object.keys(this.appState.apiSettings.apiKeys));
-            for (const key of Object.values(this.appState.apiSettings.apiKeys)) {
-                if (key) {
-                    hasApiKey = true;
-                    break;
-                }
-            }
-        }
-        if (!hasApiKey) {
-            console.warn('[validateConfiguration] No API key configured.');
-            this.notificationService.showNotification('Please configure at least one API key before launching', 'error');
-
-            const apiSettingsBtn = document.getElementById('api-settings-btn');
-            if (apiSettingsBtn) apiSettingsBtn.click();
-            console.log('[validateConfiguration] Clicked api-settings-btn due to missing API key.');
-            return false;
-        }
-        console.log('[validateConfiguration] API key check passed.');
-
-        let hasEnabledTask = false;
-        if (this.appState.taskSettings.taskSettings) {
-            console.log('[validateConfiguration] Checking enabled tasks:', this.appState.taskSettings.taskSettings);
-            for (const settings of Object.values(this.appState.taskSettings.taskSettings)) {
-                if (settings.enabled) {
-                    hasEnabledTask = true;
-                    break;
-                }
-            }
-        }
-        if (!hasEnabledTask) {
-            console.warn('[validateConfiguration] No task enabled.');
-            this.notificationService.showNotification('Please enable at least one task before launching', 'error');
-
-            navigateToStep('task-selection');
-            console.log('[validateConfiguration] Navigated to task-selection due to no enabled tasks.');
-            return false;
-        }
-        console.log('[validateConfiguration] Enabled task check passed. Configuration is valid.');
-        return true;
-    }
-}
-
-// Global instance - can be replaced for testing
-let validationService = new ValidationService();
-
-function validateConfiguration(dependencies = {}) {
-    const validator = dependencies.validationService || validationService;
-    return validator.validateConfiguration();
-
-}
-
-function loadSavedSettings() {
-    console.log('[loadSavedSettings] Called');
-    const savedCognitiveMode = localStorage.getItem('cognitiveMode');
-    if (savedCognitiveMode) {
-        cognitiveMode = savedCognitiveMode;
-        const radioToSelect = document.querySelector(`input[name="cognitive-mode"][value="${savedCognitiveMode}"]`);
-        if (radioToSelect) {
-            radioToSelect.checked = true;
-            radioToSelect.dispatchEvent(new Event('change'));
-            console.log('[loadSavedSettings] Restored cognitiveMode:', savedCognitiveMode);
-        }
-    }
-    // Note: Model selections will be handled in populateModelSelections
-    // after API keys are loaded, as they depend on available models
-
-    // taskSettings.parsingModel is already initialized
-    const workingDirInput = document.getElementById('working-dir');
-    if (workingDirInput && localStorage.getItem('workingDir')) workingDirInput.value = localStorage.getItem('workingDir');
-    // taskSettings.workingDir is already initialized
-    const autoFixCheckbox = document.getElementById('auto-fix');
-    if (autoFixCheckbox) autoFixCheckbox.checked = localStorage.getItem('autoFix') === 'true';
-    // taskSettings.autoFix is already initialized
-    const temperatureSlider = document.getElementById('temperature');
-    const temperatureValue = document.getElementById('temperature-value');
-    const savedTemperature = localStorage.getItem('temperature');
-    if (savedTemperature) {
-        taskSettings.temperature = parseFloat(savedTemperature);
-        if (temperatureSlider) temperatureSlider.value = savedTemperature;
-        if (temperatureValue) temperatureValue.textContent = savedTemperature;
-        console.log('[loadSavedSettings] Restored temperature:', savedTemperature);
-    } else if (temperatureSlider) {
-        taskSettings.temperature = parseFloat(temperatureSlider.value); // Ensure global taskSettings has default
-        if (temperatureValue) temperatureValue.textContent = temperatureSlider.value;
-    }
-    // Auto-plan settings
-    const autoPlanFields = {
-        'maxTaskHistoryChars': 'max-task-history',
-        'maxTasksPerIteration': 'max-tasks-per-iteration',
-        'maxIterations': 'max-iterations'
-    };
-    for (const [key, id] of Object.entries(autoPlanFields)) {
-        const input = document.getElementById(id);
-        const savedValue = localStorage.getItem(key);
-        if (savedValue) {
-            taskSettings[key] = parseInt(savedValue, 10);
-            if (input) input.value = savedValue;
-        } else if (input) { // Ensure global taskSettings has default from input
-            taskSettings[key] = parseInt(input.value, 10);
-        }
-    }
-    const graphFileInput = document.getElementById('graph-file');
-    const savedGraphFile = localStorage.getItem('graphFile');
-    if (savedGraphFile) {
-        taskSettings.graphFile = savedGraphFile;
-        if (graphFileInput) graphFileInput.value = savedGraphFile;
-    } else if (graphFileInput && graphFileInput.value) { // Ensure global taskSettings has default from input
-        taskSettings.graphFile = graphFileInput.value;
-    }
-    const savedEnabledTasks = localStorage.getItem('enabledTasks');
-    if (savedEnabledTasks) {
-        try {
-            taskSettings.taskSettings = JSON.parse(savedEnabledTasks);
-            console.log('[loadSavedSettings] Restored enabledTasks:', taskSettings.taskSettings);
-            Object.keys(taskSettings.taskSettings).forEach(taskId => {
-                const checkbox = document.getElementById(`task-${taskId}`);
-                if (checkbox && taskSettings.taskSettings[taskId]?.enabled) checkbox.checked = true;
-            });
-        } catch (e) {
-            console.error('[loadSavedSettings] Error parsing enabledTasks:', e);
-            taskSettings.taskSettings = {};
-        }
-    }
-    console.log('[loadSavedSettings] Finished. Initial taskSettings after load:', JSON.parse(JSON.stringify(taskSettings)));
-}
-
-function saveTaskSelection(dependencies = {}) {
-    const state = dependencies.appState || appState;
-    const doc = dependencies.document || document;
-
-    console.log('[saveTaskSelection] Called');
-    const currentEnabledTasks = {};
-    doc.querySelectorAll('#task-toggles .task-toggle input[type="checkbox"]').forEach(checkbox => {
-        currentEnabledTasks[checkbox.value] = {
-            enabled: checkbox.checked, task_type: checkbox.value // Add task_type, which is the task ID
-        };
-    });
-    state.taskSettings.taskSettings = currentEnabledTasks;
-    state.localStorage.setItem('enabledTasks', JSON.stringify(currentEnabledTasks));
-    console.log('[saveTaskSelection] Saved enabledTasks to localStorage and taskSettings.taskSettings:', JSON.stringify(currentEnabledTasks));
-}
-
-// Initialize sessionId globally - this will be used consistently throughout the app
-let sessionId = generateSessionId();
-console.log('[Global] Initial sessionId:', sessionId);
-// Update appState to use the global sessionId
-appState.sessionId = sessionId;
-
-let apiSettings = {
-    apiKeys: {},
-    apiBase: {},
-    localTools: []
-};
-let taskSettings = {};
-
+// Main entry point - orchestrates module initialization.
+// Module files (must be loaded before this script):
+//   theme.js, menubar.js,
+//   htmlUtils.js, appDirectory.js, apiLoader.js, quickSettings.js,
+//   basicChat.js, userSettings.js, pluginManager.js,
+//   cognitiveMode.js, pipelineWizard.js
+
+// Initialize sessionId globally
+let sessionId = Utils.generateSessionId();
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        AppState,
-        HttpService,
-        UIManager,
-        ValidationService,
         apiProviders,
         availableModels,
-        checkApiKeysConfigured,
-        checkTasksEnabled,
-        createLocalToolElement,
-        gatherLocalTools,
-        gatherUserSettings,
-        generateCognotikWorkingDir,
-        generateCognotikWorkingDirWithDate,
-        generateSessionId,
-        generateSessionIdWithDate,
-        generateTimestampedDirectory,
-        generateTimestampedDirectoryWithDate,
-        loadSettingsFromServer,
-        populateApiKeyInputs,
-        populateLocalTools,
-        processServerSettings,
-        saveSessionSettingsToServer,
-        saveTaskSelection,
-        showNotification,
-        taskTypes,
-        validateConfiguration
     };
 }
+
+// Initialize services
+const httpService = new HttpService();
+const notificationService = { showNotification };
+
+// Initialize app state with dependencies
+let appState = new AppState({
+    localStorage: window.localStorage,
+    sessionId: sessionId
+});
+// Make available to inline onclick handlers (e.g. removeLocalTool)
+window.appState = appState;
+
+// Initialize UI manager
+const uiManager = new UIManager({
+    document: document,
+    appState: appState,
+    httpService: httpService,
+    notificationService: notificationService
+});
+
+// Initialize validation service
+const validationService = new ValidationService({
+    appState: appState,
+    notificationService: notificationService
+});
+
+// Initialize model manager
+const modelManager = new ModelManager({
+    appState: appState,
+    document: document,
+    getAvailableModels: () => availableModels
+});
+
+// Initialize task config manager
+const taskConfigManager = new TaskConfigManager({
+    appState: appState,
+    document: document,
+    httpService: httpService,
+    notificationService: notificationService,
+    modelManager: modelManager,
+    getAvailableModels: () => availableModels
+});
+
+// ===== Notification (used by global notificationService) =====
+function showNotification(message, type = 'info') {
+    return uiManager.showNotification(message, type);
+}
+// ===== API Key Banner =====
+function hasConfiguredApiKeys(state) {
+    if (!state || !state.apiSettings) return false;
+    const keys = state.apiSettings.apiKeys;
+    if (!keys || typeof keys !== 'object') return false;
+    // Consider it configured if there is at least one non-empty key value
+    return Object.keys(keys).some(k => {
+        const v = keys[k];
+        return v !== null && v !== undefined && String(v).trim() !== '';
+    });
+}
+function isCognotikHostedEnvironment() {
+     try {
+         const host = (window.location.hostname || '').toLowerCase();
+         if (!host) return false;
+         // Match hosted.cognotik.com exactly, or any subdomain of cognotik.com
+         if (host === 'hosted.cognotik.com') return true;
+         if (host === 'cognotik.com') return true;
+         if (host.endsWith('.cognotik.com')) return true;
+         return false;
+     } catch (e) {
+         return false;
+     }
+}
+function updateApiKeyBanner() {
+    const banner = document.getElementById('api-key-banner');
+    if (!banner) return;
+     // Suppress the banner entirely on the hosted Cognotik environment,
+     // where API keys are managed server-side and users do not need to
+     // configure their own.
+     if (isCognotikHostedEnvironment()) {
+         banner.style.display = 'none';
+         return;
+     }
+    if (hasConfiguredApiKeys(appState)) {
+        banner.style.display = 'none';
+    } else {
+        banner.style.display = 'block';
+    }
+}
+function setupApiKeyBanner() {
+    const actionBtn = document.getElementById('api-key-banner-action');
+    if (actionBtn) {
+        actionBtn.addEventListener('click', () => {
+            const settingsBtn = document.getElementById('user-settings-btn');
+            if (settingsBtn) {
+                settingsBtn.click();
+            }
+        });
+    }
+}
+// ===== Localhost detection: hide User Settings button when not on localhost =====
+function isLocalhost() {
+    const host = window.location.hostname;
+    return host === 'localhost'
+        || host === '127.0.0.1'
+        || host === '::1'
+        || host === '[::1]';
+}
+function applyLocalhostRestrictions() {
+    if (!isLocalhost()) {
+        const pluginManagerBtn = document.getElementById('plugin-manager-btn');
+        if (pluginManagerBtn) pluginManagerBtn.style.display = 'none';
+    }
+}
+// ===== Update logout button label with user name =====
+function updateLogoutButtonLabel() {
+    try {
+        const user = appState && appState.userInfo;
+        let btn = document.getElementById('auth-btn');
+        const labelEl = document.getElementById('auth-btn-label');
+        if (!btn || !labelEl) return;
+        // Always remove any existing dropdown so we can re-create based on state
+        const existingMenu = document.getElementById('user-menu-dropdown');
+        if (existingMenu) existingMenu.remove();
+        if (!user) {
+            // Not logged in
+            btn.setAttribute('aria-label', 'Login');
+            btn.setAttribute('title', 'Login');
+            btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🔑</span> Login';
+            btn.onclick = () => { window.location.href = '/login/'; };
+        } else {
+            // Clone the button to strip any pre-existing event listeners
+            // (e.g. the login redirect handler attached by the Menubar component)
+            const clone = btn.cloneNode(true);
+            btn.parentNode.replaceChild(clone, btn);
+            btn = clone;
+            const label = user.name || user.email || user.id || 'Logout';
+            btn.setAttribute('aria-label', 'User menu for ' + label);
+            btn.setAttribute('title', label);
+            btn.innerHTML = '<span class="btn-icon" aria-hidden="true">👤</span> ' +
+                escapeHtmlSafe(label) + ' <span aria-hidden="true" style="margin-left:4px;">▾</span>';
+            setupUserMenu(btn, label);
+        }
+    } catch (e) {
+        console.warn('[init] Unable to update logout button label:', e);
+    }
+}
+function setupUserMenu(btn, label) {
+    // Make the parent a positioning context for the dropdown
+    const parent = btn.parentElement;
+    if (parent && getComputedStyle(parent).position === 'static') {
+        parent.style.position = 'relative';
+    }
+    // Build the dropdown
+    const menu = document.createElement('div');
+    menu.id = 'user-menu-dropdown';
+    menu.setAttribute('role', 'menu');
+    menu.style.position = 'absolute';
+    menu.style.right = '0';
+    menu.style.top = '100%';
+    menu.style.marginTop = '0';
+    menu.style.paddingTop = '4px';
+    menu.style.minWidth = '180px';
+    menu.style.zIndex = '1000';
+    menu.style.display = 'none';
+    // The actual visual menu (inner element so we can have an invisible
+    // hover-bridge above it, preventing the menu from closing when the
+    // mouse moves from the button to the menu).
+    const menuInner = document.createElement('div');
+    menuInner.style.background = 'var(--color-surface, #fff)';
+    menuInner.style.border = '1px solid var(--color-border, #ddd)';
+    menuInner.style.borderRadius = '6px';
+    menuInner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+    menuInner.style.padding = '6px 0';
+    menu.appendChild(menuInner);
+    const makeItem = (icon, text, onClick) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.setAttribute('role', 'menuitem');
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '8px';
+        item.style.width = '100%';
+        item.style.padding = '8px 14px';
+        item.style.background = 'transparent';
+        item.style.border = 'none';
+        item.style.textAlign = 'left';
+        item.style.cursor = 'pointer';
+        item.style.font = 'inherit';
+        item.style.color = 'inherit';
+        item.innerHTML = '<span aria-hidden="true">' + icon + '</span> ' + escapeHtmlSafe(text);
+        item.addEventListener('mouseenter', () => { item.style.background = 'rgba(0,0,0,0.06)'; });
+        item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hideMenu();
+            onClick();
+        });
+        return item;
+    };
+    const settingsItem = makeItem('⚙️', 'Settings', () => {
+        const modal = document.getElementById('user-settings-modal');
+        if (modal) {
+            modal.style.display = 'block';
+            if (typeof populateUserSettings === 'function') {
+                populateUserSettings(appState);
+            }
+        }
+    });
+    menuInner.appendChild(settingsItem);
+    const logoutItem = makeItem('🚪', 'Logout', () => {
+        const confirmMessage = 'Are you sure you want to log out' +
+            (label && label !== 'Logout' ? ' as ' + label : '') + '?';
+        if (window.confirm(confirmMessage)) {
+            fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+        }
+    });
+    menuInner.appendChild(logoutItem);
+    parent.appendChild(menu);
+    // Hover-based open/close with a small grace delay so users can move
+    // the mouse between button and menu without the menu disappearing.
+    let hideTimer = null;
+    const showMenu = () => {
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+        menu.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
+    };
+    const hideMenu = () => {
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+            menu.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+            hideTimer = null;
+        }, 200);
+    };
+    const cancelHide = () => {
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+    };
+    btn.setAttribute('aria-haspopup', 'true');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('mouseenter', showMenu);
+    btn.addEventListener('mouseleave', hideMenu);
+    btn.addEventListener('focus', showMenu);
+    menu.addEventListener('mouseenter', cancelHide);
+    menu.addEventListener('mouseleave', hideMenu);
+    // Allow click to toggle as well (for touch / keyboard users)
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        const visible = menu.style.display === 'block';
+        if (visible) {
+            cancelHide();
+            menu.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+        } else {
+            showMenu();
+        }
+    };
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== btn) {
+            cancelHide();
+            menu.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            cancelHide();
+            menu.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+function escapeHtmlSafe(s) {
+    if (typeof HtmlUtils !== 'undefined' && HtmlUtils && typeof HtmlUtils.escapeHtml === 'function') {
+        return HtmlUtils.escapeHtml(s);
+    }
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+// ===== Usage modal =====
+// Generic helper to wire up a modal that displays a given URL in an iframe.
+function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url, loadingOverlayId }) {
+    const btn = document.getElementById(buttonId);
+    const modal = document.getElementById(modalId);
+    const iframe = document.getElementById(iframeId);
+    const closeBtn = closeBtnId ? document.getElementById(closeBtnId) : null;
+    const loadingOverlay = loadingOverlayId ? document.getElementById(loadingOverlayId) : null;
+    if (!btn || !modal || !iframe) return;
+    const close = () => {
+        modal.style.display = 'none';
+        iframe.src = 'about:blank';
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    };
+    btn.addEventListener('click', () => {
+        // (Re)load each time it's opened so data is fresh
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+        iframe.src = url;
+        modal.style.display = 'block';
+    });
+    if (loadingOverlay) {
+        iframe.addEventListener('load', () => {
+            // Don't hide overlay for the "about:blank" reset
+            if (iframe.src && iframe.src !== 'about:blank' && !iframe.src.endsWith('about:blank')) {
+                loadingOverlay.style.display = 'none';
+            }
+        });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', close);
+    }
+    // Close when clicking outside modal-content
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) close();
+    });
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') close();
+    });
+}
+// ===== Sessions button =====
+function setupSessionsButton() {
+    setupIframeModal({
+        buttonId: 'sessions-btn',
+        modalId: 'sessions-modal',
+        iframeId: 'sessions-iframe',
+        closeBtnId: 'close-sessions-modal',
+        url: '/sessions/',
+        loadingOverlayId: 'sessions-loading-overlay'
+    });
+}
+// ===== Budget / Usage button (unified) =====
+function formatBudget(amount) {
+    if (typeof amount !== 'number' || isNaN(amount)) return '—';
+    const sign = amount < 0 ? '-' : '';
+    const abs = Math.abs(amount);
+    return sign + '$' + abs.toFixed(2);
+}
+function updateBudgetDisplay() {
+    const span = document.getElementById('budget-amount');
+    if (!span) return;
+    const btn = document.getElementById('budget-btn');
+    fetch('/usage/?format=json', {
+        headers: { 'Accept': 'application/json' }
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch usage: ' + response.status);
+        }
+        return response.json();
+    }).then(data => {
+        const budget = (data && typeof data.available_budget === 'number')
+            ? data.available_budget : null;
+        if (budget === null) {
+            span.textContent = 'Budget';
+            if (btn) {
+                btn.removeAttribute('data-budget');
+                btn.classList.remove('budget-warning', 'budget-critical');
+            }
+            return;
+        }
+        span.textContent = formatBudget(budget);
+        if (btn) {
+            btn.setAttribute('title', 'Available budget: ' + formatBudget(budget));
+            btn.setAttribute('data-budget', String(budget));
+            btn.classList.remove('budget-warning', 'budget-critical');
+            if (budget < 0.01) {
+                btn.classList.add('budget-critical');
+                span.textContent = formatBudget(budget);
+            } else if (budget < 1.00) {
+                btn.classList.add('budget-warning');
+            }
+        }
+        updateBudgetWarningBanner(budget);
+        // Re-render app grid so launch buttons reflect the new budget state
+        renderAppGrid();
+        setupAppCards();
+    }).catch(err => {
+        console.warn('[updateBudgetDisplay] Error:', err);
+        span.textContent = 'Budget';
+        if (btn) {
+            btn.removeAttribute('data-budget');
+            btn.classList.remove('budget-warning', 'budget-critical');
+        }
+        updateBudgetWarningBanner(null);
+    });
+}
+function setupBudgetButton() {
+    setupIframeModal({
+        buttonId: 'budget-btn',
+        modalId: 'usage-modal',
+        iframeId: 'usage-iframe',
+        closeBtnId: 'close-usage-modal',
+        url: '/usage/'
+    });
+    updateBudgetDisplay();
+    // Refresh budget every 60 seconds
+    setInterval(updateBudgetDisplay, 60000);
+}
+function updateBudgetWarningBanner(budget) {
+    const banner = document.getElementById('budget-warning-banner');
+    if (!banner) return;
+    if (typeof budget !== 'number' || isNaN(budget)) {
+        banner.classList.remove('visible', 'budget-critical-banner');
+        banner.innerHTML = '';
+        return;
+    }
+    if (budget < 0.01) {
+        banner.classList.add('visible', 'budget-critical-banner');
+        banner.innerHTML = `<strong>🚫 Insufficient credits (${formatBudget(budget)}).</strong>
+             You need credits to launch AI sessions.
+             <a href="/usage/">Add credits now →</a>`;
+    } else if (budget < 1.00) {
+        banner.classList.add('visible');
+        banner.classList.remove('budget-critical-banner');
+        banner.innerHTML = `<strong>⚠️ Low balance: ${formatBudget(budget)}.</strong>
+             Your available credits are running low.
+             <a href="/usage/">Top up credits →</a>`;
+    } else {
+        banner.classList.remove('visible', 'budget-critical-banner');
+        banner.innerHTML = '';
+    }
+}
+
+
+// ===== Main Initialization =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Render top menubar via reusable component
+    renderMenubar();
+
+    setupBasicChatModal({ httpService, notificationService, sessionId });
+    setupSettingsSection(notificationService);
+    setupCustomPipelineModal({
+        appState, modelManager, validationService, uiManager,
+        notificationService, httpService, taskConfigManager,
+        getCognitiveTypes: () => cognitiveTypes
+    });
+    setupUserSettingsModal({
+        appState, httpService, notificationService, modelManager,
+        onSettingsSaved: () => {
+            populateQuickSettingsModels(appState, availableModels);
+            populateBasicChatModelSelections(appState, availableModels);
+            updateApiKeyBanner();
+            updateLogoutButtonLabel();
+            updateBudgetDisplay();
+        }
+    });
+    setupPluginManagerModal();
+    setupApiKeyBanner();
+    setupSessionsButton();
+    setupBudgetButton();
+    applyLocalhostRestrictions();
+    if (typeof setupAuthBanner === 'function') setupAuthBanner();
+    if (typeof updateAuthBanner === 'function') {
+        updateAuthBanner();
+        // Periodically refresh the auth banner every 30 seconds (localhost only)
+        if (isLocalhost()) {
+            setInterval(() => updateAuthBanner(), 30000);
+        }
+    }
+    loadAppDirectory().then(() => {
+        renderAppGrid();
+        setupAppSearch();
+        setupAppCards();
+    }).catch(error => {
+        console.error('[init] Error loading app directory:', error);
+    });
+});
+function renderMenubar() {
+    if (typeof Menubar === 'undefined') {
+        console.warn('[renderMenubar] Menubar component not loaded');
+        return;
+    }
+    const appGridSection = document.getElementById('app-grid-section');
+    Menubar.render('#menubar-container', {
+        title: 'Cognotik',
+        titleAriaLabel: 'About Cognotik',
+        titleClickable: true,
+        onTitleClick: function() {
+            if (typeof window.__openAboutModal === 'function') {
+                window.__openAboutModal();
+            }
+        },
+        showLayoutSelector: true,
+        showThemeSelector: true,
+        onLayoutChange: function(layout) {
+            if (appGridSection) appGridSection.setAttribute('data-layout', layout);
+        },
+        buttons: [
+            { id: 'plugin-manager-btn', icon: '🔌', label: 'Plugins', ariaLabel: 'Open Plugin Manager' },
+            { id: 'sessions-btn', icon: '📁', label: 'Sessions', ariaLabel: 'Open Sessions' },
+            {
+                id: 'budget-btn',
+                icon: '📊',
+                label: 'Budget',
+                labelId: 'budget-amount',
+                ariaLabel: 'Open Usage & Credits',
+                title: 'Usage and available credit balance'
+            },
+            {
+                id: 'auth-btn',
+                icon: '🔑',
+                label: 'Login',
+                labelId: 'auth-btn-label',
+                ariaLabel: 'Login',
+                onClick: function() { window.location.href = '/login/'; }
+            }
+        ]
+    });
+    // Hidden trigger for legacy code that may reference 'user-settings-btn'.
+    // The visible entry point is now within the user dropdown menu.
+    if (!document.getElementById('user-settings-btn')) {
+        const hiddenBtn = document.createElement('button');
+        hiddenBtn.id = 'user-settings-btn';
+        hiddenBtn.type = 'button';
+        hiddenBtn.style.display = 'none';
+        document.body.appendChild(hiddenBtn);
+    }
+}
+
+// Load API providers and models first, then initialize everything
+loadApiProviders().then(() => {
+    uiManager.setupTooltips();
+     return loadUserSettings(httpService, appState);
+}).then(() => {
+     // Ensure DOM (and menubar) are ready before touching auth-btn etc.
+     const applyPostSettings = () => {
+         modelManager.populateModelSelections();
+         populateQuickSettingsModels(appState, availableModels);
+         updateApiKeyBanner();
+         updateLogoutButtonLabel();
+         // Re-render app grid now that login state is known
+         renderAppGrid();
+         setupAppCards();
+     };
+     if (document.readyState === 'loading') {
+         document.addEventListener('DOMContentLoaded', applyPostSettings);
+     } else {
+         // Defer to next tick to ensure DOMContentLoaded handler
+         // (which renders the menubar) has run.
+         setTimeout(applyPostSettings, 0);
+     }
+    // Sync the collect-session-data checkbox with loaded settings.
+    // Wrap in a helper that waits for the DOM to be ready, since this
+    // initialization chain runs outside of DOMContentLoaded and the
+    // checkbox element may not yet exist when settings finish loading.
+    const syncCollectSessionDataCheckbox = () => {
+        const cs = document.getElementById('collect-session-data');
+         console.log('[syncCollectSessionDataCheckbox] checkbox found:', !!cs,
+             'apiSettings exists:', !!appState.apiSettings);
+        if (cs && appState.apiSettings) {
+            const v = appState.apiSettings.collectSessionData;
+             const checked = (v === true || v === 'true' || v === 1 || v === '1');
+             console.log('[syncCollectSessionDataCheckbox] value:', v,
+                 '(type:', typeof v, ') => checked:', checked);
+             cs.checked = checked;
+             console.log('[syncCollectSessionDataCheckbox] cs.checked after:', cs.checked);
+         } else {
+             console.warn('[syncCollectSessionDataCheckbox] Skipping sync - ' +
+                 'checkbox:', !!cs, 'apiSettings:', !!appState.apiSettings);
+        }
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncCollectSessionDataCheckbox);
+    } else {
+        syncCollectSessionDataCheckbox();
+    }
+    return loadCognitiveTypes();
+}).catch(error => {
+    console.error('[init] Error during initialization:', error);
+    uiManager.setupTooltips();
+     loadUserSettings(httpService, appState).then(() => {
+         const applyFallback = () => {
+             populateQuickSettingsModels(appState, availableModels);
+             updateApiKeyBanner();
+             updateLogoutButtonLabel();
+             renderAppGrid();
+             setupAppCards();
+         };
+         if (document.readyState === 'loading') {
+             document.addEventListener('DOMContentLoaded', applyFallback);
+         } else {
+             setTimeout(applyFallback, 0);
+         }
+     });
+});

@@ -1,420 +1,478 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
-import com.google.common.cache.LoadingCache
-import com.google.common.cache.RemovalListener
-import jakarta.servlet.WriteListener
+import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
+import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
+import com.simiacryptus.cognotik.webui.servlet.handler.FileRequestHandler
+import com.simiacryptus.cognotik.webui.servlet.handler.FileUploadHandler
+import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
+import com.simiacryptus.cognotik.webui.servlet.render.DirectoryListingRenderer
+import com.simiacryptus.cognotik.webui.servlet.render.DirectoryPageModel
+import com.simiacryptus.cognotik.webui.servlet.render.MarkdownRenderer
+import com.simiacryptus.cognotik.webui.servlet.render.MonacoEditorRenderer
+import com.simiacryptus.cognotik.webui.servlet.render.git.GitHtml
+import com.simiacryptus.cognotik.webui.servlet.render.git.GitScripts
+import com.simiacryptus.cognotik.webui.servlet.render.git.GitStyles
+import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
+import com.simiacryptus.cognotik.webui.servlet.util.PathUtils
+import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.eclipse.jetty.http.MimeTypes
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.core.internal.waiters.ResponseOrException.response
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
-import java.nio.file.StandardOpenOption
 
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2,  // 2MB
+    maxFileSize = 1024 * 1024 * 50,       // 50MB
+    maxRequestSize = 1024 * 1024 * 100    // 100MB
+)
 abstract class FileServlet : HttpServlet() {
 
-    abstract fun getDir(
-        req: HttpServletRequest,
-    ): File
+    abstract fun getDir(request: HttpServletRequest, response: HttpServletResponse): File?
 
-    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
-        val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
-        val dir = getDir(req)
-        log.info("Serving directory: ${dir.absolutePath}")
-        val file = getFile(dir, pathSegments, req)
-        log.info("Resolved file path: ${file.absolutePath}")
-
-        when {
-            !file.exists() -> {
-                log.warn("File not found: ${file.absolutePath}")
-                resp.status = HttpServletResponse.SC_NOT_FOUND
-                resp.writer.write("File not found")
+    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+        log.debug("Received GET request for path: ${request.pathInfo ?: request.servletPath}")
+        try {
+            val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+            val dir = getDir(request, response)
+            val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
+            if (file != null && FileAccessControl.isHidden(dir, file)) {
+                log.debug("Path is hidden, returning 404: ${file.absolutePath}")
+                response.status = HttpServletResponse.SC_NOT_FOUND
+                response.writer.write("File not found")
+                return
             }
-
-            file.isFile -> {
-                log.info("File found: ${file.absolutePath}")
-                var channel = channelCache.get(file)
-                while (!channel.isOpen) {
-                    log.warn("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
-                    channelCache.refresh(file)
-                    channel = channelCache.get(file)
+             val editParam = request.getParameter("edit")
+            when {
+                file != null && file.name == "_files.json" && !file.exists() -> {
+                    serveVirtualFilesJson(file, response)
                 }
-                try {
-                    if (channel.size() > 1024 * 1024 * 1) {
-                        log.info("File is large, using writeLarge method for file: ${file.absolutePath}")
-                        writeLarge(channel, resp, file, req)
+
+                file != null && !file.exists() -> {
+                    serveNonExistentFile(file, response)
+                }
+                 file != null && file.isFile && editParam != null && editParam != "false" -> {
+                     serveEditor(file, dir, response)
+                 }
+
+
+                file != null && file.isFile -> {
+                    FileRequestHandler.serveFile(file, request, response)
+                }
+
+                request.pathInfo?.endsWith("/") == false -> {
+                    log.info("Redirecting to directory path: ${request.requestURI + "/"}")
+                    response.sendRedirect(request.requestURI + "/")
+                }
+
+                else -> {
+                    serveDirectoryListing(file, request, response, pathSegments)
+                }
+            }
+        } catch (e: IllegalArgumentException) {
+            log.warn("Invalid path in GET request: ${e.message}")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.writer.write("Invalid path: ${e.message}")
+        } catch (e: Exception) {
+            log.error("Error handling GET request", e)
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.writer.write("Internal server error: ${e.message}")
+        }
+    }
+
+    override fun doHead(request: HttpServletRequest, response: HttpServletResponse) {
+        log.debug("Received HEAD request for path: ${request.pathInfo ?: request.servletPath}")
+        try {
+            val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+            val dir = getDir(request, response)
+            val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
+            if (file != null && FileAccessControl.isHidden(dir, file)) {
+                response.status = HttpServletResponse.SC_NOT_FOUND
+                return
+            }
+            when {
+                file != null && file.name == "_files.json" && !file.exists() -> {
+                    val parentDir = file.parentFile
+                    if (parentDir != null && parentDir.exists() && parentDir.isDirectory) {
+                        response.contentType = "application/json"
+                        response.characterEncoding = "UTF-8"
+                        response.status = HttpServletResponse.SC_OK
                     } else {
-                        log.info("File is small, using writeSmall method for file: ${file.absolutePath}")
-                        writeSmall(channel, resp, file, req)
+                        response.status = HttpServletResponse.SC_NOT_FOUND
                     }
-                } finally {
+                }
 
+                file != null && !file.exists() -> {
+                    val fileName = file.name
+                    val extension = fileName.split(".").lastOrNull()
+                    when {
+                        setOf("html", "pdf", "txt").contains(extension) -> {
+                            val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
+                            if (mdFile.exists() && mdFile.isFile) {
+                                when (extension) {
+                                    "txt" -> {
+                                        response.contentType = "text/plain"
+                                        response.characterEncoding = "UTF-8"
+                                        response.status = HttpServletResponse.SC_OK
+                                    }
+
+                                    "pdf" -> {
+                                        response.contentType = "application/pdf"
+                                        response.status = HttpServletResponse.SC_OK
+                                    }
+
+                                    else -> {
+                                        response.contentType = "text/html"
+                                        response.characterEncoding = "UTF-8"
+                                        response.status = HttpServletResponse.SC_OK
+                                    }
+                                }
+                            } else {
+                                response.status = HttpServletResponse.SC_NOT_FOUND
+                            }
+                        }
+
+                        else -> {
+                            response.status = HttpServletResponse.SC_NOT_FOUND
+                        }
+                    }
+                }
+
+                file != null && file.isFile -> {
+                    response.contentType = MimeTypeResolver.getMimeType(file.name)
+                    response.setContentLengthLong(file.length())
+                    response.status = HttpServletResponse.SC_OK
+                }
+
+                request.pathInfo?.endsWith("/") == false -> {
+                    response.setHeader("Location", request.requestURI + "/")
+                    response.status = HttpServletResponse.SC_MOVED_PERMANENTLY
+                }
+
+                else -> {
+                    response.contentType = "text/html"
+                    response.characterEncoding = "UTF-8"
+                    response.status = HttpServletResponse.SC_OK
                 }
             }
+        } catch (e: IllegalArgumentException) {
+            log.warn("Invalid path in HEAD request: ${e.message}")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+        } catch (e: Exception) {
+            log.error("Error handling HEAD request", e)
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        }
+    }
 
-            req.pathInfo?.endsWith("/") == false -> {
-                log.info("Redirecting to directory path: ${req.requestURI + "/"}")
-                resp.sendRedirect(req.requestURI + "/")
+
+    override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+        log.debug("Received POST request for path: ${request.pathInfo ?: request.servletPath}")
+        try {
+            val gitAction = request.getParameter("gitAction")
+            if (gitAction != null && isGitEnabled(request)) {
+                GitOperationHandler.handleGitOperation(request, response, getGitRoot(request, response))
+                return
+            }
+            val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+            val dir = getDir(request, response)
+            val targetDir = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
+            if (targetDir != null && FileAccessControl.isHidden(dir, targetDir)) {
+                log.warn("Refusing POST to hidden path: ${targetDir.absolutePath}")
+                response.status = HttpServletResponse.SC_NOT_FOUND
+                response.writer.write("File not found")
+                return
+            }
+            FileUploadHandler.handleUpload(request, response, targetDir, dir)
+        } catch (e: IllegalArgumentException) {
+            log.warn("Invalid path in POST request: ${e.message}")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.writer.write("Invalid path: ${e.message}")
+        } catch (e: Exception) {
+            log.error("Error during file upload", e)
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.writer.write("Error uploading file: ${e.message}")
+        }
+    }
+
+    override fun doPut(request: HttpServletRequest, response: HttpServletResponse) {
+        log.info("Received PUT request for path: ${request.pathInfo ?: request.servletPath}")
+        try {
+            val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+            val dir = getDir(request, response)
+            if (dir == null) {
+                log.warn("Base directory is null for PUT request")
+                response.status = HttpServletResponse.SC_BAD_REQUEST
+                response.writer.write("Invalid base directory")
+                return
+            }
+            FileUploadHandler.handlePut(request, response, dir, pathSegments)
+        } catch (e: IllegalArgumentException) {
+            log.warn("Invalid path in PUT request: ${e.message}")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.writer.write("Invalid path: ${e.message}")
+        } catch (e: Exception) {
+            log.error("Error during file PUT", e)
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.writer.write("Error writing file: ${e.message}")
+        }
+    }
+
+    override fun doDelete(request: HttpServletRequest, response: HttpServletResponse) {
+        log.info("Received DELETE request for path: ${request.pathInfo ?: request.servletPath}")
+        try {
+            val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+            val dir = getDir(request, response)
+            if (dir == null) {
+                response.status = HttpServletResponse.SC_BAD_REQUEST
+                response.writer.write("Invalid base directory")
+                return
+            }
+            val targetFile = File(dir, pathSegments.drop(1).joinToString("/"))
+            if (FileAccessControl.isHidden(dir, targetFile) || FileAccessControl.isReadOnly(dir, targetFile)) {
+                log.warn("Refusing DELETE on hidden path: ${targetFile.absolutePath}")
+                response.status = HttpServletResponse.SC_NOT_FOUND
+                response.writer.write("File not found")
+                return
+            }
+            FileDeleteHandler.handleDelete(response, targetFile, dir)
+        } catch (e: IllegalArgumentException) {
+            log.warn("Invalid path in DELETE request: ${e.message}")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.writer.write("Invalid path: ${e.message}")
+        } catch (e: Exception) {
+            log.error("Error during file DELETE", e)
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.writer.write("Error deleting file: ${e.message}")
+        }
+    }
+
+    // --- Private helper methods ---
+
+    private fun serveVirtualFilesJson(file: File, resp: HttpServletResponse) {
+        val parentDir = file.parentFile
+        if (parentDir != null && parentDir.exists() && parentDir.isDirectory) {
+            log.debug("Serving virtual _files.json for directory: ${parentDir.absolutePath}")
+            FileRequestHandler.serveFilesJson(parentDir, resp)
+        } else {
+            log.warn("Parent directory not found for _files.json: ${file.absolutePath}")
+            resp.status = HttpServletResponse.SC_NOT_FOUND
+            resp.writer.write("File not found")
+        }
+    }
+     private fun serveEditor(file: File, baseDir: File, resp: HttpServletResponse) {
+         try {
+             val isBinary = isBinaryFile(file)
+             if (isBinary) {
+                 log.info("Refusing to open binary file in editor: ${file.absolutePath}")
+                 resp.status = HttpServletResponse.SC_BAD_REQUEST
+                 resp.contentType = "text/plain"
+                 resp.characterEncoding = "UTF-8"
+                 resp.writer.write("Cannot edit binary file: ${file.name}")
+                 return
+             }
+             val content = file.readText(Charsets.UTF_8)
+             val readOnly = FileAccessControl.isReadOnly(baseDir, file)
+             resp.contentType = "text/html"
+             resp.characterEncoding = "UTF-8"
+             resp.status = HttpServletResponse.SC_OK
+             resp.writer.write(
+                 MonacoEditorRenderer.renderEditorPage(
+                     filename = file.name,
+                     filePath = file.absolutePath,
+                     content = content,
+                     readOnly = readOnly
+                 )
+             )
+         } catch (e: Exception) {
+             log.error("Error serving editor for file: ${file.absolutePath}", e)
+             resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+             resp.writer.write("Error opening editor: ${e.message}")
+         }
+     }
+     private fun isBinaryFile(file: File): Boolean {
+         if (!file.exists() || !file.isFile) return false
+         val sampleSize = minOf(file.length(), 8192L).toInt()
+         if (sampleSize == 0) return false
+         val buffer = ByteArray(sampleSize)
+         file.inputStream().use { input ->
+             val read = input.read(buffer)
+             if (read <= 0) return false
+             for (i in 0 until read) {
+                 val b = buffer[i].toInt() and 0xFF
+                 if (b == 0) return true
+             }
+         }
+         return false
+     }
+
+    private fun serveNonExistentFile(file: File, resp: HttpServletResponse) {
+        val fileName = file.name
+        val extension = fileName.split(".").lastOrNull()
+        extension?.let {
+            log.debug("File does not exist: ${file.absolutePath}, checking for markdown alternative for extension: $it")
+        }
+        when {
+            setOf("html", "pdf", "txt").contains(extension) -> {
+                val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
+                if (mdFile.exists() && mdFile.isFile) {
+                    log.debug("Found markdown file, rendering: ${mdFile.absolutePath}")
+                    if (extension == "txt") {
+                        resp.contentType = "text/plain"
+                        resp.characterEncoding = "UTF-8"
+                        resp.status = HttpServletResponse.SC_OK
+                        resp.writer.write(mdFile.readText())
+                    } else {
+                        MarkdownRenderer.renderMarkdown(mdFile, resp, fileName.endsWith(".pdf"))
+                    }
+                } else {
+                    log.debug("File not found: ${file.absolutePath}")
+                    resp.status = HttpServletResponse.SC_NOT_FOUND
+                    resp.writer.write("File not found")
+                }
             }
 
             else -> {
-                log.info("Listing directory contents for: ${file.absolutePath}")
-                resp.contentType = "text/html"
-                resp.characterEncoding = "UTF-8"
-                resp.status = HttpServletResponse.SC_OK
-                val currentPathString = pathSegments.drop(1).joinToString("/")
-                val servletPathBase =
-                    req.contextPath + req.servletPath.removeSuffix("/*").removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
-
-                val files = file.listFiles()
-                    ?.filter { it.isFile }
-
-                    ?.sortedBy { it.name }
-                    ?.joinToString("") {
-                        """<li><a class="item-link" href="${it.name}"><span class="icon">📄</span>${it.name}</a></li>"""
-                    } ?: ""
-                val folders = file.listFiles()
-                    ?.filter { !it.isFile }
-
-                    ?.sortedBy { it.name }
-                    ?.joinToString("") {
-                        """<li><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a></li>"""
-                    } ?: ""
-                resp.writer.write(
-                    directoryHTML(
-                        currentPathString,
-                        servletPathBase,
-                        getZipLink(req, currentPathString),
-                        folders,
-                        files
-                    )
-                )
+                log.debug("File not found: ${file.absolutePath}")
+                resp.status = HttpServletResponse.SC_NOT_FOUND
+                resp.writer.write("File not found")
             }
         }
     }
-    // getFile should construct the file path using all pathSegments relative to the base dir
 
-    open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
-        File(dir, pathSegments.drop(1).joinToString("/"))
-
-    private fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
-        log.info("Writing small file: ${file.absolutePath}")
-        resp.contentType = getMimeType(file.name)
-        resp.status = HttpServletResponse.SC_OK
-        val async = req.startAsync()
-        resp.outputStream.apply {
-            setWriteListener(object : WriteListener {
-                val buffer = ByteArray(16 * 1024)
-                val byteBuffer = ByteBuffer.wrap(buffer)
-                override fun onWritePossible() {
-                    while (isReady) {
-                        byteBuffer.clear()
-                        val readBytes = channel.read(byteBuffer)
-                        if (readBytes == -1) {
-                            log.info("Completed writing small file: ${file.absolutePath}")
-                            async.complete()
-                            channelCache.put(file, channel)
-                            return
-                        }
-                        write(buffer, 0, readBytes)
-                    }
-                }
-
-                override fun onError(throwable: Throwable) {
-                    log.error("Error writing small file: ${file.absolutePath}", throwable)
-                    channelCache.put(file, channel)
-                }
-            })
-        }
-    }
-
-    private fun writeLarge(
-        channel: FileChannel,
-        resp: HttpServletResponse,
-        file: File,
-        req: HttpServletRequest
+    private fun serveDirectoryListing(
+        file: File?, request: HttpServletRequest, response: HttpServletResponse, pathSegments: List<String>
     ) {
-        log.info("Writing large file: ${file.absolutePath}")
-        val mappedByteBuffer: MappedByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-        resp.contentType = getMimeType(file.name)
-        resp.status = HttpServletResponse.SC_OK
-        val async = req.startAsync()
-        resp.outputStream.apply {
-            setWriteListener(object : WriteListener {
-                val buffer = ByteArray(256 * 1024)
-                override fun onWritePossible() {
-                    while (isReady) {
-                        val start = mappedByteBuffer.position()
-                        val attemptedReadSize = buffer.size.coerceAtMost(mappedByteBuffer.remaining())
-                        mappedByteBuffer.get(buffer, 0, attemptedReadSize)
-                        val end = mappedByteBuffer.position()
-                        val readBytes = end - start
-                        if (readBytes == 0) {
-                            log.info("Completed writing large file: ${file.absolutePath}")
-                            async.complete()
-                            channelCache.put(file, channel)
-                            return
-                        }
-                        write(buffer, 0, readBytes)
-                    }
+        response.contentType = "text/html"
+        response.characterEncoding = "UTF-8"
+        response.status = HttpServletResponse.SC_OK
+        val currentPathString = pathSegments.drop(1).joinToString("/")
+        val servletPathBase =
+            request.contextPath + request.servletPath.removeSuffix("/*")
+                .removeSuffix("/") + "/" + request.pathInfo.split("/")
+                .firstOrNull { it.isNotBlank() }
+
+        val (files, folders) = listContents(file, request, response)
+        val gitEnabled = isGitEnabled(request)
+        val gitRoot = if (gitEnabled) getGitRoot(request, response) else null
+        val isRepo = GitOperationHandler.isGitRepository(gitRoot)
+        val gitSection = if (gitEnabled) GitHtml.buildGitSection(gitRoot, isRepo) else ""
+        val gitStyles = if (gitEnabled) GitStyles.getGitStyles() else ""
+        val gitScripts = if (gitEnabled) GitScripts.getGitScripts() else ""
+        val gitToolbar = if (gitEnabled && isRepo) GitHtml.getGitToolbarActions() else ""
+
+        val model = DirectoryPageModel(
+            currentPath = currentPathString,
+            servletBaseHref = servletPathBase,
+            zipLink = getZipLink(request, currentPathString),
+            folders = folders,
+            files = files,
+            toolbarActions = getToolbarActions(request, currentPathString) + gitToolbar,
+            additionalSections = gitSection + getAdditionalSections(file, request, currentPathString),
+            additionalStyles = getAdditionalStyles() + gitStyles,
+            additionalScripts = getAdditionalScripts() + gitScripts,
+            actualFilePath = file?.absolutePath ?: ""
+        )
+        response.writer.write(DirectoryListingRenderer.renderDirectoryPage(model))
+    }
+
+    open fun listContents(
+        file: File?,
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): Pair<String, String> {
+        val baseDir = getDir(request, response)
+        val files = file?.listFiles()
+            ?.filter { it.isFile }
+            ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
+            ?.sortedBy { it.name }?.joinToString("") {
+                val fileName = it.name
+                val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
+                val htmlLink = if (fileName.endsWith(".md")) {
+                    val htmlFileName = fileName.substringBeforeLast(".") + ".html"
+                    """ <a class="item-link" href="${htmlFileName}" style="margin-left: 0.5rem; font-size: 0.85rem;"><span class="icon">🌐</span>View as HTML</a>"""
+                } else {
+                    ""
                 }
-
-                override fun onError(throwable: Throwable) {
-                    log.error("Error writing large file: ${file.absolutePath}", throwable)
-                    channelCache.put(file, channel)
-                }
-            })
-        }
+                val fileActions = getFileActions(it, request)
+                 val deleteButton = if (!FileAccessControl.isReadOnly(baseDir, it)) {
+                     """<button class="delete-link" onclick="deleteItem(event, '${escapeJs(fileName)}', false)" title="Delete file">🗑️ Delete</button>"""
+                 } else ""
+                 val editButton = """<a class="action-link" href="${fileName}?edit=1" title="Edit file in Monaco editor">✏️ Edit</a>"""
+                 """<li style="display: flex; align-items: center;">$baseLink$htmlLink$editButton$fileActions$deleteButton</li>"""
+            } ?: ""
+        val folders = file?.listFiles()
+            ?.filter { !it.isFile }
+            ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
+            ?.sortedBy { it.name }?.joinToString("") {
+                val folderActions = getFolderActions(it, request)
+                 val deleteButton = if (!FileAccessControl.isReadOnly(baseDir, it)) {
+                     """<button class="delete-link" onclick="deleteItem(event, '${escapeJs(it.name)}', true)" title="Delete folder">🗑️ Delete</button>"""
+                 } else ""
+                 """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions$deleteButton</li>"""
+            } ?: ""
+        return Pair(files, folders)
     }
+     private fun escapeJs(s: String): String =
+         s.replace("\\", "\\\\")
+             .replace("'", "\\'")
+             .replace("\"", "\\\"")
+             .replace("\n", "\\n")
+             .replace("\r", "\\r")
 
-    private fun getMimeType(fileName: String): String {
-        return when {
-            fileName.endsWith(".js") -> "application/javascript"
-            fileName.endsWith(".mjs") -> "application/javascript"
-            fileName.endsWith(".log") -> "text/plain"
-            else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
-        }
-    }
+    /**
+     * Override to provide additional action links/buttons for individual files in directory listings.
+     * Returns an HTML string that will be appended after the file link.
+     */
+    open fun getFileActions(file: File, req: HttpServletRequest): String = ""
 
-    open fun getZipLink(
-        req: HttpServletRequest,
-        filePath: String
-    ): String = ""
+    /**
+     * Override to provide additional action links/buttons for individual folders in directory listings.
+     * Returns an HTML string that will be appended after the folder link.
+     */
+    open fun getFolderActions(folder: File, req: HttpServletRequest): String = ""
 
+    /**
+     * Override to provide additional toolbar items in the navbar area.
+     * Returns an HTML string that will be placed in the navbar alongside the ZIP link.
+     */
+    open fun getToolbarActions(req: HttpServletRequest, currentPath: String): String = ""
 
-    private fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
-        val parts = currentPath.split("/").filter { it.isNotEmpty() }
-        val breadcrumbs = StringBuilder()
-        val rootLink = if (servletBaseHref.endsWith("/")) servletBaseHref else "$servletBaseHref/"
+    /**
+     * Override to provide additional sections in the directory listing page.
+     * Returns an HTML string that will be inserted after the upload section and before folders/files.
+     */
+    open fun getAdditionalSections(dir: File?, req: HttpServletRequest, currentPath: String): String = ""
 
-        // Root breadcrumb
-        if (parts.isEmpty()) {
-            breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">Root</li>""")
-        } else {
-            breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink" style="color: #0d6efd; text-decoration:none;">Root</a></li>""")
-        }
+    /**
+     * Override to provide additional CSS styles for the directory listing page.
+     * Returns a CSS string (without style tags) that will be appended to the page styles.
+     */
+    open fun getAdditionalStyles(): String = ""
 
-        var accumulatedPath = ""
-        for ((index, part) in parts.withIndex()) {
-            accumulatedPath += "$part/"
-            // Separator
-            if (index >= 0) { // Always add separator if there are parts after Root
-                breadcrumbs.append("""<li style="padding-right: .5rem; color: #6c757d;">/</li>""")
-            }
+    /**
+     * Override to provide additional JavaScript for the directory listing page.
+     * Returns a JavaScript string (without script tags) that will be appended to the page scripts.
+     */
+    open fun getAdditionalScripts(): String = ""
 
-            if (index < parts.size - 1) {
-                breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink$accumulatedPath" style="color: #0d6efd; text-decoration:none;">$part</a></li>""")
-            } else {
-                breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">$part</li>""")
-            }
-        }
-        return breadcrumbs.toString()
-    }
+    /**
+     * Override to indicate whether Git features should be enabled for this servlet.
+     */
+    open fun isGitEnabled(req: HttpServletRequest): Boolean = true
 
-    private fun directoryHTML(currentPath: String, servletBaseHref: String, zipLink: String, folders: String, files: String) = """
-    |<!DOCTYPE html>
-    |<html lang="en">
-    |<head>
-    |    <meta charset="UTF-8">
-    |    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    |    <title>Directory Listing: /$currentPath</title>
-    |    <style>
-    |        body {
-    |            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    |            background-color: #f0f2f5; /* Light gray background */
-    |            color: #1c1e21; /* Dark gray text */
-    |            margin: 0;
-    |            padding: 0;
-    |            line-height: 1.5;
-    |        }
-    |        .navbar {
-    |            background-color: #ffffff;
-    |            padding: 1rem 1.5rem;
-    |            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    |            margin-bottom: 1.5rem;
-    |            display: flex;
-    |            align-items: center;
-    |            justify-content: space-between;
-    |            flex-wrap: wrap; /* Allow wrapping for smaller screens */
-    |        }
-    |        .navbar-title {
-    |            font-size: 1.4rem;
-    |            font-weight: 600;
-    |            color: #343a40; /* Darker title color */
-    |            margin-right: 1rem; /* Space before ZIP link */
-    |        }
-    |        .zip-link {
-    |            display: inline-block;
-    |            padding: 0.5rem 1rem;
-    |            font-size: 0.9rem;
-    |            font-weight: 500;
-    |            color: #fff;
-    |            background-color: #0d6efd; /* Primary blue */
-    |            border: none;
-    |            border-radius: 0.25rem;
-    |            text-decoration: none;
-    |            transition: background-color 0.15s ease-in-out;
-    |            white-space: nowrap;
-    |        }
-    |        .zip-link:hover {
-    |            background-color: #0b5ed7; /* Darker blue on hover */
-    |        }
-    |        .container {
-    |            max-width: 960px;
-    |            margin: 0 auto;
-    |            padding: 0 1rem 1.5rem 1rem;
-    |        }
-    |        .breadcrumb-nav {
-    |            margin-bottom: 1.5rem;
-    |            padding: 0.75rem 1rem;
-    |            background-color: #ffffff;
-    |            border-radius: 0.25rem;
-    |            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    |        }
-    |        .breadcrumb {
-    |            padding: 0; margin:0; list-style:none; display:flex; flex-wrap:wrap;
-    |        }
-    |        .section {
-    |            background-color: #ffffff;
-    |            border: 1px solid #dee2e6; /* Light border */
-    |            border-radius: 0.375rem; /* Bootstrap-like radius */
-    |            margin-bottom: 1.5rem;
-    |            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    |        }
-    |        .section-header {
-    |            padding: 0.75rem 1.25rem;
-    |            margin-bottom: 0;
-    |            background-color: #f8f9fa; /* Very light gray for header */
-    |            border-bottom: 1px solid #dee2e6;
-    |            border-top-left-radius: calc(0.375rem - 1px);
-    |            border-top-right-radius: calc(0.375rem - 1px);
-    |        }
-    |        .section-title {
-    |            font-size: 1.2rem;
-    |            font-weight: 500;
-    |            color: #343a40; /* Darker text for titles */
-    |            margin: 0;
-    |        }
-    |        .section-content {
-    |            padding: 1.25rem;
-    |        }
-    |        .item-list {
-    |            list-style: none;
-    |            padding: 0;
-    |            margin: 0;
-    |        }
-    |        .item-list li {
-    |            margin-bottom: 0.25rem;
-    |        }
-    |        .item-list li:last-child { margin-bottom: 0; }
-    |        .item-link {
-    |            color: #0d6efd; /* Primary blue for links */
-    |            text-decoration: none;
-    |            display: flex;
-    |            align-items: center;
-    |            padding: 0.45rem 0.75rem; /* Slightly more padding */
-    |            border-radius: 0.25rem;
-    |            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-    |        }
-    |        .item-link:hover {
-    |            background-color: #e9ecef; /* Light gray hover for links */
-    |            color: #0a58ca; /* Darker blue on hover */
-    |        }
-    |        .item-link .icon {
-    |            margin-right: 0.7em; /* More space for icon */
-    |            width: 1.2em; 
-    |            text-align: center;
-    |            color: #495057; /* Neutral icon color */
-    |        }
-    |        .item-link:hover .icon { color: #0a58ca; } /* Icon color on hover */
-    |        .empty-state {
-    |            color: #6c757d; /* Secondary text color */
-    |            padding: 0.5rem 0.75rem;
-    |            font-style: italic;
-    |        }
-    |    </style>
-    |</head>
-    |<body>
-    |    <div class="navbar">
-    |        <span class="navbar-title"> File Browser</span>
-    |        ${if (zipLink.isNotBlank()) """<a href="$zipLink" class="zip-link">Download Current Directory as ZIP</a>""" else ""}
-    |    </div>
-    |    <div class="container">
-    |        <nav class="breadcrumb-nav" aria-label="breadcrumb">
-    |           <ol class="breadcrumb">
-    |               ${generateBreadcrumbs(currentPath, servletBaseHref)}
-    |           </ol>
-    |        </nav>
-    |
-    |        <div class="section">
-    |            <div class="section-header"><h2 class="section-title">Folders</h2></div>
-    |            <div class="section-content">
-    |                ${if (folders.isBlank()) "<p class=\"empty-state\">No sub-folders found.</p>" else "<ul class=\"item-list\">$folders</ul>"}
-    |            </div>
-    |        </div>
-    |
-    |        <div class="section">
-    |            <div class="section-header"><h2 class="section-title">Files</h2></div>
-    |            <div class="section-content">
-    |                ${if (files.isBlank()) "<p class=\"empty-state\">No files found.</p>" else "<ul class=\"item-list\">$files</ul>"}
-    |            </div>
-    |        </div>
-    |    </div>
-    |</body>
-    |</html>
-    """.trimMargin()
+    /**
+     * Returns the root directory for Git operations (the repository root).
+     * By default, returns the result of getDir(req).
+     */
+    open fun getGitRoot(req: HttpServletRequest, response: HttpServletResponse): File? = getDir(req, response)
+
+    /**
+     * Override to provide a ZIP download link for the current directory.
+     */
+    open fun getZipLink(req: HttpServletRequest, filePath: String): String = ""
 
     companion object {
         val log = LoggerFactory.getLogger(FileServlet::class.java)
-        fun parsePath(path: String): List<String> {
-            val pathSegments = path.split("/").filter { it.isNotBlank() }
-            pathSegments.forEach {
-                when {
-                    it == ".." -> throw IllegalArgumentException("Invalid path")
-                    it.any {
-                        when {
-                            it == ':' -> true
-                            it == '/' -> true
-                            it == '~' -> true
-                            it == '\\' -> true
-                            it.code < 32 -> true
-                            it.code > 126 -> true
-                            else -> false
-                        }
-                    } -> throw IllegalArgumentException("Invalid path")
-                }
-            }
-            return pathSegments
-        }
-
-        val channelCache: LoadingCache<File, FileChannel> = CacheBuilder
-            .newBuilder().maximumSize(100)
-            .expireAfterAccess(10, java.util.concurrent.TimeUnit.SECONDS)
-            .removalListener(RemovalListener<File, FileChannel> { notification ->
-                log.info("Closing FileChannel for file: ${notification.key}")
-                try {
-                    val channel = notification.value
-                    if (channel == null) {
-                        log.error("FileChannel is null for file: ${notification.key}")
-                    } else {
-                        channel.close()
-                        log.info("Successfully closed FileChannel for file: ${notification.key}")
-                    }
-                } catch (e: Throwable) {
-                    log.error("Error closing FileChannel for file: ${notification.key}", e)
-                }
-            }).build(object : CacheLoader<File, FileChannel>() {
-                override fun load(key: File): FileChannel {
-                    log.info("Opening FileChannel for file: ${key.absolutePath}")
-                    return FileChannel.open(key.toPath(), StandardOpenOption.READ)
-                }
-            })
     }
-
 }

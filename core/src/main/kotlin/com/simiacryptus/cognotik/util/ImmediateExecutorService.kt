@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.User
 import java.util.concurrent.*
 
 /**
@@ -10,82 +8,93 @@ import java.util.concurrent.*
  * In contrast to typical Java executor services, this implementation does not queue tasks unless the MAXIMUM thread count is reached, only then queues tasks.
  * The core thread count is set to 0, meaning that threads are created as needed and will be terminated when idle with the stable state of the pool being 0 threads.
  *
- * @param session The session associated with this executor service.
- * @param user The user associated with this executor service, if any.
  */
 class ImmediateExecutorService(
-    private val session: Session,
-    private val user: User?
+  val threadFactory: ThreadFactoryTrackerInterface = ThreadFactoryTracker()
 ) : ExecutorService {
-    val threadFactory = RecordingThreadFactory(session, user)
-    private val executor = ThreadPoolExecutor(
-        0,
 
-        Integer.MAX_VALUE,
+  abstract class ThreadFactoryTrackerInterface : ThreadFactory {
+    val threads = mutableListOf<Thread>()
+  }
 
-        60L, TimeUnit.SECONDS,
-
-        SynchronousQueue<Runnable>(),
-
-        threadFactory
-
-    )
-
-    override fun execute(command: Runnable) {
-        executor.execute(command)
+  class ThreadFactoryTracker : ThreadFactoryTrackerInterface() {
+    private val defaultFactory = Executors.defaultThreadFactory()
+    override fun newThread(runnable: Runnable): Thread {
+      val thread = defaultFactory.newThread(runnable)
+      threads.add(thread)
+      thread.isDaemon = true
+      return thread
     }
+  }
 
-    override fun shutdown() {
-        executor.shutdown()
-    }
+  private val executor = ThreadPoolExecutor(
+    0,
 
-    override fun shutdownNow(): MutableList<Runnable> {
-        threadFactory.threads.filter { it.isAlive }.forEach { it.interrupt() }
-        return executor.shutdownNow()
-    }
+    Integer.MAX_VALUE,
 
-    override fun isShutdown(): Boolean {
-        return executor.isShutdown
-    }
+    60L, TimeUnit.SECONDS,
 
-    override fun isTerminated(): Boolean {
-        return executor.isTerminated
-    }
+    SynchronousQueue<Runnable>(),
 
-    override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
-        return executor.awaitTermination(timeout, unit)
-    }
+    threadFactory
 
-    override fun <T : Any?> submit(task: Callable<T>): Future<T> {
-        return executor.submit(task)
-    }
+  )
 
-    override fun <T : Any?> submit(task: Runnable, result: T): Future<T> {
-        return executor.submit(task, result)
-    }
+  override fun execute(command: Runnable) {
+    executor.execute(command)
+  }
 
-    override fun submit(task: Runnable): Future<*> {
-        return executor.submit(task)
-    }
+  override fun shutdown() {
+    executor.shutdown()
+  }
 
-    override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>): MutableList<Future<T>> {
-        return executor.invokeAll(tasks)
-    }
+  override fun shutdownNow(): MutableList<Runnable> {
+    threadFactory.threads.filter { it.isAlive }.forEach { it.interrupt() }
+    return executor.shutdownNow()
+  }
 
-    override fun <T : Any?> invokeAll(
-        tasks: MutableCollection<out Callable<T>>,
-        timeout: Long,
-        unit: TimeUnit
-    ): MutableList<Future<T>> {
-        return executor.invokeAll(tasks, timeout, unit)
-    }
+  override fun isShutdown(): Boolean {
+    return executor.isShutdown
+  }
 
-    override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>): T {
-        return executor.invokeAny(tasks)
-    }
+  override fun isTerminated(): Boolean {
+    return executor.isTerminated
+  }
 
-    override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>, timeout: Long, unit: TimeUnit): T {
-        return executor.invokeAny(tasks, timeout, unit)
-    }
+  override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
+    return executor.awaitTermination(timeout, unit)
+  }
+
+  override fun <T : Any?> submit(task: Callable<T>): Future<T> {
+    return executor.submit(task)
+  }
+
+  override fun <T : Any?> submit(task: Runnable, result: T): Future<T> {
+    return executor.submit(task, result)
+  }
+
+  override fun submit(task: Runnable): Future<*> {
+    return executor.submit(task)
+  }
+
+  override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>): MutableList<Future<T>> {
+    return executor.invokeAll(tasks)
+  }
+
+  override fun <T : Any?> invokeAll(
+    tasks: MutableCollection<out Callable<T>>,
+    timeout: Long,
+    unit: TimeUnit
+  ): MutableList<Future<T>> {
+    return executor.invokeAll(tasks, timeout, unit)
+  }
+
+  override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>): T {
+    return executor.invokeAny(tasks)
+  }
+
+  override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>, timeout: Long, unit: TimeUnit): T {
+    return executor.invokeAny(tasks, timeout, unit)
+  }
 
 }

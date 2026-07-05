@@ -1,21 +1,18 @@
 package cognotik.actions.git
 
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.ChangeListManager
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
 import java.text.SimpleDateFormat
 import javax.swing.JOptionPane
 
@@ -42,16 +39,15 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
     }
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
-        val session = Session.newGlobalID()
+        val session = Session.newUserID()
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",
             codeSelection = diffInfo,
             filename = "working_copy_changes.diff",
-            api = IdeaChatClient.instance,
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-            storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
+            model = AppSettingsState.instance.smartChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
+            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
@@ -66,12 +62,13 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(e.project)
-
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {
@@ -130,6 +127,6 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
     override fun update(e: AnActionEvent) {
         val project = e.project ?: return
         val vcs = e.getData(VcsDataKeys.VCS)
-        e.presentation.isEnabledAndVisible = project != null && vcs != null
+        e.presentation.isEnabledAndVisible = vcs != null
     }
 }

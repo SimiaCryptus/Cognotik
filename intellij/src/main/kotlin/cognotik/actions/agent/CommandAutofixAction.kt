@@ -5,7 +5,6 @@ package cognotik.actions.agent
  */
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.ComboBox
@@ -16,28 +15,25 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.apps.CmdPatchApp
+import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.CommandConfig
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.models.ToolProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.apps.general.CmdPatchApp
-import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.commonRoot
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.toJson
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.*
-import kotlin.collections.set
 
 class CommandAutofixAction : BaseAction() {
 
@@ -52,8 +48,8 @@ class CommandAutofixAction : BaseAction() {
             UITools.runAsync(e.project, "Initializing Command Autofix", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Getting settings..."
-                val files = UITools.getSelectedFiles(e)
-                val folders = UITools.getSelectedFolders(e).map { it.toFile.toPath() }
+                val files = e.getSelectedFiles()
+                val folders = e.getSelectedFolders().map { it.toFile.toPath() }
                 val root = (folders + files.map { it.toFile.toPath() }).filterNotNull().toTypedArray().commonRoot()
                 lateinit var settingsUI: SettingsUI
                 val settings = run {
@@ -63,7 +59,7 @@ class CommandAutofixAction : BaseAction() {
 
                         if (files.size == 1) {
                             val defaultFile = files[0]
-                            val whitelist = listOf("sh", "py", "bat", "ps")
+                            val whitelist = listOf("sh", "py", "bat", "ps", "ps1", "cmd", "exe", "jar")
                             val matchesWhitelist =
                                 whitelist.any { defaultFile.name.endsWith(".$it", ignoreCase = true) }
                             if (defaultFile.isFile && (defaultFile.toFile.canExecute() || matchesWhitelist)) {
@@ -71,7 +67,7 @@ class CommandAutofixAction : BaseAction() {
                                 val first = settingsUI.commandsList.firstOrNull()
                                 if (first != null) {
                                     first.commandField.selectedItem = defaultFile.toFile.absolutePath
-                                    first.workingDirectoryField.selectedItem = defaultFile.parent
+                                    first.workingDirectoryField.selectedItem = defaultFile.parent.toFile.absolutePath
                                     first.argumentsField.selectedItem = ""
                                 }
                             }
@@ -84,7 +80,6 @@ class CommandAutofixAction : BaseAction() {
                                     cmdPanel.commandField.selectedItem?.toString()
                                         ?: throw IllegalArgumentException("No executable selected")
                                 )
-                                AppSettingsState.instance.executables?.plusAssign(executable.absolutePath)
                                 val argument = cmdPanel.argumentsField.selectedItem?.toString() ?: ""
                                 AppSettingsState.instance.recentArguments?.remove(argument)
                                 AppSettingsState.instance.recentArguments?.add(0, argument)
@@ -97,11 +92,12 @@ class CommandAutofixAction : BaseAction() {
                                 AppSettingsState.instance.recentWorkingDirs?.apply {
                                     if (size > MAX_RECENT_ARGUMENTS) dropLast(size - MAX_RECENT_DIRS)
                                 }
-                                require(executable.exists()) { "Executable file does not exist: ${executable}" }
+                                //require(executable.exists()) { "Executable file does not exist: $executable" }
+                                val workingDirectory = File(workingDir)
                                 PatchApp.CommandSettings(
                                     executable = executable,
                                     arguments = argument,
-                                    workingDirectory = File(workingDir),
+                                    workingDirectory = workingDirectory,
                                     additionalInstructions = settingsUI.additionalInstructionsField.text
                                 )
                             }.toList()
@@ -121,14 +117,12 @@ class CommandAutofixAction : BaseAction() {
                 val patchApp = CmdPatchApp(
                     root = root,
                     settings = settings,
-                    api = api.getChildClient().apply {
-                        budget = settingsUI.apiBudgetField.value as Double
-                    },
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel()
+                    model = AppSettingsState.instance.smartChatClient,
+                    fastModel = AppSettingsState.instance.fastChatClient,
+                    processor = AppSettingsState.instance.processor
                 )
-                val session = Session.newGlobalID()
+                val session = Session.newUserID()
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
@@ -140,11 +134,13 @@ class CommandAutofixAction : BaseAction() {
                 val dateFormat = SimpleDateFormat("HH:mm:ss")
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
-                val server = CognotikAppServer.getServer(e.project)
                 Thread {
                     Thread.sleep(500)
                     try {
-                        val uri = server.server.uri.resolve("/#$session")
+                        val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                            AppSettingsState.instance.listeningEndpoint,
+                            AppSettingsState.instance.listeningPort
+                        ).server.uri.resolve("/#$session")
                         BaseAction.log.info("Opening browser to $uri")
                         browse(uri)
                     } catch (e: Throwable) {
@@ -162,14 +158,15 @@ class CommandAutofixAction : BaseAction() {
      * Checks if the action should be enabled
      */
     override fun isEnabled(event: AnActionEvent): Boolean {
+        if (!super.isEnabled(event)) return false
         if (event.project == null) return false
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         val hasBasePath = event.project?.basePath != null
         return folder != null || hasBasePath
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CommandAutofixAction::class.java)
+        private val log = getLogger(CommandAutofixAction::class.java)
         private const val MAX_RECENT_ARGUMENTS = 10
         private const val MAX_RECENT_DIRS = 10
         private const val TEXT_AREA_ROWS = 6
@@ -178,10 +175,8 @@ class CommandAutofixAction : BaseAction() {
          * Dialog for command settings configuration
          */
         class CommandSettingsDialog(
-            project: com.intellij.openapi.project.Project?,
-            private val settingsUI: SettingsUI
-        ) :
-            DialogWrapper(project, true) {
+            project: com.intellij.openapi.project.Project?, private val settingsUI: SettingsUI
+        ) : DialogWrapper(project, true) {
             init {
                 title = "Command Autofix Settings"
                 init()
@@ -223,25 +218,18 @@ class CommandAutofixAction : BaseAction() {
                             cell(settingsUI.maxRetriesSlider)
                             cell(settingsUI.maxRetriesField)
                         }
-                        row("Budget:") {
-                            cell(settingsUI.apiBudgetSlider)
-                            cell(settingsUI.apiBudgetField)
-                        }
                     }
                     group("Autofix On Exit Code:") {
                         buttonsGroup {
                             row {
                                 settingsUI.exitCodeNonZero = radioButton(
-                                    "Non-zero (Error)",
-                                    SettingsUI.ExitCodeOption.NONZERO
+                                    "Non-zero (Error)", SettingsUI.ExitCodeOption.NONZERO
                                 )
                                 settingsUI.exitCodeZero = radioButton(
-                                    "Zero (Success)",
-                                    SettingsUI.ExitCodeOption.ZERO
+                                    "Zero (Success)", SettingsUI.ExitCodeOption.ZERO
                                 )
                                 settingsUI.exitCodeAny = radioButton(
-                                    "Any (Always Run)",
-                                    SettingsUI.ExitCodeOption.ANY
+                                    "Any (Always Run)", SettingsUI.ExitCodeOption.ANY
                                 )
                             }
                         }.apply {
@@ -396,17 +384,6 @@ class CommandAutofixAction : BaseAction() {
                     maxRetriesField.value = value
                 }
             }
-            val apiBudgetSlider: JSlider = JSlider(JSlider.HORIZONTAL, 0, 100, 0).apply {
-                majorTickSpacing = 20
-                minorTickSpacing = 5
-                paintTicks = true
-                paintLabels = true
-                toolTipText = "API budget for this session (0.0 - 10.0)"
-                addChangeListener {
-
-                    apiBudgetField.value = value / 10.0
-                }
-            }
             val additionalInstructionsField = JTextArea().apply {
                 rows = TEXT_AREA_ROWS
                 columns = 60
@@ -416,16 +393,7 @@ class CommandAutofixAction : BaseAction() {
                 minimumSize = Dimension(400, 100)
 
             }
-            val apiBudgetField = JSpinner(SpinnerNumberModel(0.0, 0.0, 1000.0, 0.1)).apply {
-                toolTipText = "Specify the API budget for this session (0.0 - 1000.0)"
-                addChangeListener {
 
-                    val budgetValue = value as Double
-                    if (budgetValue <= 10.0) {
-                        apiBudgetSlider.value = (budgetValue * 10).toInt()
-                    }
-                }
-            }
             val autoFixCheckBox = JCheckBox("Auto-apply fixes").apply {
                 isSelected = false
             }
@@ -452,7 +420,6 @@ class CommandAutofixAction : BaseAction() {
                     includeGitDiffs = includeGitDiffsCheckBox.isSelected,
                     includeLineNumbers = includeLineNumbersCheckBox.isSelected,
                     additionalInstructions = additionalInstructionsField.text,
-                    apiBudget = apiBudgetField.value as Double
                 )
                 AppSettingsState.instance.savedCommandConfigsJson?.set(configName, config.toJson())
                 savedConfigsCombo.addItem(configName)
@@ -485,11 +452,6 @@ class CommandAutofixAction : BaseAction() {
                 includeLineNumbersCheckBox.isSelected = config.includeLineNumbers ?: true
                 additionalInstructionsField.text = config.additionalInstructions
 
-                val budgetValue = if (config.apiBudget != null) config.apiBudget else 0.0
-                apiBudgetField.value = budgetValue
-                if (budgetValue <= 10.0) {
-                    apiBudgetSlider.value = (budgetValue * 10).toInt()
-                }
                 commandsPanel.revalidate()
                 commandsPanel.repaint()
             }
@@ -512,11 +474,10 @@ class CommandAutofixAction : BaseAction() {
                     selectedItem = workingDirectory.absolutePath
                     preferredSize = Dimension(400, preferredSize.height)
                 }
-                val commandField =
-                    ComboBox(AppSettingsState.instance.executables?.toTypedArray() ?: emptyArray()).apply {
-                        isEditable = true
-                        preferredSize = Dimension(400, preferredSize.height)
-                    }
+                val commandField = ComboBox(emptyArray<String>()).apply {
+                    isEditable = true
+                    preferredSize = Dimension(400, preferredSize.height)
+                }
                 val workingDirectoryButton = JButton("...").apply {
                     addActionListener {
                         val fileChooser = JFileChooser().apply {
@@ -553,8 +514,7 @@ class CommandAutofixAction : BaseAction() {
 
                 init {
                     border = BorderFactory.createCompoundBorder(
-                        BorderFactory.createEmptyBorder(5, 5, 5, 5),
-                        BorderFactory.createEtchedBorder()
+                        BorderFactory.createEmptyBorder(5, 5, 5, 5), BorderFactory.createEtchedBorder()
                     )
                     layout = BorderLayout()
 
@@ -571,8 +531,7 @@ class CommandAutofixAction : BaseAction() {
                     val removeButton = JButton("Remove").apply {
                         addActionListener {
                             val parent = SwingUtilities.getAncestorOfClass(
-                                SettingsUI::class.java,
-                                this@CommandPanel
+                                SettingsUI::class.java, this@CommandPanel
                             ) as? SettingsUI
                             parent?.removeCommandPanel(this@CommandPanel)
                         }
@@ -625,13 +584,19 @@ class CommandAutofixAction : BaseAction() {
                 fun loadFromSettings(settings: PatchApp.CommandSettings) {
                     commandField.selectedItem = settings.executable.absolutePath
                     argumentsField.selectedItem = settings.arguments
-
-
                 }
-
             }
         }
-
     }
+
+    data class CommandConfig(
+        val commands: List<PatchApp.CommandSettings>,
+        val exitCodeOption: String,
+        val autoFix: Boolean,
+        val maxRetries: Int,
+        val additionalInstructions: String,
+        val includeGitDiffs: Boolean = false,
+        val includeLineNumbers: Boolean = false,
+    )
 
 }

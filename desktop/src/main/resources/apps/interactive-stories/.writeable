@@ -1,0 +1,4 @@
+# Writeable paths whitelist
+# This file uses .gitignore-style patterns to specify which files and
+# directories the application is permitted to write to.
+story_idea.md

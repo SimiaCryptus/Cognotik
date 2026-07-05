@@ -1,0 +1,68 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'software.amazon.awssdk:kms:2.41.7'
+    implementation 'software.amazon.awssdk:s3:2.41.7'
+
+    implementation project(':core')
+    implementation project(':webui')
+    implementation project(':stdtools')
+    implementation project(':providers')
+    implementation project(":tasklib")
+
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'
+    implementation 'com.google.guava:guava:33.1.0-jre'
+}
+
+tasks.register('codeImplementer', JavaExec) {
+    group = "cognotik"
+    description = "Runs the CodeImplementer. Usage: ./gradlew codeImplementer -PimplPrompt='Build X' -PimplPort=8030 -PimplWorkspace='.' -PimplTimeout=30 -PimplHeadless=true"
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "com.simiacryptus.CodeImplementer"
+    def prompt = project.hasProperty('implPrompt') ? project.property('implPrompt') : 'Make a Java class that implements a basic RESTful API'
+    def port = project.hasProperty('implPort') ? project.property('implPort') : '0'
+    def workspace = project.hasProperty('implWorkspace') ? project.property('implWorkspace') : '.'
+    def timeout = project.hasProperty('implTimeout') ? project.property('implTimeout') : '30'
+    def headless = project.hasProperty('implHeadless') ? project.property('implHeadless') : 'true'
+    args = [prompt, port, workspace, timeout, headless]
+    standardOutput = System.out
+    errorOutput = System.err
+}
+
+tasks.register('codeFixer', JavaExec) {
+    group = "cognotik"
+    description = "Runs the CodeFixer"
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "com.simiacryptus.CodeFixer"
+    standardOutput = System.out
+    errorOutput = System.err
+    def prompt = project.hasProperty('fixPrompt') ? project.property('fixPrompt') : 'Fix the build errors reported in build.log'
+    def log = project.hasProperty('fixLog') ? project.property('fixLog') : 'build.log'
+    args = [prompt, log]
+}
+
+
+tasks.register('codeReview', JavaExec) {
+    group = "cognotik"
+    description = "Runs the Cognotik CodeReviewer. Usage: ./gradlew codeReview -PreviewRoot='.' -PreviewSrc='src/main/java' -PreviewPrompt='Fix bugs in %s' -PreviewDocs='docs/best_practices.md' -PreviewThreads=4 -PreviewOverwrite='PatchExisting'"
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "com.simiacryptus.CodeReviewer"
+    def rootDir = project.hasProperty('reviewRoot') ? project.property('reviewRoot') : '.'
+    def srcDir = project.hasProperty('reviewSrc') ? project.property('reviewSrc') : 'src/main/java'
+    // Use %s in the prompt to insert the filename being reviewed
+    def prompt = project.hasProperty('reviewPrompt') ? project.property('reviewPrompt') : 'Update implementation file (%s) according to the standards documents'
+    def docs = project.hasProperty('reviewDocs') ? project.property('reviewDocs') : 'docs/best_practices.md'
+    def threads = project.hasProperty('reviewThreads') ? project.property('reviewThreads') : '4'
+    def overwrite = project.hasProperty('reviewOverwrite') ? project.property('reviewOverwrite') : 'PatchExisting'
+    args = [rootDir, srcDir, prompt, docs, threads, overwrite]
+    // Ensure output is visible in CI logs
+    standardOutput = System.out
+    errorOutput = System.err
+}

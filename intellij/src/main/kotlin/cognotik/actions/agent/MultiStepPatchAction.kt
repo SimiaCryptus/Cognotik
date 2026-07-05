@@ -1,50 +1,41 @@
 package cognotik.actions.agent
 
-import ai.grazie.utils.mpp.UUID
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.ParsedResponse
+import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
+import java.util.UUID
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 
 class MultiStepPatchAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -52,7 +43,7 @@ class MultiStepPatchAction : BaseAction() {
     val path = "/autodev"
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        UITools.getSelectedFile(event) ?: return false
+        event.getSelectedFile() ?: return false
         return true
     }
 
@@ -61,12 +52,10 @@ class MultiStepPatchAction : BaseAction() {
         UITools.runAsync(project, "Initializing Auto Dev Assistant", true) { progress ->
             progress.isIndeterminate = true
             try {
-                val session = Session.newGlobalID()
-                val storage =
-                    ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome) as DataStorage?
-                val selectedFile = UITools.getSelectedFolder(e)
-                if (null != storage && null != selectedFile) {
-                    DataStorage.sessionPaths[session] = selectedFile.toFile
+                val session = Session.newUserID()
+                val selectedFile = e.getSelectedFolder()
+                if (null != selectedFile) {
+                    DataStorage.userPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
@@ -81,11 +70,13 @@ class MultiStepPatchAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(e.project)
 
                 ApplicationManager.getApplication().invokeLater {
                     progress.text = "Opening browser..."
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     BaseAction.log.info("Opening browser to $uri")
                     browse(uri)
                 }
@@ -110,24 +101,22 @@ class MultiStepPatchAction : BaseAction() {
 
         override fun userMessage(
             session: Session,
-            user: User?,
+            user: User,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: API
+            ui: SocketManager
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartChatClient
             )
-            if (api is ChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
-                api = api,
                 session = session,
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                fastModel = AppSettingsState.instance.fastChatClient,
                 event = event,
+                processor = AppSettingsState.instance.processor,
             ).start(
                 userMessage = userMessage,
             )
@@ -136,26 +125,26 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModel(),
+            val model: ChatInterface? = null,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+        override fun <T : Any> initSettings(session: Session, user: User): T? = Settings() as T
     }
 
     class AutoDevAgent(
-        val api: API,
         val session: Session,
-        val user: User?,
-        val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val user: User = localUser,
+        val ui: SocketManager,
+        val model: ChatInterface,
+        val fastModel: ChatInterface,
         val event: AnActionEvent,
+        val processor: PatchProcessor,
     ) {
         val actors = mapOf(
-            ActorTypes.DesignActor to ParsedActor(
+            ActorTypes.DesignActor to ParsedAgent(
                 resultClass = TaskList::class.java,
                 prompt = """
           Translate the user directive into an action plan for the project.
@@ -163,10 +152,10 @@ class MultiStepPatchAction : BaseAction() {
           For each task, provide a list of files to be modified and a description of the changes to be made.
         """.trimIndent(),
                 model = model,
-                parsingModel = parsingModel,
+                parsingModel = fastModel,
             ),
-            ActorTypes.TaskCodingActor to SimpleActor(
-                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + patchFormatPrompt,
+            ActorTypes.TaskCodingActor to ChatAgent(
+                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + processor.patchFormatPrompt,
                 model = model
             ),
         ).map { it.key.name to it.value }.toMap()
@@ -176,8 +165,8 @@ class MultiStepPatchAction : BaseAction() {
             TaskCodingActor,
         }
 
-        private val designActor by lazy { actors.get(ActorTypes.DesignActor.name)!! as ParsedActor<TaskList> }
-        private val taskActor by lazy { actors.get(ActorTypes.TaskCodingActor.name)!! as SimpleActor }
+        private val designActor by lazy { actors.get(ActorTypes.DesignActor.name)!! as ParsedAgent<TaskList> }
+        private val taskActor by lazy { actors.get(ActorTypes.TaskCodingActor.name)!! as ChatAgent }
 
         fun start(
             userMessage: String,
@@ -197,30 +186,30 @@ class MultiStepPatchAction : BaseAction() {
             }
 
             val task = ui.newTask()
-            val api = (api as ChatClient).getChildClient(task)
 
             val toInput = { it: String -> listOf(codeSummary(), it) }
             val architectureResponse = Discussable(
                 task = task,
                 userMessage = { userMessage },
                 heading = renderMarkdown(userMessage),
-                initialResponse = { it: String -> designActor.answer(toInput(it), api = api) },
+                initialResponse = { it: String -> designActor.answer(toInput(it)) },
                 outputFn = { design: ParsedResponse<TaskList> ->
 
-                    AgentPatterns.displayMapInTabs(
-                        mapOf(
-                          "Text" to design.text.renderMarkdown,
-                          "JSON" to "```json\n${toJson(design.obj)/*.indent("  ")*/}\n```".renderMarkdown,
-                        )
+                    val map = mapOf(
+                      "Text" to design.text.renderMarkdown(true),
+                      "JSON" to "```json\n${toJson(design.obj)}\n```".renderMarkdown(true),
                     )
+                  TabbedDisplay.displayMapInTabs(
+                    map,
+                    null,
+                    map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                  )
                 },
-                ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, Role>> ->
                     designActor.respond(
-                        messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
-                            .toTypedArray<ApiModel.ChatMessage>()),
+                        messages = (userMessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                            .toTypedArray<ModelSchema.ChatMessage>()),
                         input = toInput(userMessage),
-                        api = api
                     )
                 },
                 atomicRef = AtomicReference(),
@@ -229,17 +218,17 @@ class MultiStepPatchAction : BaseAction() {
 
             try {
                 val taskTabs = TabbedDisplay(task)
-                architectureResponse.obj.tasks.map { (paths, description) ->
-                    var description = (description ?: UUID.random().toString()).trim()
+                architectureResponse?.obj?.tasks?.map { (paths, description) ->
+                    var description = (description ?: UUID.randomUUID().toString()).trim()
 
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
-                    description = renderMarkdown(description, ui = ui, tabs = false)
+                    description = renderMarkdown(description, ui = task.ui, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
-                    ApplicationServices.clientManager.getPool(session, user).submit {
+                    ApplicationServices.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
-                        Retryable(ui, task) {
+                        Retryable(task) {
                             try {
                                 val filter = codeFiles.filter { path ->
                                     paths?.find { path.toString().contains(it) }?.isNotEmpty() == true
@@ -258,38 +247,38 @@ class MultiStepPatchAction : BaseAction() {
                   """.trimIndent() + (paths?.joinToString("\n") ?: "")
                                 }
                                 renderMarkdown(
-                                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                                        ui.socketManager!!,
-                                        root = root,
-                                        response = taskActor.answer(
-                                            listOf(
-                                                codeSummary(),
-                                                userMessage,
-                                                filter.joinToString("\n\n") {
-                                                    "# ${it}\n```${
-                                                        it.toString().split('.').last()
-                                                            .let { /*escapeHtml4*/it/*.indent("  ")*/ }
-                                                    }\n${root.resolve(it).toFile().readText()}\n```"
-                                                },
-                                                architectureResponse.text,
-                                                "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
-                                            ), api),
-                                        handle = { newCodeMap ->
-                                            newCodeMap.forEach { (path, newCode) ->
-                                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                            }
+                                  DiffInstrumentor(
+                                    processor,
+                                    SessionRenderer(task),
+                                  ).instrument(
+                                    root = root,
+                                    response = taskActor.answer(
+                                      listOf(
+                                        codeSummary(),
+                                        userMessage,
+                                        filter.joinToString("\n\n") {
+                                          "# ${it}\n```${
+                                            it.toString().split('.').last()
+                                          }\n${root.resolve(it).toFile().readText()}\n```"
                                         },
-                                        ui = ui,
-                                        api = api
-                                    )
+                                        architectureResponse.text,
+                                        "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
+                                      )),
+                                    handle = { newCodeMap: Map<Path, String> ->
+                                      newCodeMap.forEach { (path, newCode) ->
+                                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                      }
+                                    },
+                                    resolver = ::resolveToRelativePath,
+                                  )
                                 )
                             } catch (e: Exception) {
-                                task.error(ui, e)
+                                task.error(e)
                                 ""
                             }
                         }
                     }
-                }.toTypedArray().forEach { it.get() }
+                }?.toTypedArray()?.forEach { it.get() }
             } catch (e: Exception) {
                 log.warn("Error", e)
             }
@@ -297,8 +286,8 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiStepPatchAction::class.java)
-        val root: File get() = File(AppSettingsState.instance.pluginHome, "code_chat")
+        private val log = getLogger(MultiStepPatchAction::class.java)
+        val root: File get() = File(AppSettingsState.Companion.pluginHome, "code_chat")
 
         data class TaskList(
             @Description("List of tasks to be performed in this project")
