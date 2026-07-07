@@ -2,15 +2,19 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.DeepSeekModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
 class DeepSeekChatClient(
@@ -39,6 +43,51 @@ class DeepSeekChatClient(
     request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
   }
 
+  override fun getModels(): List<ChatModel> {
+    // Check cache first
+    modelsCache[apiBase]?.let { return it }
+
+    return try {
+      val modelsResponse = fetchAllModels()
+      val models = modelsResponse.map { modelInfo ->
+        val known = DeepSeekModels.values.values
+          .firstOrNull { it.name == modelInfo.id || it.modelId == modelInfo.id }
+        when {
+          known != null -> known
+          else -> {
+            log.debug("Unknown DeepSeek model: ${modelInfo.id}")
+            ChatModel(
+              name = modelInfo.id,
+              modelId = modelInfo.id,
+              maxTotalTokens = 1_000_000,
+              maxOutTokens = 384_000,
+              provider = CoreProviders.DeepSeek,
+              outputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
+              inputModalities = setOf(ChatMessageModality.TEXT),
+              outputModalities = setOf(ChatMessageModality.TEXT)
+            )
+          }
+        }
+      }
+      // Cache the result
+      modelsCache[apiBase] = models
+      models
+    } catch (e: Exception) {
+      log.error("Failed to fetch DeepSeek models", e)
+      // Fall back to the statically-known models
+      DeepSeekModels.values.values.toList()
+    }
+  }
+
+  private fun fetchAllModels(): List<ModelInfo> {
+    require(!apiBase.isBlank())
+    val response = get("$apiBase/models")
+    checkError(response)
+    log.debug("DeepSeek models response: $response")
+    val listResponse = JsonUtil.objectMapper().readValue(response, ListModelsResponse::class.java)
+    return listResponse.data
+  }
+
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
@@ -58,11 +107,24 @@ class DeepSeekChatClient(
   }
 
   companion object {
+    private val log = getLogger(DeepSeekChatClient::class.java)
+    private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+
     const val HEADER_CONTENT_TYPE = "Content-Type"
     const val HEADER_ACCEPT = "Accept"
     const val HEADER_AUTHORIZATION = "Authorization"
     const val APPLICATION_JSON = "application/json"
 
+    data class ModelInfo(
+      val id: String,
+      val `object`: String? = null,
+      val owned_by: String? = null
+    )
+
+    data class ListModelsResponse(
+      val `object`: String? = null,
+      val data: List<ModelInfo> = emptyList()
+    )
 
     fun toDeepSeek(chatRequest: ModelSchema.ChatRequest): Map<String, Any> {
       val request = mutableMapOf<String, Any>(
