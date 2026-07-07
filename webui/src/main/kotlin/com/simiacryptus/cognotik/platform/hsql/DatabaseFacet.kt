@@ -395,7 +395,7 @@ class DatabaseFacet(
                 "user.home",
                 "."
             )
-        ).resolve(".cognotik2").absolutePath
+        ).resolve(".cognotik").absolutePath
         val dbName = System.getProperty("cognotik.db.dbName")
         val serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
         val serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
