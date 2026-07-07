@@ -59,7 +59,6 @@ class PluginManager(
   init {
     Thread {
       sleep(1000)
-      log.info("PluginManager initialized", RuntimeException("PluginManager init stack trace"))
       root.mkdirs()
       restorePlugins()
     }.start()
