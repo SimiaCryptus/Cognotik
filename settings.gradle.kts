@@ -38,9 +38,9 @@ include(":intellij")
 
 
 //include(":demo")
-// Include modules from sibling ../Cognotik-Plugins directory
+// Include modules from sibling ../Cognotik-Private directory
 // (Windows doesn't reliably support symlinks, so we map projectDir explicitly)
-val cognotikPluginsDir = file("../Cognotik-Plugins")
+val cognotikPluginsDir = file("../Cognotik-Private")
 if (cognotikPluginsDir.isDirectory) {
     val pluginModules = listOf(
         "shared",
@@ -55,13 +55,13 @@ if (cognotikPluginsDir.isDirectory) {
         "proxy"
     )
      // Create the parent container project and point it at the external directory
-     // so Gradle doesn't try to use the non-existent <root>/Cognotik-Plugins path.
-     include(":Cognotik-Plugins")
-     project(":Cognotik-Plugins").projectDir = cognotikPluginsDir
+     // so Gradle doesn't try to use the non-existent <root>/Cognotik-Private path.
+     include(":Cognotik-Private")
+     project(":Cognotik-Private").projectDir = cognotikPluginsDir
     for (module in pluginModules) {
         val moduleDir = cognotikPluginsDir.resolve(module)
         if (moduleDir.isDirectory) {
-            val path = ":Cognotik-Plugins:$module"
+            val path = ":Cognotik-Private:$module"
             include(path)
             project(path).projectDir = moduleDir
         } else {
