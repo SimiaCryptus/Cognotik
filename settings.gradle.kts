@@ -29,9 +29,5 @@ include(":stdtools")
 include(":desktop")
 include(":experiment")
 include(":tool")
-
-if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
-//    include(":android")
-}
 include(":intellij")
 
