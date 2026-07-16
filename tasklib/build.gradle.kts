@@ -20,11 +20,11 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core"))
-    compileOnly(project(":webui"))
-    implementation(project(":webui"))
-    testImplementation(project(":providers"))
-    testImplementation(project(":stdtools"))
+    implementation(project(":Cognotik:core"))
+    compileOnly(project(":Cognotik:webui"))
+    implementation(project(":Cognotik:webui"))
+    testImplementation(project(":Cognotik:providers"))
+    testImplementation(project(":Cognotik:stdtools"))
 
     implementation(libs.pty4j)
     implementation(libs.pdfbox)

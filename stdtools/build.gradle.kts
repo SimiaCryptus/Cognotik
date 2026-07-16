@@ -20,15 +20,15 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core"))
-    compileOnly(project(":kotlin"))
-    testImplementation(project(":providers"))
-    testImplementation(project(":kotlin"))
-    compileOnly(project(":groovy"))
-    implementation(project(":groovy"))
-    implementation(project(":webui"))
-    implementation(project(":tasklib"))
-//    testImplementation(project(":scala"))
+    implementation(project(":Cognotik:core"))
+    compileOnly(project(":Cognotik:kotlin"))
+    testImplementation(project(":Cognotik:providers"))
+    testImplementation(project(":Cognotik:kotlin"))
+    compileOnly(project(":Cognotik:groovy"))
+    implementation(project(":Cognotik:groovy"))
+    implementation(project(":Cognotik:webui"))
+    implementation(project(":Cognotik:tasklib"))
+//    testImplementation(project(":Cognotik:scala"))
 
 
     implementation(libs.pty4j)

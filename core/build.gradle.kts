@@ -20,7 +20,7 @@ repositories {
 dependencies {
 
   implementation(libs.hsqldb)
-  implementation(project(":antlr")) {
+  implementation(project(":Cognotik:antlr")) {
     exclude(group = "org.jetbrains.kotlin")
   }
   implementation(libs.antlr.runtime)

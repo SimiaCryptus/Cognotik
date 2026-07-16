@@ -56,13 +56,13 @@ java {
 }
 
 dependencies {
-    implementation(project(":core"))
-    implementation(project(":groovy"))
-    implementation(project(":kotlin"))
-    implementation(project(":webui"))
-    implementation(project(":providers"))
-    implementation(project(":tasklib"))
-    implementation(project(":stdtools"))
+    implementation(project(":Cognotik:core"))
+    implementation(project(":Cognotik:groovy"))
+    implementation(project(":Cognotik:kotlin"))
+    implementation(project(":Cognotik:webui"))
+    implementation(project(":Cognotik:providers"))
+    implementation(project(":Cognotik:tasklib"))
+    implementation(project(":Cognotik:stdtools"))
 
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)

@@ -25,15 +25,15 @@ java {
 }
 
 dependencies {
-    compileOnly(project(":core"))
-    compileOnly(project(":webui"))
-    compileOnly(project(":tasklib"))
-    testImplementation(project(":core"))
-    testImplementation(project(":webui"))
-    testImplementation(project(":tasklib"))
-    testImplementation(project(":providers"))
-    testImplementation(project(":stdtools"))
-    testImplementation(project(":desktop"))
+    compileOnly(project(":Cognotik:core"))
+    compileOnly(project(":Cognotik:webui"))
+    compileOnly(project(":Cognotik:tasklib"))
+    testImplementation(project(":Cognotik:core"))
+    testImplementation(project(":Cognotik:webui"))
+    testImplementation(project(":Cognotik:tasklib"))
+    testImplementation(project(":Cognotik:providers"))
+    testImplementation(project(":Cognotik:stdtools"))
+    testImplementation(project(":Cognotik:desktop"))
 
     implementation(libs.hsqldb)
     implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")

@@ -4,42 +4,5 @@ log/
 reports/
 build/
 # Android
-android/local.properties
-*.iml
-.externalNativeBuild
-.cxx
 .gradle/
-.idea/
-openai.key
-*.log*
-# Cypress
-cypress/videos/
-cypress/screenshots/
-cypress/downloads/
-cypress.env.json
-*.log.*
-client_secret_google_oauth.json
-*.data
-*.parsed.json
-package-lock.json
-.kotlin/
-tmp/
-user-sessions/
-metadata.properties
-metadata.script
-.websearch/
-.intellijPlatform/
-node_modules/
-.env
-metadata.*
-.DS_Store
-test_config.json
-/experiment/search_lambda/terraform/.terraform/
-symbol_graph.json
-workspaces
-demo-cognotik-buildtool
-transcript/
-plugins/
-Cognotik-Jobs/
-.doc-processor-cache/
 

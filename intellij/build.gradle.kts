@@ -23,32 +23,32 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
 
-    implementation(project(":core")) {
+    implementation(project(":Cognotik:core")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
-    implementation(project(":groovy")) {
+    implementation(project(":Cognotik:groovy")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
-    implementation(project(":webui")) {
+    implementation(project(":Cognotik:webui")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
 
-    implementation(project(":providers")) {
+    implementation(project(":Cognotik:providers")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
-    implementation(project(":tasklib")) {
+    implementation(project(":Cognotik:tasklib")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
-    implementation(project(":stdtools")) {
+    implementation(project(":Cognotik:stdtools")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")

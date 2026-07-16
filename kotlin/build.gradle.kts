@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
 
-    implementation(project(":core"))
+    implementation(project(":Cognotik:core"))
     implementation(libs.kotlinx.coroutines)
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}")

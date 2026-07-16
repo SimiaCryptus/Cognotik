@@ -6,19 +6,19 @@ plugins {
     kotlin("jvm") // Version is applied globally via settings.gradle.kts
     id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
     jacoco
-    id("io.github.gradle-nexus.publish-plugin")
+    //id("io.github.gradle-nexus.publish-plugin")
 }
 
-nexusPublishing {
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
-            username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
-            password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
-        }
-    }
-}
+//nexusPublishing {
+//    repositories {
+//        sonatype {
+//            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+//            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
+//            username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
+//            password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
+//        }
+//    }
+//}
 
 subprojects {
     apply(plugin = "jacoco")
@@ -219,12 +219,12 @@ tasks.register<JacocoReport>("jacocoRootReport") {
 
 
 
-tasks {
-    wrapper {
-        gradleVersion = properties("gradleVersion")
-        distributionType = Wrapper.DistributionType.ALL
-    }
-}
+//tasks {
+//    wrapper {
+//        gradleVersion = properties("gradleVersion")
+//        distributionType = Wrapper.DistributionType.ALL
+//    }
+//}
 
 repositories {
     gradlePluginPortal()

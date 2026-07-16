@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":Cognotik:core"))
 
     implementation(libs.groovy.all)
 

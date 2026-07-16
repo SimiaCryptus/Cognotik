@@ -17,7 +17,7 @@ repositories {
 
 dependencies {
 
-  implementation(project(":core"))
+  implementation(project(":Cognotik:core"))
   implementation(libs.scala.library)
   implementation(libs.scala.compiler)
   implementation(libs.scala.reflect)

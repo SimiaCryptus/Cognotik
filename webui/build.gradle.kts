@@ -20,13 +20,13 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core"))
-    compileOnly(project(":kotlin"))
-    testImplementation(project(":providers"))
-    testImplementation(project(":kotlin"))
-    compileOnly(project(":groovy"))
-    implementation(project(":groovy"))
-//    testImplementation(project(":scala"))
+    implementation(project(":Cognotik:core"))
+    compileOnly(project(":Cognotik:kotlin"))
+    testImplementation(project(":Cognotik:providers"))
+    testImplementation(project(":Cognotik:kotlin"))
+    compileOnly(project(":Cognotik:groovy"))
+    implementation(project(":Cognotik:groovy"))
+//    testImplementation(project(":Cognotik:scala"))
     implementation(libs.pty4j)
     implementation(libs.webdrivermanager)
     implementation(libs.pdfbox)
