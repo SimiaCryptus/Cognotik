@@ -15,9 +15,10 @@ repositories {
   }
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
 
-  implementation(project(":Cognotik:core"))
+  implementation(project("$projectPrefix:core"))
   implementation(libs.scala.library)
   implementation(libs.scala.compiler)
   implementation(libs.scala.reflect)

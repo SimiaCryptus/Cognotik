@@ -19,15 +19,16 @@ repositories {
     }
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
-    implementation(project(":Cognotik:core"))
-    compileOnly(project(":Cognotik:kotlin"))
-    testImplementation(project(":Cognotik:providers"))
-    testImplementation(project(":Cognotik:kotlin"))
-    compileOnly(project(":Cognotik:groovy"))
-    implementation(project(":Cognotik:groovy"))
-    implementation(project(":Cognotik:webui"))
-    implementation(project(":Cognotik:tasklib"))
+    implementation(project("$projectPrefix:core"))
+    compileOnly(project("$projectPrefix:kotlin"))
+    testImplementation(project("$projectPrefix:providers"))
+    testImplementation(project("$projectPrefix:kotlin"))
+    compileOnly(project("$projectPrefix:groovy"))
+    implementation(project("$projectPrefix:groovy"))
+    implementation(project("$projectPrefix:webui"))
+    implementation(project("$projectPrefix:tasklib"))
 //    testImplementation(project(":Cognotik:scala"))
 
 

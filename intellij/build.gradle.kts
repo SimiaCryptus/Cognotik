@@ -20,35 +20,36 @@ repositories {
     }
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
 
-    implementation(project(":Cognotik:core")) {
+    implementation(project("$projectPrefix:core")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
-    implementation(project(":Cognotik:groovy")) {
+    implementation(project("$projectPrefix:groovy")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
-    implementation(project(":Cognotik:webui")) {
+    implementation(project("$projectPrefix:webui")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
 
-    implementation(project(":Cognotik:providers")) {
+    implementation(project("$projectPrefix:providers")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
-    implementation(project(":Cognotik:tasklib")) {
+    implementation(project("$projectPrefix:tasklib")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
-    implementation(project(":Cognotik:stdtools")) {
+    implementation(project("$projectPrefix:stdtools")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")

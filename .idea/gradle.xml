@@ -8,16 +8,6 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/controller" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/games" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/home" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/jobs" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/office" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/proxy" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/proxy-providers" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/shared" />
-            <option value="$PROJECT_DIR$/../Cognotik-Private/worker" />
             <option value="$PROJECT_DIR$/antlr" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/desktop" />

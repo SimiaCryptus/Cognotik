@@ -55,14 +55,15 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
-    implementation(project(":Cognotik:core"))
-    implementation(project(":Cognotik:groovy"))
-    implementation(project(":Cognotik:kotlin"))
-    implementation(project(":Cognotik:webui"))
-    implementation(project(":Cognotik:providers"))
-    implementation(project(":Cognotik:tasklib"))
-    implementation(project(":Cognotik:stdtools"))
+    implementation(project("$projectPrefix:core"))
+    implementation(project("$projectPrefix:groovy"))
+    implementation(project("$projectPrefix:kotlin"))
+    implementation(project("$projectPrefix:webui"))
+    implementation(project("$projectPrefix:providers"))
+    implementation(project("$projectPrefix:tasklib"))
+    implementation(project("$projectPrefix:stdtools"))
 
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)

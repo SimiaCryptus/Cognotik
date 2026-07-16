@@ -17,10 +17,11 @@ repositories {
   }
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
 
   implementation(libs.hsqldb)
-  implementation(project(":Cognotik:core")) {
+  implementation(project("$projectPrefix:core")) {
     exclude(group = "org.jetbrains.kotlin")
   }
   implementation(libs.antlr.runtime)

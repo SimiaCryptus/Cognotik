@@ -35,35 +35,3 @@ if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 }
 include(":intellij")
 
-
-//include(":demo")
-// Include modules from sibling ../Cognotik-Private directory
-// (Windows doesn't reliably support symlinks, so we map projectDir explicitly)
-val cognotikPluginsDir = file("../Cognotik-Private")
-if (cognotikPluginsDir.isDirectory) {
-  val pluginModules = listOf(
-    "shared",
-    "jobs",
-    "office",
-    "games",
-    "home",
-    "controller",
-    "worker",
-    "proxy-providers",
-    "proxy"
-  )
-  // Create the parent container project and point it at the external directory
-  // so Gradle doesn't try to use the non-existent <root>/Cognotik-Private path.
-  include(":Cognotik-Private")
-  project(":Cognotik:Cognotik-Private").projectDir = cognotikPluginsDir
-  for (module in pluginModules) {
-    val moduleDir = cognotikPluginsDir.resolve(module)
-    if (moduleDir.isDirectory) {
-      val path = ":Cognotik-Private:$module"
-      include(path)
-      project(path).projectDir = moduleDir
-    } else {
-      logger.warn("Skipping $module: directory not found at ${moduleDir.absolutePath}")
-    }
-  }
-}

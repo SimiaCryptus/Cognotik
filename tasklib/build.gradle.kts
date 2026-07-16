@@ -19,12 +19,13 @@ repositories {
     }
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
-    implementation(project(":Cognotik:core"))
-    compileOnly(project(":Cognotik:webui"))
-    implementation(project(":Cognotik:webui"))
-    testImplementation(project(":Cognotik:providers"))
-    testImplementation(project(":Cognotik:stdtools"))
+    implementation(project("$projectPrefix:core"))
+    compileOnly(project("$projectPrefix:webui"))
+    implementation(project("$projectPrefix:webui"))
+    testImplementation(project("$projectPrefix:providers"))
+    testImplementation(project("$projectPrefix:stdtools"))
 
     implementation(libs.pty4j)
     implementation(libs.pdfbox)

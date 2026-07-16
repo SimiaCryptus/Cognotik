@@ -24,16 +24,17 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
-    compileOnly(project(":Cognotik:core"))
-    compileOnly(project(":Cognotik:webui"))
-    compileOnly(project(":Cognotik:tasklib"))
-    testImplementation(project(":Cognotik:core"))
-    testImplementation(project(":Cognotik:webui"))
-    testImplementation(project(":Cognotik:tasklib"))
-    testImplementation(project(":Cognotik:providers"))
-    testImplementation(project(":Cognotik:stdtools"))
-    testImplementation(project(":Cognotik:desktop"))
+    compileOnly(project("$projectPrefix:core"))
+    compileOnly(project("$projectPrefix:webui"))
+    compileOnly(project("$projectPrefix:tasklib"))
+    testImplementation(project("$projectPrefix:core"))
+    testImplementation(project("$projectPrefix:webui"))
+    testImplementation(project("$projectPrefix:tasklib"))
+    testImplementation(project("$projectPrefix:providers"))
+    testImplementation(project("$projectPrefix:stdtools"))
+    testImplementation(project("$projectPrefix:desktop"))
 
     implementation(libs.hsqldb)
     implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
