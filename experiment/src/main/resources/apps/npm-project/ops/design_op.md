@@ -4,7 +4,7 @@ related:
   - ../code/idea.md
 ---
 
-* Read the application idea from `idea.md`
+* Read the application idea from `README.md`
 * Produce a comprehensive design document in `design.md` that captures:
 
 ## Technology Decisions (choose based on the idea's requirements)

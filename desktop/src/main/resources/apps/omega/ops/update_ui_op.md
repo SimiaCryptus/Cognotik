@@ -3,7 +3,6 @@ task_type: FileModification
 folder: ../generated_app/
 related:
   - ../requirements.md
-  - ../idea.md
   - ../docs/UI.md
   - ../generated_app/ops/*.md
   - ../generated_app/index.html
@@ -26,7 +25,6 @@ The existing `index.html` is the current UI implementation.
 ## What to Do
 
 * Read the update notes in `ui_notes.md` which contain user feedback, bug reports, feature requests, and design changes for the UI
-* Review the original idea in `idea.md` and requirements in `requirements.md` for context on the project's goals
 * Review the existing `index.html` to understand the current UI implementation
 * Review the current pipeline ops in `ops/*.md` in case new steps were added or existing steps changed
 * Apply the requested changes from `ui_notes.md` to the existing UI

@@ -18,7 +18,7 @@ Generate a complete HTML/JS/CSS project that serves as the UI for the generated 
 
 ## Context
 
-The related file `UI.md` is the authoritative developer guide for building DocOps app UIs. Follow its conventions exactly.
+The related file `_UI.md` is the authoritative developer guide for building DocOps app UIs. Follow its conventions exactly.
 
 The `ops/*.md` files show you the actual pipeline that was generated — read them to understand what steps exist, what files they produce, and what the user needs to interact with.
 

@@ -10,7 +10,7 @@ related:
 ---
 
 * Read the design document in `design.md` for architecture and technology decisions
-* Read the original idea in `idea.md` for feature requirements
+* Read the original idea in `README.md` for feature requirements
 * Review the existing scaffold files in `code/` to understand the current structure
 * Implement the full application:
 

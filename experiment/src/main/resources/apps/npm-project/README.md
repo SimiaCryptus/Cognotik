@@ -41,7 +41,7 @@ the initial build.
 
 | File                  | Purpose                                                                               |
 |-----------------------|---------------------------------------------------------------------------------------|
-| `idea.md`             | User-provided description of the desired web application                              |
+| `README.md`             | User-provided description of the desired web application                              |
 | `notes.md`            | User feedback, bug reports, feature requests, and design changes for the Update stage |
 | `design.md`           | AI-generated design document with all architecture and technology decisions           |
 | `code/`               | The generated npm project directory                                                   |

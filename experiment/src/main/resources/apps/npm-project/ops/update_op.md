@@ -5,12 +5,10 @@ folder: ../code/
 related:
   - ../code/**
   - ../code/notes.md
-  - ../code/idea.md
   - ../code/design.md
 ---
 
 * Read the update notes in `notes.md` which contain user feedback, bug reports, feature requests, and design changes
-* Review the original idea in `idea.md` and design in `design.md` for context
 * Review the existing project files in the `code/` folder to understand the current implementation
 * Apply the requested changes from `notes.md` to the existing project files:
 

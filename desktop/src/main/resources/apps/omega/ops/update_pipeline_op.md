@@ -4,7 +4,6 @@ task_config_json: generate_pipeline.json
 folder: ../generated_app/ops/
 related:
   - ../requirements.md
-  - ../idea.md
   - ../docs/PIPELINE.md
   - ../generated_app/ops/*.md
   - ../generated_app/ops/*.json
@@ -24,7 +23,6 @@ The existing `ops/*.md` and `ops/*.json` files show the current pipeline impleme
 ## What to Do
 
 * Read the update notes in `pipeline_notes.md` which contain user feedback, bug reports, feature requests, and design changes for the pipeline
-* Review the original idea in `idea.md` and requirements in `requirements.md` for context on the project's goals
 * Review the existing pipeline op files in `ops/` to understand the current implementation
 * Apply the requested changes from `pipeline_notes.md` to the existing pipeline files
 * Preserve existing pipeline steps and functionality that are not mentioned in the notes
