@@ -21,6 +21,8 @@ repositories {
 
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
+
+    implementation(project("$projectPrefix:diffpatch"))
     implementation(project("$projectPrefix:core"))
     compileOnly(project("$projectPrefix:webui"))
     implementation(project("$projectPrefix:webui"))

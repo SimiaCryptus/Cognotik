@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.ui.patch
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.diff.PatchParser.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -532,3 +533,16 @@ class DiffInstrumentor(
     } + "\n\n"
   }
 }
+
+fun String.removeCodeFences(): String {
+  return when {
+    this.trim().startsWith(TRIPLE_TILDE) && this.endsWith(TRIPLE_TILDE) ->
+      this.trim().lines()
+        .drop(1)
+        .dropLast(1)
+        .joinToString("\n")
+
+    else -> this
+  }
+}
+

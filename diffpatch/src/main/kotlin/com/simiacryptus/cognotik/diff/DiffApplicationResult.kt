@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.cognotik.util.GrammarValidator
+import com.simiacryptus.cognotik.validate.GrammarValidator
 
 data class DiffApplicationResult(
   val newCode: String,

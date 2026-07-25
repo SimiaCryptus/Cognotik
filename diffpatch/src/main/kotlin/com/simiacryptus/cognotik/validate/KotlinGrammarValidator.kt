@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.validate
 
 import KotlinLexer
 import KotlinParser
@@ -10,7 +10,6 @@ class KotlinGrammarValidator : GrammarValidator {
   companion object {
     private val log = getLogger(KotlinGrammarValidator::class.java)
   }
-
   override fun validateGrammar(code: String): List<GrammarValidator.ValidationError> {
     try {
       val lexer = KotlinLexer(CharStreams.fromString(code))

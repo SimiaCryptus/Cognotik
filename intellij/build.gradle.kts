@@ -27,6 +27,7 @@ dependencies {
     implementation(project("$projectPrefix:core")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
+    implementation(project("$projectPrefix:diffpatch"))
     implementation(project("$projectPrefix:groovy")) {
         exclude(group = "com.fasterxml.jackson.core")
     }

@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
@@ -12,13 +11,12 @@ import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.diff.FileValidators
+import com.simiacryptus.cognotik.validate.FileValidators
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
-import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -26,7 +24,6 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
-import jdk.internal.util.StaticProperty.userHome
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File

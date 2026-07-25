@@ -71,6 +71,18 @@ interface PatchParser {
     fun Path.removeAllUpperDirectories(): Path =
       this.pathString.split("/").dropWhile { it == "." || it == ".." }.joinToString("/").let { Path.of(it) }
 
+    fun removeCodeFences(): String {
+      return when {
+        content.trim().startsWith(TRIPLE_TILDE) && content.endsWith(TRIPLE_TILDE) ->
+          content.trim().lines()
+            .drop(1)
+            .dropLast(1)
+            .joinToString("\n")
+
+        else -> content
+      }
+    }
+
   }
 
   val patchFormatPrompt: String

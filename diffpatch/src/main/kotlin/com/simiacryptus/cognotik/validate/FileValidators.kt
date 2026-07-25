@@ -1,8 +1,5 @@
-package com.simiacryptus.cognotik.diff
+package com.simiacryptus.cognotik.validate
 
-import com.simiacryptus.cognotik.util.GrammarValidator
-import com.simiacryptus.cognotik.util.KotlinGrammarValidator
-import com.simiacryptus.cognotik.util.ParenMatchingValidator
 import org.slf4j.LoggerFactory.getLogger
 
 object FileValidators {

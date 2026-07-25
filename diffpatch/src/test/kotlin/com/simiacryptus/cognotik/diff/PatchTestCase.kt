@@ -1,7 +1,7 @@
 package com.simiacryptus.diff
 
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.diff.fromJson
 import org.junit.jupiter.api.Assertions
 
 data class PatchTestCase(
@@ -17,10 +17,11 @@ data class PatchTestCase(
       fun normalize(text: String) = text.trim().replace("\r\n", "\n")
       val stream = patcher.javaClass.getResourceAsStream(resourceName)
         ?: throw IllegalArgumentException("Resource not found: $resourceName")
-      val testCase: PatchTestCase = JsonUtil.fromJson(String(stream.readAllBytes()), PatchTestCase::class.java)
+      val testCase: PatchTestCase = fromJson(String(stream.readAllBytes()), PatchTestCase::class.java)
       if (false == testCase.isValid) return
       val result = patcher.applyPatch(testCase.originalCode, testCase.diff)
       Assertions.assertEquals(normalize(testCase.newCode), normalize(result))
     }
   }
 }
+

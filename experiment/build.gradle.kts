@@ -30,6 +30,7 @@ dependencies {
     compileOnly(project("$projectPrefix:webui"))
     compileOnly(project("$projectPrefix:tasklib"))
     testImplementation(project("$projectPrefix:core"))
+    implementation(project("$projectPrefix:diffpatch"))
     testImplementation(project("$projectPrefix:webui"))
     testImplementation(project("$projectPrefix:tasklib"))
     testImplementation(project("$projectPrefix:providers"))

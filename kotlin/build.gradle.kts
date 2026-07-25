@@ -19,10 +19,11 @@ repositories {
     }
 }
 
+val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
 
-    val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
     implementation(project("$projectPrefix:core"))
+    implementation(project("$projectPrefix:diffpatch"))
     implementation(libs.kotlinx.coroutines)
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}")

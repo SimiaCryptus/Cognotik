@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.validate
 
 interface GrammarValidator {
   fun validateGrammar(code: String): List<ValidationError>

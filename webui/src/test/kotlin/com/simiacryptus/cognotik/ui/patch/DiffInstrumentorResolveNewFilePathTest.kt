@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.ui.patch
 
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
-import com.simiacryptus.cognotik.util.ParenMatchingValidator
+import com.simiacryptus.cognotik.validate.ParenMatchingValidator
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
