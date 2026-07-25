@@ -6,16 +6,23 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.slf4j.LoggerFactory.getLogger
 
-class KotlinGrammarValidator : GrammarValidator {
+/**
+ * Validates Kotlin source using the ANTLR Kotlin grammar.
+ *
+ * @param isScript when true the input is parsed with the `script` start rule
+ *                 (used for `.kts` files) instead of the `kotlinFile` rule.
+ */
+class KotlinGrammarValidator(private val isScript: Boolean = false) : GrammarValidator {
   companion object {
     private val log = getLogger(KotlinGrammarValidator::class.java)
   }
+
   override fun validateGrammar(code: String): List<GrammarValidator.ValidationError> {
     try {
       val lexer = KotlinLexer(CharStreams.fromString(code))
       val tokens = CommonTokenStream(lexer)
       val parser = KotlinParser(tokens)
-      parser.kotlinFile()
+      if (isScript) parser.script() else parser.kotlinFile()
       return if (parser.numberOfSyntaxErrors == 0) {
         emptyList()
       } else {

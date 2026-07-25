@@ -13,6 +13,16 @@ object FileValidators {
   val validatorProviders = mutableListOf<(String?) -> GrammarValidator?>({ filename ->
     when (filename?.split('.')?.lastOrNull()) {
       "kt" -> KotlinGrammarValidator()
+      "ktm" -> KotlinGrammarValidator()
+      "rs" -> RustGrammarValidator()
+      "kts" -> KotlinGrammarValidator(isScript = true)
+      "py", "pyi", "pyw" -> PythonGrammarValidator()
+      "java" -> JavaGrammarValidator()
+      "ts", "tsx", "mts", "cts" -> TypeScriptGrammarValidator()
+      "js", "mjs", "cjs", "jsx" -> JavaScriptGrammarValidator()
+      "json", "json5" -> Json5GrammarValidator()
+      "css" -> CssGrammarValidator()
+      "html", "htm", "xhtml" -> HtmlGrammarValidator()
       else -> null
     }
   }, { _ -> ParenMatchingValidator() })
@@ -22,4 +32,3 @@ object FileValidators {
   }
 
 }
-
