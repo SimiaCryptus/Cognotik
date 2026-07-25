@@ -6,3 +6,4 @@ build/
 # Android
 .gradle/
 .idea/
+/.doc-processor-cache/

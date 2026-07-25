@@ -1,8 +1,0 @@
-{
-  "filename": "test_minimized.js",
-  "originalCode": "function foo() {\n    var x = 1;\n}",
-  "diff": "var x = 1;\n+    var y = 2;\n}",
-  "newCode": "function foo() {\n    var x = 1;\n    var y = 2;\n}",
-  "isValid": true,
-  "errors": ""
-}

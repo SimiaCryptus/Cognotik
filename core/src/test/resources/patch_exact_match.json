@@ -1,8 +1,0 @@
-{
-  "filename": "test_exact_match.txt",
-  "originalCode": "line1\nline2\nline3",
-  "diff": "line1\nline2\nline3",
-  "newCode": "line1\nline2\nline3",
-  "isValid": true,
-  "errors": ""
-}

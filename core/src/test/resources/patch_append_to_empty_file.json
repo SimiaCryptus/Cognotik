@@ -1,8 +1,0 @@
-{
-  "filename": "test_append_to_empty.txt",
-  "originalCode": "",
-  "diff": "+newLine",
-  "newCode": "newLine",
-  "isValid": true,
-  "errors": ""
-}

@@ -1,8 +1,0 @@
-{
-  "filename": "test_modify_line.txt",
-  "originalCode": "line1\nline2\nline3",
-  "diff": "line1\n-line2\n+modifiedLine2\nline3",
-  "newCode": "line1\nmodifiedLine2\nline3",
-  "isValid": true,
-  "errors": ""
-}
