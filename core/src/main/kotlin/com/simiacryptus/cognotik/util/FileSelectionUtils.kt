@@ -211,23 +211,6 @@ object FileSelectionUtils {
     }.toTypedArray()
   }
 
-  fun isLLMTextFile(file: File, treatDocumentsAsText: Boolean = false): Boolean {
-    return when {
-      !file.exists() -> false
-      file.isDirectory -> false
-      file.name.endsWith(".data") -> true
-      treatDocumentsAsText && file.isDocumentFile() -> true
-      file.length() > 100_000_000L -> false // 100MB limit
-      isGitignore(file.toPath()) -> false
-      isLLMIgnored(file.toPath()) -> false
-      file.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> false
-
-      isBinaryFile(file) -> false
-
-      else -> true
-    }
-  }
-
   fun isBinaryFile(file: File): Boolean {
     if (!file.exists() || file.isDirectory || file.length() == 0L) {
       return false

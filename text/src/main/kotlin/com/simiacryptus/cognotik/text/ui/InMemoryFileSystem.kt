@@ -5,9 +5,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryFileSystem : FileSystem {
   private val files = ConcurrentHashMap<String, String>()
-  fun putFile(path: Path, content: String) {
-    files[path.normalize().toString()] = content
-  }
 
   override fun exists(path: Path): Boolean {
     return files.containsKey(path.normalize().toString())

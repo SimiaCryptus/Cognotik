@@ -676,15 +676,3 @@ class DiffInstrumentor(
 private fun String.indent(indent: String): String {
   return this.lines().joinToString("\n") { line -> indent + line }
 }
-
-fun String.removeCodeFences(): String {
-  return when {
-    this.trim().startsWith(TRIPLE_TILDE) && this.endsWith(TRIPLE_TILDE) ->
-      this.trim().lines()
-        .drop(1)
-        .dropLast(1)
-        .joinToString("\n")
-
-    else -> this
-  }
-}

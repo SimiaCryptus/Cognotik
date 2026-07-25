@@ -783,22 +783,4 @@ class RouterServlet(
         return sb.toString()
     }
 
-
-    fun copyRecursively(source: File, destination: File) {
-        try {
-            if (source.isDirectory) {
-                destination.mkdirs()
-                source.listFiles()?.forEach { child ->
-                    copyRecursively(child, File(destination, child.name))
-                }
-            } else {
-                DocOpsApp.copyFileWithLineEndingNormalization(source, destination)
-            }
-        } catch (e: Exception) {
-            DocOpsApp.log.error(
-                "Failed to copy file from ${source.absolutePath} to ${destination.absolutePath}: ${e.message}", e
-            )
-        }
-    }
-
 }

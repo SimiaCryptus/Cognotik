@@ -78,6 +78,7 @@ object IgnoreFileUtil {
         markerFileName = ".hidden",
         alwaysIgnored = emptySet(),
     )
+
     /**
      * Predefined spec for `.writeable`. When present, acts as a whitelist:
      * only paths matching patterns in this file are considered writeable;

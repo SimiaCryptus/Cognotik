@@ -1047,17 +1047,6 @@ class ErbTemplateEngine {
     fun child(newLocals: Map<String, Any?>): Context {
       return Context(data, this, newLocals)
     }
-
-    fun getAllVariables(): Map<String, Any?> {
-      val result = mutableMapOf<String, Any?>()
-      // Add parent variables first (so they can be overridden)
-      parent?.getAllVariables()?.let { result.putAll(it) }
-      // Add data object entries
-      data.entrySet().forEach { result[it.key] = it.value }
-      // Add locals (highest priority)
-      result.putAll(locals)
-      return result
-    }
   }
 
   data class TypeSchema(

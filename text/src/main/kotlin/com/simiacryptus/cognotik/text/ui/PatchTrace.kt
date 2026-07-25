@@ -83,9 +83,6 @@ class PatchTrace(
   /** Rendered lines for all ancestor traces followed by this trace's own lines. */
   fun linesWithParents(): List<String> = (parent?.linesWithParents() ?: emptyList()) + lines()
 
-  /** Convenience single-string rendering, including ancestors. */
-  fun renderText(): String = linesWithParents().joinToString("\n")
-
   fun isEmpty(): Boolean = records.isEmpty() && (parent?.isEmpty() ?: true)
 
   private fun record(level: String, text: String, error: Throwable?) {

@@ -1303,9 +1303,5 @@ class InteractiveStoryTask(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
       "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
     )
-
-    fun isTextFile(file: File): Boolean {
-      return textExtensions.contains(file.extension.lowercase())
-    }
   }
 }

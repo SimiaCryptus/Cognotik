@@ -49,7 +49,6 @@ class SeleniumFetchTask(
     @Description("Maximum seconds to wait for page load (default: 30)") var page_load_timeout_seconds: Long = 30L,
     @Description("Browser viewport width in pixels (default: 1920)") var viewport_width: Int = 1920,
     @Description("Browser viewport height in pixels (default: 1080)") var viewport_height: Int = 1080,
-    @Description("Whether to capture a full-page screenshot when supported (default: true)") var full_page_screenshot: Boolean = true,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: AbstractTask.TaskState? = AbstractTask.TaskState.Pending,

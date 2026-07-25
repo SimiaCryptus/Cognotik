@@ -324,16 +324,6 @@ abstract class DocProcessorBase<K : DocTaskKind, S : Any, P : Any>(
           filePath.canonicalFile.absolutePath
         }
       }
-
-    val relative_doc_files: List<String>
-      get() = doc_files.map { docFile ->
-        try {
-          docFile.canonicalFile.relativeTo(root.canonicalFile).toString()
-        } catch (_: IllegalArgumentException) {
-          // File is outside root, return absolute path
-          docFile.canonicalFile.absolutePath
-        }
-      }
   }
 
   data class ModificationTask<K : DocTaskKind>(

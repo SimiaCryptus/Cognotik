@@ -84,21 +84,6 @@ open class SeleniumFetchStrategy(private val task: CrawlerAgentTask) : FetchStra
 
     protected val driver: WebDriver get() = driverLocal.get()
 
-    /**
-     * Cleanly quits the driver bound to the calling thread and removes it from
-     * the [ThreadLocal].  Call this from a thread-pool shutdown hook or test
-     * tear-down.
-     */
-    fun quitDriver() {
-        try {
-            driverLocal.get()?.quit()
-        } catch (e: Exception) {
-            log.warn("Error quitting WebDriver", e)
-        } finally {
-            driverLocal.remove()
-        }
-    }
-
     override fun fetch(
         url: String,
         webSearchDir: File,

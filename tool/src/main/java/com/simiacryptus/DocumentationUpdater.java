@@ -1,10 +1,10 @@
 package com.simiacryptus;
 
 import com.simiacryptus.cognotik.chat.model.ChatModel;
-import com.simiacryptus.cognotik.util.DocProcessor;
+import com.simiacryptus.cognotik.docops.DocProcessor;
+import com.simiacryptus.cognotik.docops.UpdateModes;
 import com.simiacryptus.cognotik.util.PlanHarness;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
-import com.simiacryptus.cognotik.util.UpdateModes;
 
 import java.io.File;
 import java.util.ArrayList;

@@ -20,6 +20,7 @@ plugins {
 
 include(":antlr")
 include(":text")
+include(":docops")
 include(":core")
 include(":providers")
 include(":groovy")

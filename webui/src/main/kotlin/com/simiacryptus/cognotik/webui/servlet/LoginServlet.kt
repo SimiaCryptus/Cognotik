@@ -316,8 +316,6 @@ class LoginServlet : HttpServlet() {
             data class Success(val envelope: SessionEnvelope) : SessionVerificationResult()
             data class Failure(val error: SessionVerificationError, val reason: String) : SessionVerificationResult()
             /** Convenience accessor: returns the envelope if successful, otherwise null. */
-            val envelopeOrNull: SessionEnvelope?
-                get() = (this as? Success)?.envelope
         }
 
         /**
