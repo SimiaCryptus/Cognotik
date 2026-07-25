@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.ui.patch
 
 import java.nio.file.Path
 
-
 data class InstrumentationResult(
   val renderedMarkdown: String,
   val appliedPatches: List<AppliedPatch>,

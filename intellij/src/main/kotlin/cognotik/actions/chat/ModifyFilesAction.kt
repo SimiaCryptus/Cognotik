@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -186,6 +187,7 @@ open class ModifyFilesAction(
               root.toPath().resolve(it).toFile().absolutePath
             } else null,
                 resolver = ::resolveToRelativePath,
+                  prefilterFilename = ::prefilterFilename
           )
         }
 

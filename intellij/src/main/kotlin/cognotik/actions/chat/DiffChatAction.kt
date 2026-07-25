@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
@@ -158,6 +159,7 @@ class DiffChatAction : BaseAction() {
                     shouldAutoApply = { false },
                     defaultFile = "file.txt",
                     resolver = { root, _ -> "file.txt" },
+                    prefilterFilename = ::prefilterFilename
                   )
                 }                
             }</div>"""

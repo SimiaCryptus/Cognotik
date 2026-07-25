@@ -1,11 +1,8 @@
 package com.simiacryptus.cognotik.ui.patch
 
-import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.diff.PatchParser.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
-import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -28,8 +25,11 @@ class DiffInstrumentor(
     handle: (Map<Path, String>) -> Unit = {},
     shouldAutoApply: (Path) -> Boolean = { false },
     defaultFile: String? = null,
-    resolver: (Path, String) -> String? = ::resolveToRelativePath,
+    resolver: (Path, String) -> String?,
+    prefilterFilename: (String) -> String?,
   ): String {
+    /** Shadows the class logger: captures this call's messages for the Patch Data dump. */
+    val log = PatchTrace("instrument(root=$root)", log)
     log.debug("Instrumenting response: {} chars, root={}, defaultFile={}", response.length, root, defaultFile)
     if (response.isBlank()) {
       log.warn("Empty response provided to instrument()")
@@ -43,6 +43,7 @@ class DiffInstrumentor(
     log.debug("Parsed {} segments from response", segments.size)
 
     val result = StringBuilder()
+    val changes = mutableListOf<PendingChange>()
     for (segment in segments) {
       when (segment) {
         is ResponseSegment.Markdown -> result.append(segment.removeCodeFences().trimEnd()).append("\n\n")
@@ -62,7 +63,7 @@ class DiffInstrumentor(
               .append("\n\n")
             continue
           }
-          val resolved = resolveNewFilePath(root, filename, resolver)
+          val resolved = resolveNewFilePath(root, filename, resolver, log)
           if (resolved == null) {
             result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
             result.append(renderer.renderWarning("The new file block's filename '${filename}' could not be resolved to a valid path. Please ensure the filename is correct and has an extension."))
@@ -77,7 +78,9 @@ class DiffInstrumentor(
               segment.removeCodeFences(),
               segment.language,
               handle,
-              shouldAutoApply
+              shouldAutoApply,
+              changes = changes,
+              trace = log
             ).trimEnd()
           ).append("\n\n")
         }
@@ -98,7 +101,7 @@ class DiffInstrumentor(
               continue
             }
           }
-          val resolved = resolveWithBestEffort(root, filename, resolver)
+          val resolved = resolveWithBestEffort(root, filename, resolver, log)
           if (resolved == null) {
             // Treat as "create file" by applying the diff to blank content
             log.info("File '{}' not found, treating diff as new file creation", filename)
@@ -113,12 +116,17 @@ class DiffInstrumentor(
             }
             if (applyResult != null && applyResult.newCode.isNotBlank() && (applyResult.isValid || allowInvalid)) {
               // Resolve the path for the new file
-              val newFileResolved = resolveNewFilePath(root, filename, resolver)
+              val newFileResolved = resolveNewFilePath(root, filename, resolver, log)
               if (newFileResolved != null) {
                 val filepath = fs.resolve(root, newFileResolved)
                 log.debug("Creating new file from diff: {}", filepath)
                 val lang = filepath.name.substringAfterLast('.', "")
-                result.append(renderNewFile(filepath, applyResult.newCode, lang, handle, shouldAutoApply).trimEnd())
+                result.append(
+                  renderNewFile(
+                    filepath, applyResult.newCode, lang, handle, shouldAutoApply,
+                    changes = changes, trace = log
+                  ).trimEnd()
+                )
                   .append("\n\n")
               } else {
                 log.warn("Could not resolve new file path for '{}', rendering as diff code block", filename)
@@ -153,14 +161,57 @@ class DiffInstrumentor(
               relativize,
               segment.removeCodeFences(),
               handle,
-              shouldAutoApply
+              shouldAutoApply,
+              changes = changes,
+              trace = log
             ).trimEnd()
           ).append("\n\n")
         }
       }
     }
+    appendChangeSummary(result, changes, log)
     return result.toString()
   }
+
+  /**
+   * Appends a summary of every file the response touches, plus an "Apply All" control which
+   * applies all still-pending changes. Individual failures are collected so one bad patch does
+   * not prevent the rest from being applied.
+   */
+  private fun appendChangeSummary(
+    result: StringBuilder,
+    changes: List<PendingChange>,
+    log: PatchTrace
+  ) {
+    if (changes.isEmpty()) return
+    val pending = changes.filter { it.apply != null }
+    log.debug("Rendering change summary: {} change(s), {} pending", changes.size, pending.size)
+    val onApplyAll: (() -> Unit)? = if (pending.isEmpty()) null else ({
+      var failures = 0
+      pending.forEach { change ->
+        try {
+          change.apply?.invoke()
+        } catch (e: Throwable) {
+          failures++
+          log.error("Apply-all failed for {}: {}", change.summary.path, e.message, e)
+        }
+      }
+      if (failures > 0) throw RuntimeException(
+        "$failures of ${pending.size} change(s) could not be applied; use the per-file buttons for details"
+      )
+    })
+    result.append(renderer.renderChangeSummary(changes.map { it.summary }, onApplyAll)).append("\n\n")
+  }
+
+  private fun newFileSummary(filepath: Path, code: String, applied: Boolean) = FileChangeSummary(
+    path = filepath,
+    relativePath = filepath.fileName ?: filepath,
+    changeType = ChangeType.NEW_FILE,
+    linesAdded = if (code.isBlank()) 0 else code.lines().size,
+    linesRemoved = 0,
+    isValid = true,
+    applied = applied
+  )
 
   /**
    * Resolves a filename for a new file block. This is intentionally less aggressive
@@ -172,15 +223,22 @@ class DiffInstrumentor(
   private fun resolveNewFilePath(
     root: Path,
     filename: String,
-    resolver: (Path, String) -> String?
+    resolver: (Path, String) -> String?,
+    log: PatchTrace
   ): String? {
     val updirCount = filename.split("/").takeWhile { it == ".." }.size
     val trimmedFilename = filename.split("/").dropWhile { it == ".." }.joinToString("/")
-    val currentDirRelPath = root.toFile().absolutePath.split(File.separator).takeLast(updirCount).joinToString("/") + File.separator
+    val currentDirRelPath =
+      root.toFile().absolutePath.split(File.separator).takeLast(updirCount).joinToString("/") + File.separator
     if (trimmedFilename.startsWith(currentDirRelPath)) {
       val stripped = trimmedFilename.removePrefix(currentDirRelPath)
-      log.debug("Stripping leading '../{}' from filename '{}' to resolve new file path: '{}'", currentDirRelPath, filename, stripped)
-      return resolveNewFilePath(root, stripped, resolver)
+      log.debug(
+        "Stripping leading '../{}' from filename '{}' to resolve new file path: '{}'",
+        currentDirRelPath,
+        filename,
+        stripped
+      )
+      return resolveNewFilePath(root, stripped, resolver, log)
     }
 
     // First, check for overlap between filename components and root's trailing components.
@@ -257,7 +315,8 @@ class DiffInstrumentor(
   private fun resolveWithBestEffort(
     root: Path,
     filename: String,
-    resolver: (Path, String) -> String?
+    resolver: (Path, String) -> String?,
+    log: PatchTrace
   ): String? {
     // Strategy 1: Direct resolution
     val direct = resolver(root, filename)
@@ -372,14 +431,23 @@ class DiffInstrumentor(
     code: String,
     lang: String,
     handle: (Map<Path, String>) -> Unit,
-    shouldAutoApply: (Path) -> Boolean
+    shouldAutoApply: (Path) -> Boolean,
+    changes: MutableList<PendingChange>? = null,
+    trace: PatchTrace? = null
   ): String {
+    /** Shadows the class logger: captures this call's messages for the Patch Data dump. */
+    val log = PatchTrace("renderNewFile($filepath)", log, trace)
     var code = code.trim().trimIndent()
     if (code.startsWith("```") && code.endsWith("```")) {
       code = code.lines().drop(1).dropLast(1).joinToString("\n").trim().trimIndent()
     }
     log.debug("Rendering new file: path={}, lang={}, code length={}", filepath, lang, code.length)
     val codeBlock = "\n```${lang}\n${code.indent("  ")}\n```\n"
+    val saveAction: () -> Unit = {
+      log.info("Saving new file: {}", filepath)
+      fs.writeText(filepath, code)
+      handle(mapOf(filepath to code))
+    }
     if (code.isBlank()) {
       log.warn("Empty code content for new file: {}", filepath)
     }
@@ -393,6 +461,7 @@ class DiffInstrumentor(
         fs.writeText(filepath, code)
         handle(mapOf(filepath to code))
         log.info("Successfully auto-created file: {}", filepath)
+        changes?.add(PendingChange(newFileSummary(filepath, code, applied = true), apply = null))
         codeBlock + "\n" + renderer.renderAutoApplied(
           filepath,
           ""
@@ -400,24 +469,33 @@ class DiffInstrumentor(
           mapOf(
             "filename" to filepath.toString(),
             "code" to code,
-            "action" to "save_auto"
+            "action" to "save_auto",
+            "trace" to log.linesWithParents()
           )
         )
       } catch (e: Throwable) {
         log.error("Error auto-saving file {}: {}", filepath, e.message, e)
-        codeBlock + "\n<div class=\"cmd-button\">Error Auto-Saving ${filepath}: ${e.message}</div>"
+        changes?.add(PendingChange(newFileSummary(filepath, code, applied = false), apply = saveAction))
+        codeBlock + "\n<div class=\"cmd-button\">Error Auto-Saving ${filepath}: ${e.message}</div>" +
+            renderer.recordPatch(
+              mapOf(
+                "filename" to filepath.toString(),
+                "code" to code,
+                "action" to "save_auto_failed",
+                "errors" to e.message,
+                "trace" to log.linesWithParents()
+              )
+            )
       }
     }
-    val saveButton = renderer.renderSaveButton(filepath, code, lang) {
-      log.info("User triggered save for file: {}", filepath)
-      fs.writeText(filepath, code)
-      handle(mapOf(filepath to code))
-    }
+    changes?.add(PendingChange(newFileSummary(filepath, code, applied = false), apply = saveAction))
+    val saveButton = renderer.renderSaveButton(filepath, code, lang, saveAction)
     return codeBlock + "\n" + saveButton + renderer.recordPatch(
       mapOf(
         "filename" to filepath.toString(),
         "code" to code,
-        "action" to "save"
+        "action" to "save",
+        "trace" to log.linesWithParents()
       )
     )
   }
@@ -427,8 +505,12 @@ class DiffInstrumentor(
     relativePath: Path,
     diffVal: String,
     handle: (Map<Path, String>) -> Unit,
-    shouldAutoApply: (Path) -> Boolean
+    shouldAutoApply: (Path) -> Boolean,
+    changes: MutableList<PendingChange>? = null,
+    trace: PatchTrace? = null
   ): String {
+    /** Shadows the class logger: captures this call's messages for the Patch Data dump. */
+    val log = PatchTrace("renderDiffBlock($filepath)", log, trace)
     var diffVal = diffVal.trim().trimIndent()
     if (diffVal.startsWith("```") && diffVal.endsWith("```")) {
       diffVal = diffVal.lines().drop(1).dropLast(1).joinToString("\n").trim().trimIndent()
@@ -442,9 +524,15 @@ class DiffInstrumentor(
     val escaped = "\n```diff\n$diffVal\n```\n"
     if (diffVal.isBlank()) {
       log.warn("Empty diff content for file: {}", filepath)
-      return escaped + renderer.renderWarning("Empty diff content")
+      return escaped + renderer.renderWarning("Empty diff content") + renderer.recordPatch(
+        mapOf(
+          "filename" to filepath.toString(),
+          "action" to "diff_empty",
+          "trace" to log.linesWithParents()
+        )
+      )
     }
-    val controller = DiffApplyController(filepath, diffVal, processor, fs)
+    val controller = DiffApplyController(filepath, diffVal, processor, fs, log)
     val prevCode = fs.readText(filepath)
     log.debug("Read previous code from {}: {} chars", filepath, prevCode.length)
 
@@ -458,6 +546,47 @@ class DiffInstrumentor(
     val isValid = testResult?.isValid ?: false
     val errorMsg = testResult?.errors?.joinToString("; ") { it.message }
     log.debug("Patch validation for {}: isValid={}, errors={}", filepath, isValid, errorMsg)
+    val summaryOf: (Boolean) -> FileChangeSummary = { applied ->
+      FileChangeSummary(
+        path = filepath,
+        relativePath = relativePath,
+        changeType = ChangeType.MODIFIED,
+        linesAdded = DiffStats.linesAdded(diffVal),
+        linesRemoved = DiffStats.linesRemoved(diffVal),
+        isValid = isValid,
+        applied = applied
+      )
+    }
+
+    /** Applies (or re-applies, after a revert) the diff; [force] ignores validation failures. */
+    val applyDiff: (Boolean) -> Unit = { force ->
+      log.info("Applying diff for {} (force={})", filepath, force)
+      when (val state = controller.apply(force = force)) {
+        is ApplyState.Applied -> {
+          handle(mapOf(relativePath to state.newCode))
+          log.info("Successfully applied diff to {}", filepath)
+        }
+
+        is ApplyState.Failed -> {
+          log.error("Apply diff failed for {}: {}", filepath, state.error.message)
+          throw state.error
+        }
+
+        else -> log.warn("Unexpected state after apply for {}: {}", filepath, state::class.simpleName)
+      }
+    }
+    val revertDiff: () -> Unit = {
+      log.info("Reverting diff for {}", filepath)
+      val currentState = controller.currentState()
+      if (currentState is ApplyState.Applied) {
+        controller.revert()
+        handle(mapOf(relativePath to currentState.originalCode))
+        log.info("Successfully reverted diff for {}", filepath)
+      } else {
+        log.warn("Cannot revert, current state for {} is {}", filepath, currentState::class.simpleName)
+      }
+    }
+
 
     // Auto-apply path
     val shouldAutoApplyResult = shouldAutoApply(filepath)
@@ -468,11 +597,14 @@ class DiffInstrumentor(
         is ApplyState.Applied -> {
           handle(mapOf(relativePath to state.newCode))
           log.debug("Successfully auto-applied diff to {}", filepath)
-          val revertButton = renderer.renderApplyDiffButton(filepath, diffVal, onApply = {}, onRevert = {
-            log.info("User triggered revert for auto-applied diff: {}", filepath)
-            controller.revert()
-            handle(mapOf(relativePath to state.originalCode))
-          })
+          changes?.add(PendingChange(summaryOf(true), apply = null))
+          /* onApply used to be a no-op, which made re-applying after a revert impossible. */
+          val revertButton = renderer.renderApplyDiffButton(
+            filepath, diffVal,
+            onApply = { applyDiff(false) },
+            onRevert = { revertDiff() },
+            onForceApply = { applyDiff(true) }
+          )
           escaped + renderer.renderAutoApplied(filepath, revertButton) + renderer.recordPatch(
             mapOf(
               "filename" to filepath.toString(),
@@ -480,14 +612,33 @@ class DiffInstrumentor(
               "diff" to diffVal,
               "newCode" to state.newCode,
               "isValid" to true,
-              "action" to "auto_apply"
+              "action" to "auto_apply",
+              "trace" to log.linesWithParents()
             )
           )
         }
 
         is ApplyState.Failed -> {
           log.error("Failed to auto-apply diff to {}: {}", filepath, state.error.message)
-          escaped + "<div class=\"cmd-button\">Error Auto-Applying Diff to ${filepath}: ${state.error.message}</div>"
+          changes?.add(PendingChange(summaryOf(false), apply = { applyDiff(true) }))
+          escaped + "<div class=\"cmd-button\">Error Auto-Applying Diff to ${filepath}: ${state.error.message}</div>" +
+              renderer.renderApplyDiffButton(
+                filepath, diffVal,
+                onApply = { applyDiff(false) },
+                onRevert = { revertDiff() },
+                onForceApply = { applyDiff(true) }
+              ) +
+              renderer.recordPatch(
+                mapOf(
+                  "filename" to filepath.toString(),
+                  "originalCode" to prevCode,
+                  "diff" to diffVal,
+                  "isValid" to isValid,
+                  "errors" to state.error.message,
+                  "action" to "auto_apply_failed",
+                  "trace" to log.linesWithParents()
+                )
+              )
         }
 
         else -> {
@@ -496,30 +647,16 @@ class DiffInstrumentor(
         }
       }
     } else {
+      changes?.add(PendingChange(summaryOf(false), apply = { applyDiff(false) }))
       escaped + (if (!isValid && errorMsg != null) {
         log.debug("Rendering validation warning for {}: {}", filepath, errorMsg)
         renderer.renderWarning("The patch is not valid: $errorMsg")
-      } else "") + renderer.renderApplyDiffButton(filepath, diffVal, onApply = {
-        log.info("User triggered apply diff for {}", filepath)
-        val state = controller.apply()
-        if (state is ApplyState.Applied) {
-          handle(mapOf(relativePath to state.newCode))
-          log.info("User successfully applied diff to {}", filepath)
-        } else if (state is ApplyState.Failed) {
-          log.error("User apply diff failed for {}: {}", filepath, state.error.message)
-          throw state.error
-        }
-      }, onRevert = {
-        log.info("User triggered revert for {}", filepath)
-        val currentState = controller.currentState()
-        if (currentState is ApplyState.Applied) {
-          controller.revert()
-          handle(mapOf(relativePath to currentState.originalCode))
-          log.info("User successfully reverted diff for {}", filepath)
-        } else {
-          log.warn("Cannot revert, current state for {} is {}", filepath, currentState::class.simpleName)
-        }
-      }) + renderer.recordPatch(
+      } else "") + renderer.renderApplyDiffButton(
+        filepath, diffVal,
+        onApply = { applyDiff(false) },
+        onRevert = { revertDiff() },
+        onForceApply = { applyDiff(true) }
+      ) + renderer.recordPatch(
         mapOf(
           "filename" to filepath.toString(),
           "originalCode" to prevCode,
@@ -527,11 +664,16 @@ class DiffInstrumentor(
           "newCode" to (testResult?.newCode ?: ""),
           "isValid" to isValid,
           "errors" to errorMsg,
-          "action" to "diff"
+          "action" to "diff",
+          "trace" to log.linesWithParents()
         )
       )
     } + "\n\n"
   }
+}
+
+private fun String.indent(indent: String): String {
+  return this.lines().joinToString("\n") { line -> indent + line }
 }
 
 fun String.removeCodeFences(): String {
@@ -545,4 +687,3 @@ fun String.removeCodeFences(): String {
     else -> this
   }
 }
-

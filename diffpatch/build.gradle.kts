@@ -66,6 +66,9 @@ dependencies {
     exclude(group = "org.slf4j", module = "slf4j-api")
   }
   testImplementation(libs.mockito)
+  testImplementation(libs.mockk) {
+    exclude(group = "org.jetbrains.kotlin")
+  }
 }
 // Ensure Kotlin compilation happens before Java compilation
 tasks.named("compileJava") {

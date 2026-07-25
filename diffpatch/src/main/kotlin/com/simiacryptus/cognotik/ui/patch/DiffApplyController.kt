@@ -9,23 +9,50 @@ class DiffApplyController(
   private val filepath: Path,
   private val diff: String,
   private val processor: PatchProcessor,
-  private val fs: FileSystem
+  private val fs: FileSystem,
+  /**
+   * In-memory trace which also forwards to slf4j. Named `log` so that all logging in this
+   * class is captured and can be surfaced in the "Patch Data" dump.
+   */
+  private val log: PatchTrace = PatchTrace("DiffApplyController", logger)
 ) {
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(DiffApplyController::class.java)
+    internal val logger = org.slf4j.LoggerFactory.getLogger(DiffApplyController::class.java)
   }
 
   private val state = AtomicReference<ApplyState>(ApplyState.Pending)
 
   fun currentState(): ApplyState = state.get()
 
-  fun apply(): ApplyState {
-    log.debug("Attempting to apply diff to file: {}", filepath)
+  /**
+   * Applies the diff. Applying is legal from [ApplyState.Pending] and [ApplyState.Reverted]
+   * (so an apply/revert/re-apply cycle can be repeated), and from [ApplyState.Failed] when
+   * [force] is set.
+   *
+   * @param force ignore patch validation errors (as long as the result is non-blank) and retry
+   *   a previously failed application.
+   */
+  fun apply(force: Boolean = false): ApplyState {
+    log.debug("Attempting to apply diff to file: {} (force={})", filepath, force)
     while (true) {
       val current = state.get()
       log.debug("Current state for {}: {}", filepath, current::class.simpleName)
-      when (current) {
-        is ApplyState.Pending, is ApplyState.Reverted -> {
+      when {
+        current is ApplyState.Applied -> {
+          log.debug("Diff already applied to {}", filepath)
+          return current
+        }
+
+        current is ApplyState.Failed && !force -> {
+          log.debug(
+            "Diff previously failed for {}: {} (retry with force=true to ignore)",
+            filepath, current.error.message
+          )
+          return current
+        }
+
+        else -> {
+          /* Pending, Reverted, or a forced retry of a previous failure. */
           if (diff.isBlank()) {
             log.warn("Diff content is blank for file: {}", filepath)
             val failed = ApplyState.Failed(IllegalArgumentException("Diff content is blank"))
@@ -39,12 +66,23 @@ class DiffApplyController(
             log.debug("Patch result for {}: isValid={}, errors={}", filepath, result.isValid, result.errors.size)
             if (!result.isValid) {
               val errorMessage = result.errors.joinToString("; ") { it.message }
-              log.warn("Invalid patch for {}: {}", filepath, errorMessage)
-              val failed = ApplyState.Failed(
-                IllegalStateException("Invalid patch: $errorMessage")
-              )
-              if (state.compareAndSet(current, failed)) return failed
-              continue // CAS failed, retry
+              if (!force) {
+                log.warn("Invalid patch for {}: {}", filepath, errorMessage)
+                val failed = ApplyState.Failed(
+                  IllegalStateException("Invalid patch: $errorMessage")
+                )
+                if (state.compareAndSet(current, failed)) return failed
+                continue // CAS failed, retry
+              }
+              log.warn("Ignoring patch validation failure for {} (force=true): {}", filepath, errorMessage)
+              if (result.newCode.isBlank() && originalCode.isNotBlank()) {
+                log.error("Forced apply for {} produced empty content, refusing to write", filepath)
+                val failed = ApplyState.Failed(
+                  IllegalStateException("Forced apply produced empty content: $errorMessage")
+                )
+                if (state.compareAndSet(current, failed)) return failed
+                continue // CAS failed, retry
+              }
             }
             if (result.newCode == originalCode) {
               log.info("Patch for {} produces no changes, skipping write", filepath)
@@ -74,18 +112,15 @@ class DiffApplyController(
             failed
           }
         }
-
-        is ApplyState.Applied -> {
-          log.debug("Diff already applied to {}", filepath)
-          return current
-        }
-
-        is ApplyState.Failed -> {
-          log.debug("Diff previously failed for {}: {}", filepath, current.error.message)
-          return current
-        }
       }
     }
+  }
+
+  /** Clears any terminal state so the diff can be attempted again from scratch. */
+  fun reset(): ApplyState {
+    log.debug("Resetting apply state for {}", filepath)
+    state.set(ApplyState.Pending)
+    return ApplyState.Pending
   }
 
   fun revert(): ApplyState {

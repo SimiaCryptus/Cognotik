@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -270,6 +271,7 @@ class MultiStepPatchAction : BaseAction() {
                                       }
                                     },
                                     resolver = ::resolveToRelativePath,
+                                    prefilterFilename = ::prefilterFilename
                                   )
                                 )
                             } catch (e: Exception) {

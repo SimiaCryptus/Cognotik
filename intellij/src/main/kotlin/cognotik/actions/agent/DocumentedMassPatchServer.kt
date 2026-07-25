@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -115,6 +116,7 @@ class DocumentedMassPatchServer(
                                 shouldAutoApply = { it: Path -> autoApply },
                                 defaultFile = path.toString(),
                                 resolver = ::resolveToRelativePath,
+                                prefilterFilename = ::prefilterFilename
                               ).renderMarkdown(true)
                             )
                         } else {
@@ -145,6 +147,7 @@ class DocumentedMassPatchServer(
                                         shouldAutoApply = { it: Path -> autoApply },
                                         defaultFile = path.toString(),
                                         resolver = ::resolveToRelativePath,
+                                        prefilterFilename = ::prefilterFilename
                                       )
                                     }
                                 }</div>"""

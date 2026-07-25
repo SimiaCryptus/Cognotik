@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -950,6 +951,7 @@ abstract class PatchApp(
         }
       },
       resolver = ::resolveToRelativePath,
+      prefilterFilename = ::prefilterFilename
     )
     log.info("Instrumented file diffs with apply links")
     task.verbose(
