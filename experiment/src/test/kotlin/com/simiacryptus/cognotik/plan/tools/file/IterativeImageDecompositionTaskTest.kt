@@ -15,6 +15,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
+@Suppress("unused")
 class IterativeImageDecompositionTaskTest {
 
   companion object {

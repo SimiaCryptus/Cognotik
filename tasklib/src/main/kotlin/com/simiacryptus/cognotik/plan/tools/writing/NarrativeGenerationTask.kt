@@ -118,6 +118,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     }
   }
 
+  @Suppress("unused")
   data class NarrativeCharacterReference(
     @Description("The name of the character this reference is for")
     var character_name: String = "",

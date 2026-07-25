@@ -229,11 +229,9 @@ abstract class ApplicationServer(
         logger.debug("Added cancelSession servlet")
     }
 
-    protected open fun getFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
-        authFilter(applicationClass)
-
     companion object {
 
+        @Suppress("unused")
         @JvmStatic
         private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 

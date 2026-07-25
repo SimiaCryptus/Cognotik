@@ -245,6 +245,7 @@ open class PromptOptimization(
 
 abstract class Expectation {
   companion object {
+    @Suppress("unused")
     private val log = LoggerFactory.getLogger(Expectation::class.java)
   }
 

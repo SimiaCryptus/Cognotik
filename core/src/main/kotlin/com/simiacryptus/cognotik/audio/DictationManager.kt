@@ -12,6 +12,7 @@ abstract class DictationManager {
     private val log = LoggerFactory.getLogger(DictationManager::class.java)
   }
 
+  @Suppress("unused")
   val availableMicLines: List<String>
     get() {
       return AudioSystem.getMixerInfo().filter {

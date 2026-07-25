@@ -71,6 +71,7 @@ object GeminiImageModels {
     "Imagen4Fast" to Imagen4Fast
   )
 
+  @Suppress("unused")
   fun valueOf(name: String): ImageModel? = values[name]
   fun entries(): Collection<ImageModel> = values.values
 }

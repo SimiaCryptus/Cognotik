@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Timeout
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+@Suppress("unused")
 object SingleFixTaskTest {
 
   @JvmStatic

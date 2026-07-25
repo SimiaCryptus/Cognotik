@@ -18,6 +18,7 @@ import java.io.File
  * with through the file server.
  */
 object FileAccessControl {
+    @Suppress("unused")
     private val log = LoggerFactory.getLogger(FileAccessControl::class.java)
 
     private const val READONLY_FILE = ".readonly"

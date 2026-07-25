@@ -32,6 +32,7 @@ class AppEntry(
         }
 
         @JvmStatic
+        @Suppress("unused")
         fun unregister(name: String): Boolean {
             return DynamicEnum.unregister(AppEntry::class.java, name)
         }
