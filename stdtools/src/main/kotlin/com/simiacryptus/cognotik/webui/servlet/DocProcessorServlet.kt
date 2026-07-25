@@ -2,11 +2,10 @@ package com.simiacryptus.cognotik.webui.servlet
 
     import com.simiacryptus.cognotik.chat.model.ChatMessageModality
     import com.simiacryptus.cognotik.chat.model.ChatModel
+    import com.simiacryptus.cognotik.docops.DocProcessor
+    import com.simiacryptus.cognotik.docops.UpdateModes
     import com.simiacryptus.cognotik.platform.ApplicationServices
     import com.simiacryptus.cognotik.platform.model.Session
-    import com.simiacryptus.cognotik.docops.DocProcessor
-    import com.simiacryptus.cognotik.docops.DocProcessorBase
-    import com.simiacryptus.cognotik.docops.UpdateModes
     import com.simiacryptus.cognotik.webui.application.authenticate
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
@@ -18,7 +17,7 @@ package com.simiacryptus.cognotik.webui.servlet
     import java.util.concurrent.Executors
     import java.util.concurrent.atomic.AtomicBoolean
 
-    /**
+/**
      * Servlet that processes DocOps rendering requests.
      *
      * Accepts requests with the following query parameters:
@@ -118,7 +117,7 @@ package com.simiacryptus.cognotik.webui.servlet
                 }
                 val listTemplateVarsParam = request.getParameter("listTemplateVars")
                 if (listTemplateVarsParam != null && listTemplateVarsParam.equals("true", ignoreCase = true)) {
-                    val vars: Map<String, String> = DocProcessorBase.listTemplateVarKeys(docFile)
+                    val vars: Map<String, String> = DocProcessor.listTemplateVarKeys(docFile)
                     response.status = HttpServletResponse.SC_OK
                     response.contentType = "application/json"
                     response.characterEncoding = "UTF-8"
@@ -149,7 +148,7 @@ package com.simiacryptus.cognotik.webui.servlet
                     parentSession = session,
                     templateVarOverrides = templateVarOverrides,
                 )
-                val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
+                 val docSpec = docProcessor.docOps.loader.load(docFile)
                 if (docSpec == null) {
                     log.info("No valid frontmatter found in document '$docPath' for session '$session'")
                     response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -160,17 +159,17 @@ package com.simiacryptus.cognotik.webui.servlet
                 val allTasks = docProcessor.getAll(docFile)
                 val tasksToRun = if (!targetPath.isNullOrBlank()) {
                     val targetFile = sessionDir.resolve(targetPath).canonicalFile
-                    allTasks.filter { task ->
+                     allTasks.filter { planned ->
                         try {
-                            task.data.main_file?.canonicalFile?.endsWith(targetFile) == true
+                             planned.task.data.main_file?.canonicalFile?.endsWith(targetFile) == true
                         } catch (e: Exception) {
                             false
-                        } ?: false
+                         }
                     }
                 } else {
                     allTasks
                 }
-                if (tasksToRun.isEmpty()) {
+                 if (tasksToRun.isEmpty) {
                     log.info("No tasks found for document '$docPath' and target '$targetPath' in session '$session'")
                     response.status = HttpServletResponse.SC_BAD_REQUEST
                     response.contentType = "application/json"
@@ -182,10 +181,12 @@ package com.simiacryptus.cognotik.webui.servlet
                     response.writer.write("""{"error": "$msg"}""")
                     return
                 }
-                log.info("Marking ${tasksToRun.size} DocOps task(s) as PENDING for session $session")
+                 log.info("Marking ${tasksToRun.tasks.size} DocOps task(s) as PENDING for session $session")
                 // Write PENDING status entries synchronously BEFORE responding to the client.
-                docProcessor.initializeStatus(tasksToRun)
-                val processedFiles = tasksToRun.flatMap { task -> task.data.relative_files ?: emptyList() }.distinct()
+                 docProcessor.docOps.initializeStatus(tasksToRun)
+                 val processedFiles = tasksToRun.tasks
+                     .flatMap { planned -> planned.task.data.relative_files ?: emptyList() }
+                     .distinct()
                 // Send response immediately after status is written.
                 response.status = HttpServletResponse.SC_ACCEPTED
                 response.contentType = "application/json"
@@ -193,23 +194,25 @@ package com.simiacryptus.cognotik.webui.servlet
                 response.writer.write(buildString {
                     append("""{"success": true""")
                     append(""", "async": true""")
-                    append(""", "tasksScheduled": ${tasksToRun.size}""")
+                     append(""", "tasksScheduled": ${tasksToRun.tasks.size}""")
                     append(""", "processedFiles": [""")
-                    append(processedFiles.joinToString(", ") { "\"${it.replace("\\", "\\\\").replace("\"", "\\\"")}\"" })
+                     append(processedFiles.joinToString(", ") { path ->
+                         "\"${path.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+                     })
                     append("]")
                     append("}")
                 })
                 response.writer.flush()
-                log.info("Response sent (${tasksToRun.size} tasks PENDING); kicking off async execution for session $session")
+                 log.info("Response sent (${tasksToRun.tasks.size} tasks PENDING); kicking off async execution for session $session")
                 // Kick off the actual processing on a background thread.
                 asyncExecutor.submit {
                     val cancelFlag = AtomicBoolean(false)
                     try {
                         val resultSessions = docProcessor.runAll(
-                            fileMods = tasksToRun,
+                             plan = tasksToRun,
                             cancelFlag = cancelFlag,
                             onNewSession = { _ -> })
-                        log.info("Async DocOps processing complete: ${tasksToRun.size} tasks, ${resultSessions.size} sessions (session=$session)")
+                         log.info("Async DocOps processing complete: ${tasksToRun.tasks.size} tasks, ${resultSessions.size} sessions (session=$session)")
                     } catch (e: Throwable) {
                         log.error("Async DocOps processing failed for session $session", e)
                     }

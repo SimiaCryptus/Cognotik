@@ -82,7 +82,7 @@ enum class UpdateModes : UpdateMode {
       target: File,
       relatedFiles: List<File>,
     ): UpdatePrepareResult {
-      return         UpdatePrepareResult(PatchProcessors.Fuzzy)
+      return UpdatePrepareResult(PatchProcessors.Fuzzy)
     }
   },
 
