@@ -4,7 +4,11 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Entities
+import org.jsoup.nodes.Node
+import org.jsoup.nodes.TextNode
 import org.slf4j.LoggerFactory.getLogger
+import kotlin.collections.iterator
+import kotlin.text.iterator
 
 object HtmlSimplifier {
     private val log = getLogger(HtmlSimplifier::class.java)
@@ -279,7 +283,7 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "CleanupTextNodes") {
             select("*").forEach { element ->
-                val nodesToRemove = mutableListOf<org.jsoup.nodes.TextNode>()
+                val nodesToRemove = mutableListOf<TextNode>()
                 element.textNodes().forEach { node ->
                     val trimmed = if (preserveWhitespace) node.text() else node.text().trim()
                     if (trimmed.isBlank()) {
@@ -489,7 +493,7 @@ object HtmlSimplifier {
             }
             val text = anchor.text().trim()
             val replacement = if (text.isNotEmpty()) "$text {$id}" else "{$id}"
-            anchor.replaceWith(org.jsoup.nodes.TextNode(replacement))
+            anchor.replaceWith(TextNode(replacement))
         }
         if (urlToId.isEmpty()) return null
         // Serialize the tree to compact single-line JSON.
@@ -551,7 +555,7 @@ object HtmlSimplifier {
             val replacement = if (text.isNotEmpty()) "$text [${idx}]" else "[${idx}]"
             // Replace the entire anchor with a text node containing the marker so downstream
             // consumers see a flat, compact reference rather than nested markup.
-            val textNode = org.jsoup.nodes.TextNode(replacement)
+            val textNode = TextNode(replacement)
             anchor.replaceWith(textNode)
         }
         return urls
@@ -730,7 +734,7 @@ object HtmlSimplifier {
                 val replacements = originalNodes.map { node ->
                     if (node is Element && isInlineLeaf(node)) {
                         localCollapsed++
-                        org.jsoup.nodes.TextNode(node.text()) as org.jsoup.nodes.Node
+                        TextNode(node.text()) as Node
                     } else {
                         node
                     }

@@ -1,5 +1,6 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.docops
 
+import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Instant
@@ -98,6 +99,6 @@ abstract class DocStatus(root: File) {
 
     companion object {
         internal val statusLock = Any()
-        private val log = LoggerFactory.getLogger(DocProcessor::class.java)
+        private val log = LoggerFactory.getLogger(DocStatus::class.java)
     }
 }

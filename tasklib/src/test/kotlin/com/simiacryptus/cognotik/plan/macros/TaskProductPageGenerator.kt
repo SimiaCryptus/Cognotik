@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.macros
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.util.UpdateModes
+import com.simiacryptus.cognotik.docops.UpdateModes
 import java.io.File
 
 object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator() {

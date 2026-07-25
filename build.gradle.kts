@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
@@ -229,4 +232,29 @@ tasks.register<JacocoReport>("jacocoRootReport") {
 repositories {
     gradlePluginPortal()
     mavenCentral()
+}
+
+
+val quietKotlin = (providers.gradleProperty("quietKotlin").orNull ?: "false").toBoolean()
+val suppressedKotlinWarnings = listOf(
+    "UNNECESSARY_SAFE_CALL",
+    "USELESS_CAST",
+    "REDUNDANT_ELSE_IN_WHEN",
+    "UNUSED_VARIABLE",
+    "NOTHING_TO_INLINE",
+    "CAN_BE_VAL",
+    "UNUSED_ANONYMOUS_PARAMETER"
+)
+
+subprojects {
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
+            if (quietKotlin) {
+                suppressWarnings.set(true)
+            } else {
+                freeCompilerArgs.addAll(suppressedKotlinWarnings.map { "-Xsuppress-warning=$it" })
+            }
+        }
+    }
 }

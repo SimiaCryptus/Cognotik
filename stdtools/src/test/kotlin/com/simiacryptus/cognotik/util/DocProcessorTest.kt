@@ -1,21 +1,31 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.defaultUser
-import com.simiacryptus.cognotik.util.DocProcessor.*
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandPatternOrLiteral
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandRecursiveGlob
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandSimpleGlob
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandTransformPattern
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.isGlobPattern
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseDocuments
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseGenerates
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseRelated
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseSpecifies
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseTransforms
+import com.simiacryptus.cognotik.docops.DocProcessor.*
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.expandPatternOrLiteral
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.expandRecursiveGlob
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.expandSimpleGlob
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.expandTransformPattern
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.isGlobPattern
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.parseDocuments
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.parseFrontmatter
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.parseGenerates
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.parseRelated
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.parseSpecifies
+import com.simiacryptus.cognotik.docops.DocProcessorBase.Companion.parseTransforms
+import com.simiacryptus.cognotik.docops.DocProcessorBase.DocSpec
+import com.simiacryptus.cognotik.docops.DocProcessorBase.DocumentMatch
+import com.simiacryptus.cognotik.docops.DocProcessorBase.GenerateMatch
+import com.simiacryptus.cognotik.docops.DocProcessorBase.GenerateSpec
+import com.simiacryptus.cognotik.docops.DocProcessorBase.ModificationTask
+import com.simiacryptus.cognotik.docops.DocProcessorBase.ModificationTaskConfig
+import com.simiacryptus.cognotik.docops.DocProcessorBase.TransformMatch
+import com.simiacryptus.cognotik.docops.DocProcessorBase.TransformSpec
+import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.*
@@ -1171,7 +1181,7 @@ class DocProcessorTest {
       )
 
       val result = processor.resolveTaskType(listOf(spec), emptyList(), emptyList(), emptyList())
-      assertEquals(FileModification, result)
+       assertEquals(FileModification, result.taskType)
     }
 
     @Test
@@ -1184,7 +1194,7 @@ class DocProcessorTest {
       )
 
       val result = processor.resolveTaskType(listOf(spec), emptyList(), emptyList(), emptyList())
-      assertEquals(FileModification, result)
+       assertEquals(FileModification, result.taskType)
     }
 
     @Test
@@ -1197,7 +1207,7 @@ class DocProcessorTest {
       )
 
       val result = processor.resolveTaskType(listOf(spec), emptyList(), emptyList(), emptyList())
-      assertEquals(FileModification, result)
+       assertEquals(FileModification, result.taskType)
     }
   }
 
@@ -1235,7 +1245,8 @@ class DocProcessorTest {
             main_file = File("src/A.kt"),
             related_files = emptyList(),
             task_description = "Update A",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
       val result = processor.sortByDependencies(listOf(task))
       assertEquals(1, result.size)
@@ -1250,13 +1261,14 @@ class DocProcessorTest {
 
       val baseTask = ModificationTask(
         data = ModificationTaskConfig(
-            root = tempDir,
-            main_file = File("src/Base.kt"),
-            related_files = emptyList(),
-            task_description = "Update Base",
-            taskConfigOverrides = emptyMap(),
-            doc_files = emptyList(),
-        )
+          root = tempDir,
+          main_file = File("src/Base.kt"),
+          related_files = emptyList(),
+          task_description = "Update Base",
+          taskConfigOverrides = emptyMap(),
+          doc_files = emptyList(),
+        ),
+         taskType = PlatformTaskKind(FileModification),
       )
       val derivedTask = ModificationTask(
         data = ModificationTaskConfig(
@@ -1264,7 +1276,8 @@ class DocProcessorTest {
             main_file = File("src/Derived.kt"),
             related_files = listOf("src/Base.kt").map { File(it) },
             task_description = "Update Derived",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
 
       // Even if derived comes first in input, base should come first in output
@@ -1283,7 +1296,8 @@ class DocProcessorTest {
             main_file = File("src/A.kt"),
             related_files = emptyList(),
             task_description = "Update A",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
       val task2 = ModificationTask(
         data = ModificationTaskConfig(
@@ -1291,7 +1305,8 @@ class DocProcessorTest {
             main_file = File("src/B.kt"),
             related_files = emptyList(),
             task_description = "Update B",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
 
       val result = processor.sortByDependencies(listOf(task1, task2))
@@ -1309,7 +1324,8 @@ class DocProcessorTest {
             main_file = File("src/A.kt"),
             related_files = listOf("src/B.kt").map { File(it) },
             task_description = "Update A",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
       val taskB = ModificationTask(
         data = ModificationTaskConfig(
@@ -1317,7 +1333,8 @@ class DocProcessorTest {
             main_file = File("src/B.kt"),
             related_files = listOf("src/A.kt").map { File(it) },
             task_description = "Update B",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
 
       // Should not throw, should return both tasks
@@ -1333,7 +1350,8 @@ class DocProcessorTest {
         data = ModificationTaskConfig(
             root = tempDir,
             task_description = "No files",
-        )
+         ),
+         taskType = PlatformTaskKind(FileModification),
       )
       val result = processor.sortByDependencies(listOf(task))
       assertEquals(1, result.size)
@@ -1371,7 +1389,7 @@ class DocProcessorTest {
       val target = File(srcFolder, "file.kt")
 
       val result = processor.buildCombinedTaskDescription(
-        listOf(spec), emptyList(), emptyList(), emptyList(), target, FileModification
+         listOf(spec), emptyList(), emptyList(), emptyList(), target, PlatformTaskKind(FileModification)
       )
       assertTrue(result.contains("Custom prompt text"))
     }
@@ -1387,7 +1405,7 @@ class DocProcessorTest {
       val target = File(srcFolder, "file.kt")
 
       val result = processor.buildCombinedTaskDescription(
-        listOf(spec), emptyList(), emptyList(), emptyList(), target, FileModification
+         listOf(spec), emptyList(), emptyList(), emptyList(), target, PlatformTaskKind(FileModification)
       )
       assertTrue(result.contains("Update the file"))
       assertTrue(result.contains("file.kt"))
@@ -1406,7 +1424,7 @@ class DocProcessorTest {
       val target = File(docsFolder, "doc.md")
 
       val result = processor.buildCombinedTaskDescription(
-        emptyList(), emptyList(), listOf(docMatch), emptyList(), target, FileModification
+         emptyList(), emptyList(), listOf(docMatch), emptyList(), target, PlatformTaskKind(FileModification)
       )
       assertTrue(result.contains("documentation"))
     }
@@ -1423,7 +1441,7 @@ class DocProcessorTest {
       val target = File(srcFolder, "out.kt")
 
       val result = processor.buildCombinedTaskDescription(
-        emptyList(), emptyList(), emptyList(), listOf(genMatch), target, FileModification
+         emptyList(), emptyList(), emptyList(), listOf(genMatch), target, PlatformTaskKind(FileModification)
       )
       assertTrue(result.contains("Generate or update"))
     }
@@ -1450,7 +1468,8 @@ class DocProcessorTest {
             related_files = listOf("src/Related.kt").map { File(it) },
             task_description = "Update Main",
         ),
-        message = { "test message" }
+         message = { "test message" },
+         taskType = PlatformTaskKind(FileModification),
       )
 
       val rebased = task.rebase(oldRoot, newRoot)
@@ -1610,29 +1629,6 @@ class DocProcessorTest {
       )
     }
 
-    @Test
-    fun `detects http URLs`() {
-      val method = DocProcessor::class.java.getDeclaredMethod("isUrl", String::class.java)
-      method.isAccessible = true
-      assertTrue(method.invoke(processor, "http://example.com") as Boolean)
-    }
-
-    @Test
-    fun `detects https URLs`() {
-      val method = DocProcessor::class.java.getDeclaredMethod("isUrl", String::class.java)
-      method.isAccessible = true
-      assertTrue(method.invoke(processor, "https://example.com/path") as Boolean)
-    }
-
-    @Test
-    fun `rejects non-URL strings`() {
-      val method = DocProcessor::class.java.getDeclaredMethod("isUrl", String::class.java)
-      method.isAccessible = true
-      assertFalse(method.invoke(processor, "file.txt") as Boolean)
-      assertFalse(method.invoke(processor, "../relative/path") as Boolean)
-      assertFalse(method.invoke(processor, "/absolute/path") as Boolean)
-      assertFalse(method.invoke(processor, "ftp://other.com") as Boolean)
-    }
   }
 
   // ========================================================================

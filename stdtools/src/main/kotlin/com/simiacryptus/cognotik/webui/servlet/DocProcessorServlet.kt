@@ -4,8 +4,9 @@ package com.simiacryptus.cognotik.webui.servlet
     import com.simiacryptus.cognotik.chat.model.ChatModel
     import com.simiacryptus.cognotik.platform.ApplicationServices
     import com.simiacryptus.cognotik.platform.model.Session
-    import com.simiacryptus.cognotik.util.DocProcessor
-    import com.simiacryptus.cognotik.util.UpdateModes
+    import com.simiacryptus.cognotik.docops.DocProcessor
+    import com.simiacryptus.cognotik.docops.DocProcessorBase
+    import com.simiacryptus.cognotik.docops.UpdateModes
     import com.simiacryptus.cognotik.webui.application.authenticate
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
@@ -117,14 +118,14 @@ package com.simiacryptus.cognotik.webui.servlet
                 }
                 val listTemplateVarsParam = request.getParameter("listTemplateVars")
                 if (listTemplateVarsParam != null && listTemplateVarsParam.equals("true", ignoreCase = true)) {
-                    val vars = DocProcessor.listTemplateVarKeys(docFile)
+                    val vars: Map<String, String> = DocProcessorBase.listTemplateVarKeys(docFile)
                     response.status = HttpServletResponse.SC_OK
                     response.contentType = "application/json"
                     response.characterEncoding = "UTF-8"
                     response.writer.write(buildString {
                         append("""{"doc": "${docPath.replace("\\", "\\\\").replace("\"", "\\\"")}"""")
                         append(""", "templateVars": {""")
-                        append(vars.entries.joinToString(", ") { (k, v) ->
+                        append(vars.entries.joinToString(", ") { (k: String, v: String) ->
                             val ek = k.replace("\\", "\\\\").replace("\"", "\\\"")
                             val ev = v.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
                             "\"$ek\": \"$ev\""

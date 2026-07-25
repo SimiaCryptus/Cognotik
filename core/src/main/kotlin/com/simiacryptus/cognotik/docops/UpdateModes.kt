@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.docops
 
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
@@ -17,7 +17,6 @@ data class UpdatePrepareResult(
 
 
 enum class UpdateModes : UpdateMode {
-
   SkipExisting {
     override fun prepare(
       source: File,
