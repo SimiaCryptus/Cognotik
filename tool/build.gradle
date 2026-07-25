@@ -6,16 +6,20 @@ repositories {
     mavenCentral()
 }
 
+
+
+def projectPrefix = (rootProject.name == "Cognotik") ? "" : ":Cognotik"
+
 dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.9'
     implementation 'software.amazon.awssdk:kms:2.41.7'
     implementation 'software.amazon.awssdk:s3:2.41.7'
 
-    implementation project(':core')
-    implementation project(':webui')
-    implementation project(':stdtools')
-    implementation project(':providers')
-    implementation project(":tasklib")
+    implementation project(projectPrefix + ':core')
+    implementation project(projectPrefix + ':webui')
+    implementation project(projectPrefix + ':stdtools')
+    implementation project(projectPrefix + ':providers')
+    implementation project(projectPrefix + ":tasklib")
 
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'
     implementation 'com.google.guava:guava:33.1.0-jre'
