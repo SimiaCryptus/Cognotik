@@ -24,7 +24,7 @@ dependencies {
   implementation(project("$projectPrefix:core")) {
     exclude(group = "org.jetbrains.kotlin")
   }
-  implementation(project("$projectPrefix:diffpatch"))
+  implementation(project("$projectPrefix:text"))
   implementation(libs.antlr.runtime)
   implementation(libs.commons.text)
 

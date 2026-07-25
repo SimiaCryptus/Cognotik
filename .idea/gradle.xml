@@ -11,7 +11,6 @@
             <option value="$PROJECT_DIR$/antlr" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/desktop" />
-            <option value="$PROJECT_DIR$/diffpatch" />
             <option value="$PROJECT_DIR$/experiment" />
             <option value="$PROJECT_DIR$/groovy" />
             <option value="$PROJECT_DIR$/intellij" />
@@ -19,6 +18,7 @@
             <option value="$PROJECT_DIR$/providers" />
             <option value="$PROJECT_DIR$/stdtools" />
             <option value="$PROJECT_DIR$/tasklib" />
+            <option value="$PROJECT_DIR$/text" />
             <option value="$PROJECT_DIR$/tool" />
             <option value="$PROJECT_DIR$/webui" />
           </set>

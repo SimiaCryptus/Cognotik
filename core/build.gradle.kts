@@ -21,7 +21,7 @@ val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
 
   implementation(libs.hsqldb)
-  implementation(project("$projectPrefix:diffpatch"))
+  implementation(project("$projectPrefix:text"))
   implementation(libs.antlr.runtime)
   implementation(libs.commons.text)
 

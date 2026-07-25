@@ -44,7 +44,6 @@
       <module name="Cognotik.desktop" options="-parameters" />
       <module name="Cognotik.desktop.main" options="-parameters" />
       <module name="Cognotik.desktop.test" options="-parameters" />
-      <module name="Cognotik.diffpatch" options="-parameters" />
       <module name="Cognotik.diffpatch.main" options="-parameters" />
       <module name="Cognotik.diffpatch.test" options="-parameters" />
       <module name="Cognotik.experiment" options="-parameters" />
@@ -68,12 +67,16 @@
       <module name="Cognotik.tasklib" options="-parameters" />
       <module name="Cognotik.tasklib.main" options="-parameters" />
       <module name="Cognotik.tasklib.test" options="-parameters" />
+      <module name="Cognotik.text" options="-parameters" />
+      <module name="Cognotik.text.main" options="-parameters" />
+      <module name="Cognotik.text.test" options="-parameters" />
       <module name="Cognotik.tool" options="-parameters" />
       <module name="Cognotik.tool.main" options="-parameters" />
       <module name="Cognotik.tool.test" options="-parameters" />
       <module name="Cognotik.webui" options="-parameters" />
       <module name="Cognotik.webui.main" options="-parameters" />
       <module name="Cognotik.webui.test" options="-parameters" />
+      <module name="text" options="-parameters" />
     </option>
   </component>
 </project>

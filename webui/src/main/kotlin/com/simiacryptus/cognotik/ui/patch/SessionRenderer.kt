@@ -1,5 +1,8 @@
 package com.simiacryptus.cognotik.ui.patch
 
+import com.simiacryptus.cognotik.text.ui.ChangeType
+import com.simiacryptus.cognotik.text.ui.DiffUIRenderer
+import com.simiacryptus.cognotik.text.ui.FileChangeSummary
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.nio.file.Path

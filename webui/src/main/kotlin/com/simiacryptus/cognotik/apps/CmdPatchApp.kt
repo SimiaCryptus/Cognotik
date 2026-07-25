@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown

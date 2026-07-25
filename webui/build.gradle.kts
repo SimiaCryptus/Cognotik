@@ -22,7 +22,7 @@ repositories {
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
 
-    implementation(project("$projectPrefix:diffpatch"))
+    implementation(project("$projectPrefix:text"))
     implementation(project("$projectPrefix:core"))
     compileOnly(project("$projectPrefix:kotlin"))
     testImplementation(project("$projectPrefix:providers"))

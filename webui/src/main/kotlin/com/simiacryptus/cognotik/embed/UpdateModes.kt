@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.text.patch.PatchProcessor
+import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import org.slf4j.LoggerFactory
 import java.io.File
 

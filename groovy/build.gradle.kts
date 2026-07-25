@@ -19,7 +19,7 @@ repositories {
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
     implementation(project("$projectPrefix:core"))
-    implementation(project("$projectPrefix:diffpatch"))
+    implementation(project("$projectPrefix:text"))
 
     implementation(libs.groovy.all)
 

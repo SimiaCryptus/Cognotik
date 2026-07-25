@@ -35,5 +35,5 @@ The `ApplyPatchAction` allows users to apply text-based patches directly to a se
 
 ### Dependencies
 
-- `com.simiacryptus.cognotik.diff.PatchProcessor`: Handles the logic of merging the patch with existing file content.
+- `com.simiacryptus.cognotik.text.patch.PatchProcessor`: Handles the logic of merging the patch with existing file content.
 - `com.simiacryptus.cognotik.config.AppSettingsState`: Provides access to the configured patch processor.

@@ -19,7 +19,7 @@ plugins {
 }
 
 include(":antlr")
-include(":diffpatch")
+include(":text")
 include(":core")
 include(":providers")
 include(":groovy")

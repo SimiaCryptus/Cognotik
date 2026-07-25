@@ -58,7 +58,7 @@ java {
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
     implementation(project("$projectPrefix:core"))
-    implementation(project("$projectPrefix:diffpatch"))
+    implementation(project("$projectPrefix:text"))
     implementation(project("$projectPrefix:groovy"))
     implementation(project("$projectPrefix:kotlin"))
     implementation(project("$projectPrefix:webui"))
