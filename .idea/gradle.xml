@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$/antlr" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/desktop" />
+            <option value="$PROJECT_DIR$/diffpatch" />
             <option value="$PROJECT_DIR$/experiment" />
             <option value="$PROJECT_DIR$/groovy" />
             <option value="$PROJECT_DIR$/intellij" />

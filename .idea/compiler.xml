@@ -44,6 +44,9 @@
       <module name="Cognotik.desktop" options="-parameters" />
       <module name="Cognotik.desktop.main" options="-parameters" />
       <module name="Cognotik.desktop.test" options="-parameters" />
+      <module name="Cognotik.diffpatch" options="-parameters" />
+      <module name="Cognotik.diffpatch.main" options="-parameters" />
+      <module name="Cognotik.diffpatch.test" options="-parameters" />
       <module name="Cognotik.experiment" options="-parameters" />
       <module name="Cognotik.experiment.main" options="-parameters" />
       <module name="Cognotik.experiment.test" options="-parameters" />
