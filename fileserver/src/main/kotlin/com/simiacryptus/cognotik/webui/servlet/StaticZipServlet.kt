@@ -7,7 +7,7 @@ import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-class ZipServlet(private val dataStoragePath: String) : HttpServlet() {
+class StaticZipServlet(private val dataStoragePath: String) : HttpServlet() {
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
       val sessionParam = request.getParameter("session")

@@ -26,7 +26,7 @@ metadata.
 * **`SessionSettingsServlet`**: Allows viewing and editing session-specific configuration (stored as JSON).
 * **`CancelThreadsServlet`**: Provides a mechanism to forcefully shut down the thread pool associated with a specific
   session.
-* **`ZipServlet`**: Packages a session's directory into a ZIP file for download.
+* **`StaticZipServlet`**: Packages a session's directory into a ZIP file for download.
 
 ### API & Proxy Services
 
