@@ -27,9 +27,20 @@ dependencies {
     implementation(project("$projectPrefix:core")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
-    implementation(project("$projectPrefix:text"))
+    implementation(project("$projectPrefix:lwcore")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
+    implementation(project("$projectPrefix:text")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
     implementation(project("$projectPrefix:groovy")) {
         exclude(group = "com.fasterxml.jackson.core")
+    }
+    implementation(project("$projectPrefix:fileserver")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
     }
     implementation(project("$projectPrefix:webui")) {
         exclude(group = "org.seleniumhq.selenium")
