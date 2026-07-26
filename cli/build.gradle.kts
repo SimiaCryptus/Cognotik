@@ -35,12 +35,6 @@ tasks.register<JavaExec>("runDocOpsCli") {
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("com.simiacryptus.cognotik.docops.cli.DocOpsCli")
 }
-tasks.register<JavaExec>("runDocOpsCli") {
-    group = "application"
-    description = "Runs the DocOpsCli main class"
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("com.simiacryptus.cognotik.docops.cli.DocOpsCli")
-}
 tasks.register<JavaExec>("runDocOpsCliFromJar") {
      group = "application"
      description = "Runs the DocOpsCli main class from the shadow (fat) JAR, to test packaged resource handling"
@@ -508,11 +502,11 @@ tasks.named("build") {
     dependsOn(tasks.war)
     dependsOn(tasks.shadowJar)
 }
+
 java {
      withJavadocJar()
      withSourcesJar()
 }
-
 
 publishing {
     publications {
@@ -561,16 +555,14 @@ signing {
         useInMemoryPgpKeys(signingKey, signingPassword)
         sign(publishing.publications["maven"])
     }
-
 }
-
-
 
 tasks.javadoc {
     if (JavaVersion.current().isJava9Compatible) {
         (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
 }
+
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {
     freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
@@ -641,9 +633,11 @@ tasks.register("debugPackagingEnvironment", JPackageTask::class) {
 tasks.named("packageDmg").configure {
     dependsOn("debugPackagingEnvironment")
 }
+
 tasks.named("packageMsi").configure {
     dependsOn("debugPackagingEnvironment")
 }
+
 tasks.named("buildDebManually").configure {
     dependsOn("debugPackagingEnvironment")
 }

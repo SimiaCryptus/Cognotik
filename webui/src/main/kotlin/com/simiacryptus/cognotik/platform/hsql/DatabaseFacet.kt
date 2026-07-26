@@ -525,11 +525,11 @@ class DatabaseFacet(
                 }
                 File(dir, dbName).absolutePath
             } catch (e: Exception) {
-                log.error(
+                log.warn(
                     "Cannot use preferred database directory '{}' for database '{}' (facet '{}'); " +
                             "falling back to an in-memory database retained for the lifetime of this " +
                             "application. Data will NOT be persisted to disk.",
-                    dir.absolutePath, dbName, facetName, e
+                    dir.absolutePath, dbName, facetName
                 )
                 "mem:$dbName"
             }

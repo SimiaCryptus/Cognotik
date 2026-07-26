@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.docops.cli
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.apps.ResourceApps
+import com.simiacryptus.cognotik.cli.ApiKeysCli
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.docops.DocProcessor
@@ -16,10 +16,12 @@ import com.simiacryptus.cognotik.docops.status.TaskStatus
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.FileApplicationServices
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.defaultUser
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.encrypt
@@ -57,7 +59,7 @@ import kotlin.system.exitProcess
  */
 object DocOpsCli {
 
-  private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "help")
+private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", "help")
 
   @JvmStatic
   fun main(args: Array<String>) {
@@ -76,7 +78,13 @@ object DocOpsCli {
     try {
       exitCode = execute(opts)
     } catch (e: Throwable) {
-      System.err.println("docops: ${e.message ?: e.toString()}")
+       System.err.println("docops: ${e.javaClass.simpleName}: ${e.message ?: e.toString()}")
+       generateSequence(e.cause) { it.cause }.take(3).forEach {
+         System.err.println("  caused by: ${it.javaClass.simpleName}: ${it.message}")
+       }
+       if (System.getenv("COGNOTIK_DEBUG") == null) {
+         System.err.println("  (set COGNOTIK_DEBUG=1 for a stack trace)")
+       }
       if (System.getenv("COGNOTIK_DEBUG") != null) e.printStackTrace()
       exitCode = 1
     }
@@ -84,13 +92,16 @@ object DocOpsCli {
     exitProcess(exitCode)
   }
 
-  /*
-   * ------------------------------------------------------------------
-   * Commands
-   * ------------------------------------------------------------------
-   */
-
   private fun execute(opts: CliOptions): Int {
+    val servicesCache = mutableMapOf<File, FileApplicationServices>()
+    ApplicationServices.fileApplicationServices = { rootDir ->
+      servicesCache.getOrPut(rootDir) {
+        object : FileApplicationServices(rootDir) {
+          override val userSettingsManager: UserSettingsInterface
+            get() = UserSettingsManager(rootDir)
+        }
+      }
+    }
     val root = opts.root
     val docsFolder = opts.docsFolder ?: root
     if (!root.isDirectory) throw IllegalArgumentException("root is not a directory: ${root.absolutePath}")
@@ -101,6 +112,12 @@ object DocOpsCli {
         printStatus(JsonFileDocStatusStore(root).read())
         return 0
       }
+       // Credential setup needs the settings store but no model and no server.
+       "keys" -> return ApiKeysCli.configure(
+         root = root,
+         user = defaultUser(),
+         installServices = false,
+       )
 
       "vars" -> {
         val files = resolveDocFiles(opts, root, docsFolder)
@@ -117,7 +134,7 @@ object DocOpsCli {
       }
     }
 
-    val user = defaultUser
+     val user = defaultUser()
     bootstrapPlatform(user)
 
     if (opts.command == "models") {
@@ -213,24 +230,20 @@ object DocOpsCli {
     return if (failures > 0) 1 else 0
   }
 
-  /*
-   * ------------------------------------------------------------------
-   * Platform bootstrap
-   * ------------------------------------------------------------------
-   */
-
   /**
    * Minimal, headless equivalent of what the app server does at boot: register dynamic enums
    * (task types, providers, runtimes), install a single-local-user auth stack, and tell the
    * orchestrator how to build chat clients from a model + user pair.
    */
+   private fun defaultUser(): User = User(
+     id = "1",
+     email = System.getenv("EMAIL")
+       ?: System.getProperty("user.email")
+       ?: "user@localhost"
+   )
+
   private fun bootstrapPlatform(user: User) {
     require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" }
-    try {
-      ResourceApps("apps/apps.json").init()
-    } catch (e: Exception) {
-      System.err.println("warning: could not load app manifest: ${e.message}")
-    }
     CoreProviders.init()
     CoreTasks.init()
     try {
@@ -502,6 +515,7 @@ object DocOpsCli {
               status    Print docops.status.json for --root.
               vars      List declared {{ TEMPLATE_VARS }} and their defaults.
               models    List model ids usable by the current user.
+               keys      Interactively configure provider API keys.
               help      Show this message.
 
             Documents:
@@ -540,6 +554,7 @@ object DocOpsCli {
 
             Examples:
               cognotik docops plan
+               cognotik docops keys
               cognotik docops run docs/api.md --smart-model claude-3-5-sonnet-20241022
               cognotik docops run --mode ForceUpdate --var MODULE=billing --open
               cognotik docops status --root /work/project

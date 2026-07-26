@@ -40,16 +40,55 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * [plan] is pure — it never mutates the workspace. All destructive side effects (deleting a
  * target, writing status) happen inside [run].
+ *
+ * NOTE: every injectable collaborator is resolved **lazily**. Hosts commonly construct
+ * `DocOps(host = this)` from a property initializer, which means the host is only partially
+ * constructed at that point (`taskKinds` and friends may still be null). Deferring the default
+ * wiring to first use makes `DocOps` immune to host field-declaration order.
  */
 class DocOps<K : DocTaskKind, S : Any>(
   val config: DocOpsConfig,
   val host: DocOpsHost<K, S>,
-  val statusStore: DocStatusStore = JsonFileDocStatusStore(config.root),
-  val loader: DocSpecLoader = MarkdownDocSpecLoader(config.templateVarOverrides),
-  val resources: ResourceResolver = defaultResources(config),
-  val planner: DocPlanner<K> = defaultPlanner(config, host.taskKinds),
-  val runner: DocTaskRunner<K, S> = DocTaskRunner(config, host, statusStore),
+  statusStore: DocStatusStore? = null,
+  loader: DocSpecLoader? = null,
+  resources: ResourceResolver? = null,
+  planner: DocPlanner<K>? = null,
+  runner: DocTaskRunner<K, S>? = null,
 ) {
+  private val statusStoreOverride: DocStatusStore? = statusStore
+  private val loaderOverride: DocSpecLoader? = loader
+  private val resourcesOverride: ResourceResolver? = resources
+  private val plannerOverride: DocPlanner<K>? = planner
+  private val runnerOverride: DocTaskRunner<K, S>? = runner
+  val statusStore: DocStatusStore by lazy {
+    statusStoreOverride ?: JsonFileDocStatusStore(config.root)
+  }
+  val loader: DocSpecLoader by lazy {
+    loaderOverride ?: MarkdownDocSpecLoader(config.templateVarOverrides)
+  }
+  val resources: ResourceResolver by lazy {
+    resourcesOverride ?: defaultResources(config)
+  }
+  val planner: DocPlanner<K> by lazy {
+    plannerOverride ?: defaultPlanner(config, hostTaskKinds())
+  }
+  val runner: DocTaskRunner<K, S> by lazy {
+    runnerOverride ?: DocTaskRunner(config, host, statusStore!!)
+  }
+
+  /**
+   * Reads [DocOpsHost.taskKinds] defensively: hosts that leak `this` from a field initializer
+   * can (and did) hand us a null here, which used to surface as an opaque Kotlin intrinsic
+   * failure ("Parameter specified as non-null is null: ... parameter kinds").
+   */
+  @Suppress("USELESS_ELVIS")
+  private fun hostTaskKinds(): DocTaskKindResolver<K> = host.taskKinds
+    ?: throw IllegalStateException(
+      "DocOpsHost.taskKinds is null for ${host.javaClass.name}. " +
+          "This usually means DocOps was constructed from a property initializer that runs " +
+          "before 'taskKinds' is assigned - declare 'taskKinds' before the DocOps field, " +
+          "make it a 'get()' property, or pass an explicit planner."
+    )
 
   /** Every `*.md` / `*.markdown` file under [DocOpsConfig.docsFolder]. */
   fun markdownFiles(): List<File> = config.docsFolder.listFilesRecursively()
