@@ -24,6 +24,12 @@ dependencies {
   implementation(project("$projectPrefix:antlr")) {
     exclude(group = "org.jetbrains.kotlin")
   }
+  implementation(project("$projectPrefix:text")) {
+    exclude(group = "org.jetbrains.kotlin")
+  }
+  implementation(project("$projectPrefix:core")) {
+    exclude(group = "org.jetbrains.kotlin")
+  }
   implementation(libs.antlr.runtime)
   implementation(libs.commons.text)
   implementation(libs.slf4j.api)
