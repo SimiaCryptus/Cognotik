@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "Waiting for application to close..."
+sleep 3
+echo "Installing new version..."
+chmod +x "@@INSTALLER_PATH@@"
+echo "Update completed. Please run the new AppImage at: @@INSTALLER_PATH@@"
+rm "@@SCRIPT_PATH@@"

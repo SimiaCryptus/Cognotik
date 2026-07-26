@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Cognotik Editor
+Comment=AI-powered application suite
+Icon=cognotik
+Exec=/opt/cognotik/bin/Cognotik "%f"
+Categories=Development;Utility;TextEditor;
+MimeType=inode/directory;text/plain;
+Terminal=false
+StartupNotify=true
+NoDisplay=true

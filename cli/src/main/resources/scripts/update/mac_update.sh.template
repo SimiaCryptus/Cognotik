@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Cognotik macOS Update Script
+echo "Starting Cognotik update process..."
+
+# Path to the downloaded DMG file
+INSTALLER_PATH="@@INSTALLER_PATH@@"
+APP_NAME="@@APP_NAME@@"
+SCRIPT_PATH="@@SCRIPT_PATH@@"
+
+# Function to clean up and exit
+cleanup() {
+  echo "Cleaning up..."
+  # Detach the DMG if it's mounted
+  VOLUME_PATH=$(mount | grep "$APP_NAME" | awk '{print $3}')
+  if [ ! -z "$VOLUME_PATH" ]; then
+    echo "Detaching DMG volume: $VOLUME_PATH"
+    hdiutil detach "$VOLUME_PATH" -force
+  fi
+  
+  # Remove the script file
+  rm -f "$SCRIPT_PATH"
+  
+  echo "Update process completed."
+}
+
+# Set up trap to ensure cleanup on exit
+trap cleanup EXIT
+
+# Check if the installer exists
+if [ ! -f "$INSTALLER_PATH" ]; then
+  echo "Error: Installer not found at $INSTALLER_PATH"
+  exit 1
+fi
+
+# Mount the DMG file
+echo "Mounting DMG file: $INSTALLER_PATH"
+VOLUME_PATH=$(hdiutil attach "$INSTALLER_PATH" | grep /Volumes/ | awk '{print $3}')
+
+if [ -z "$VOLUME_PATH" ]; then
+  echo "Error: Failed to mount the DMG file"
+  exit 1
+fi
+
+echo "DMG mounted at: $VOLUME_PATH"
+
+# Check if the app exists in the mounted volume
+APP_SOURCE="$VOLUME_PATH/$APP_NAME.app"
+if [ ! -d "$APP_SOURCE" ]; then
+  echo "Error: Application not found in the mounted DMG"
+  exit 1
+fi
+
+# Remove the existing application if it exists
+APP_DEST="/Applications/$APP_NAME.app"
+if [ -d "$APP_DEST" ]; then
+  echo "Removing existing application: $APP_DEST"
+  rm -rf "$APP_DEST"
+fi
+
+# Copy the new application to Applications folder
+echo "Installing new version of $APP_NAME to Applications folder..."
+cp -r "$APP_SOURCE" "/Applications/"
+
+if [ $? -ne 0 ]; then
+  echo "Failed to copy application. Trying with sudo..."
+  sudo cp -r "$APP_SOURCE" "/Applications/"
+  
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to install the application"
+    exit 1
+  fi
+fi
+
+echo "Application installed successfully!"
+
+# Detach the DMG
+echo "Detaching DMG volume: $VOLUME_PATH"
+hdiutil detach "$VOLUME_PATH" -force
+
+echo "Update completed successfully! You can now restart $APP_NAME."
+
+# Keep terminal window open for a moment so user can see the result
+sleep 5
+
+exit 0

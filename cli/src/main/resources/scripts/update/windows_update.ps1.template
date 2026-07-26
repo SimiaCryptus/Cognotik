@@ -1,0 +1,243 @@
+# --- Configuration ---
+$AppName = '@@APP_NAME@@'
+# WARNING: Hardcoding paths like this is generally bad practice. Consider making it relative or a parameter.
+$InstallerPath = '@@INSTALLER_PATH@@'
+$UninstallLogFile = Join-Path $env:TEMP "cognotik_uninstall.log"
+$InstallLogFile = Join-Path $env:TEMP "cognotik_install.log"
+$WmicUninstallLogFile = Join-Path $env:TEMP "wmic_uninstall.log" # For the alternative method
+$ExeInstallLogFile = Join-Path $env:TEMP "exe_install.log"
+
+# --- Helper Function for Logging ---
+function Log-Message {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Message
+    )
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message"
+}
+
+# --- Script Start ---
+Log-Message "Update process started"
+
+Log-Message "Waiting for application to close (simulated)..."
+Start-Sleep -Seconds 3
+
+Log-Message "Uninstalling current version..."
+
+# --- Find Product Code using CIM (WMI) ---
+Log-Message "Searching for product code for '$AppName'..."
+$ProductCode = $null
+$MsiExecExitCode = $null
+$FoundProduct = $null
+
+# Win32_Product can be slow and trigger repairs. Use with caution.
+# Consider Get-Package if applicable, but it might not find all MSI products reliably.
+try {
+    $InstalledProducts = Get-CimInstance -ClassName Win32_Product -Filter "Name LIKE '%$AppName%'" -ErrorAction Stop
+} catch {
+    Log-Message "Error querying Win32_Product: $($_.Exception.Message). This might happen if the WMI repository is corrupt or the service is stopped."
+    $InstalledProducts = @() # Ensure it's an empty array if the query fails
+}
+
+
+if ($InstalledProducts) {
+    Log-Message "Found potential products matching the name."
+    # Process products to find a valid GUID
+    foreach ($product in $InstalledProducts) {
+        $potentialCode = $product.IdentifyingNumber
+        Log-Message "Checking potential product code: '$potentialCode'"
+
+        # Validate if it looks like a GUID {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
+        if ($potentialCode -match '^{(\w{8}-(\w{4}-){3}\w{12})}$') {
+            Log-Message "Valid GUID format confirmed: $potentialCode"
+            $ProductCode = $potentialCode
+            $FoundProduct = $product # Keep track of the product object for potential WMIC uninstall
+            break # Found the first valid GUID, stop searching
+        } else {
+            Log-Message "Value '$potentialCode' is not a valid GUID format. Skipping."
+        }
+    }
+} else {
+    Log-Message "No products found matching name '$AppName' via Win32_Product."
+}
+
+
+# --- Attempt Uninstallation ---
+$UninstallAttempted = $false
+$UninstallSuccess = $false
+
+if ($ProductCode) {
+    Log-Message "Attempting uninstall using msiexec for Product Code: $ProductCode..."
+    $msiArgs = "/x `"$ProductCode`" /norestart /l*v `"$UninstallLogFile`""
+    Log-Message "Running: msiexec.exe $msiArgs"
+    try {
+        $process = Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru -ErrorAction Stop
+        $MsiExecExitCode = $process.ExitCode
+        Log-Message "msiexec uninstall exit code: $MsiExecExitCode"
+        $UninstallAttempted = $true
+        if ($MsiExecExitCode -eq 0) {
+            $UninstallSuccess = $true
+            Log-Message "Uninstallation with msiexec succeeded (Code: $MsiExecExitCode)."
+        } else {
+             Log-Message "Uninstallation with msiexec failed (Code: $MsiExecExitCode)."
+             # Check log file
+             if (Test-Path $UninstallLogFile) {
+                 Log-Message "Uninstall log ($UninstallLogFile) content:"
+                 Get-Content $UninstallLogFile -Tail 20 | Out-String | Write-Host # Show last 20 lines
+             } else {
+                 Log-Message "Uninstall log file not found at $UninstallLogFile."
+             }
+        }
+    } catch {
+        Log-Message "Failed to run msiexec: $($_.Exception.Message)"
+        $MsiExecExitCode = -1 # Indicate failure to launch
+    }
+
+    # If msiexec failed, try the alternative CIM/WMI method using the found product object
+    if (-not $UninstallSuccess -and $FoundProduct) {
+         Log-Message "Trying alternative uninstall method using CIM/WMI..."
+         try {
+            # Use the Uninstall method of the CimInstance object
+            Log-Message "Calling Uninstall() method on CIM object for $ProductCode"
+            $uninstallResult = $FoundProduct | Invoke-CimMethod -MethodName Uninstall
+            Log-Message "CIM Uninstall method ReturnValue: $($uninstallResult.ReturnValue)"
+            if ($uninstallResult.ReturnValue -eq 0) {
+                Log-Message "Alternative uninstall via CIM method succeeded."
+                $UninstallSuccess = $true
+            } else {
+                Log-Message "Alternative uninstall via CIM method failed (ReturnValue: $($uninstallResult.ReturnValue))."
+            }
+         } catch {
+             Log-Message "Error during alternative CIM uninstall: $($_.Exception.Message)"
+         }
+    }
+
+} else {
+    Log-Message "No valid product code found. Attempting uninstall by name via CIM/WMI (if any products were found initially)."
+    # Try uninstalling any product found earlier by name using the CIM method
+    $uninstallByNameSuccess = $false
+    if ($InstalledProducts) {
+        foreach ($product in $InstalledProducts) {
+             Log-Message "Trying alternative uninstall for product '$($product.Name)' (IdentifyingNumber: $($product.IdentifyingNumber)) using CIM/WMI method..."
+             try {
+                $uninstallResult = $product | Invoke-CimMethod -MethodName Uninstall
+                Log-Message "CIM Uninstall method ReturnValue: $($uninstallResult.ReturnValue)"
+                if ($uninstallResult.ReturnValue -eq 0) {
+                    Log-Message "Alternative uninstall via CIM method succeeded for '$($product.Name)'."
+                    $uninstallByNameSuccess = $true
+                    # Decide if you want to stop after the first successful uninstall-by-name
+                    # break
+                } else {
+                    Log-Message "Alternative uninstall via CIM method failed for '$($product.Name)' (ReturnValue: $($uninstallResult.ReturnValue))."
+                }
+             } catch {
+                 Log-Message "Error during alternative CIM uninstall for '$($product.Name)': $($_.Exception.Message)"
+             }
+        }
+        if ($uninstallByNameSuccess) {
+            $UninstallSuccess = $true # Mark overall success if at least one succeeded
+        } else {
+             Log-Message "Alternative uninstallation by name via CIM method failed for all found products."
+        }
+    } else {
+         Log-Message "No products found initially, cannot attempt uninstall by name."
+    }
+}
+
+if (-not $UninstallSuccess -and $UninstallAttempted) {
+    Log-Message "Both primary (msiexec) and alternative (CIM method) uninstallation methods appear to have failed."
+} elseif (-not $UninstallSuccess -and -not $UninstallAttempted) {
+    Log-Message "Could not attempt uninstallation (no valid product code found or no products matched name)."
+}
+
+Log-Message "Continuing with installation regardless of uninstall result..."
+
+# --- Install New Version ---
+Log-Message "Installing new version..."
+Log-Message "Installer path: $InstallerPath"
+
+if (-not (Test-Path $InstallerPath)) {
+    Log-Message "ERROR: Installer not found at '$InstallerPath'. Aborting installation."
+} else {
+    $InstallerExitCode = $null
+    if ($InstallerPath -like "*.msi") {
+        Log-Message "Running MSI installer..."
+        $msiArgs = "/i `"$InstallerPath`" /norestart /l*v `"$InstallLogFile`""
+        Log-Message "Running: msiexec.exe $msiArgs"
+        try {
+            $process = Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru -ErrorAction Stop
+            $InstallerExitCode = $process.ExitCode
+            Log-Message "msiexec install exit code: $InstallerExitCode"
+        } catch {
+             Log-Message "Failed to run msiexec for install: $($_.Exception.Message)"
+             $InstallerExitCode = -1 # Indicate failure
+        }
+        # Check log file
+        if (Test-Path $InstallLogFile) {
+            Log-Message "Install log ($InstallLogFile):"
+            Get-Content $InstallLogFile -Tail 20 | Out-String | Write-Host # Show last 20 lines
+        } else {
+            Log-Message "Install log file not found at $InstallLogFile."
+        }
+
+    } elseif ($InstallerPath -like "*.exe") {
+        Log-Message "Running EXE installer..."
+        # Common silent switches for EXE installers (e.g., InnoSetup, NSIS). May need adjustment.
+        $exeArgs = "/S /v"
+        Log-Message "Running: `"$InstallerPath`" $exeArgs"
+        try {
+            # Redirect output for EXEs as they might write to stdout/stderr
+            $process = Start-Process $InstallerPath -ArgumentList $exeArgs -Wait -PassThru -RedirectStandardOutput $ExeInstallLogFile -RedirectStandardError $ExeInstallLogFile -ErrorAction Stop
+            $InstallerExitCode = $process.ExitCode
+            Log-Message "EXE install exit code: $InstallerExitCode"
+            # Display log/output
+            if (Test-Path $ExeInstallLogFile) {
+                Log-Message "EXE install output/log ($ExeInstallLogFile):"
+                Get-Content $ExeInstallLogFile | Out-String | Write-Host
+            } else {
+                 Log-Message "EXE install log file not found at $ExeInstallLogFile (or no output was generated)."
+            }
+        } catch {
+             Log-Message "Failed to run EXE installer: $($_.Exception.Message)"
+             $InstallerExitCode = -1 # Indicate failure
+        }
+    } else {
+        Log-Message "Unknown installer type: $InstallerPath"
+    }
+
+    if ($InstallerExitCode -eq 0) {
+        Log-Message "Installation command completed successfully (Code: $InstallerExitCode)."
+    } elseif ($InstallerExitCode -ne $null) {
+         Log-Message "Installation command failed or reported an error (Code: $InstallerExitCode)."
+    }
+}
+# --- Clean up Installer ---
+Log-Message "Attempting to clean up installer file..."
+if (Test-Path $InstallerPath) {
+    Log-Message "Removing installer: '$InstallerPath'"
+    try {
+        Remove-Item $InstallerPath -Force -ErrorAction Stop
+        Log-Message "Installer file removed successfully."
+    } catch {
+        Log-Message "Error removing installer file: $($_.Exception.Message)"
+    }
+} else {
+    Log-Message "Installer file '$InstallerPath' not found for cleanup (might have been moved or deleted already)."
+}
+
+
+Log-Message "Update completed."
+Log-Message "Check logs in '$env:TEMP' for details (cognotik_*.log)."
+
+# --- Self Deletion ---
+Log-Message "Waiting before self-deleting script..."
+Start-Sleep -Seconds 5
+try {
+    Log-Message "Attempting to delete script: '$($MyInvocation.MyCommand.Path)'"
+    Remove-Item $MyInvocation.MyCommand.Path -Force -ErrorAction Stop
+    Log-Message "Script deleted successfully." # This message might not appear if deletion is immediate
+} catch {
+    Log-Message "Error deleting script: $($_.Exception.Message)"
+}
+
+# End of script

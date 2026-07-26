@@ -81,6 +81,7 @@ class DatabaseFacet(
         } else {
             registerDatabase(name, dbName ?: "default", root)
             startSharedServer()
+            ensureDatabaseAccessible(dbName ?: "default")
             Triple(
                 buildLocalJdbcUrl(dbName ?: "default"),
                 "SA",
@@ -94,6 +95,7 @@ class DatabaseFacet(
         val url: String
         val username: String
         val password: String
+        var localDbName: String? = null
         val remoteUrl = serviceUrl?.ifBlank { null }
         if (remoteUrl != null) {
             log.debug("Connecting to external $name service at: {}", remoteUrl)
@@ -101,9 +103,14 @@ class DatabaseFacet(
             username = serviceUser
             password = filterPassword(servicePassword)
         } else {
-            registerDatabase(name, dbName ?: "default", root)
+            val db = dbName ?: "default"
+            registerDatabase(name, db, root)
             startSharedServer()
-            url = buildLocalJdbcUrl(dbName ?: "default")
+            // Non-fatal: if the preferred (file-backed) location is unusable this
+            // demotes the database to an in-memory one for the app's lifetime.
+            ensureDatabaseAccessible(db)
+            localDbName = db
+            url = buildLocalJdbcUrl(db)
             username = "SA"
             password = ""
         }
@@ -130,9 +137,13 @@ class DatabaseFacet(
                     connections.remove(cacheKey)
                 }
                 log.debug("Opening $name connection to: {}", cacheKey)
-                val conn = openConnectionWithRetry(url, username, password)
-                ensureSchema(url, conn)
-                connections[cacheKey] = conn
+                val conn = openConnectionWithRetry(url, username, password, localDbName)
+                // The URL may have changed if the database was demoted to memory
+                // during the connection attempts; key the cache/schema off the
+                // URL we actually connected with.
+                val effectiveUrl = if (localDbName != null) buildLocalJdbcUrl(localDbName) else url
+                ensureSchema(effectiveUrl, conn)
+                connections[effectiveUrl + "|" + name] = conn
                 conn
             }
         }
@@ -210,25 +221,38 @@ class DatabaseFacet(
         }
     }
 
-    private fun openConnectionWithRetry(url: String, username: String, password: String): Connection {
+    private fun openConnectionWithRetry(
+        url: String,
+        username: String,
+        password: String,
+        localDbName: String? = null
+    ): Connection {
         var lastError: Exception? = null
+        var currentUrl = url
         for (attempt in 1..5) {
             try {
-                return DriverManager.getConnection(url, username, password)
+                return DriverManager.getConnection(currentUrl, username, password)
             } catch (e: Exception) {
                 lastError = e
-                log.warn("JDBC $name connection attempt $attempt/5 to $url failed: ${e.message}", e)
+                log.warn("JDBC $name connection attempt $attempt/5 to $currentUrl failed: ${e.message}", e)
+                // A file-backed embedded database that cannot be opened is not
+                // fatal: degrade to an in-memory database that is retained for
+                // the lifetime of the application and retry against it.
+                if (localDbName != null && !isMemoryBacked(localDbName)) {
+                    demoteToMemory(localDbName, e)
+                    currentUrl = buildLocalJdbcUrl(localDbName)
+                }
                 try {
                     Thread.sleep(50L * attempt)
                 } catch (ie: InterruptedException) {
                     Thread.currentThread().interrupt()
-                    log.warn("Interrupted while waiting to retry $name connection to $url", ie)
-                    throw RuntimeException("Interrupted while opening connection to $url", ie)
+                    log.warn("Interrupted while waiting to retry $name connection to $currentUrl", ie)
+                    throw RuntimeException("Interrupted while opening connection to $currentUrl", ie)
                 }
             }
         }
-        log.error("Exhausted all 5 attempts to open $name connection to $url", lastError)
-        throw lastError ?: RuntimeException("Failed to open $name connection to $url after 5 attempts")
+        log.error("Exhausted all 5 attempts to open $name connection to $currentUrl", lastError)
+        throw lastError ?: RuntimeException("Failed to open $name connection to $currentUrl after 5 attempts")
     }
 
     /**
@@ -468,6 +492,120 @@ class DatabaseFacet(
          * Order of insertion is preserved for stable index assignment.
          */
         private val registeredDatabases = LinkedHashMap<String, String>()
+        /**
+         * Databases whose accessibility has been verified against the running
+         * shared server (possibly after being demoted to in-memory storage).
+         */
+        private val verifiedDatabases = ConcurrentHashMap.newKeySet<String>()
+        private fun isMemoryBacked(db: String): Boolean =
+            registeredDatabases[db]?.startsWith("mem:") ?: true
+        /**
+         * Resolve where a database should be stored. File-backed storage under
+         * [root] is preferred, but if that directory cannot be created or written
+         * to we log an error and degrade to an in-memory database rather than
+         * failing. The in-memory database is retained for the lifetime of the
+         * application (see [openKeepAlive] and `DB_CLOSE_DELAY=-1`).
+         */
+        private fun resolveStoragePath(facetName: String, dbName: String, root: String?): String {
+            if (root == null) return "mem:$dbName"
+            val dir = File(root)
+            return try {
+                if (!dir.exists()) dir.mkdirs()
+                if (!dir.isDirectory) {
+                    throw IllegalStateException("Database root '${dir.absolutePath}' is not a usable directory")
+                }
+                val probe = File(dir, ".cognotik-write-probe-${System.nanoTime()}")
+                try {
+                    if (!probe.createNewFile()) {
+                        throw IllegalStateException("Database root '${dir.absolutePath}' is not writable")
+                    }
+                    probe.writeText("ok")
+                } finally {
+                    probe.delete()
+                }
+                File(dir, dbName).absolutePath
+            } catch (e: Exception) {
+                log.error(
+                    "Cannot use preferred database directory '{}' for database '{}' (facet '{}'); " +
+                            "falling back to an in-memory database retained for the lifetime of this " +
+                            "application. Data will NOT be persisted to disk.",
+                    dir.absolutePath, dbName, facetName, e
+                )
+                "mem:$dbName"
+            }
+        }
+        /**
+         * Degrade [db] from file-backed to in-memory storage after a failure to
+         * open it. Non-fatal by design: the resulting database lives for the
+         * lifetime of the application and is reused by every subsequent caller.
+         */
+        private fun demoteToMemory(db: String, cause: Throwable?) {
+            synchronized(serverLock) {
+                if (isMemoryBacked(db)) return
+                val previous = registeredDatabases[db]
+                registeredDatabases[db] = "mem:$db"
+                schemasInitialized.removeIf { it.contains("/$previous") }
+                log.error(
+                    "Unable to open file-backed H2 database '{}' at '{}'; falling back to an in-memory " +
+                            "database retained for the lifetime of this application. Data will NOT be " +
+                            "persisted to disk.",
+                    db, previous, cause
+                )
+                if (actualPort > 0) openKeepAlive(db, actualPort)
+            }
+        }
+        /**
+         * Open (once) and retain a connection so the database — in particular an
+         * in-memory one — is never disposed between client connections.
+         */
+        private fun openKeepAlive(db: String, port: Int) {
+            val keepAliveUrl = buildLocalJdbcUrlForProbe(db, port)
+            if (keepAliveConnections.containsKey(keepAliveUrl)) return
+            try {
+                keepAliveConnections[keepAliveUrl] = DriverManager.getConnection(keepAliveUrl, "SA", "")
+                log.debug("Opened keep-alive H2 connection to {}", keepAliveUrl)
+            } catch (e: Exception) {
+                log.warn(
+                    "Failed to open keep-alive H2 connection for database '{}' on {}:{}: {}",
+                    db, serverHost, port, e.message, e
+                )
+            }
+        }
+        /**
+         * Verify that [db] can actually be opened on the already-running shared
+         * server. Used for databases registered after server startup. A failure
+         * to open a file-backed database is logged and degraded to in-memory
+         * storage instead of being propagated.
+         */
+        private fun ensureDatabaseAccessible(db: String) {
+            if (verifiedDatabases.contains(db)) return
+            synchronized(serverLock) {
+                if (verifiedDatabases.contains(db)) return
+                val port = actualPort
+                if (port <= 0) return
+                try {
+                    DriverManager.getConnection(buildLocalJdbcUrlForProbe(db, port), "SA", "").close()
+                } catch (e: Exception) {
+                    if (isMemoryBacked(db)) {
+                        log.error("Unable to open in-memory H2 database '{}': {}", db, e.message, e)
+                        return
+                    }
+                    demoteToMemory(db, e)
+                    try {
+                        DriverManager.getConnection(buildLocalJdbcUrlForProbe(db, port), "SA", "").close()
+                    } catch (e2: Exception) {
+                        log.error(
+                            "Fallback in-memory H2 database '{}' could not be opened either: {}",
+                            db, e2.message, e2
+                        )
+                        return
+                    }
+                }
+                openKeepAlive(db, port)
+                verifiedDatabases.add(db)
+            }
+        }
+
 
         /**
          * Build a JDBC URL for connecting to a database hosted on the
@@ -492,15 +630,12 @@ class DatabaseFacet(
         }
 
         private fun registerDatabase(facetName: String, dbName: String, root: String?) {
-            val path = if (root == null) {
-                "mem:$dbName"
-            } else {
-                // For H2 we register the absolute file path (without the
-                // `file:` prefix used by HSQL). H2 derives the database
-                // files (`<path>.mv.db`, `<path>.trace.db`, ...) from this
-                // base name.
-                File(root, dbName).absolutePath
-            }
+            // For H2 we register the absolute file path (without the `file:`
+            // prefix used by HSQL). H2 derives the database files
+            // (`<path>.mv.db`, `<path>.trace.db`, ...) from this base name.
+            // If the preferred directory is unusable this silently (but loudly
+            // logged) degrades to an in-memory alias instead of failing.
+            val path = resolveStoragePath(facetName, dbName, root)
             synchronized(serverLock) {
                 val existing = registeredDatabases[dbName]
                 if (existing == null) {
@@ -609,10 +744,20 @@ class DatabaseFacet(
                 }
                 try {
                     candidate.start()
-                    // Verify we can actually connect locally before declaring success.
-                    val firstDb = registeredDatabases.keys.first()
-                    val probeUrl = buildLocalJdbcUrlForProbe(firstDb, freePort)
-                    DriverManager.getConnection(probeUrl, "SA", "").close()
+                    // Verify we can actually connect to each registered database
+                    // before declaring success. Failing to open a *file-backed*
+                    // database (missing/unwritable directory, locked files, ...)
+                    // is NOT fatal: log an error and degrade that database to an
+                    // in-memory database that lives for the application lifetime.
+                    for (db in registeredDatabases.keys.toList()) {
+                        try {
+                            DriverManager.getConnection(buildLocalJdbcUrlForProbe(db, freePort), "SA", "").close()
+                        } catch (probeError: Exception) {
+                            if (isMemoryBacked(db)) throw probeError
+                            demoteToMemory(db, probeError)
+                            DriverManager.getConnection(buildLocalJdbcUrlForProbe(db, freePort), "SA", "").close()
+                        }
+                    }
                     server = candidate
                     chosenPort = freePort
                 } catch (e: Exception) {
@@ -652,18 +797,9 @@ class DatabaseFacet(
             // Although we also set DB_CLOSE_DELAY=-1, the keep-alive ensures
             // the database stays open even if that property is ignored.
             for (db in registeredDatabases.keys) {
-                try {
-                    val keepAliveUrl = buildLocalJdbcUrlForProbe(db, actualPort)
-                    val keepAlive = DriverManager.getConnection(keepAliveUrl, "SA", "")
-                    keepAliveConnections[keepAliveUrl] = keepAlive
-                    log.debug("Opened keep-alive H2 connection to {}", keepAliveUrl)
-                } catch (e: Exception) {
-                    log.warn(
-                        "Failed to open keep-alive H2 connection for database '{}' on {}:{}: {}",
-                        db, serverHost, actualPort, e.message, e
-                    )
-                }
+                openKeepAlive(db, actualPort)
             }
+            verifiedDatabases.addAll(registeredDatabases.keys)
             return server
         }
 
