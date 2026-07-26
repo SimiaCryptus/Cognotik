@@ -16,6 +16,7 @@ dependencies {
     implementation 'software.amazon.awssdk:s3:2.41.7'
 
     implementation project(projectPrefix + ':core')
+    implementation project(projectPrefix + ':lwcore')
     implementation project(projectPrefix + ':text')
     implementation project(projectPrefix + ':docops')
     implementation project(projectPrefix + ':webui')

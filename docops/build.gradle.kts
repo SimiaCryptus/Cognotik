@@ -27,7 +27,7 @@ dependencies {
   implementation(project("$projectPrefix:text")) {
     exclude(group = "org.jetbrains.kotlin")
   }
-  implementation(project("$projectPrefix:core")) {
+  implementation(project("$projectPrefix:lwcore")) {
     exclude(group = "org.jetbrains.kotlin")
   }
   implementation(libs.antlr.runtime)

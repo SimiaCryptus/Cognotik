@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.exceptions
 
 class FailedToImplementException(
   cause: Throwable? = null,

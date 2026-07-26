@@ -60,6 +60,8 @@ import kotlin.system.exitProcess
 object DocOpsCli {
 
 private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", "help")
+  /** Cap on how many context files are enumerated per task by [printPlan]. */
+  private const val MAX_CONTEXT_FILES_SHOWN = 8
 
   @JvmStatic
   fun main(args: Array<String>) {
@@ -168,7 +170,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     warnAboutNonDocs(docProcessor, docFiles, opts)
 
     val plan = applyTargetFilter(
-      plan = if (opts.paths.isEmpty()) docProcessor.getAll() else docProcessor.getAll(*docFiles.toTypedArray()),
+      plan = if (!opts.hasExplicitDocs) docProcessor.getAll() else docProcessor.getAll(*docFiles.toTypedArray()),
       root = root,
       target = opts.target,
     )
@@ -319,10 +321,15 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
    */
 
   private fun resolveDocFiles(opts: CliOptions, root: File, docsFolder: File): List<File> {
-    if (opts.paths.isEmpty()) return markdownFiles(docsFolder)
-    return opts.paths.map { path ->
+    // Positional arguments may be files or directories; --doc is restricted to files.
+    val requested = opts.paths.map { it to false } + opts.docFiles.map { it to true }
+    if (requested.isEmpty()) return markdownFiles(docsFolder)
+    return requested.map { (path, mustBeFile) ->
       val file = File(path).let { if (it.isAbsolute) it else root.resolve(path) }.canonicalFile
       if (!file.exists()) throw IllegalArgumentException("document not found: $path")
+      if (mustBeFile && file.isDirectory) {
+        throw IllegalArgumentException("--doc expects a file (use --docs for a directory): $path")
+      }
       if (file.isDirectory) return@map file
       if (!file.canonicalPath.startsWith(root.canonicalPath)) {
         throw IllegalArgumentException("document is outside --root: $path")
@@ -336,7 +343,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     .toList()
 
   private fun warnAboutNonDocs(docProcessor: DocProcessor, files: List<File>, opts: CliOptions) {
-    if (opts.paths.isEmpty()) return
+    if (!opts.hasExplicitDocs) return
     files.forEach { file ->
       val spec = try {
         docProcessor.docOps.loader.load(file)
@@ -370,18 +377,50 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
 
   private fun printPlan(plan: WorkPlan<PlatformTaskKind>, root: File, mode: UpdateMode) {
     println("Plan: ${plan.tasks.size} task(s) in ${plan.queues.size} queue(s) [mode=$mode]")
-    plan.tasks.forEachIndexed { index, planned ->
-      val main = planned.task.data.main_file?.let { relative(root, it) } ?: planned.target.name
-      val context = planned.task.data.relative_files?.size ?: 0
-      println("  [${index + 1}] $main ($context context file(s))")
-    }
+     var taskNumber = 0
+     plan.queues.filter { !it.isEmpty }.forEachIndexed { queueIndex, queue ->
+       println("  Queue ${queueIndex + 1}/${plan.queues.size} (${queue.tasks.size} task(s), run sequentially):")
+       queue.tasks.forEach { planned ->
+         taskNumber++
+         val target = planned.target.relativeToOrAbsolute(root)
+         val verb = if (planned.target.file.exists()) "update" else "create"
+         println("    [$taskNumber] $verb ${'$'}target  [${planned.task.taskType.name}]")
+         val data = planned.task.data
+         data.main_file?.let { main ->
+           val mainPath = relative(root, main)
+           if (mainPath != target) println("         main:    $mainPath")
+         }
+         if (data.doc_files.isNotEmpty()) {
+           println("         doc(s):  " + data.doc_files.joinToString(", ") { relative(root, it) })
+         }
+         val context = data.related_files.orEmpty()
+         if (context.isNotEmpty()) {
+           println("         context (${context.size}):")
+           context.take(MAX_CONTEXT_FILES_SHOWN).forEach { println("           - ${relative(root, it)}") }
+           if (context.size > MAX_CONTEXT_FILES_SHOWN) {
+             println("           - ... and ${context.size - MAX_CONTEXT_FILES_SHOWN} more")
+           }
+         }
+         if (planned.preparation.deleteTargetBeforeRun) {
+           println("         note:    existing target is deleted before this task runs")
+         }
+       }
+     }
+     val targets = plan.tasks.map { it.target }.distinct().sorted()
+     if (targets.isNotEmpty()) {
+       println("Target files (${targets.size}):")
+       targets.forEach { target ->
+         val verb = if (target.file.exists()) "update" else "create"
+         println("  ${verb.padEnd(6)} ${target.relativeToOrAbsolute(root)}")
+       }
+     }
     if (plan.skipped.isNotEmpty()) {
       println("Skipped (${plan.skipped.size}):")
-      plan.skipped.forEach { println("  ${it.target.name}: ${it.reason}") }
+       plan.skipped.forEach { println("  ${it.target.relativeToOrAbsolute(root)}: ${it.reason}") }
     }
     if (plan.failed.isNotEmpty()) {
       println("Failed to plan (${plan.failed.size}):")
-      plan.failed.forEach { println("  ${it.target.name}: ${it.error}") }
+       plan.failed.forEach { println("  ${it.target.relativeToOrAbsolute(root)}: ${it.error}") }
     }
   }
 
@@ -425,6 +464,8 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     val paths: MutableList<String> = mutableListOf()
     var root: File = File(".").canonicalFile
     var docsFolder: File? = null
+    /** Explicit single documents from repeated `--doc FILE`. */
+    val docFiles: MutableList<String> = mutableListOf()
     var mode: String = "PatchToUpdate"
     var target: String? = null
     var smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL")
@@ -440,6 +481,8 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     var autoFix: Boolean = true
     var help: Boolean = false
     val templateVars: MutableMap<String, String> = linkedMapOf()
+    /** True when the user named documents explicitly instead of scanning `--docs`. */
+    val hasExplicitDocs: Boolean get() = paths.isNotEmpty() || docFiles.isNotEmpty()
   }
 
   private fun parse(args: Array<String>): CliOptions {
@@ -467,6 +510,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
         arg == "-h" || arg == "--help" -> opts.help = true
         arg == "--root" -> opts.root = File(value(arg)).canonicalFile
         arg == "--docs" -> opts.docsFolder = File(value(arg)).canonicalFile
+        arg == "--doc" -> opts.docFiles.add(value(arg))
         arg == "-m" || arg == "--mode" -> opts.mode = value(arg)
         arg == "--target" -> opts.target = value(arg)
         arg == "--smart-model" -> opts.smartModel = value(arg)
@@ -520,11 +564,13 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
 
             Documents:
               Zero or more markdown files or directories (relative to --root).
-              Omit to process every *.md / *.markdown under --docs.
+              May also be named with --doc FILE (repeatable).
+              Omit both to process every *.md / *.markdown under --docs.
 
             Options:
               --root DIR             Project root / working directory (default: .)
               --docs DIR             Folder to scan for documents (default: --root)
+              --doc FILE             Single document file to process (repeatable)
               -m, --mode MODE        Update mode: SkipExisting, OverwriteExisting, OverwriteToUpdate,
                                      PatchExisting, PatchToUpdate, ForceUpdate, ForceOverwrite
                                      (default: PatchToUpdate)
@@ -556,6 +602,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
               cognotik docops plan
                cognotik docops keys
               cognotik docops run docs/api.md --smart-model claude-3-5-sonnet-20241022
+              cognotik docops run --doc docs/api.md --doc docs/cli.md
               cognotik docops run --mode ForceUpdate --var MODULE=billing --open
               cognotik docops status --root /work/project
           """.trimIndent()

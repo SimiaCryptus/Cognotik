@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.util.BudgetException
-import com.simiacryptus.cognotik.util.NonRetryableException
+import com.simiacryptus.cognotik.exceptions.BudgetException
+import com.simiacryptus.cognotik.exceptions.NonRetryableException
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
 import java.util.concurrent.ExecutionException

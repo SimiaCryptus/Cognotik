@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.CodeRequest
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices

@@ -3,7 +3,7 @@
 package com.simiacryptus.cognotik.kotlin
 
 import com.simiacryptus.cognotik.platform.model.defaultUser
-import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

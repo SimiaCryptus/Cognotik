@@ -27,10 +27,12 @@ java {
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
     compileOnly(project("$projectPrefix:core"))
+    compileOnly(project("$projectPrefix:lwcore"))
     compileOnly(project("$projectPrefix:docops"))
     compileOnly(project("$projectPrefix:webui"))
     compileOnly(project("$projectPrefix:tasklib"))
     testImplementation(project("$projectPrefix:core"))
+    testImplementation(project("$projectPrefix:lwcore"))
     implementation(project("$projectPrefix:text"))
     testImplementation(project("$projectPrefix:docops"))
     testImplementation(project("$projectPrefix:webui"))

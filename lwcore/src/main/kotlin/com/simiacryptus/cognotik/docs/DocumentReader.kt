@@ -22,7 +22,7 @@ interface RenderableDocumentReader : DocumentReader {
 fun File.getDocumentReader(): DocumentReader = when {
   this.name.endsWith(".pdf", ignoreCase = true) -> PDFReader(this)
   this.name.endsWith(".docx", ignoreCase = true) -> DocxReader(this)
-  this.name.endsWith(".doc", ignoreCase = true) -> DocReader(this)
+  this.name.endsWith(".doc", ignoreCase = true) -> _root_ide_package_.com.simiacryptus.cognotik.docs.DocReader(this)
   this.name.endsWith(".xlsx", ignoreCase = true) -> XlsxReader(this)
   this.name.endsWith(".xls", ignoreCase = true) -> XlsReader(this)
   this.name.endsWith(".pptx", ignoreCase = true) -> PptxReader(this)
