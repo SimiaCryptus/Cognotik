@@ -58,7 +58,7 @@ abstract class ApplicationServer(
     }
     protected open val userInfo by lazy { ServletHolder("userInfo", UserInfoServlet()) }
     protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
-    protected open val fileZip by lazy { ServletHolder("fileZip", StaticZipServlet(dataStorage)) }
+    protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
     protected open val fileIndex by lazy {
         ServletHolder("fileIndex", object : SessionFileServlet(dataStorage) {
             val sessions = mutableSetOf<Session>()

@@ -109,7 +109,6 @@ dependencies {
     /*io.mockk.every*/
     testImplementation(libs.mockk)
 
-
     compileOnly(kotlin("stdlib"))
     testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("scripting-jsr223"))
@@ -129,67 +128,11 @@ node {
     nodeProjectDir.set(file("${project.projectDir}/../webapp"))
 }
 
-// Add webapp build tasks
-tasks.register<com.github.gradle.node.npm.task.NpmTask>("buildWebapp") {
-    dependsOn(tasks.npmInstall)
-    args.set(listOf("run", "build"))
-    inputs.dir("../webapp/src")
-    inputs.files("../webapp/package.json", "../webapp/package-lock.json")
-    outputs.dir("../webapp/build")
-}
 
-// Copy webapp build output to resources
-tasks.register<Copy>("copyWebappBuild") {
-    dependsOn("buildWebapp")
-    from("../webapp/build")
-    into("src/main/resources/application")
-}
-
-tasks.register<Copy>("copyWebappStatic") {
-    dependsOn("buildWebapp")
-    from("../webapp/build/static")
-    into("src/main/resources/welcome/static")
-}
-
-// Clean webapp build artifacts
-tasks.register<Delete>("cleanWebapp") {
-    delete("../webapp/build")
-    delete("src/main/resources/application/static")
-    delete("src/main/resources/welcome/static")
-}
-tasks.clean {
-    dependsOn("cleanWebapp")
-}
-
-
-tasks.register<com.github.gradle.node.npm.task.NpmTask>("installSass") {
-    args.set(listOf("install", "sass", "--save-dev"))
-}
-
-tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
-    dependsOn("installSass")
-    command.set("sass")
-    workingDir.set(file("${project.projectDir}"))
-    args.set(
-        listOf(
-            "src/main/resources/shared:build/resources/main/css",
-            "--style=expanded",
-            "--source-map"
-        )
-    )
-}
-
-tasks.named("processResources") {
-    dependsOn("compileSass", "copyWebappBuild", "copyWebappStatic")
-}
 java {
     withJavadocJar()
     withSourcesJar()
 }
-tasks.named("sourcesJar") {
-    dependsOn("copyWebappBuild", "copyWebappStatic")
-}
-
 
 
 publishing {
@@ -239,16 +182,14 @@ signing {
         useInMemoryPgpKeys(signingKey, signingPassword)
         sign(publishing.publications["maven"])
     }
-
 }
-
-
 
 tasks.javadoc {
     if (JavaVersion.current().isJava9Compatible) {
         (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
 }
+
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {
     freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
