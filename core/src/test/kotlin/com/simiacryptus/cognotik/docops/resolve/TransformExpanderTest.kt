@@ -69,9 +69,10 @@ package com.simiacryptus.cognotik.docops.resolve
         val doc = root.child("spec.md")
         val a = root.child("protos/a.proto")
         root.child("protos/notes.txt")
-        val spec = docSpec(doc, transforms = listOf(TransformSpec("protos/(.*)\\.proto", "gen/\$1.kt")))
+         val transform = TransformSpec("protos/(.*)\\.proto", "gen/\$1.kt")
+         val spec = docSpec(doc, transforms = listOf(transform))
 
-        val matches = TransformExpander.expand(root, spec.transforms[0], spec)
+         val matches = TransformExpander.expand(root, transform, spec)
         assertEquals(1, matches.size)
         assertEquals(a.canonicalFile, matches[0].sourceFile)
         assertEquals(File(root, "gen/a.kt").canonicalFile, matches[0].destinationFile)
@@ -80,8 +81,9 @@ package com.simiacryptus.cognotik.docops.resolve
 
       @Test
       fun `expand skips invalid regexes`() {
-        val spec = docSpec(root.child("spec.md"), transforms = listOf(TransformSpec("(unclosed", "x")))
-        assertTrue(TransformExpander.expand(root, spec.transforms[0], spec).isEmpty())
+         val transform = TransformSpec("(unclosed", "x")
+         val spec = docSpec(root.child("spec.md"), transforms = listOf(transform))
+         assertTrue(TransformExpander.expand(root, transform, spec).isEmpty())
       }
 
       @Test
