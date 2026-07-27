@@ -11,7 +11,7 @@ interactive (user-approved) and automated (auto-fix) modes.
 
 ## Task Types
 
-### [AutoFixTask](AutoFixTask.kt)
+### [AutoFixTask](../../../autofix/AutoFixTask.kt)
 
 **Task Type:** `AutoFix`
 Executes shell commands and automatically attempts to fix any errors that occur during execution. It uses a self-healing
@@ -46,7 +46,7 @@ relationship mapping.
 A wrapper for executing external CLI tools (compilers, linters, etc.) with specific arguments. It handles output capture
 and provides a structured way to integrate existing development tools into the agent's workflow.
 
-### [SingleFixTask](SingleFixTask.kt)
+### [SingleFixTask](../../../autofix/SingleFixTask.kt)
 
 **Task Type:** `SingleFix`
 Analyzes a provided log file (e.g., a build log or test failure) and attempts to fix the identified errors in the

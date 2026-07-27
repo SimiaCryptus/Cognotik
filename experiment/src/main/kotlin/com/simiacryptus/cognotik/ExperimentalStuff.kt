@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.apps.ResourceApps
+import com.simiacryptus.cognotik.autofix.SingleFixTask
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -10,8 +11,6 @@ import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
 import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
-import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType.Companion.register
 
 @Suppress("unused") class ExperimentalStuff : CognotikPlugin {
 
@@ -92,7 +91,7 @@ import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType.Compani
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServer)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.run.RunCodeTask.RunCode)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.run.RunToolTask.RunTool)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.run.SingleFixTask.SingleFix)
+        TaskType.registerTaskType(SingleFixTask.SingleFix)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.run.SymbolsDbCodeTask.SymbolsDbCode)
 
         // --- Online & External Tool Task Types ---

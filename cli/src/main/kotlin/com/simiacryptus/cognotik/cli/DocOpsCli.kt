@@ -1,8 +1,7 @@
-package com.simiacryptus.cognotik.docops.cli
+package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.cli.ApiKeysCli
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.docops.DocProcessor

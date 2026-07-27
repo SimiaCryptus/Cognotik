@@ -1,9 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
+import com.simiacryptus.cognotik.autofix.AutoFixTask
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.CommandWithWorkingDir
+import com.simiacryptus.cognotik.autofix.AutoFixTask.AutoFixTaskExecutionConfigData
+import com.simiacryptus.cognotik.autofix.AutoFixTask.CommandWithWorkingDir
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll

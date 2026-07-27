@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.docops.cli
+package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer

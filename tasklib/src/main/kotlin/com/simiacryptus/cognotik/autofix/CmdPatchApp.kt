@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.apps
+package com.simiacryptus.cognotik.autofix
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.ChatInterface

@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
+
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -35,10 +37,22 @@ object FileServerCli {
 
   open class SimpleFileServlet(
     private val baseDir: File,
-    private val gitEnabled: Boolean
-  ) : FileServlet() {
+    private val gitEnabled: Boolean,
+    private val readOnly: Boolean = false
+  ) : FilesystemServlet() {
     override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
     override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
+
+    /**
+     * The FS API is dispatched from service() and therefore bypasses the
+     * doPost/doPut/doDelete overrides below; read-only mode must be declared
+     * here so mutating FS API calls answer EROFS.
+     */
+    override fun getFsApiConfig(req: HttpServletRequest) = FsApiConfig(
+      readOnly = readOnly,
+      execAllowlist = if (gitEnabled) mapOf("git" to GIT_SUBCOMMANDS) else emptyMap()
+    )
+
     override fun getZipLink(req: HttpServletRequest, filePath: String): String {
       val session = URLEncoder.encode(baseDir.name, StandardCharsets.UTF_8)
       val path = URLEncoder.encode(if (filePath.isBlank()) "/" else filePath, StandardCharsets.UTF_8)
@@ -54,7 +68,8 @@ object FileServerCli {
   }
 
   /** Rejects mutating requests when --read-only is used. */
-  class ReadOnlyFileServlet(baseDir: File, gitEnabled: Boolean) : SimpleFileServlet(baseDir, gitEnabled) {
+  class ReadOnlyFileServlet(baseDir: File, gitEnabled: Boolean) :
+    SimpleFileServlet(baseDir, gitEnabled, readOnly = true) {
     private fun deny(response: HttpServletResponse) {
       response.status = HttpServletResponse.SC_FORBIDDEN
       response.contentType = "text/plain"
@@ -125,6 +140,7 @@ object FileServerCli {
 
     println("Serving ${baseDir.absolutePath}")
     println("  ->  http://$displayHost:$boundPort/")
+    println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
     println("Press Ctrl-C to stop.")
 
     Runtime.getRuntime().addShutdownHook(Thread {

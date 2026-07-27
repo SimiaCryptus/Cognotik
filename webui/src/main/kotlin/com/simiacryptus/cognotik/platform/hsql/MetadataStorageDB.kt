@@ -528,7 +528,7 @@ class MetadataStorageDB : MetadataStorageInterface {
                 }
             }
         } catch (e: Exception) {
-            log.error(
+            log.info(
                 "Error upserting metadata (session={}, user={}, key={}): {}",
                 sessionId, userEmail, keyName, e.message, e
             )

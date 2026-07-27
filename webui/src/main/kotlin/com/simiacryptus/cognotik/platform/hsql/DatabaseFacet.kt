@@ -64,7 +64,7 @@ class DatabaseFacet(
         try {
             initializeSchemaForDatabase(url, db)
         } catch (e: Exception) {
-            log.error("Failed to initialize schema for $name on $url", e)
+            log.info("Failed to initialize schema for $name on $url", e)
         }
         db
     }
@@ -170,7 +170,7 @@ class DatabaseFacet(
                     val jdbcConn = (this.connection as? JdbcTransaction)?.let { null }
                     // Execute raw DDL strings via the Exposed transaction's connection.
                     val rawConn =
-                        (this.connection as ExposedConnection<*>).connection as Connection
+                        this.connection.connection as Connection
                     rawConn.createStatement().use { stmt ->
                         log.info("Executing {} $name schema DDL statements for {}", ddls.size, url)
                         var failures = 0
@@ -180,7 +180,7 @@ class DatabaseFacet(
                                 stmt.executeUpdate(ddl)
                             } catch (e: Exception) {
                                 failures++
-                                log.warn(
+                                log.info(
                                     "Failed to execute $name schema DDL statement [{}]: {}",
                                     ddlSummary,
                                     e.message,
@@ -202,7 +202,7 @@ class DatabaseFacet(
                         log.info("Creating {} Exposed table(s) for $name on {}", tables.size, url)
                         SchemaUtils.create(tables = tables.toTypedArray())
                     } catch (e: Exception) {
-                        log.error("Failed to create Exposed tables for $name on $url", e)
+                        log.info("Failed to create Exposed tables for $name on $url", e)
                         throw e
                     }
                 }
@@ -234,7 +234,7 @@ class DatabaseFacet(
                 return DriverManager.getConnection(currentUrl, username, password)
             } catch (e: Exception) {
                 lastError = e
-                log.warn("JDBC $name connection attempt $attempt/5 to $currentUrl failed: ${e.message}", e)
+                log.info("JDBC $name connection attempt $attempt/5 to $currentUrl failed: ${e.message}", e)
                 // A file-backed embedded database that cannot be opened is not
                 // fatal: degrade to an in-memory database that is retained for
                 // the lifetime of the application and retry against it.
@@ -251,7 +251,7 @@ class DatabaseFacet(
                 }
             }
         }
-        log.error("Exhausted all 5 attempts to open $name connection to $currentUrl", lastError)
+        log.info("Exhausted all 5 attempts to open $name connection to $currentUrl", lastError)
         throw lastError ?: RuntimeException("Failed to open $name connection to $currentUrl after 5 attempts")
     }
 
@@ -360,7 +360,7 @@ class DatabaseFacet(
                             stmt.executeUpdate(ddl)
                         } catch (e: Exception) {
                             failures++
-                            log.warn(
+                            log.info(
                                 "Failed to execute $name schema DDL statement [{}]: {}",
                                 ddlSummary, e.message, e
                             )
@@ -392,7 +392,7 @@ class DatabaseFacet(
                     }
                     return
                 } catch (e: Exception) {
-                    log.error("Failed to create Exposed tables for $name on $url", e)
+                    log.info("Failed to create Exposed tables for $name on $url", e)
                     throw e
                 }
             }
@@ -545,12 +545,13 @@ class DatabaseFacet(
                 val previous = registeredDatabases[db]
                 registeredDatabases[db] = "mem:$db"
                 schemasInitialized.removeIf { it.contains("/$previous") }
-                log.error(
+                log.debug(
                     "Unable to open file-backed H2 database '{}' at '{}'; falling back to an in-memory " +
                             "database retained for the lifetime of this application. Data will NOT be " +
                             "persisted to disk.",
                     db, previous, cause
                 )
+                log.warn("Using in-memory H2 database '{}' instead of file-backed '{}'; data will NOT be persisted to disk.", db, previous)
                 if (actualPort > 0) openKeepAlive(db, actualPort)
             }
         }
@@ -657,7 +658,7 @@ class DatabaseFacet(
                     val requestedIsMem = path.startsWith("mem:")
                     when {
                         existingIsMem && !requestedIsMem -> {
-                            log.warn(
+                            log.info(
                                 "H2 database '{}' was previously registered as '{}' but facet '{}' now requests '{}'; upgrading to file-backed storage",
                                 dbName, existing, facetName, path
                             )

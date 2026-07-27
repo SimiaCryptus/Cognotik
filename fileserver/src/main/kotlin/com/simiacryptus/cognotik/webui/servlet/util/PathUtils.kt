@@ -1,11 +1,18 @@
 package com.simiacryptus.cognotik.webui.servlet.util
 
 object PathUtils {
+  /**
+   * Path segment reserved for the FS API v1 surface
+   * (`{mount}/.fsapi/v1/...`). Never treated as a real file/directory.
+   */
+  const val RESERVED_SEGMENT = ".fsapi"
+
   fun parsePath(path: String): List<String> {
     val pathSegments = path.split("/").filter { it.isNotBlank() }
     pathSegments.forEach {
       when {
         it == ".." -> throw IllegalArgumentException("Invalid path")
+        it == RESERVED_SEGMENT -> throw IllegalArgumentException("Reserved path segment: $it")
         it.any { ch ->
           when {
             ch == ':' -> true

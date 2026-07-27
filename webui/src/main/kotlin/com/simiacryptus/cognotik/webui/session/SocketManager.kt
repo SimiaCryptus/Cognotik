@@ -30,7 +30,7 @@ abstract class SocketManager(
     try {
         dataStorage.getMessages(owner, sessionId)
     } catch (e: Exception) {
-      log.error("Failed to load messages from storage for session: {}, using empty map", sessionId, e)
+      log.info("Failed to load messages from storage for session: {}, using empty map", sessionId, e)
       LinkedHashMap()
     }
   )
@@ -103,7 +103,7 @@ abstract class SocketManager(
       "Removing socket: {} (id: {}), user: {}",
       socket,
       System.identityHashCode(socket),
-      socket.user.name ?: "anonymous"
+      socket.user.name
     )
 
     try {
@@ -126,7 +126,7 @@ abstract class SocketManager(
       "Adding socket: {} (id: {}), user: {}, remote: {}",
       socket,
       System.identityHashCode(socket),
-      user.name ?: "anonymous",
+      user.name,
       session.remoteAddress
     )
 
@@ -138,7 +138,7 @@ abstract class SocketManager(
     ) {
       log.warn(
         "Unauthorized access attempt from user: {}, remote: {}",
-        user.name ?: "anonymous",
+        user.name,
         session.remoteAddress
       )
       throw IllegalArgumentException("Unauthorized")
@@ -148,7 +148,7 @@ abstract class SocketManager(
       sockets[socket] = session
       sendQueues[socket] = ConcurrentLinkedDeque()
     } catch (e: Exception) {
-      log.error("Error adding socket for user: {}", user.name ?: "anonymous", e)
+      log.error("Error adding socket for user: {}", user.name, e)
       throw e
     }
     trafficLog.debug("Socket added, active connections: {}", sockets.size)
@@ -215,7 +215,7 @@ abstract class SocketManager(
       if (newValue == "null") newValue = ""
 
       log.debug("Setting message - Key: {}, Content size: {} bytes", messageID, newValue.length)
-      val version = setMessage(messageID, newValue)
+      val version: Int = setMessage(messageID, newValue)
       if (version < 0) {
         log.debug("Skipping duplicate message - Key: {}, Content size: {} bytes", messageID, newValue.length)
         return
@@ -340,7 +340,7 @@ abstract class SocketManager(
     }
   }
 
-  private fun setMessage(key: String, value: String) = synchronized(stateLock) {
+  private fun setMessage(key: String, value: String) : Int = synchronized(stateLock) {
     val existingValue = messageStates[key] ?: ""
     if (existingValue == value) {
       log.debug("Skipping update for key: {}, content is identical ({} bytes)", key, value.length)
@@ -351,13 +351,13 @@ abstract class SocketManager(
     }
     try {
       log.debug("Updating message - Key: {}, Content size: {} bytes", key, value.length)
-      dataStorage?.updateMessage(owner, sessionId, key, value)
       messageStates[key] = value // Using [] syntax for put
       messageTimestamps[key] = System.currentTimeMillis()
+      dataStorage.updateMessage(owner, sessionId, key, value)
       messageVersions.getOrPut(key) { AtomicInteger(0) }.incrementAndGet()
     } catch (e: Exception) {
-      log.error("Error updating message state for key: $key", e)
-      trafficLog.error("Error updating message state for key: {}, error: {}", key, e.message)
+      log.info("Error updating message state for key: $key", e)
+      trafficLog.info("Error updating message state for key: {}, error: {}", key, e.message)
       -1 // Return error code
     }
   }
@@ -408,7 +408,7 @@ abstract class SocketManager(
     if (!canWrite(socket.user)) {
       log.warn(
         "Unauthorized message from socket: {} (id: {}), user: {}",
-        socket, System.identityHashCode(socket), socket.user?.name ?: "anonymous"
+        socket, System.identityHashCode(socket), socket.user.name
       )
       send("""${randomID()},<div class="error">Unauthorized message</div>""")
       return
@@ -563,7 +563,7 @@ abstract class SocketManager(
    */
   open fun createLinkedManager(newSession: Session): SocketManager {
     log.debug("Creating linked manager for session: {}", newSession)
-    trafficLog.info("Creating linked manager for session: {}, owner: {}", newSession, owner?.name ?: "anonymous")
+    trafficLog.info("Creating linked manager for session: {}, owner: {}", newSession, owner.name)
     return ReadonlySocketManager(newSession, dataStorage, owner, applicationClass)
   }
 

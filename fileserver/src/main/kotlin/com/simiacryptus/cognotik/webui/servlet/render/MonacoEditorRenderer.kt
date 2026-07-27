@@ -1,63 +1,63 @@
 package com.simiacryptus.cognotik.webui.servlet.render
-    
-    object MonacoEditorRenderer {
-        private fun detectLanguage(filename: String): String {
-            val ext = filename.substringAfterLast('.', "").lowercase()
-            return when (ext) {
-                "js", "mjs", "cjs" -> "javascript"
-                "ts" -> "typescript"
-                "jsx" -> "javascript"
-                "tsx" -> "typescript"
-                "json" -> "json"
-                "html", "htm" -> "html"
-                "css" -> "css"
-                "scss", "sass" -> "scss"
-                "less" -> "less"
-                "xml" -> "xml"
-                "yaml", "yml" -> "yaml"
-                "md", "markdown" -> "markdown"
-                "py" -> "python"
-                "rb" -> "ruby"
-                "go" -> "go"
-                "rs" -> "rust"
-                "java" -> "java"
-                "kt", "kts" -> "kotlin"
-                "scala" -> "scala"
-                "groovy", "gradle" -> "groovy"
-                "c", "h" -> "c"
-                "cpp", "cc", "cxx", "hpp", "hh", "hxx" -> "cpp"
-                "cs" -> "csharp"
-                "php" -> "php"
-                "swift" -> "swift"
-                "sh", "bash", "zsh" -> "shell";
-                "sql" -> "sql"
-                "dockerfile" -> "dockerfile"
-                "ini", "toml", "cfg", "conf" -> "ini"
-                "lua" -> "lua"
-                "r" -> "r"
-                "pl", "pm" -> "perl"
-                "txt", "log" -> "plaintext"
-                else -> "plaintext"
-            }
-        }
-    
-        fun renderEditorPage(
-            filename: String,
-            filePath: String,
-            content: String,
-            readOnly: Boolean = false
-        ): String {
-            val language = detectLanguage(filename)
-            val escapedContent = content
-                .replace("\\", "\\\\")
-                .replace("`", "\\`")
-                .replace("\$", "\\\$")
-           .replace("</", "<\\/")
-            val escapedFilename = filename
-                .replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\"", "&quot;")
-            return """
+
+object MonacoEditorRenderer {
+  private fun detectLanguage(filename: String): String {
+    val ext = filename.substringAfterLast('.', "").lowercase()
+    return when (ext) {
+      "js", "mjs", "cjs" -> "javascript"
+      "ts" -> "typescript"
+      "jsx" -> "javascript"
+      "tsx" -> "typescript"
+      "json" -> "json"
+      "html", "htm" -> "html"
+      "css" -> "css"
+      "scss", "sass" -> "scss"
+      "less" -> "less"
+      "xml" -> "xml"
+      "yaml", "yml" -> "yaml"
+      "md", "markdown" -> "markdown"
+      "py" -> "python"
+      "rb" -> "ruby"
+      "go" -> "go"
+      "rs" -> "rust"
+      "java" -> "java"
+      "kt", "kts" -> "kotlin"
+      "scala" -> "scala"
+      "groovy", "gradle" -> "groovy"
+      "c", "h" -> "c"
+      "cpp", "cc", "cxx", "hpp", "hh", "hxx" -> "cpp"
+      "cs" -> "csharp"
+      "php" -> "php"
+      "swift" -> "swift"
+      "sh", "bash", "zsh" -> "shell"
+      "sql" -> "sql"
+      "dockerfile" -> "dockerfile"
+      "ini", "toml", "cfg", "conf" -> "ini"
+      "lua" -> "lua"
+      "r" -> "r"
+      "pl", "pm" -> "perl"
+      "txt", "log" -> "plaintext"
+      else -> "plaintext"
+    }
+  }
+
+  fun renderEditorPage(
+    filename: String,
+    filePath: String,
+    content: String,
+    readOnly: Boolean = false
+  ): String {
+    val language = detectLanguage(filename)
+    val escapedContent = content
+      .replace("\\", "\\\\")
+      .replace("`", "\\`")
+      .replace("\$", "\\\$")
+      .replace("</", "<\\/")
+    val escapedFilename = filename
+      .replace("\\", "\\\\")
+      .replace("'", "\\'")
+      .replace("\"", "&quot;")
+    return """
 <!DOCTYPE html>
 <html lang="en" data-theme="auto">
 <head>
@@ -376,5 +376,5 @@ select.theme-selector, select.lang-selector {
 </body>
 </html>
 """
-        }
-    }
+  }
+}

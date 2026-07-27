@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.HistoricalFigureDebateTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.UnrunnableProtocolDialogTask
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
+import com.simiacryptus.cognotik.autofix.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
 import com.simiacryptus.cognotik.plan.tools.social.GameTheoryTask

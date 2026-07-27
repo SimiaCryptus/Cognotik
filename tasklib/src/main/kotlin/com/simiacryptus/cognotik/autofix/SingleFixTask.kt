@@ -1,7 +1,6 @@
-package com.simiacryptus.cognotik.plan.tools.run
+package com.simiacryptus.cognotik.autofix
 
-import com.simiacryptus.cognotik.apps.PatchApp
-import com.simiacryptus.cognotik.apps.PatchApp.OutputResult
+import com.simiacryptus.cognotik.autofix.PatchApp.OutputResult
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
