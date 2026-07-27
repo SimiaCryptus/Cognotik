@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Files</title>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <script src="/modules/theme.js" onerror="window.__fsNoThemeManager=true"></script>
+</head>
+<body>
+<a class="fs-skip" href="#fs-explorer">Skip to explorer</a>
+<a class="fs-skip" href="#fs-editor">Skip to editor</a>
+
+<div id="fs-root" class="fs-shell" aria-busy="true">
+    <p class="fs-boot" role="status">Loading workspace…</p>
+</div>
+
+<noscript>
+    <p>This view needs JavaScript.
+        <a href="../files/root/">Use the classic file browser</a> instead.</p>
+</noscript>
+
+<script type="module" src="app/main.js"></script>
+</body>
+</html>

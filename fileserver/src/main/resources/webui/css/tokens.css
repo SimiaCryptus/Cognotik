@@ -1,0 +1,82 @@
+:root {
+    --fs-bg: #ffffff;
+    --fs-bg-elevated: #f6f7f9;
+    --fs-bg-hover: #eceef1;
+    --fs-bg-active: #dfe6f5;
+    --fs-fg: #1c1e21;
+    --fs-fg-muted: #5d646d;
+    --fs-accent: #0d6efd;
+    --fs-border: #d8dbe0;
+    --fs-focus-ring: #0a58ca;
+    --fs-danger: #c9303c;
+    --fs-warn: #a05a00;
+    --fs-ok: #157347;
+    --fs-row-h: 22px;
+    --fs-space-1: 2px;
+    --fs-space-2: 4px;
+    --fs-space-3: 8px;
+    --fs-space-4: 12px;
+    --fs-space-5: 16px;
+    --fs-space-6: 24px;
+    --fs-radius: 4px;
+    --fs-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --fs-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --fs-z-overlay: 1000;
+    --fs-motion-fast: 120ms;
+    --fs-sidebar-w: 280px;
+}
+
+html[data-theme="dark"] {
+    --fs-bg: #1a1d21;
+    --fs-bg-elevated: #23262b;
+    --fs-bg-hover: #2d3136;
+    --fs-bg-active: #2f3d55;
+    --fs-fg: #e4e6eb;
+    --fs-fg-muted: #a2a9b2;
+    --fs-accent: #5a9eff;
+    --fs-border: #3a3f44;
+    --fs-focus-ring: #8ec1ff;
+    --fs-danger: #ff6b74;
+    --fs-warn: #e2a03f;
+    --fs-ok: #43c08a;
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] {
+        --fs-bg: #1a1d21;
+        --fs-bg-elevated: #23262b;
+        --fs-bg-hover: #2d3136;
+        --fs-bg-active: #2f3d55;
+        --fs-fg: #e4e6eb;
+        --fs-fg-muted: #a2a9b2;
+        --fs-accent: #5a9eff;
+        --fs-border: #3a3f44;
+        --fs-focus-ring: #8ec1ff;
+        --fs-danger: #ff6b74;
+        --fs-warn: #e2a03f;
+        --fs-ok: #43c08a;
+    }
+}
+
+html[data-theme="hc"], html[data-contrast="more"] {
+    --fs-bg: #000000;
+    --fs-bg-elevated: #000000;
+    --fs-bg-hover: #1a1a1a;
+    --fs-bg-active: #0040a0;
+    --fs-fg: #ffffff;
+    --fs-fg-muted: #e0e0e0;
+    --fs-accent: #47b6ff;
+    --fs-border: #ffffff;
+    --fs-focus-ring: #ffff00;
+}
+
+@media (prefers-contrast: more) {
+    html[data-theme="auto"] {
+        --fs-border: #6d747d;
+        --fs-fg-muted: #3a3f44;
+    }
+}
+
+html[data-density="compact"] {
+    --fs-row-h: 18px;
+}
