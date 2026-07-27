@@ -13,6 +13,23 @@ private const val MAX_TEXT_SIZE = 1024 * 1024
 object FileSelectionUtils {
   val log = getLogger(FileSelectionUtils::class.java)
 
+  fun isLLMTextFile(file: File, treatDocumentsAsText: Boolean = false): Boolean {
+    return when {
+      !file.exists() -> false
+      file.isDirectory -> false
+      file.name.endsWith(".data") -> true
+      treatDocumentsAsText && file.isDocumentFile() -> true
+      file.length() > 100_000_000L -> false // 100MB limit
+      isGitignore(file.toPath()) -> false
+      isLLMIgnored(file.toPath()) -> false
+      file.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> false
+
+      isBinaryFile(file) -> false
+
+      else -> true
+    }
+  }
+
   fun getAvailableFiles(
     path: Path,
     treatDocumentsAsText: Boolean = false,
