@@ -19,7 +19,6 @@ import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.core.internal.waiters.ResponseOrException.response
 import java.io.File
 
 @MultipartConfig(

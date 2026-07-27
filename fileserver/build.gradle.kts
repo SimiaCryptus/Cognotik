@@ -83,6 +83,12 @@ dependencies {
     compileOnly(libs.graalvm.js.language)
     compileOnly(libs.kotlinx.coroutines)
     compileOnly(libs.aws.sdk)
+    /*
+    implementation("org.eclipse.jetty:jetty-server:11.0.20")
+    implementation("org.eclipse.jetty:jetty-servlet:11.0.20")
+    */
+    implementation(libs.jetty.server)
+    implementation(libs.jetty.servlet)
 
     compileOnly("org.openapitools:openapi-generator:7.3.0") {
         exclude(group = "org.slf4j")

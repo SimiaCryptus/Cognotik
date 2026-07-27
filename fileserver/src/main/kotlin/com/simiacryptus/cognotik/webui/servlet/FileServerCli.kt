@@ -1,0 +1,202 @@
+package com.simiacryptus.cognotik.webui.servlet
+
+import jakarta.servlet.MultipartConfigElement
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.servlet.ServletContextHandler
+import org.eclipse.jetty.servlet.ServletHolder
+import java.io.File
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+/**
+ * Minimal foreground file server.
+ *
+ * Usage:
+ *   FileServerCli [options] [directory]
+ *
+ * Options:
+ *   -p, --port <n>     Port to listen on (default 8081, 0 = random free port)
+ *   -h, --host <addr>  Interface to bind (default 127.0.0.1, use 0.0.0.0 for all)
+ *       --no-git       Disable the Git UI/API features
+ *       --read-only    Disable POST/PUT/DELETE (uploads, edits, deletes)
+ *       --help         Print this help
+ *
+ * Runs until interrupted (Ctrl-C).
+ */
+object FileServerCli {
+
+  /** First path segment consumed by [FileServlet] (normally a session id). */
+  private const val ROOT_SEGMENT = "root"
+  private const val FILES_PREFIX = "/files"
+
+  open class SimpleFileServlet(
+    private val baseDir: File,
+    private val gitEnabled: Boolean
+  ) : FileServlet() {
+    override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
+    override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
+    override fun getZipLink(req: HttpServletRequest, filePath: String): String {
+      val session = URLEncoder.encode(baseDir.name, StandardCharsets.UTF_8)
+      val path = URLEncoder.encode(if (filePath.isBlank()) "/" else filePath, StandardCharsets.UTF_8)
+      return "${req.contextPath}/zip?session=$session&path=$path"
+    }
+  }
+
+  /** Sends browsers landing on "/" (or "/files") to the served directory listing. */
+  class RootRedirectServlet : HttpServlet() {
+    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+      response.sendRedirect("${request.contextPath}$FILES_PREFIX/$ROOT_SEGMENT/")
+    }
+  }
+
+  /** Rejects mutating requests when --read-only is used. */
+  class ReadOnlyFileServlet(baseDir: File, gitEnabled: Boolean) : SimpleFileServlet(baseDir, gitEnabled) {
+    private fun deny(response: HttpServletResponse) {
+      response.status = HttpServletResponse.SC_FORBIDDEN
+      response.contentType = "text/plain"
+      response.writer.write("Server is running in read-only mode")
+    }
+
+    override fun doPost(request: HttpServletRequest, response: HttpServletResponse) = deny(response)
+    override fun doPut(request: HttpServletRequest, response: HttpServletResponse) = deny(response)
+    override fun doDelete(request: HttpServletRequest, response: HttpServletResponse) = deny(response)
+  }
+
+  private fun usage(): String = """
+            Usage: FileServerCli [options] [directory]
+
+              -p, --port <n>     Port to listen on (default 8081, 0 = random free port)
+              -h, --host <addr>  Interface to bind (default 127.0.0.1, 0.0.0.0 for all)
+                  --no-git       Disable Git UI/API features
+                  --read-only    Disable uploads, edits and deletes
+                  --help         Show this message
+
+            The server runs in the foreground; press Ctrl-C to stop it.
+        """.trimIndent()
+
+  @JvmStatic
+  fun main(args: Array<String>) {
+    var port = 8081
+    var host = "127.0.0.1"
+    var gitEnabled = true
+    var readOnly = false
+    var dirArg: String? = null
+
+    var i = 0
+    while (i < args.size) {
+      when (val arg = args[i]) {
+        "-p", "--port" -> {
+          port = args.getOrNull(++i)?.toIntOrNull()
+            ?: fail("Missing or invalid value for $arg")
+        }
+
+        "-h", "--host" -> {
+          host = args.getOrNull(++i) ?: fail("Missing value for $arg")
+        }
+
+        "--no-git" -> gitEnabled = false
+        "--read-only" -> readOnly = true
+        "--help" -> {
+          println(usage())
+          return
+        }
+
+        else -> {
+          if (arg.startsWith("-")) fail("Unknown option: $arg")
+          if (dirArg != null) fail("Only one directory may be specified")
+          dirArg = arg
+        }
+      }
+      i++
+    }
+
+    val baseDir = File(dirArg ?: ".").canonicalFile
+    if (!baseDir.exists() || !baseDir.isDirectory) {
+      fail("Not a directory: ${baseDir.absolutePath}")
+    }
+
+    val server = start(baseDir, host, port, gitEnabled, readOnly)
+    val boundPort = (server.connectors.first() as ServerConnector).localPort
+    val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
+
+    println("Serving ${baseDir.absolutePath}")
+    println("  ->  http://$displayHost:$boundPort/")
+    println("Press Ctrl-C to stop.")
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+      println("\nShutting down...")
+      try {
+        server.stop()
+      } catch (e: Exception) {
+        // best effort
+      }
+    })
+
+    /* Blocks until the server is stopped (i.e. by the shutdown hook on Ctrl-C). */
+    server.join()
+  }
+
+  /**
+   * Starts an embedded server for [baseDir]. Exposed for tests/embedding;
+   * the caller owns stopping the returned [Server].
+   */
+  fun start(
+    baseDir: File,
+    host: String = "127.0.0.1",
+    port: Int = 8081,
+    gitEnabled: Boolean = true,
+    readOnly: Boolean = false
+  ): Server {
+    val server = Server()
+    val connector = ServerConnector(server).apply {
+      this.host = host
+      this.port = port
+    }
+    server.addConnector(connector)
+
+    val context = ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
+      contextPath = "/"
+      resourceBase = baseDir.absolutePath
+    }
+
+    val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled)
+    else SimpleFileServlet(baseDir, gitEnabled)
+    val fileHolder = ServletHolder("files", fileServlet)
+    /* @MultipartConfig is not honoured for programmatically registered instances. */
+    fileHolder.registration.setMultipartConfig(
+      MultipartConfigElement(
+        System.getProperty("java.io.tmpdir"),
+        1024L * 1024 * 50,
+        1024L * 1024 * 100,
+        1024 * 1024 * 2
+      )
+    )
+    context.addServlet(fileHolder, "$FILES_PREFIX/*")
+
+    /* ZIP downloads: session = directory name, resolved against the parent dir. */
+    context.addServlet(
+      ServletHolder("zip", StaticZipServlet(baseDir.parentFile?.absolutePath ?: baseDir.absolutePath)),
+      "/zip"
+    )
+
+    val redirect = ServletHolder("redirect", RootRedirectServlet())
+    context.addServlet(redirect, "")
+    context.addServlet(redirect, FILES_PREFIX)
+
+    server.handler = context
+    server.stopAtShutdown = true
+    server.start()
+    return server
+  }
+
+  private fun fail(message: String): Nothing {
+    System.err.println("error: $message")
+    System.err.println()
+    System.err.println(usage())
+    kotlin.system.exitProcess(2)
+  }
+}
