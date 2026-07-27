@@ -153,6 +153,59 @@ object FsApiHandler {
       ),
       capability = "git"
     ) { ctx -> httpGit(ctx) }
+    read("terminal", "List interactive terminal sessions", capability = "terminal") { ctx ->
+      FsTerminalHandler.list(ctx)
+    }
+    FsAction.register(
+      FsAction(
+        "terminal/stream", "GET",
+        "SSE output stream for a terminal session (resumable via ?from=<seq>)",
+        listOf(ActionParam("id", required = true), ActionParam("from", "long")),
+        requiresCapability = "terminal"
+      ) { ctx -> FsTerminalHandler.stream(ctx) }
+    )
+    write(
+      "POST", "terminal", "Start an interactive shell (or a single command) session",
+      listOf(
+        ActionParam("cwd", location = "body", description = "virtual working directory", default = "/"),
+        ActionParam("cmd", location = "body", description = "omit for the default shell"),
+        ActionParam("args", "array", location = "body"),
+        ActionParam("label", location = "body"),
+        ActionParam("cols", "int", location = "body", default = 80),
+        ActionParam("rows", "int", location = "body", default = 24)
+      ),
+      capability = "terminal"
+    ) { ctx -> FsTerminalHandler.create(ctx) }
+    write(
+      "POST", "terminal/input", "Write to a session's stdin",
+      listOf(
+        ActionParam("id", required = true, location = "body"),
+        ActionParam("data", required = true, location = "body")
+      ),
+      capability = "terminal"
+    ) { ctx -> FsTerminalHandler.input(ctx) }
+    write(
+      "POST", "terminal/resize", "Record the client's cols/rows",
+      listOf(
+        ActionParam("id", required = true, location = "body"),
+        ActionParam("cols", "int", location = "body"),
+        ActionParam("rows", "int", location = "body")
+      ),
+      capability = "terminal"
+    ) { ctx -> FsTerminalHandler.resize(ctx) }
+    write(
+      "POST", "terminal/signal", "Terminate the child process",
+      listOf(
+        ActionParam("id", required = true, location = "body"),
+        ActionParam("signal", location = "body", default = "SIGTERM")
+      ),
+      capability = "terminal"
+    ) { ctx -> FsTerminalHandler.signal(ctx) }
+    write(
+      "DELETE", "terminal", "Close a terminal session",
+      listOf(ActionParam("id", required = true)),
+      capability = "terminal"
+    ) { ctx -> FsTerminalHandler.close(ctx) }
     write(
       "PUT", "file", "fs.writeFile / createWriteStream (supports Content-Range and If-Match)",
       listOf(path, ActionParam("flag", default = "w"), ActionParam("position", "long"))
@@ -248,7 +301,8 @@ object FsApiHandler {
       "maxBatchOps" to config.maxBatchOps,
       "maxDirEntries" to config.maxDirEntries,
       "maxDepth" to config.maxDepth,
-      "maxSnapshotBytes" to config.maxSnapshotBytes
+      "maxSnapshotBytes" to config.maxSnapshotBytes,
+      "maxTerminals" to config.maxTerminals
     ),
     "capabilities" to linkedMapOf(
       "range" to true,
@@ -263,7 +317,8 @@ object FsApiHandler {
       "utimes" to config.utimesEnabled,
       "symlink" to false,
       "chmod" to false,
-      "exec" to config.execAllowlist.keys.sorted(),
+      "exec" to if (config.execAllowAny) listOf("*") else config.execAllowlist.keys.sorted(),
+      "terminal" to config.terminalEnabled,
       "sync" to config.syncStrategy,
       "crossOriginIsolated" to config.crossOriginIsolated
     )

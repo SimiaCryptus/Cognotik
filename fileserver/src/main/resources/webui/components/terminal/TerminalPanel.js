@@ -11,6 +11,66 @@ import config from '../../config.js';
 /* ------------------------------------------------------------ xterm loader */
 
 let xtermPromise = null;
+/*
+  * Monaco ships an AMD loader that owns the global `define`. xterm's bundles are
+  * UMD: with `define.amd` present they register an anonymous AMD module (which
+  * Monaco's loader rejects: "Can only have one anonymous define call per script
+  * file") and never touch `window.Terminal`. Hiding the AMD globals for the
+  * duration of the bundle's evaluation forces the browser-global branch.
+  */
+const AMD_GLOBALS = ['define', 'require', 'module', 'exports'];
+function withoutAmd(run) {
+     const saved = AMD_GLOBALS.map((name) => [name, window[name]]);
+     for (const name of AMD_GLOBALS) window[name] = undefined;
+     try {
+         return run();
+     } finally {
+         for (const [name, value] of saved) window[name] = value;
+     }
+}
+/** Appending a script with inline text evaluates it synchronously. */
+function evalInline(source, src) {
+     const script = document.createElement('script');
+     script.textContent = `${source}\n//# sourceURL=${src}`;
+     document.head.appendChild(script);
+     script.remove();
+}
+/**
+  * Loads a UMD bundle as a browser global. The text is fetched first so the AMD
+  * globals are only hidden during the (synchronous) evaluation -- Monaco may be
+  * loading its own chunks at the same time and must not see them missing.
+  */
+async function loadUmdScript(src) {
+     let source = null;
+     try {
+         const response = await fetch(src, {credentials: 'omit'});
+         if (response.ok) source = await response.text();
+     } catch (e) { /* no CORS on the CDN: fall back to a <script> tag */
+     }
+     if (source !== null) {
+         withoutAmd(() => evalInline(source, src));
+         return;
+     }
+     await new Promise((resolve, reject) => {
+         const script = document.createElement('script');
+         script.src = src;
+         const saved = AMD_GLOBALS.map((name) => [name, window[name]]);
+         const restore = () => {
+             for (const [name, value] of saved) window[name] = value;
+         };
+         script.onload = () => {
+             restore();
+             resolve();
+         };
+         script.onerror = () => {
+             restore();
+             reject(new Error(`${src} could not be fetched`));
+         };
+         for (const name of AMD_GLOBALS) window[name] = undefined;
+         document.head.appendChild(script);
+     });
+}
+
 
 /** Loads xterm.js (+ the fit addon) from the configured CDN, once. */
 export function loadXterm() {
@@ -18,23 +78,18 @@ export function loadXterm() {
     if (window.Terminal) return Promise.resolve(window.Terminal);
     if (xtermPromise) return xtermPromise;
     const urls = config.terminal.xterm;
-    xtermPromise = new Promise((resolve, reject) => {
+     xtermPromise = (async () => {
         if (!document.querySelector(`link[href="${urls.css}"]`)) {
             document.head.appendChild(h('link', {rel: 'stylesheet', href: urls.css}));
         }
-        const script = document.createElement('script');
-        script.src = urls.js;
-        script.onload = () => {
-            /* The fit addon is a nicety: a failure must not break the terminal. */
-            const fit = document.createElement('script');
-            fit.src = urls.fit;
-            fit.onload = () => resolve(window.Terminal);
-            fit.onerror = () => resolve(window.Terminal);
-            document.head.appendChild(fit);
-        };
-        script.onerror = () => reject(new Error('xterm.js could not be fetched'));
-        document.head.appendChild(script);
-    }).catch((error) => {
+         await loadUmdScript(urls.js);
+         if (!window.Terminal) throw new Error('xterm.js loaded but exported no Terminal');
+         /* The fit addon is a nicety: a failure must not break the terminal. */
+         await loadUmdScript(urls.fit).catch((error) => {
+             console.warn('xterm fit addon unavailable', error);
+         });
+         return window.Terminal;
+     })().catch((error) => {
         xtermPromise = null;
         throw error;
     });
@@ -382,7 +437,7 @@ export class TerminalPanel extends Component {
         this.status.textContent = 'line mode (no TTY)';
         this.ready = loadXterm()
             .then((Terminal) => {
-                this.Terminal = Terminal;
+                 this.Terminal = typeof Terminal === 'function' ? Terminal : null;
             })
             .catch((error) => {
                 console.warn('xterm.js unavailable; using the plain console', error);

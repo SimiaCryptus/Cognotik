@@ -27,16 +27,17 @@ object FsExecHandler {
   )
 
   fun handle(req: HttpServletRequest, resp: HttpServletResponse, root: File, config: FsApiConfig) {
-    if (config.execAllowlist.isEmpty()) {
+    if (config.execAllowlist.isEmpty() && !config.execAllowAny) {
       throw FsException(FsErrorCode.ENOSYS, "exec", null, "exec capability disabled")
     }
     val body = FsJson.parseObject(req.reader.readText())
     val cmd = FsJson.string(body, "cmd")
       ?: throw FsException(FsErrorCode.EINVAL, "exec", null, "missing 'cmd'")
     val allowedSubcommands = config.execAllowlist[cmd]
-      ?: throw FsException(FsErrorCode.EACCES, "exec", cmd, "command '$cmd' is not allowlisted")
+      ?: if (config.execAllowAny) emptySet()
+      else throw FsException(FsErrorCode.EACCES, "exec", cmd, "command '$cmd' is not allowlisted")
     val args = FsJson.list(body, "args").map { it?.toString() ?: "" }
-    validate(cmd, args, allowedSubcommands)
+    validate(cmd, args, allowedSubcommands, config.execRestrictArguments)
 
     val cwdTarget = FsPath.resolve(root, FsJson.string(body, "cwd") ?: "/", "exec")
     if (FileAccessControl.isHidden(root, cwdTarget.file)) {
@@ -101,8 +102,13 @@ object FsExecHandler {
     )
   }
 
-  private fun validate(cmd: String, args: List<String>, allowedSubcommands: Set<String>) {
-    if (cmd.any { it == '/' || it == '\\' || it.code < 32 }) {
+  private fun validate(
+    cmd: String,
+    args: List<String>,
+    allowedSubcommands: Set<String>,
+    restrictArguments: Boolean,
+  ) {
+    if (cmd.any { it.code < 32 } || (restrictArguments && cmd.any { it == '/' || it == '\\' })) {
       throw FsException(FsErrorCode.EACCES, "exec", cmd, "command must be a bare allowlisted name")
     }
     if (allowedSubcommands.isNotEmpty()) {
@@ -116,6 +122,7 @@ object FsExecHandler {
       if (arg.any { it == '\u0000' || it.code < 32 }) {
         throw FsException(FsErrorCode.EINVAL, "exec", cmd, "argument contains control characters")
       }
+      if (!restrictArguments) continue
       val lowered = arg.lowercase()
       if (FORBIDDEN_ARG_PREFIXES.any { lowered == it || lowered.startsWith("$it=") }) {
         throw FsException(FsErrorCode.EACCES, "exec", cmd, "argument '$arg' is not permitted")

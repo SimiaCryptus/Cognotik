@@ -12,6 +12,8 @@ open class SimpleFilesystemServlet(
   private val gitEnabled: Boolean = true,
   private val readOnly: Boolean = false,
   private val zipEndpoint: String? = "/zip",
+  private val terminalEnabled: Boolean = false,
+  private val execPermissive: Boolean = false,
 ) : FilesystemServlet() {
 
   override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
@@ -20,7 +22,11 @@ open class SimpleFilesystemServlet(
 
   override fun getFsApiConfig(req: HttpServletRequest): FsApiConfig = FsApiConfig(
     readOnly = readOnly,
-    execAllowlist = if (gitEnabled) mapOf("git" to GIT_SUBCOMMANDS) else emptyMap(),
+    execAllowlist = if (!gitEnabled) emptyMap()
+    else mapOf("git" to if (execPermissive) emptySet() else GIT_SUBCOMMANDS),
+    execAllowAny = execPermissive,
+    execRestrictArguments = !execPermissive,
+    terminalEnabled = terminalEnabled && !readOnly,
     cwd = "/",
     tmpdir = "/.tmp"
   )

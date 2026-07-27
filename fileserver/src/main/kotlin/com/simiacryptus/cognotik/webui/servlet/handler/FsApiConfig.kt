@@ -11,6 +11,18 @@ data class FsApiConfig(
   /** cmd -> allowed first-arg (sub-command) set; empty set = any sub-command. */
   val execAllowlist: Map<String, Set<String>> = mapOf(
   ),
+  /**
+   * Permissive mode for trusted (typically loopback) deployments: any bare
+   * command name may be spawned, regardless of [execAllowlist]. Still never
+   * routed through a shell.
+   */
+  val execAllowAny: Boolean = false,
+  /**
+   * When true, argument-injection hardening (`-c`, `--upload-pack`, ...) is
+   * applied to /exec. Disable only for a trusted local server, where the
+   * terminal already grants arbitrary execution anyway.
+   */
+  val execRestrictArguments: Boolean = true,
   /** "sse", "poll" or "none". */
   val watchMode: String = "sse",
   val utimesEnabled: Boolean = true,
@@ -32,8 +44,9 @@ data class FsApiConfig(
   /** Advertised sync strategy for the client bridge: "sab" | "xhr" | "snapshot". */
   val syncStrategy: String = "xhr",
   val terminalEnabled: Boolean = true,
-  val maxTerminals: Int = 1,
-  val terminalShell: List<String> = listOf("bash"),
+  val maxTerminals: Int = 8,
+  /** Empty = auto-detect an interactive login-less shell ($SHELL, bash, sh, cmd). */
+  val terminalShell: List<String> = emptyList(),
 ) {
 
 
