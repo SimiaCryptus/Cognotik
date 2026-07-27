@@ -69,8 +69,53 @@ Maven:
 | `jackson-dataformat-{yaml,xml,toml,properties}`      | `DataMergeProcessor`                    | only if used |
 | `Cognotik:antlr` + `antlr4-runtime`                  | `KotlinGrammarValidator`                | only if used |
 | `groovy.lang.GString`                                | extra serializer, resolved reflectively | yes          |
+| `com.google.guava:guava`                             | collection helpers                      | no           |
+| `commons-io:commons-io`                              | stream helpers                          | no           |
+| `org.jetbrains.kotlinx:kotlinx-coroutines-core`      | available for async callers             | no           |
+| `org.hsqldb:hsqldb`                                  | inherited from the sibling modules      | yes          |
 
-Logback is `compileOnly` — bring your own SLF4J binding.
+Logback is `compileOnly` — bring your own SLF4J binding. **Toolchain**
+
+* Kotlin and JUnit versions are inherited from the root version catalog (`libs.versions.toml`); the module declares no
+  independent pins other than `resolutionStrategy.force(libs.antlr.runtime)`.
+* `compileJava` is forced to run after `compileKotlin`, so Kotlin code may reference the ANTLR-generated Java types.
+  **Trimming the graph.** `PatchParser`, `FuzzyPatchMatcher`, `ThermodynamicPatchMatcher`, `PythonPatcher`,
+  `FullReplacementProcessor` and `ParenMatchingValidator` touch neither Jackson nor ANTLR. If that is all you need:
+
+```kotlin
+implementation("com.cognotik:core:<version>") {
+  exclude(group = "com.fasterxml.jackson.dataformat") // disables DataMergeProcessor
+  exclude(group = "org.antlr")                        // disables KotlinGrammarValidator
+}
+```
+
+If you exclude ANTLR, also replace the default validator chain (see [Validation](#validation)) so `*.kt`
+lookups never construct `KotlinGrammarValidator`.
+
+## Quick start
+
+The common "one file, one response" case needs three lines of glue:
+
+```kotlin
+import com.simiacryptus.cognotik.diff.PatchProcessors
+val processor = PatchProcessors.Fuzzy                  // 1. pick a dialect + engine
+val prompt = processor.patchFormatPrompt               // 2. describe it to the model
+val result = processor.apply(original, modelResponse, filename = "src/Main.kt")
+if (result.isValid) file.writeText(result.newCode)
+else result.errors.forEach { logger.warn(it.message) }
+```
+
+Integration checklist:
+
+1. **Use one instance for both prompt and parse.** `patchFormatPrompt` documents the dialect *that*
+   implementation can read; mixing presets is the single most common source of "nothing applied".
+2. **Always pass `filename`** to `apply()`, otherwise validator selection degrades to
+   `ParenMatchingValidator`.
+3. **Detect no-ops.** `apply()` never throws; compare `result.newCode` with the input.
+4. **Use `parse()` for multi-file replies.** `apply()` only sees ```` ```diff ```` fences.
+5. **Never write on `isValid == false`** unless a human reviews the result.
+
+---
 
 ---
 
@@ -176,24 +221,8 @@ The parser accepts three overlapping conventions and picks the strongest signal 
 **2. Markdown headers.** `#`-headers and a dashed `File:` banner are indexed by position; the nearest preceding header
 before a fence supplies the filename.
 
-```
-### src/main/Example.kt
-```diff
-...
-```
-
-```
-
-```
-
---------------------
-File: src/main/Example.kt
---------------------
-
-```
-
-**3. Bare fences + `defaultFile`.** With no header and no marker, `defaultFile` is used; if that is
-also absent, the block degrades to `Markdown`.
+**3. Bare fences + `defaultFile`.** With no header and no marker, `defaultFile` is used; if that is also absent, the
+block degrades to `Markdown`.
 
 ### Fence matching
 
@@ -201,8 +230,8 @@ also absent, the block degrades to `Markdown`.
 
 1. Scans line-by-line for `^(\s*)```(.*)$`, recording indentation and the info-string.
 2. Classifies a fence as *opening* when the info-string is non-empty (a language tag).
-3. Pairs fences with a depth counter, **only considering fences at the same indentation** as the
- opening fence; deeper-indented fences are treated as block content.
+3. Pairs fences with a depth counter, **only considering fences at the same indentation** as the opening fence;
+   deeper-indented fences are treated as block content.
 
 This is what allows a `md` block to legally contain an indented ```` ```js ```` block (see the
 `EdgeCases` tests). Unclosed blocks are auto-closed by appending a fence before parsing.
@@ -212,21 +241,21 @@ This is what allows a `md` block to legally contain an indented ```` ```js ```` 
 `normalizeFilename` is applied iteratively (fixed point, max 10 passes) and removes:
 
 * prefixes: `File:`, `file:`, `Code:`, `Path:`, `Filename:`, `Modified:`, `Updated:`, `Changed:`,
-`Edit:`, `Patch:` (each in both capitalisations)
+  `Edit:`, `Patch:` (each in both capitalisations)
 * trailing `:` / `.`
 * wrapping quotes, single quotes, backticks
 * ordered-list prefixes (`1. `)
 * markdown emphasis (`**`, `*`)
 
-Finally, a header consisting solely of a **language keyword** (`kotlin`, `py`, `dockerfile`, …) is
-normalized to the empty string so `### kotlin` is never mistaken for a path.
+Finally, a header consisting solely of a **language keyword** (`kotlin`, `py`, `dockerfile`, …) is normalized to the
+empty string so `### kotlin` is never mistaken for a path.
 
 ### Diff detection
 
 ```kotlin
 isDiffContent(lang, code) =
-  lang == "diff" (case-insensitive)
-  || every line starts with one of: '', ' ', '\t', '@', '-', '+'
+  lang == "diff"(case - insensitive)
+      || every line starts with one of : '', ' ', '\t', '@', '-', '+'
 ```
 
 A block satisfying either condition becomes a `DiffBlock`; otherwise `NewFileBlock`.
@@ -278,6 +307,43 @@ check `newCode` against `originalCode` if you need to detect a total no-op.
 > Note: `apply()` only recognises ```` ```diff ```` fences. For the full segment model (new files,
 > explicit markers, multi-file responses) call `parse()` and drive `applyPatch()` yourself.
 
+## DiffApplicationResult
+
+```kotlin
+data class DiffApplicationResult(
+  val newCode: String,
+  val errors: List<GrammarValidator.ValidationError> = emptyList(),
+  val isValid: Boolean = errors.isEmpty(),
+  val validator: GrammarValidator? = null
+)
+```
+
+The result is a *report*, not a guarantee: it says what the engine produced and what the selected validator thought of
+it. Read it as follows.
+
+| Observation                                   | Interpretation                                                  |
+|-----------------------------------------------|-----------------------------------------------------------------|
+| `newCode == originalCode`                     | nothing matched, or every hunk threw and was swallowed          |
+| `newCode != originalCode && errors.isEmpty()` | applied and validated — the success case                        |
+| `isValid == false`                            | applied, but introduced errors **not** present in the original  |
+| `errors` non-empty yet identical to originals | cannot happen: pre-existing errors are subtracted               |
+| `validator is ParenMatchingValidator`         | only bracket/quote balance was checked; assume shallow coverage |
+
+Recommended write path:
+
+```kotlin
+val result = processor.apply(original, response, filename)
+when {
+  result.newCode == original -> logger.warn("Patch was a no-op for $filename")
+  !result.isValid -> logger.warn("Rejecting patch for $filename: ${result.errors}")
+  else -> file.writeText(result.newCode)
+}
+```
+
+Because errors are *differenced* against the original file, a file that was already broken will not block a patch that
+leaves it equally broken — but a patch that adds a new breakage is always visible.
+---
+
 ---
 
 ## Patch engines
@@ -289,6 +355,46 @@ check `newCode` against `originalCode` if you need to detect a total no-op.
 | `PythonPatcher`             | same linking model, indentation-preserving normalization | Python / YAML                        | yes               |
 | `FullReplacementProcessor`  | no diff at all                                           | large rewrites, small files          | yes               |
 | `DataMergeProcessor`        | structured deep merge                                    | JSON/YAML/XML/TOML/properties config | yes               |
+
+### Choosing an engine
+
+A decision order that holds up in practice:
+
+1. **Structured data** (`json`, `yaml`, `yml`, `xml`, `toml`, `properties`) → `DataMerge`. Diffing a serialized tree by
+   lines is fragile; merging it is not.
+2. **Indentation is semantic** (Python, YAML, Nim, Haskell) → `Python`.
+3. **Small file (< ~200 lines) or edit touching more than half the lines** → `FullReplacement`. The extra output tokens
+   are usually cheaper than one failed patch plus a retry.
+4. **Auto-commit without human review** → `Strict`. Failing loudly beats mis-applying quietly.
+5. **Otherwise** → `Fuzzy`. With a weak model *and* a review step, `Lenient`.
+6. **Small hunks that keep drifting even under `Lenient`** → `Thermodynamic`: it aligns globally instead of growing
+   outward from anchors.
+
+```kotlin
+private val DATA_EXTS = setOf("json", "yaml", "yml", "xml", "toml", "properties")
+fun pick(filename: String, changedLines: Int, totalLines: Int): PatchProcessor = when {
+  filename.substringAfterLast('.', "") in DATA_EXTS -> PatchProcessors.DataMerge
+  filename.endsWith(".py") -> PatchProcessors.Python
+  totalLines < 200 || changedLines > totalLines / 2 -> PatchProcessors.FullReplacement
+  else -> PatchProcessors.Fuzzy
+}
+```
+
+Cost/risk summary (risk = probability the engine produces *something*; corruption = probability that something is
+wrong):
+
+| Preset            | Output tokens | Failure-to-apply risk | Silent-corruption risk             |
+|-------------------|---------------|-----------------------|------------------------------------|
+| `FullReplacement` | high          | none                  | none (all-or-nothing)              |
+| `DataMerge`       | low           | low                   | medium (arrays replaced wholesale) |
+| `Strict`          | medium        | high                  | low                                |
+| `Fuzzy`           | medium        | low                   | medium                             |
+| `Lenient`         | medium        | very low              | high                               |
+| `Thermodynamic`   | medium        | low                   | medium                             |
+| `Python`          | medium        | low                   | medium                             |
+
+Whatever you pick, keep the original content until validation passes — every engine can return a file that parses but is
+semantically wrong.
 
 ### FuzzyPatchMatcher
 
@@ -525,6 +631,28 @@ FileValidators.validatorProviders.add(0) { filename ->
 
 ## Utilities
 
+### `JsonUtil`
+
+A single, intentionally permissive Jackson `ObjectMapper` plus thin helpers, tuned for text that came out of a language
+model rather than out of another program.
+
+```kotlin
+val text: String = JsonUtil.toJson(myObject)
+val obj: MyType = JsonUtil.fromJson(text, MyType::class.java)
+val merged: MyType = JsonUtil.merge(base, overrides)   // shallow: top-level fields only
+```
+
+What you can rely on:
+
+* unknown properties are ignored rather than fatal — models invent fields;
+* Kotlin classes, JSR-310 date/time and `Optional` are registered;
+* output is pretty-printed and stable enough to diff between runs;
+* `groovy.lang.GString` gains an extra serializer when Groovy is on the classpath; the lookup is reflective, so its
+  absence is not an error.
+  `JsonUtil` is a *parser*, not a *validator*: use it to accept model output, and a `GrammarValidator` (or your own
+  schema check) to decide whether to keep it. For nested merging prefer `DataMergeProcessor` — see the
+  [caveat](#known-caveats) about `JsonUtil.merge` being shallow.
+
 ### `StringSplitter`
 
 Splits text at the separator occurrence that maximises an entropy-like objective
@@ -637,6 +765,47 @@ src/test/resources/*.json            # fixtures
 fun testPatchApplication(resourceName: String) = test(resourceName, FuzzyPatchMatcher.default)
 ```
 
+### Fixture inventory
+
+The fixtures in `src/test/resources` are small on purpose: each one isolates a single behaviour of the
+`applyPatch` dispatch table.
+
+| Fixture                            | Exercises                                                            |
+|------------------------------------|----------------------------------------------------------------------|
+| `patch_add_line.json`              | one insertion between two context lines                              |
+| `patch_add_2_lines_variant_2.json` | two insertions straddling a blank line, `+ ` marker with a space     |
+| `patch_add_2_lines_variant_3.json` | two adjacent insertions after a blank line                           |
+| `patch_append_line.json`           | insertion at end of file                                             |
+| `patch_prepend_line.json`          | insertion at start of file                                           |
+| `patch_append_to_empty_file.json`  | empty source — the `source.isBlank()` branch                         |
+| `patch_blank_file.json`            | marker-less full document written into an empty file                 |
+| `patch_exact_match.json`           | context-only patch that must be a no-op (snippet mode)               |
+| `patch_inner_block.json`           | hunk with no leading context, taken from the middle of a JS function |
+| `patch_modify_line.json`           | `-`/`+` replacement pair                                             |
+| `patch_remove_line.json`           | deletion written as `- line` (space after the marker)                |
+| `patch_wrap_panel.json`            | whole-member rewrite: large delete block + re-indented add block     |
+| `yaml_min_repro.json`              | YAML whose context lines carry a stray leading space                 |
+
+The last two are the interesting ones. `patch_wrap_panel.json` is the canonical
+`fixPatchLineOrder` + `annihilateNoopLinePairs` stress case, and `yaml_min_repro.json` is precisely the case where
+`FuzzyPatchMatcher.normalizeLine` (which trims) succeeds and `PythonPatcher.normalizeLine` (which does not) fails.
+
+### Debugging a failing fixture
+
+```kotlin
+val matcher = FuzzyPatchMatcher(debug = true)   // per-line link/apply trace
+println(matcher.applyPatch(fixture.originalCode, fixture.diff))
+```
+
+Useful narrowing steps, in order:
+
+1. Does `generatePatch(original, expectedNew)` round-trip through `applyPatch`? If not, the linking phase is at fault,
+   not the application phase.
+2. Does the failure disappear with `enableFuzzyMatching = false`? Then a fuzzy match is firing where it should not —
+   raise `levenshteinThresholdDivisor` or `minLineLengthForFuzzyMatch`.
+3. Does it disappear with `enableSnippetPatching = false`? Then the patch was misclassified as a context-only snippet —
+   it contains no `+`/`-` lines.
+
 ### Coverage matrix
 
 Each engine declares the fixtures it is expected to pass. Entries commented out in a given test class document that
@@ -686,6 +855,67 @@ class CaseInsensitivePatcher : FuzzyPatchMatcher() {
 }
 ```
 
+## Performance & thread safety
+
+### Complexity
+
+| Operation                                 | Cost                                                                                                                                |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| `PatchParser.parse`                       | `O(lines)` — line-wise fence scan, no global regex                                                                                  |
+| `FuzzyPatchMatcher` linking               | bounded by `sourceLines.size * 10` iterations plus a visited-pair set; each `isMatch` costs `O(len²)` when Levenshtein is consulted |
+| `subsequenceLinking`                      | recursion capped by `maxRecursionDepth` (100)                                                                                       |
+| `ThermodynamicPatchMatcher.generatePatch` | `O(n·m)` cells, each with a Levenshtein call ⇒ effectively `O(n·m·len²)`                                                            |
+| `ThermodynamicPatchMatcher.applyPatch`    | `O(n)` binding sites × `O(patch)` scoring                                                                                           |
+| `FullReplacementProcessor`                | `O(1)` beyond the string copy                                                                                                       |
+| `DataMergeProcessor`                      | dominated by parse + serialize of both documents                                                                                    |
+
+Practical consequences:
+
+* Long lines are more expensive than many lines — minified or generated files are the worst case for every
+  Levenshtein-based engine. Consider routing them to `FullReplacement`.
+* `Thermodynamic` is for focused hunks. Feeding it a whole-file rewrite is quadratic in the *file*, not in the change.
+* `FileValidators.MAX_DIFF_SIZE_CHARS` (100 000) exists to stop a runaway hunk from becoming a runaway alignment.
+  Oversized hunks are dropped, not truncated.
+
+### Thread safety
+
+* Engines hold only their constructor configuration; all mutable state (`LineRecord` graphs, DP tables) is created per
+  call. Sharing a single instance — including `FuzzyPatchMatcher.default` and the
+  `PatchProcessors` enum constants — across threads is safe.
+* `ParenMatchingValidator` is stateless. `KotlinGrammarValidator` builds a fresh lexer/parser per call.
+* `FileValidators.validatorProviders` is a plain `MutableList`. Mutate it once during application startup, before any
+  concurrent `getValidator` calls; it is not synchronized.
+
+### Logging
+
+All engines log through SLF4J under their own class names. The per-line traces are `debug`-level and very verbose
+(`src/test/resources/logback.xml` enables them for the test suite). In production, keep
+`com.simiacryptus.cognotik.diff` at `info` and enable `debug` only for the file you are investigating;
+`FuzzyPatchMatcher(debug = true)` adds a further, even noisier trace independent of the logger level.
+---
+
+## Troubleshooting
+
+| Symptom                                                 | Likely cause                                                      | Remedy                                                                  |
+|---------------------------------------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------------|
+| `result.newCode == originalCode`                        | no ```` ```diff ```` fence in the reply, or every hunk threw      | log `parse(response)`; check the fence's info-string; try `Lenient`     |
+| Additions land at the end of the file                   | zero context lines matched; the safety valve appended the residue | require context in the prompt; use `Strict` to fail loudly instead      |
+| Python/YAML indentation collapses                       | `FuzzyPatchMatcher.normalizeLine` trims leading whitespace        | use `PatchProcessors.Python`                                            |
+| Filenames like `src/utils/src/utils/x.js`               | model repeated the path prefix                                    | pass `root` so `calcFilename` collapses the duplication                 |
+| `filename` comes back empty                             | the header was a bare language keyword (`### kotlin`)             | supply `defaultFile`                                                    |
+| A fenced block swallows the rest of the document        | an inner fence sits at the same indentation as the outer one      | indent the inner fence, per the `md`-containing-`js` example            |
+| A hunk is ignored with no error                         | larger than `MAX_DIFF_SIZE_CHARS`                                 | split the hunk, or switch to `FullReplacement`                          |
+| A JSON/YAML array is clobbered                          | `deepMerge` replaces arrays wholesale                             | emit the complete array in the patch                                    |
+| A config key refuses to disappear                       | removal requires an explicit `null`                               | emit `"key": null`                                                      |
+| A YAML patch was parsed as TOML (or vice versa)         | `detectFormat` is heuristic                                       | keep the patch in the same syntax as the source, or add a marker line   |
+| `KotlinGrammarValidator` reports errors on valid Kotlin | ANTLR runtime/grammar mismatch                                    | check `resolutionStrategy.force(libs.antlr.runtime)` reaches your build |
+| Everything validates but nothing is really checked      | `ParenMatchingValidator` was selected                             | register a real validator for that extension                            |
+
+When in doubt, bisect the pipeline: `parse()` → inspect segments → `applyPatch()` on one segment →
+`validateGrammar()`. `apply()` collapses all four steps and hides per-hunk exceptions, which is convenient in production
+and unhelpful while debugging.
+---
+
 ---
 
 ## Known caveats
@@ -706,6 +936,31 @@ class CaseInsensitivePatcher : FuzzyPatchMatcher() {
   semantics (via `applyPatch`) for nested structures.
 * **`isBinary` on `InputStream`** consumes the stream and compares against `available()`, which is only a lower bound
   for some stream types.
+* **Oversized hunks vanish.** Hunks above `MAX_DIFF_SIZE_CHARS` are skipped by `apply()` without an entry in
+  `errors`; the only evidence is that `newCode` is unchanged for that hunk.
+* **`DataMergeProcessor.detectFormat` is heuristic.** A YAML document containing `=` and brackets can be read as TOML,
+  and an ambiguous document falls back to JSON. Keep patch and source in the same syntax when it matters.
+* **Array semantics are replace-only.** There is no element-wise merge, so a patch must repeat every element it wants to
+  keep.
+* **`validatorProviders` is unsynchronized.** Register providers during startup only.
+
+## Glossary
+
+| Term               | Meaning in this codebase                                                                                  |
+|--------------------|-----------------------------------------------------------------------------------------------------------|
+| **Segment**        | One typed piece of a model response: `Markdown`, `NewFileBlock` or `DiffBlock`.                           |
+| **Hunk**           | One contiguous ```` ```diff ```` block, applied atomically by `applyPatch`.                               |
+| **Snippet mode**   | Applying a context-only block (no `+`/`-` markers) by locating and replacing the matching region.         |
+| **Anchor**         | An unambiguous line pair produced by `linkUniqueMatchingLines`; growth proceeds outward from anchors.     |
+| **Linking**        | Establishing `matchingLine` pointers between source and patch `LineRecord`s.                              |
+| **Normalization**  | `normalizeLine` — what "equal" means for an engine. The one real difference between `Fuzzy` and `Python`. |
+| **Binding energy** | `ThermodynamicPatchMatcher`'s per-line-pair score; negative is favourable.                                |
+| **Binding site**   | A candidate source offset at which a thermodynamic patch could be applied.                                |
+| **Cooperativity**  | Bonus for extending an existing match, biasing alignments toward contiguity.                              |
+| **Safety valve**   | The rule that leftover `ADD` lines are appended only if some context matched.                             |
+| **Preset**         | A `PatchProcessors` enum constant: a named, serializable engine configuration.                            |
+
+---
 
 ---
 
@@ -728,6 +983,32 @@ Notes:
   `SIGNING_KEY` / `SIGNING_PASSWORD` environment variables) are present; otherwise it is skipped so local builds work
   unsigned.
 * `group` and `version` come from the `libraryGroup` / `libraryVersion` Gradle properties.
+
+## Contributing
+
+The library's contract is "never make a file worse", so changes are judged mainly on their effect on the fixture suite.
+
+1. **Reproduce first.** Add a minimal JSON fixture to `src/test/resources` that fails before your change. The existing
+   fixtures show the preferred granularity — one behaviour per file.
+2. **Declare the capability matrix.** Add the fixture to `testCases()`/`patchTestCases()` for every engine that should
+   pass it, and leave it commented out (not deleted) for engines that should not. Those commented lines are the
+   documentation of each engine's limits.
+3. **Do not regress the matrix.** A change that makes one engine pass a new fixture while silently dropping another is a
+   net loss; call it out explicitly in the PR description.
+4. **Keep `normalizeLine` the seam.** Prefer overriding normalization over adding conditionals inside the linking
+   algorithms; `FuzzyPatchMatcher` is `open` for exactly this reason.
+5. **New engines implement `PatchProcessor`** and ship their own `patchFormatPrompt`. A preset in
+   `PatchProcessors` is only warranted once the engine passes a meaningful slice of the fixtures.
+6. **New validators go through `FileValidators.validatorProviders`.** Never hard-code a validator inside an engine.
+7. Run `./gradlew test` before opening a PR, and raise the log level in `src/test/resources/logback.xml` if the per-line
+   traces drown the output.
+
+### Compatibility
+
+`PatchParser`, `PatchProcessor`, `GrammarValidator` and `DiffApplicationResult` are the public surface; treat their
+signatures as semver-relevant. Engine *behaviour* is explicitly heuristic and may change between minor versions — pin a
+version if byte-identical output matters to you, and prefer `Strict` or
+`FullReplacement` when reproducibility outweighs tolerance.
 
 ## License
 
