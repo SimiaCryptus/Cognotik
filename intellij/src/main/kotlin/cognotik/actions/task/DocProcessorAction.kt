@@ -21,11 +21,15 @@ import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.docops.DocProcessor
+import com.simiacryptus.cognotik.docops.DocProcessor.Companion.newProcessor
+import com.simiacryptus.cognotik.docops.PlatformTaskKind
+import com.simiacryptus.cognotik.docops.UpdateModes
+import com.simiacryptus.cognotik.docops.model.PlannedTask
+import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.newProcessor
-import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
@@ -36,8 +40,9 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Point
 import java.io.File
-import java.util.concurrent.CancellationException
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -48,11 +53,13 @@ import javax.swing.event.ListSelectionListener
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
- * 
+ *
  * This action:
- * 1. Parses selected markdown files for frontmatter with 'specifies', 'documents', or 'transforms' keys
- * 2. Shows a checklist dialog allowing users to select the overwrite mode and which file generation tasks to run
- * 3. Executes the selected tasks using DocProcessor infrastructure
+ * 1. Plans work for the selected markdown files via [DocProcessor]/`DocOps` (planning is pure -
+ *    nothing is written or deleted while the dialog is open)
+ * 2. Shows a checklist dialog allowing users to select the update mode and which targets to build
+ * 3. Re-plans with the chosen update mode, narrows the plan to the selected targets, and hands the
+ *    plan to `DocOps.run` (which owns queues, sessions, cancellation, timeouts and status)
  */
 class DocProcessorAction : BaseAction() {
 
@@ -62,7 +69,6 @@ class DocProcessorAction : BaseAction() {
         templatePresentation.text = "📋 Build Related"
         templatePresentation.description = "Process markdown documentation files with frontmatter specifications"
     }
-
 
     companion object {
         /**
@@ -142,119 +148,97 @@ class DocProcessorAction : BaseAction() {
         }
 
         Thread {
-            // Discover template variables declared in any selected markdown file's
-            // frontmatter so the user can override them before processing.
-            val declaredTemplateVars: Map<String, String> = collectDeclaredTemplateVars(selectedFiles)
-            val templateVarOverrides: Map<String, String> = if (declaredTemplateVars.isNotEmpty()) {
-                val future = CompletableFuture<Map<String, String>?>()
-                ApplicationManager.getApplication().invokeAndWait {
-                    val dialog = TemplateVarsDialog(project, declaredTemplateVars)
-                    if (dialog.showAndGet()) {
-                        future.complete(dialog.getValues())
-                    } else {
-                        future.complete(null)
+            try {
+                // Discover template variables declared in any selected markdown file's
+                // frontmatter so the user can override them before processing.
+                val declaredTemplateVars: Map<String, String> = collectDeclaredTemplateVars(selectedFiles)
+                val templateVarOverrides: Map<String, String> = if (declaredTemplateVars.isNotEmpty()) {
+                    val future = CompletableFuture<Map<String, String>?>()
+                    ApplicationManager.getApplication().invokeAndWait {
+                        val dialog = TemplateVarsDialog(project, declaredTemplateVars)
+                        if (dialog.showAndGet()) {
+                            future.complete(dialog.getValues())
+                        } else {
+                            future.complete(null)
+                        }
                     }
-                }
-                val result = future.get()
-                if (result == null) {
                     // User cancelled the template variable dialog -> abort entire action.
+                    future.get() ?: return@Thread
+                } else {
+                    emptyMap()
+                }
+
+                // Planning is pure: this touches nothing on disk, so it is safe to do before the
+                // user has picked an update mode. The mode only affects which targets are skipped,
+                // so the plan is rebuilt once the mode is known.
+                val discoveryPlan = createDocProcessor(root, UpdateModes.PatchExisting, templateVarOverrides)
+                    .getAll(*selectedFiles.toTypedArray())
+
+                if (discoveryPlan.tasks.isEmpty()) {
+                    UITools.showError(
+                        project,
+                        buildString {
+                            append("No tasks found in selected files. ")
+                            append("Ensure files have 'specifies', 'documents', 'transforms', 'generates' or 'folder' frontmatter.")
+                            if (discoveryPlan.skipped.isNotEmpty() || discoveryPlan.failed.isNotEmpty()) {
+                                append("\n\n${discoveryPlan.skipped.size} target(s) skipped, ")
+                                append("${discoveryPlan.failed.size} target(s) failed to plan - see the log for details.")
+                            }
+                        }
+                    )
+                    discoveryPlan.failed.forEach { log.warn("Planning failed for ${it.target}", it.error) }
                     return@Thread
                 }
-                result
-            } else {
-                emptyMap()
-            }
-            // Discover all tasks first so we can show them along with the mode selector.
-            // We use a temporary processor with the default mode for discovery only;
-            // the user-selected mode will be applied to the real processor below.
-            val discoveryProcessor = DocProcessor(
-                root = root,
-                docsFolder = root,
-                updateMode = UpdateModes.PatchExisting,
-                fastModel = AppSettingsState.instance.fastModel?.model
-                    ?: AppSettingsState.instance.smartModel?.model
-                    ?: throw IllegalStateException("Fast model not configured"),
-                smartModel = AppSettingsState.instance.smartModel?.model
-                    ?: AppSettingsState.instance.fastModel?.model
-                    ?: throw IllegalStateException("Smart model not configured"),
-                imageModel = AppSettingsState.instance.imageChatModel?.model
-                    ?: AppSettingsState.instance.fastModel?.model
-                    ?: AppSettingsState.instance.smartModel?.model
-                    ?: throw IllegalStateException("Image model not configured"),
-                audioModel = AppSettingsState.instance.audioModel?.model
-                    ?: AppSettingsState.instance.fastModel?.model
-                    ?: AppSettingsState.instance.smartModel?.model
-                    ?: throw IllegalStateException("Audio model not configured"),
-                autoFix = true,
-                user = localUser,
-                templateVarOverrides = templateVarOverrides,
-            )
-            val allTasks = discoveryProcessor.getAll(*selectedFiles.toTypedArray())
-            if (allTasks.isEmpty()) {
-                UITools.showError(
-                    project,
-                    "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter."
-                )
-                return@Thread
-            }
-            // Show dialog on EDT - includes mode selector
-            val dialogResult = CompletableFuture<DocProcessorTaskDialog.DialogResult?>()
-            ApplicationManager.getApplication().invokeAndWait {
-                val dialog = DocProcessorTaskDialog(project, allTasks)
-                if (dialog.showAndGet()) {
-                    dialogResult.complete(dialog.getResult())
-                } else {
-                    dialogResult.complete(null)
-                }
-            }
-            val result = dialogResult.get() ?: return@Thread
-            val selectedTasks = result.selectedTasks
-            if (selectedTasks.isEmpty()) return@Thread
-            val selectedMode = result.selectedMode
 
-
-            val docProcessor = DocProcessor(
-                root = root,
-                docsFolder = root,
-                updateMode = selectedMode,
-                fastModel = AppSettingsState.instance.fastModel?.model
-                    ?: AppSettingsState.instance.smartModel?.model
-                    ?: throw IllegalStateException("Fast model not configured"),
-                smartModel = AppSettingsState.instance.smartModel?.model
-                    ?: AppSettingsState.instance.fastModel?.model
-                    ?: throw IllegalStateException("Smart model not configured"),
-                imageModel = AppSettingsState.instance.imageChatModel?.model
-                    ?: AppSettingsState.instance.fastModel?.model
-                    ?: AppSettingsState.instance.smartModel?.model
-                    ?: throw IllegalStateException("Image model not configured"),
-                audioModel = AppSettingsState.instance.audioModel?.model
-                    ?: AppSettingsState.instance.fastModel?.model
-                    ?: AppSettingsState.instance.smartModel?.model
-                    ?: throw IllegalStateException("Audio model not configured"),
-                autoFix = true,
-                user = localUser,
-                templateVarOverrides = templateVarOverrides,
-            )
-
-
-            val totalTasks = selectedTasks.size
-            ApplicationManager.getApplication().invokeLater {
-                ProgressManager.getInstance().run(object : Task.Backgroundable(
-                    project, "Processing Documentation Tasks", true
-                ) {
-                    override fun run(indicator: ProgressIndicator) {
-                        run(
-                            indicator = indicator,
-                            totalTasks = totalTasks,
-                            root = root,
-                            model = AppSettingsState.instance.smartModel?.model,
-                            fastModel = AppSettingsState.instance.fastModel?.model,
-                            docProcessor = docProcessor,
-                            selectedTasks = selectedTasks,
-                        )
+                // Show dialog on EDT - includes mode selector
+                val dialogResult = CompletableFuture<DocProcessorTaskDialog.DialogResult?>()
+                ApplicationManager.getApplication().invokeAndWait {
+                    val dialog = DocProcessorTaskDialog(project, discoveryPlan, root)
+                    if (dialog.showAndGet()) {
+                        dialogResult.complete(dialog.getResult())
+                    } else {
+                        dialogResult.complete(null)
                     }
-                })
+                }
+                val result = dialogResult.get() ?: return@Thread
+                if (result.selectedTargets.isEmpty()) return@Thread
 
+                val docProcessor = createDocProcessor(
+                    root = root,
+                    updateMode = result.selectedMode,
+                    templateVarOverrides = templateVarOverrides,
+                    autoFix = result.autoFix,
+                )
+                // Re-plan with the selected update mode, then narrow to the user's selection.
+                val plan = docProcessor.getAll(*selectedFiles.toTypedArray())
+                    .filter { it.target.file in result.selectedTargets }
+                if (plan.tasks.isEmpty()) {
+                    UITools.showError(
+                        project,
+                        "Nothing to do: the selected targets were all skipped by update mode ${result.selectedMode.name}."
+                    )
+                    return@Thread
+                }
+
+                ApplicationManager.getApplication().invokeLater {
+                    ProgressManager.getInstance().run(object : Task.Backgroundable(
+                        project, "Processing Documentation Tasks", true
+                    ) {
+                        override fun run(indicator: ProgressIndicator) {
+                            run(
+                                indicator = indicator,
+                                root = root,
+                                model = AppSettingsState.instance.smartModel?.model,
+                                fastModel = AppSettingsState.instance.fastModel?.model,
+                                docProcessor = docProcessor,
+                                plan = plan,
+                            )
+                        }
+                    })
+                }
+            } catch (ex: Throwable) {
+                log.warn("Error preparing documentation tasks", ex)
+                UITools.showError(project, "Error preparing documentation tasks: ${ex.message}")
             }
         }.start()
     }
@@ -266,30 +250,65 @@ class DocProcessorAction : BaseAction() {
      * encountered default wins (subsequent occurrences are ignored). Files that
      * fail to parse are skipped with a warning.
      */
-    private fun collectDeclaredTemplateVars(files: List<File>): Map<String, String> {
-        return DocProcessor.listTemplateVarKeys(files)
+    private fun collectDeclaredTemplateVars(files: List<File>): Map<String, String> =
+        DocProcessor.listTemplateVarKeys(files)
+
+    /** All model wiring in one place; every model falls back to whatever is configured. */
+    private fun createDocProcessor(
+        root: File,
+        updateMode: UpdateModes,
+        templateVarOverrides: Map<String, String>,
+        autoFix: Boolean = true,
+    ): DocProcessor {
+        val settings = AppSettingsState.instance
+        val smartModel = settings.smartModel?.model
+            ?: settings.fastModel?.model
+            ?: throw IllegalStateException("Smart model not configured")
+        val fastModel = settings.fastModel?.model ?: smartModel
+        val imageModel = settings.imageChatModel?.model ?: fastModel
+        val audioModel = settings.audioModel?.model ?: fastModel
+        return DocProcessor(
+            root = root,
+            docsFolder = root,
+            updateMode = updateMode,
+            smartModel = smartModel,
+            fastModel = fastModel,
+            imageModel = imageModel,
+            audioModel = audioModel,
+            autoFix = autoFix,
+            user = localUser,
+            templateVarOverrides = templateVarOverrides,
+            showMenubar = false,
+        )
     }
 
-
+    /**
+     * Executes the plan. Queues, sessions, per-task timeouts, the overall timeout and status
+     * tracking are all owned by `DocOps`/`DocTaskRunner`; this method only wires the progress
+     * indicator, the cancel flag and the master task log.
+     */
     private fun run(
         indicator: ProgressIndicator,
-        totalTasks: Int,
         root: File,
         model: ChatModel?,
-        docProcessor: DocProcessor,
-        selectedTasks: List<ModificationTask>,
         fastModel: ChatModel?,
+        docProcessor: DocProcessor,
+        plan: WorkPlan<PlatformTaskKind>,
     ) {
+        val totalTasks = plan.tasks.size
         indicator.isIndeterminate = false
         indicator.fraction = 0.0
         indicator.text = "Processing $totalTasks documentation task(s)..."
+
         val cancelFlag = AtomicBoolean(false)
-        val sessions = mutableListOf<Session>()
+        val sessions = Collections.synchronizedList(mutableListOf<Session>())
+        val sessionStatusMap = ConcurrentHashMap<Session, StringBuilder>()
+        val startedTasks = AtomicInteger(0)
         val scheduledFutures = mutableListOf(scheduledPool.scheduleAtFixedRate({
             if (indicator.isCanceled && !cancelFlag.get()) {
                 cancelFlag.set(true)
                 val threadPoolManager = ApplicationServices.threadPoolManager
-                sessions.forEach {
+                sessions.toList().forEach {
                     try {
                         threadPoolManager.getPool(it, localUser).shutdown()
                         threadPoolManager.getScheduledPool(it, localUser).shutdown()
@@ -299,86 +318,41 @@ class DocProcessorAction : BaseAction() {
                 }
             }
         }, 0, 1, TimeUnit.SECONDS))
-        val completedTasks = AtomicInteger(0)
+
         try {
-            val masterTask = newBasicSession(
-                root, model, fastModel = fastModel
-            ).newTask(root = true)
-            val sessions = mutableListOf<Session>()
-            docProcessor.separateQueues(selectedTasks).map { docProcessor.sortByDependencies(it) }
-                .filter { it.isNotEmpty() }
-                .map { mods ->
-                    newProcessor(user = localUser).submit {
-                        object : UnifiedHarness(
-                            serverless = docProcessor.serverless,
-                            openBrowser = docProcessor.openBrowser,
-                            fastModel = docProcessor.fastModel,
-                            smartModel = docProcessor.smartModel,
-                            imageModel = docProcessor.imageModel,
-                            audioModel = docProcessor.audioModel,
-                            showMenubar = false,
-                            user = localUser,
-                        ) {
-                            override fun createTempDirectory(prefix: String) =
-                                docProcessor.root.resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
-                                    .apply { mkdirs() }
-                        }.use { harness ->
-                            if (cancelFlag.get()) {
-                                log.info("Cancellation requested, skipping execution of remaining tasks")
-                                return@submit
-                            }
-                            val sessionStatusMap = mutableMapOf<Session, StringBuilder?>()
-                            mods.forEach { mod ->
-                                val mod = mod.rebase(
-                                    docProcessor.root,
-                                    mod.data.relative_files?.firstOrNull()
-                                        ?.let { docProcessor.root.resolve(it).parentFile }
-                                        ?: docProcessor.root)
-                                harness.resetSession()
-                                if (cancelFlag.get()) {
-                                    log.info("Cancellation requested, skipping execution of remaining tasks")
-                                    throw CancellationException("Execution cancelled")
-                                }
-                                val session = harness.runTask(
-                                    taskType = mod.taskType,
-                                    timeoutMinutes = 30,
-                                    message = mod.message(),
-                                    executionConfig = docProcessor.executionConfig(mod, harness,)
-                                ) { session ->
-                                    if (cancelFlag.get()) {
-                                        log.info("Cancellation requested, skipping execution of remaining tasks")
-                                        throw CancellationException("Execution cancelled")
-                                    }
-                                    sessionStatusMap[session] = masterTask.add(
-                                        session.linkToSession(
-                                            "${mod.taskType.name}: ${
-                                                mod.data.main_file?.let { mod.data.root.resolve(it) }
-                                                    ?.absolutePath ?: "No files specified"
-                                            }"))
-                                    sessions += session
-                                    val completed1 = completedTasks.incrementAndGet()
-                                    indicator.fraction = completed1.toDouble() / totalTasks
-                                    indicator.text = "Processing task $completed1 of $totalTasks..."
-                                    indicator.text2 = "Session: $session"
-                                    sessions += session
-                                    harness.createSettings(
-                                        session = session,
-                                        autoFix = docProcessor.autoFix,
-                                        typeConfig = mod.typeConfig,
-                                        workingDir = mod.data.root.toString()
-                                    ).apply {
-                                        processor = mod.patchProcessor ?: processor
-                                    }
-                                }
-                                sessionStatusMap[session]?.append(" (Complete)")
-                                masterTask.update()
-                            }
-                        }
-                    }
-                }.let {
-                    CompletableFuture.allOf(*it.toTypedArray()).get(90, TimeUnit.MINUTES)
-                }
-            sessions.toTypedArray<Session>()
+            val masterTask = newBasicSession(root, model, fastModel = fastModel).newTask(root = true)
+            plan.skipped.forEach { masterTask.add("Skipped ${it.target.name}: ${it.reason}") }
+            plan.failed.forEach {
+                log.warn("Planning failed for ${it.target}", it.error)
+                masterTask.add("Failed to plan ${it.target.name}: ${it.error.message ?: it.error.toString()}")
+            }
+            masterTask.update()
+
+            docProcessor.runAll(
+                plan = plan,
+                pool = newProcessor(user = localUser),
+                cancelFlag = cancelFlag,
+            ) { session ->
+                sessions += session
+                val started = startedTasks.incrementAndGet()
+                indicator.fraction = started.toDouble() / totalTasks
+                indicator.text = "Processing task $started of $totalTasks..."
+                indicator.text2 = "Session: $session"
+                masterTask.add(session.linkToSession("Task $started of $totalTasks"))
+                    ?.let { sessionStatusMap[session] = it }
+                masterTask.update()
+            }
+
+            // Summarize using the status store the runner wrote.
+            runCatching {
+                val status = docProcessor.docOps.statusStore.read()
+                val counts = status.tasks.values.groupingBy { it.status }.eachCount()
+                masterTask.add(counts.entries.joinToString(", ") { "${it.key}: ${it.value}" })
+                masterTask.update()
+            }.onFailure { log.debug("Could not read doc-ops status", it) }
+        } catch (ex: Throwable) {
+            log.warn("Documentation processing failed", ex)
+            throw ex
         } finally {
             indicator.fraction = 1.0
             indicator.text = "Documentation processing complete"
@@ -386,12 +360,13 @@ class DocProcessorAction : BaseAction() {
         }
     }
 
-
     /**
-     * Dialog that displays a checklist of file generation tasks for user selection.
+     * Dialog that displays a checklist of planned targets for user selection.
      */
     class DocProcessorTaskDialog(
-        project: Project?, private val allTasks: List<ModificationTask>
+        project: Project?,
+        private val plan: WorkPlan<PlatformTaskKind>,
+        private val root: File,
     ) : DialogWrapper(project) {
         var autoFix: Boolean = true
         private val modeComboBox = ComboBox(UpdateModes.entries.toTypedArray()).apply {
@@ -415,7 +390,7 @@ class DocProcessorAction : BaseAction() {
         private val checkBoxList = CheckBoxList<TaskItem>()
         private var taskItems: List<TaskItem> = emptyList()
         private val searchField = JBTextField().apply {
-            emptyText.text = "Type to filter tasks..."
+            emptyText.text = "Type to filter targets..."
         }
         private val selectedStates = mutableMapOf<Int, Boolean>()
         private val selectionCountLabel = JLabel()
@@ -430,25 +405,15 @@ class DocProcessorAction : BaseAction() {
                 modeDescriptionLabel.text = getModeDescription(selected)
             }
 
-
-            taskItems = allTasks.mapIndexed { index, t ->
-                val config = t.data
-                val targetFiles =
-                    config.relative_files?.map { it.ifBlank { null } }?.filterNotNull()?.joinToString(", ")
-                        ?.ifBlank { null }
-                        ?: config.main_file?.let { listOf(it.name) }?.joinToString(", ")?.ifBlank { null }
-                        ?: "[folder: ${config.root.name}]"
-                val relatedFiles = config.relative_related_files?.take(3)?.joinToString(", ") ?: ""
-                val description = buildString {
-                    append("Target: $targetFiles")
-                    if (relatedFiles.isNotEmpty()) {
-                        append(" | Related: $relatedFiles")
-                        if ((config.relative_related_files?.size ?: 0) > 3) {
-                            append("...")
-                        }
-                    }
-                }
-                TaskItem(index, targetFiles, description, config)
+            taskItems = plan.tasks.mapIndexed { index, task ->
+                val displayName = task.target.relativeToOrAbsolute(root)
+                TaskItem(
+                    index = index,
+                    target = task.target.file,
+                    displayName = displayName,
+                    description = "Target: $displayName",
+                    details = task.toString(),
+                )
             }.sortedBy { it.displayName.lowercase() }
 
             checkBoxList.setItems(taskItems) { it.displayName }
@@ -467,8 +432,6 @@ class DocProcessorAction : BaseAction() {
                     val index = checkBoxList.locationToIndex(e.point)
                     if (index >= 0 && index < checkBoxList.model.size) {
                         val item = checkBoxList.getItemAt(index)
-
-
                         if (item != null && item != currentHoveredItem) {
                             currentHoveredItem = item
                             popupShowTimer.restart()
@@ -518,9 +481,11 @@ class DocProcessorAction : BaseAction() {
             })
             updateSelectionCount()
 
-
             init()
         }
+
+        private fun File.relativeToRootOr(root: File): String =
+            runCatching { relativeTo(root).path.ifBlank { name } }.getOrElse { path }
 
         private fun showPopupForCurrentItem() {
             val item = currentHoveredItem ?: return
@@ -601,7 +566,6 @@ class DocProcessorAction : BaseAction() {
             dialog.isVisible = true
         }
 
-
         private fun hidePopup() {
             currentPopup?.hide()
             currentPopup = null
@@ -613,29 +577,13 @@ class DocProcessorAction : BaseAction() {
             super.dispose()
         }
 
-        private fun buildDetailsText(item: TaskItem): String {
-            val config = item.config
-            return buildString {
-                appendLine("Target Files:")
-                config.relative_files?.forEach { appendLine("  • $it") }
-                appendLine()
-                if (!config.relative_related_files.isNullOrEmpty()) {
-                    appendLine("Related Files:")
-                    config.relative_related_files?.forEach { appendLine("  • $it") }
-                    appendLine()
-                }
-                if (config.task_description.isNotBlank()) {
-                    appendLine("Task Description:")
-                    appendLine("  ${config.task_description}")
-                    appendLine()
-                }
-                if (!config.taskConfigOverrides.isNullOrEmpty()) {
-                    appendLine("Config Overrides:")
-                    config.taskConfigOverrides?.forEach { (k, v) -> appendLine("  $k: $v") }
-                }
-            }.trimEnd()
-        }
-
+        private fun buildDetailsText(item: TaskItem): String = buildString {
+            appendLine("Target:")
+            appendLine("  ${item.target.absolutePath}")
+            appendLine()
+            appendLine("Planned task:")
+            appendLine("  ${item.details}")
+        }.trimEnd()
 
         private fun syncVisibleSelectionStates() {
             for (i in 0 until checkBoxList.itemsCount) {
@@ -648,9 +596,9 @@ class DocProcessorAction : BaseAction() {
 
         private fun updateSelectionCount() {
             val totalSelected = taskItems.count { selectedStates.getOrDefault(it.index, true) }
-            selectionCountLabel.text = "$totalSelected of ${taskItems.size} task(s) selected"
+            selectionCountLabel.text = "$totalSelected of ${taskItems.size} target(s) selected" +
+                    " in ${plan.queues.size} queue(s)"
         }
-
 
         private fun filterTasks(query: String) {
             // Save current selection states
@@ -671,13 +619,12 @@ class DocProcessorAction : BaseAction() {
             updateSelectionCount()
         }
 
-
         override fun createCenterPanel(): JComponent = panel {
             row {
                 checkBox("Auto-fix issues").selected(autoFix).onChanged { autoFix = it.isSelected }
             }
             row {
-                label("Select which file generation tasks to execute:")
+                label("Select which targets to build:")
             }
             row {
                 cell(searchField).align(Align.FILL)
@@ -711,12 +658,29 @@ class DocProcessorAction : BaseAction() {
             row {
                 cell(selectionCountLabel).align(Align.FILL)
             }
+            if (plan.skipped.isNotEmpty() || plan.failed.isNotEmpty()) {
+                group("Not Planned") {
+                    plan.skipped.take(10).forEach { skipped ->
+                        row { label("🚫 ${skipped.target.name}: ${skipped.reason}") }
+                    }
+                    plan.failed.take(10).forEach { failed ->
+                        row {
+                            label("⚠️ ${failed.target.name}: ${failed.error.message ?: failed.error.toString()}")
+                        }
+                    }
+                }
+            }
             group("Overwrite Mode") {
                 row("Mode:") {
                     cell(modeComboBox).align(Align.FILL)
                 }
                 row {
                     cell(modeDescriptionLabel).align(Align.FILL)
+                }
+                row {
+                    label("Changing the mode re-plans the selected documents before execution.").apply {
+                        component.font = component.font.deriveFont(component.font.size2D - 1f)
+                    }
                 }
             }
             group("Help") {
@@ -729,6 +693,7 @@ class DocProcessorAction : BaseAction() {
             <li><b>documents:</b> Documentation files to update based on source files</li>
             <li><b>transforms:</b> Source-to-destination file transformations</li>
             <li><b>generates:</b> Single output file from multiple input patterns</li>
+            <li><b>folder:</b> A whole folder as the target (and effective task root)</li>
             </ul>
             """.trimIndent()
                     )
@@ -736,25 +701,31 @@ class DocProcessorAction : BaseAction() {
             }
         }
 
-        fun getSelectedTasks(): List<ModificationTask> {
+        /** Targets (not task instances) are returned, so the plan can be rebuilt with the chosen mode. */
+        fun getSelectedTargets(): Set<File> {
             // Save current visible selection states
             syncVisibleSelectionStates()
-            return taskItems.filter { selectedStates.getOrDefault(it.index, true) }.map { allTasks[it.index] }
+            return taskItems.filter { selectedStates.getOrDefault(it.index, true) }
+                .map { it.target }
+                .toSet()
         }
 
         fun getSelectedMode(): UpdateModes = modeComboBox.selectedItem as? UpdateModes ?: UpdateModes.PatchExisting
-        fun getResult(): DialogResult = DialogResult(getSelectedTasks(), getSelectedMode())
-        data class DialogResult(
-            val selectedTasks: List<ModificationTask>,
-            val selectedMode: UpdateModes,
-        )
 
+        fun getResult(): DialogResult = DialogResult(getSelectedTargets(), getSelectedMode(), autoFix)
+
+        data class DialogResult(
+            val selectedTargets: Set<File>,
+            val selectedMode: UpdateModes,
+            val autoFix: Boolean,
+        )
 
         data class TaskItem(
             val index: Int,
+            val target: File,
             val displayName: String,
             val description: String,
-            val config: DocProcessor.ModificationTaskConfig
+            val details: String,
         ) {
             override fun toString(): String = "$displayName - $description"
         }

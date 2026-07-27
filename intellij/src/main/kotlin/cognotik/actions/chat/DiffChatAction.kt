@@ -137,7 +137,7 @@ class DiffChatAction : BaseAction() {
                   val virtualFs = InMemoryFileSystem()
                   val virtualRoot = Paths.get("/virtual")
                   val virtualFile = virtualRoot.resolve("file.txt")
-                  virtualFs.putFile(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
+                  virtualFs.writeText(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
                   val renderer = SessionRenderer(task)
                   val instrumentor = DiffInstrumentor(
                     processor = AppSettingsState.instance.processor,
@@ -153,7 +153,7 @@ class DiffChatAction : BaseAction() {
                           selectionEnd = selectionStart + newCode.length
                           document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
                         }
-                        virtualFs.putFile(virtualFile, newCode)
+                        virtualFs.writeText(virtualFile, newCode)
                       }
                     },
                     shouldAutoApply = { false },

@@ -30,6 +30,9 @@ dependencies {
     implementation(project("$projectPrefix:lwcore")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
+    implementation(project("$projectPrefix:docops")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
     implementation(project("$projectPrefix:text")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
@@ -204,9 +207,12 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            // Use specific IDE versions that are known to be available
-            ide(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
+            recommended()
             // Optionally add a few more specific versions for broader compatibility testing
+            //ide(
+            //    providers.gradleProperty("platformType").get(),
+            //    providers.gradleProperty("platformVersion").get()
+            //)
             // ide("IC", "2024.3")
             // ide("IC", "2024.2")
         }
