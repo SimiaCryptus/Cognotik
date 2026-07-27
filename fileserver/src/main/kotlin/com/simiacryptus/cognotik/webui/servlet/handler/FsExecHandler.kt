@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
 import com.simiacryptus.cognotik.webui.servlet.util.FsPath
-import com.simiacryptus.cognotik.webui.servlet.util.MiniJson
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
@@ -30,15 +30,15 @@ object FsExecHandler {
     if (config.execAllowlist.isEmpty()) {
       throw FsException(FsErrorCode.ENOSYS, "exec", null, "exec capability disabled")
     }
-    val body = MiniJson.parseObject(req.reader.readText())
-    val cmd = MiniJson.string(body, "cmd")
+    val body = FsJson.parseObject(req.reader.readText())
+    val cmd = FsJson.string(body, "cmd")
       ?: throw FsException(FsErrorCode.EINVAL, "exec", null, "missing 'cmd'")
     val allowedSubcommands = config.execAllowlist[cmd]
       ?: throw FsException(FsErrorCode.EACCES, "exec", cmd, "command '$cmd' is not allowlisted")
-    val args = MiniJson.list(body, "args").map { it?.toString() ?: "" }
+    val args = FsJson.list(body, "args").map { it?.toString() ?: "" }
     validate(cmd, args, allowedSubcommands)
 
-    val cwdTarget = FsPath.resolve(root, MiniJson.string(body, "cwd") ?: "/", "exec")
+    val cwdTarget = FsPath.resolve(root, FsJson.string(body, "cwd") ?: "/", "exec")
     if (FileAccessControl.isHidden(root, cwdTarget.file)) {
       throw FsException(FsErrorCode.ENOENT, "exec", cwdTarget.virtual)
     }
@@ -86,7 +86,7 @@ object FsExecHandler {
     resp.contentType = "application/json"
     resp.characterEncoding = "UTF-8"
     resp.writer.write(
-      MiniJson.stringify(
+      FsJson.stringify(
         linkedMapOf(
           "cmd" to cmd,
           "args" to args,

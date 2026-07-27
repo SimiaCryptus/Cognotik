@@ -1,11 +1,15 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
+import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
+import com.simiacryptus.cognotik.webui.servlet.action.FsAction
+import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
+
 import com.simiacryptus.cognotik.webui.servlet.util.EtagUtil
 import com.simiacryptus.cognotik.webui.servlet.util.FileChannelCache
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import com.simiacryptus.cognotik.webui.servlet.util.FsPath
 import com.simiacryptus.cognotik.webui.servlet.util.FsTarget
 import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
-import com.simiacryptus.cognotik.webui.servlet.util.MiniJson
 import com.simiacryptus.cognotik.webui.servlet.util.RangeUtil
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -38,6 +42,154 @@ object FsApiHandler {
   private val log = LoggerFactory.getLogger(FsApiHandler::class.java)
   private val WRITE_FLAGS = setOf("w", "wx", "a", "ax", "r+", "w+", "a+")
 
+  /**
+   * Every operation is a registered [FsAction] (a `DynamicEnum` constant).
+   * That makes the operation set extensible (`FsAction.register(...)`) and
+   * self-describing (`GET /.fsapi/v1/actions`).
+   */
+  init {
+    val path = ActionParam("path", required = true, description = "virtual path, '/'-relative to the served root")
+    read("meta", "API version, platform, limits and capabilities") { ctx ->
+      writeJson(ctx.resp, HttpServletResponse.SC_OK, meta(ctx.config))
+    }
+    read("actions", "Self-description of every registered file and git action") { ctx ->
+      writeJson(ctx.resp, HttpServletResponse.SC_OK, describeActions(ctx.config))
+    }
+    read(
+      "stat", "fs.stat / fs.lstat",
+      listOf(path, ActionParam("lstat", "boolean"), ActionParam("throwIfNoEntry", "boolean", default = true))
+    ) { ctx -> httpStat(ctx.req, ctx.resp, ctx.root) }
+    read(
+      "dir", "fs.readdir",
+      listOf(path, ActionParam("recursive", "boolean"), ActionParam("depth", "int"), ActionParam("stat", "boolean"))
+    ) { ctx -> httpReaddir(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    read("file", "fs.readFile / createReadStream (supports Range and ETag)", listOf(path)) { ctx ->
+      httpReadFile(ctx.req, ctx.resp, ctx.root, ctx.method == "HEAD")
+    }
+    read("realpath", "fs.realpath", listOf(path)) { ctx ->
+      writeJson(ctx.resp, HttpServletResponse.SC_OK, opRealpath(ctx.root, ctx.req.getParameter("path")))
+    }
+    read(
+      "resolve", "CommonJS/ESM module resolution",
+      listOf(ActionParam("request", required = true), ActionParam("from")), capability = "resolve"
+    ) { ctx -> FsResolveHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    read(
+      "snapshot", "Zip snapshot of a subtree",
+      listOf(path, ActionParam("maxBytes", "long")), capability = "snapshot"
+    ) { ctx -> FsSnapshotHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    read(
+      "watch", "SSE change stream (fs.watch)",
+      listOf(path, ActionParam("recursive", "boolean")), capability = "watch"
+    ) { ctx -> FsWatchHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "stat", "Batch fs.stat",
+      listOf(
+        ActionParam("paths", "array", required = true, location = "body"),
+        ActionParam("lstat", "boolean", location = "body")
+      )
+    ) { ctx -> httpStatBatch(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "dir", "fs.mkdir",
+      listOf(
+        ActionParam("path", required = true, location = "body"),
+        ActionParam("recursive", "boolean", location = "body")
+      )
+    ) { ctx -> httpMkdir(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "rename", "fs.rename",
+      listOf(
+        ActionParam("from", required = true, location = "body"),
+        ActionParam("to", required = true, location = "body"),
+        ActionParam("overwrite", "boolean", location = "body", default = true)
+      )
+    ) { ctx -> httpRename(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "copy", "fs.copyFile / fs.cp",
+      listOf(
+        ActionParam("from", required = true, location = "body"),
+        ActionParam("to", required = true, location = "body"),
+        ActionParam("recursive", "boolean", location = "body"),
+        ActionParam("force", "boolean", location = "body", default = true),
+        ActionParam("preserveTimestamps", "boolean", location = "body")
+      )
+    ) { ctx -> httpCopy(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "truncate", "fs.truncate",
+      listOf(
+        ActionParam("path", required = true, location = "body"),
+        ActionParam("len", "long", location = "body", default = 0)
+      )
+    ) { ctx -> httpTruncate(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "utimes", "fs.utimes",
+      listOf(
+        ActionParam("path", required = true, location = "body"),
+        ActionParam("atimeMs", "long", location = "body"),
+        ActionParam("mtimeMs", "long", location = "body")
+      ),
+      capability = "utimes"
+    ) { ctx -> httpUtimes(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "batch", "Pipeline several operations in one round trip",
+      listOf(
+        ActionParam("ops", "array", required = true, location = "body"),
+        ActionParam("stopOnError", "boolean", location = "body")
+      )
+    ) { ctx -> httpBatch(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "exec", "Run an allowlisted child_process command",
+      listOf(
+        ActionParam("cmd", required = true, location = "body"),
+        ActionParam("args", "array", location = "body"),
+        ActionParam("cwd", location = "body")
+      ),
+      capability = "exec"
+    ) { ctx -> FsExecHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "POST", "git", "Run a registered git action (see the 'git' section of /actions)",
+      listOf(
+        ActionParam("action", required = true, location = "body"),
+        ActionParam("params", "object", location = "body")
+      ),
+      capability = "git"
+    ) { ctx -> httpGit(ctx) }
+    write(
+      "PUT", "file", "fs.writeFile / createWriteStream (supports Content-Range and If-Match)",
+      listOf(path, ActionParam("flag", default = "w"), ActionParam("position", "long"))
+    ) { ctx -> httpWriteFile(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    write(
+      "DELETE", "file", "fs.unlink / fs.rm / fs.rmdir",
+      listOf(path, ActionParam("recursive", "boolean"), ActionParam("force", "boolean"))
+    ) { ctx -> httpRemove(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    FsAction.register(FsAction("", "OPTIONS", "Advertise the permitted methods") { ctx ->
+      ctx.resp.setHeader("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
+      ctx.resp.status = HttpServletResponse.SC_NO_CONTENT
+    })
+  }
+
+  private fun read(
+    op: String,
+    description: String,
+    parameters: List<ActionParam> = emptyList(),
+    capability: String? = null,
+    handler: (FsActionContext) -> Unit,
+  ) {
+    FsAction.register(FsAction(op, "GET", description, parameters, requiresCapability = capability, handler = handler))
+    FsAction.register(FsAction(op, "HEAD", description, parameters, requiresCapability = capability, handler = handler))
+  }
+
+  private fun write(
+    method: String,
+    op: String,
+    description: String,
+    parameters: List<ActionParam> = emptyList(),
+    capability: String? = null,
+    handler: (FsActionContext) -> Unit,
+  ) = FsAction.register(
+    FsAction(op, method, description, parameters, requiresCapability = capability, handler = handler)
+  )
+
+
   fun handle(
     method: String,
     op: String,
@@ -52,52 +204,19 @@ object FsApiHandler {
       if (root == null || !root.exists() || !root.isDirectory) {
         throw FsException(FsErrorCode.ENOENT, syscall, "/", "served root is unavailable")
       }
-      val mutating = method != "GET" && method != "HEAD" && method != "OPTIONS"
-      if (mutating && config.requireApiHeader && req.getHeader("X-Fs-Api").isNullOrBlank()) {
+      val normalizedMethod = method.ifBlank { "GET" }.uppercase()
+      val action = FsAction.find(normalizedMethod, op)
+        ?: (if (normalizedMethod == "OPTIONS") FsAction.find("OPTIONS", "") else null)
+        ?: throw unknown(method, op)
+      if (action.mutating && config.requireApiHeader && req.getHeader("X-Fs-Api").isNullOrBlank()) {
         throw FsException(FsErrorCode.EACCES, syscall, null, "missing X-Fs-Api request header")
       }
-      when (method) {
-        "GET", "HEAD" -> when (op) {
-          "meta" -> writeJson(resp, HttpServletResponse.SC_OK, meta(config))
-          "stat" -> httpStat(req, resp, root)
-          "dir" -> httpReaddir(req, resp, root, config)
-          "file" -> httpReadFile(req, resp, root, method == "HEAD")
-          "realpath" -> writeJson(resp, HttpServletResponse.SC_OK, opRealpath(root, req.getParameter("path")))
-          "resolve" -> FsResolveHandler.handle(req, resp, root, config)
-          "snapshot" -> FsSnapshotHandler.handle(req, resp, root, config)
-          "watch" -> FsWatchHandler.handle(req, resp, root, config)
-          else -> throw unknown(method, op)
-        }
 
-        "POST" -> when (op) {
-          "stat" -> httpStatBatch(req, resp, root, config)
-          "dir" -> httpMkdir(req, resp, root, config)
-          "rename" -> httpRename(req, resp, root, config)
-          "copy" -> httpCopy(req, resp, root, config)
-          "truncate" -> httpTruncate(req, resp, root, config)
-          "utimes" -> httpUtimes(req, resp, root, config)
-          "batch" -> httpBatch(req, resp, root, config)
-          "exec" -> FsExecHandler.handle(req, resp, root, config)
-          else -> throw unknown(method, op)
-        }
 
-        "PUT" -> when (op) {
-          "file" -> httpWriteFile(req, resp, root, config)
-          else -> throw unknown(method, op)
-        }
 
-        "DELETE" -> when (op) {
-          "file" -> httpRemove(req, resp, root, config)
-          else -> throw unknown(method, op)
-        }
 
-        "OPTIONS" -> {
-          resp.setHeader("Allow", "GET,HEAD,POST,PUT,DELETE,OPTIONS")
-          resp.status = HttpServletResponse.SC_NO_CONTENT
-        }
 
-        else -> throw unknown(method, op)
-      }
+      action.handler(FsActionContext(normalizedMethod, op, req, resp, root, config))
     } catch (e: FsException) {
       FsErrors.write(resp, e)
     } catch (e: IllegalArgumentException) {
@@ -136,6 +255,8 @@ object FsApiHandler {
       "conditional" to true,
       "batch" to true,
       "statBatch" to true,
+      "actions" to true,
+      "git" to config.execAllowlist.containsKey("git"),
       "resolve" to config.resolveEnabled,
       "snapshot" to config.snapshotEnabled,
       "watch" to config.watchMode,
@@ -147,6 +268,15 @@ object FsApiHandler {
       "crossOriginIsolated" to config.crossOriginIsolated
     )
   )
+  // ------------------------------------------------------- self-description
+  /** Payload for `GET /.fsapi/v1/actions` — the registry, not a hard-coded list. */
+  private fun describeActions(config: FsApiConfig): Map<String, Any?> = linkedMapOf(
+    "apiVersion" to API_VERSION,
+    "capabilities" to meta(config)["capabilities"],
+    "fs" to FsAction.values().sortedBy { it.name }.map { it.describe() },
+    "git" to GitActions.describe()
+  )
+
 
   // -------------------------------------------------------------- helpers
 
@@ -155,7 +285,7 @@ object FsApiHandler {
     resp.status = status
     resp.contentType = "application/json"
     resp.characterEncoding = "UTF-8"
-    resp.writer.write(MiniJson.stringify(payload))
+    resp.writer.write(FsJson.stringify(payload))
   }
 
   private fun target(root: File, path: String?, syscall: String, default: String? = null): FsTarget {
@@ -562,12 +692,12 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
-    val paths = MiniJson.list(body, "paths")
+    val body = FsJson.parseObject(req.reader.readText())
+    val paths = FsJson.list(body, "paths")
     if (paths.size > config.maxBatchOps) {
       throw FsException(FsErrorCode.EINVAL, "stat", null, "too many paths (max ${config.maxBatchOps})")
     }
-    val lstat = MiniJson.boolean(body, "lstat", false)
+    val lstat = FsJson.boolean(body, "lstat", false)
     val results = paths.map { raw ->
       try {
         linkedMapOf<String, Any?>("ok" to true, "stat" to opStat(root, raw?.toString(), lstat, true))
@@ -724,11 +854,11 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
+    val body = FsJson.parseObject(req.reader.readText())
     val payload = opMkdir(
       root, config,
-      MiniJson.string(body, "path") ?: req.getParameter("path"),
-      MiniJson.boolean(body, "recursive", boolParam(req, "recursive"))
+      FsJson.string(body, "path") ?: req.getParameter("path"),
+      FsJson.boolean(body, "recursive", boolParam(req, "recursive"))
     )
     writeJson(
       resp,
@@ -743,12 +873,12 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
+    val body = FsJson.parseObject(req.reader.readText())
     opRename(
       root, config,
-      MiniJson.string(body, "from") ?: req.getParameter("from"),
-      MiniJson.string(body, "to") ?: req.getParameter("to"),
-      MiniJson.boolean(body, "overwrite", true)
+      FsJson.string(body, "from") ?: req.getParameter("from"),
+      FsJson.string(body, "to") ?: req.getParameter("to"),
+      FsJson.boolean(body, "overwrite", true)
     )
     resp.status = HttpServletResponse.SC_NO_CONTENT
   }
@@ -759,14 +889,14 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
+    val body = FsJson.parseObject(req.reader.readText())
     opCopy(
       root, config,
-      MiniJson.string(body, "from") ?: req.getParameter("from"),
-      MiniJson.string(body, "to") ?: req.getParameter("to"),
-      MiniJson.boolean(body, "recursive", false),
-      MiniJson.boolean(body, "force", true),
-      MiniJson.boolean(body, "preserveTimestamps", false)
+      FsJson.string(body, "from") ?: req.getParameter("from"),
+      FsJson.string(body, "to") ?: req.getParameter("to"),
+      FsJson.boolean(body, "recursive", false),
+      FsJson.boolean(body, "force", true),
+      FsJson.boolean(body, "preserveTimestamps", false)
     )
     resp.status = HttpServletResponse.SC_NO_CONTENT
   }
@@ -777,11 +907,11 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
+    val body = FsJson.parseObject(req.reader.readText())
     opTruncate(
       root, config,
-      MiniJson.string(body, "path") ?: req.getParameter("path"),
-      MiniJson.long(body, "len") ?: req.getParameter("len")?.toLongOrNull() ?: 0L
+      FsJson.string(body, "path") ?: req.getParameter("path"),
+      FsJson.long(body, "len") ?: req.getParameter("len")?.toLongOrNull() ?: 0L
     )
     resp.status = HttpServletResponse.SC_NO_CONTENT
   }
@@ -792,14 +922,35 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
+    val body = FsJson.parseObject(req.reader.readText())
     opUtimes(
       root, config,
-      MiniJson.string(body, "path") ?: req.getParameter("path"),
-      MiniJson.long(body, "atime") ?: MiniJson.long(body, "atimeMs"),
-      MiniJson.long(body, "mtime") ?: MiniJson.long(body, "mtimeMs")
+      FsJson.string(body, "path") ?: req.getParameter("path"),
+      FsJson.long(body, "atime") ?: FsJson.long(body, "atimeMs"),
+      FsJson.long(body, "mtime") ?: FsJson.long(body, "mtimeMs")
     )
     resp.status = HttpServletResponse.SC_NO_CONTENT
+  }
+
+  /** Bridges the FS API onto the extensible [GitActions] registry. */
+  private fun httpGit(ctx: FsActionContext) {
+    if (!ctx.config.execAllowlist.containsKey("git")) {
+      throw FsException(FsErrorCode.ENOSYS, "git", null, "git capability disabled for this mount")
+    }
+    val body = FsJson.parseObject(ctx.req.reader.readText())
+    val name = FsJson.string(body, "action")
+      ?: throw FsException(FsErrorCode.EINVAL, "git", null, "missing 'action'")
+
+    @Suppress("UNCHECKED_CAST")
+    val params = (body["params"] as? Map<String, Any?>) ?: body
+    val payload = try {
+      GitActions.execute(name, params, ctx.root)
+    } catch (e: IllegalArgumentException) {
+      throw FsException(FsErrorCode.EINVAL, "git", null, e.message)
+    } catch (e: Exception) {
+      throw FsException(FsErrorCode.EIO, "git", null, e.message)
+    }
+    writeJson(ctx.resp, HttpServletResponse.SC_OK, payload)
   }
 
   private fun httpBatch(
@@ -808,9 +959,9 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = MiniJson.parseObject(req.reader.readText())
-    val ops = MiniJson.list(body, "ops")
-    val stopOnError = MiniJson.boolean(body, "stopOnError", false)
+    val body = FsJson.parseObject(req.reader.readText())
+    val ops = FsJson.list(body, "ops")
+    val stopOnError = FsJson.boolean(body, "stopOnError", false)
     if (ops.size > config.maxBatchOps) {
       throw FsException(FsErrorCode.EINVAL, "batch", null, "too many ops (max ${config.maxBatchOps})")
     }
@@ -839,11 +990,11 @@ object FsApiHandler {
   }
 
   private fun runBatchOp(root: File, config: FsApiConfig, op: Map<String, Any?>): Any {
-    val name = (MiniJson.string(op, "op") ?: "").lowercase()
-    val path = MiniJson.string(op, "path")
+    val name = (FsJson.string(op, "op") ?: "").lowercase()
+    val path = FsJson.string(op, "path")
     return when (name) {
-      "stat" -> opStat(root, path, false, MiniJson.boolean(op, "throwIfNoEntry", true))
-      "lstat" -> opStat(root, path, true, MiniJson.boolean(op, "throwIfNoEntry", true))
+      "stat" -> opStat(root, path, false, FsJson.boolean(op, "throwIfNoEntry", true))
+      "lstat" -> opStat(root, path, true, FsJson.boolean(op, "throwIfNoEntry", true))
       "exists" -> {
         val stat = opStat(root, path, false, false)
         linkedMapOf("path" to stat["path"], "exists" to (stat["exists"] == true))
@@ -851,52 +1002,58 @@ object FsApiHandler {
 
       "readdir" -> opReaddir(
         root, config, path,
-        MiniJson.boolean(op, "recursive", false),
-        MiniJson.int(op, "depth") ?: config.maxDepth,
-        MiniJson.boolean(op, "withFileTypes", true)
+        FsJson.boolean(op, "recursive", false),
+        FsJson.int(op, "depth") ?: config.maxDepth,
+        FsJson.boolean(op, "withFileTypes", true)
       )
 
-      "mkdir" -> opMkdir(root, config, path, MiniJson.boolean(op, "recursive", false))
+      "mkdir" -> opMkdir(root, config, path, FsJson.boolean(op, "recursive", false))
       "rm", "unlink", "rmdir" -> opRemove(
         root, config, path,
-        MiniJson.boolean(op, "recursive", name == "rm"),
-        MiniJson.boolean(op, "force", false)
+        FsJson.boolean(op, "recursive", name == "rm"),
+        FsJson.boolean(op, "force", false)
       )
 
       "rename" -> opRename(
         root, config,
-        MiniJson.string(op, "from"), MiniJson.string(op, "to"),
-        MiniJson.boolean(op, "overwrite", true)
+        FsJson.string(op, "from"), FsJson.string(op, "to"),
+        FsJson.boolean(op, "overwrite", true)
       )
 
       "copy" -> opCopy(
         root, config,
-        MiniJson.string(op, "from"), MiniJson.string(op, "to"),
-        MiniJson.boolean(op, "recursive", false),
-        MiniJson.boolean(op, "force", true),
-        MiniJson.boolean(op, "preserveTimestamps", false)
+        FsJson.string(op, "from"), FsJson.string(op, "to"),
+        FsJson.boolean(op, "recursive", false),
+        FsJson.boolean(op, "force", true),
+        FsJson.boolean(op, "preserveTimestamps", false)
       )
 
-      "truncate" -> opTruncate(root, config, path, MiniJson.long(op, "len") ?: 0L)
+      "truncate" -> opTruncate(root, config, path, FsJson.long(op, "len") ?: 0L)
       "utimes" -> opUtimes(
         root, config, path,
-        MiniJson.long(op, "atime") ?: MiniJson.long(op, "atimeMs"),
-        MiniJson.long(op, "mtime") ?: MiniJson.long(op, "mtimeMs")
+        FsJson.long(op, "atime") ?: FsJson.long(op, "atimeMs"),
+        FsJson.long(op, "mtime") ?: FsJson.long(op, "mtimeMs")
       )
 
       "realpath" -> opRealpath(root, path)
-      "read" -> opReadEncoded(root, config, path, MiniJson.long(op, "offset") ?: 0L, MiniJson.long(op, "length"))
+      "read" -> opReadEncoded(root, config, path, FsJson.long(op, "offset") ?: 0L, FsJson.long(op, "length"))
       "write" -> opWriteEncoded(
         root, config, path,
-        MiniJson.string(op, "flag") ?: "w",
-        MiniJson.string(op, "data"),
-        MiniJson.string(op, "encoding") ?: "base64"
+        FsJson.string(op, "flag") ?: "w",
+        FsJson.string(op, "data"),
+        FsJson.string(op, "encoding") ?: "base64"
       )
 
       "resolve" -> FsResolveHandler.resolve(
         root, config,
-        MiniJson.string(op, "from") ?: "/",
-        MiniJson.string(op, "request") ?: throw FsException(FsErrorCode.EINVAL, "resolve", null, "missing 'request'")
+        FsJson.string(op, "from") ?: "/",
+        FsJson.string(op, "request") ?: throw FsException(FsErrorCode.EINVAL, "resolve", null, "missing 'request'")
+      )
+
+      "git" -> GitActions.execute(
+        FsJson.string(op, "action") ?: throw FsException(FsErrorCode.EINVAL, "git", null, "missing 'action'"),
+        @Suppress("UNCHECKED_CAST") ((op["params"] as? Map<String, Any?>) ?: op),
+        root
       )
 
       else -> throw FsException(FsErrorCode.ENOSYS, "batch", path, "unknown batch op '$name'")

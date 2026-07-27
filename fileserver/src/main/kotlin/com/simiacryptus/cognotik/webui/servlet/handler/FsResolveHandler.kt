@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
 import com.simiacryptus.cognotik.webui.servlet.util.FsPath
-import com.simiacryptus.cognotik.webui.servlet.util.MiniJson
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import java.io.File
@@ -34,7 +34,7 @@ object FsResolveHandler {
     resp.status = HttpServletResponse.SC_OK
     resp.contentType = "application/json"
     resp.characterEncoding = "UTF-8"
-    resp.writer.write(MiniJson.stringify(payload))
+    resp.writer.write(FsJson.stringify(payload))
   }
 
   fun resolve(root: File, config: FsApiConfig, from: String, request: String): Map<String, Any?> {
@@ -85,7 +85,7 @@ object FsResolveHandler {
     val packageJson = File(dir, "package.json")
     if (visible(root, packageJson) && packageJson.isFile) {
       val manifest = try {
-        MiniJson.parseObject(packageJson.readText())
+        FsJson.parseObject(packageJson.readText())
       } catch (e: Exception) {
         emptyMap()
       }
@@ -113,7 +113,7 @@ object FsResolveHandler {
 
       else -> null
     }
-    return fromExports ?: MiniJson.string(manifest, "main")
+    return fromExports ?: FsJson.string(manifest, "main")
   }
 
   private fun loadIndex(root: File, dir: File): File? {
@@ -159,11 +159,11 @@ object FsResolveHandler {
       val packageJson = File(current, "package.json")
       if (packageJson.isFile && !FileAccessControl.isHidden(root, packageJson)) {
         val manifest = try {
-          MiniJson.parseObject(packageJson.readText())
+          FsJson.parseObject(packageJson.readText())
         } catch (e: Exception) {
           emptyMap()
         }
-        if (MiniJson.string(manifest, "type") == "module") return "module"
+        if (FsJson.string(manifest, "type") == "module") return "module"
         return "commonjs"
       }
       if (current.path == rootPath) break

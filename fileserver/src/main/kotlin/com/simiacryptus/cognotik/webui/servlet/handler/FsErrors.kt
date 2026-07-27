@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
-import com.simiacryptus.cognotik.webui.servlet.util.MiniJson
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import jakarta.servlet.http.HttpServletResponse
 
 /**
@@ -52,6 +52,6 @@ object FsErrors {
     resp.contentType = "application/json"
     resp.characterEncoding = "UTF-8"
     resp.setHeader("X-Fs-Error", e.code.name)
-    resp.writer.write(MiniJson.stringify(mapOf("error" to payload(e))))
+    resp.writer.write(FsJson.stringify(mapOf("error" to payload(e))))
   }
 }

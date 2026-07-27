@@ -29,6 +29,10 @@ import java.io.File
  *  - **A4** no magic: the FS API never performs `.md -> .html/.pdf` substitution,
  *    so `stat('foo.html')` is ENOENT unless `foo.html` really exists.
  *
+ * Operations are registered `FsAction`/`GitAction` DynamicEnum constants, so a
+ * downstream module can add or replace an operation without subclassing; the
+ * live set is always discoverable via `GET {mount}/.fsapi/v1/actions`.
+ *
  * Subclasses normally only need to implement [getDir]; override
  * [getFsApiConfig] to advertise/limit capabilities (read-only mode, exec
  * allowlist, watch mode, quotas).

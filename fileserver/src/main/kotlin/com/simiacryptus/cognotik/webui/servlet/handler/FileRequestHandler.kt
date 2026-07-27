@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
+import com.simiacryptus.cognotik.util.JsonUtil
+
 import com.simiacryptus.cognotik.webui.servlet.util.FileChannelCache
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
-import com.simiacryptus.cognotik.webui.servlet.util.PathUtils.jsonEscape
 import jakarta.servlet.WriteListener
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -105,34 +107,23 @@ object FileRequestHandler {
     try {
       val children = directory.listFiles() ?: emptyArray()
       val entries = children.sortedBy { it.name }.map { child ->
-        val type = if (child.isDirectory) "directory" else "file"
-        val size = if (child.isFile) child.length() else null
-        val lastModified = child.lastModified()
-        buildString {
-          append("    {")
-          append("\"name\": ${jsonEscape(child.name)}")
-          append(", \"type\": \"$type\"")
-          if (size != null) {
-            append(", \"size\": $size")
-          }
-          append(", \"lastModified\": $lastModified")
-          if (child.isFile) {
-            append(", \"mimeType\": ${jsonEscape(MimeTypeResolver.getMimeType(child.name))}")
-          }
-          append("}")
+        linkedMapOf<String, Any?>(
+          "name" to child.name,
+          "type" to if (child.isDirectory) "directory" else "file"
+        ).apply {
+          if (child.isFile) put("size", child.length())
+          put("lastModified", child.lastModified())
+          if (child.isFile) put("mimeType", MimeTypeResolver.getMimeType(child.name))
         }
       }
-      val json = buildString {
-        appendLine("{")
-        appendLine("  \"path\": ${jsonEscape(directory.name)},")
-        appendLine("  \"totalFiles\": ${children.count { it.isFile }},")
-        appendLine("  \"totalFolders\": ${children.count { it.isDirectory }},")
-        appendLine("  \"entries\": [")
-        append(entries.joinToString(",\n"))
-        appendLine()
-        appendLine("  ]")
-        append("}")
-      }
+      val json = JsonUtil.toJson(
+        linkedMapOf<String, Any?>(
+          "path" to directory.name,
+          "totalFiles" to children.count { it.isFile },
+          "totalFolders" to children.count { it.isDirectory },
+          "entries" to entries
+        )
+      )
       resp.contentType = "application/json"
       resp.characterEncoding = "UTF-8"
       resp.status = HttpServletResponse.SC_OK
@@ -140,7 +131,7 @@ object FileRequestHandler {
     } catch (e: Exception) {
       log.error("Error generating _files.json for directory: ${directory.absolutePath}", e)
       resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.writer.write("""{"error": "Error generating directory listing"}""")
+      resp.writer.write(FsJson.stringify(mapOf("error" to "Error generating directory listing")))
     }
   }
 

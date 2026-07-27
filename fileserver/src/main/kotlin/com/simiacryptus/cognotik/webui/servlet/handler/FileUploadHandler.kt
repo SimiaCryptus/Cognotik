@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
 import com.simiacryptus.cognotik.webui.servlet.util.FileChannelCache
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import com.simiacryptus.cognotik.webui.servlet.util.PathUtils
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -79,9 +80,10 @@ object FileUploadHandler {
       Files.copy(input, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
     }
     log.info("File uploaded successfully: ${targetFile.absolutePath}")
-    resp.status = HttpServletResponse.SC_OK
-    resp.contentType = "application/json"
-    resp.writer.write("""{"success": true, "message": "File uploaded successfully", "filename": "$fileName"}""")
+    writeJson(
+      resp, HttpServletResponse.SC_OK,
+      linkedMapOf("success" to true, "message" to "File uploaded successfully", "filename" to fileName)
+    )
   }
 
   fun handlePut(req: HttpServletRequest, resp: HttpServletResponse, baseDir: File, pathSegments: List<String>) {
@@ -137,15 +139,25 @@ object FileUploadHandler {
     }
     if (fileExisted) {
       log.info("File updated successfully via PUT: ${targetFile.absolutePath}")
-      resp.status = HttpServletResponse.SC_OK
-      resp.contentType = "application/json"
-      resp.writer.write("""{"success": true, "message": "File updated successfully", "filename": "$fileName"}""")
+      writeJson(
+        resp, HttpServletResponse.SC_OK,
+        linkedMapOf("success" to true, "message" to "File updated successfully", "filename" to fileName)
+      )
     } else {
       log.info("File created successfully via PUT: ${targetFile.absolutePath}")
-      resp.status = HttpServletResponse.SC_CREATED
-      resp.contentType = "application/json"
-      resp.writer.write("""{"success": true, "message": "File created successfully", "filename": "$fileName"}""")
+      writeJson(
+        resp, HttpServletResponse.SC_CREATED,
+        linkedMapOf("success" to true, "message" to "File created successfully", "filename" to fileName)
+      )
     }
+  }
+
+  private fun writeJson(resp: HttpServletResponse, status: Int, payload: Map<String, Any?>) {
+    if (resp.isCommitted) return
+    resp.status = status
+    resp.contentType = "application/json"
+    resp.characterEncoding = "UTF-8"
+    resp.writer.write(FsJson.stringify(payload))
   }
 
   fun getSubmittedFileName(part: Part): String? {

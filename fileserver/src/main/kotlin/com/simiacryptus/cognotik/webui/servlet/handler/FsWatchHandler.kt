@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
 import com.simiacryptus.cognotik.webui.servlet.util.FsPath
-import com.simiacryptus.cognotik.webui.servlet.util.MiniJson
+import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
@@ -134,7 +134,7 @@ object FsWatchHandler {
   private fun send(resp: HttpServletResponse, event: String, payload: Map<String, Any?>) {
     val writer = resp.writer
     writer.write("event: $event\n")
-    writer.write("data: ${MiniJson.stringify(payload)}\n\n")
+    writer.write("data: ${FsJson.stringify(payload)}\n\n")
     writer.flush()
   }
 }
