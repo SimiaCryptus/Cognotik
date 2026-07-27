@@ -73,6 +73,22 @@ object AutoFixCli {
     // One-shot CLI: never linger.
     exitProcess(exitCode)
   }
+  /**
+   * Programmatic entry point: performs the same headless bootstrap as [main] but returns
+   * the exit code instead of killing the JVM, so an embedding process (e.g. the file
+   * server's `autofix` FS action) can drive it in-process.
+   */
+  fun run(args: Array<String>): Int {
+    CliSupport.installFileServices()
+    CliSupport.bootstrapPlatform(CliSupport.defaultUser())
+    val opts = parse(args)
+    if (opts.help) {
+      printUsage(System.out)
+      return 0
+    }
+    return execute(opts)
+  }
+
 
   private fun execute(opts: CliOptions): Int {
     if (!opts.root.isDirectory) throw IllegalArgumentException("root is not a directory: ${opts.root.absolutePath}")

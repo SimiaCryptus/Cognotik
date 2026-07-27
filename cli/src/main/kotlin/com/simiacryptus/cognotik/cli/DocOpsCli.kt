@@ -92,6 +92,20 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     // One-shot CLI: never linger.
     exitProcess(exitCode)
   }
+  /**
+   * Programmatic entry point: identical to [main] but returns the exit code instead of
+   * killing the JVM, so an embedding process (e.g. the file server's `docops` FS action)
+   * can drive it in-process. Throws [IllegalArgumentException] on bad usage.
+   */
+  fun run(args: Array<String>): Int {
+    val opts = parse(args)
+    if (opts.help || opts.command == "help") {
+      printUsage(System.out)
+      return 0
+    }
+    return execute(opts)
+  }
+
 
   private fun execute(opts: CliOptions): Int {
     val servicesCache = mutableMapOf<File, FileApplicationServices>()
