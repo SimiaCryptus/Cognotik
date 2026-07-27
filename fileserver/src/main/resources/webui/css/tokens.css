@@ -1,4 +1,5 @@
 :root {
+    color-scheme: light;
     --fs-bg: #ffffff;
     --fs-bg-elevated: #f6f7f9;
     --fs-bg-hover: #eceef1;
@@ -27,6 +28,7 @@
 }
 
 html[data-theme="dark"] {
+    color-scheme: dark;
     --fs-bg: #1a1d21;
     --fs-bg-elevated: #23262b;
     --fs-bg-hover: #2d3136;
@@ -43,6 +45,7 @@ html[data-theme="dark"] {
 
 @media (prefers-color-scheme: dark) {
     html[data-theme="auto"] {
+        color-scheme: dark;
         --fs-bg: #1a1d21;
         --fs-bg-elevated: #23262b;
         --fs-bg-hover: #2d3136;
@@ -59,6 +62,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="hc"], html[data-contrast="more"] {
+    color-scheme: dark;
     --fs-bg: #000000;
     --fs-bg-elevated: #000000;
     --fs-bg-hover: #1a1a1a;

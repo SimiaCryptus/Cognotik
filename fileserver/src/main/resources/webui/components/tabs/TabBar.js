@@ -55,7 +55,6 @@ export class TabBar extends Component {
                     type: 'button', class: 'fs-tab__close', 'aria-label': `Close ${tab.name}`,
                     onclick: (event) => {
                         event.stopPropagation();
-                        executeCommand('tab.close', undefined, tab.id);
                         this.closeTab(tab.id);
                     },
                 }, [h('span', {'aria-hidden': 'true', text: '✕'})]),

@@ -45,6 +45,7 @@ export class AppShell extends Component {
         this.tabBar.mount(this.main);
         this.editorArea = new EditorArea();
         this.editorArea.mount(this.main);
+        this.buildBottom();
 
         this.statusBar = new StatusBar();
         this.statusBar.mount(this.el);
@@ -57,12 +58,13 @@ export class AppShell extends Component {
         this.updateReadOnlyBadge();
 
         ui.setSidebar = (visible) => this.setSidebarVisible(visible);
-        ui.focusPanel = (id) => this.showPanel(id, {focus: true});
+        ui.focusPanel = (id) => (allPanels('bottom').some((panel) => panel.id === id)
+            ? this.showBottomPanel(id, {focus: true})
+            : this.showPanel(id, {focus: true}));
     }
 
     buildHeader() {
         this.menuBar = new MenuBar();
-        this.breadcrumbs = h('div', {class: 'fs-breadcrumbs', 'aria-live': 'off'});
         this.readOnlyBadge = h('span', {class: 'fs-badge', hidden: true, text: 'Read-only'});
 
         const theme = h('select', {
@@ -91,30 +93,10 @@ export class AppShell extends Component {
         this.header.append(
             h('span', {class: 'fs-header__title', text: 'Files'}),
             this.menuBar.mount(h('div')),
-            this.breadcrumbs,
             h('span', {class: 'fs-header__spacer'}),
             this.readOnlyBadge, theme, classic,
         );
-        this.track(bus.on('tab:activated', (tab) => this.renderBreadcrumbs(tab?.path || '/')));
-    }
 
-    renderBreadcrumbs(path) {
-        clear(this.breadcrumbs);
-        const parts = path.split('/').filter(Boolean);
-        const nav = h('ol', {class: 'fs-breadcrumbs__list', 'aria-label': 'Breadcrumbs'});
-        let accumulated = '';
-        nav.appendChild(h('li', {}, [h('button', {
-            text: '/', onclick: () => ui.revealPath('/'),
-        })]));
-        parts.forEach((part, index) => {
-            accumulated += `/${part}`;
-            const target = accumulated;
-            nav.appendChild(h('li', {}, [
-                index ? h('span', {'aria-hidden': 'true', text: '›'}) : null,
-                h('button', {text: part, onclick: () => ui.revealPath(target)}),
-            ]));
-        });
-        this.breadcrumbs.appendChild(nav);
     }
 
     buildActivityBar() {
@@ -168,6 +150,80 @@ export class AppShell extends Component {
         this.splitter.setAttribute('aria-valuenow', String(visible ? store.get().panels.sidebarWidth : 0));
         announce(visible ? 'Sidebar shown' : 'Sidebar hidden');
     }
+
+    /**
+     * The bottom dock lives *inside* .fs-main (below the editor) so the
+     * explorer keeps full height and no grid surgery is needed.
+     */
+    buildBottom() {
+        this.bottomSplitter = h('div', {
+            class: 'fs-hsplitter', role: 'separator', tabindex: '0', hidden: true,
+            'aria-orientation': 'horizontal', 'aria-label': 'Resize panel', 'aria-controls': 'fs-bottom',
+        });
+        this.bottom = h('section', {
+            class: 'fs-bottom', id: 'fs-bottom', hidden: true, 'aria-label': 'Panel',
+        });
+        this.main.append(this.bottomSplitter, this.bottom);
+        this.setBottomHeight(persist.get('layout', {})?.bottom ?? 260);
+        let dragging = false;
+        this.track(on(this.bottomSplitter, 'pointerdown', (event) => {
+            dragging = true;
+            this.bottomSplitter.setPointerCapture(event.pointerId);
+        }));
+        this.track(on(this.bottomSplitter, 'pointermove', (event) => {
+            if (!dragging) return;
+            this.setBottomHeight(this.main.getBoundingClientRect().bottom - event.clientY);
+        }));
+        this.track(on(this.bottomSplitter, 'pointerup', () => {
+            dragging = false;
+        }));
+        this.track(on(this.bottomSplitter, 'keydown', (event) => {
+            const step = event.shiftKey ? 64 : 16;
+            const height = this.bottom.getBoundingClientRect().height;
+            if (event.key === 'ArrowUp') this.setBottomHeight(height + step);
+            else if (event.key === 'ArrowDown') this.setBottomHeight(height - step);
+            else if (event.key === 'Escape') this.setBottomVisible(false);
+            else return;
+            event.preventDefault();
+        }));
+    }
+
+    setBottomHeight(height) {
+        const clamped = Math.min(window.innerHeight * 0.8, Math.max(80, Math.round(height)));
+        this.bottom.style.height = `${clamped}px`;
+        this.bottomSplitter.setAttribute('aria-valuenow', String(clamped));
+        persist.patch({layout: {...(persist.get('layout', {}) || {}), bottom: clamped}});
+    }
+
+    setBottomVisible(visible) {
+        this.bottom.hidden = !visible;
+        this.bottomSplitter.hidden = !visible;
+        announce(visible ? 'Panel shown' : 'Panel hidden');
+    }
+
+    /** Mounts (once) and reveals a registered `location: 'bottom'` panel. */
+    showBottomPanel(id, {toggle = false, focus = false} = {}) {
+        const visible = !this.bottom.hidden;
+        if (toggle && visible && store.get().panels.bottom === id) {
+            this.setBottomVisible(false);
+            return this.panelInstances.get(id) || null;
+        }
+        let instance = this.panelInstances.get(id);
+        if (!instance) {
+            instance = allPanels('bottom').find((panel) => panel.id === id)?.create?.();
+            if (!instance) return null;
+            this.panelInstances.set(id, instance);
+        }
+        clear(this.bottom);
+        if (instance.el) this.bottom.appendChild(instance.el);
+        else instance.mount(this.bottom);
+        this.bottom.setAttribute('aria-label', allPanels('bottom').find((p) => p.id === id)?.title || id);
+        store.set({panels: {...store.get().panels, bottom: id}});
+        this.setBottomVisible(true);
+        if (focus) instance.focus?.();
+        return instance;
+    }
+
 
     setSidebarWidth(width) {
         const clamped = Math.min(MAX_SIDEBAR, Math.max(MIN_SIDEBAR, Math.round(width)));

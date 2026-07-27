@@ -1,10 +1,12 @@
-import {registerCommand, executeCommand} from '../core/commands.js';
+import {registerCommand, executeCommand, getCommand, isEnabled} from '../core/commands.js';
 import {registerAction, registerGroup, presentationFor, allActions} from '../core/actions.js';
+import {registerPanel} from '../core/registry.js';
 import {registerEditor} from '../components/editors/EditorRegistry.js';
 import {MonacoEditor} from '../components/editors/MonacoEditor.js';
 import {PlainTextEditor} from '../components/editors/PlainTextEditor.js';
 import {ImageViewer, BinaryPlaceholder} from '../components/editors/SimpleEditors.js';
 import {openQuickPick} from '../components/overlays/QuickPick.js';
+import {TerminalPanel} from '../components/terminal/TerminalPanel.js';
 import {tabs} from '../components/tabs/TabModel.js';
 import {fs} from '../core/fsclient.js';
 import {caps} from '../core/capabilities.js';
@@ -23,7 +25,9 @@ import config from '../config.js';
 export function registerContributions({shell}) {
     registerEditors();
     registerCoreCommands(shell);
+    registerEditorActions();
     registerFileActions();
+    registerTerminalActions(shell);
     registerServerActions();
 }
 
@@ -140,14 +144,21 @@ function registerCoreCommands(shell) {
     });
     registerCommand({
         id: 'file.save', title: 'File: Save', keys: ['Mod+S'],
-        when: (ctx) => !!ctx.activeTab && !caps.readOnly,
-        run: (ctx) => shell.editorArea.save(ctx.activeTab),
+        when: (ctx) => {
+            const tab = ctx.activeTab || tabs.activeTab();
+            return !!tab && !tab.virtual && !caps.readOnly;
+        },
+        run: (ctx) => {
+            const tab = ctx.activeTab || tabs.activeTab();
+            return tab ? shell.editorArea.save(tab) : false;
+        },
     });
     registerCommand({
         id: 'file.saveAll', title: 'File: Save All', keys: ['Mod+Alt+S'],
         when: () => tabs.dirtyTabs().length > 0 && !caps.readOnly,
         run: async () => {
             for (const tab of tabs.dirtyTabs()) await shell.editorArea.save(tab);
+            announce('All files saved');
         },
     });
     registerCommand({
@@ -230,6 +241,82 @@ async function quickOpenIndex() {
     quickOpenCache = items;
     return items;
 }
+
+/**
+ * A menu entry that delegates to an existing command: the command stays the
+ * single source of truth for `keys` and `when`, so no chord is registered twice.
+ */
+function commandAction({commandId, title, icon, menus, update, disabledReason}) {
+    const command = getCommand(commandId);
+    if (!command) {
+        console.error(`commandAction: unknown command ${commandId}`);
+        return null;
+    }
+    return registerAction({
+        id: `${commandId}.menu`,
+        title: title || command.title,
+        icon,
+        commandId,
+        paletteHidden: true,
+        selection: {min: 0, max: Infinity, kinds: ['file', 'dir']},
+        menus,
+        enablement: (ctx) => isEnabled(command, ctx),
+        disabledReason: disabledReason || 'Not available right now',
+        update,
+        run: () => executeCommand(commandId),
+    });
+}
+
+/** File/View menu entries for the editor lifecycle (§19.1 `main/*` anchors). */
+function registerEditorActions() {
+    commandAction({
+        commandId: 'file.save', title: 'Save', icon: '💾',
+        disabledReason: 'No editable file is open',
+        menus: [
+            {anchor: 'main/file', group: '3_save', order: 10},
+            {anchor: 'tab/context', group: '3_save', order: 10},
+        ],
+        update: (ctx, p) => {
+            const tab = ctx.activeTab;
+            if (tab) p.text = `Save ${tab.name}${tab.dirty ? ' •' : ''}`;
+        },
+    });
+    commandAction({
+        commandId: 'file.saveAll', title: 'Save All',
+        disabledReason: 'There are no unsaved changes',
+        menus: [{anchor: 'main/file', group: '3_save', order: 20}],
+        update: (ctx, p) => {
+            const count = tabs.dirtyTabs().length;
+            if (count > 1) p.text = `Save All (${count})`;
+        },
+    });
+    commandAction({
+        commandId: 'tab.close', title: 'Close Tab',
+        disabledReason: 'No tab is open',
+        menus: [
+            {anchor: 'main/file', group: '4_close', order: 10},
+            {anchor: 'tab/context', group: '4_close', order: 10},
+        ],
+        update: (ctx, p) => {
+            const tab = ctx.activeTab;
+            if (tab) p.text = `Close ${tab.name}`;
+        },
+    });
+    commandAction({
+        commandId: 'tree.refresh', title: 'Refresh Explorer', icon: '⟳',
+        menus: [{anchor: 'main/view', group: '2_refresh', order: 10}],
+    });
+    commandAction({
+        commandId: 'view.focusEditor', title: 'Focus Editor',
+        disabledReason: 'No file is open',
+        menus: [{anchor: 'main/go', group: '1_open', order: 20}],
+    });
+    commandAction({
+        commandId: 'view.resetWorkspace', title: 'Reset Workspace State…',
+        menus: [{anchor: 'main/view', group: '9_danger', order: 90}],
+    });
+}
+
 
 /** File/folder actions: one registration serves menubar, context menu and palette. */
 function registerFileActions() {
@@ -464,6 +551,120 @@ function targetFolder(ctx) {
     if (!first) return '/';
     return first.type === 'dir' ? first.path : dirname(first.path);
 }
+
+/** POSIX-ish quoting so a file name with spaces survives the shell. */
+function shellQuote(value) {
+    const text = String(value ?? '');
+    return /^[\w@%+=:,./-]+$/.test(text) ? text : `'${text.replace(/'/g, `'\\''`)}'`;
+}
+
+function splitArgs(text) {
+    return (String(text || '').match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [])
+        .map((part) => part.replace(/^["']|["']$/g, ''));
+}
+
+/**
+ * §19 — terminals. One registration serves the explorer context menu, the
+ * Tools menu, the palette and the keyboard, and the panel is contributed
+ * through the registry so the shell knows nothing about it.
+ */
+function registerTerminalActions(shell) {
+    registerPanel({
+        id: 'terminal', title: 'Terminal', icon: '⌨', location: 'bottom', order: 10,
+        create: () => new TerminalPanel(),
+    });
+    const openTerminal = async ({cwd = '/', command, label} = {}) => {
+        const panel = shell.showBottomPanel('terminal', {focus: true});
+        if (!panel) return null;
+        return panel.openSession({cwd, command, label});
+    };
+    ui.openTerminal = openTerminal;
+    registerCommand({
+        id: 'view.toggleTerminal', title: 'View: Toggle Terminal', keys: ['Ctrl+`', 'Mod+`'],
+        run: () => shell.showBottomPanel('terminal', {toggle: true, focus: true}),
+    });
+    registerCommand({
+        id: 'terminal.new', title: 'Terminal: New Terminal', keys: ['Mod+Shift+`'],
+        requires: ['terminal'],
+        run: () => openTerminal({cwd: '/'}),
+    });
+    commandAction({
+        commandId: 'view.toggleTerminal', title: 'Terminal', icon: '⌨',
+        menus: [{anchor: 'main/view', group: '1_open', order: 20}],
+    });
+    registerAction({
+        id: 'terminal.openHere', title: 'Open Terminal Here', icon: '⌨',
+        requires: ['terminal'],
+        menus: [
+            {anchor: 'explorer/context', group: '7_run', order: 10},
+            {anchor: 'explorer/empty', group: '7_run', order: 10},
+            {anchor: 'main/tools', group: '7_run', order: 10},
+        ],
+        selection: {min: 0, max: 1, kinds: ['file', 'dir']},
+        update: (ctx, p) => {
+            const folder = targetFolder(ctx);
+            p.text = `Open Terminal in ${basename(folder) || '/'}`;
+        },
+        run: (ctx) => openTerminal({cwd: targetFolder(ctx), label: basename(targetFolder(ctx)) || '/'}),
+    });
+    registerAction({
+        id: 'file.run', title: 'Run…', icon: '▶',
+        requires: ['terminal'],
+        menus: [
+            {anchor: 'explorer/context', group: '7_run', order: 20},
+            {anchor: 'main/tools', group: '7_run', order: 20},
+        ],
+        selection: {min: 1, max: 1, kinds: ['file']},
+        update: (ctx, p) => {
+            if (ctx.resources[0]) p.text = `Run ${ctx.resources[0].name}…`;
+        },
+        params: [
+            {
+                id: 'interpreter', type: 'enum', label: 'Run with', default: 'auto',
+                options: ['auto', 'sh', 'bash', 'node', 'python3', 'java -jar'],
+                help: '"auto" executes the file directly (./name)',
+            },
+            {id: 'args', label: 'Arguments', placeholder: '--help'},
+        ],
+        run: async (ctx, params) => {
+            const file = ctx.resources[0];
+            const prefix = params.interpreter && params.interpreter !== 'auto' ? `${params.interpreter} ` : './';
+            const command = `${prefix}${shellQuote(file.name)}${params.args ? ` ${params.args}` : ''}`;
+            await openTerminal({cwd: dirname(file.path), command, label: file.name});
+            return {kind: 'none'};
+        },
+    });
+    registerAction({
+        id: 'tools.exec', title: 'Run Command…', icon: '⌘',
+        requires: ['exec'],
+        menus: [{anchor: 'main/tools', group: '7_run', order: 30}],
+        selection: {min: 0, kinds: ['file', 'dir']},
+        params: [
+            {id: 'cmd', label: 'Command', required: true, help: 'Must be allowlisted by the server'},
+            {id: 'args', label: 'Arguments', placeholder: 'status --porcelain'},
+        ],
+        /* Captured (non-interactive) execution: the transcript opens read-only. */
+        run: async (ctx, params) => {
+            const cwd = targetFolder(ctx);
+            const args = splitArgs(params.args);
+            const result = await fs.exec(params.cmd, args, {cwd, signal: ctx.signal});
+            const header = `$ ${params.cmd} ${args.join(' ')}`.trim();
+            return {
+                kind: 'document',
+                title: `${params.cmd}.log`,
+                languageId: 'plaintext',
+                content: [
+                    header,
+                    `cwd ${cwd} · exit ${result?.code}`,
+                    '',
+                    result?.stdout || '',
+                    result?.stderr ? `\n[stderr]\n${result.stderr}` : '',
+                ].join('\n'),
+            };
+        },
+    });
+}
+
 
 function download(href, name) {
     const link = document.createElement('a');

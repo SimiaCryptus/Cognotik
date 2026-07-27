@@ -191,6 +191,45 @@ export function createFsClient({base, fetchImpl} = {}) {
                 body: JSON.stringify({action, params}),
             });
         },
+        /* ------------------------------------------------------------ terminal */
+        terminals() {
+            return json('/terminal');
+        },
+        terminalOpen({cwd = '/', cmd, args, label, cols, rows} = {}) {
+            return json('/terminal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({cwd, cmd, args, label, cols, rows}),
+            });
+        },
+        terminalInput(id, data) {
+            return json('/terminal/input', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id, data}),
+            });
+        },
+        terminalResize(id, cols, rows) {
+            return json('/terminal/resize', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id, cols, rows}),
+            });
+        },
+        terminalSignal(id, signal = 'SIGTERM') {
+            return json('/terminal/signal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id, signal}),
+            });
+        },
+        terminalClose(id) {
+            return json(`/terminal${qs({id})}`, {method: 'DELETE'});
+        },
+        terminalStreamUrl(id, from = 0) {
+            return client.url('/terminal/stream', {id, from});
+        },
+
 
         fileUrl(path) {
             return client.url('/file', {path});

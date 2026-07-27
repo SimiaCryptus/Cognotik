@@ -40,7 +40,8 @@ export function openContextMenu({anchor, x, y, ctx, label, onClose, depth = 0, i
                 container.appendChild(button);
                 continue;
             }
-            const chord = keysFor(entry.action.id)[0];
+            /* Actions that delegate to a command show the command's accelerator. */
+            const chord = keysFor(entry.action.commandId || entry.action.id)[0];
             const hintId = presentation.disabledReason && !presentation.enabled ? `fs-menu-hint-${++hintSeq}` : null;
             const button = h('button', {
                 type: 'button', role: 'menuitem', tabindex: '-1',

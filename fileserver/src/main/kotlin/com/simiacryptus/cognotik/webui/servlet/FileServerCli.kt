@@ -34,13 +34,13 @@ object FileServerCli {
   /** First path segment consumed by [FileServlet] (normally a session id). */
   private const val ROOT_SEGMENT = "root"
   private const val FILES_PREFIX = "/files"
-     private const val UI_PREFIX = "/ui"
+  private const val UI_PREFIX = "/ui"
 
   open class SimpleFileServlet(
     private val baseDir: File,
     private val gitEnabled: Boolean,
-       private val readOnly: Boolean = false,
-       private val uiEnabled: Boolean = true
+    private val readOnly: Boolean = false,
+    private val uiEnabled: Boolean = true
   ) : FilesystemServlet() {
     override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
     override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
@@ -60,24 +60,25 @@ object FileServerCli {
       val path = URLEncoder.encode(if (filePath.isBlank()) "/" else filePath, StandardCharsets.UTF_8)
       return "${req.contextPath}/zip?session=$session&path=$path"
     }
-       /** docs/ui.md §21.3 — the classic listing links to the equivalent SPA path. */
-       override fun getToolbarActions(req: HttpServletRequest, currentPath: String): String {
-         if (!uiEnabled) return ""
-         val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
-         return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$UI_PREFIX/#$hash">🧭 Open in IDE view</a>"""
-       }
+
+    /** docs/ui.md §21.3 — the classic listing links to the equivalent SPA path. */
+    override fun getToolbarActions(req: HttpServletRequest, currentPath: String): String {
+      if (!uiEnabled) return ""
+      val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
+      return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$UI_PREFIX/#$hash">🧭 Open in IDE view</a>"""
+    }
   }
 
   /** Sends browsers landing on "/" (or "/files") to the served directory listing. */
-     class RootRedirectServlet(private val target: String = "$FILES_PREFIX/$ROOT_SEGMENT/") : HttpServlet() {
+  class RootRedirectServlet(private val target: String = "$FILES_PREFIX/$ROOT_SEGMENT/") : HttpServlet() {
     override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-         response.sendRedirect("${request.contextPath}$target")
+      response.sendRedirect("${request.contextPath}$target")
     }
   }
 
   /** Rejects mutating requests when --read-only is used. */
-     class ReadOnlyFileServlet(baseDir: File, gitEnabled: Boolean, uiEnabled: Boolean = true) :
-       SimpleFileServlet(baseDir, gitEnabled, readOnly = true, uiEnabled = uiEnabled) {
+  class ReadOnlyFileServlet(baseDir: File, gitEnabled: Boolean, uiEnabled: Boolean = true) :
+    SimpleFileServlet(baseDir, gitEnabled, readOnly = true, uiEnabled = uiEnabled) {
     private fun deny(response: HttpServletResponse) {
       response.status = HttpServletResponse.SC_FORBIDDEN
       response.contentType = "text/plain"
@@ -109,8 +110,8 @@ object FileServerCli {
     var host = "127.0.0.1"
     var gitEnabled = true
     var readOnly = false
-       var uiEnabled = true
-       var uiDefault = false
+    var uiEnabled = true
+    var uiDefault = false
     var dirArg: String? = null
 
     var i = 0
@@ -127,8 +128,8 @@ object FileServerCli {
 
         "--no-git" -> gitEnabled = false
         "--read-only" -> readOnly = true
-           "--no-ui" -> uiEnabled = false
-           "--ui" -> uiDefault = true
+        "--no-ui" -> uiEnabled = false
+        "--ui" -> uiDefault = true
         "--help" -> {
           println(usage())
           return
@@ -148,14 +149,14 @@ object FileServerCli {
       fail("Not a directory: ${baseDir.absolutePath}")
     }
 
-       val server = start(baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault)
+    val server = start(baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault)
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
 
     println("Serving ${baseDir.absolutePath}")
     println("  ->  http://$displayHost:$boundPort/")
-       if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
-       println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
+    if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
+    println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
     println("Press Ctrl-C to stop.")
 
@@ -181,9 +182,9 @@ object FileServerCli {
     host: String = "127.0.0.1",
     port: Int = 8081,
     gitEnabled: Boolean = true,
-       readOnly: Boolean = false,
-       uiEnabled: Boolean = true,
-       uiDefault: Boolean = false
+    readOnly: Boolean = false,
+    uiEnabled: Boolean = true,
+    uiDefault: Boolean = false
   ): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
@@ -197,8 +198,8 @@ object FileServerCli {
       resourceBase = baseDir.absolutePath
     }
 
-       val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled)
-       else SimpleFileServlet(baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled)
+    val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled)
+    else SimpleFileServlet(baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled)
     val fileHolder = ServletHolder("files", fileServlet)
     /* @MultipartConfig is not honoured for programmatically registered instances. */
     fileHolder.registration.setMultipartConfig(
@@ -217,12 +218,12 @@ object FileServerCli {
       "/zip"
     )
 
-       if (uiEnabled) {
-         context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
-       }
+    if (uiEnabled) {
+      context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
+    }
 
-       val landing = if (uiEnabled && uiDefault) "$UI_PREFIX/" else "$FILES_PREFIX/$ROOT_SEGMENT/"
-       val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
+    val landing = if (uiEnabled && uiDefault) "$UI_PREFIX/" else "$FILES_PREFIX/$ROOT_SEGMENT/"
+    val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
     context.addServlet(redirect, "")
     context.addServlet(redirect, FILES_PREFIX)
 

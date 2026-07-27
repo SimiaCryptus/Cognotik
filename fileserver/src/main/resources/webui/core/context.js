@@ -42,11 +42,24 @@ export function buildContext(options = {}) {
     } catch (e) {
         console.warn('context source failed', e);
     }
+    /* The active editor is global state: menus, the palette and keybindings all
+       need it regardless of which surface produced the invocation. */
+    let editorBase = base;
+    if (origin !== 'editor' && !base.activeTab) {
+        try {
+            editorBase = sources.get('editor')?.() || {};
+        } catch (e) {
+            editorBase = {};
+        }
+    }
+
 
     const resources = (options.resources || base.resources || []).slice(0, caps.limits.maxContextResources);
     const truncated = (options.resources || base.resources || []).length > resources.length;
     const paths = resources.map((r) => r.path);
-    const editorSelection = options.editorSelection !== undefined ? options.editorSelection : base.editorSelection || null;
+    const editorSelection = options.editorSelection !== undefined
+        ? options.editorSelection
+        : (base.editorSelection || editorBase.editorSelection || null);
 
     const ctx = {
         origin,
@@ -58,8 +71,8 @@ export function buildContext(options = {}) {
         commonAncestor: commonAncestor(paths),
         truncated,
         count: (options.resources || base.resources || []).length,
-        activeTab: base.activeTab || null,
-        editor: base.editor || null,
+        activeTab: base.activeTab || editorBase.activeTab || null,
+        editor: base.editor || editorBase.editor || null,
         editorSelection,
         selection: paths,
         caps,

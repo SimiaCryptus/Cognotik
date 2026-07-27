@@ -133,19 +133,17 @@ export class TreeView extends Component {
         const additive = event.ctrlKey || event.metaKey;
         const range = event.shiftKey;
         this.applySelection(node, {additive, range});
-        if (node.type === 'dir') {
-            const twisty = event.target.closest('.fs-tree__twisty');
-            if (twisty) {
-                this.model.toggle(node.path);
-                return;
-            }
+        /* Only the twisty reacts to a single click; opening needs a double click
+           (or Enter) so the tree is not "over-reactive" while browsing. */
+        if (node.type === 'dir' && event.target.closest('.fs-tree__twisty')) {
+            this.model.toggle(node.path);
         }
-        if (node.type === 'file' && !additive && !range) this.props.onActivate?.(node, {preview: true});
     }
 
     onDblClick(event) {
         const node = this.nodeAt(event);
         if (!node) return;
+        event.preventDefault();
         if (node.type === 'dir') this.model.toggle(node.path);
         else this.props.onActivate?.(node, {preview: false});
     }

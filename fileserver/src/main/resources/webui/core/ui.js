@@ -16,6 +16,8 @@ export const ui = {
     revealPath: async () => null,
     openVirtualDocument: async () => null,
     refresh: async () => null,
+    /** Replaced by the terminal panel; resolves to the created session. */
+    openTerminal: async () => null,
     focusPanel() {
     },
     setSidebar() {

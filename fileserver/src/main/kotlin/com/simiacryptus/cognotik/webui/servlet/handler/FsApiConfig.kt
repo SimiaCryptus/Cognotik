@@ -9,7 +9,8 @@ data class FsApiConfig(
   /** Server-wide read-only mode (`--read-only`): all mutations answer EROFS. */
   val readOnly: Boolean = false,
   /** cmd -> allowed first-arg (sub-command) set; empty set = any sub-command. */
-  val execAllowlist: Map<String, Set<String>> = emptyMap(),
+  val execAllowlist: Map<String, Set<String>> = mapOf(
+  ),
   /** "sse", "poll" or "none". */
   val watchMode: String = "sse",
   val utimesEnabled: Boolean = true,
@@ -30,7 +31,12 @@ data class FsApiConfig(
   val crossOriginIsolated: Boolean = false,
   /** Advertised sync strategy for the client bridge: "sab" | "xhr" | "snapshot". */
   val syncStrategy: String = "xhr",
+  val terminalEnabled: Boolean = true,
+  val maxTerminals: Int = 1,
+  val terminalShell: List<String> = listOf("bash"),
 ) {
+
+
   companion object {
     fun defaultCaseSensitive(): Boolean {
       val os = System.getProperty("os.name", "").lowercase()
