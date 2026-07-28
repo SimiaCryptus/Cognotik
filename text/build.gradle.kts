@@ -43,6 +43,21 @@ dependencies {
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.19.0")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.19.0")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:2.19.0")
+  /*
+   * Caveman prompting module (com.simiacryptus.cognotik.text.caveman).
+   *
+   * These classical-IR toolkits are OPTIONAL back-ends, declared compileOnly so that
+   * (a) the core module carries no additional runtime footprint, and
+   * (b) consumers opt in explicitly by adding them to their own runtime classpath.
+   *
+   * The default pipeline (DefaultEnglishAnalyzer / PorterStemmer / HeuristicPosTagger /
+   * FrequencySalienceExtractor / TextRankSalienceExtractor) requires none of them.
+   * No neural runtime, embedding model, or LLM inference library is permitted here.
+   */
+  compileOnly("org.apache.lucene:lucene-core:9.11.1")
+  compileOnly("org.apache.lucene:lucene-analysis-common:9.11.1")
+  compileOnly("org.apache.opennlp:opennlp-tools:2.3.3")
+
 
   compileOnly(libs.logback.classic) {
     exclude(group = "org.slf4j", module = "slf4j-api")
