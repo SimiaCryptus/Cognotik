@@ -22,6 +22,9 @@ package com.simiacryptus.cognotik.cli
   import com.simiacryptus.cognotik.webui.application.ApplicationServer
   import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
   import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
+   import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
+   import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
+   import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
   import com.simiacryptus.cognotik.webui.servlet.action.FsAction
   import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
   import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
@@ -111,10 +114,26 @@ package com.simiacryptus.cognotik.cli
           description = "Open a patch chat session over the selected files",
           parameters = listOf(
             ActionParam("path", required = false, description = "file or folder relative to the root (repeatable)"),
-            ActionParam("lineNumbers", required = false, default = "false", description = "number the code summary"),
-            ActionParam("name", required = false, description = "session label shown in the chat history"),
+             ActionParam(
+               "lineNumbers", "boolean", required = false, default = false,
+               label = "Number the code summary"
+             ),
+             ActionParam(
+               "name", required = false, label = "Session name",
+               description = "label shown in the chat history"
+             ),
           ),
           mutating = true,
+           ui = ActionUi(
+             title = "Modify Files…", icon = "✏️", category = "Cognotik",
+             menus = listOf(
+               ActionMenu("explorer/context", "7_run", 30),
+               ActionMenu("main/tools", "7_run", 30),
+             ),
+             selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
+             hiddenParams = setOf("path"),
+             sendSelection = "paths", selectionParam = "path",
+           ),
         ) { ctx -> handleModify(ctx) },
         replace = true,
       )

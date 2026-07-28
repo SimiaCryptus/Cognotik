@@ -328,6 +328,8 @@ object FsApiHandler {
   private fun describeActions(config: FsApiConfig): Map<String, Any?> = linkedMapOf(
     "apiVersion" to API_VERSION,
     "capabilities" to meta(config)["capabilities"],
+    /* Presentation-bearing actions, in the shape the web UI registers directly. */
+    "actions" to FsAction.values().sortedBy { it.name }.mapNotNull { it.uiDescriptor() },
     "fs" to FsAction.values().sortedBy { it.name }.map { it.describe() },
     "git" to GitActions.describe()
   )

@@ -679,33 +679,115 @@ function download(href, name) {
  * §19.11 — descriptors from GET /actions become first-class actions, so a
  * host-registered Kotlin tool appears in every surface with no JavaScript.
  */
+const serverActions = new Set();
+
 function registerServerActions() {
-    bus.on('actions:descriptors', ({actions: descriptors}) => {
-        for (const descriptor of descriptors || []) {
-            if (!descriptor?.id || !descriptor.title) continue;
-            registerAction({
-                ...descriptor,
-                run: async (ctx, params) => {
-                    const response = await fetch(`${store.get().base}/action/${encodeURIComponent(descriptor.id)}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'X-Fs-Api': '1'},
-                        body: JSON.stringify({
-                            context: {
-                                origin: ctx.origin, anchor: ctx.anchor, truncated: ctx.truncated,
-                                resources: ctx.resources.map((r) => ({path: r.path, type: r.type})),
-                                editorSelection: ctx.editorSelection,
-                            },
-                            params,
-                        }),
-                        signal: ctx.signal,
-                    });
-                    if (!response.ok) {
-                        const payload = await response.json().catch(() => ({}));
-                        throw Object.assign(new Error(payload?.error?.message || 'Action failed'), {code: payload?.error?.code || 'EACTION'});
-                    }
-                    return response.json();
-                },
-            });
-        }
-    });
+     bus.on('actions:descriptors', (payload) => ingestDescriptors(payload?.actions));
+     /* The /actions round trip may land before *or* after this module runs, so
+        ask again rather than depend on the ordering. */
+     fs.actions().then((payload) => ingestDescriptors(payload?.actions)).catch(() => { /* additive */
+     });
+}
+
+function ingestDescriptors(descriptors) {
+     for (const descriptor of descriptors || []) {
+         if (!descriptor?.id || !descriptor.title) continue;
+         if (serverActions.has(descriptor.id)) continue;
+         serverActions.add(descriptor.id);
+         registerAction({
+             ...descriptor,
+             run: (ctx, params) => runServerAction(descriptor, ctx, params),
+         });
+     }
+}
+
+/** Server paths are root-relative: '/src/a.kt' would be read as absolute. */
+function relativePath(path) {
+     return String(path ?? '').replace(/^\/+/, '');
+}
+
+async function runServerAction(descriptor, ctx, params) {
+     const endpoint = descriptor.endpoint || {};
+     const method = (endpoint.method || 'POST').toUpperCase();
+     const query = new URLSearchParams();
+     for (const [key, value] of Object.entries(params || {})) {
+         if (value === undefined || value === null || value === '' || value === false) continue;
+         query.append(key, value === true ? 'true' : String(value));
+     }
+     const key = endpoint.selectionParam || 'path';
+     if (endpoint.sendSelection === 'paths') {
+         for (const path of ctx.paths || []) query.append(key, relativePath(path));
+     } else if (endpoint.sendSelection === 'first' && ctx.paths?.length) {
+         query.append(key, relativePath(ctx.paths[0]));
+     } else if (endpoint.sendSelection === 'folder') {
+         const folder = relativePath(targetFolder(ctx));
+         if (folder) query.append(key, folder);
+     }
+     const search = query.toString();
+     const url = `${store.get().base}/${endpoint.op || ''}${search ? `?${search}` : ''}`;
+     const response = await fetch(url, {method, headers: {'X-Fs-Api': '1'}, signal: ctx.signal});
+     const payload = await response.json().catch(() => ({}));
+     if (!response.ok) {
+         throw Object.assign(new Error(payload?.error?.message || `${descriptor.title} failed`), {
+             code: payload?.error?.code || 'EACTION',
+         });
+     }
+     return serverActionResult(descriptor, payload, ctx);
+}
+
+/** Maps the CLI payload shapes onto §19.8 action results. */
+async function serverActionResult(descriptor, payload, ctx) {
+     if (!payload || typeof payload !== 'object') return {kind: 'none'};
+     if (payload.kind) return payload;
+     if (payload.url) {
+         /* A popup opened from an awaited promise is usually blocked; offer it instead. */
+         return {
+             kind: 'toast', severity: 'info', message: `${descriptor.title}: session ready`,
+             actions: [{label: 'Open', run: () => window.open(payload.url, '_blank', 'noopener')}],
+         };
+     }
+     if (payload.task) {
+         const task = await pollServerTask(payload.task, ctx);
+         return {
+             kind: 'document',
+             title: `${task.kind}-${task.id}.log`,
+             languageId: 'plaintext',
+             content: [
+                 `${task.kind} ${task.label}`,
+                 `state ${task.state}${task.exitCode === null || task.exitCode === undefined ? '' : ` · exit ${task.exitCode}`}`,
+                 '',
+                 task.output || '(no output)',
+             ].join('\n'),
+         };
+     }
+     if (Array.isArray(payload.tasks)) {
+         return {
+             kind: 'document', title: 'tasks.log', languageId: 'plaintext',
+             content: payload.tasks.map((t) => `${t.id}  ${t.state}  ${t.kind}  ${t.label}`).join('\n')
+                 || '(no tasks yet)',
+         };
+     }
+     return {
+         kind: 'document', title: `${descriptor.id}.json`, languageId: 'json',
+         content: JSON.stringify(payload, null, 2),
+     };
+}
+
+async function pollServerTask(task, ctx) {
+     let current = task;
+     while (current?.state === 'running' && !ctx?.signal?.aborted) {
+         ctx?.progress?.(`${current.kind}: ${current.state}`);
+         // eslint-disable-next-line no-await-in-loop
+         await new Promise((resolve) => setTimeout(resolve, 1500));
+         // eslint-disable-next-line no-await-in-loop
+         const response = await fetch(`${store.get().base}/tasks?id=${encodeURIComponent(current.id)}`, {
+             headers: {'X-Fs-Api': '1'},
+         }).catch(() => null);
+         if (!response?.ok) break;
+         // eslint-disable-next-line no-await-in-loop
+         const payload = await response.json().catch(() => null);
+         if (!payload?.task) break;
+         current = payload.task;
+     }
+     return current;
 }

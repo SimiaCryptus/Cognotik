@@ -1,6 +1,9 @@
 package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
+import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
+import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
+import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
 import com.simiacryptus.cognotik.webui.servlet.action.FsAction
 import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
@@ -94,13 +97,29 @@ object ServerTaskActions {
         method = "POST",
         description = "Run the DocOps CLI against the served tree",
         parameters = listOf(
-          ActionParam("command", required = false, default = "plan", description = DOCOPS_COMMANDS.joinToString("|")),
-          ActionParam("path", required = false, description = "document or folder, relative to the root (repeatable)"),
-          ActionParam("mode", required = false, description = "update mode, e.g. PatchToUpdate"),
-          ActionParam("target", required = false, description = "only run the task producing this output file"),
-          ActionParam("var", required = false, description = "template variable override NAME=VALUE (repeatable)"),
+           ActionParam(
+             "command", required = false, default = "plan", label = "Command",
+             description = "only \"run\" mutates the workspace", options = DOCOPS_COMMANDS
+           ),
+           ActionParam("path", required = false, description = "document or folder, relative to the root (repeatable)"),
+           ActionParam("mode", required = false, label = "Update mode", description = "e.g. PatchToUpdate"),
+           ActionParam(
+             "target", required = false, label = "Target",
+             description = "only run the task producing this output file"
+           ),
+           ActionParam("var", required = false, description = "template variable override NAME=VALUE (repeatable)"),
         ),
         mutating = true,
+         ui = ActionUi(
+           title = "DocOps…", icon = "📘", category = "Cognotik",
+           menus = listOf(
+             ActionMenu("main/tools", "7_run", 40),
+             ActionMenu("explorer/context", "7_run", 40),
+           ),
+           selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
+           hiddenParams = setOf("path", "var"),
+           sendSelection = "paths", selectionParam = "path",
+         ),
       ) { ctx -> handleDocOps(ctx) },
       replace = true,
     )
@@ -110,12 +129,22 @@ object ServerTaskActions {
         method = "POST",
         description = "Run a command and iteratively fix whatever it reports",
         parameters = listOf(
-          ActionParam("cmd", required = true, description = "command line to run (repeatable)"),
+           ActionParam("cmd", required = true, label = "Command", description = "command line to run (repeatable)"),
           ActionParam("dir", required = false, description = "working directory, relative to the root"),
           ActionParam("autoFix", required = false, default = "true", description = "apply generated patches"),
-          ActionParam("timeout", required = false, description = "minutes before giving up"),
+           ActionParam("timeout", "int", required = false, label = "Timeout (minutes)"),
         ),
         mutating = true,
+         ui = ActionUi(
+           title = "AutoFix…", icon = "🩺", category = "Cognotik",
+           menus = listOf(
+             ActionMenu("main/tools", "7_run", 50),
+             ActionMenu("explorer/context", "7_run", 50),
+           ),
+           selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
+           hiddenParams = setOf("dir", "autoFix"),
+           sendSelection = "folder", selectionParam = "dir",
+         ),
       ) { ctx -> handleAutoFix(ctx) },
       replace = true,
     )
@@ -128,6 +157,13 @@ object ServerTaskActions {
           ActionParam("id", required = false, description = "task id; omit to list"),
         ),
         mutating = false,
+         ui = ActionUi(
+           title = "Cognotik Tasks", icon = "🗒", category = "Cognotik",
+           menus = listOf(ActionMenu("main/tools", "7_run", 60)),
+           selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
+           hiddenParams = setOf("id"),
+           sendSelection = "none",
+         ),
       ) { ctx -> handleTasks(ctx) },
       replace = true,
     )
