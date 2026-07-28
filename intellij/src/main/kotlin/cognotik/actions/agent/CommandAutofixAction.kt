@@ -15,8 +15,8 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.apps.CmdPatchApp
-import com.simiacryptus.cognotik.apps.PatchApp
+import com.simiacryptus.cognotik.autofix.CmdPatchApp
+import com.simiacryptus.cognotik.autofix.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ToolProvider
