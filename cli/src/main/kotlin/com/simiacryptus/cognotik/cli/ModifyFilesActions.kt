@@ -176,8 +176,8 @@ package com.simiacryptus.cognotik.cli
       SessionProxyServer.metadataStorage.setSessionName(null, session, label)
       SessionProxyServer.agents[session] = PatchChatManager(
         session = session,
-        model = models?.smart?.asChatInterface(user!!)!!,
-        fastModel = models?.fast?.asChatInterface(user!!)!!,
+        model = models?.smart?.asChatInterface(user ?: throw IllegalStateException("No user configured")) ?: throw IllegalStateException("No smart model configured"),
+        fastModel = models?.fast?.asChatInterface(user ?: throw IllegalStateException("No user configured")) ?: throw IllegalStateException("No fast model configured"),
         root = root,
         files = selected,
         showLineNumbers = lineNumbers,

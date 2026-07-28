@@ -28,6 +28,7 @@ import java.io.File
 )
 abstract class FileServlet : HttpServlet() {
 
+  var forceNew = false
   abstract fun getDir(request: HttpServletRequest, response: HttpServletResponse): File?
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -67,16 +68,19 @@ abstract class FileServlet : HttpServlet() {
         }
 
         else -> {
-          val currentPath = pathSegments.drop(1).joinToString("/")
-          val newUiUrl = if (request.getParameter("legacy") == null) {
-            newUiRedirectUrl(request, currentPath)
-          } else null
-          if (newUiUrl != null) {
-            log.debug("Redirecting directory listing to new UI: $newUiUrl")
-            response.sendRedirect(newUiUrl)
+          if(forceNew) {
+            val currentPath = pathSegments.drop(1).joinToString("/")
+            val newUiUrl = if (request.getParameter("legacy") == null) {
+              newUiRedirectUrl(request, currentPath)
+            } else null
+            if (newUiUrl != null) {
+              log.debug("Redirecting directory listing to new UI: $newUiUrl")
+              response.sendRedirect(newUiUrl)
+            } else {
+              serveDirectoryListing(file, request, response, pathSegments)
+            }
           } else {
-            serveDirectoryListing(file, request, response, pathSegments)
-          }
+            serveDirectoryListing(file,    request, response, pathSegments)    }
         }
       }
     } catch (e: IllegalArgumentException) {

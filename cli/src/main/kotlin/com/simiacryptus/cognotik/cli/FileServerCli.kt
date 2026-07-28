@@ -63,7 +63,7 @@ import kotlin.system.exitProcess
  */
 object FileServerCli {
 
-  var user: User? = null
+  var user: User = CliSupport.defaultUser()
   var available: Map<String, ChatModel> = emptyMap()
   var models: CliSupport.Models? = null
 
@@ -397,7 +397,7 @@ object FileServerCli {
     var fixCommand = ""
      var modifyEnabled = true
      var lineNumbers = false
-     var chatPort = 0
+     var chatPort = 8061
 
     var i = 0
     while (i < args.size) {

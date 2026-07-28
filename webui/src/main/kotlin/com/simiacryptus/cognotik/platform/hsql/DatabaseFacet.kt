@@ -61,11 +61,16 @@ class DatabaseFacet(
         // Ensure schema (DDL strings + Exposed table definitions) is initialized
         // for this facet. Exposed transactions bypass [getConnection], so
         // schema initialization must also be triggered here.
-        try {
-            initializeSchemaForDatabase(url, db)
-        } catch (e: Exception) {
-            log.info("Failed to initialize schema for $name on $url", e)
-        }
+       //
+       // Intentionally NOT caught here: swallowing this failure would cache
+       // a "ready" Database handle (via `by lazy`) whose schema was never
+       // actually created. This is especially dangerous right after an
+       // in-memory fallback demotion, where a failed initialization attempt
+       // otherwise looks identical to a successful one from the caller's
+       // perspective. Letting the exception propagate means Kotlin's
+       // `lazy {}` will NOT memoize this value, so the next access retries
+       // schema initialization instead of silently operating without one.
+       initializeSchemaForDatabase(url, db)
         db
     }
 
@@ -378,20 +383,26 @@ class DatabaseFacet(
             }
             // Also create any Exposed table definitions registered with this facet.
             if (tables.isNotEmpty()) {
-                try {
-                    // Initialize via Exposed by using the lazy database property.
-                    // Using a nested transaction here would require an Exposed
-                    // Database handle; we instead defer to initializeSchemaForDatabase
-                    // by accessing `database` which itself triggers initialization
-                    // (but is guarded by schemasInitialized). To avoid recursion,
-                    // we mark schemasInitialized before delegating.
-                    schemasInitialized.add(schemaKey)
-                    log.info("Creating {} Exposed table(s) for $name on {}", tables.size, url)
+               // Initialize via Exposed by using the lazy database property.
+               // Using a nested transaction here would require an Exposed
+               // Database handle; we instead defer to initializeSchemaForDatabase
+               // by accessing `database` which itself triggers initialization
+               // (but is guarded by schemasInitialized). To avoid recursion,
+               // we mark schemasInitialized before delegating, but MUST undo
+               // that mark if table creation actually fails -- otherwise a
+               // single failed attempt (common right after an in-memory
+               // fallback demotion, before the schema exists) would
+               // permanently "poison" this key and every later connection
+               // would silently skip schema initialization forever.
+               schemasInitialized.add(schemaKey)
+               try {
+                   log.info("Creating {} Exposed table(s) for $name on {}", tables.size, url)
                     exposedTransaction(database) {
                         SchemaUtils.create(tables = tables.toTypedArray())
                     }
                     return
                 } catch (e: Exception) {
+                   schemasInitialized.remove(schemaKey)
                     log.info("Failed to create Exposed tables for $name on $url", e)
                     throw e
                 }
