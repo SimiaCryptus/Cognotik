@@ -37,12 +37,15 @@ function candidates() {
     const out = [];
     const meta = document.querySelector('meta[name="fs-api-base"]')?.content;
     const query = new URLSearchParams(location.search).get('api');
+    const session = new URLSearchParams(location.search).get('session');
     const stored = persist.global('apiBase');
+    /* Derived from the servlet layout: /ui/ and /fileIndex/<session>/ are siblings. */
+    const prefix = location.pathname.replace(/\/ui(\/.*)?$/, '');
     if (query) out.push(query);
+    if (session) out.push(`${prefix}/fileIndex/${session}/.fsapi/v1`);
     if (meta) out.push(meta);
     if (stored) out.push(stored);
     /* Derived from the CLI layout: /ui/ -> /files/root/.fsapi/v1 */
-    const prefix = location.pathname.replace(/\/ui(\/.*)?$/, '');
     out.push(`${prefix}/files/root/.fsapi/v1`);
     out.push(`${prefix}/.fsapi/v1`);
     return out.map((value) => value.replace(/\/$/, '')).filter((value, index, list) => list.indexOf(value) === index);

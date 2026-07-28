@@ -67,7 +67,16 @@ abstract class FileServlet : HttpServlet() {
         }
 
         else -> {
-          serveDirectoryListing(file, request, response, pathSegments)
+          val currentPath = pathSegments.drop(1).joinToString("/")
+          val newUiUrl = if (request.getParameter("legacy") == null) {
+            newUiRedirectUrl(request, currentPath)
+          } else null
+          if (newUiUrl != null) {
+            log.debug("Redirecting directory listing to new UI: $newUiUrl")
+            response.sendRedirect(newUiUrl)
+          } else {
+            serveDirectoryListing(file, request, response, pathSegments)
+          }
         }
       }
     } catch (e: IllegalArgumentException) {
@@ -475,6 +484,13 @@ abstract class FileServlet : HttpServlet() {
    * Override to provide a ZIP download link for the current directory.
    */
   open fun getZipLink(req: HttpServletRequest, filePath: String): String = ""
+  /**
+   * Override to redirect directory-listing GET requests to a newer UI (e.g. an SPA) instead
+   * of rendering the legacy HTML directory listing. Return null (the default) to keep the
+   * legacy behavior. Callers can force the legacy listing with a `?legacy=1` query parameter.
+   */
+  open fun newUiRedirectUrl(req: HttpServletRequest, currentPath: String): String? = null
+
 
   companion object {
     val log = LoggerFactory.getLogger(FileServlet::class.java)

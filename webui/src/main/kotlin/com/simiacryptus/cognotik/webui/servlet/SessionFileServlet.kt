@@ -62,8 +62,24 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
                  )
                  return
              }
-             if (!isAuthenticatedForSession(req, resp)) {
+             // The FS API is consumed by fetch()-style clients (the IDE view) that expect a
+             // JSON body on *every* response. isAuthenticatedForSession() is built for the
+             // classic HTML browser and reacts to a missing/invalid session by issuing a 307
+             // redirect to /login/...; to a fetch() client that redirect is indistinguishable
+             // from a dead endpoint, which is exactly why the IDE view falls back to a generic
+             // "No FS API endpoint answered /meta" message instead of an actionable one. Report
+             // a proper FS API error here instead, consistent with the "missing session" case
+             // above.
+             val session = Session(sessionId)
+             val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+             if (user == null && !session.isGlobal()) {
                  log.debug("FS API request rejected (unauthenticated): ${req.pathInfo}")
+                 FsErrors.write(
+                     resp, FsException(
+                         FsErrorCode.EACCES, "fsapi", null,
+                         "Not authenticated for session '$sessionId'; log in and retry"
+                     )
+                 )
                  return
              }
          }
@@ -100,17 +116,29 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
      )
      /**
       * docs/ui.md §21.3 — the classic listing links to the equivalent SPA path.
-      * The SPA is a shared, session-agnostic mount, so the FS API base is handed to it
-      * as `?mount=/fileIndex/<session>` and the directory as the location hash.
+      * The SPA is a shared, session-agnostic mount; it derives the FS API base itself
+      * from `?session=<id>` (siblings `/ui/` and `/fileIndex/<id>/.fsapi/v1`), with the
+      * directory carried in the location hash.
       */
      override fun getToolbarActions(req: HttpServletRequest, currentPath: String): String {
          val sessionId = sessionIdOf(req) ?: return ""
-         val mount = req.contextPath +
-                 req.servletPath.removeSuffix("/*").removeSuffix("/") + "/" + sessionId
          val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
-         val encodedMount = URLEncoder.encode(mount, "UTF-8")
-         return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$webUiPath/?mount=$encodedMount#$hash">🧭 Open in IDE view</a>"""
+         val encodedSession = URLEncoder.encode(sessionId, "UTF-8")
+        return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$webUiPath/?session=$encodedSession#$hash">🧭 Open in IDE view</a>"""
      }
+     /**
+      * Directory-listing GET requests (e.g. `/fileIndex/<session>/`) are redirected to the
+      * new IDE-style UI by default, so the legacy HTML browser is only shown when explicitly
+      * requested via `?legacy=1`. The underlying FS API and file-serving endpoints (used by
+      * both UIs, and by any legacy integrations) are unaffected.
+      */
+     override fun newUiRedirectUrl(req: HttpServletRequest, currentPath: String): String? {
+         val sessionId = sessionIdOf(req) ?: return null
+         val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
+         val encodedSession = URLEncoder.encode(sessionId, "UTF-8")
+        return "${req.contextPath}$webUiPath/?session=$encodedSession#$hash"
+     }
+
 
     override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File? {
         return try {
