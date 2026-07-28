@@ -92,8 +92,5 @@ fi
 # shellcheck disable=SC2206  # deliberate word-splitting of JAVA_OPTS
 read -r -a java_opts <<< "${JAVA_OPTS:-}"
 
-export EMAIL="acharneski@gmail.com"
-export COGNOTIK_SMART_MODEL="claude-sonnet-5"
-export COGNOTIK_FAST_MODEL="claude-haiku-4-5-20251001"
-
+EMAIL="acharneski@gmail.com" COGNOTIK_SMART_MODEL="claude-sonnet-5" COGNOTIK_FAST_MODEL="claude-haiku-4-5-20251001" \
 exec "$JAVA_BIN" "${java_opts[@]}" -cp "$JAR" "$MAIN_CLASS" "$@"

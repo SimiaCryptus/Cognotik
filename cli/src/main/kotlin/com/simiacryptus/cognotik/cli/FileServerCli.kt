@@ -1,9 +1,14 @@
 package com.simiacryptus.cognotik.cli
 
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.cli.CliSupport.availableModels
+import com.simiacryptus.cognotik.cli.CliSupport.bootstrapPlatform
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.FilesystemServlet
 import com.simiacryptus.cognotik.webui.servlet.StaticZipServlet
 import com.simiacryptus.cognotik.webui.servlet.WebUiServlet
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
+import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
@@ -31,12 +36,14 @@ import kotlin.system.exitProcess
  * POST {mount}/.fsapi/v1/docops?command=plan
  * POST {mount}/.fsapi/v1/docops?command=run&path=docs/api.md
  * POST {mount}/.fsapi/v1/autofix?cmd=./gradlew%20build
+  * POST {mount}/.fsapi/v1/modify?path=src/Foo.kt
  * GET  {mount}/.fsapi/v1/tasks[?id=t1]
  * ```
  *
  * The classic directory listing grows matching affordances: per-document
- * *Plan* / *Run* links for markdown files, an *AutoFix…* toolbar button, and a
- * live output panel that polls the task endpoint.
+  * *Plan* / *Run* links for markdown files, a per-file *Modify* link (the port of
+  * the IDE's `ModifyFilesAction`), an *AutoFix…* toolbar button, and a live output
+  * panel that polls the task endpoint.
  *
  * Usage:
  *   FileServerCli [options] [directory]
@@ -55,6 +62,10 @@ import kotlin.system.exitProcess
  * Runs until interrupted (Ctrl-C).
  */
 object FileServerCli {
+
+  var user: User? = null
+  var available: Map<String, ChatModel> = emptyMap()
+  var models: CliSupport.Models? = null
 
   /** First path segment consumed by [FileServlet] (normally a session id). */
   private const val ROOT_SEGMENT = "root"
@@ -75,6 +86,10 @@ object FileServerCli {
     private val tasksEnabled: Boolean = false,
     /** Pre-filled command in the AutoFix prompt. */
     private val defaultFixCommand: String = "",
+     /** true = render the Modify (patch chat) affordances; requires ModifyFilesActions. */
+     private val modifyEnabled: Boolean = false,
+     /** Default state of the code-summary line numbering handed to the patch chat. */
+     private val lineNumbers: Boolean = false,
   ) : FilesystemServlet() {
     override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
     override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
@@ -113,35 +128,43 @@ object FileServerCli {
         val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
         """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$UI_PREFIX/#$hash">🧭 Open in IDE view</a>"""
       }
-      if (!tasksEnabled) return ide
+       /* The IDE action worked on a folder selection too, so the toolbar offers the current dir. */
+       val modify = if (!modifyEnabled || readOnly) "" else
+         """<a class="zip-link" style="background-color:#198754;" href="#" onclick="return cognotikModify(event,null)">✏️ Modify files…</a>"""
+       if (!tasksEnabled) return ide + modify
       val fix = if (readOnly) "" else
         """<a class="zip-link" style="background-color:#d63384;" href="#" onclick="return cognotikAutoFix(event)">🩺 AutoFix…</a>"""
-      return ide +
+       return ide + modify +
           """<a class="zip-link" style="background-color:#0d6efd;" href="#" onclick="return cognotikDocOps(event,'plan','')">📘 DocOps plan</a>""" +
           fix +
           """<a class="zip-link" style="background-color:#495057;" href="#" onclick="return cognotikTasks(event)">🗒 Tasks</a>"""
     }
 
-    /** Markdown documents get direct DocOps entry points. */
+     /** Markdown documents get direct DocOps entry points; every file gets a patch chat. */
     override fun getFileActions(file: File, req: HttpServletRequest): String {
-      if (!tasksEnabled) return ""
-      if (file.extension.lowercase() !in setOf("md", "markdown")) return ""
       val rel = escapeJs(relativeToBase(file))
-      val plan =
-        """<a class="action-link" href="#" title="Plan doc-ops for this document" onclick="return cognotikDocOps(event,'plan','$rel')">📘 Plan</a>"""
-      if (readOnly) return plan
-      return plan +
-          """<a class="action-link" href="#" title="Run doc-ops for this document" onclick="return cognotikDocOps(event,'run','$rel')">🚀 Run</a>"""
+       val sb = StringBuilder()
+       if (tasksEnabled && file.extension.lowercase() in setOf("md", "markdown")) {
+         sb.append("""<a class="action-link" href="#" title="Plan doc-ops for this document" onclick="return cognotikDocOps(event,'plan','$rel')">📘 Plan</a>""")
+         if (!readOnly) {
+           sb.append("""<a class="action-link" href="#" title="Run doc-ops for this document" onclick="return cognotikDocOps(event,'run','$rel')">🚀 Run</a>""")
+         }
+       }
+       if (modifyEnabled && !readOnly && file.isFile) {
+         sb.append("""<a class="action-link" href="#" title="Open a patch chat for this file" onclick="return cognotikModify(event,'$rel')">✏️ Modify</a>""")
+       }
+       return sb.toString()
     }
 
     override fun getAdditionalSections(dir: File?, req: HttpServletRequest, currentPath: String): String {
-      if (!tasksEnabled) return ""
+       if (!tasksEnabled && !modifyEnabled) return ""
       val base = "${req.contextPath}$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1"
       return """
               <script>
                 window.COGNOTIK_FSAPI = "${escapeJs(base)}";
                 window.COGNOTIK_PATH = "${escapeJs(currentPath)}";
                 window.COGNOTIK_FIX_CMD = "${escapeJs(defaultFixCommand)}";
+                 window.COGNOTIK_LINE_NUMBERS = $lineNumbers;
               </script>
               <section id="cognotik-tasks" class="cognotik-tasks" style="display:none;">
                 <h3 style="margin-top:0;">Cognotik tasks</h3>
@@ -152,7 +175,7 @@ object FileServerCli {
     }
 
     override fun getAdditionalStyles(): String {
-      if (!tasksEnabled) return ""
+       if (!tasksEnabled && !modifyEnabled) return ""
       return """
               .cognotik-tasks { margin: 1rem 0; padding: 0.75rem 1rem; border: 1px solid #6f42c1; border-radius: 6px; }
               .cognotik-task-status { font-weight: 600; margin-bottom: 0.5rem; }
@@ -162,7 +185,7 @@ object FileServerCli {
     }
 
     override fun getAdditionalScripts(): String {
-      if (!tasksEnabled) return ""
+       if (!tasksEnabled && !modifyEnabled) return ""
       /* Plain ES5, no template literals: this string is also a Kotlin raw string. */
       return """
               function cognotikPanel() {
@@ -286,7 +309,9 @@ object FileServerCli {
     tasksEnabled: Boolean = false,
   ) : SimpleFileServlet(
     baseDir, gitEnabled, readOnly = true, uiEnabled = uiEnabled,
-    terminalEnabled = false, execPermissive = execPermissive, tasksEnabled = tasksEnabled,
+     terminalEnabled = false, execPermissive = execPermissive, tasksEnabled = tasksEnabled,
+     /* Patch chat writes files: never offered on a read-only mount. */
+     modifyEnabled = false,
   ) {
     private fun deny(response: HttpServletResponse) {
       response.status = HttpServletResponse.SC_FORBIDDEN
@@ -307,8 +332,7 @@ object FileServerCli {
                       --no-git       Disable Git UI/API features
                       --read-only    Disable uploads, edits and deletes
                       --no-terminal  Disable interactive terminal sessions
-                      --no-exec      Restrict /exec to read-mostly git sub-commands
-                      --secure       Shorthand for --read-only --no-terminal --no-exec --no-tasks
+                       --secure       Shorthand for --read-only --no-terminal --no-exec --no-tasks --no-modify
                       --shell <cmd>  Shell for new terminals (default: auto-detect)
                       --ui           Make the IDE-style SPA (/ui/) the landing page
                       --no-ui        Do not serve the SPA at all
@@ -330,6 +354,16 @@ object FileServerCli {
                   'docops run' and 'autofix' mutate the workspace, run in the background and
                   return a task id; everything else answers inline. Both are refused with
                   EROFS on a read-only mount.
+                 Patch chat (port of the IDE's ModifyFilesAction), enabled by default:
+                       --no-modify        Do not expose the modify operation
+                       --line-numbers     Number the code summary given to the model
+                       --chat-port <n>    Port for the chat UI (default 0 = random, started on demand)
+                   POST {mount}/.fsapi/v1/modify?path=src/Foo.kt[&path=...][&lineNumbers=true]
+                     -> { "session": "...", "url": "http://host:port/#<session>", "files": [...] }
+                   Omit 'path' to select the whole served tree. Folders are expanded; the
+                   selection is embedded in the chat's system prompt and the model's patches
+                   are applied to the workspace, so it is refused with EROFS when read-only.
+
 
                 By default this is a PERMISSIVE LOCAL server: interactive terminals and
                 unrestricted child processes are enabled and it binds to 127.0.0.1 only.
@@ -340,6 +374,10 @@ object FileServerCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
+    val user = CliSupport.defaultUser()
+    CliSupport.installFileServices()
+    bootstrapPlatform(user)
+
     var port = 8081
     var host = "127.0.0.1"
     var gitEnabled = true
@@ -357,6 +395,9 @@ object FileServerCli {
     var taskTimeout = 30L
     var taskMonitor = false
     var fixCommand = ""
+     var modifyEnabled = true
+     var lineNumbers = false
+     var chatPort = 0
 
     var i = 0
     while (i < args.size) {
@@ -384,10 +425,17 @@ object FileServerCli {
           terminalEnabled = false
           execPermissive = false
           tasksEnabled = false
+           modifyEnabled = false
         }
 
         "--no-tasks" -> tasksEnabled = false
         "--tasks" -> tasksEnabled = true
+         "--no-modify" -> modifyEnabled = false
+         "--modify" -> modifyEnabled = true
+         "--line-numbers" -> lineNumbers = true
+         "--chat-port" -> chatPort = args.getOrNull(++i)?.toIntOrNull()
+           ?: fail("Missing or invalid value for $arg")
+
         "--task-root" -> taskRootArg = args.getOrNull(++i) ?: fail("Missing value for $arg")
         "--smart-model" -> smartModel = args.getOrNull(++i) ?: fail("Missing value for $arg")
         "--fast-model" -> fastModel = args.getOrNull(++i) ?: fail("Missing value for $arg")
@@ -413,12 +461,22 @@ object FileServerCli {
       i++
     }
 
+    available = availableModels(user)
+    models = CliSupport.resolveModels(
+      user = user,
+      smartModel = System.getenv("COGNOTIK_SMART_MODEL"),
+      fastModel = System.getenv("COGNOTIK_FAST_MODEL"),
+      imageModel = System.getenv("COGNOTIK_IMAGE_MODEL"),
+      audioModel = System.getenv("COGNOTIK_AUDIO_MODEL"),
+    )
+
     val baseDir = File(dirArg ?: ".").canonicalFile
     if (!baseDir.exists() || !baseDir.isDirectory) {
       fail("Not a directory: ${baseDir.absolutePath}")
     }
     val taskRoot = (taskRootArg?.let { File(it) } ?: baseDir).canonicalFile
-    if (tasksEnabled && !taskRoot.isDirectory) {
+     if (readOnly) modifyEnabled = false
+     if ((tasksEnabled || modifyEnabled) && !taskRoot.isDirectory) {
       fail("Task root is not a directory: ${taskRoot.absolutePath}")
     }
 
@@ -439,10 +497,27 @@ object FileServerCli {
         )
       )
     }
+     /*
+      * Same contract for the patch chat: registering is free, and the chat UI server
+      * (CognotikAppServer) is only started by the first successful modify request.
+      */
+     if (modifyEnabled) {
+       ModifyFilesActions.install(
+         ModifyFilesActions.Config(
+           root = taskRoot,
+           chatUri = { CognotikAppServer.getServer(host, chatPort).server.uri },
+           readOnly = readOnly,
+           smartModel = smartModel,
+           fastModel = fastModel,
+           showLineNumbers = lineNumbers,
+         )
+       )
+     }
 
     val server = start(
-      baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
-      terminalEnabled, execPermissive, shell, tasksEnabled, fixCommand
+       baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
+       terminalEnabled, execPermissive, shell, tasksEnabled, fixCommand,
+       modifyEnabled, lineNumbers
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
@@ -457,8 +532,8 @@ object FileServerCli {
           ", terminal ${if (terminalEnabled && !readOnly) "enabled" else "disabled"}" +
           ", exec ${if (execPermissive) "unrestricted" else "allowlisted"}"
     )
+     val apiBase = "http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1"
     if (tasksEnabled) {
-      val apiBase = "http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1"
       println("  Tasks     -> docops/autofix enabled (root ${taskRoot.absolutePath})")
       println("               POST $apiBase/docops?command=plan")
       println("               POST $apiBase/autofix?cmd=<command>")
@@ -470,6 +545,16 @@ object FileServerCli {
     } else {
       println("  Tasks     -> disabled")
     }
+     if (modifyEnabled) {
+       println("  Modify    -> patch chat enabled (root ${taskRoot.absolutePath}, line numbers $lineNumbers)")
+       println("               POST $apiBase/modify?path=<file>")
+       println("               (the chat UI server starts on the first request)")
+       if (smartModel == null) {
+         println("               NOTE: no smart model selected; set --smart-model or COGNOTIK_SMART_MODEL")
+       }
+     } else {
+       println("  Modify    -> disabled${if (readOnly) " (read-only mount)" else ""}")
+     }
     if (!readOnly && (terminalEnabled || execPermissive || tasksEnabled) &&
       host != "127.0.0.1" && host != "localhost"
     ) {
@@ -510,6 +595,8 @@ object FileServerCli {
     shell: List<String> = emptyList(),
     tasksEnabled: Boolean = false,
     defaultFixCommand: String = "",
+     modifyEnabled: Boolean = false,
+     lineNumbers: Boolean = false,
   ): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
@@ -524,11 +611,13 @@ object FileServerCli {
     }
 
     val showTasks = tasksEnabled && ServerTaskActions.isEnabled
+     val showModify = modifyEnabled && !readOnly && ModifyFilesActions.isEnabled
     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks)
     else SimpleFileServlet(
       baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled,
       terminalEnabled = terminalEnabled, execPermissive = execPermissive, shell = shell,
-      tasksEnabled = showTasks, defaultFixCommand = defaultFixCommand
+       tasksEnabled = showTasks, defaultFixCommand = defaultFixCommand,
+       modifyEnabled = showModify, lineNumbers = lineNumbers
     )
     val fileHolder = ServletHolder("files", fileServlet)
     /* @MultipartConfig is not honoured for programmatically registered instances. */
@@ -576,4 +665,5 @@ object FileServerCli {
     System.err.println(usage())
     exitProcess(2)
   }
+
 }
