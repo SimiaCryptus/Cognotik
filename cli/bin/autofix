@@ -23,9 +23,9 @@ while [[ -L "$self" ]]; do
   [[ "$target" == /* ]] && self="$target" || self="$(dirname -- "$self")/$target"
 done
 SCRIPT_DIR="$(cd -- "$(dirname -- "$self")" && pwd -P)"
-PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
-LIBS_DIR="$SCRIPT_DIR/build/libs"
-MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
+LIBS_DIR="$SCRIPT_DIR/../build/libs"
+MAIN_CLASS="com.simiacryptus.cognotik.cli.DocOpsCli"
 
 die() { printf 'autofix: %s\n' "$*" >&2; exit 1; }
 
