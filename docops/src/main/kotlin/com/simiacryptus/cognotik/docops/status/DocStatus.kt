@@ -36,3 +36,16 @@ interface DocStatusStore {
 
   fun read(): DocOpsStatus
 }
+
+class NullDocStatusStore : DocStatusStore {
+  override fun initialize(targetKeys: Collection<String>) {}
+  override fun set(
+    targetKey: String,
+    status: TaskStatus,
+    sessionId: String?,
+    error: String?,
+  ): TaskStatusEntry = TaskStatusEntry(targetKey, status, sessionId, null, null, error)
+
+  override fun markAllRunningAs(status: TaskStatus, error: String?) {}
+  override fun read(): DocOpsStatus = DocOpsStatus(lastUpdated = "", tasks = emptyMap())
+}

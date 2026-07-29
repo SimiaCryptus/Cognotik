@@ -26,6 +26,7 @@ import com.simiacryptus.cognotik.docops.spec.MarkdownDocSpecLoader
 import com.simiacryptus.cognotik.docops.spec.TemplateEngine
 import com.simiacryptus.cognotik.docops.status.DocStatusStore
 import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
+import com.simiacryptus.cognotik.docops.status.NullDocStatusStore
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -49,7 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class DocOps<K : DocTaskKind, S : Any>(
   val config: DocOpsConfig,
   val host: DocOpsHost<K, S>,
-  statusStore: DocStatusStore? = null,
+  statusStore: DocStatusStore,
   loader: DocSpecLoader? = null,
   resources: ResourceResolver? = null,
   planner: DocPlanner<K>? = null,
@@ -73,7 +74,7 @@ class DocOps<K : DocTaskKind, S : Any>(
     plannerOverride ?: defaultPlanner(config, hostTaskKinds())
   }
   val runner: DocTaskRunner<K, S> by lazy {
-    runnerOverride ?: DocTaskRunner(config, host, statusStore!!)
+    runnerOverride ?: DocTaskRunner(config, host, statusStore ?: throw IllegalStateException("statusStore is null"))
   }
 
   /**

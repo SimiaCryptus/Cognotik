@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.docops.exec.DocTaskScheduler
 import com.simiacryptus.cognotik.docops.model.DocSpec
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.spec.TemplateEngine
+import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
+import com.simiacryptus.cognotik.docops.status.NullDocStatusStore
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -110,7 +112,13 @@ class DocProcessor(
     templateVarOverrides = templateVarOverrides,
   )
 
-  val docOps: DocOps<PlatformTaskKind, Session> = DocOps(config, this)
+  val docOps: DocOps<PlatformTaskKind, Session> = DocOps(
+    config = config,
+    host = this,
+    statusStore = JsonFileDocStatusStore(
+      root = root,
+    )
+  )
 
   /*
    * ------------------------------------------------------------------
