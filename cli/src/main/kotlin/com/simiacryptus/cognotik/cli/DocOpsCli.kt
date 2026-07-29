@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
@@ -538,6 +539,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
           opts.serverless = true
           opts.monitor = false
         }
+        arg =="--email" -> email = args.getOrNull(++i) ?: throw IllegalArgumentException("missing value for --email")
 
         arg == "--open" -> opts.openBrowser = true
         arg == "--no-auto-fix" -> opts.autoFix = false

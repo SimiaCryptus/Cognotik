@@ -77,7 +77,7 @@ package com.simiacryptus.cognotik.cli
             }
 
             "--root" -> root = File(value(arg)).canonicalFile
-            "--user" -> email = value(arg)
+            "--email" -> email = value(arg)
             "--provider" -> providerName = value(arg)
             "--key" -> key = value(arg)
             "--base" -> baseUrl = value(arg)

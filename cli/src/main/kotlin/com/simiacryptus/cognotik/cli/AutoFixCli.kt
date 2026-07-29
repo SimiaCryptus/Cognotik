@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.autofix.AutoFixTask
+import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.UnifiedHarness
@@ -307,6 +308,7 @@ object AutoFixCli {
           opts.serverless = true
           opts.monitor = false
         }
+        arg =="--email" -> email = args.getOrNull(++i) ?: throw IllegalArgumentException("missing value for --email")
 
         arg == "--open" -> opts.openBrowser = true
         arg == "--no-auto-fix" -> opts.autoFix = false

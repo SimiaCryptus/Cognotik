@@ -25,9 +25,9 @@ done
 SCRIPT_DIR="$(cd -- "$(dirname -- "$self")" && pwd -P)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
 LIBS_DIR="$SCRIPT_DIR/build/libs"
-MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli"
+MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli"
 
-die() { printf 'autofix: %s\n' "$*" >&2; exit 1; }
+die() { printf 'fileserver: %s\n' "$*" >&2; exit 1; }
 
 usage() {
   sed -n '3,20p' "$self" | sed 's/^# \{0,1\}//'
@@ -57,7 +57,7 @@ fi
 build() {
   local gradlew="$PROJECT_ROOT/gradlew"
   [[ -x "$gradlew" ]] || die "gradle wrapper not found or not executable: $gradlew"
-  printf 'autofix: building :cli:shadowJar ...\n' >&2
+  printf 'fileserver: building :cli:shadowJar ...\n' >&2
   ( cd -- "$PROJECT_ROOT" && "$gradlew" :cli:shadowJar ) \
     || die "build failed"
 }
