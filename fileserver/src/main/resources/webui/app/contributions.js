@@ -696,12 +696,44 @@ function ingestDescriptors(descriptors) {
          serverActions.add(descriptor.id);
          registerAction({
              ...descriptor,
+            resolveParam: (paramId, ctx) => resolveServerParamOptions(descriptor, paramId, ctx),
              run: (ctx, params) => runServerAction(descriptor, ctx, params),
          });
      }
 }
+/**
+* Live options for a "checkbox list" parameter (server-side `ActionParam.dynamic`):
+* calls the action's own endpoint again with `resolveParam=<id>` plus the current
+* selection, so a server-side callback (e.g. DocOps enumerating targets for the
+* selected documents) can answer with no bespoke client-side integration.
+*/
+async function resolveServerParamOptions(descriptor, paramId, ctx) {
+     const endpoint = descriptor.endpoint || {};
+     const method = (endpoint.method || 'POST').toUpperCase();
+     const query = new URLSearchParams();
+     query.set('resolveParam', paramId);
+     const key = endpoint.selectionParam || 'path';
+     if (endpoint.sendSelection === 'paths') {
+         for (const path of ctx.paths || []) query.append(key, relativePath(path));
+     } else if (endpoint.sendSelection === 'first' && ctx.paths?.length) {
+         query.append(key, relativePath(ctx.paths[0]));
+     } else if (endpoint.sendSelection === 'folder') {
+         const folder = relativePath(targetFolder(ctx));
+         if (folder) query.append(key, folder);
+     }
+     const url = `${store.get().base}/${endpoint.op || ''}?${query.toString()}`;
+     const response = await fetch(url, {method, headers: {'X-Fs-Api': '1'}, signal: ctx.signal});
+     const payload = await response.json().catch(() => ({}));
+     if (!response.ok) {
+         throw Object.assign(new Error(payload?.error?.message || `Could not load options for ${paramId}`), {
+             code: payload?.error?.code || 'EACTION',
+         });
+     }
+     return payload?.options || [];
+}
 
 /** Server paths are root-relative: '/src/a.kt' would be read as absolute. */
+
 function relativePath(path) {
      return String(path ?? '').replace(/^\/+/, '');
 }

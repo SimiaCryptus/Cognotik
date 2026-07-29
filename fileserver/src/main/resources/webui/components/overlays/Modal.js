@@ -84,7 +84,7 @@ export function initModal() {
     };
 
     /** ActionDialog: a real <form> generated from a declared parameter schema. */
-    ui.form = async ({title, params = [], ctx, remember}) => {
+   ui.form = async ({title, params = [], ctx, remember, resolveOptions}) => {
         const remembered = (remember && persist.get('actionParams', {})[remember]) || {};
         const values = {};
         const fields = [];
@@ -94,7 +94,7 @@ export function initModal() {
         for (const param of params) {
             const id = `fs-param-${param.id}`;
             const initial = remembered[param.id] ?? (typeof param.default === 'function' ? param.default(ctx) : param.default);
-            values[param.id] = initial ?? (param.type === 'boolean' ? false : '');
+           values[param.id] = initial ?? (param.type === 'boolean' ? false : param.type === 'checklist' ? [] : '');
             let input;
             switch (param.type) {
                 case 'boolean':
@@ -108,6 +108,40 @@ export function initModal() {
                     input = h('select', {id}, (param.options || []).map((option) =>
                         h('option', {value: option, text: option, selected: option === initial})));
                     break;
+               /* A "checkbox list": options may be static or fetched live (param.dynamic)
+                  from the server, e.g. DocOps enumerating targets for selected files. */
+               case 'checklist': {
+                   const list = h('div', {class: 'fs-checklist', id, role: 'group', 'aria-label': param.label || param.id});
+                   const checkedValues = new Set(Array.isArray(initial) ? initial : []);
+                   const paint = (options) => {
+                       clear(list);
+                       if (!options.length) {
+                           list.appendChild(h('p', {class: 'help', text: 'No options available'}));
+                           return;
+                       }
+                       for (const option of options) {
+                           const value = typeof option === 'string' ? option : option.value;
+                           const optionLabel = typeof option === 'string' ? option : (option.label || option.value);
+                           const optionId = `${id}-${value}`;
+                           list.appendChild(h('label', {class: 'fs-checklist__item', htmlFor: optionId}, [
+                               h('input', {type: 'checkbox', id: optionId, value, checked: checkedValues.has(value)}),
+                               h('span', {text: optionLabel}),
+                           ]));
+                       }
+                   };
+                   if (param.dynamic && resolveOptions) {
+                       list.appendChild(h('p', {class: 'help', text: 'Loading…'}));
+                       Promise.resolve(resolveOptions(param)).then((options) => paint(options || []))
+                           .catch((error) => {
+                               clear(list);
+                               list.appendChild(h('p', {class: 'error', text: `Could not load options: ${error?.message || error}`}));
+                           });
+                   } else {
+                       paint(param.options || []);
+                   }
+                   input = list;
+                   break;
+               }
                 case 'number':
                 case 'integer':
                     input = h('input', {type: 'number', id, value: initial ?? ''});
@@ -121,7 +155,15 @@ export function initModal() {
             const error = h('p', {class: 'error', id: `${id}-error`});
             const help = param.help ? h('p', {class: 'help', id: `${id}-help`, text: param.help}) : null;
             if (help) input.setAttribute('aria-describedby', `${id}-help`);
-            const read = () => (param.type === 'boolean' ? input.checked : input.value);
+           const read = () => {
+               if (param.type === 'boolean') return input.checked;
+               if (param.type === 'checklist') {
+                   return Array.from(input.querySelectorAll('input[type="checkbox"]:checked')).map((cb) => cb.value);
+               }
+               return input.value;
+           };
+           /* For 'checklist' this listens on the container: checkbox 'input'/'change'
+              events bubble, so one listener covers every option without extra wiring. */
             input.addEventListener('input', () => {
                 values[param.id] = read();
                 error.textContent = '';
@@ -141,7 +183,8 @@ export function initModal() {
                 const value = read();
                 values[param.id] = value;
                 let problem = null;
-                if (param.required && (value === '' || value === null || value === undefined)) problem = 'This field is required';
+               const empty = Array.isArray(value) ? value.length === 0 : (value === '' || value === null || value === undefined);
+               if (param.required && empty) problem = 'This field is required';
                 else if (param.validate) problem = param.validate(value, ctx) || null;
                 if (problem) {
                     error.textContent = problem;
@@ -149,7 +192,7 @@ export function initModal() {
                 }
             }
             if (errors.size) {
-                fields.find((f) => errors.has(f.param.id))?.input.focus();
+               fields.find((f) => errors.has(f.param.id))?.input.focus?.();
                 return undefined;
             }
             if (remember) {

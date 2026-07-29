@@ -359,6 +359,27 @@ dialog.fs-modal::backdrop {
 .fs-field .error {
     color: var(--fs-danger);
 }
+.fs-checklist {
+    display: grid;
+    gap: var(--fs-space-1);
+    max-height: 220px;
+    overflow: auto;
+    border: 1px solid var(--fs-border);
+    border-radius: var(--fs-radius);
+    padding: var(--fs-space-2);
+    background: var(--fs-bg);
+}
+.fs-checklist__item {
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-2);
+    padding: var(--fs-space-1) var(--fs-space-2);
+    border-radius: var(--fs-radius);
+}
+.fs-checklist__item:hover {
+    background: var(--fs-bg-hover);
+}
+
 
 .fs-toasts {
     position: fixed;

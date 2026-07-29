@@ -2,6 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
+import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
+import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
+import com.simiacryptus.cognotik.webui.servlet.handler.FsException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import java.io.File
@@ -19,6 +22,15 @@ data class ActionParam(
   val label: String? = null,
   /** Non-empty turns the generated control into a select. */
   val options: List<String> = emptyList(),
+   /**
+    * When true, [options] is a placeholder only: the real list is fetched live by
+    * calling this action's own endpoint again with `?resolveParam=<name>` (plus the
+    * current selection) instead of running the action. See [FsAction.paramResolvers]
+    * and [FsAction.serveParamResolution].
+    */
+   val dynamic: Boolean = false,
+   /** Renders as a checkbox list (multiple values) rather than a single-value select. */
+   val multi: Boolean = false,
 ) {
   fun describe(): Map<String, Any?> = linkedMapOf(
     "name" to name,
@@ -28,7 +40,9 @@ data class ActionParam(
     "description" to description,
     "default" to default,
     "label" to label,
-    "options" to options
+     "options" to options,
+     "dynamic" to dynamic,
+     "multi" to multi
   )
 
   /** Shape expected by the web UI's `ui.form()` parameter schema. */
@@ -36,6 +50,7 @@ data class ActionParam(
     "id" to name,
     "label" to (label ?: name),
     "type" to when {
+       multi -> "checklist"
       options.isNotEmpty() -> "enum"
       type == "boolean" -> "boolean"
       type == "int" || type == "long" || type == "number" -> "number"
@@ -44,9 +59,28 @@ data class ActionParam(
     "options" to options.ifEmpty { null },
     "required" to required,
     "default" to default,
-    "help" to description.ifBlank { null }
+     "help" to description.ifBlank { null },
+     "dynamic" to dynamic,
+     "multi" to multi
   )
 }
+/**
+  * One live-fetched option for a [ActionParam.dynamic] "checkbox list" parameter,
+  * returned by a [FsAction.paramResolvers] callback and serialised by
+  * [FsAction.serveParamResolution] as `{"options": [...]}`.
+  */
+data class ActionOption(
+   val value: String,
+   val label: String? = null,
+   val description: String? = null,
+) {
+   fun describe(): Map<String, Any?> = linkedMapOf(
+     "value" to value,
+     "label" to (label ?: value),
+     "description" to description,
+   )
+}
+
 
 /** One menu placement; anchors/groups follow docs/ui.md §19.1. */
 data class ActionMenu(val anchor: String, val group: String = "5_tools", val order: Int = 100)
@@ -119,6 +153,12 @@ open class FsAction(
   mutating: Boolean? = null,
   /** Optional web-UI presentation; null = API-only. */
   val ui: ActionUi? = null,
+   /**
+    * Active, callback-based resolvers for [ActionParam.dynamic] parameters, keyed
+    * by [ActionParam.name]. Invoked (instead of [handler]) when the client calls
+    * this same `method op` with `?resolveParam=<name>` — see [serveParamResolution].
+    */
+   val paramResolvers: Map<String, (FsActionContext) -> List<ActionOption>> = emptyMap(),
   val handler: (FsActionContext) -> Unit,
 ) : DynamicEnum<FsAction>(key(method, op)) {
 
@@ -174,6 +214,9 @@ open class FsAction(
 
   companion object {
     private val READ_ONLY_METHODS = setOf("GET", "HEAD", "OPTIONS")
+   /** Query parameter that switches a `dynamic`-param-bearing op into "list my options" mode. */
+   const val RESOLVE_PARAM_QUERY = "resolveParam"
+
 
     fun key(method: String, op: String): String = "${method.uppercase()} ${op.trim('/')}"
 
@@ -192,5 +235,60 @@ open class FsAction(
       val name = key(method, op)
       return values().firstOrNull { it.name == name }
     }
+   /**
+    * Call at the top of a handler that owns [ActionParam.dynamic] parameters: if
+    * the request is asking to resolve one of them (`?resolveParam=<name>`), this
+    * writes `{"options": [...]}` and returns true — the caller must return
+    * immediately without running the real action. Otherwise it returns false and
+    * the caller proceeds as usual.
+    */
+   fun serveParamResolution(ctx: FsActionContext): Boolean {
+     val name = ctx.req.getParameter(RESOLVE_PARAM_QUERY)?.takeIf { it.isNotBlank() } ?: return false
+     val action = find(ctx.method, ctx.op)
+     val resolver = action?.paramResolvers?.get(name)
+     if (resolver == null) {
+       FsErrors.write(
+         ctx.resp,
+         FsException(FsErrorCode.EINVAL, ctx.op, null, "'$name' has no live option resolver")
+       )
+       return true
+     }
+     val options = try {
+       resolver(ctx)
+     } catch (e: Exception) {
+       FsErrors.write(
+         ctx.resp,
+         FsException(FsErrorCode.EIO, ctx.op, null, e.message ?: "option resolution failed")
+       )
+       return true
+     }
+     writeOptions(ctx, options)
+     return true
+   }
+   private fun writeOptions(ctx: FsActionContext, options: List<ActionOption>) {
+     ctx.resp.status = 200
+     ctx.resp.contentType = "application/json"
+     ctx.resp.characterEncoding = "UTF-8"
+     ctx.resp.writer.write(
+       buildString {
+         append("{\"options\":[")
+         options.forEachIndexed { index, option ->
+           if (index > 0) append(",")
+           append(optionJson(option))
+         }
+         append("]}")
+       }
+     )
+   }
+   private fun optionJson(option: ActionOption): String {
+     fun esc(s: String) = s.replace("\\", "\\\\").replace("\"", "\\\"")
+       .replace("\n", "\\n").replace("\r", "\\r")
+     return buildString {
+       append("{\"value\":\"").append(esc(option.value)).append("\",")
+       append("\"label\":\"").append(esc(option.label ?: option.value)).append("\"")
+       option.description?.let { append(",\"description\":\"").append(esc(it)).append("\"") }
+       append("}")
+     }
+   }
   }
 }

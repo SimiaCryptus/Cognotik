@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
 import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
+import com.simiacryptus.cognotik.webui.servlet.action.ActionOption
 import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
 import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
 import com.simiacryptus.cognotik.webui.servlet.action.FsAction
@@ -97,29 +98,32 @@ object ServerTaskActions {
         method = "POST",
         description = "Run the DocOps CLI against the served tree",
         parameters = listOf(
-           ActionParam(
-             "command", required = false, default = "plan", label = "Command",
-             description = "only \"run\" mutates the workspace", options = DOCOPS_COMMANDS
-           ),
-           ActionParam("path", required = false, description = "document or folder, relative to the root (repeatable)"),
-           ActionParam("mode", required = false, label = "Update mode", description = "e.g. PatchToUpdate"),
-           ActionParam(
-             "target", required = false, label = "Target",
-             description = "only run the task producing this output file"
-           ),
-           ActionParam("var", required = false, description = "template variable override NAME=VALUE (repeatable)"),
+          ActionParam(
+            "command", required = false, default = "plan", label = "Command",
+            description = "only \"run\" mutates the workspace", options = DOCOPS_COMMANDS
+          ),
+          ActionParam("path", required = false, description = "document or folder, relative to the root (repeatable)"),
+          ActionParam("mode", required = false, label = "Update mode", description = "e.g. PatchToUpdate"),
+          ActionParam(
+           "target", required = false, label = "Targets",
+           description = "only run the tasks producing these output files",
+           multi = true, dynamic = true,
+          ),
+          ActionParam("var", required = false, description = "template variable override NAME=VALUE (repeatable)"),
         ),
         mutating = true,
-         ui = ActionUi(
-           title = "DocOps…", icon = "📘", category = "Cognotik",
-           menus = listOf(
-             ActionMenu("main/tools", "7_run", 40),
-             ActionMenu("explorer/context", "7_run", 40),
-           ),
-           selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
-           hiddenParams = setOf("path", "var"),
-           sendSelection = "paths", selectionParam = "path",
-         ),
+        ui = ActionUi(
+          title = "DocOps…", icon = "📘", category = "Cognotik",
+          menus = listOf(
+            ActionMenu("main/tools", "7_run", 40),
+            ActionMenu("explorer/context", "7_run", 40),
+          ),
+          selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
+          hiddenParams = setOf("path", "var"),
+          sendSelection = "paths", selectionParam = "path",
+        ),
+       /* Live options for "target": scrapes `docops plan` for the selected files. */
+       paramResolvers = mapOf("target" to ::resolveDocOpsTargets),
       ) { ctx -> handleDocOps(ctx) },
       replace = true,
     )
@@ -129,22 +133,22 @@ object ServerTaskActions {
         method = "POST",
         description = "Run a command and iteratively fix whatever it reports",
         parameters = listOf(
-           ActionParam("cmd", required = true, label = "Command", description = "command line to run (repeatable)"),
+          ActionParam("cmd", required = true, label = "Command", description = "command line to run (repeatable)"),
           ActionParam("dir", required = false, description = "working directory, relative to the root"),
           ActionParam("autoFix", required = false, default = "true", description = "apply generated patches"),
-           ActionParam("timeout", "int", required = false, label = "Timeout (minutes)"),
+          ActionParam("timeout", "int", required = false, label = "Timeout (minutes)"),
         ),
         mutating = true,
-         ui = ActionUi(
-           title = "AutoFix…", icon = "🩺", category = "Cognotik",
-           menus = listOf(
-             ActionMenu("main/tools", "7_run", 50),
-             ActionMenu("explorer/context", "7_run", 50),
-           ),
-           selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
-           hiddenParams = setOf("dir", "autoFix"),
-           sendSelection = "folder", selectionParam = "dir",
-         ),
+        ui = ActionUi(
+          title = "AutoFix…", icon = "🩺", category = "Cognotik",
+          menus = listOf(
+            ActionMenu("main/tools", "7_run", 50),
+            ActionMenu("explorer/context", "7_run", 50),
+          ),
+          selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
+          hiddenParams = setOf("dir", "autoFix"),
+          sendSelection = "folder", selectionParam = "dir",
+        ),
       ) { ctx -> handleAutoFix(ctx) },
       replace = true,
     )
@@ -157,13 +161,13 @@ object ServerTaskActions {
           ActionParam("id", required = false, description = "task id; omit to list"),
         ),
         mutating = false,
-         ui = ActionUi(
-           title = "Cognotik Tasks", icon = "🗒", category = "Cognotik",
-           menus = listOf(ActionMenu("main/tools", "7_run", 60)),
-           selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
-           hiddenParams = setOf("id"),
-           sendSelection = "none",
-         ),
+        ui = ActionUi(
+          title = "Cognotik Tasks", icon = "🗒", category = "Cognotik",
+          menus = listOf(ActionMenu("main/tools", "7_run", 60)),
+          selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
+          hiddenParams = setOf("id"),
+          sendSelection = "none",
+        ),
       ) { ctx -> handleTasks(ctx) },
       replace = true,
     )
@@ -176,6 +180,7 @@ object ServerTaskActions {
    */
 
   private fun handleDocOps(ctx: FsActionContext) {
+   if (FsAction.serveParamResolution(ctx)) return
     val cfg = config ?: return fail(ctx.resp, FsErrorCode.ENOSYS, "docops", "task actions are not enabled")
     val command = (ctx.req.getParameter("command") ?: "plan").trim().lowercase()
     if (command !in DOCOPS_COMMANDS) {
@@ -193,7 +198,7 @@ object ServerTaskActions {
     ctx.req.getParameterValues("path")?.forEach { if (it.isNotBlank()) argv.add(it) }
     argv += listOf("--root", cfg.root.absolutePath)
     ctx.req.getParameter("mode")?.takeIf { it.isNotBlank() }?.let { argv += listOf("--mode", it) }
-    ctx.req.getParameter("target")?.takeIf { it.isNotBlank() }?.let { argv += listOf("--target", it) }
+   ctx.req.getParameterValues("target")?.forEach { if (it.isNotBlank()) argv += listOf("--target", it) }
     ctx.req.getParameterValues("var")?.forEach { if (it.contains('=')) argv += listOf("--var", it) }
     cfg.smartModel?.takeIf { it.isNotBlank() }?.let { argv += listOf("--smart-model", it) }
     cfg.fastModel?.takeIf { it.isNotBlank() }?.let { argv += listOf("--fast-model", it) }
@@ -205,6 +210,51 @@ object ServerTaskActions {
       DocOpsCli.run(argv.toTypedArray())
     }
   }
+/**
+  * Live options for the "target" checkbox list (§ActionParam.dynamic): asks
+  * DocOps, in read-only "plan" mode, what it would produce for the selected
+  * documents, then scrapes "-> target" / "- target" style lines out of the
+  * (human-oriented) plan output. Best-effort: an empty result just means an
+  * empty checkbox list, never a failed dialog.
+  */
+private fun resolveDocOpsTargets(ctx: FsActionContext): List<ActionOption> {
+   val cfg = config ?: return emptyList()
+   val paths = ctx.req.getParameterValues("path").orEmpty().filter { it.isNotBlank() }
+   if (paths.isEmpty()) return emptyList()
+   val argv = mutableListOf("plan")
+   argv += paths
+   argv += listOf("--root", cfg.root.absolutePath, "--serverless")
+   if (!ioLock.tryLock(2, TimeUnit.SECONDS)) return emptyList()
+   val buffer = ByteArrayOutputStream()
+   val previousOut = System.out
+   val previousErr = System.err
+   try {
+     val stream = PrintStream(buffer, true, "UTF-8")
+     System.setOut(stream)
+     System.setErr(stream)
+     try {
+       DocOpsCli.run(argv.toTypedArray())
+     } catch (e: Throwable) {
+       return emptyList()
+     } finally {
+       stream.flush()
+     }
+   } finally {
+     System.setOut(previousOut)
+     System.setErr(previousErr)
+     ioLock.unlock()
+   }
+   val text = buffer.toString("UTF-8")
+   val targets = LinkedHashSet<String>()
+   val arrow = Regex("""->\s*(\S.*\.\w+)\s*$""")
+   val bullet = Regex("""^\s*[-*]\s+(\S.*\.\w+)\s*$""")
+   text.lineSequence().forEach { line ->
+     arrow.find(line)?.groupValues?.get(1)?.trim()?.let { targets.add(it) }
+     bullet.find(line)?.groupValues?.get(1)?.trim()?.let { targets.add(it) }
+   }
+   return targets.map { ActionOption(it) }
+}
+
 
   private fun handleAutoFix(ctx: FsActionContext) {
     val cfg = config ?: return fail(ctx.resp, FsErrorCode.ENOSYS, "autofix", "task actions are not enabled")

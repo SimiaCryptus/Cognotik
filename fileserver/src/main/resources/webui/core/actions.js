@@ -188,7 +188,10 @@ export async function invoke(action, ctx) {
     }
     let params = {};
     if (action.params?.length) {
-        params = await ui.form({title: action.title, params: action.params, ctx, remember: action.id});
+       params = await ui.form({
+           title: action.title, params: action.params, ctx, remember: action.id,
+           resolveOptions: action.resolveParam ? (param) => action.resolveParam(param.id, ctx) : undefined,
+       });
         if (params === null) return undefined;
     }
     const controller = new AbortController();
