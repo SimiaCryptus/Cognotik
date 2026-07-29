@@ -40,7 +40,7 @@ class TextReader(textFile: File) : PaginatedDocumentReader {
 
   private fun splitIntoPages(text: String, maxChars: Int = 16000): List<String> {
     if (text.length <= maxChars) return listOf(text)
-    val lines = text.split("\n")
+    val lines = text.split("\n").filter { it.isNotBlank() }
     if (lines.size <= 1) return listOf(text)
     val splitFitnesses = lines.indices.map { i ->
       val leftSize = lines.subList(0, i).map { it.length }.sum()
@@ -53,7 +53,7 @@ class TextReader(textFile: File) : PaginatedDocumentReader {
       i to fitness
     }.toTypedArray().toMutableList()
 
-    val bestSplitIndex = (splitFitnesses.minByOrNull { it.second }?.first ?: lines.size) / 2
+    val bestSplitIndex = ((splitFitnesses.minByOrNull { it.second }?.first ?: lines.size) / 2).coerceIn(0, lines.size)
     val leftText = lines.subList(0, bestSplitIndex).joinToString("\n")
     val rightText = lines.subList(bestSplitIndex, lines.size).joinToString("\n")
     return splitIntoPages(leftText, maxChars) + splitIntoPages(rightText, maxChars)

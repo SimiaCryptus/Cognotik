@@ -56,12 +56,24 @@ Click **📕 Generate HTML Book** to compile all your episodes into a single, be
 ## 📖 Browsing Your Series
 
 The **📖 Series** tab gives you a clean overview of every episode you've generated. Click any episode to expand and read it. You can also generate new episodes or compile the book directly from this tab — no need to jump back to the Pipeline.
+## 🖼️ Reading Comics Comfortably
+Every comic preview — whether it's a single episode or the full compiled book — opens in its own mini viewer with handy controls:
+- **+ / −** buttons to make the viewing window taller or shorter
+- **⛶ Fullscreen** button to read distraction-free, edge-to-edge
+- Press **Esc** any time to exit fullscreen
+No more squinting at a tiny preview box — read your comics the way they're meant to be seen.
+---
+## 📡 Keeping an Eye on Generation
+Comic generation happens in the background, so you're never stuck staring at a spinner. While episodes or your HTML book are being created, you'll see live status badges (pending → running → done) and **📡 Monitor** links that let you peek at what the AI is doing behind the scenes in real time. It's a great way to satisfy your curiosity — or just confirm everything's chugging along nicely.
+---
 
 ---
+
 
 ## 💰 Tracking Costs
 
 The **💰 Usage** tab shows you exactly how many AI tokens have been used and what it's cost — broken down by model. This is especially handy when generating longer series or experimenting with different AI models.
+Prefer raw numbers? Hit **{ } JSON View** to see the underlying data directly, or switch back to **📊 Table View** for an easy-to-read summary. You can also drill into individual **Task Sessions** to see the cost of each specific episode or book compilation.
 
 ---
 

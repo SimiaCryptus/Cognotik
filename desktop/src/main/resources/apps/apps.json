@@ -7,7 +7,8 @@
       "badgeClass": "",
       "type": "docops",
       "path": "apps/philosophical-calculator",
-      "id": "philosophical-calculator",
+-     "id": "philosophical-calculator",
++     "id": "app-philosophical-calculator",
       "category": "Think",
       "tags": [
         "Teach"
@@ -26,7 +27,8 @@
       "badgeClass": "",
       "type": "docops",
       "path": "apps/webapp-factory",
-      "id": "webapp-factory",
+-     "id": "webapp-factory",
++     "id": "app-webapp-factory",
       "category": "Create",
       "tags": [
         "Devs"
@@ -43,7 +45,8 @@
       "badgeClass": "",
       "type": "docops",
       "path": "apps/sys-wizard",
-      "id": "sys-wizard",
+-     "id": "sys-wizard",
++     "id": "app-sys-wizard",
       "category": "Perform",
       "tags": [
         "Devs"
@@ -61,7 +64,8 @@
       "badgeClass": "",
       "type": "docops",
       "path": "apps/interactive-stories",
-      "id": "interactive-stories",
+-     "id": "interactive-stories",
++     "id": "app-interactive-stories",
       "category": "Imagine",
       "tags": [
         "Kids"
@@ -79,7 +83,8 @@
       "badgeClass": "",
       "type": "docops",
       "path": "apps/comic-serial",
-      "id": "comic-serial",
+-     "id": "comic-serial",
++     "id": "app-comic-serial",
       "category": "Imagine",
       "tags": [
         "Kids"
@@ -97,7 +102,8 @@
       "badgeClass": "",
       "type": "docops",
       "path": "apps/quiz-wiz",
-      "id": "quiz-wiz",
+-     "id": "quiz-wiz",
++     "id": "app-quiz-wiz",
       "category": "Create",
       "tags": [
         "Teach",
@@ -112,7 +118,8 @@
       "badgeClass": "accent",
       "type": "docops",
       "path": "apps/omega",
-      "id": "omega",
+-     "id": "omega",
++     "id": "app-omega",
       "category": "Imagine",
       "tags": [
         "Devs"
@@ -125,6 +132,8 @@
       "badge": null,
       "badgeClass": "",
       "type": "chat",
++     "id": "app-basic-chat",
++     "path": "apps/basic-chat",
       "category": "Perform",
       "tags": []
     },
@@ -133,6 +142,8 @@
       "icon": "🔧",
       "description": "Build a custom AI pipeline with configurable cognitive modes, task selection, and model settings.",
       "type": "pipeline",
++     "id": "app-custom-task-pipeline",
++     "path": "apps/custom-task-pipeline",
       "category": "Perform",
       "tags": [
         "Devs"
@@ -141,4 +152,4 @@
       "badgeClass": "muted",
       "cardClass": "app-card-muted"
     }
-  ]
+ ]

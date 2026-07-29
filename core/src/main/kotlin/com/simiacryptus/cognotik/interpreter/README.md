@@ -40,5 +40,5 @@ Implementations of this interface are typically used by the interpreter engine t
 LLMs:
 
 ```kotlin
-val result = codeRuntime.run("println(\"Hello, World!\")")
+val result = codeRuntime.run("println(\"Hello, World!\")", currentUser)
 ```

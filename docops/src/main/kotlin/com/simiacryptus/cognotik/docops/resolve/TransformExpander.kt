@@ -17,7 +17,7 @@ object TransformExpander {
   fun compile(pattern: String): Pattern? = try {
     Pattern.compile(pattern)
   } catch (e: Exception) {
-    log.warn("Invalid regex pattern: $pattern", e)
+    log.debug("Invalid regex pattern: $pattern", e)
     null
   }
 

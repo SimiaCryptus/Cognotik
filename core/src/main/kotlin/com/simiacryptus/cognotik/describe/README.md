@@ -30,6 +30,12 @@ The abstract base class for all describers. It defines the common logic for:
 - **`AbbrevWhitelistTSDescriber` / `AbbrevWhitelistYamlDescriber`**: These classes allow you to provide a list of
   package prefixes that should *not* be abbreviated, ensuring detailed descriptions for specific internal modules while
   keeping others compact.
+  They accept a `vararg` list of prefixes in their constructor and override `isAbbreviated` so that any type whose
+  `typeName` starts with one of the provided prefixes is fully described (never abbreviated), while everything else
+  falls back to the standard describer behavior.
+  ```kotlin
+  val describer = AbbrevWhitelistYamlDescriber("com.simiacryptus.myapp")
+  ```
 
 ## Metadata and Annotations
 
@@ -74,6 +80,8 @@ values at runtime.
   Kotlin properties and constructor parameters, and handling array component types.
 - **`MethodTypeDescriber`**: An interface that allows instances to provide dynamic type overrides for method parameters,
   useful when runtime types differ from static signatures.
+- **`Description`**: Runtime-retained annotation (see `Description.kt`) used to attach human-readable documentation to
+  classes, properties, methods, and parameters, which describers surface in their generated output.
 
 ## Usage Example
 

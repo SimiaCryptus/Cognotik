@@ -232,6 +232,36 @@ import {
         linkManager.update(target, taskInfo);
         // Determine an appropriate container near the relevant viewer
         ensureContainerNearViewer(target);
+        // Keep a persistent "Active Sessions" panel up to date (best practice #3)
+        renderActiveSessionsPanel();
+    }
+    // Renders a persistent panel listing every session we've ever tracked,
+    // so monitoring links remain visible even after tasks complete or the
+    // per-target containers are re-rendered/cleared elsewhere.
+    function renderActiveSessionsPanel() {
+        var panel = document.getElementById('active-sessions-panel');
+        if (!panel) return;
+        var targets = Object.keys(trackedTasks);
+        if (targets.length === 0) {
+            panel.innerHTML = '<p class="placeholder">No sessions started yet.</p>';
+            return;
+        }
+        var html = '<div class="active-sessions-list">';
+        targets.forEach(function(target) {
+            var info = trackedTasks[target];
+            var status = (info && info.status) || 'UNKNOWN';
+            var sid = info && info.sessionId;
+            var statusClass = 'session-status-' + status.toLowerCase();
+            html += '<div class="active-session-row">';
+            html += '<span class="active-session-target">' + escapeHtml(target) + '</span>';
+            html += '<span class="active-session-status ' + statusClass + '">' + escapeHtml(status) + '</span>';
+            if (sid) {
+                html += '<a href="' + escapeHtml(getProxyUrl(sid)) + '" target="_blank" class="monitor-link">📡 Monitor</a>';
+            }
+            html += '</div>';
+        });
+        html += '</div>';
+        panel.innerHTML = html;
     }
 
     function ensureContainerNearViewer(target) {
@@ -1334,6 +1364,7 @@ import {
                         trackSession(target, statusData.tasks[target]);
                     }
                 }
+                renderActiveSessionsPanel();
             } catch (e) { /* ignore */ }
         }, 15000);
     }
@@ -1351,5 +1382,6 @@ import {
     checkExistingFiles();
     initModels();
     startRecoveryPoll();
+    renderActiveSessionsPanel();
 
 })();
