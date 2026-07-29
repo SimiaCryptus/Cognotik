@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.cli
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.availableModels
 import com.simiacryptus.cognotik.cli.CliSupport.bootstrapPlatform
+import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.FilesystemServlet
 import com.simiacryptus.cognotik.webui.servlet.StaticZipServlet
@@ -329,6 +330,7 @@ object FileServerCli {
 
                   -p, --port <n>     Port to listen on (default 8081, 0 = random free port)
                   -h, --host <addr>  Interface to bind (default 127.0.0.1, 0.0.0.0 for all)
+                     --email <addr> Login email for the local CLI user (default: anonymous)
                       --no-git       Disable Git UI/API features
                       --read-only    Disable uploads, edits and deletes
                       --no-terminal  Disable interactive terminal sessions
@@ -374,9 +376,7 @@ object FileServerCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    val user = CliSupport.defaultUser()
     CliSupport.installFileServices()
-    bootstrapPlatform(user)
 
     var port = 8081
     var host = "127.0.0.1"
@@ -392,6 +392,8 @@ object FileServerCli {
     var taskRootArg: String? = null
     var smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL")
     var fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL")
+    var imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL")
+    var audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL")
     var taskTimeout = 30L
     var taskMonitor = false
     var fixCommand = ""
@@ -436,9 +438,10 @@ object FileServerCli {
          "--chat-port" -> chatPort = args.getOrNull(++i)?.toIntOrNull()
            ?: fail("Missing or invalid value for $arg")
 
+        "--email" -> email = args.getOrNull(++i) ?: fail("Missing value for $arg")
         "--task-root" -> taskRootArg = args.getOrNull(++i) ?: fail("Missing value for $arg")
-        "--smart-model" -> smartModel = args.getOrNull(++i) ?: fail("Missing value for $arg")
-        "--fast-model" -> fastModel = args.getOrNull(++i) ?: fail("Missing value for $arg")
+        "--smart-model" -> smartModel = args.getOrNull(++i) ?: smartModel ?: fail("Missing value for $arg")
+        "--fast-model" -> fastModel = args.getOrNull(++i) ?: fastModel ?: fail("Missing value for $arg")
         "--task-timeout" -> taskTimeout = args.getOrNull(++i)?.toLongOrNull()
           ?: fail("Missing or invalid value for $arg")
 
@@ -461,13 +464,19 @@ object FileServerCli {
       i++
     }
 
-    available = availableModels(user)
-    models = CliSupport.resolveModels(
-      user = user,
-      smartModel = System.getenv("COGNOTIK_SMART_MODEL"),
-      fastModel = System.getenv("COGNOTIK_FAST_MODEL"),
-      imageModel = System.getenv("COGNOTIK_IMAGE_MODEL"),
-      audioModel = System.getenv("COGNOTIK_AUDIO_MODEL"),
+
+  /* Built after parsing so --email is honoured, then published for the FS actions. */
+  val cliUser = CliSupport.defaultUser()
+  bootstrapPlatform(cliUser)
+  user = cliUser
+
+   available = availableModels(cliUser)
+   models = CliSupport.resolveModels(
+     user = cliUser,
+      smartModel = smartModel,
+      fastModel = fastModel,
+      imageModel = imageModel,
+      audioModel = audioModel,
     )
 
     val baseDir = File(dirArg ?: ".").canonicalFile

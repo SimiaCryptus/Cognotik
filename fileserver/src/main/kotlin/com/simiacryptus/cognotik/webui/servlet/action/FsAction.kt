@@ -51,7 +51,9 @@ data class ActionParam(
     "label" to (label ?: name),
     "type" to when {
        multi -> "checklist"
-      options.isNotEmpty() -> "enum"
+      /* A dynamic single-value parameter has no static options: the client fetches
+         them with `?resolveParam=<name>` when the dialog opens. */
+      options.isNotEmpty() || dynamic -> "enum"
       type == "boolean" -> "boolean"
       type == "int" || type == "long" || type == "number" -> "number"
       else -> "string"

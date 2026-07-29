@@ -744,6 +744,14 @@ async function runServerAction(descriptor, ctx, params) {
      const query = new URLSearchParams();
      for (const [key, value] of Object.entries(params || {})) {
          if (value === undefined || value === null || value === '' || value === false) continue;
+         /* A 'checklist' parameter (e.g. DocOps targets) is a repeated query parameter. */
+         if (Array.isArray(value)) {
+             for (const item of value) {
+                 if (item === undefined || item === null || item === '') continue;
+                 query.append(key, String(item));
+             }
+             continue;
+         }
          query.append(key, value === true ? 'true' : String(value));
      }
      const key = endpoint.selectionParam || 'path';
@@ -772,9 +780,19 @@ async function serverActionResult(descriptor, payload, ctx) {
      if (!payload || typeof payload !== 'object') return {kind: 'none'};
      if (payload.kind) return payload;
      if (payload.url) {
-         /* A popup opened from an awaited promise is usually blocked; offer it instead. */
+         /* Chat sessions (modify) open immediately in a new tab. The window.open()
+            happens after an await, so a strict pop-up blocker may refuse it: fall
+            back to an explicit affordance rather than losing the session. */
+         const opened = window.open(payload.url, '_blank', 'noopener');
+         if (opened) {
+             return {
+                 kind: 'toast', severity: 'info',
+                 message: `${descriptor.title}: session opened in a new tab`,
+             };
+         }
          return {
-             kind: 'toast', severity: 'info', message: `${descriptor.title}: session ready`,
+             kind: 'toast', severity: 'warn',
+             message: `${descriptor.title}: session ready — allow pop-ups to open it automatically`,
              actions: [{label: 'Open', run: () => window.open(payload.url, '_blank', 'noopener')}],
          };
      }

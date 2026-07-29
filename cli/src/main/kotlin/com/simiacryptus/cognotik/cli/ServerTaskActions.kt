@@ -37,10 +37,10 @@ import java.util.concurrent.locks.ReentrantLock
  *
  * Design notes:
  *
- *  1. **No new process.** Both tools are invoked in-process through their
- *     programmatic entry points ([DocOpsCli.run] / [AutoFixCli.run]); the platform
- *     bootstrap those functions perform is idempotent, so nothing happens at server
- *     start-up and a misconfigured model never breaks `FileServerCli`.
+*  1. **No new process, and no CLI in the loop.** DocOps is driven through its own
+*     API by [ServerDocOps] (so [DocOpsCli] stays an independent reference CLI);
+*     AutoFix still uses [AutoFixCli.run]. Nothing is resolved at server start-up,
+*     so a misconfigured model never breaks `FileServerCli`.
  *  2. **One task at a time.** The tools write to `System.out`, so execution is
  *     serialised behind a lock and stdout is *tee'd* into the task record while it
  *     runs. Pure/read-only commands answer synchronously; anything that mutates the
@@ -72,6 +72,12 @@ object ServerTaskActions {
     val timeoutMinutes: Long = 30,
     /** true = let the tool start its own ephemeral monitor server. */
     val monitor: Boolean = false,
+   /** Folder scanned for documents when the request names none (default: [root]). */
+   val docsFolder: File? = null,
+   /** Default `?mode=` for docops. */
+   val docOpsMode: String = ServerDocOps.DEFAULT_MODE,
+   /** Concurrent docops queues. */
+   val docOpsConcurrency: Int = 4,
   )
 
   @Volatile
@@ -99,15 +105,24 @@ object ServerTaskActions {
         description = "Run the DocOps CLI against the served tree",
         parameters = listOf(
           ActionParam(
-            "command", required = false, default = "plan", label = "Command",
-            description = "only \"run\" mutates the workspace", options = DOCOPS_COMMANDS
+            /* API-only: the UI never asks, it always runs (see hiddenParams below). */
+            "command", required = false, default = "run", label = "Command",
+            description = "only \"run\" mutates the workspace; other values are API-only",
+            options = DOCOPS_COMMANDS
           ),
           ActionParam("path", required = false, description = "document or folder, relative to the root (repeatable)"),
-          ActionParam("mode", required = false, label = "Update mode", description = "e.g. PatchToUpdate"),
           ActionParam(
-           "target", required = false, label = "Targets",
-           description = "only run the tasks producing these output files",
-           multi = true, dynamic = true,
+            "mode", required = false, label = "Update mode",
+            default = ServerDocOps.DEFAULT_MODE,
+            description = "how existing targets are updated",
+            /* Enumerated from UpdateModes, so the dialog is a select and not a free field. */
+            options = ServerDocOps.MODES
+          ),
+          ActionParam(
+             "target", required = false, label = "Targets",
+             description = "only run the tasks producing these output files (repeatable)",
+             /* Enumerated live from the current selection; see resolveDocOpsTargets. */
+             dynamic = true, multi = true
           ),
           ActionParam("var", required = false, description = "template variable override NAME=VALUE (repeatable)"),
         ),
@@ -119,11 +134,11 @@ object ServerTaskActions {
             ActionMenu("explorer/context", "7_run", 40),
           ),
           selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
-          hiddenParams = setOf("path", "var"),
+          /* 'command' is fixed to "run" for UI invocations: there is no picker. */
+          hiddenParams = setOf("path", "var", "command"),
           sendSelection = "paths", selectionParam = "path",
         ),
-       /* Live options for "target": scrapes `docops plan` for the selected files. */
-       paramResolvers = mapOf("target" to ::resolveDocOpsTargets),
+        paramResolvers = mapOf("target" to ::resolveDocOpsTargets),
       ) { ctx -> handleDocOps(ctx) },
       replace = true,
     )
@@ -180,9 +195,11 @@ object ServerTaskActions {
    */
 
   private fun handleDocOps(ctx: FsActionContext) {
-   if (FsAction.serveParamResolution(ctx)) return
     val cfg = config ?: return fail(ctx.resp, FsErrorCode.ENOSYS, "docops", "task actions are not enabled")
-    val command = (ctx.req.getParameter("command") ?: "plan").trim().lowercase()
+    /* '?resolveParam=target' asks for that parameter's option list, not for a run. */
+    if (FsAction.serveParamResolution(ctx)) return
+    /* The generated dialog carries no 'command': every UI invocation is a run. */
+    val command = (ctx.req.getParameter("command") ?: "run").trim().lowercase()
     if (command !in DOCOPS_COMMANDS) {
       return fail(
         ctx.resp, FsErrorCode.EINVAL, "docops",
@@ -194,67 +211,55 @@ object ServerTaskActions {
       return fail(ctx.resp, FsErrorCode.EROFS, "docops", "this mount is read-only; 'run' is refused")
     }
 
-    val argv = mutableListOf(command)
-    ctx.req.getParameterValues("path")?.forEach { if (it.isNotBlank()) argv.add(it) }
-    argv += listOf("--root", cfg.root.absolutePath)
-    ctx.req.getParameter("mode")?.takeIf { it.isNotBlank() }?.let { argv += listOf("--mode", it) }
-   ctx.req.getParameterValues("target")?.forEach { if (it.isNotBlank()) argv += listOf("--target", it) }
-    ctx.req.getParameterValues("var")?.forEach { if (it.contains('=')) argv += listOf("--var", it) }
-    cfg.smartModel?.takeIf { it.isNotBlank() }?.let { argv += listOf("--smart-model", it) }
-    cfg.fastModel?.takeIf { it.isNotBlank() }?.let { argv += listOf("--fast-model", it) }
-    // Embedded execution: no browser, no second web server unless explicitly asked for.
-    if (!cfg.monitor) argv += "--serverless"
 
-    val label = "docops $command" + (ctx.req.getParameterValues("path")?.joinToString(" ", " ") ?: "")
-    dispatch(ctx.resp, kind = "docops", label = label, async = mutates) {
-      DocOpsCli.run(argv.toTypedArray())
-    }
-  }
-/**
-  * Live options for the "target" checkbox list (§ActionParam.dynamic): asks
-  * DocOps, in read-only "plan" mode, what it would produce for the selected
-  * documents, then scrapes "-> target" / "- target" style lines out of the
-  * (human-oriented) plan output. Best-effort: an empty result just means an
-  * empty checkbox list, never a failed dialog.
-  */
-private fun resolveDocOpsTargets(ctx: FsActionContext): List<ActionOption> {
-   val cfg = config ?: return emptyList()
+   /* Validation (mode, path jailing) happens here so it answers EINVAL, not a failed task. */
+   val request = try {
+     docOpsRequest(cfg, ctx)
+   } catch (e: IllegalArgumentException) {
+     return fail(ctx.resp, FsErrorCode.EINVAL, "docops", e.message ?: "invalid docops request")
+   }
+
    val paths = ctx.req.getParameterValues("path").orEmpty().filter { it.isNotBlank() }
-   if (paths.isEmpty()) return emptyList()
-   val argv = mutableListOf("plan")
-   argv += paths
-   argv += listOf("--root", cfg.root.absolutePath, "--serverless")
-   if (!ioLock.tryLock(2, TimeUnit.SECONDS)) return emptyList()
-   val buffer = ByteArrayOutputStream()
-   val previousOut = System.out
-   val previousErr = System.err
-   try {
-     val stream = PrintStream(buffer, true, "UTF-8")
-     System.setOut(stream)
-     System.setErr(stream)
-     try {
-       DocOpsCli.run(argv.toTypedArray())
-     } catch (e: Throwable) {
-       return emptyList()
-     } finally {
-       stream.flush()
+   val label = "docops $command" + (if (paths.isEmpty()) "" else paths.joinToString(" ", " "))
+   dispatch(ctx.resp, kind = "docops", label = label, async = mutates) {
+     when (command) {
+       "status" -> ServerDocOps.status(request.root)
+       "vars" -> ServerDocOps.vars(request)
+       "models" -> ServerDocOps.models(request.user)
+       "plan" -> ServerDocOps.plan(request)
+       else -> ServerDocOps.run(request)
      }
-   } finally {
-     System.setOut(previousOut)
-     System.setErr(previousErr)
-     ioLock.unlock()
    }
-   val text = buffer.toString("UTF-8")
-   val targets = LinkedHashSet<String>()
-   val arrow = Regex("""->\s*(\S.*\.\w+)\s*$""")
-   val bullet = Regex("""^\s*[-*]\s+(\S.*\.\w+)\s*$""")
-   text.lineSequence().forEach { line ->
-     arrow.find(line)?.groupValues?.get(1)?.trim()?.let { targets.add(it) }
-     bullet.find(line)?.groupValues?.get(1)?.trim()?.let { targets.add(it) }
-   }
-   return targets.map { ActionOption(it) }
 }
 
+/**
+  * Maps the query parameters onto a [ServerDocOps.Request]. `--root`/model selection
+  * come from the server's [Config]; the user is the one `FileServerCli` bootstrapped.
+  */
+private fun docOpsRequest(cfg: Config, ctx: FsActionContext): ServerDocOps.Request {
+   val vars = linkedMapOf<String, String>()
+   ctx.req.getParameterValues("var")?.forEach { spec ->
+     val idx = spec.indexOf('=')
+     if (idx > 0) vars[spec.substring(0, idx).trim()] = spec.substring(idx + 1)
+   }
+   val root = cfg.root.canonicalFile
+   val mode = ctx.req.getParameter("mode")?.takeIf { it.isNotBlank() } ?: cfg.docOpsMode
+   ServerDocOps.checkMode(mode)
+   return ServerDocOps.Request(
+     root = root,
+     user = FileServerCli.user,
+     docsFolder = cfg.docsFolder?.canonicalFile ?: root,
+     paths = ctx.req.getParameterValues("path").orEmpty().map { it.trim() }.filter { it.isNotBlank() },
+     mode = mode,
+     /* Repeatable: the dialog renders a checkbox list of planned outputs. */
+     targets = ctx.req.getParameterValues("target").orEmpty().map { it.trim() }.filter { it.isNotBlank() },
+     templateVars = vars,
+     smartModel = cfg.smartModel,
+     fastModel = cfg.fastModel,
+     concurrency = cfg.docOpsConcurrency,
+     monitor = cfg.monitor,
+   )
+  }
 
   private fun handleAutoFix(ctx: FsActionContext) {
     val cfg = config ?: return fail(ctx.resp, FsErrorCode.ENOSYS, "autofix", "task actions are not enabled")
@@ -293,6 +298,25 @@ private fun resolveDocOpsTargets(ctx: FsActionContext): List<ActionOption> {
       ?: return fail(ctx.resp, FsErrorCode.ENOENT, "tasks", "no such task '$id'")
     writeJson(ctx.resp, 200, "{\"task\":" + taskJson(record, true) + "}")
   }
+  /*
+   * ------------------------------------------------------------------
+   * Live parameter options
+   * ------------------------------------------------------------------
+   */
+  /**
+  * Options for `?target=`: plans the selection through the DocOps API and lists the
+  * output files it would produce. No output scraping and no console lock is involved,
+  * because [ServerDocOps.targets] reads the `WorkPlan` directly.
+   *
+   * `plan` is read-only, so this is safe on a read-only mount.
+   */
+  private fun resolveDocOpsTargets(ctx: FsActionContext): List<ActionOption> {
+    val cfg = config ?: return emptyList()
+   /* Option discovery is plumbing, not an invocation: nothing is registered in `tasks`. */
+   return ServerDocOps.targets(docOpsRequest(cfg, ctx))
+     .map { ActionOption(it.path, it.path, it.description) }
+  }
+
 
   /*
    * ------------------------------------------------------------------

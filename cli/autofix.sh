@@ -96,3 +96,5 @@ EMAIL="acharneski@gmail.com" \
 COGNOTIK_SMART_MODEL="claude-sonnet-5" \
 COGNOTIK_FAST_MODEL="claude-haiku-4-5-20251001" \
 exec "$JAVA_BIN" "${java_opts[@]}" -cp "$JAR" "$MAIN_CLASS" "$@"
+
+--email="acharneski@gmail.com" --smart-model "claude-sonnet-5" --fast-model "claude-haiku-4-5-20251001"

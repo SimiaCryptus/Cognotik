@@ -26,8 +26,18 @@ function open({title, body, actions, initialFocus}) {
             footer.appendChild(h('button', {
                 type: 'button', text: action.label,
                 onclick: () => {
-                    const value = action.value ?? action.run?.();
-                    Promise.resolve(value).then(close);
+                    /* `??` would treat a declared `value: null` (Cancel) as "unset" and
+                       fall through to run(), resolving the dialog with `undefined` — which
+                       callers cannot distinguish from a confirmation. Ask for the key. */
+                    const value = Object.prototype.hasOwnProperty.call(action, 'value')
+                        ? action.value
+                        : action.run?.();
+                    /* run() answering `undefined` means "validation failed": stay open. */
+                    if (value === undefined) return;
+                    Promise.resolve(value).then((resolved) => {
+                        if (resolved === undefined) return;
+                        close(resolved);
+                    });
                 },
             }));
         }
@@ -104,10 +114,48 @@ export function initModal() {
                     input = h('textarea', {id, rows: '4', placeholder: param.placeholder || ''});
                     input.value = initial ?? '';
                     break;
-                case 'enum':
-                    input = h('select', {id}, (param.options || []).map((option) =>
-                        h('option', {value: option, text: option, selected: option === initial})));
+                /* A single-value select whose options may be static or fetched live
+                   (param.dynamic), e.g. DocOps listing the targets available for the
+                   documents that are currently selected. */
+                case 'enum': {
+                    const select = h('select', {id});
+                    const paint = (options, {loading = false, error = null} = {}) => {
+                        clear(select);
+                        select.disabled = !!loading;
+                        if (loading) {
+                            select.appendChild(h('option', {value: '', text: 'Loading…'}));
+                            return;
+                        }
+                        if (error) {
+                            select.appendChild(h('option', {value: '', text: error}));
+                        } else if (param.dynamic && !param.required) {
+                            /* Live lists need an explicit "leave unset" entry; static
+                               enums keep their declared default as the only initial value. */
+                            select.appendChild(h('option', {value: '', text: param.placeholder || '(none)'}));
+                        }
+                        for (const option of options) {
+                            const value = typeof option === 'string' ? option : option.value;
+                            const optionLabel = typeof option === 'string' ? option : (option.label || option.value);
+                            select.appendChild(h('option', {
+                                value, text: optionLabel, selected: value === initial,
+                                title: (typeof option === 'object' && option.description) || null,
+                            }));
+                        }
+                        values[param.id] = select.value;
+                    };
+                    if (param.dynamic && resolveOptions) {
+                        paint([], {loading: true});
+                        Promise.resolve(resolveOptions(param))
+                            .then((options) => paint(options || []))
+                            .catch((error) => paint([], {
+                                error: `Could not load options: ${error?.message || error}`,
+                            }));
+                    } else {
+                        paint(param.options || []);
+                    }
+                    input = select;
                     break;
+                }
                /* A "checkbox list": options may be static or fetched live (param.dynamic)
                   from the server, e.g. DocOps enumerating targets for selected files. */
                case 'checklist': {

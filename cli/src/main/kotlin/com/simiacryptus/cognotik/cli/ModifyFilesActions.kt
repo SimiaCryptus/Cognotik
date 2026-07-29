@@ -114,10 +114,8 @@ package com.simiacryptus.cognotik.cli
           description = "Open a patch chat session over the selected files",
           parameters = listOf(
             ActionParam("path", required = false, description = "file or folder relative to the root (repeatable)"),
-             ActionParam(
-               "lineNumbers", "boolean", required = false, default = false,
-               label = "Number the code summary"
-             ),
+             /* 'lineNumbers' stays an API-only knob (Config.showLineNumbers is the default):
+                the dialog would only stand between the click and the chat session. */
              ActionParam(
                "name", required = false, label = "Session name",
                description = "label shown in the chat history"
@@ -131,7 +129,9 @@ package com.simiacryptus.cognotik.cli
                ActionMenu("main/tools", "7_run", 30),
              ),
              selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
-             hiddenParams = setOf("path"),
+             /* Both parameters are supplied by the invocation, so no dialog is shown at
+                all: the action opens the session straight away. */
+             hiddenParams = setOf("path", "name"),
              sendSelection = "paths", selectionParam = "path",
            ),
         ) { ctx -> handleModify(ctx) },

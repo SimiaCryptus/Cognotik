@@ -192,7 +192,8 @@ export async function invoke(action, ctx) {
            title: action.title, params: action.params, ctx, remember: action.id,
            resolveOptions: action.resolveParam ? (param) => action.resolveParam(param.id, ctx) : undefined,
        });
-        if (params === null) return undefined;
+        /* Cancelled (or dismissed) dialogs never run the action. */
+        if (params === null || params === undefined) return undefined;
     }
     const controller = new AbortController();
     const task = ui.task({label: action.title, cancel: () => controller.abort()});

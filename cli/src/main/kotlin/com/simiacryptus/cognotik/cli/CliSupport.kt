@@ -33,12 +33,11 @@ object CliSupport {
     val audio: ChatModel,
   )
 
-  fun defaultUser(): User = User(
-    id = "1",
-    email = System.getenv("EMAIL")
-      ?: System.getProperty("user.email")
-      ?: "user@localhost"
-  )
+  var email = (System.getenv("EMAIL")
+    ?: System.getProperty("user.email")
+    ?: "user@localhost")
+
+  fun defaultUser(): User = User(id = "1", email = email)
 
   /**
    * Points [ApplicationServices.fileApplicationServices] at per-root instances so user
