@@ -6,7 +6,7 @@ import {initMermaid} from './render/mermaid.js';
 import {initMathJax} from './render/mathjax.js';
 
 import {APP_VERSION, IS_DEV} from './config/env.js';
-import {createLogger, renderFatalError} from './util/logger.js';
+import {createLogger, dumpDiagnostics, installGlobalErrorHandlers, renderFatalError} from './util/logger.js';
 import {resolveSessionId} from './core/session.js';
 import {MessageStore} from './core/store.js';
 import {Transport} from './core/transport.js';
@@ -69,7 +69,19 @@ export function boot(options = {}) {
         interactive: !isArchive
     });
 
-    transport.on('message', (event) => store.upsertMany(event.detail));
+     transport.on('message', (event) => {
+         const batch = event.detail || [];
+         try {
+             store.upsertMany(batch);
+         } catch (err) {
+             // Never let one bad batch kill the socket's message pump (§16).
+             log.error('Failed to ingest message batch', {
+                 count: batch.length,
+                 ids: batch.map((m) => m?.id),
+                 error: err
+             });
+         }
+     });
 
     /* 7. archive mode short-circuits the socket and appInfo entirely (§13). */
     if (isArchive) {
@@ -90,7 +102,7 @@ export function boot(options = {}) {
     });
     transport.on('reconnecting', (event) => log.warn('Reconnecting', {attempt: event.detail}));
     transport.on('error', (event) => {
-        log.error('Transport error', event.detail?.message);
+         log.error('Transport error', {error: event.detail, stats: transport.stats()});
         bus.emit(Events.CONNECTION_ERROR, event.detail);
     });
     bus.on(Events.MESSAGES_RENDERED, () => composer.updateVisibility());
@@ -101,21 +113,29 @@ export function boot(options = {}) {
 
     // 6. appInfo — non-blocking; failures fall back to defaults
     fetchAppInfo(sessionId).then((config) => {
-        applyAppConfig(config);
-        composer.updateVisibility();
-        if (IS_DEV && config.websocket) {
-            transport.configure(config.websocket);
-            transport.reconnect();
-        }
-    });
+         try {
+             applyAppConfig(config);
+             composer.updateVisibility();
+             if (IS_DEV && config.websocket) {
+                 transport.configure(config.websocket);
+                 transport.reconnect();
+             }
+         } catch (err) {
+             log.error('Failed to apply appInfo', {config, error: err});
+         }
+     }, (err) => log.error('appInfo pipeline rejected', err));
 
     return {sessionId, store, view, transport, composer};
 }
+installGlobalErrorHandlers();
+
 
 try {
-    boot();
+     const app = boot();
+     // Triage surface: `__cognotik.diagnostics()`, `__cognotik.transport.stats()`.
+     window.__cognotik = {...app, diagnostics: dumpDiagnostics};
     log.info('Application started successfully');
 } catch (error) {
-    log.error('Critical: failed to start application', error);
+     log.error('Critical: failed to start application', {error, diagnostics: dumpDiagnostics()});
     renderFatalError(error);
 }

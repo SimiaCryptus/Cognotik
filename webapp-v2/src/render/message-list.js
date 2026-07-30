@@ -1,5 +1,5 @@
 import {createLogger} from '../util/logger.js';
-import {el} from '../util/dom.js';
+import {describeNode, el} from '../util/dom.js';
 import {expandReferences} from './references.js';
 import {applyVerboseWrappers} from './verbose.js';
 import {runPipeline} from './pipeline.js';
@@ -63,11 +63,20 @@ export class MessageListView {
     /* --------------------------------------------------------------- render */
 
     _onStoreChange(event) {
-        const {changed, dirtyHosts} = event.detail || {};
-        for (const id of dirtyHosts || []) this.dirty.add(id);
-        // Reference messages are never rendered directly (§4.3).
-        for (const id of changed || []) if (!isReferenceId(id)) this.dirty.add(id);
-        this.render();
+         try {
+             const {changed, dirtyHosts} = event.detail || {};
+             for (const id of dirtyHosts || []) this.dirty.add(id);
+             // Reference messages are never rendered directly (§4.3).
+             for (const id of changed || []) if (!isReferenceId(id)) this.dirty.add(id);
+             this.render();
+         } catch (err) {
+             log.count('render-failures');
+             log.error('Store change handling failed', {
+                 changed: Array.from(event.detail?.changed || []),
+                 dirtyHosts: Array.from(event.detail?.dirtyHosts || []),
+                 error: err
+             });
+         }
     }
 
     render() {
@@ -85,11 +94,29 @@ export class MessageListView {
 
             if (stale) {
                 const drafts = node ? captureDrafts(node) : null;
-                const fresh = this._buildMessage(message);
-                if (node?.parentNode) node.replaceWith(fresh);
-                if (drafts) restoreDrafts(fresh, drafts);
-                this.nodes.set(message.id, fresh);
-                node = fresh;
+                 let fresh = null;
+                 try {
+                     fresh = this._buildMessage(message);
+                 } catch (err) {
+                     // One poisonous message must not blank the whole transcript (§16).
+                     log.count('build-failures');
+                     log.error('Failed to build message node', {
+                         id: message.id,
+                         version: message.version,
+                         type: message.type,
+                         isHtml: message.isHtml,
+                         length: message.content?.length || 0,
+                         error: err
+                     });
+                 }
+                 if (fresh) {
+                     if (node?.parentNode) node.replaceWith(fresh);
+                     if (drafts) restoreDrafts(fresh, drafts);
+                     this.nodes.set(message.id, fresh);
+                     node = fresh;
+                 } else if (!node) {
+                     continue; // nothing renderable yet; retried on the next version
+                 }
             }
 
             if (!node.parentNode || node.previousElementSibling !== cursor) {
@@ -172,61 +199,151 @@ export class MessageListView {
         if (target.closest('.tabs .tab-button')) return;
 
         const action = resolveAction(target);
-        if (!action) return;
-        const messageId = resolveMessageId(target);
-        if (!messageId) {
-            log.warn('Action without a resolvable message id', {action});
-            return;
-        }
+         const {messageId, source, holder} = resolveTarget(target);
+
+         if (!action) {
+             // A clicked control that carries an id but no action is a contract mismatch
+             // between server HTML and §7.2 — make it visible instead of silent.
+             if (messageId && target.closest('a, button, [data-message-action], [data-action]')) {
+                 log.count('unresolved-action');
+                 log.debug('Clicked control has an id but no resolvable action', {
+                     id: messageId,
+                     idSource: source,
+                     node: describeNode(target)
+                 });
+             }
+             return;
+         }
+         if (!messageId) {
+             log.count('missing-target-id');
+             log.warn('Action without a resolvable target id — dropping frame', {
+                 action,
+                 node: describeNode(target),
+                 hint: 'the control must carry data-id (server handler id) or sit inside [data-message-id]'
+             });
+             return;
+         }
 
         event.preventDefault();
         event.stopPropagation();
-        this.dispatchAction(messageId, action);
+         this.dispatchAction(messageId, action, {
+             idSource: source,
+             idFrom: holder === target ? 'self' : 'ancestor',
+             enclosingMessageId: enclosingMessageId(target),
+             node: describeNode(target, 2)
+         });
     }
 
     _onKeyDown(event) {
         const target = event.target;
         if (!(target instanceof Element)) return;
-         // Server-injected inputs: `.reply-input`, or any textarea carrying a data-id.
-         if (!target.matches('.reply-input, textarea[data-id]')) return;
+         // Server-injected inputs: `.reply-input`, or any text field carrying a data-id.
+         if (!target.matches('.reply-input, textarea[data-id], input[type="text"][data-id]')) return;
         if (event.key !== 'Enter' || event.shiftKey) return;
         event.preventDefault();
-        const messageId = target.getAttribute('data-id') || resolveMessageId(target);
-        if (messageId) this.dispatchAction(messageId, 'text-submit');
+         const {messageId, source} = resolveTarget(target);
+         if (!messageId) {
+             log.count('missing-target-id');
+             log.warn('Enter pressed in a reply input with no resolvable id', {node: describeNode(target)});
+             return;
+         }
+         this.dispatchAction(messageId, 'text-submit', {idSource: source, via: 'keydown'});
     }
 
     /** §7.3 dispatch. Actions are forwarded verbatim — never whitelisted. */
-    dispatchAction(messageId, action) {
-        if (action !== 'text-submit') {
-            log.debug('Posting action', {messageId, action});
-            this.transport.sendAction(messageId, action);
-            return;
-        }
 
+     dispatchAction(messageId, action, context = {}) {
+         if (!this.transport) {
+             log.warn('Dropping action: no transport attached (archive mode?)', {messageId, action});
+             return;
+         }
+         if (action === 'text-submit') {
+             this._submitText(messageId, context);
+             return;
+         }
+         log.debug('Posting action', {messageId, action, ...context});
+         log.count(`action:${action}`);
+         this._track(this.transport.sendAction(messageId, action), {messageId, action});
+     }
+
+     _submitText(messageId, context = {}) {
+         const input = this._findInput(messageId);
+         if (!input) {
+             log.count('text-submit-no-input');
+             log.warn('text-submit with no matching input element', {messageId, ...context});
+             return;
+         }
+         const text = input.value ?? '';
+         if (!text.trim()) {
+             log.debug('text-submit ignored: input is blank', {messageId});
+             return;
+         }
+         log.debug('Posting user text', {messageId, length: text.length, ...context});
+         log.count('action:text-submit');
+         this._track(this.transport.sendUserText(messageId, text), {messageId, action: 'text-submit'});
+         input.value = '';
+         input.style.height = 'auto';
+     }
+
+     /** Scoped to the message list first so a modal copy of the same id cannot shadow it. */
+     _findInput(messageId) {
          const id = cssEscape(messageId);
-         const input =
-             document.querySelector(`.reply-input[data-id="${id}"]`) ||
-             document.querySelector(`textarea[data-id="${id}"], input[type="text"][data-id="${id}"]`);
-        const text = input?.value ?? '';
-        if (!text.trim()) return;
-        this.transport.sendUserText(messageId, text);
-        if (input) {
-            input.value = '';
-            input.style.height = 'auto';
-        }
+         for (const scope of [this.list, document]) {
+             if (!scope) continue;
+             const found =
+                 scope.querySelector(`.reply-input[data-id="${id}"]`) ||
+                 scope.querySelector(`textarea[data-id="${id}"], input[type="text"][data-id="${id}"]`);
+             if (found) return found;
+         }
+         return null;
+     }
+
+     /** Outbound frames resolve when written to the socket; surface the failures (§3.2). */
+     _track(promise, context) {
+         Promise.resolve(promise).then(
+             () => log.debug('Frame delivered', context),
+             (err) => {
+                 log.count('send-failures');
+                 log.error('Frame delivery failed', {...context, error: err?.message || String(err)});
+             }
+         );
     }
 }
 
 /* ------------------------------------------------------------------ helpers */
 
-/** §7.1 identifier extraction. */
+/**
+  * §7.1 identifier extraction — **NEAREST WINS**.
+  *
+  * The clicked control's own id must beat the enclosing message wrapper's id: server
+  * emitted links/buttons carry their own handler id in `data-id`, and the server resolves
+  * *that* id. Walking `closest('[data-message-id]')` first always matched the wrapper we
+  * build ourselves, so we posted the message id and the server answered
+  * "No link handler found for ID: …" for every single control.
+  *
+  * `message-id` (no `data-` prefix) is the inert `z*` reference marker (§5) and is
+  * deliberately NOT considered here — routing an action to a reference id is always wrong.
+  */
+export function resolveTarget(node) {
+     if (!node || typeof node.closest !== 'function') return {messageId: null, source: null, holder: null};
+     const holder = node.closest('[data-message-id], [data-id]');
+     if (!holder) return {messageId: null, source: null, holder: null};
+
+     const explicit = holder.getAttribute('data-message-id');
+     if (explicit) return {messageId: explicit, source: 'data-message-id', holder};
+     const dataId = holder.getAttribute('data-id');
+     if (dataId) return {messageId: dataId, source: 'data-id', holder};
+     return {messageId: null, source: null, holder};
+}
+
+/** Back-compat wrapper (§7.1). */
 export function resolveMessageId(node) {
-    return (
-        node.getAttribute?.('data-message-id') ||
-        node.closest?.('[data-message-id]')?.getAttribute('data-message-id') ||
-        node.getAttribute?.('data-id') ||
-        null
-    );
+     return resolveTarget(node).messageId;
+}
+
+/** The message that visually contains the node — diagnostics only, never posted. */
+export function enclosingMessageId(node) {
+     return node?.closest?.('[data-message-id]')?.getAttribute('data-message-id') || null;
 }
 
 /** §7.2 action extraction: explicit attributes first, then class fallback. */

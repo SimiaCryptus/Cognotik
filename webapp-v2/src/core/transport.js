@@ -34,6 +34,21 @@ const REPLAY_WINDOW = 10_000;
 const REPLAY_IDLE_FLUSH = 1_000;
 const AGGREGATE_DEBOUNCE = 100;
 const CHUNK_SIZE = 10;
+/** Diagnostics only — decoding 1006 vs 1011 is the difference between a proxy and a crash. */
+const CLOSE_CODES = Object.freeze({
+     1000: 'normal',
+     1001: 'going away',
+     1002: 'protocol error',
+     1003: 'unsupported data',
+     1005: 'no status received',
+     1006: 'abnormal close (no close frame — network/proxy)',
+     1008: 'policy violation',
+     1009: 'message too big',
+     1011: 'server internal error',
+     1012: 'service restart',
+     1013: 'try again later',
+     1015: 'TLS handshake failure'
+});
 
 /** '/coding/agent' -> '/coding/' ; '/' -> '/' (§3.1) */
 export function derivePath(pathname) {
@@ -120,6 +135,7 @@ export class Transport extends EventTarget {
             this.socket = null;
         }
         this._flushBuffers('disconnect');
+         this._failQueue(new Error('Transport disconnected by user'));
         this._emit('close', {forced: true});
     }
 
@@ -212,14 +228,29 @@ export class Transport extends EventTarget {
         this._stopHeartbeat();
         // Deliver anything already buffered rather than dropping it, then clear (§3.6).
         this._flushBuffers('close');
-        log.warn('Socket closed', {code: event?.code, reason: event?.reason, forced: this.forcedClose});
+         log.count('closes');
+         log.warn('Socket closed', {
+             code: event?.code,
+             codeMeaning: CLOSE_CODES[event?.code] || 'unknown',
+             reason: event?.reason || '(none)',
+             wasClean: event?.wasClean,
+             forced: this.forcedClose,
+             uptimeMs: this.connectionStartTime ? Date.now() - this.connectionStartTime : 0,
+             queued: this.sendQueue.length
+         });
         this._emit('close', {code: event?.code, reason: event?.reason, forced: this.forcedClose});
         if (!this.forcedClose) this._scheduleReconnect();
     }
 
     _onError() {
         const error = new Error('WebSocket transport error');
-        log.error(error.message, {readyState: this.readyState});
+         log.count('errors');
+         log.error(error.message, {
+             readyState: this.readyState,
+             url: this.socket?.url,
+             attempt: this.reconnectAttempts,
+             queued: this.sendQueue.length
+         });
         this._emit('error', error);
         // A close event follows; reconnection is scheduled there.
     }
@@ -230,7 +261,9 @@ export class Transport extends EventTarget {
         if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
             this.forcedClose = true;
             const error = new Error(`Maximum reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`);
-            log.error(error.message);
+             log.error(error.message, {sessionId: this.sessionId, queued: this.sendQueue.length});
+             // Nothing will ever flush these; reject so callers can surface it (§3.2).
+             this._failQueue(error);
             this._emit('error', error);
             return;
         }
@@ -272,6 +305,7 @@ export class Transport extends EventTarget {
 
     _onMessage(event) {
         const raw = typeof event.data === 'string' ? event.data : '';
+         log.count('frames-in');
 
         const control = parseControlFrame(raw);
         if (control) {
@@ -290,9 +324,15 @@ export class Transport extends EventTarget {
 
         const message = decodeDataFrame(raw);
         if (!message) {
-            log.warn('Dropping malformed frame', {preview: raw.slice(0, 120), length: raw.length});
+             log.count('frames-dropped');
+             log.warn('Dropping malformed frame', {
+                 preview: raw.slice(0, 120),
+                 length: raw.length,
+                 expected: '<id>,<version>,<content>'
+             });
             return;
         }
+         log.debug('Frame decoded', {id: message.id, version: message.version, bytes: message.content.length});
         this._buffer(message);
     }
 
@@ -366,9 +406,20 @@ export class Transport extends EventTarget {
      */
     send(text) {
         return new Promise((resolve, reject) => {
+             if (typeof text !== 'string' || text.length === 0) {
+                 const error = new Error('Refusing to send an empty/non-string frame');
+                 log.error(error.message, {type: typeof text});
+                 reject(error);
+                 return;
+             }
             this.sendQueue.push({text, resolve, reject});
             if (!this.isConnected) {
-                log.warn('Socket not open — frame queued', {queued: this.sendQueue.length});
+                 log.count('frames-queued');
+                 log.warn('Socket not open — frame queued', {
+                     queued: this.sendQueue.length,
+                     readyState: this.readyState,
+                     preview: text.slice(0, 80)
+                 });
                 this._ensureConnection();
                 return;
             }
@@ -377,11 +428,14 @@ export class Transport extends EventTarget {
     }
 
     sendAction(messageId, action) {
-        return this.send(encodeAction(messageId, action));
+         const frame = encodeAction(messageId, action);
+         log.debug('Encoding action frame', {messageId, action, frame});
+         return this.send(frame);
     }
 
     sendUserText(messageId, text) {
-        return this.send(encodeUserText(messageId, text));
+         log.debug('Encoding userTxt frame', {messageId, length: text?.length || 0});
+         return this.send(encodeUserText(messageId, text));
     }
 
     /** Composer submissions are raw text with NO `!` prefix (§3.5). */
@@ -410,9 +464,16 @@ export class Transport extends EventTarget {
             const entry = this.sendQueue.shift();
             try {
                 this.socket.send(entry.text);
+                 log.count('frames-out');
+                 log.debug('Frame sent', {preview: entry.text.slice(0, 120), remaining: this.sendQueue.length});
                 entry.resolve(true);
             } catch (err) {
-                log.error('Frame send failed; re-queueing', err);
+                 log.count('send-failures');
+                 log.error('Frame send failed; re-queueing', {
+                     error: err,
+                     readyState: this.readyState,
+                     preview: entry.text.slice(0, 120)
+                 });
                 this.sendQueue.unshift(entry);
                 this._ensureConnection();
                 return;
@@ -421,8 +482,38 @@ export class Transport extends EventTarget {
         };
         step();
     }
+     /** Terminal failure: never leave a caller awaiting a frame that can never be written. */
+     _failQueue(error) {
+         if (!this.sendQueue.length) return;
+         const pending = this.sendQueue;
+         this.sendQueue = [];
+         log.error('Failing queued frames', {count: pending.length, reason: error.message});
+         for (const entry of pending) {
+             try {
+                 entry.reject(error);
+             } catch (err) {
+                 log.warn('Queued frame rejection handler threw', err);
+             }
+         }
+     }
 
     /* ----------------------------------------------------------------- utils */
+     /** One-call snapshot for triage: `app.transport.stats()` (§16). */
+     stats() {
+         return {
+             sessionId: this.sessionId,
+             url: this.socket?.url || null,
+             readyState: this.readyState,
+             connected: this.isConnected,
+             forcedClose: this.forcedClose,
+             reconnecting: this.reconnecting,
+             reconnectAttempts: this.reconnectAttempts,
+             queued: this.sendQueue.length,
+             buffered: this.replayBuffer.length + this.aggregateBuffer.length,
+             uptimeMs: this.connectionStartTime ? Date.now() - this.connectionStartTime : 0,
+             counters: log.counters()
+         };
+     }
 
     on(type, handler) {
         this.addEventListener(type, handler);

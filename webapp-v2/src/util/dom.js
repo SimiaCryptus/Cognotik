@@ -46,3 +46,28 @@ export function parseHtml(html) {
 export function directChildren(parent, selector) {
     return Array.from(parent.children).filter((child) => child.matches(selector));
 }
+/**
+  * Compact `tag#id.class[data-…] < parent < …` description for structured logs (§16).
+  * Never throws: it is only ever called from error paths.
+  */
+export function describeNode(node, depth = 3) {
+     try {
+         if (!node || node.nodeType !== 1) return String(node);
+         const parts = [];
+         let cursor = node;
+         while (cursor && cursor.nodeType === 1 && parts.length < depth) {
+             const id = cursor.id ? `#${cursor.id}` : '';
+             const classes = cursor.classList?.length
+                 ? `.${Array.from(cursor.classList).slice(0, 4).join('.')}`
+                 : '';
+             const attrs = ['data-id', 'data-message-id', 'data-message-action', 'data-action', 'data-for-tab']
+                 .map((name) => (cursor.hasAttribute(name) ? `[${name}=${cursor.getAttribute(name)}]` : ''))
+                 .join('');
+             parts.push(`${cursor.tagName.toLowerCase()}${id}${classes}${attrs}`);
+             cursor = cursor.parentElement;
+         }
+         return parts.join(' < ');
+     } catch {
+         return '<undescribable node>';
+     }
+}

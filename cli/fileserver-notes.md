@@ -17,7 +17,5 @@ can only resize the terminal area when it is open. if no terminal is open, this 
 
 need themeing sync with fileserver ui via theme ui parameter
 
-BUG: all messages from the server currently have a reply ui appended to them (input textbox and send button) - remove these! when needed, input dialog elements are injected by the websocket server messages.
-The collapse button to minimize the input ui does not work
-We need support for the pending progress status (spinner when server is processing) which is a property of the messages sent (ie `<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>`)
-
+Bug: No link handlers work: e.g. `No link handler found for ID: wmrvol`
+Also, improve console logging and exception handling / diagnostics
