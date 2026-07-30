@@ -18,10 +18,16 @@ export class TreeModel {
         return () => this.listeners.delete(fn);
     }
 
-    emit() {
+     /**
+      * `hint` lets a view repaint surgically. 'selection' means only the
+      * selected/focused rows changed: rebuilding the row elements there would
+      * (a) reset the scroll position and (b) break double click, because the
+      * second click would land on a freshly created element (#3).
+      */
+     emit(hint) {
         this.listeners.forEach((fn) => {
             try {
-                fn(this);
+                 fn(this, hint);
             } catch (e) {
                 console.error(e);
             }
@@ -181,7 +187,7 @@ export class TreeModel {
     select(paths, {focus} = {}) {
         this.selection = Array.from(new Set(paths));
         if (focus) this.focus = focus;
-        this.emit();
+         this.emit('selection');
     }
 
     /** collapseDescendants: a selected folder swallows its selected children. */

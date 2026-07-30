@@ -5,8 +5,10 @@ import {registerEditor} from '../components/editors/EditorRegistry.js';
 import {MonacoEditor} from '../components/editors/MonacoEditor.js';
 import {PlainTextEditor} from '../components/editors/PlainTextEditor.js';
 import {ImageViewer, BinaryPlaceholder} from '../components/editors/SimpleEditors.js';
+import {HtmlPreview} from '../components/editors/HtmlPreview.js';
 import {openQuickPick} from '../components/overlays/QuickPick.js';
 import {TerminalPanel} from '../components/terminal/TerminalPanel.js';
+import {ChatPanel} from '../components/chat/ChatPanel.js';
 import {tabs} from '../components/tabs/TabModel.js';
 import {fs} from '../core/fsclient.js';
 import {caps} from '../core/capabilities.js';
@@ -16,8 +18,9 @@ import {store} from '../core/store.js';
 import {persist} from '../core/persist.js';
 import {announce} from '../core/a11y.js';
 import {raise} from '../core/errors.js';
+import {copyText} from '../core/clipboard.js';
 import {keysFor} from '../core/keymap.js';
-import {basename, dirname, join, validateName} from '../core/paths.js';
+import {basename, dirname, extname, join, validateName} from '../core/paths.js';
 import {buildContext} from '../core/context.js';
 import config from '../config.js';
 
@@ -28,10 +31,19 @@ export function registerContributions({shell}) {
     registerEditorActions();
     registerFileActions();
     registerTerminalActions(shell);
+     registerChatActions(shell);
     registerServerActions();
 }
 
 function registerEditors() {
+     /* Highest priority, but only ever selected by an explicit preview tab
+        (its stat carries `previewUrl`), so editing is unaffected. */
+     registerEditor({
+         id: HtmlPreview.id,
+         priority: 200,
+         canOpen: HtmlPreview.canOpen,
+         create: (ctx) => new HtmlPreview(ctx)
+     });
     registerEditor({
         id: MonacoEditor.id,
         priority: 100,
@@ -142,6 +154,23 @@ function registerCoreCommands(shell) {
         id: 'tree.collapseAll', title: 'Explorer: Collapse All',
         run: () => shell.panelInstances.get('explorer')?.model.collapseAll(),
     });
+     registerCommand({
+         id: 'tree.revealActiveFile', title: 'Explorer: Reveal Active File', keys: ['Mod+Shift+J'],
+         when: () => {
+             const tab = tabs.activeTab();
+             return !!tab && !tab.virtual;
+         },
+         run: async () => {
+             const tab = tabs.activeTab();
+             if (!tab || tab.virtual) {
+                 ui.toast({severity: 'info', message: 'No file is open'});
+                 return;
+             }
+             shell.showPanel('explorer');
+             await ui.revealPath(tab.path);
+             announce(`Revealed ${tab.name}`);
+         },
+     });
     registerCommand({
         id: 'file.save', title: 'File: Save', keys: ['Mod+S'],
         when: (ctx) => {
@@ -193,8 +222,12 @@ function registerCoreCommands(shell) {
         run: async () => {
             const {closeContextMenu} = await import('../components/overlays/ContextMenu.js');
             const {close} = await import('../components/overlays/QuickPick.js');
+             /* The keybinding preventDefault()s Escape, which suppresses the
+                native <dialog> cancel: dismiss action/parameter dialogs here. */
+             const {closeTopModal} = await import('../components/overlays/Modal.js');
             closeContextMenu();
             close();
+             closeTopModal();
         },
     });
 }
@@ -306,6 +339,14 @@ function registerEditorActions() {
         commandId: 'tree.refresh', title: 'Refresh Explorer', icon: '⟳',
         menus: [{anchor: 'main/view', group: '2_refresh', order: 10}],
     });
+     commandAction({
+         commandId: 'tree.revealActiveFile', title: 'Reveal Active File in Explorer', icon: '🎯',
+         disabledReason: 'No file is open',
+         menus: [
+             {anchor: 'main/go', group: '1_open', order: 30},
+             {anchor: 'tab/context', group: '1_open', order: 20},
+         ],
+     });
     commandAction({
         commandId: 'view.focusEditor', title: 'Focus Editor',
         disabledReason: 'No file is open',
@@ -318,13 +359,40 @@ function registerEditorActions() {
 }
 
 
+/** Extensions worth rendering rather than editing (see 'file.view'). */
+const PREVIEWABLE = new Set(['html', 'htm', 'xhtml', 'svg', 'pdf']);
+/** Extensions for which "Run…" is meaningful; '' covers launchers (gradlew). */
+const RUNNABLE = new Set([
+     '', 'sh', 'bash', 'zsh', 'py', 'js', 'mjs', 'cjs', 'ts', 'rb', 'pl', 'php',
+     'ps1', 'bat', 'cmd', 'jar', 'exe', 'kts', 'groovy', 'gradle',
+]);
+
+/** Opens a read-only preview tab hosting the file in a sandboxed iframe. */
+function openPreviewTab(path) {
+     const previewPath = `fs-preview:${path}`;
+     return tabs.open(previewPath, {
+         pinned: true, virtual: true,
+         stat: {
+             path: previewPath, type: 'file', size: 0, readOnly: true,
+             mimeType: 'text/html', previewUrl: fs.fileUrl(path), sourcePath: path,
+         },
+     });
+}
+
 /** File/folder actions: one registration serves menubar, context menu and palette. */
 function registerFileActions() {
+     ui.openPreview = (path) => openPreviewTab(path);
     registerGroup({id: 'group:copy', title: 'Copy', anchor: 'explorer/context', group: '3_clipboard', order: 10});
 
     registerAction({
-        id: 'file.open', title: 'Open', menus: [{anchor: 'explorer/context', group: '1_open', order: 10}],
+         id: 'file.open', title: 'Edit', icon: '✎',
+         menus: [{anchor: 'explorer/context', group: '1_open', order: 10}],
         selection: {min: 1, max: 50, kinds: ['file', 'dir']},
+         update: (ctx, p) => {
+             /* "Edit" is meaningless for a folder — the same entry reveals it. */
+             if (!ctx.files.length && ctx.dirs.length) p.text = 'Open';
+             else if (ctx.files.length === 1 && !ctx.dirs.length) p.text = `Edit ${ctx.files[0].name}`;
+         },
         run: async (ctx) => {
             for (const resource of ctx.resources) {
                 if (resource.type === 'file') await ui.openPath(resource.path, {pinned: true});
@@ -332,6 +400,47 @@ function registerFileActions() {
             }
         },
     });
+     registerAction({
+         id: 'file.view', title: 'View', icon: '🌐',
+         description: 'Render the document in a preview tab',
+         menus: [
+             {anchor: 'explorer/context', group: '1_open', order: 5},
+             {anchor: 'tab/context', group: '1_open', order: 5},
+         ],
+         selection: {min: 1, max: 1, kinds: ['file']},
+         /* Only documents a browser can render; everything else stays "Edit". */
+         hideWhenDisabled: true,
+         enablement: (ctx) => PREVIEWABLE.has(extname(ctx.resources[0]?.path || '')),
+         update: (ctx, p) => {
+             p.text = `View ${ctx.resources[0].name}`;
+         },
+         run: async (ctx) => {
+             await ui.openPreview(ctx.resources[0].path);
+             return {kind: 'none'};
+         },
+     });
+     registerAction({
+         id: 'file.openInNewTab', title: 'Open in New Browser Tab', icon: '↗',
+         description: 'Open through the v2 FS API in a separate browser tab',
+         menus: [
+             {anchor: 'explorer/context', group: '8_export', order: 5},
+             {anchor: 'tab/context', group: '8_export', order: 5},
+             {anchor: 'main/file', group: '8_export', order: 5},
+         ],
+         selection: {min: 0, max: 1, kinds: ['file', 'dir']},
+         run: (ctx) => {
+             const resource = ctx.resources[0];
+             const path = resource?.path || '/';
+             /* A file has a v2 representation (/file?path=…); a folder does not,
+                so open this same SPA on the corresponding deep link instead. */
+             const href = (!resource || resource.type === 'dir')
+                 ? `${location.pathname}#${path.endsWith('/') ? path : `${path}/`}`
+                 : fs.fileUrl(path);
+             window.open(href, '_blank', 'noopener');
+             return {kind: 'none'};
+         },
+     });
+
 
     registerAction({
         id: 'file.new', title: 'New File…', icon: '＋',
@@ -482,8 +591,13 @@ function registerFileActions() {
         menus: [{anchor: 'group:copy', group: '3_clipboard', order: 10}],
         selection: {min: 1, kinds: ['file', 'dir']},
         run: async (ctx) => {
-            await navigator.clipboard?.writeText(ctx.paths.join('\n'));
-            announce('Path copied');
+             /* navigator.clipboard rejects while the closing menu still owns
+                focus, so go through the helper with its legacy fallback (#2). */
+             const ok = await copyText(ctx.paths.join('\n'));
+             return {
+                 kind: 'toast', severity: ok ? 'info' : 'error',
+                 message: ok ? `Copied ${ctx.paths.length} path(s)` : 'Could not access the clipboard',
+             };
         },
     });
 
@@ -492,8 +606,11 @@ function registerFileActions() {
         menus: [{anchor: 'group:copy', group: '3_clipboard', order: 20}],
         selection: {min: 1, kinds: ['file', 'dir']},
         run: async (ctx) => {
-            await navigator.clipboard?.writeText(ctx.resources.map((r) => r.name).join('\n'));
-            announce('Name copied');
+             const ok = await copyText(ctx.resources.map((r) => r.name).join('\n'));
+             return {
+                 kind: 'toast', severity: ok ? 'info' : 'error',
+                 message: ok ? `Copied ${ctx.resources.length} name(s)` : 'Could not access the clipboard',
+             };
         },
     });
 
@@ -501,6 +618,8 @@ function registerFileActions() {
         id: 'file.download', title: 'Download',
         menus: [{anchor: 'explorer/context', group: '8_export', order: 10}, {anchor: 'tab/context', group: '8_export'}],
         selection: {min: 1, max: 1, kinds: ['file']},
+         /* A folder has nothing to download: hide rather than grey out (#5). */
+         hideWhenDisabled: true,
         run: (ctx) => download(fs.fileUrl(ctx.resources[0].path), ctx.resources[0].name),
     });
 
@@ -509,6 +628,7 @@ function registerFileActions() {
         requires: ['snapshot'],
         menus: [{anchor: 'explorer/context', group: '8_export', order: 20}, {anchor: 'main/file', group: '8_export'}],
         selection: {min: 0, max: 1, kinds: ['dir']},
+         hideWhenDisabled: true,
         run: (ctx) => {
             const path = ctx.resources[0]?.path || '/';
             download(fs.snapshotUrl(path), `${basename(path) || 'root'}.zip`);
@@ -581,7 +701,12 @@ function registerTerminalActions(shell) {
     ui.openTerminal = openTerminal;
     registerCommand({
         id: 'view.toggleTerminal', title: 'View: Toggle Terminal', keys: ['Ctrl+`', 'Mod+`'],
-        run: () => shell.showBottomPanel('terminal', {toggle: true, focus: true}),
+         run: async () => {
+             const panel = shell.showBottomPanel('terminal', {toggle: true, focus: true});
+             /* Never reveal an empty dock: open a session, and let the panel
+                collapse it again when the last one is closed (#7). */
+             if (panel && shell.isBottomVisible() && caps.has('terminal')) await panel.ensureSession();
+         },
     });
     registerCommand({
         id: 'terminal.new', title: 'Terminal: New Terminal', keys: ['Mod+Shift+`'],
@@ -600,7 +725,9 @@ function registerTerminalActions(shell) {
             {anchor: 'explorer/empty', group: '7_run', order: 10},
             {anchor: 'main/tools', group: '7_run', order: 10},
         ],
-        selection: {min: 0, max: 1, kinds: ['file', 'dir']},
+         /* Folder-only: right-clicking a file must not offer it (#5). */
+         selection: {min: 0, max: 1, kinds: ['dir']},
+         hideWhenDisabled: true,
         update: (ctx, p) => {
             const folder = targetFolder(ctx);
             p.text = `Open Terminal in ${basename(folder) || '/'}`;
@@ -615,6 +742,11 @@ function registerTerminalActions(shell) {
             {anchor: 'main/tools', group: '7_run', order: 20},
         ],
         selection: {min: 1, max: 1, kinds: ['file']},
+         hideWhenDisabled: true,
+         /* Offering "Run" for a .txt is noise: restrict it to scripts,
+            archives/binaries and extension-less launchers (#4). */
+         enablement: (ctx) => RUNNABLE.has(extname(ctx.resources[0]?.path || '')),
+         disabledReason: 'This file is not runnable',
         update: (ctx, p) => {
             if (ctx.resources[0]) p.text = `Run ${ctx.resources[0].name}…`;
         },
@@ -674,6 +806,135 @@ function download(href, name) {
     link.click();
     link.remove();
 }
+/*
+  * ------------------------------------------------------------------
+  * Code chat (#4) and selection-edit prompts (#8)
+  * ------------------------------------------------------------------
+  */
+/** Suggestions offered the first time, before any history exists. */
+const EDIT_PROMPTS = [
+     'Refactor for clarity',
+     'Add documentation comments',
+     'Add error handling',
+     'Write unit tests for this',
+     'Explain what this does',
+];
+function recentPrompts() {
+     return persist.get('editPrompts', []) || [];
+}
+function rememberPrompt(prompt) {
+     const list = [prompt, ...recentPrompts().filter((p) => p !== prompt)].slice(0, 20);
+     persist.set('editPrompts', list);
+     return list;
+}
+/** Selection first, otherwise whatever the editor is showing. */
+function chatTargets(ctx) {
+     if (ctx.paths?.length) return ctx.paths;
+     const tab = ctx.activeTab || tabs.activeTab();
+     return tab && !tab.virtual ? [tab.path] : [];
+}
+/**
+  * The chat panel is contributed through the registry, so the shell knows
+  * nothing about it; `ui.openChat` is what server actions answering with a
+  * session URL use instead of a (blockable) pop-up.
+  */
+function registerChatActions(shell) {
+     registerPanel({
+         id: 'chat', title: 'Code Chat', icon: '💬', location: 'bottom', order: 20,
+         create: () => new ChatPanel(),
+     });
+     const openChat = async ({paths, name, prompt, url} = {}) => {
+         const panel = shell.showBottomPanel('chat', {focus: true});
+         if (!panel) return null;
+         return panel.openSession({paths, name, prompt, url});
+     };
+     ui.openChat = openChat;
+     registerCommand({
+         id: 'view.toggleChat', title: 'View: Toggle Code Chat', keys: ['Mod+Shift+C'],
+         run: () => shell.showBottomPanel('chat', {toggle: true, focus: true}),
+     });
+     commandAction({
+         commandId: 'view.toggleChat', title: 'Code Chat', icon: '💬',
+         menus: [{anchor: 'main/view', group: '1_open', order: 30}],
+     });
+     registerAction({
+         id: 'chat.openForSelection', title: 'Code Chat…', icon: '💬', category: 'Cognotik',
+         description: 'Open a patch chat over the selected files',
+         menus: [
+             {anchor: 'explorer/context', group: '7_run', order: 25},
+             {anchor: 'main/tools', group: '7_run', order: 25},
+             {anchor: 'editor/context', group: '7_run', order: 25},
+             {anchor: 'tab/context', group: '7_run', order: 25},
+         ],
+         selection: {min: 0, kinds: ['file', 'dir']},
+         enablement: (ctx) => !caps.readOnly && chatTargets(ctx).length > 0,
+         disabledReason: 'Open or select a file first',
+         update: (ctx, p) => {
+             const targets = chatTargets(ctx);
+             if (targets.length === 1) p.text = `Code Chat about ${basename(targets[0])}…`;
+             else if (targets.length > 1) p.text = `Code Chat about ${targets.length} items…`;
+         },
+         run: async (ctx) => {
+             await openChat({paths: chatTargets(ctx)});
+             return {kind: 'none'};
+         },
+     });
+     registerEditAction(openChat);
+}
+/**
+  * §19.8 — selection-edit: pick an instruction (recently used first), then open
+  * a chat over the active file with the selection quoted into the prompt.
+  */
+function registerEditAction(openChat) {
+     registerCommand({
+         id: 'editor.editSelection', title: 'Edit Selection with AI…', keys: ['Mod+Alt+E'],
+         when: (ctx) => !caps.readOnly && !!(ctx.activeTab && !ctx.activeTab.virtual),
+         run: async (ctx) => {
+             const recent = recentPrompts();
+             const items = [
+                 ...recent.map((p) => ({id: `recent:${p}`, label: p, description: 'recent'})),
+                 ...EDIT_PROMPTS.filter((p) => !recent.includes(p))
+                     .map((p) => ({id: `preset:${p}`, label: p, description: 'suggested'})),
+                 {id: '__other', label: 'Other…', description: 'type a new instruction'},
+             ];
+             const choice = await openQuickPick({
+                 title: 'Edit code with', placeholder: 'Pick or type an instruction', items,
+             });
+             if (!choice) return;
+             let prompt = choice.label;
+             if (choice.id === '__other') {
+                 prompt = await ui.prompt({
+                     title: 'Edit code', label: 'Instruction',
+                     validate: (value) => (value && value.trim() ? null : 'An instruction is required'),
+                 });
+                 if (!prompt) return;
+             }
+             rememberPrompt(prompt);
+             const tab = ctx.activeTab || tabs.activeTab();
+             const selection = ctx.editorSelection;
+             const ranged = selection && !selection.isEmpty;
+             const scope = ranged
+                 ? `lines ${selection.ranges[0].startLine}-${selection.ranges[0].endLine}`
+                 : 'the whole file';
+             await openChat({
+                 paths: [tab.path],
+                 name: prompt,
+                 prompt: `${prompt}\n\nApply this to ${basename(tab.path)} (${scope}).`
+                     + (ranged ? `\n\n\`\`\`\n${selection.text}\n\`\`\`` : ''),
+             });
+         },
+     });
+     commandAction({
+         commandId: 'editor.editSelection', title: 'Edit Selection with AI…', icon: '✨',
+         disabledReason: 'Open an editable file first',
+         menus: [
+             {anchor: 'editor/selection', group: '7_run', order: 10},
+             {anchor: 'editor/context', group: '7_run', order: 10},
+             {anchor: 'main/selection', group: '7_run', order: 10},
+         ],
+     });
+}
+
 
 /**
  * §19.11 — descriptors from GET /actions become first-class actions, so a
@@ -780,9 +1041,18 @@ async function serverActionResult(descriptor, payload, ctx) {
      if (!payload || typeof payload !== 'object') return {kind: 'none'};
      if (payload.kind) return payload;
      if (payload.url) {
-         /* Chat sessions (modify) open immediately in a new tab. The window.open()
-            happens after an await, so a strict pop-up blocker may refuse it: fall
-            back to an explicit affordance rather than losing the session. */
+         /* Chat sessions (modify) are hosted in the Code Chat panel: the
+            window.open() below happens after an await, which is exactly what a
+            strict pop-up blocker refuses (#4). */
+         if (typeof ui.openChat === 'function') {
+             const hosted = await ui.openChat({url: payload.url, name: descriptor.title});
+             if (hosted) {
+                 return {
+                     kind: 'toast', severity: 'info',
+                     message: `${descriptor.title}: session opened in the Code Chat panel`,
+                 };
+             }
+         }
          const opened = window.open(payload.url, '_blank', 'noopener');
          if (opened) {
              return {

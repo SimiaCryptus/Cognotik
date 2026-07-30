@@ -159,8 +159,16 @@ object ServerTaskActions {
           menus = listOf(
             ActionMenu("main/tools", "7_run", 50),
             ActionMenu("explorer/context", "7_run", 50),
+           /* Right-clicking the empty explorer background means "this folder",
+              which is exactly AutoFix's unit of work; without this anchor it
+              was effectively invisible for the common case. */
+           ActionMenu("explorer/empty", "7_run", 50),
           ),
-          selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
+           /* AutoFix runs a build/test command *in a directory*; offering it for a
+              plain (non-executable) file is meaningless, so restrict the selection
+              and let the client hide it instead of greying it out. */
+           selection = ActionSelection(min = 0, max = 1, kinds = listOf("dir")),
+           hideWhenDisabled = true,
           hiddenParams = setOf("dir", "autoFix"),
           sendSelection = "folder", selectionParam = "dir",
         ),

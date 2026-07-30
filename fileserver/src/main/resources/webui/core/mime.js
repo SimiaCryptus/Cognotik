@@ -1,4 +1,4 @@
-import {extname} from './paths.js';
+import {extname, basename} from './paths.js';
 
 const LANGUAGES = {
     js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
@@ -15,6 +15,13 @@ const LANGUAGES = {
 };
 
 const TEXT_MIME = /^(text\/|application\/(json|javascript|xml|x-sh|x-yaml|xhtml\+xml))/;
+/** Mirrors MimeTypeResolver: extension-less names that are text in practice. */
+const TEXT_FILENAMES = new Set([
+     '.gitattributes', '.gitignore', '.gitmodules', '.gitkeep', '.dockerignore',
+     '.editorconfig', '.env', '.npmrc', '.nvmrc', '.prettierrc', '.eslintrc', '.babelrc',
+     'dockerfile', 'makefile', 'license', 'licence', 'notice', 'readme', 'changelog',
+     'authors', 'contributors', 'codeowners', 'gradlew', 'procfile',
+]);
 
 export function languageFor(path) {
     return LANGUAGES[extname(path)] || 'plaintext';
@@ -23,7 +30,12 @@ export function languageFor(path) {
 export function isTextLike(stat) {
     if (!stat) return false;
     if (stat.mimeType && TEXT_MIME.test(stat.mimeType)) return true;
-    return Object.prototype.hasOwnProperty.call(LANGUAGES, extname(stat.path || ''));
+     if (Object.prototype.hasOwnProperty.call(LANGUAGES, extname(stat.path || ''))) return true;
+     /* Defence in depth for an older server that still answers
+        application/octet-stream for '.gitattributes' & friends (note #1). */
+     const name = basename(stat.path || '').toLowerCase();
+     if (TEXT_FILENAMES.has(name)) return true;
+     return name.startsWith('.') && !name.slice(1).includes('.');
 }
 
 export function isImage(stat) {

@@ -106,6 +106,12 @@ data class ActionUi(
   val menus: List<ActionMenu> = emptyList(),
   val selection: ActionSelection = ActionSelection(),
   val paletteHidden: Boolean = false,
+   /**
+    * true = the client hides the action when the current selection cannot
+    * satisfy [selection] (a folder-only tool on a file, see fileserver-notes #6)
+    * instead of showing it greyed out.
+    */
+   val hideWhenDisabled: Boolean = false,
   /** Parameters supplied by the invocation context rather than the dialog. */
   val hiddenParams: Set<String> = emptySet(),
   /** "none" | "paths" | "first" | "folder". */
@@ -118,6 +124,7 @@ data class ActionUi(
     "icon" to icon,
     "category" to category,
     "paletteHidden" to paletteHidden,
+     "hideWhenDisabled" to hideWhenDisabled,
     "sendSelection" to sendSelection
   )
 }
@@ -195,6 +202,7 @@ open class FsAction(
       "category" to (presentation.category ?: "Server"),
       "description" to description,
       "paletteHidden" to presentation.paletteHidden,
+       "hideWhenDisabled" to presentation.hideWhenDisabled,
       "requires" to listOfNotNull(requiresCapability),
       "menus" to presentation.menus.map {
         linkedMapOf("anchor" to it.anchor, "group" to it.group, "order" to it.order)

@@ -165,6 +165,13 @@ export class AppShell extends Component {
         });
         this.main.append(this.bottomSplitter, this.bottom);
         this.setBottomHeight(persist.get('layout', {})?.bottom ?? 260);
+         /* A panel with nothing left to show collapses the dock rather than
+            leaving a blank strip above the status bar (#7). */
+         this.track(bus.on('panel:empty', ({id}) => {
+             if (store.get().panels.bottom === id) this.setBottomVisible(false);
+         }));
+         /* Double-clicking the divider collapses/restores, as in an IDE. */
+         this.track(on(this.bottomSplitter, 'dblclick', () => this.setBottomVisible(this.bottom.hidden)));
         let dragging = false;
         this.track(on(this.bottomSplitter, 'pointerdown', (event) => {
             dragging = true;
@@ -193,13 +200,20 @@ export class AppShell extends Component {
         this.bottom.style.height = `${clamped}px`;
         this.bottomSplitter.setAttribute('aria-valuenow', String(clamped));
         persist.patch({layout: {...(persist.get('layout', {}) || {}), bottom: clamped}});
+         /* Panels that own a canvas (xterm) have to re-fit after every drag. */
+         bus.emit('panel:resized', {id: store.get().panels.bottom, height: clamped});
     }
 
     setBottomVisible(visible) {
         this.bottom.hidden = !visible;
         this.bottomSplitter.hidden = !visible;
+         if (visible) bus.emit('panel:resized', {id: store.get().panels.bottom});
         announce(visible ? 'Panel shown' : 'Panel hidden');
     }
+     isBottomVisible() {
+         return !this.bottom.hidden;
+     }
+
 
     /** Mounts (once) and reveals a registered `location: 'bottom'` panel. */
     showBottomPanel(id, {toggle = false, focus = false} = {}) {

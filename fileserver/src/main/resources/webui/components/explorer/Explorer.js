@@ -38,6 +38,8 @@ export class Explorer extends Component {
         const toolbar = h('div', {class: 'fs-explorer__toolbar', role: 'toolbar', 'aria-label': 'Explorer actions'}, [
             this.button('＋', 'New file', 'file.new'),
             this.button('📁', 'New folder', 'folder.new'),
+             /* #10 — jump the tree to whatever the editor is showing. */
+             this.button('🎯', 'Reveal active file', 'tree.revealActiveFile'),
             this.button('⟳', 'Refresh', 'tree.refresh'),
             this.button('⤒', 'Collapse all', 'tree.collapseAll'),
             this.filter,

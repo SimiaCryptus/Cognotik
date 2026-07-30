@@ -27,6 +27,11 @@ export class TreeView extends Component {
         this.track(on(this.el, 'keydown', (e) => this.onKeydown(e)));
         this.track(on(this.el, 'click', (e) => this.onClick(e)));
         this.track(on(this.el, 'dblclick', (e) => this.onDblClick(e)));
+         /* Stop the browser turning the second click into a text selection,
+            which otherwise swallows the dblclick target. */
+         this.track(on(this.el, 'mousedown', (e) => {
+             if (e.detail > 1) e.preventDefault();
+         }));
         this.track(on(this.el, 'contextmenu', (e) => this.onContextMenu(e)));
         this.track(on(this.el, 'focusin', () => this.props.onFocusIn?.()));
         this.installDnd();
@@ -35,7 +40,11 @@ export class TreeView extends Component {
 
     mounted() {
         this.rowHeight = parseFloat(getComputedStyle(this.el).getPropertyValue('--fs-row-h')) || 22;
-        this.track(this.model.onChange(() => this.update()));
+         /* Selection-only changes are applied in place; see TreeModel.emit. */
+         this.track(this.model.onChange((model, hint) => {
+             if (hint === 'selection') this.refreshSelection();
+             else this.update();
+         }));
         this.update();
     }
 
@@ -45,6 +54,9 @@ export class TreeView extends Component {
     }
 
     paint() {
+         /* clear() collapses the scroll height, which the browser answers by
+            resetting scrollTop: expanding a folder would jump to the top (#9). */
+         const scrollTop = this.el.scrollTop;
         const total = this.rows.length;
         const height = this.rowHeight || 22;
         let start = 0;
@@ -67,6 +79,7 @@ export class TreeView extends Component {
                 text: this.model.query ? 'No matches' : 'Empty folder'
             }));
         }
+         if (this.el.scrollTop !== scrollTop) this.el.scrollTop = scrollTop;
     }
 
     renderRow(node, index, total) {
@@ -107,9 +120,23 @@ export class TreeView extends Component {
         return row;
     }
 
+     /**
+      * Selection/focus changes touch attributes only. A full repaint would
+      * rebuild every row, which (a) reset the scroll position and (b) broke
+      * double-click: the two clicks landed on different elements, so the
+      * dblclick target was the container and no node could be resolved (#3, #9).
+      */
+     refreshSelection() {
+         for (const row of this.inner.querySelectorAll('.fs-tree__row')) {
+             const path = row.dataset.path;
+             row.setAttribute('aria-selected', String(this.model.selection.includes(path)));
+             row.setAttribute('tabindex', this.model.focus === path ? '0' : '-1');
+         }
+     }
+
     focusPath(path, {scroll = true} = {}) {
         this.model.focus = path;
-        this.paint();
+         this.refreshSelection();
         const index = this.rows.findIndex((r) => r.path === path);
         if (index < 0) return;
         if (scroll) {
@@ -126,6 +153,13 @@ export class TreeView extends Component {
         const row = event.target instanceof Element ? event.target.closest('.fs-tree__row') : null;
         return row ? this.model.node(row.dataset.path) : null;
     }
+     /** Fallback used by dblclick when the event target is the container. */
+     nodeAtPoint(event) {
+         const el = document.elementFromPoint(event.clientX, event.clientY);
+         const row = el instanceof Element ? el.closest('.fs-tree__row') : null;
+         return row ? this.model.node(row.dataset.path) : null;
+     }
+
 
     onClick(event) {
         const node = this.nodeAt(event);
@@ -141,7 +175,11 @@ export class TreeView extends Component {
     }
 
     onDblClick(event) {
-        const node = this.nodeAt(event);
+         /* The dblclick target is the nearest common ancestor of the two clicks,
+            so resolve by hit-test (and finally by focus) as well (#3). */
+         const node = this.nodeAt(event)
+             || this.nodeAtPoint(event)
+             || (this.model.focus ? this.model.node(this.model.focus) : null);
         if (!node) return;
         event.preventDefault();
         if (node.type === 'dir') this.model.toggle(node.path);

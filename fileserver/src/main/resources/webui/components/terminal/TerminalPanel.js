@@ -425,6 +425,10 @@ export class TerminalPanel extends Component {
     }
 
     mounted() {
+         /* The dock is resizable, and xterm only re-flows when told to. */
+         this.track(bus.on('panel:resized', ({id} = {}) => {
+             if (!id || id === 'terminal') this.active?.view.refit?.();
+         }));
         if (!caps.has('terminal')) {
             this.status.textContent = 'unavailable';
             this.host.appendChild(h('p', {
@@ -448,6 +452,17 @@ export class TerminalPanel extends Component {
     focus() {
         this.active?.view.focus();
     }
+     /**
+      * Used by the toggle command so the dock is never revealed empty (#7).
+      */
+     async ensureSession() {
+         if (this.entries.length) {
+             this.focus();
+             return this.active;
+         }
+         return this.openSession({});
+     }
+
 
     /** Starts a session; `command` (if any) is typed into it once it is live. */
     async openSession({cwd = '/', command, label} = {}) {
@@ -458,6 +473,8 @@ export class TerminalPanel extends Component {
             info = await fs.terminalOpen({cwd, label, cols: 80, rows: 24});
         } catch (error) {
             raise(error, {operation: 'terminal', path: cwd});
+             /* Never leave an empty dock behind a failed start (#7). */
+             if (!this.entries.length) bus.emit('panel:empty', {id: 'terminal'});
             return null;
         }
         const entry = {info, view: null, session: null, exited: false};
@@ -534,7 +551,11 @@ export class TerminalPanel extends Component {
         const next = this.entries[Math.min(index, this.entries.length - 1)] || null;
         this.active = null;
         if (next) this.activate(next);
-        else this.renderTabs();
+         else {
+             this.renderTabs();
+             /* Nothing left to show: let the shell give the space back (#7). */
+             bus.emit('panel:empty', {id: 'terminal'});
+         }
     }
 
     destroyed() {

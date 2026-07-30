@@ -426,10 +426,15 @@ dialog.fs-modal::backdrop {
 
 /* ---------------------------------------------------- bottom dock / terminal */
 .fs-hsplitter {
-    height: 4px;
+     height: 6px;
     cursor: row-resize;
     background: transparent;
     flex: 0 0 auto;
+     /* Pointer capture only works for drags the browser does not claim. */
+     touch-action: none;
+}
+.fs-splitter {
+     touch-action: none;
 }
 
 .fs-hsplitter:hover, .fs-hsplitter:focus-visible {
@@ -535,4 +540,78 @@ dialog.fs-modal::backdrop {
 
 .fs-terminal .xterm {
     height: 100%;
+}
+/* --------------------------------------------------------------- code chat */
+.fs-chat {
+     display: flex;
+     flex-direction: column;
+     flex: 1;
+     min-height: 0;
+}
+.fs-chat__toolbar {
+     display: flex;
+     align-items: center;
+     gap: var(--fs-space-2);
+     padding: var(--fs-space-1) var(--fs-space-2);
+     border-bottom: 1px solid var(--fs-border);
+}
+.fs-chat__title {
+     font-weight: 600;
+}
+.fs-chat__status {
+     margin: 0;
+     padding: 0 var(--fs-space-3);
+     color: var(--fs-fg-muted);
+}
+.fs-chat__status:empty {
+     display: none;
+}
+.fs-chat__prompt {
+     display: flex;
+     gap: var(--fs-space-3);
+     align-items: flex-start;
+     padding: var(--fs-space-2) var(--fs-space-3);
+     border-bottom: 1px dashed var(--fs-border);
+}
+.fs-chat__prompt[hidden] {
+     display: none;
+}
+.fs-chat__prompt-text {
+     margin: 0;
+     flex: 1;
+     max-height: 6rem;
+     overflow: auto;
+     white-space: pre-wrap;
+     font-family: var(--fs-font-mono);
+     font-size: .85em;
+}
+.fs-chat__frame {
+     flex: 1;
+     min-height: 0;
+     width: 100%;
+     border: 0;
+     background: var(--fs-bg);
+}
+/* --------------------------------------------------------------- preview tab */
+.fs-preview {
+     position: absolute;
+     inset: 0;
+     display: flex;
+     flex-direction: column;
+}
+.fs-preview__toolbar {
+     display: flex;
+     align-items: center;
+     gap: var(--fs-space-3);
+     padding: var(--fs-space-1) var(--fs-space-3);
+     border-bottom: 1px solid var(--fs-border);
+     background: var(--fs-bg-elevated);
+     color: var(--fs-fg-muted);
+}
+.fs-preview__frame {
+     flex: 1;
+     min-height: 0;
+     width: 100%;
+     border: 0;
+     background: #ffffff;
 }

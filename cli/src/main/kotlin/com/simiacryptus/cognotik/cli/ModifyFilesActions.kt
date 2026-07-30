@@ -120,6 +120,12 @@ package com.simiacryptus.cognotik.cli
                "name", required = false, label = "Session name",
                description = "label shown in the chat history"
              ),
+            /* Opening instruction from the client's selection-edit action; it
+               labels the session (the chat app owns its own input box). */
+            ActionParam(
+              "prompt", required = false, label = "Instruction",
+              description = "opening instruction, used as the session label"
+            ),
           ),
           mutating = true,
            ui = ActionUi(
@@ -131,7 +137,7 @@ package com.simiacryptus.cognotik.cli
              selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
              /* Both parameters are supplied by the invocation, so no dialog is shown at
                 all: the action opens the session straight away. */
-             hiddenParams = setOf("path", "name"),
+             hiddenParams = setOf("path", "name", "prompt"),
              sendSelection = "paths", selectionParam = "path",
            ),
         ) { ctx -> handleModify(ctx) },
@@ -171,7 +177,9 @@ package com.simiacryptus.cognotik.cli
         ?: cfg.showLineNumbers
 
       val session = Session.newUserID()
+       val prompt = ctx.req.getParameter("prompt")?.takeIf { it.isNotBlank() }
       val label = ctx.req.getParameter("name")?.takeIf { it.isNotBlank() }
+         ?: prompt?.lineSequence()?.firstOrNull()?.trim()?.take(60)
         ?: "ModifyFiles @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
       SessionProxyServer.metadataStorage.setSessionName(null, session, label)
       SessionProxyServer.agents[session] = PatchChatManager(
@@ -198,6 +206,7 @@ package com.simiacryptus.cognotik.cli
       val sb = StringBuilder("{")
       sb.append("\"session\":\"").append(esc(session.toString())).append("\",")
       sb.append("\"url\":\"").append(esc(url)).append("\",")
+       sb.append("\"prompt\":").append(prompt?.let { "\"" + esc(it) + "\"" } ?: "null").append(",")
       sb.append("\"lineNumbers\":").append(lineNumbers).append(",")
       sb.append("\"files\":[")
       sb.append(selected.joinToString(",") { "\"" + esc(it.toString().replace(File.separatorChar, '/')) + "\"" })

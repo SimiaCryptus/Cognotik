@@ -4,6 +4,12 @@ import {ui} from '../../core/ui.js';
 import {persist} from '../../core/persist.js';
 
 let seq = 0;
+/**
+  * Open dialogs, innermost last. The global Escape keybinding calls
+  * preventDefault(), which suppresses <dialog>'s native `cancel` event, so the
+  * "Close Overlay" command has to dismiss the top dialog explicitly (#3).
+  */
+const openDialogs = [];
 
 function open({title, body, actions, initialFocus}) {
     return new Promise((resolve) => {
@@ -17,10 +23,13 @@ function open({title, body, actions, initialFocus}) {
         let release = null;
         const close = (value) => {
             release?.();
+             const index = openDialogs.indexOf(dialog);
+             if (index >= 0) openDialogs.splice(index, 1);
             dialog.close();
             dialog.remove();
             resolve(value);
         };
+         dialog.__fsCancel = () => close(null);
 
         for (const action of actions) {
             footer.appendChild(h('button', {
@@ -47,9 +56,17 @@ function open({title, body, actions, initialFocus}) {
             close(null);
         });
         document.body.appendChild(dialog);
+         openDialogs.push(dialog);
         dialog.showModal();
         release = trapFocus(dialog, {initial: initialFocus?.(dialog)});
     });
+}
+/** Dismisses the innermost dialog (as Cancel would). Returns false if none. */
+export function closeTopModal() {
+     const dialog = openDialogs[openDialogs.length - 1];
+     if (!dialog) return false;
+     dialog.__fsCancel?.();
+     return true;
 }
 
 export function initModal() {

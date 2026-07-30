@@ -53,6 +53,9 @@ export function registerAction(spec) {
         preview: true,
         singleton: true,
         modal: false,
+         /* true = an action that cannot apply to this context is hidden rather
+            than greyed out (folder-only tools on a file selection, §19.5). */
+         hideWhenDisabled: false,
         ...spec,
     };
     actions.set(action.id, action);
@@ -131,6 +134,7 @@ export function presentationFor(action, ctx) {
             disable('Unavailable');
         }
     }
+     if (!p.enabled && action.hideWhenDisabled) p.visible = false;
     return p;
 }
 
