@@ -67,6 +67,15 @@ object FileServerCli {
   var user: User = CliSupport.defaultUser()
   var available: Map<String, ChatModel> = emptyMap()
   var models: CliSupport.Models? = null
+   /**
+    * The DocOps servlet installed by [ServerTaskActions.install]. It is mounted at
+    * [DOCOPS_PREFIX] and is the same instance the `.fsapi/v1/docops` action drives,
+    * so there is a single DocOps implementation in the server.
+    */
+   @Volatile
+   var docProcessorServlet: CliDocProcessorServlet? = null
+   /** Mount point of [docProcessorServlet]. */
+   const val DOCOPS_PREFIX = "/docops"
 
   /** First path segment consumed by [FileServlet] (normally a session id). */
 
@@ -104,6 +113,9 @@ object FileServerCli {
                   POST {mount}/.fsapi/v1/docops?command=plan|run|status|vars|models[&path=...]
                   POST {mount}/.fsapi/v1/autofix?cmd=<command>[&dir=<subdir>]
                   GET  {mount}/.fsapi/v1/tasks[?id=<taskId>]
+                   The same DocOps engine is also mounted directly as a servlet:
+                   POST /docops?doc=<file>[&target=<file>][&mode=<mode>][&var.NAME=VALUE]
+                   GET  /docops?doc=<file>&listTemplateVars=true
 
                   'docops run' and 'autofix' mutate the workspace, run in the background and
                   return a task id; everything else answers inline. Both are refused with
@@ -297,6 +309,7 @@ object FileServerCli {
     if (tasksEnabled) {
       println("  Tasks     -> docops/autofix enabled (root ${taskRoot.absolutePath})")
       println("               POST $apiBase/docops?command=plan")
+       println("               POST http://$displayHost:$boundPort$DOCOPS_PREFIX?doc=<file>  (DocProcessorServlet)")
       println("               POST $apiBase/autofix?cmd=<command>")
       println("               GET  $apiBase/tasks")
       if (readOnly) println("               (read-only mount: 'docops run' and 'autofix' answer EROFS)")
@@ -397,6 +410,20 @@ object FileServerCli {
       ServletHolder("zip", StaticZipServlet(baseDir.parentFile?.absolutePath ?: baseDir.absolutePath)),
       "/zip"
     )
+     /*
+      * The DocOps engine, exposed as itself. This is the same instance the FS API
+      * 'docops' action invokes (see ServerTaskActions.install), so the HTTP endpoint
+      * and the action can never drift apart.
+      */
+     docProcessorServlet?.let { servlet ->
+       val docopsHolder = ServletHolder("docops", servlet)
+       docopsHolder.registration.setMultipartConfig(
+         MultipartConfigElement(System.getProperty("java.io.tmpdir"))
+       )
+       context.addServlet(docopsHolder, "$DOCOPS_PREFIX/*")
+       context.addServlet(docopsHolder, DOCOPS_PREFIX)
+     }
+
 
     if (uiEnabled) {
       context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")

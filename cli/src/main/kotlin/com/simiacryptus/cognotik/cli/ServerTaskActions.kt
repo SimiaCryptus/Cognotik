@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
 import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
 import jakarta.servlet.http.HttpServletResponse
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -82,6 +83,12 @@ object ServerTaskActions {
 
   @Volatile
   private var config: Config? = null
+   /**
+    * The servlet every docops invocation goes through. Published to [FileServerCli]
+    * so the very same instance is also reachable over HTTP at `/docops`.
+    */
+   @Volatile
+   private var docServlet: CliDocProcessorServlet? = null
   private val installed = AtomicBoolean(false)
   private val tasks = ConcurrentHashMap<String, TaskRecord>()
   private val order = mutableListOf<String>()
@@ -97,6 +104,20 @@ object ServerTaskActions {
   @Synchronized
   fun install(cfg: Config) {
     config = cfg
+     /*
+      * Built here (and re-built on reconfiguration) so both entry points - the FS API
+      * action and the /docops HTTP mount - share one DocProcessorServlet.
+      */
+     docServlet = CliDocProcessorServlet(
+       root = cfg.root.canonicalFile,
+       docsFolder = cfg.docsFolder?.canonicalFile,
+       smartModel = cfg.smartModel,
+       fastModel = cfg.fastModel,
+       readOnly = cfg.readOnly,
+       mode = cfg.docOpsMode,
+       concurrency = cfg.docOpsConcurrency,
+       monitor = cfg.monitor,
+     ).also { FileServerCli.docProcessorServlet = it }
     if (!installed.compareAndSet(false, true)) return
     FsAction.register(
       FsAction(
@@ -247,8 +268,9 @@ object ServerTaskActions {
 }
 
 /**
-  * Maps the query parameters onto a [ServerDocOps.Request]. `--root`/model selection
-  * come from the server's [Config]; the user is the one `FileServerCli` bootstrapped.
+   * Maps the query parameters onto a [ServerDocOps.Request], bound to the shared
+   * [CliDocProcessorServlet] that performs the work. `--root`/model selection come
+   * from the server's [Config]; the user is the one `FileServerCli` bootstrapped.
   */
 private fun docOpsRequest(cfg: Config, ctx: FsActionContext): ServerDocOps.Request {
    val vars = linkedMapOf<String, String>()
@@ -259,6 +281,8 @@ private fun docOpsRequest(cfg: Config, ctx: FsActionContext): ServerDocOps.Reque
    val root = cfg.root.canonicalFile
    val mode = ctx.req.getParameter("mode")?.takeIf { it.isNotBlank() } ?: cfg.docOpsMode
    ServerDocOps.checkMode(mode)
+    val servlet: DocProcessorServlet = docServlet
+      ?: throw IllegalArgumentException("the DocOps servlet is not installed")
    return ServerDocOps.Request(
      root = root,
      user = FileServerCli.user,
@@ -272,6 +296,7 @@ private fun docOpsRequest(cfg: Config, ctx: FsActionContext): ServerDocOps.Reque
      fastModel = cfg.fastModel,
      concurrency = cfg.docOpsConcurrency,
      monitor = cfg.monitor,
+      servlet = servlet,
    )
   }
 

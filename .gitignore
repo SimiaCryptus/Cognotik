@@ -9,4 +9,5 @@ build/
 /.doc-processor-cache/
 /.kotlin/
 /.intellijPlatform/
+.cognotik*
 
