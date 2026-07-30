@@ -1,86 +1,338 @@
+/* ============================================================================
+ * Cognotik Files · “Aurora” design tokens
+ *
+ * One vocabulary, four themes (light / dark / auto / high-contrast), six
+ * accents and three densities. Everything downstream reads tokens only, so a
+ * re-skin never touches a component.
+ *
+ * CONTRACT — `--fs-bg`, `--fs-fg`, `--fs-accent` and `--fs-bg-active` must stay
+ * plain hex literals: TerminalPanel hands them straight to xterm.js, whose
+ * colour parser understands #rgb/#rrggbb and nothing else. (var() substitution
+ * is fine: custom properties are substituted in the computed value, so
+ * getComputedStyle still yields a hex string.)
+ *
+ * Derived tokens use color-mix() with a static fallback declared first, so an
+ * older engine degrades to a hand-picked colour instead of nothing.
+ * ========================================================================== */
+
 :root {
     color-scheme: light;
+
+    /* ── accent ramp (two literals per accent; the theme picks one) ───────── */
+    --fs-accent-light: #4f56e0;
+    --fs-accent-dark: #9aa5ff;
+    --fs-accent: var(--fs-accent-light);
+
+    /* ── the hex contract ────────────────────────────────────────────────── */
     --fs-bg: #ffffff;
-    --fs-bg-elevated: #f6f7f9;
-    --fs-bg-hover: #eceef1;
-    --fs-bg-active: #dfe6f5;
-    --fs-fg: #1c1e21;
-    --fs-fg-muted: #5d646d;
-    --fs-accent: #0d6efd;
-    --fs-border: #d8dbe0;
-    --fs-focus-ring: #0a58ca;
-    --fs-danger: #c9303c;
-    --fs-warn: #a05a00;
-    --fs-ok: #157347;
-    --fs-row-h: 22px;
+    --fs-fg: #171b21;
+    --fs-bg-active: #e6e9fd;
+
+    /* ── surfaces ────────────────────────────────────────────────────────── */
+    --fs-canvas: #e9ecf4;
+    --fs-bg-elevated: #f6f7fb;
+    --fs-bg-sunken: #f0f2f8;
+    --fs-bg-overlay: #ffffff;
+    /* Chrome is translucent so the ambient aurora reads through it. */
+    --fs-chrome: rgba(255, 255, 255, .68);
+    --fs-scrim: rgba(15, 18, 24, .34);
+
+    /* ── ink ─────────────────────────────────────────────────────────────── */
+    --fs-fg-muted: #5a6474;
+    --fs-fg-subtle: #8b94a4;
+    --fs-fg-on-accent: #ffffff;
+
+    /* ── lines ───────────────────────────────────────────────────────────── */
+    --fs-border: #e2e6ef;
+    --fs-border-strong: #ccd2df;
+    --fs-hairline: rgba(23, 27, 33, .08);
+    --fs-hairline: color-mix(in oklab, var(--fs-fg) 9%, transparent);
+
+    /* ── interaction overlays (translucent: valid on any surface) ─────────── */
+    --fs-hover: rgba(23, 27, 33, .055);
+    --fs-hover: color-mix(in oklab, var(--fs-fg) 6%, transparent);
+    --fs-pressed: rgba(23, 27, 33, .1);
+    --fs-pressed: color-mix(in oklab, var(--fs-fg) 11%, transparent);
+    --fs-selected: rgba(79, 86, 224, .13);
+    --fs-selected: color-mix(in oklab, var(--fs-accent) 14%, transparent);
+    --fs-selected-strong: rgba(79, 86, 224, .26);
+    --fs-selected-strong: color-mix(in oklab, var(--fs-accent) 28%, transparent);
+    --fs-accent-soft: rgba(79, 86, 224, .1);
+    --fs-accent-soft: color-mix(in oklab, var(--fs-accent) 11%, transparent);
+    --fs-accent-strong: #4148c9;
+    --fs-accent-strong: color-mix(in oklab, var(--fs-accent) 86%, #000);
+    --fs-focus-ring: #4f56e0;
+    --fs-focus-ring: color-mix(in oklab, var(--fs-accent) 92%, var(--fs-fg));
+
+    /* ── status ──────────────────────────────────────────────────────────── */
+    --fs-danger: #d32d3f;
+    --fs-warn: #9a6100;
+    --fs-ok: #12805c;
+    --fs-info: var(--fs-accent);
+    --fs-danger-soft: rgba(211, 45, 63, .1);
+    --fs-danger-soft: color-mix(in oklab, var(--fs-danger) 12%, transparent);
+    --fs-warn-soft: rgba(154, 97, 0, .12);
+    --fs-warn-soft: color-mix(in oklab, var(--fs-warn) 14%, transparent);
+    --fs-ok-soft: rgba(18, 128, 92, .12);
+    --fs-ok-soft: color-mix(in oklab, var(--fs-ok) 14%, transparent);
+
+    /* ── ambient light behind the whole app ──────────────────────────────── */
+    --fs-aurora-1: rgba(79, 86, 224, .16);
+    --fs-aurora-1: color-mix(in oklab, var(--fs-accent) 17%, transparent);
+    --fs-aurora-2: rgba(0, 190, 190, .12);
+    --fs-aurora-2: color-mix(in oklab, var(--fs-accent) 9%, transparent);
+    --fs-aurora-3: rgba(255, 255, 255, .9);
+
+    /* ── elevation ───────────────────────────────────────────────────────── */
+    --fs-shadow-color: 222 42% 18%;
+    --fs-shadow-1: 0 1px 1px hsl(var(--fs-shadow-color) / .05),
+    0 2px 4px hsl(var(--fs-shadow-color) / .05);
+    --fs-shadow-2: 0 1px 2px hsl(var(--fs-shadow-color) / .06),
+    0 6px 14px -4px hsl(var(--fs-shadow-color) / .12);
+    --fs-shadow-3: 0 2px 4px hsl(var(--fs-shadow-color) / .07),
+    0 14px 30px -8px hsl(var(--fs-shadow-color) / .18);
+    --fs-shadow-4: 0 4px 8px hsl(var(--fs-shadow-color) / .08),
+    0 32px 64px -16px hsl(var(--fs-shadow-color) / .28);
+    --fs-inset-hairline: inset 0 0 0 1px var(--fs-hairline);
+
+    /* ── scrollbars ──────────────────────────────────────────────────────── */
+    --fs-scrollbar: rgba(23, 27, 33, .22);
+    --fs-scrollbar: color-mix(in oklab, var(--fs-fg) 24%, transparent);
+    --fs-scrollbar-hover: color-mix(in oklab, var(--fs-fg) 42%, transparent);
+
+    /* ── geometry ────────────────────────────────────────────────────────── */
+    --fs-radius-xs: 4px;
+    --fs-radius-sm: 6px;
+    --fs-radius: 8px;
+    --fs-radius-md: 10px;
+    --fs-radius-lg: 14px;
+    --fs-radius-xl: 20px;
+    --fs-radius-pill: 999px;
+
     --fs-space-1: 2px;
     --fs-space-2: 4px;
     --fs-space-3: 8px;
     --fs-space-4: 12px;
     --fs-space-5: 16px;
     --fs-space-6: 24px;
-    --fs-radius: 4px;
-    --fs-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --fs-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --fs-space-7: 32px;
+    --fs-space-8: 48px;
+
+    /* ── typography ──────────────────────────────────────────────────────── */
+    --fs-font-ui: 'InterVariable', 'Inter', ui-sans-serif, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+    --fs-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas,
+    'Liberation Mono', Menlo, monospace;
+    --fs-text-xs: 11px;
+    --fs-text-sm: 12.5px;
+    --fs-text-md: 13.5px;
+    --fs-text-lg: 16px;
+    --fs-text-xl: 21px;
+    --fs-leading: 1.5;
+    --fs-tracking-tight: -.011em;
+    --fs-tracking-wide: .04em;
+
+    /* ── motion ──────────────────────────────────────────────────────────── */
+    --fs-motion-fast: 110ms;
+    --fs-motion: 180ms;
+    --fs-motion-slow: 280ms;
+    --fs-ease: cubic-bezier(.2, 0, .2, 1);
+    --fs-ease-out: cubic-bezier(.16, 1, .3, 1);
+    --fs-ease-spring: cubic-bezier(.2, 1.3, .3, 1);
+
+    /* ── layout ──────────────────────────────────────────────────────────── */
+    --fs-row-h: 26px;
+    --fs-header-h: 38px;
+    --fs-status-h: 26px;
+    --fs-tab-h: 34px;
+    --fs-sidebar-w: 288px;
+    --fs-rail-size: 30px;
+    --fs-blur: saturate(180%) blur(18px);
+
+    /* ── stacking ────────────────────────────────────────────────────────── */
     --fs-z-overlay: 1000;
-    --fs-motion-fast: 120ms;
-    --fs-sidebar-w: 280px;
 }
 
+/* ─────────────────────────────────────────────────────────── dark ───────── */
 html[data-theme="dark"] {
     color-scheme: dark;
-    --fs-bg: #1a1d21;
-    --fs-bg-elevated: #23262b;
-    --fs-bg-hover: #2d3136;
-    --fs-bg-active: #2f3d55;
-    --fs-fg: #e4e6eb;
-    --fs-fg-muted: #a2a9b2;
-    --fs-accent: #5a9eff;
-    --fs-border: #3a3f44;
-    --fs-focus-ring: #8ec1ff;
-    --fs-danger: #ff6b74;
-    --fs-warn: #e2a03f;
-    --fs-ok: #43c08a;
+    --fs-accent: var(--fs-accent-dark);
+
+    --fs-bg: #0f1217;
+    --fs-fg: #e7eaf1;
+    --fs-bg-active: #242c48;
+
+    --fs-canvas: #070910;
+    --fs-bg-elevated: #14181f;
+    --fs-bg-sunken: #0b0e13;
+    --fs-bg-overlay: #171b23;
+    --fs-chrome: rgba(19, 23, 30, .72);
+    --fs-scrim: rgba(0, 0, 0, .58);
+
+    --fs-fg-muted: #99a3b4;
+    --fs-fg-subtle: #6c7787;
+    --fs-fg-on-accent: #0b0e13;
+
+    --fs-border: #252b35;
+    --fs-border-strong: #39414e;
+    --fs-hairline: color-mix(in oklab, var(--fs-fg) 12%, transparent);
+
+    --fs-hover: color-mix(in oklab, var(--fs-fg) 8%, transparent);
+    --fs-pressed: color-mix(in oklab, var(--fs-fg) 14%, transparent);
+    --fs-accent-strong: color-mix(in oklab, var(--fs-accent) 84%, #fff);
+
+    --fs-danger: #ff7b85;
+    --fs-warn: #f0b45f;
+    --fs-ok: #4ed4a0;
+
+    --fs-aurora-3: rgba(255, 255, 255, .04);
+    --fs-shadow-color: 222 70% 2%;
+    --fs-shadow-1: 0 1px 1px hsl(var(--fs-shadow-color) / .5), 0 2px 4px hsl(var(--fs-shadow-color) / .35);
+    --fs-shadow-2: 0 2px 6px hsl(var(--fs-shadow-color) / .5), 0 8px 18px -6px hsl(var(--fs-shadow-color) / .55);
+    --fs-shadow-3: 0 4px 10px hsl(var(--fs-shadow-color) / .5), 0 18px 40px -10px hsl(var(--fs-shadow-color) / .6);
+    --fs-shadow-4: 0 8px 16px hsl(var(--fs-shadow-color) / .5), 0 40px 80px -20px hsl(var(--fs-shadow-color) / .7);
 }
 
 @media (prefers-color-scheme: dark) {
     html[data-theme="auto"] {
         color-scheme: dark;
-        --fs-bg: #1a1d21;
-        --fs-bg-elevated: #23262b;
-        --fs-bg-hover: #2d3136;
-        --fs-bg-active: #2f3d55;
-        --fs-fg: #e4e6eb;
-        --fs-fg-muted: #a2a9b2;
-        --fs-accent: #5a9eff;
-        --fs-border: #3a3f44;
-        --fs-focus-ring: #8ec1ff;
-        --fs-danger: #ff6b74;
-        --fs-warn: #e2a03f;
-        --fs-ok: #43c08a;
+        --fs-accent: var(--fs-accent-dark);
+
+        --fs-bg: #0f1217;
+        --fs-fg: #e7eaf1;
+        --fs-bg-active: #242c48;
+
+        --fs-canvas: #070910;
+        --fs-bg-elevated: #14181f;
+        --fs-bg-sunken: #0b0e13;
+        --fs-bg-overlay: #171b23;
+        --fs-chrome: rgba(19, 23, 30, .72);
+        --fs-scrim: rgba(0, 0, 0, .58);
+
+        --fs-fg-muted: #99a3b4;
+        --fs-fg-subtle: #6c7787;
+        --fs-fg-on-accent: #0b0e13;
+
+        --fs-border: #252b35;
+        --fs-border-strong: #39414e;
+        --fs-hairline: color-mix(in oklab, var(--fs-fg) 12%, transparent);
+
+        --fs-hover: color-mix(in oklab, var(--fs-fg) 8%, transparent);
+        --fs-pressed: color-mix(in oklab, var(--fs-fg) 14%, transparent);
+        --fs-accent-strong: color-mix(in oklab, var(--fs-accent) 84%, #fff);
+
+        --fs-danger: #ff7b85;
+        --fs-warn: #f0b45f;
+        --fs-ok: #4ed4a0;
+
+        --fs-aurora-3: rgba(255, 255, 255, .04);
+        --fs-shadow-color: 222 70% 2%;
+        --fs-shadow-1: 0 1px 1px hsl(var(--fs-shadow-color) / .5), 0 2px 4px hsl(var(--fs-shadow-color) / .35);
+        --fs-shadow-2: 0 2px 6px hsl(var(--fs-shadow-color) / .5), 0 8px 18px -6px hsl(var(--fs-shadow-color) / .55);
+        --fs-shadow-3: 0 4px 10px hsl(var(--fs-shadow-color) / .5), 0 18px 40px -10px hsl(var(--fs-shadow-color) / .6);
+        --fs-shadow-4: 0 8px 16px hsl(var(--fs-shadow-color) / .5), 0 40px 80px -20px hsl(var(--fs-shadow-color) / .7);
     }
 }
 
+/* ────────────────────────────────────────────── high contrast ───────────── */
 html[data-theme="hc"], html[data-contrast="more"] {
     color-scheme: dark;
     --fs-bg: #000000;
-    --fs-bg-elevated: #000000;
-    --fs-bg-hover: #1a1a1a;
-    --fs-bg-active: #0040a0;
     --fs-fg: #ffffff;
-    --fs-fg-muted: #e0e0e0;
-    --fs-accent: #47b6ff;
+    --fs-accent: #58c4ff;
+    --fs-bg-active: #0040a0;
+
+    --fs-canvas: #000000;
+    --fs-bg-elevated: #000000;
+    --fs-bg-sunken: #000000;
+    --fs-bg-overlay: #000000;
+    --fs-chrome: #000000;
+    --fs-scrim: rgba(0, 0, 0, .8);
+
+    --fs-fg-muted: #eaeaea;
+    --fs-fg-subtle: #cfcfcf;
+    --fs-fg-on-accent: #000000;
+
     --fs-border: #ffffff;
+    --fs-border-strong: #ffffff;
+    --fs-hairline: #ffffff;
+
+    --fs-hover: #222222;
+    --fs-pressed: #333333;
+    --fs-selected: #0040a0;
+    --fs-selected-strong: #58c4ff;
+    --fs-accent-soft: #002a6b;
+    --fs-accent-strong: #8fdcff;
     --fs-focus-ring: #ffff00;
+
+    --fs-danger: #ff8a92;
+    --fs-warn: #ffd166;
+    --fs-ok: #6cffb8;
+
+    --fs-aurora-1: transparent;
+    --fs-aurora-2: transparent;
+    --fs-aurora-3: transparent;
+    --fs-blur: none;
+    --fs-shadow-1: 0 0 0 1px #fff;
+    --fs-shadow-2: 0 0 0 1px #fff;
+    --fs-shadow-3: 0 0 0 2px #fff;
+    --fs-shadow-4: 0 0 0 2px #fff;
 }
 
 @media (prefers-contrast: more) {
     html[data-theme="auto"] {
         --fs-border: #6d747d;
-        --fs-fg-muted: #3a3f44;
+        --fs-border-strong: #4a5058;
+        --fs-fg-muted: #333941;
+        --fs-fg-subtle: #4a5058;
     }
 }
 
+/* ───────────────────────────────────────────────── accents ──────────────── */
+html[data-accent="indigo"] {
+    --fs-accent-light: #4f56e0;
+    --fs-accent-dark: #9aa5ff;
+}
+
+html[data-accent="violet"] {
+    --fs-accent-light: #7a3aed;
+    --fs-accent-dark: #c2a4ff;
+}
+
+html[data-accent="blue"] {
+    --fs-accent-light: #0b63e5;
+    --fs-accent-dark: #6fb3ff;
+}
+
+html[data-accent="teal"] {
+    --fs-accent-light: #0d8a84;
+    --fs-accent-dark: #5ad9cf;
+}
+
+html[data-accent="amber"] {
+    --fs-accent-light: #a86610;
+    --fs-accent-dark: #f0b45f;
+}
+
+html[data-accent="rose"] {
+    --fs-accent-light: #cf3a63;
+    --fs-accent-dark: #ff92ab;
+}
+
+/* ───────────────────────────────────────────────── density ──────────────── */
 html[data-density="compact"] {
-    --fs-row-h: 18px;
+    --fs-row-h: 21px;
+    --fs-header-h: 32px;
+    --fs-status-h: 22px;
+    --fs-tab-h: 28px;
+    --fs-text-sm: 12px;
+}
+
+html[data-density="spacious"] {
+    --fs-row-h: 30px;
+    --fs-header-h: 44px;
+    --fs-status-h: 30px;
+    --fs-tab-h: 38px;
+    --fs-text-sm: 13.5px;
 }

@@ -84,6 +84,28 @@ export class AppShell extends Component {
         const saved = persist.get('theme', 'auto');
         theme.value = saved;
         document.documentElement.setAttribute('data-theme', saved);
+        /* Accent is orthogonal to light/dark: one hue drives every token that
+           derives from --fs-accent (focus rings, selection, tabs, links…). */
+        const accent = h('select', {
+            class: 'fs-theme', 'aria-label': 'Accent colour',
+            onchange: (e) => {
+                document.documentElement.setAttribute('data-accent', e.target.value);
+                persist.set('accent', e.target.value);
+                /* Editors read colours from the tokens, so re-theme them too. */
+                bus.emit('theme:changed', persist.get('theme', 'auto'));
+            },
+        }, [
+            h('option', {value: 'indigo', text: '◆ Indigo'}),
+            h('option', {value: 'violet', text: '◆ Violet'}),
+            h('option', {value: 'blue', text: '◆ Blue'}),
+            h('option', {value: 'teal', text: '◆ Teal'}),
+            h('option', {value: 'amber', text: '◆ Amber'}),
+            h('option', {value: 'rose', text: '◆ Rose'}),
+        ]);
+        const savedAccent = persist.get('accent', 'indigo');
+        accent.value = savedAccent;
+        document.documentElement.setAttribute('data-accent', savedAccent);
+
 
         const classic = h('a', {
             class: 'fs-header__classic', text: 'Classic view',
@@ -94,7 +116,7 @@ export class AppShell extends Component {
             h('span', {class: 'fs-header__title', text: 'Files'}),
             this.menuBar.mount(h('div')),
             h('span', {class: 'fs-header__spacer'}),
-            this.readOnlyBadge, theme, classic,
+            this.readOnlyBadge, theme, accent, classic,
         );
 
     }

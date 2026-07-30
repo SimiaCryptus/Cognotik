@@ -122,6 +122,7 @@ async function boot() {
     }
     const theme = persist.get('theme', 'auto');
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-accent', persist.get('accent', 'indigo'));
     document.documentElement.setAttribute('data-density', persist.get('layout', {})?.density || 'comfortable');
 
     clear(root);

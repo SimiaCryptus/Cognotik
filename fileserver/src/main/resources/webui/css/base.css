@@ -1,50 +1,233 @@
+/* ============================================================================
+ * Primitives: reset, typography, controls, scrollbars, focus, motion.
+ * Everything here is written with :where() where possible, so component rules
+ * always win without specificity games.
+ * ========================================================================== */
+
 *, *::before, *::after {
     box-sizing: border-box;
 }
 
-html, body {
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     height: 100%;
-    margin: 0;
 }
 
 body {
+    height: 100%;
+    margin: 0;
     font-family: var(--fs-font-ui);
-    font-size: 13px;
+    font-size: var(--fs-text-sm);
+    line-height: var(--fs-leading);
+    letter-spacing: var(--fs-tracking-tight);
+    font-optical-sizing: auto;
+    font-variant-ligatures: contextual;
+    font-variant-numeric: tabular-nums;
     color: var(--fs-fg);
-    background: var(--fs-bg);
+    background-color: var(--fs-canvas);
+    /* Ambient “aurora”: fixed, non-interactive, visible through glass chrome. */
+    background-image:
+            radial-gradient(120ch 60ch at 8% -18%, var(--fs-aurora-1), transparent 60%),
+            radial-gradient(90ch 50ch at 102% -6%, var(--fs-aurora-2), transparent 58%),
+            radial-gradient(70ch 40ch at 50% 118%, var(--fs-aurora-3), transparent 62%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    accent-color: var(--fs-accent);
+    caret-color: var(--fs-accent);
+    overscroll-behavior: none;
 }
 
-:focus-visible {
-    outline: 2px solid var(--fs-focus-ring);
-    outline-offset: 1px;
+:where(h1, h2, h3, h4, h5, h6, p, pre, figure, ul, ol, dl) {
+    margin: 0;
 }
+
+:where(h1, h2, h3, h4) {
+    font-weight: 650;
+    letter-spacing: var(--fs-tracking-tight);
+    line-height: 1.25;
+}
+
+:where(h1) {
+    font-size: var(--fs-text-xl);
+}
+
+:where(h2) {
+    font-size: var(--fs-text-lg);
+}
+
+:where(ul, ol) {
+    padding-inline-start: var(--fs-space-5);
+}
+
+::selection {
+    background: var(--fs-selected-strong);
+}
+
+:where(a) {
+    color: var(--fs-accent);
+    text-decoration-color: color-mix(in oklab, var(--fs-accent) 45%, transparent);
+    text-underline-offset: 2px;
+    border-radius: var(--fs-radius-xs);
+    transition: color var(--fs-motion-fast) var(--fs-ease);
+}
+
+:where(a:hover) {
+    color: var(--fs-accent-strong);
+    text-decoration-color: currentColor;
+}
+
+:where(code, kbd, samp, pre) {
+    font-family: var(--fs-font-mono);
+    font-size: .92em;
+    font-variant-ligatures: none;
+}
+
+kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 1px 5px;
+    text-align: center;
+    color: var(--fs-fg);
+    background: linear-gradient(180deg, var(--fs-bg-overlay), var(--fs-bg-sunken));
+    border: 1px solid var(--fs-border);
+    border-block-end-width: 2px;
+    border-radius: var(--fs-radius-sm);
+    box-shadow: 0 1px 0 var(--fs-hairline);
+    font-size: var(--fs-text-xs);
+    line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ controls */
 
 button, input, select, textarea {
     font: inherit;
+    letter-spacing: inherit;
     color: inherit;
 }
 
 button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fs-space-2);
+    padding: 3px 8px;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--fs-radius);
+    color: inherit;
     cursor: pointer;
-    padding: 2px 6px;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color var(--fs-motion-fast) var(--fs-ease),
+    color var(--fs-motion-fast) var(--fs-ease),
+    border-color var(--fs-motion-fast) var(--fs-ease),
+    box-shadow var(--fs-motion-fast) var(--fs-ease),
+    transform var(--fs-motion-fast) var(--fs-ease);
 }
 
-button:hover:not(:disabled) {
-    background: var(--fs-bg-hover);
+button:hover:not(:disabled):not([aria-disabled="true"]) {
+    background: var(--fs-hover);
+}
+
+button:active:not(:disabled):not([aria-disabled="true"]) {
+    background: var(--fs-pressed);
+    transform: translateY(.5px);
 }
 
 button:disabled, [aria-disabled="true"] {
-    opacity: .55;
+    opacity: .5;
     cursor: default;
 }
 
-a {
-    color: var(--fs-accent);
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])),
+:where(select), :where(textarea) {
+    min-width: 0;
+    padding: 4px 8px;
+    color: var(--fs-fg);
+    background: var(--fs-bg);
+    border: 1px solid var(--fs-border);
+    border-radius: var(--fs-radius);
+    box-shadow: inset 0 1px 1px var(--fs-hairline);
+    transition: border-color var(--fs-motion-fast) var(--fs-ease),
+    box-shadow var(--fs-motion-fast) var(--fs-ease),
+    background-color var(--fs-motion-fast) var(--fs-ease);
 }
+
+:where(input, select, textarea):hover:not(:disabled) {
+    border-color: var(--fs-border-strong);
+}
+
+:where(input, select, textarea):focus-visible {
+    outline: none;
+    border-color: var(--fs-accent);
+    box-shadow: 0 0 0 3px var(--fs-accent-soft);
+}
+
+:where(input, textarea)::placeholder {
+    color: var(--fs-fg-subtle);
+}
+
+:where(input[aria-invalid="true"]) {
+    border-color: var(--fs-danger);
+    box-shadow: 0 0 0 3px var(--fs-danger-soft);
+}
+
+select option {
+    background: var(--fs-bg-overlay);
+    color: var(--fs-fg);
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* --------------------------------------------------------------- focus ring */
+
+:focus-visible {
+    outline: 2px solid var(--fs-focus-ring);
+    outline-offset: 2px;
+}
+
+/* Roving-tabindex containers manage their own visible focus. */
+[role="tree"]:focus, [role="tablist"]:focus, [role="menu"]:focus {
+    outline: none;
+}
+
+/* --------------------------------------------------------- scrollbars ----- */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--fs-scrollbar) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--fs-scrollbar);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: var(--fs-radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--fs-scrollbar-hover);
+    background-clip: content-box;
+}
+
+/* -------------------------------------------------------------- utilities */
 
 .sr-only {
     position: absolute;
@@ -53,33 +236,144 @@ a {
     padding: 0;
     margin: -1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
     white-space: nowrap;
     border: 0;
 }
 
 .fs-skip {
     position: absolute;
-    left: -9999px;
+    inset-inline-start: -9999px;
     top: 0;
     z-index: calc(var(--fs-z-overlay) + 10);
-    background: var(--fs-bg-elevated);
-    padding: var(--fs-space-3);
+    padding: var(--fs-space-3) var(--fs-space-4);
+    background: var(--fs-bg-overlay);
     border: 1px solid var(--fs-border);
+    border-radius: var(--fs-radius-md);
+    box-shadow: var(--fs-shadow-3);
+    text-decoration: none;
+    font-weight: 600;
 }
 
 .fs-skip:focus {
-    left: var(--fs-space-3);
+    inset-inline-start: var(--fs-space-4);
+    top: var(--fs-space-3);
+}
+
+/* ------------------------------------------------------------ boot screen */
+
+#fs-root[aria-busy="true"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .fs-boot {
-    padding: var(--fs-space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-4);
+    padding: var(--fs-space-5) var(--fs-space-6);
     color: var(--fs-fg-muted);
+    background: var(--fs-chrome);
+    -webkit-backdrop-filter: var(--fs-blur);
+    backdrop-filter: var(--fs-blur);
+    border: 1px solid var(--fs-hairline);
+    border-radius: var(--fs-radius-xl);
+    box-shadow: var(--fs-shadow-3);
+    animation: fs-rise var(--fs-motion-slow) var(--fs-ease-out) both;
 }
+
+.fs-boot__spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--fs-border);
+    border-top-color: var(--fs-accent);
+    animation: fs-spin .8s linear infinite;
+}
+
+.fs-boot__text {
+    font-weight: 550;
+    letter-spacing: .01em;
+}
+
+@keyframes fs-spin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+@keyframes fs-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fs-fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fs-pop {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(.97);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fs-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(16px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* --------------------------------------------------------- preferences --- */
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
-        transition: none !important;
-        animation: none !important;
+        transition-duration: 1ms !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
+
+    .fs-boot__spinner {
+        animation: fs-fade 1s ease-in-out infinite alternate !important;
+    }
+}
+
+@media (forced-colors: active) {
+    * {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+    }
+
+    button, input, select, textarea, .fs-menu, .fs-quickpick, .fs-toast, dialog.fs-modal {
+        border: 1px solid CanvasText !important;
+    }
+
+    [aria-selected="true"], [aria-pressed="true"] {
+        forced-color-adjust: none;
+        background: Highlight !important;
+        color: HighlightText !important;
     }
 }
