@@ -410,7 +410,7 @@ export class TerminalPanel extends Component {
                 this.button('＋', 'New terminal', () => this.openSession({})),
                 this.button('■', 'Kill session', () => this.killActive()),
                 this.button('⌫', 'Clear', () => this.active?.view.clear()),
-                this.button('✕', 'Hide terminal', () => executeCommand('view.toggleTerminal')),
+                this.button('▾', 'Collapse terminal', () => executeCommand('view.toggleTerminal')),
             ]),
             this.host,
         ]);

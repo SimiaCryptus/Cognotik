@@ -20,12 +20,18 @@ import {createLogger} from '../util/logger.js';
     export const QUERY_PARAM = 'theme';
     /** Pseudo-theme: follow the OS `prefers-color-scheme`. */
     export const AUTO_THEME = 'auto';
-    export const DEFAULT_THEME = 'light';
+     export const DEFAULT_THEME = 'nexus';
+     /** What 'auto' resolves to on each side of `prefers-color-scheme`. */
+     export const DARK_FALLBACK = 'nexus';
+     export const LIGHT_FALLBACK = 'light';
 
     /** Registry. `dark: true` drives `color-scheme` and the mermaid/Prism variants. */
     export const THEMES = Object.freeze({
-        light: Object.freeze({id: 'light', label: 'Light', dark: false}),
-        dark: Object.freeze({id: 'dark', label: 'Dark', dark: true})
+         nexus: Object.freeze({id: 'nexus', label: 'Nexus', dark: true}),
+         synthwave: Object.freeze({id: 'synthwave', label: 'Synthwave', dark: true}),
+         matrix: Object.freeze({id: 'matrix', label: 'Matrix', dark: true}),
+         dark: Object.freeze({id: 'dark', label: 'Slate', dark: true}),
+         light: Object.freeze({id: 'light', label: 'Photon', dark: false})
     });
 
     export function listThemes() {
@@ -52,9 +58,15 @@ import {createLogger} from '../util/logger.js';
     function concrete(preference) {
         const id = normalize(preference);
         if (!id) return null;
-        if (id === AUTO_THEME) return prefersDark() ? 'dark' : 'light';
+         if (id === AUTO_THEME) return prefersDark() ? DARK_FALLBACK : LIGHT_FALLBACK;
         return isKnownTheme(id) ? id : null;
     }
+     /** Next theme in registry order — powers the HUD cycle control. */
+     export function cycleTheme() {
+         const ids = Object.keys(THEMES);
+         const next = ids[(ids.indexOf(current) + 1) % ids.length];
+         return setTheme(next);
+     }
 
     /** The preference as asked for ('auto' is preserved so the OS keeps being tracked). */
     let requested = DEFAULT_THEME;

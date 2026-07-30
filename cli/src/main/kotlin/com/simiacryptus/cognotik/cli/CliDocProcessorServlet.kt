@@ -4,6 +4,7 @@ package com.simiacryptus.cognotik.cli
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
+   import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
     import jakarta.servlet.http.HttpServletRequest
     import jakarta.servlet.http.HttpServletResponse
     import java.io.File
@@ -40,6 +41,16 @@ package com.simiacryptus.cognotik.cli
       /** true = the tools may start their own ephemeral monitor server. */
       private val monitor: Boolean = false,
     ) : DocProcessorServlet() {
+     init {
+       /*
+        * Publish ourselves as *the* DocOps endpoint: the FS API action, the `?target=` option
+        * resolver and the patch chat's model resolution all go through DocOpsServlets, never
+        * through a locally constructed DocProcessor. Environments that swap in a proxy
+        * implementation simply install theirs afterwards and win.
+        */
+       DocOpsServlets.install(this)
+     }
+
 
       override val defaultMode: String get() = mode
       override val defaultSmartModel: String? get() = smartModel

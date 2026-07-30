@@ -377,7 +377,31 @@ package com.simiacryptus.cognotik.webui.servlet
       /** Hook for read-only mounts: write an error and return false to refuse execution. */
       protected open fun isMutationAllowed(request: HttpServletRequest, response: HttpServletResponse): Boolean = true
 
-      protected open fun availableModels(user: User): Map<String, ChatModel> = user.userSettings().models()
+      /**
+       * Models this endpoint may use for [user]. Public (not protected) because programmatic
+       * drivers - the `.fsapi/v1/docops` action, the patch chat - must ask *the servlet*, so a
+       * swapped proxy implementation stays in control of model/credential selection.
+       */
+      open fun availableModels(user: User): Map<String, ChatModel> = user.userSettings().models()
+
+      /**
+       * Resolves the four model roles for a programmatic (non-HTTP) invocation, honouring this
+       * servlet's defaults. Throws [IllegalArgumentException] when no smart model can be
+       * determined (the message includes the available ids).
+       */
+      open fun modelsFor(
+        user: User,
+        smartModel: String? = null,
+        fastModel: String? = null,
+        imageModel: String? = null,
+        audioModel: String? = null,
+      ): Models = models(
+        smartModel = smartModel?.takeIf { it.isNotBlank() } ?: defaultSmartModel,
+        fastModel = fastModel?.takeIf { it.isNotBlank() } ?: defaultFastModel,
+        imageModel = imageModel?.takeIf { it.isNotBlank() } ?: defaultImageModel,
+        audioModel = audioModel?.takeIf { it.isNotBlank() } ?: defaultAudioModel,
+        available = availableModels(user),
+      )
 
       protected open fun resolveModels(request: HttpServletRequest, user: User): Models = models(
         smartModel = request.getParameter("smartModel")?.takeIf { it.isNotBlank() } ?: defaultSmartModel,

@@ -744,14 +744,16 @@ function registerTerminalActions(shell) {
     registerCommand({
         id: 'view.toggleTerminal', title: 'View: Toggle Terminal', keys: ['Ctrl+`', 'Mod+`'],
          run: async () => {
+              /* Collapsing must always work — even if the capability check below
+                 would fail — otherwise the dock's own ▾ button is a no-op. */
+              if (shell.isBottomVisible() && store.get().panels.bottom === 'terminal') {
+                  shell.setBottomVisible(false);
+                  return;
+              }
              /* Never open the dock for a capability the server does not have:
                 that is the empty strip above the status bar (#1/#7). */
              if (!caps.has('terminal')) {
                  ui.toast({severity: 'info', message: 'This server does not provide terminal sessions'});
-                 return;
-             }
-             if (shell.isBottomVisible() && store.get().panels.bottom === 'terminal') {
-                 shell.setBottomVisible(false);
                  return;
              }
              /* Reveal only once there is something to show, and let the panel

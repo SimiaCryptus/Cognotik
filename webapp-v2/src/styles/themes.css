@@ -1,96 +1,289 @@
 /*
-     * Theme tokens — the ONLY place colours are declared.
-     *
-     * Contract:
-     *   - `config/theme.js` writes `data-theme="<id>"` on <html>.
-     *   - Every other stylesheet consumes `var(--theme-*)` and never a literal colour.
-     *
-     * Adding a theme ("solarized", "high-contrast", …):
-     *   1. copy the `[data-theme="dark"]` block, rename the selector,
-     *   2. override the tokens you care about (unset ones inherit the light defaults),
-     *   3. register it in THEMES in `src/config/theme.js`.
-     */
+   * Theme tokens — the ONLY place colours are declared.
+   *
+   * Contract:
+   *   - `config/theme.js` writes `data-theme="<id>"` on <html>.
+   *   - Every other stylesheet consumes `var(--theme-*)` and never a literal colour.
+   *   - Anything that needs a *glow*, *tint* or *translucent wash* consumes the matching
+   *     `--theme-<role>-rgb` channel triplet: `rgb(var(--theme-primary-rgb) / 35%)`.
+   *     Never invent an rgba() literal — it will not follow the theme.
+   *
+   * Adding a theme ("solarized", "high-contrast", …):
+   *   1. copy the `[data-theme="nexus"]` block, rename the selector,
+   *   2. override the tokens you care about (unset ones inherit the light defaults),
+   *   3. register it in THEMES in `src/config/theme.js`.
+   */
 
-    /* ------------------------------------------------------------- light (default) */
+  /* ------------------------------------------------------------- light (default) */
 
-    :root,
-    [data-theme="light"] {
-        color-scheme: light;
+  :root,
+  [data-theme="light"] {
+      color-scheme: light;
 
-        --theme-background: #f5f5f5;
-        --theme-surface: #ffffff;
-        --theme-surface-alt: #f0f2f5;
-        --theme-border: #dddddd;
+      --theme-background: #eef1f6;
+      --theme-background-2: #dfe5ef;
+      --theme-surface: #ffffff;
+      --theme-surface-alt: #f2f5fa;
+      /* Translucent panel wash — sits over the animated backdrop. */
+      --theme-panel: rgb(255 255 255 / 78%);
+      --theme-panel-strong: rgb(255 255 255 / 94%);
+      --theme-border: rgb(20 30 60 / 12%);
+      --theme-border-strong: rgb(20 30 60 / 28%);
 
-        --theme-text: #222222;
-        --theme-text-muted: #5a6272;
+      --theme-text: #101828;
+      --theme-text-muted: #5a6272;
 
-        --theme-primary: #007bff;
-        --theme-primary-contrast: #ffffff;
-        --theme-accent: #4caf50;
-        --theme-accent-contrast: #ffffff;
-        --theme-error: #b00020;
+      --theme-primary: #0066ff;
+      --theme-primary-rgb: 0 102 255;
+      --theme-primary-contrast: #ffffff;
+      --theme-secondary: #7b3fe4;
+      --theme-secondary-rgb: 123 63 228;
+      --theme-accent: #00857a;
+      --theme-accent-rgb: 0 133 122;
+      --theme-accent-contrast: #ffffff;
+      --theme-error: #b00020;
+      --theme-error-rgb: 176 0 32;
+      --theme-success: #0f8a4a;
+      --theme-success-rgb: 15 138 74;
 
-        --theme-user-bubble: #e7f1ff;
-        --theme-code-background: #f6f8fa;
+      --theme-user-bubble: rgb(0 102 255 / 8%);
+      --theme-code-background: #f6f8fa;
 
-        --theme-warning-background: #fff3cd;
-        --theme-warning-text: #665200;
+      --theme-warning-background: #fff3cd;
+      --theme-warning-text: #665200;
 
-        --theme-overlay: rgb(0 0 0 / 45%);
+      --theme-overlay: rgb(12 18 32 / 45%);
 
-        --theme-archive-background: #ffeb3b;
-        --theme-archive-text: #000000;
-    }
+      --theme-archive-background: #ffd54f;
+      --theme-archive-text: #1a1400;
 
-    /* ---------------------------------------------------------------------- dark */
+      /* --- high-tech chrome ------------------------------------------------ */
+      --theme-grid-line: rgb(20 40 90 / 6%);
+      --theme-grid-size: 44px;
+      --theme-scanline: rgb(20 40 90 / 3%);
+      --theme-blur: 10px;
+      --theme-glow: 0 0 0 rgb(0 0 0 / 0%);
+      --theme-aurora-1: rgb(0 102 255 / 18%);
+      --theme-aurora-2: rgb(123 63 228 / 14%);
+      --theme-aurora-3: rgb(0 133 122 / 12%);
+      --theme-gradient-primary: linear-gradient(135deg, #0066ff, #7b3fe4);
+      --theme-gradient-accent: linear-gradient(135deg, #00857a, #0066ff);
+      --theme-hairline: linear-gradient(90deg, transparent, rgb(0 102 255 / 45%), transparent);
+  }
 
-    [data-theme="dark"] {
-        color-scheme: dark;
+  /* ---------------------------------------------------------------------- dark */
 
-        --theme-background: #14171c;
-        --theme-surface: #1c2027;
-        --theme-surface-alt: #23282f;
-        --theme-border: #333a44;
+  [data-theme="dark"] {
+      color-scheme: dark;
 
-        --theme-text: #e6e8 eb;
-        --theme-text: #e6e8eb;
-        --theme-text-muted: #9aa4b2;
+      --theme-background: #14171c;
+      --theme-background-2: #0c0e12;
+      --theme-surface: #1c2027;
+      --theme-surface-alt: #23282f;
+      --theme-panel: rgb(28 32 39 / 72%);
+      --theme-panel-strong: rgb(28 32 39 / 92%);
+      --theme-border: rgb(160 190 255 / 14%);
+      --theme-border-strong: rgb(160 190 255 / 34%);
 
-        --theme-primary: #4c9aff;
-        --theme-primary-contrast: #0b0d10;
-        --theme-accent: #3f9d54;
-        --theme-accent-contrast: #f2f5f7;
-        --theme-error: #ff6b6b;
+      --theme-text: #e6e8eb;
+      --theme-text-muted: #9aa4b2;
 
-        --theme-user-bubble: #202a3a;
-        --theme-code-background: #11141a;
+      --theme-primary: #4c9aff;
+      --theme-primary-rgb: 76 154 255;
+      --theme-primary-contrast: #0b0d10;
+      --theme-secondary: #b46cff;
+      --theme-secondary-rgb: 180 108 255;
+      --theme-accent: #3fd18a;
+      --theme-accent-rgb: 63 209 138;
+      --theme-accent-contrast: #06120c;
+      --theme-error: #ff6b6b;
+      --theme-error-rgb: 255 107 107;
+      --theme-success: #3fd18a;
+      --theme-success-rgb: 63 209 138;
 
-        --theme-warning-background: #3a3113;
-        --theme-warning-text: #ffd666;
+      --theme-user-bubble: rgb(76 154 255 / 12%);
+      --theme-code-background: #11141a;
 
-        --theme-overlay: rgb(0 0 0 / 65%);
+      --theme-warning-background: #3a3113;
+      --theme-warning-text: #ffd666;
 
-        --theme-archive-background: #6b5d0f;
-        --theme-archive-text: #f5f0d0;
-    }
+      --theme-overlay: rgb(3 5 9 / 72%);
 
-    /*
-     * Template for a new theme — see the header comment.
-     *
-     * [data-theme="high-contrast"] {
-     *     color-scheme: dark;
-     *     --theme-background: #000;
-     *     --theme-surface: #000;
-     *     --theme-text: #fff;
-     *     --theme-border: #fff;
-     *     --theme-primary: #ffe700;
-     * }
-     */
+      --theme-archive-background: #6b5d0f;
+      --theme-archive-text: #f5f0d0;
 
-    /* Server-emitted HTML sometimes ships its own light-ish code background. */
-    [data-theme] pre[class*="language-"],
-    [data-theme] code[class*="language-"] {
-        background: var(--theme-code-background);
-        color: var(--theme-text);
-    }
+      --theme-grid-line: rgb(120 170 255 / 7%);
+      --theme-scanline: rgb(140 190 255 / 4%);
+      --theme-blur: 14px;
+      --theme-aurora-1: rgb(76 154 255 / 22%);
+      --theme-aurora-2: rgb(180 108 255 / 18%);
+      --theme-aurora-3: rgb(63 209 138 / 14%);
+      --theme-gradient-primary: linear-gradient(135deg, #4c9aff, #b46cff);
+      --theme-gradient-accent: linear-gradient(135deg, #3fd18a, #4c9aff);
+      --theme-hairline: linear-gradient(90deg, transparent, rgb(76 154 255 / 55%), transparent);
+  }
+
+  /* --------------------------------------------------------- nexus (dark default) */
+  /* Deep-space navy, cyan primary, magenta secondary. The "peta-snazzy" default.  */
+
+  [data-theme="nexus"] {
+      color-scheme: dark;
+
+      --theme-background: #060912;
+      --theme-background-2: #01030a;
+      --theme-surface: #0b1020;
+      --theme-surface-alt: #111a2f;
+      --theme-panel: rgb(11 17 33 / 62%);
+      --theme-panel-strong: rgb(9 14 28 / 90%);
+      --theme-border: rgb(64 226 255 / 18%);
+      --theme-border-strong: rgb(64 226 255 / 46%);
+
+      --theme-text: #dff3ff;
+      --theme-text-muted: #7f9dc0;
+
+      --theme-primary: #2ee6ff;
+      --theme-primary-rgb: 46 230 255;
+      --theme-primary-contrast: #001218;
+      --theme-secondary: #ff3fd0;
+      --theme-secondary-rgb: 255 63 208;
+      --theme-accent: #7c5cff;
+      --theme-accent-rgb: 124 92 255;
+      --theme-accent-contrast: #f2f6ff;
+      --theme-error: #ff4d6d;
+      --theme-error-rgb: 255 77 109;
+      --theme-success: #38ffb0;
+      --theme-success-rgb: 56 255 176;
+
+      --theme-user-bubble: rgb(124 92 255 / 14%);
+      --theme-code-background: #03060f;
+
+      --theme-warning-background: rgb(255 196 61 / 14%);
+      --theme-warning-text: #ffce54;
+
+      --theme-overlay: rgb(1 3 10 / 78%);
+
+      --theme-archive-background: rgb(255 63 208 / 18%);
+      --theme-archive-text: #ffd8f4;
+
+      --theme-grid-line: rgb(46 230 255 / 9%);
+      --theme-grid-size: 40px;
+      --theme-scanline: rgb(46 230 255 / 4%);
+      --theme-blur: 18px;
+      --theme-aurora-1: rgb(46 230 255 / 26%);
+      --theme-aurora-2: rgb(255 63 208 / 22%);
+      --theme-aurora-3: rgb(124 92 255 / 22%);
+      --theme-gradient-primary: linear-gradient(135deg, #2ee6ff, #7c5cff 55%, #ff3fd0);
+      --theme-gradient-accent: linear-gradient(135deg, #7c5cff, #2ee6ff);
+      --theme-hairline: linear-gradient(90deg, transparent, rgb(46 230 255 / 70%), rgb(255 63 208 / 55%), transparent);
+  }
+
+  /* --------------------------------------------------------------- synthwave */
+
+  [data-theme="synthwave"] {
+      color-scheme: dark;
+
+      --theme-background: #150726;
+      --theme-background-2: #08010f;
+      --theme-surface: #1e0b34;
+      --theme-surface-alt: #2a1049;
+      --theme-panel: rgb(30 11 52 / 66%);
+      --theme-panel-strong: rgb(24 8 42 / 92%);
+      --theme-border: rgb(255 106 213 / 22%);
+      --theme-border-strong: rgb(255 106 213 / 52%);
+
+      --theme-text: #ffe9fb;
+      --theme-text-muted: #c39ad6;
+
+      --theme-primary: #ff6ad5;
+      --theme-primary-rgb: 255 106 213;
+      --theme-primary-contrast: #1a0016;
+      --theme-secondary: #8be9fd;
+      --theme-secondary-rgb: 139 233 253;
+      --theme-accent: #ffcc4d;
+      --theme-accent-rgb: 255 204 77;
+      --theme-accent-contrast: #2a1600;
+      --theme-error: #ff4f6e;
+      --theme-error-rgb: 255 79 110;
+      --theme-success: #6ee7a8;
+      --theme-success-rgb: 110 231 168;
+
+      --theme-user-bubble: rgb(139 233 253 / 12%);
+      --theme-code-background: #0f0320;
+
+      --theme-warning-background: rgb(255 204 77 / 16%);
+      --theme-warning-text: #ffd977;
+
+      --theme-overlay: rgb(10 1 18 / 78%);
+
+      --theme-archive-background: rgb(255 106 213 / 20%);
+      --theme-archive-text: #ffe0f7;
+
+      --theme-grid-line: rgb(255 106 213 / 10%);
+      --theme-scanline: rgb(255 106 213 / 5%);
+      --theme-blur: 18px;
+      --theme-aurora-1: rgb(255 106 213 / 28%);
+      --theme-aurora-2: rgb(139 233 253 / 20%);
+      --theme-aurora-3: rgb(255 204 77 / 16%);
+      --theme-gradient-primary: linear-gradient(135deg, #ff6ad5, #8be9fd);
+      --theme-gradient-accent: linear-gradient(135deg, #ffcc4d, #ff6ad5);
+      --theme-hairline: linear-gradient(90deg, transparent, rgb(255 106 213 / 70%), rgb(139 233 253 / 55%), transparent);
+  }
+
+  /* ------------------------------------------------------------------ matrix */
+
+  [data-theme="matrix"] {
+      color-scheme: dark;
+
+      --theme-background: #030805;
+      --theme-background-2: #000200;
+      --theme-surface: #06120a;
+      --theme-surface-alt: #0a1c10;
+      --theme-panel: rgb(6 18 10 / 66%);
+      --theme-panel-strong: rgb(4 14 8 / 92%);
+      --theme-border: rgb(57 255 136 / 20%);
+      --theme-border-strong: rgb(57 255 136 / 50%);
+
+      --theme-text: #ccffdd;
+      --theme-text-muted: #63a37c;
+
+      --theme-primary: #39ff88;
+      --theme-primary-rgb: 57 255 136;
+      --theme-primary-contrast: #001a08;
+      --theme-secondary: #b6ff5c;
+      --theme-secondary-rgb: 182 255 92;
+      --theme-accent: #14e0a0;
+      --theme-accent-rgb: 20 224 160;
+      --theme-accent-contrast: #00140c;
+      --theme-error: #ff5f5f;
+      --theme-error-rgb: 255 95 95;
+      --theme-success: #39ff88;
+      --theme-success-rgb: 57 255 136;
+
+      --theme-user-bubble: rgb(57 255 136 / 10%);
+      --theme-code-background: #010703;
+
+      --theme-warning-background: rgb(182 255 92 / 14%);
+      --theme-warning-text: #d6ff9c;
+
+      --theme-overlay: rgb(0 4 2 / 80%);
+
+      --theme-archive-background: rgb(57 255 136 / 18%);
+      --theme-archive-text: #d7ffe6;
+
+      --theme-grid-line: rgb(57 255 136 / 9%);
+      --theme-scanline: rgb(57 255 136 / 5%);
+      --theme-blur: 14px;
+      --theme-aurora-1: rgb(57 255 136 / 22%);
+      --theme-aurora-2: rgb(20 224 160 / 18%);
+      --theme-aurora-3: rgb(182 255 92 / 12%);
+      --theme-gradient-primary: linear-gradient(135deg, #39ff88, #14e0a0);
+      --theme-gradient-accent: linear-gradient(135deg, #b6ff5c, #39ff88);
+      --theme-hairline: linear-gradient(90deg, transparent, rgb(57 255 136 / 70%), transparent);
+  }
+
+  /* Server-emitted HTML sometimes ships its own light-ish code background. */
+  [data-theme] pre[class*="language-"],
+  [data-theme] code[class*="language-"] {
+      background: var(--theme-code-background);
+      color: var(--theme-text);
+  }

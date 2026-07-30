@@ -443,6 +443,38 @@ dialog.fs-modal::backdrop {
 .fs-hsplitter[data-dragging="true"] {
      background: var(--fs-accent);
 }
+/* The UA's [hidden] rule loses to the class rules below (`display: flex`),
+    so "collapse" would set the attribute and change nothing on screen. */
+.fs-bottom[hidden],
+.fs-hsplitter[hidden] {
+      display: none !important;
+}
+/* The always-present dock header: collapsing hides the panel body, never this,
+   so an expand affordance is always on screen. */
+.fs-bottom__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-2);
+    flex: 0 0 auto;
+    min-height: 22px;
+    padding: 0 var(--fs-space-2);
+    border-top: 1px solid var(--fs-border);
+    background: var(--fs-bg-elevated);
+    color: var(--fs-fg-muted);
+    cursor: default;
+    user-select: none;
+}
+.fs-bottom__bar[hidden] {
+    display: none;
+}
+.fs-bottom__title {
+    font-weight: 600;
+}
+.fs-bottom__toggle, .fs-bottom__close {
+    padding: 0 var(--fs-space-2);
+    color: inherit;
+}
+
 
 .fs-bottom {
     flex: 0 0 auto;
@@ -450,7 +482,6 @@ dialog.fs-modal::backdrop {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-top: 1px solid var(--fs-border);
     background: var(--fs-bg-elevated);
 }
 

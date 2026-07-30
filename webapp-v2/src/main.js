@@ -25,9 +25,20 @@ import {installVerboseShortcut, syncVerboseDom} from './render/verbose.js';
 
 import {applyAppConfig, fetchAppInfo, loadDevWebSocketConfig} from './config/app-config.js';
 import {applyArchiveBodyClass, isArchive, loadArchivedMessages} from './config/archive.js';
-import {getTheme, installTheme, listThemes, setTheme} from './config/theme.js';
+import {cycleTheme, getTheme, installTheme, listThemes, setTheme, toggleTheme} from './config/theme.js';
 
 const log = createLogger('App');
+/** Fades out the index.html boot sequence once the app owns the viewport. */
+function dismissBootVeil({immediate = false} = {}) {
+     const veil = document.getElementById('boot-veil');
+     if (!veil) return;
+     if (immediate) {
+         veil.remove();
+         return;
+     }
+     veil.classList.add('boot-veil-done');
+     setTimeout(() => veil.remove(), 600);
+}
 
 /**
  * Boot sequence, normative order (reverse-spec §1.2).
@@ -50,7 +61,7 @@ export function boot(options = {}) {
     initMathJax();
 
     // 3. shell DOM
-    const shell = mountShell(root);
+     const shell = mountShell(root, {sessionId, version: APP_VERSION});
     applyArchiveBodyClass();
 
     const store = new MessageStore();
@@ -139,6 +150,7 @@ installGlobalErrorHandlers();
 
 try {
      const app = boot();
+      dismissBootVeil();
       // Triage/control surface: `__cognotik.diagnostics()`,
       // `__cognotik.transport.stats()`, `__cognotik.setTheme('dark')`.
       window.__cognotik = {
@@ -146,10 +158,13 @@ try {
           diagnostics: dumpDiagnostics,
           setTheme,
           getTheme,
-          listThemes
+           listThemes,
+           toggleTheme,
+           cycleTheme
       };
     log.info('Application started successfully');
 } catch (error) {
+      dismissBootVeil({immediate: true});
      log.error('Critical: failed to start application', {error, diagnostics: dumpDiagnostics()});
     renderFatalError(error);
 }

@@ -7,6 +7,10 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
+import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
+import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
+import com.simiacryptus.cognotik.webui.servlet.action.ModifyFilesFsAction
+import com.simiacryptus.cognotik.webui.servlet.action.SessionFsRoots
 import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
@@ -23,6 +27,7 @@ import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.net.URL
 import java.util.*
 import kotlin.system.exitProcess
@@ -106,6 +111,7 @@ abstract class ApplicationDirectory(
             log.info("Starting application with args: ${args.joinToString(", ")}")
             init(args.contains("--server"))
             setupPlatform()
+            installFsApiActions()
             ApplicationServicesConfig.isLocked = true
             val server = start(port, "0.0.0.0", *(webAppContexts()))
             log.info("Server started successfully on port $port")
@@ -119,6 +125,40 @@ abstract class ApplicationDirectory(
             Thread.sleep(1000)
             exitProcess(0)
         }
+    }
+
+    /**
+     * Publishes the DocOps endpoint and installs the extended FS API actions (DocOps,
+     * Tasks, Modify Files) that were previously CLI-only.
+     *
+     * [docopsServlet] is resolved *lazily* through [DocOpsServlets]: in some deployments it is
+     * overridden with a proxy implementation, and every doc-ops invocation (HTTP mount, the
+     * `.fsapi/v1/docops` action, `?resolveParam=target`) must go through that instance rather
+     * than build its own `DocProcessor`.
+     *
+     * AutoFix is intentionally *not* registered here: it needs a fix-loop implementation
+     * ([com.simiacryptus.cognotik.webui.servlet.action.AutoFixRunner]) which this server does
+     * not ship, and arbitrary command execution is not appropriate for a shared mount.
+     */
+    protected open fun installFsApiActions() {
+        log.info("Publishing DocOps endpoint and installing extended FS API actions")
+        DocOpsServlets.install { docopsServlet as? DocProcessorServlet }
+        DocOpsFsActions.install(
+            DocOpsFsActions.Config(
+                root = SessionFsRoots::rootOf,
+                user = SessionFsRoots::userOf,
+                /* Sessions are per-user sandboxes; the endpoint decides the models. */
+                smartModel = null,
+                fastModel = null,
+            )
+        )
+        ModifyFilesFsAction.install(
+            ModifyFilesFsAction.Config(
+                root = SessionFsRoots::rootOf,
+                user = SessionFsRoots::userOf,
+                chatUri = { URI(domainName.ifBlank { "http://$localName:$port" }) },
+            )
+        )
     }
 
     open fun webAppContexts(): Array<WebAppContext> {
