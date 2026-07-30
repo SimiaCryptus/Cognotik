@@ -1,0 +1,50 @@
+Models: smart=claude-sonnet-5 fast=claude-haiku-4-5-20251001 image=claude-haiku-4-5-20251001 audio=claude-haiku-4-5-20251001
+Serving /home/andrew/code/Cognotik
+  ->  http://127.0.0.1:8081/
+  IDE view  -> http://127.0.0.1:8081/ui/
+  Classic   -> http://127.0.0.1:8081/files/root/
+  FS API v1 -> http://127.0.0.1:8081/files/root/.fsapi/v1/meta
+  Mode      -> read-write, terminal enabled, exec unrestricted
+  Tasks     -> docops/autofix enabled (root /home/andrew/code/Cognotik)
+               POST http://127.0.0.1:8081/files/root/.fsapi/v1/docops?command=plan
+               POST http://127.0.0.1:8081/files/root/.fsapi/v1/autofix?cmd=<command>
+               GET  http://127.0.0.1:8081/files/root/.fsapi/v1/tasks
+  Modify    -> patch chat enabled (root /home/andrew/code/Cognotik, line numbers false)
+               POST http://127.0.0.1:8081/files/root/.fsapi/v1/modify?path=<file>
+               (the chat UI server starts on the first request)
+Press Ctrl-C to stop.
+WARN  Completed metadata database schema initialization for jdbc:h2:tcp://localhost:34217//home/andrew/code/Cognotik/.cognotik/default;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE|metadata with 6 DDL failure(s) out of 7
+modify: session U-20260729-ologrfHi over 1 file(s) -> http://localhost:8061/#U-20260729-ologrfHi
+modify: session U-20260729-GplbD25S over 1 file(s) -> http://localhost:8061/#U-20260729-GplbD25S
+modify: session U-20260729-Pfik2OZH over 1 file(s) -> http://localhost:8061/#U-20260729-Pfik2OZH
+ERROR Error applying diff: token recognition error at: '='
+token recognition error at: '('
+token recognition error at: ')'
+token recognition error at: ';'
+token recognition error at: '('
+token recognition error at: ')'
+token recognition error at: '='
+token recognition error at: '.b'
+token recognition error at: '('
+token recognition error at: ')'
+token recognition error at: ';'
+token recognition error at: '('
+token recognition error at: '.h'
+token recognition error at: '('
+token recognition error at: ')'
+token recognition error at: ')'
+token recognition error at: ';'
+token recognition error at: '='
+token recognition error at: '.l'
+token recognition error at: '('
+token recognition error at: ')'
+token recognition error at: ';'
+token recognition error at: '('
+token recognition error at: '!'
+token recognition error at: ')'
+token recognition error at: ';'
+token recognition error at: ';'
+token recognition error at: '='
+token recognition error at: '('
+token recognition error at: ')'
+token recognition error at: ';'

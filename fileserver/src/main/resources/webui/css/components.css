@@ -440,6 +440,9 @@ dialog.fs-modal::backdrop {
 .fs-hsplitter:hover, .fs-hsplitter:focus-visible {
     background: var(--fs-accent);
 }
+.fs-hsplitter[data-dragging="true"] {
+     background: var(--fs-accent);
+}
 
 .fs-bottom {
     flex: 0 0 auto;
@@ -591,6 +594,21 @@ dialog.fs-modal::backdrop {
      width: 100%;
      border: 0;
      background: var(--fs-bg);
+}
+/* The same session, hosted as a tab in the main editor area (#4). The editor
+    panel is position:absolute, so the host has to fill it explicitly. */
+.fs-chatsession {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+}
+.fs-chatsession__frame {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      border: 0;
+      background: var(--fs-bg);
 }
 /* --------------------------------------------------------------- preview tab */
 .fs-preview {

@@ -1,0 +1,87 @@
+[{
+    "id": 1,
+    "description": "http://127.0.0.1:8081/files/root/.fsapi/v1/stat?path=%2F.gitattributes returns `\"mimeType\": \"application/octet-stream\"`, which makes the UI unable to edit the file. This seems to be based on file extension.",
+    "location": "/cli/bin/fileserver",
+    "type": "bug",
+    "status": "fixed",
+    "resolution": "MimeTypeResolver now recognises extension-less/dot-only names and source/config extensions Jetty does not know; core/mime.js has the same table as defence in depth.",
+    "components": ["fileserver backend", "fsapi stat endpoint", "mime-type detection", "code editor UI"]
+  },
+  {
+    "id": 2,
+    "description": "Right click and copy (either path or name) doesn't result in copying.",
+    "type": "bug",
+    "status": "fixed",
+    "resolution": "New core/clipboard.js copyText(): navigator.clipboard rejects while the closing menu owns focus, so it falls back to execCommand('copy'); both actions now report success/failure.",
+    "components": ["file tree UI", "context menu", "clipboard integration"]
+  },
+  {
+    "id": 3,
+    "description": "Double-clicking folders doesn't expand the folders.",
+    "type": "bug",
+    "status": "fixed",
+    "resolution": "Selection no longer repaints the tree (refreshSelection), so both clicks land on the same row; dblclick also falls back to a hit-test and then to the focused node.",
+    "components": ["file tree UI", "folder expand/collapse logic"]
+  },
+  {
+    "id": 4,
+    "description": "Need to add basic code chat.",
+    "type": "feature",
+    "status": "fixed",
+    "resolution": "New ChatPanel (bottom dock) hosts a POST /modify session in an iframe; 'Code Chat…' action + Mod+Shift+C, and server actions answering with a URL are routed to it instead of a blockable pop-up.",
+    "components": ["code editor UI", "chat panel", "AI integration"]
+  },
+  {
+    "id": 5,
+    "description": "Right clicking files shouldn't show folder-specific actions like \"open terminal in...\".",
+    "type": "bug",
+    "status": "fixed",
+    "resolution": "Actions may declare hideWhenDisabled; terminal.openHere is folder-only, and file.run / file.download / folder.downloadZip hide when the selection cannot satisfy them.",
+    "components": ["file tree UI", "context menu", "terminal integration"]
+  },
+  {
+    "id": 6,
+    "description": "Autofix action should not display for non-executable files.",
+    "type": "bug",
+    "status": "fixed",
+    "resolution": "ServerTaskActions declares the AutoFix selection as directories only with hideWhenDisabled, and ActionUi forwards that flag through GET /actions.",
+    "components": ["file tree UI", "context menu", "autofix action logic"]
+  },
+  {
+    "id": 7,
+    "description": "Need to resize code window/terminal split - and collapse terminal especially when no terminal is open.",
+    "type": "feature",
+    "status": "fixed",
+    "resolution": "Bottom dock splitter now collapses/restores on double-click, the panel collapses itself when the last session exits ('panel:empty'), and toggling the terminal opens a session so the dock is never revealed blank.",
+    "components": ["layout/split-pane manager", "terminal panel", "code editor UI"]
+  },
+  {
+    "id": 8,
+    "description": "Add selection-edit actions: edit code with recently used edit prompts.",
+    "type": "feature",
+    "status": "fixed",
+    "resolution": "'Edit Selection with AI…' (Mod+Alt+E, editor/selection anchor) offers recent prompts first, persists history, and opens a chat session with the selection quoted into the prompt.",
+    "components": ["code editor UI", "selection context menu", "AI prompt history"]
+  },
+  {
+    "id": 9,
+    "description": "When expanding folders, the tiletree view's scroll position gets reset.",
+    "type": "bug",
+    "status": "fixed",
+    "resolution": "TreeView.paint() saves and restores scrollTop (clear() collapses the scroll height), and selection changes no longer repaint at all.",
+    "components": ["file tree UI", "scroll state management"]
+  },
+  {
+    "id": 10,
+    "description": "Add a focus-to-currently-edited-file button in the filetree button bar.",
+    "type": "feature",
+    "status": "fixed",
+    "resolution": "New 'tree.revealActiveFile' command (Mod+Shift+J) with a 🎯 toolbar button, a Go menu entry and a tab context-menu entry.",
+    "components": ["file tree UI", "toolbar/button bar", "editor-state sync"]
+  },
+  {
+     "_comment": "pending items",
+     "status": "pending",
+     "ids": [],
+     "resolvedIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  }]

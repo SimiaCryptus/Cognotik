@@ -15,11 +15,17 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
+import java.io.InterruptedIOException
 import java.io.OutputStream
 import java.io.RandomAccessFile
+import java.io.UncheckedIOException
+import java.nio.channels.ClosedChannelException
+import java.nio.file.AccessDeniedException
 import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.DirectoryNotEmptyException
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -41,6 +47,18 @@ object FsApiHandler {
   const val API_VERSION = 1
   private val log = LoggerFactory.getLogger(FsApiHandler::class.java)
   private val WRITE_FLAGS = setOf("w", "wx", "a", "ax", "r+", "w+", "a+")
+  private const val OCTET_STREAM = "application/octet-stream"
+  /** Types that can execute script/markup in the serving origin when rendered inline. */
+  private val SCRIPTABLE_TYPES = setOf(
+    "text/html", "application/xhtml+xml", "image/svg+xml",
+    "application/xml", "text/xml", "application/mathml+xml"
+  )
+  private val MIME_TOKEN = Regex("^[A-Za-z0-9!#\$%&'*+.^_`|~-]+/[A-Za-z0-9!#\$%&'*+.^_`|~-]+$")
+  /** Substrings that identify a disconnected client rather than a server fault. */
+  private val CLIENT_ABORT_HINTS = listOf(
+    "broken pipe", "connection reset", "connection closed", "closed channel",
+    "early eof", "aborted", "cancelled"
+  )
 
   /**
    * Every operation is a registered [FsAction] (a `DynamicEnum` constant).
@@ -63,7 +81,17 @@ object FsApiHandler {
       "dir", "fs.readdir",
       listOf(path, ActionParam("recursive", "boolean"), ActionParam("depth", "int"), ActionParam("stat", "boolean"))
     ) { ctx -> httpReaddir(ctx.req, ctx.resp, ctx.root, ctx.config) }
-    read("file", "fs.readFile / createReadStream (supports Range and ETag)", listOf(path)) { ctx ->
+    read(
+      "file", "fs.readFile / createReadStream (supports Range and ETag)",
+      listOf(
+        path,
+        ActionParam(
+          "mime",
+          description = "'binary' (default for XHR), 'auto' for the detected type, or an explicit type"
+        ),
+        ActionParam("download", "boolean", description = "force Content-Disposition: attachment")
+      )
+    ) { ctx ->
       httpReadFile(ctx.req, ctx.resp, ctx.root, ctx.method == "HEAD")
     }
     read("realpath", "fs.realpath", listOf(path)) { ctx ->
@@ -252,16 +280,24 @@ object FsApiHandler {
     config: FsApiConfig,
   ) {
     val syscall = op.ifBlank { "fsapi" }
+    val normalizedMethod = method.ifBlank { "GET" }.uppercase()
+    val startedNanos = System.nanoTime()
+    val tag = requestTag(normalizedMethod, op, req)
     try {
+      if (log.isDebugEnabled) log.debug("FS API -> {}", tag)
       resp.setHeader("X-Fs-Api", API_VERSION.toString())
       if (root == null || !root.exists() || !root.isDirectory) {
+        log.warn("FS API {} rejected: served root is unavailable (root={})", tag, root?.absolutePath)
         throw FsException(FsErrorCode.ENOENT, syscall, "/", "served root is unavailable")
       }
-      val normalizedMethod = method.ifBlank { "GET" }.uppercase()
       val action = FsAction.find(normalizedMethod, op)
         ?: (if (normalizedMethod == "OPTIONS") FsAction.find("OPTIONS", "") else null)
-        ?: throw unknown(method, op)
+      if (action == null) {
+        log.info("FS API {} -> unsupported operation", tag)
+        throw unknown(normalizedMethod, op)
+      }
       if (action.mutating && config.requireApiHeader && req.getHeader("X-Fs-Api").isNullOrBlank()) {
+        log.warn("FS API {} rejected: missing X-Fs-Api request header", tag)
         throw FsException(FsErrorCode.EACCES, syscall, null, "missing X-Fs-Api request header")
       }
 
@@ -270,18 +306,127 @@ object FsApiHandler {
 
 
       action.handler(FsActionContext(normalizedMethod, op, req, resp, root, config))
-    } catch (e: FsException) {
-      FsErrors.write(resp, e)
-    } catch (e: IllegalArgumentException) {
-      FsErrors.write(resp, FsException(FsErrorCode.EINVAL, syscall, null, e.message))
+      if (log.isDebugEnabled) {
+        log.debug("FS API <- {} status={} in {}ms", tag, resp.status, elapsedMs(startedNanos))
+      }
     } catch (e: Exception) {
-      log.error("FS API failure: $method /$op", e)
-      FsErrors.write(resp, FsException(FsErrorCode.EIO, syscall, null, e.message))
+      if (isClientAbort(e)) {
+        /* The peer went away mid-transfer: nothing to report, and nothing to write to. */
+        log.debug("FS API {} aborted by client after {}ms: {}", tag, elapsedMs(startedNanos), e.toString())
+        return
+      }
+      when (e) {
+        is FsException ->
+          log.debug("FS API {} -> {} ({}ms)", tag, e.message ?: e.javaClass.simpleName, elapsedMs(startedNanos))
+        is IllegalArgumentException ->
+          log.info("FS API {} rejected after {}ms: {}", tag, elapsedMs(startedNanos), e.message)
+        else ->
+          log.error("FS API {} failed after {}ms", tag, elapsedMs(startedNanos), e)
+      }
+      writeError(resp, tag, toFsException(syscall, null, e))
+    } catch (e: StackOverflowError) {
+      /* Guards the recursive walkers (collect/copyTree/invalidateTree) against pathological trees. */
+      log.error("FS API {} exhausted the stack (deep or cyclic directory tree?)", tag, e)
+      writeError(resp, tag, FsException(FsErrorCode.EIO, syscall, null, "directory tree too deep"))
+    } catch (e: Throwable) {
+      log.error("FS API {} failed fatally", tag, e)
+      throw e
     }
   }
 
   private fun unknown(method: String, op: String) =
     FsException(FsErrorCode.ENOSYS, op.ifBlank { "fsapi" }, null, "unsupported operation: $method /$op")
+  // ------------------------------------------------- diagnostics & error mapping
+  private fun elapsedMs(startedNanos: Long) = (System.nanoTime() - startedNanos) / 1_000_000
+  /**
+   * Compact, log-safe request identity. Only reads query parameters for methods whose
+   * bodies the container will never consume as a form, so that `req.reader` stays intact.
+   */
+  private fun requestTag(method: String, op: String, req: HttpServletRequest): String = try {
+    buildString {
+      append(method).append(" /").append(op.ifBlank { "" })
+      if (method == "GET" || method == "HEAD" || method == "DELETE") {
+        req.getParameter("path")?.takeIf { it.isNotBlank() }?.let { append(" path=").append(it) }
+      }
+      req.remoteAddr?.let { append(" from=").append(it) }
+    }
+  } catch (e: Exception) {
+    log.debug("unable to build request tag", e)
+    "$method /$op"
+  }
+  /**
+   * Single translation point from JVM failures to the errno-shaped API contract.
+   * Deliberately reports the *virtual* path (or none) so that no host path escapes.
+   */
+  private fun toFsException(syscall: String, path: String?, e: Throwable): FsException = when (e) {
+    is FsException -> e
+    is java.nio.file.NoSuchFileException -> FsException(FsErrorCode.ENOENT, syscall, path)
+    is FileNotFoundException -> FsException(FsErrorCode.ENOENT, syscall, path)
+    is FileAlreadyExistsException -> FsException(FsErrorCode.EEXIST, syscall, path)
+    is DirectoryNotEmptyException -> FsException(FsErrorCode.ENOTEMPTY, syscall, path)
+    is AccessDeniedException -> FsException(FsErrorCode.EACCES, syscall, path, "denied by the host filesystem")
+    is SecurityException -> FsException(FsErrorCode.EACCES, syscall, path, "denied by the security manager")
+    is NumberFormatException -> FsException(FsErrorCode.EINVAL, syscall, path, "malformed numeric parameter")
+    is IllegalArgumentException -> FsException(FsErrorCode.EINVAL, syscall, path, e.message)
+    is UncheckedIOException -> toFsException(syscall, path, e.cause ?: e as Throwable)
+    is ClosedChannelException -> FsException(FsErrorCode.EIO, syscall, path, "stream closed")
+    is IOException -> FsException(FsErrorCode.EIO, syscall, path, e.message ?: e.javaClass.simpleName)
+    is InterruptedException -> {
+      Thread.currentThread().interrupt()
+      FsException(FsErrorCode.EIO, syscall, path, "interrupted")
+    }
+    else -> FsException(FsErrorCode.EIO, syscall, path, e.message ?: e.javaClass.simpleName)
+  }
+  /** True when the failure is the peer disconnecting, not a server-side fault. */
+  private fun isClientAbort(error: Throwable): Boolean {
+    var cursor: Throwable? = error
+    var hops = 0
+    while (cursor != null && hops++ < 8) {
+      if (cursor is ClosedChannelException || cursor is InterruptedIOException) return true
+      if (cursor.javaClass.simpleName.contains("Eof", ignoreCase = true)) return true
+      val message = cursor.message?.lowercase()
+      if (message != null && CLIENT_ABORT_HINTS.any { message.contains(it) }) return true
+      cursor = cursor.cause.takeIf { it !== cursor }
+    }
+    return false
+  }
+  /** Never blow up while reporting a failure, and never corrupt an already-started body. */
+  private fun writeError(resp: HttpServletResponse, tag: String, e: FsException) {
+    if (resp.isCommitted) {
+      log.warn("FS API {}: response already committed, dropping error payload ({})", tag, e.message)
+      return
+    }
+    try {
+      FsErrors.write(resp, e)
+    } catch (io: Exception) {
+      log.warn("FS API {}: failed to write error response", tag, io)
+    }
+  }
+  /** Attaches the syscall + virtual path to any raw IO failure inside [block]. */
+  private inline fun <T> fsIo(syscall: String, path: String?, block: () -> T): T = try {
+    block()
+  } catch (e: FsException) {
+    throw e
+  } catch (e: Exception) {
+    if (isClientAbort(e)) log.debug("FS API {} on {} aborted by client", syscall, path)
+    else log.warn("FS API {} failed on {}", syscall, path, e)
+    throw toFsException(syscall, path, e)
+  }
+  /** Tolerant, well-reported JSON body reader (empty body == `{}`). */
+  private fun readBody(req: HttpServletRequest, syscall: String): Map<String, Any?> {
+    val raw = try {
+      req.reader.readText()
+    } catch (e: Exception) {
+      log.debug("FS API {}: unable to read request body", syscall, e)
+      throw toFsException(syscall, null, e)
+    }
+    return try {
+      FsJson.parseObject(raw.ifBlank { "{}" })
+    } catch (e: Exception) {
+      log.debug("FS API {}: malformed JSON body ({} bytes)", syscall, raw.length, e)
+      throw FsException(FsErrorCode.EINVAL, syscall, null, "malformed JSON body: ${e.message}")
+    }
+  }
 
   // ---------------------------------------------------------------- meta
 
@@ -338,7 +483,10 @@ object FsApiHandler {
   // -------------------------------------------------------------- helpers
 
   private fun writeJson(resp: HttpServletResponse, status: Int, payload: Any?) {
-    if (resp.isCommitted) return
+    if (resp.isCommitted) {
+      log.warn("skipping JSON payload (status {}): response already committed", status)
+      return
+    }
     resp.status = status
     resp.contentType = "application/json"
     resp.characterEncoding = "UTF-8"
@@ -387,6 +535,49 @@ object FsApiHandler {
     val value = req.getParameter(name) ?: return default
     return value.isEmpty() || value.equals("true", true) || value == "1"
   }
+  /**
+   * True when the browser is *navigating* to this URL (top-level, iframe, embed…).
+   * Such responses must carry a real content type, otherwise Chrome turns them into a
+   * download and the frame stays blank ("No resource with the given identifier found").
+   */
+  private fun isNavigation(req: HttpServletRequest): Boolean {
+    val dest = req.getHeader("Sec-Fetch-Dest")?.trim()?.lowercase()
+    if (!dest.isNullOrEmpty()) {
+      return dest == "document" || dest == "iframe" || dest == "frame" ||
+          dest == "embed" || dest == "object"
+    }
+    /* Clients without Sec-Fetch-* metadata: fall back to Accept negotiation. */
+    val accept = req.getHeader("Accept")?.lowercase() ?: return false
+    return accept.startsWith("text/html") || accept.contains("application/xhtml+xml")
+  }
+  /**
+   * `?mime=` / `?download=` win; otherwise navigations get the detected type and
+   * programmatic readers keep the historical `application/octet-stream`.
+   */
+  private fun negotiateContentType(req: HttpServletRequest, resolved: String, virtual: String): String {
+    if (boolParam(req, "download")) return OCTET_STREAM
+    val requested = req.getParameter("mime")?.trim()
+    return when {
+      requested.isNullOrEmpty() -> if (isNavigation(req)) resolved else OCTET_STREAM
+      requested.equals("binary", true) || requested.equals("raw", true) ||
+          requested.equals("false", true) -> OCTET_STREAM
+      requested.equals("auto", true) || requested.equals("true", true) -> resolved
+      MIME_TOKEN.matches(requested) -> requested
+      else -> throw FsException(FsErrorCode.EINVAL, "read", virtual, "malformed 'mime' parameter")
+    }
+  }
+  private fun baseType(contentType: String) = contentType.substringBefore(';').trim().lowercase()
+  /** RFC 6266-safe `filename` (plus `filename*` for non-ASCII names). */
+  private fun contentDisposition(inline: Boolean, name: String): String {
+    val ascii = name.map { if (it.code in 32..126 && it != '"' && it != '\\') it else '_' }.joinToString("")
+    val encoded = java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20")
+    return buildString {
+      append(if (inline) "inline" else "attachment")
+      append("; filename=\"").append(ascii).append('"')
+      if (ascii != name) append("; filename*=UTF-8''").append(encoded)
+    }
+  }
+
 
   private fun copyStream(
     input: InputStream,
@@ -514,7 +705,9 @@ object FsApiHandler {
       }
       if (recursive) assertSubtreeWritable(root, resolved.file, "rm")
       invalidateTree(resolved.file)
-      val ok = if (recursive) resolved.file.deleteRecursively() else resolved.file.delete()
+      val ok = fsIo("rmdir", resolved.virtual) {
+        if (recursive) resolved.file.deleteRecursively() else resolved.file.delete()
+      }
       if (!ok && resolved.file.exists()) throw FsException(FsErrorCode.EIO, "rmdir", resolved.virtual)
     } else {
       FileChannelCache.invalidate(resolved.file)
@@ -549,14 +742,18 @@ object FsApiHandler {
           *(if (overwrite) arrayOf(StandardCopyOption.REPLACE_EXISTING) else emptyArray())
         )
       } catch (e: AtomicMoveNotSupportedException) {
+        log.debug("atomic move unsupported for {} -> {}, retrying non-atomically", source.virtual, dest.virtual, e)
         Files.move(
           source.file.toPath(), dest.file.toPath(),
           *(if (overwrite) arrayOf(StandardCopyOption.REPLACE_EXISTING) else emptyArray())
         )
       }
     } catch (e: FileAlreadyExistsException) {
+      log.debug("rename {} -> {} rejected: destination exists", source.virtual, dest.virtual)
       throw FsException(FsErrorCode.EEXIST, "rename", dest.virtual)
     } catch (e: IOException) {
+      if (isClientAbort(e)) log.debug("rename {} -> {} aborted", source.virtual, dest.virtual)
+      else log.warn("rename {} -> {} failed", source.virtual, dest.virtual, e)
       throw FsException(FsErrorCode.EIO, "rename", dest.virtual, e.message)
     }
     return linkedMapOf("from" to source.virtual, "to" to dest.virtual)
@@ -609,7 +806,9 @@ object FsApiHandler {
     val options = ArrayList<StandardCopyOption>()
     if (force) options.add(StandardCopyOption.REPLACE_EXISTING)
     if (preserveTimestamps) options.add(StandardCopyOption.COPY_ATTRIBUTES)
-    Files.copy(source.toPath(), dest.toPath(), *options.toTypedArray())
+    fsIo("copyfile", FsPath.virtualPath(root, dest)) {
+      Files.copy(source.toPath(), dest.toPath(), *options.toTypedArray())
+    }
     return 1
   }
 
@@ -620,7 +819,7 @@ object FsApiHandler {
     if (t.file.isDirectory) throw FsException(FsErrorCode.EISDIR, "truncate", t.virtual)
     requireWritable(root, t, "truncate", config)
     FileChannelCache.invalidate(t.file)
-    RandomAccessFile(t.file, "rw").use { it.setLength(len) }
+    fsIo("truncate", t.virtual) { RandomAccessFile(t.file, "rw").use { it.setLength(len) } }
     return linkedMapOf(
       "path" to t.virtual,
       "size" to t.file.length(),
@@ -639,13 +838,15 @@ object FsApiHandler {
     if (!config.utimesEnabled) throw FsException(FsErrorCode.ENOSYS, "utimes", path, "utimes capability disabled")
     val t = requireExisting(target(root, path, "utimes"), "utimes")
     requireWritable(root, t, "utimes", config)
-    val view = Files.getFileAttributeView(t.file.toPath(), BasicFileAttributeView::class.java)
-      ?: throw FsException(FsErrorCode.ENOSYS, "utimes", t.virtual)
-    view.setTimes(
-      mtimeMs?.let { FileTime.fromMillis(it) },
-      atimeMs?.let { FileTime.fromMillis(it) },
-      null
-    )
+    fsIo("utimes", t.virtual) {
+      val view = Files.getFileAttributeView(t.file.toPath(), BasicFileAttributeView::class.java)
+        ?: throw FsException(FsErrorCode.ENOSYS, "utimes", t.virtual, "attribute view unsupported")
+      view.setTimes(
+        mtimeMs?.let { FileTime.fromMillis(it) },
+        atimeMs?.let { FileTime.fromMillis(it) },
+        null
+      )
+    }
     return linkedMapOf("path" to t.virtual, "mtimeMs" to t.file.lastModified())
   }
 
@@ -668,9 +869,11 @@ object FsApiHandler {
     val count = (length ?: (size - start)).coerceAtMost(size - start)
     if (count > config.maxFileSize) throw FsException(FsErrorCode.EFBIG, "read", t.virtual)
     val bytes = ByteArray(count.toInt())
-    RandomAccessFile(t.file, "r").use { raf ->
-      raf.seek(start)
-      raf.readFully(bytes)
+    fsIo("read", t.virtual) {
+      RandomAccessFile(t.file, "r").use { raf ->
+        raf.seek(start)
+        raf.readFully(bytes)
+      }
     }
     return linkedMapOf(
       "path" to t.virtual,
@@ -703,22 +906,29 @@ object FsApiHandler {
     }
     if (!exists && normalizedFlag.startsWith("r")) throw FsException(FsErrorCode.ENOENT, "open", t.virtual)
     requireWritableParent(root, t, "open", create = true)
-    val bytes = when (encoding.lowercase()) {
-      "base64" -> Base64.getDecoder().decode(data ?: "")
-      "base64url" -> Base64.getUrlDecoder().decode(data ?: "")
-      "utf8", "utf-8" -> (data ?: "").toByteArray(Charsets.UTF_8)
-      "hex" -> (data ?: "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-      else -> throw FsException(FsErrorCode.EINVAL, "write", t.virtual, "unsupported encoding '$encoding'")
+    val bytes = try {
+      when (encoding.lowercase()) {
+        "base64" -> Base64.getDecoder().decode(data ?: "")
+        "base64url" -> Base64.getUrlDecoder().decode(data ?: "")
+        "utf8", "utf-8" -> (data ?: "").toByteArray(Charsets.UTF_8)
+        "hex" -> (data ?: "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        else -> throw FsException(FsErrorCode.EINVAL, "write", t.virtual, "unsupported encoding '$encoding'")
+      }
+    } catch (e: IllegalArgumentException) {
+      log.debug("rejecting malformed '{}' payload for {}", encoding, t.virtual, e)
+      throw FsException(FsErrorCode.EINVAL, "write", t.virtual, "malformed '$encoding' payload")
     }
     if (bytes.size > config.maxFileSize) throw FsException(FsErrorCode.EFBIG, "write", t.virtual)
     FileChannelCache.invalidate(t.file)
-    RandomAccessFile(t.file, "rw").use { raf ->
-      if (normalizedFlag.startsWith("a")) raf.seek(raf.length())
-      else if (!normalizedFlag.startsWith("r")) {
-        raf.setLength(0)
-        raf.seek(0)
+    fsIo("write", t.virtual) {
+      RandomAccessFile(t.file, "rw").use { raf ->
+        if (normalizedFlag.startsWith("a")) raf.seek(raf.length())
+        else if (!normalizedFlag.startsWith("r")) {
+          raf.setLength(0)
+          raf.seek(0)
+        }
+        raf.write(bytes)
       }
-      raf.write(bytes)
     }
     return linkedMapOf(
       "path" to t.virtual,
@@ -749,9 +959,10 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "stat")
     val paths = FsJson.list(body, "paths")
     if (paths.size > config.maxBatchOps) {
+      log.info("rejecting batch stat with {} paths (max {})", paths.size, config.maxBatchOps)
       throw FsException(FsErrorCode.EINVAL, "stat", null, "too many paths (max ${config.maxBatchOps})")
     }
     val lstat = FsJson.boolean(body, "lstat", false)
@@ -760,6 +971,9 @@ object FsApiHandler {
         linkedMapOf<String, Any?>("ok" to true, "stat" to opStat(root, raw?.toString(), lstat, true))
       } catch (e: FsException) {
         linkedMapOf<String, Any?>("ok" to false, "error" to FsErrors.payload(e))
+      } catch (e: Exception) {
+        log.warn("batch stat failed for '{}'", raw, e)
+        linkedMapOf<String, Any?>("ok" to false, "error" to FsErrors.payload(toFsException("stat", null, e)))
       }
     }
     writeJson(resp, HttpServletResponse.SC_OK, results)
@@ -786,11 +1000,12 @@ object FsApiHandler {
     if (t.file.isDirectory) throw FsException(FsErrorCode.EISDIR, "read", t.virtual)
     val etag = EtagUtil.weakEtag(t.file)
     val size = t.file.length()
+    val resolvedMime = MimeTypeResolver.getMimeType(t.file.name)
     resp.setHeader("ETag", etag)
     resp.setDateHeader("Last-Modified", t.file.lastModified())
     resp.setHeader("Accept-Ranges", "bytes")
     resp.setHeader("Cache-Control", "no-cache")
-    resp.setHeader("X-Fs-Mime-Type", MimeTypeResolver.getMimeType(t.file.name))
+    resp.setHeader("X-Fs-Mime-Type", resolvedMime)
     resp.setHeader("X-Fs-Size", size.toString())
     resp.setHeader("X-Fs-Mtime-Ms", t.file.lastModified().toString())
     val ifNoneMatch = req.getHeader("If-None-Match")
@@ -803,7 +1018,22 @@ object FsApiHandler {
       throw FsException(FsErrorCode.EBUSY, "read", t.virtual, "ETag mismatch")
     }
     val range = RangeUtil.parse(req.getHeader("Range"), size, "read", t.virtual)
-    resp.contentType = "application/octet-stream"
+    /*
+     * A navigation (iframe / new tab) served as application/octet-stream is turned into a
+     * download by the browser, so the frame never renders. Serve the real type there, and
+     * neutralise scriptable payloads with an opaque-origin sandbox instead.
+     */
+    val contentType = negotiateContentType(req, resolvedMime, t.virtual)
+    val inline = contentType != OCTET_STREAM
+    resp.contentType = contentType
+    resp.setHeader("X-Content-Type-Options", "nosniff")
+    resp.setHeader("Content-Disposition", contentDisposition(inline, t.file.name))
+    if (inline && baseType(contentType) in SCRIPTABLE_TYPES) {
+      resp.setHeader(
+        "Content-Security-Policy",
+        "sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+      )
+    }
     if (range == null) {
       resp.status = HttpServletResponse.SC_OK
       resp.setContentLengthLong(size)
@@ -816,18 +1046,33 @@ object FsApiHandler {
     val start = range?.start ?: 0L
     var remaining = range?.length ?: size
     val out: OutputStream = resp.outputStream
-    RandomAccessFile(t.file, "r").use { raf ->
-      raf.seek(start)
-      val buffer = ByteArray(64 * 1024)
-      while (remaining > 0) {
-        val chunk = minOf(remaining, buffer.size.toLong()).toInt()
-        val read = raf.read(buffer, 0, chunk)
-        if (read <= 0) break
-        out.write(buffer, 0, read)
-        remaining -= read
+    try {
+      RandomAccessFile(t.file, "r").use { raf ->
+        raf.seek(start)
+        val buffer = ByteArray(64 * 1024)
+        while (remaining > 0) {
+          val chunk = minOf(remaining, buffer.size.toLong()).toInt()
+          val read = raf.read(buffer, 0, chunk)
+          if (read <= 0) {
+            if (remaining > 0) {
+              log.warn("short read on {}: {} byte(s) still expected (file changed under us?)", t.virtual, remaining)
+            }
+            break
+          }
+          out.write(buffer, 0, read)
+          remaining -= read
+        }
       }
+      out.flush()
+    } catch (e: IOException) {
+      /* Headers are already on the wire: an error body would corrupt the response. */
+      if (isClientAbort(e)) {
+        log.debug("client aborted download of {} ({} byte(s) unsent)", t.virtual, remaining)
+        return
+      }
+      log.error("failed streaming {} ({} byte(s) unsent)", t.virtual, remaining, e)
+      throw FsException(FsErrorCode.EIO, "read", t.virtual, e.message)
     }
-    out.flush()
   }
 
   private fun httpWriteFile(
@@ -845,39 +1090,47 @@ object FsApiHandler {
     val ifNoneMatch = req.getHeader("If-None-Match")
     val ifMatch = req.getHeader("If-Match")
     if (exists && (flag == "wx" || flag == "ax" || ifNoneMatch?.trim() == "*")) {
+      log.debug("write to {} rejected: exclusive create on existing file", t.virtual)
       throw FsException(FsErrorCode.EEXIST, "open", t.virtual)
     }
     if (!exists && flag.startsWith("r")) throw FsException(FsErrorCode.ENOENT, "open", t.virtual)
     if (ifMatch != null) {
       if (!exists) throw FsException(FsErrorCode.ENOENT, "open", t.virtual)
       if (!EtagUtil.matches(ifMatch, EtagUtil.weakEtag(t.file))) {
+        log.info("write to {} rejected: If-Match mismatch (client sent '{}')", t.virtual, ifMatch)
         throw FsException(FsErrorCode.EBUSY, "write", t.virtual, "ETag mismatch (concurrent modification)")
       }
     }
     val declared = req.contentLengthLong
-    if (declared > config.maxFileSize) throw FsException(FsErrorCode.EFBIG, "write", t.virtual)
+    if (declared > config.maxFileSize) {
+      log.info("write to {} rejected: declared {} bytes exceeds maxFileSize {}", t.virtual, declared, config.maxFileSize)
+      throw FsException(FsErrorCode.EFBIG, "write", t.virtual)
+    }
     requireWritableParent(root, t, "open", create = true)
     val position = req.getParameter("position")?.toLongOrNull()
       ?: RangeUtil.contentRangeStart(req.getHeader("Content-Range"), "write", t.virtual)
     FileChannelCache.invalidate(t.file)
-    val bytesWritten = RandomAccessFile(t.file, "rw").use { raf ->
-      when {
-        flag.startsWith("a") -> raf.seek(raf.length())
-        position != null -> raf.seek(position)
-        flag.startsWith("r") -> raf.seek(0)
-        else -> {
-          raf.setLength(0)
-          raf.seek(0)
+    val bytesWritten = fsIo("write", t.virtual) {
+      RandomAccessFile(t.file, "rw").use { raf ->
+        when {
+          flag.startsWith("a") -> raf.seek(raf.length())
+          position != null -> raf.seek(position)
+          flag.startsWith("r") -> raf.seek(0)
+          else -> {
+            raf.setLength(0)
+            raf.seek(0)
+          }
         }
+        copyStream(
+          req.inputStream,
+          { buf, len -> raf.write(buf, 0, len) },
+          config.maxFileSize,
+          "write",
+          t.virtual
+        )
       }
-      copyStream(
-        req.inputStream,
-        { buf, len -> raf.write(buf, 0, len) },
-        config.maxFileSize,
-        "write",
-        t.virtual
-      )
     }
+    if (log.isDebugEnabled) log.debug("wrote {} byte(s) to {} (flag={})", bytesWritten, t.virtual, flag)
     val etag = EtagUtil.weakEtag(t.file)
     resp.setHeader("ETag", etag)
     resp.setDateHeader("Last-Modified", t.file.lastModified())
@@ -911,7 +1164,7 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "mkdir")
     val payload = opMkdir(
       root, config,
       FsJson.string(body, "path") ?: req.getParameter("path"),
@@ -930,7 +1183,7 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "rename")
     opRename(
       root, config,
       FsJson.string(body, "from") ?: req.getParameter("from"),
@@ -946,7 +1199,7 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "copyfile")
     opCopy(
       root, config,
       FsJson.string(body, "from") ?: req.getParameter("from"),
@@ -964,7 +1217,7 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "truncate")
     opTruncate(
       root, config,
       FsJson.string(body, "path") ?: req.getParameter("path"),
@@ -979,7 +1232,7 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "utimes")
     opUtimes(
       root, config,
       FsJson.string(body, "path") ?: req.getParameter("path"),
@@ -992,21 +1245,28 @@ object FsApiHandler {
   /** Bridges the FS API onto the extensible [GitActions] registry. */
   private fun httpGit(ctx: FsActionContext) {
     if (!ctx.config.execAllowlist.containsKey("git")) {
+      log.debug("git action rejected: capability disabled for this mount")
       throw FsException(FsErrorCode.ENOSYS, "git", null, "git capability disabled for this mount")
     }
-    val body = FsJson.parseObject(ctx.req.reader.readText())
+    val body = readBody(ctx.req, "git")
     val name = FsJson.string(body, "action")
       ?: throw FsException(FsErrorCode.EINVAL, "git", null, "missing 'action'")
 
     @Suppress("UNCHECKED_CAST")
     val params = (body["params"] as? Map<String, Any?>) ?: body
+    val startedNanos = System.nanoTime()
     val payload = try {
       GitActions.execute(name, params, ctx.root)
+    } catch (e: FsException) {
+      throw e
     } catch (e: IllegalArgumentException) {
+      log.info("git action '{}' rejected: {}", name, e.message)
       throw FsException(FsErrorCode.EINVAL, "git", null, e.message)
     } catch (e: Exception) {
-      throw FsException(FsErrorCode.EIO, "git", null, e.message)
+      log.error("git action '{}' failed after {}ms", name, elapsedMs(startedNanos), e)
+      throw toFsException("git", null, e)
     }
+    if (log.isDebugEnabled) log.debug("git action '{}' completed in {}ms", name, elapsedMs(startedNanos))
     writeJson(ctx.resp, HttpServletResponse.SC_OK, payload)
   }
 
@@ -1016,33 +1276,38 @@ object FsApiHandler {
     root: File,
     config: FsApiConfig,
   ) {
-    val body = FsJson.parseObject(req.reader.readText())
+    val body = readBody(req, "batch")
     val ops = FsJson.list(body, "ops")
     val stopOnError = FsJson.boolean(body, "stopOnError", false)
     if (ops.size > config.maxBatchOps) {
+      log.info("rejecting batch with {} ops (max {})", ops.size, config.maxBatchOps)
       throw FsException(FsErrorCode.EINVAL, "batch", null, "too many ops (max ${config.maxBatchOps})")
     }
     val results = ArrayList<Any?>(ops.size)
-    for (raw in ops) {
+    for ((index, raw) in ops.withIndex()) {
       @Suppress("UNCHECKED_CAST")
       val op = raw as? Map<String, Any?>
       try {
         if (op == null) throw FsException(FsErrorCode.EINVAL, "batch", null, "each op must be an object")
         results.add(linkedMapOf("ok" to true, "value" to runBatchOp(root, config, op)))
       } catch (e: FsException) {
+        if (log.isDebugEnabled) {
+          log.debug("batch op #{} ({}) -> {}", index, op?.get("op"), e.message ?: e.javaClass.simpleName)
+        }
         results.add(linkedMapOf("ok" to false, "error" to FsErrors.payload(e)))
         if (stopOnError) break
       } catch (e: Exception) {
-        log.warn("batch op failed", e)
+        log.error("batch op #{} ({}) failed", index, op?.get("op"), e)
         results.add(
           linkedMapOf(
             "ok" to false,
-            "error" to FsErrors.payload(FsException(FsErrorCode.EIO, "batch", null, e.message))
+            "error" to FsErrors.payload(toFsException("batch", FsJson.string(op ?: emptyMap(), "path"), e))
           )
         )
         if (stopOnError) break
       }
     }
+    if (log.isDebugEnabled) log.debug("batch completed: {}/{} op(s) executed", results.size, ops.size)
     writeJson(resp, HttpServletResponse.SC_OK, results)
   }
 

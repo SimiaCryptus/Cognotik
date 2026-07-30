@@ -158,7 +158,8 @@ export class AppShell extends Component {
     buildBottom() {
         this.bottomSplitter = h('div', {
             class: 'fs-hsplitter', role: 'separator', tabindex: '0', hidden: true,
-            'aria-orientation': 'horizontal', 'aria-label': 'Resize panel', 'aria-controls': 'fs-bottom',
+             'aria-orientation': 'horizontal', 'aria-label': 'Resize panel', 'aria-controls': 'fs-bottom',
+             title: 'Drag to resize · double-click to collapse',
         });
         this.bottom = h('section', {
             class: 'fs-bottom', id: 'fs-bottom', hidden: true, 'aria-label': 'Panel',
@@ -173,22 +174,47 @@ export class AppShell extends Component {
          /* Double-clicking the divider collapses/restores, as in an IDE. */
          this.track(on(this.bottomSplitter, 'dblclick', () => this.setBottomVisible(this.bottom.hidden)));
         let dragging = false;
+         const endDrag = (event) => {
+             if (!dragging) return;
+             dragging = false;
+             delete this.bottomSplitter.dataset.dragging;
+             try {
+                 this.bottomSplitter.releasePointerCapture(event.pointerId);
+             } catch (e) { /* already released */
+             }
+         };
         this.track(on(this.bottomSplitter, 'pointerdown', (event) => {
+             /* Without this the browser claims the gesture (text selection /
+                native drag) and the pointermove stream dies after one event, so
+                the split looked unresizable. */
+             event.preventDefault();
             dragging = true;
+             this.bottomSplitter.dataset.dragging = 'true';
             this.bottomSplitter.setPointerCapture(event.pointerId);
         }));
         this.track(on(this.bottomSplitter, 'pointermove', (event) => {
             if (!dragging) return;
-            this.setBottomHeight(this.main.getBoundingClientRect().bottom - event.clientY);
+             const height = this.main.getBoundingClientRect().bottom - event.clientY;
+             /* Dragging (nearly) shut collapses the dock instead of pinning it
+                at its minimum height. */
+             if (height < 48) {
+                 endDrag(event);
+                 this.setBottomVisible(false);
+                 return;
+             }
+             this.setBottomHeight(height);
         }));
-        this.track(on(this.bottomSplitter, 'pointerup', () => {
-            dragging = false;
-        }));
+         this.track(on(this.bottomSplitter, 'pointerup', endDrag));
+         this.track(on(this.bottomSplitter, 'pointercancel', endDrag));
+         this.track(on(this.bottomSplitter, 'lostpointercapture', endDrag));
         this.track(on(this.bottomSplitter, 'keydown', (event) => {
             const step = event.shiftKey ? 64 : 16;
             const height = this.bottom.getBoundingClientRect().height;
             if (event.key === 'ArrowUp') this.setBottomHeight(height + step);
-            else if (event.key === 'ArrowDown') this.setBottomHeight(height - step);
+             else if (event.key === 'ArrowDown') {
+                 if (height - step < 96) this.setBottomVisible(false);
+                 else this.setBottomHeight(height - step);
+             } else if (event.key === 'Enter') this.setBottomVisible(this.bottom.hidden);
             else if (event.key === 'Escape') this.setBottomVisible(false);
             else return;
             event.preventDefault();

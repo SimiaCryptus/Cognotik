@@ -8,7 +8,7 @@ import {ImageViewer, BinaryPlaceholder} from '../components/editors/SimpleEditor
 import {HtmlPreview} from '../components/editors/HtmlPreview.js';
 import {openQuickPick} from '../components/overlays/QuickPick.js';
 import {TerminalPanel} from '../components/terminal/TerminalPanel.js';
-import {ChatPanel} from '../components/chat/ChatPanel.js';
+import {ChatSessionEditor, openChatTab, requestChatSession} from '../components/chat/ChatSession.js';
 import {tabs} from '../components/tabs/TabModel.js';
 import {fs} from '../core/fsclient.js';
 import {caps} from '../core/capabilities.js';
@@ -31,11 +31,19 @@ export function registerContributions({shell}) {
     registerEditorActions();
     registerFileActions();
     registerTerminalActions(shell);
-     registerChatActions(shell);
+     registerChatActions();
     registerServerActions();
 }
 
 function registerEditors() {
+     /* A hosted chat session. Highest priority, but only ever matched by a tab
+        whose stat carries `chatUrl`, so nothing else changes (note #4). */
+     registerEditor({
+         id: ChatSessionEditor.id,
+         priority: 300,
+         canOpen: ChatSessionEditor.canOpen,
+         create: (ctx) => new ChatSessionEditor(ctx),
+     });
      /* Highest priority, but only ever selected by an explicit preview tab
         (its stat carries `previewUrl`), so editing is unaffected. */
      registerEditor({
@@ -374,9 +382,23 @@ function openPreviewTab(path) {
          pinned: true, virtual: true,
          stat: {
              path: previewPath, type: 'file', size: 0, readOnly: true,
-             mimeType: 'text/html', previewUrl: fs.fileUrl(path), sourcePath: path,
+             mimeType: 'text/html', previewUrl: publicUrl(path), sourcePath: path,
          },
      });
+}
+/**
+  * The user- and SEO-friendly URL for a file: `/files/root/dir/page.html`.
+  *
+  * The v2 endpoint (`/file?path=…`) defaults to application/octet-stream for
+  * programmatic readers, so a browser navigating to it downloads the file
+  * instead of rendering it. The classic servlet serves the same bytes under a
+  * clean path with the detected content type, which is what a new browser tab
+  * (and any link a user may share) wants.
+  */
+function publicUrl(path) {
+     const classic = store.get().classicBase;
+     const rel = String(path ?? '/').replace(/^\/+/, '');
+     return classic ? `${classic.replace(/\/$/, '')}/${rel}` : fs.fileUrl(path);
 }
 
 /** File/folder actions: one registration serves menubar, context menu and palette. */
@@ -431,11 +453,12 @@ function registerFileActions() {
          run: (ctx) => {
              const resource = ctx.resources[0];
              const path = resource?.path || '/';
-             /* A file has a v2 representation (/file?path=…); a folder does not,
-                so open this same SPA on the corresponding deep link instead. */
+             /* A file gets the clean legacy path (real content type, no download);
+                a folder has no such representation, so open this same SPA on the
+                corresponding deep link instead. */
              const href = (!resource || resource.type === 'dir')
                  ? `${location.pathname}#${path.endsWith('/') ? path : `${path}/`}`
-                 : fs.fileUrl(path);
+                 : publicUrl(path);
              window.open(href, '_blank', 'noopener');
              return {kind: 'none'};
          },
@@ -702,10 +725,16 @@ function registerTerminalActions(shell) {
     registerCommand({
         id: 'view.toggleTerminal', title: 'View: Toggle Terminal', keys: ['Ctrl+`', 'Mod+`'],
          run: async () => {
+             /* Never open the dock for a capability the server does not have:
+                that is the empty strip above the status bar (#1/#7). */
+             if (!caps.has('terminal')) {
+                 ui.toast({severity: 'info', message: 'This server does not provide terminal sessions'});
+                 return;
+             }
              const panel = shell.showBottomPanel('terminal', {toggle: true, focus: true});
              /* Never reveal an empty dock: open a session, and let the panel
                 collapse it again when the last one is closed (#7). */
-             if (panel && shell.isBottomVisible() && caps.has('terminal')) await panel.ensureSession();
+              if (panel && shell.isBottomVisible()) await panel.ensureSession();
          },
     });
     registerCommand({
@@ -834,29 +863,20 @@ function chatTargets(ctx) {
      return tab && !tab.virtual ? [tab.path] : [];
 }
 /**
-  * The chat panel is contributed through the registry, so the shell knows
-  * nothing about it; `ui.openChat` is what server actions answering with a
-  * session URL use instead of a (blockable) pop-up.
+  * Chat sessions are *documents*, so they open as tabs in the main editor area:
+  * a second "Modify files" run no longer destroys the first session's UI, and
+  * the bottom dock stays reserved for consoles (note #4).
+  *
+  * `ui.openChat` is also what server actions answering with a session URL use,
+  * instead of a (blockable) pop-up.
   */
-function registerChatActions(shell) {
-     registerPanel({
-         id: 'chat', title: 'Code Chat', icon: '💬', location: 'bottom', order: 20,
-         create: () => new ChatPanel(),
-     });
-     const openChat = async ({paths, name, prompt, url} = {}) => {
-         const panel = shell.showBottomPanel('chat', {focus: true});
-         if (!panel) return null;
-         return panel.openSession({paths, name, prompt, url});
-     };
-     ui.openChat = openChat;
-     registerCommand({
-         id: 'view.toggleChat', title: 'View: Toggle Code Chat', keys: ['Mod+Shift+C'],
-         run: () => shell.showBottomPanel('chat', {toggle: true, focus: true}),
-     });
-     commandAction({
-         commandId: 'view.toggleChat', title: 'Code Chat', icon: '💬',
-         menus: [{anchor: 'main/view', group: '1_open', order: 30}],
-     });
+function registerChatActions() {
+      const openChat = async ({paths = [], name, prompt, url} = {}) => {
+          /* `url` short-circuits the round trip: a server action already made one. */
+          const target = url || await requestChatSession({paths, name: name || prompt});
+          return openChatTab({url: target, paths, name, prompt});
+      };
+      ui.openChat = openChat;
      registerAction({
          id: 'chat.openForSelection', title: 'Code Chat…', icon: '💬', category: 'Cognotik',
          description: 'Open a patch chat over the selected files',
@@ -1041,7 +1061,7 @@ async function serverActionResult(descriptor, payload, ctx) {
      if (!payload || typeof payload !== 'object') return {kind: 'none'};
      if (payload.kind) return payload;
      if (payload.url) {
-         /* Chat sessions (modify) are hosted in the Code Chat panel: the
+         /* Chat sessions (modify) are hosted as a tab of their own: the
             window.open() below happens after an await, which is exactly what a
             strict pop-up blocker refuses (#4). */
          if (typeof ui.openChat === 'function') {
@@ -1049,7 +1069,7 @@ async function serverActionResult(descriptor, payload, ctx) {
              if (hosted) {
                  return {
                      kind: 'toast', severity: 'info',
-                     message: `${descriptor.title}: session opened in the Code Chat panel`,
+                     message: `${descriptor.title}: session opened in a new tab`,
                  };
              }
          }

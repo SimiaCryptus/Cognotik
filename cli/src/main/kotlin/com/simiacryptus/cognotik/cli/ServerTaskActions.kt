@@ -164,11 +164,11 @@ object ServerTaskActions {
               was effectively invisible for the common case. */
            ActionMenu("explorer/empty", "7_run", 50),
           ),
-           /* AutoFix runs a build/test command *in a directory*; offering it for a
-              plain (non-executable) file is meaningless, so restrict the selection
-              and let the client hide it instead of greying it out. */
-           selection = ActionSelection(min = 0, max = 1, kinds = listOf("dir")),
-           hideWhenDisabled = true,
+           /* AutoFix works *in a directory*, but it must be offered everywhere
+              "Run…" is: a file selection simply names its parent folder, which is
+              exactly what the client's sendSelection = "folder" sends. Restricting
+              this to `dir` made it invisible for a file selection. */
+           selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
           hiddenParams = setOf("dir", "autoFix"),
           sendSelection = "folder", selectionParam = "dir",
         ),

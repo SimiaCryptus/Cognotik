@@ -1,0 +1,425 @@
+/*
+     * Structural CSS only. The colour/layout theme system (the full
+     * --theme-* / --font-* custom-property contract) is deliberately deferred:
+     * see reverse-spec §19.1. Everything here is behaviour-critical.
+     */
+
+:root {
+    --font-primary: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "JetBrains Mono", "IBM Plex Mono", monospace;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1rem;
+    --border-radius-md: 0.5rem;
+    --theme-surface: #ffffff;
+    --theme-background: #f5f5f5;
+    --theme-border: #dddddd;
+    --theme-text: #222222;
+    --theme-primary: #007bff;
+    --theme-error: #b00020;
+}
+
+* {
+    box-sizing: border-box;
+}
+/*
+  * The UA `[hidden] { display: none }` rule loses to any author `display` declaration
+  * (e.g. `.composer-body { display: flex }`), which silently broke every `el.hidden`
+  * toggle — most visibly the composer collapse button. Force it.
+  */
+[hidden] {
+     display: none !important;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-primary);
+    background: var(--theme-background);
+    color: var(--theme-text);
+    line-height: 1.6;
+    overflow: hidden;
+}
+
+#root, .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-height: 0;
+}
+
+/* ------------------------------------------------------------ message list */
+
+.message-list-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    contain: content;
+    scroll-behavior: smooth;
+    padding: var(--spacing-lg);
+}
+
+.message-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.message {
+    background: var(--theme-surface);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.message-user {
+    align-self: flex-end;
+    background: #e7f1ff;
+}
+
+.message-system {
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+.message-error {
+    border-color: var(--theme-error);
+    color: var(--theme-error);
+}
+/* Server is still working on this message (spinner present in its content). */
+.message-pending {
+     border-left: 3px solid var(--theme-primary);
+}
+/* ---------------------------------------------------------------- spinner */
+/*
+  * Server-emitted progress marker:
+  *   <div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>
+  */
+.spinner-border {
+     display: inline-block;
+     width: 1rem;
+     height: 1rem;
+     vertical-align: -0.125em;
+     border: 0.15em solid currentColor;
+     border-right-color: transparent;
+     border-radius: 50%;
+     animation: spinner-rotate 0.75s linear infinite;
+}
+.spinner-border.small {
+     width: 0.75rem;
+     height: 0.75rem;
+}
+.spinner-border.large {
+     width: 1.5rem;
+     height: 1.5rem;
+     border-width: 0.18em;
+}
+@keyframes spinner-rotate {
+     to {
+         transform: rotate(360deg);
+     }
+}
+/* Reduced motion: no spin, but keep the marker perceivable. */
+@media (prefers-reduced-motion: reduce) {
+     .spinner-border {
+         border-right-color: currentColor;
+         opacity: 0.5;
+     }
+}
+
+/* ------------------------------------------------------------------- tabs */
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--theme-border);
+}
+
+.tab-button {
+    padding: 0.4rem 0.9rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--theme-primary);
+}
+
+.tab-button.active {
+    border-bottom: 2px solid var(--theme-primary);
+}
+
+/* Inline display:none is also set by tabs.js; this covers server-rendered HTML
+   before the tab system has initialised the container. */
+.tab-content:not(.active) {
+    display: none;
+}
+
+.tab-content {
+    padding: var(--spacing-md) 0;
+}
+
+/* ----------------------------------------------------------- collapsibles */
+
+.expandable-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.expandable-content {
+    display: none;
+}
+
+.expandable-content.expanded {
+    display: block;
+}
+
+/* ---------------------------------------------------------------- verbose */
+
+.verbose-wrapper {
+    display: none;
+}
+
+.verbose-wrapper.verbose-visible {
+    display: inline;
+}
+
+/* ------------------------------------------------------------- references */
+
+.reference-error {
+    color: var(--theme-error);
+    font-style: italic;
+}
+
+/* --------------------------------------------------------------- mermaid */
+
+.mermaid-error {
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    border-left: 3px solid var(--theme-error);
+    padding-left: var(--spacing-sm);
+}
+
+/* -------------------------------------------------------------- composer */
+
+.chat-input-container {
+    flex: 0 0 auto;
+    border-top: 1px solid var(--theme-border);
+    background: var(--theme-surface);
+    padding: var(--spacing-md);
+}
+
+.composer-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.markdown-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.toolbar-button {
+    min-width: 2rem;
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
+}
+
+.chat-input, .reply-input {
+    width: 100%;
+    min-height: 2.5rem;
+    font: inherit;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--theme-border);
+    border-radius: 0.3125rem;
+    resize: vertical;
+}
+
+.chat-input:focus, .reply-input:focus {
+    outline: none;
+    border-color: var(--theme-primary);
+}
+
+.composer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+.composer-preview {
+    border: 1px dashed var(--theme-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-sm);
+}
+
+.connection-banner {
+    background: #fff3cd;
+    color: #665200;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-sm);
+}
+.composer-header {
+     display: flex;
+     align-items: center;
+     gap: var(--spacing-sm);
+}
+.composer-collapse-toggle {
+     border: none;
+     background: none;
+     cursor: pointer;
+     font-size: 1rem;
+     line-height: 1;
+     padding: 0.1rem 0.35rem;
+     color: var(--theme-text);
+}
+.composer-collapsed {
+     flex: 1 1 auto;
+     text-align: left;
+     border: none;
+     background: none;
+     cursor: pointer;
+     color: var(--theme-text);
+     opacity: 0.75;
+     padding: 0;
+}
+.composer-status {
+     display: flex;
+     align-items: center;
+     gap: var(--spacing-sm);
+     margin-bottom: var(--spacing-sm);
+     color: var(--theme-primary);
+     font-size: 0.9em;
+}
+
+.cmd-button, .text-submit-button, .action-button {
+    display: inline-block;
+    padding: 0.5em 1em;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: #fff;
+    background: #4caf50;
+    border: none;
+    border-radius: 0.3125rem;
+}
+
+.cmd-button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.reply-form {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+/* ----------------------------------------------------------------- modal */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 45%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay[hidden] {
+    display: none;
+}
+
+.modal-content {
+    background: var(--theme-surface);
+    border-radius: var(--border-radius-md);
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow: auto;
+    padding: var(--spacing-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-md);
+}
+
+.modal-close {
+    border: none;
+    background: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* --------------------------------------------------------- archive mode */
+
+.archive-mode .interactive-element {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.archive-mode .websocket-dependent,
+.archive-mode .chat-input-container,
+.archive-mode .input-area {
+    display: none;
+}
+
+.archive-mode::before {
+    content: "This is an archived version of the chat";
+    display: block;
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: #ffeb3b;
+    color: #000;
+}
+
+/* ------------------------------------------------------- accessibility */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+*:focus-visible {
+    outline: 2px solid var(--theme-primary);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.fatal-error {
+    margin: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--theme-error);
+    border-radius: var(--border-radius-md);
+    color: var(--theme-error);
+    background: var(--theme-surface);
+}
+
+.fatal-error-stack {
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}

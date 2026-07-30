@@ -1,14 +1,23 @@
-Need to resize code window/terminal split - and collapse terminal especially when no terminal is open.
+We need to be able to resize the code window/terminal split - and collapse terminal especially when no terminal is open.
 
-we have "open in classic view" but we need an "open in new tab" action that references the v2 file api
+"autofix" should appear on all items "run" appears on
 
-pressing "escape" should close any action dialog open
+http://127.0.0.1:8081/files/root/.fsapi/v1/file?path=%2Ftest.html
+cannot be opened in a new tab - it results in a file download
+the ui should serve html files, especially in "open in new tab", as the legacy format e.g. `http://127.0.0.1:8081/files/root/test.html` since that format uses non-query paths and is more user/seo friendly
 
-"run" appears on all items and "autofix" appears on none
 
-double clicking folders should expand them in the file tree view in the web ui
 
-double clicking files should open them in the editor
+# Fileserver
 
-html files should have a distinct "view" option in addition to "open" (which should be renamed "edit") that opens them in an ifram in the same tabbed interface as the editors.
+can only resize the terminal area when it is open. if no terminal is open, this area should be auto-collapsed
+
+
+# Agent UI
+
+need themeing sync with fileserver ui via theme ui parameter
+
+BUG: all messages from the server currently have a reply ui appended to them (input textbox and send button) - remove these! when needed, input dialog elements are injected by the websocket server messages.
+The collapse button to minimize the input ui does not work
+We need support for the pending progress status (spinner when server is processing) which is a property of the messages sent (ie `<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>`)
 

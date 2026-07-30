@@ -7,7 +7,6 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 repositories {
@@ -124,38 +123,57 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
-node {
-    version.set("20.19.5")
-    npmVersion.set("11.6.0")
-    download.set(true)
-    nodeProjectDir.set(file("${project.projectDir}/../webapp"))
+
+/* ---------------------------------------------------------------------------
+  * Frontend build (pnpm). No gradle-node plugin: just shell out to pnpm.
+  * Requires `pnpm` on PATH (e.g. `corepack enable`).
+  * Use -PskipWebapp to build the JVM artifacts without touching the frontend.
+  * ------------------------------------------------------------------------ */
+val webappDir = file("${project.projectDir}/../webapp-v2")
+val pnpm = if (System.getProperty("os.name").lowercase().contains("windows")) "pnpm.cmd" else "/home/andrew/.local/share/pnpm/bin/pnpm" // TODO: Fix this hack with a more robust and configurable discovery
+val skipWebapp = providers.gradleProperty("skipWebapp").isPresent
+val sassVersion = "1.83.0"
+
+tasks.register<Exec>("pnpmInstall") {
+     group = "webapp"
+     description = "Installs webapp-v2 dependencies via pnpm"
+     onlyIf { !skipWebapp }
+     workingDir = webappDir
+     commandLine(pnpm, "install")
+     inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"))
+     outputs.dir(File(webappDir, "node_modules"))
 }
 
-// Add webapp build tasks
-tasks.register<com.github.gradle.node.npm.task.NpmTask>("buildWebapp") {
-    dependsOn(tasks.npmInstall)
-    args.set(listOf("run", "build"))
-    inputs.dir("../webapp/src")
-    inputs.files("../webapp/package.json", "../webapp/package-lock.json")
-    outputs.dir("../webapp/build")
+tasks.register<Exec>("buildWebapp") {
+     group = "webapp"
+     description = "Builds webapp-v2 via pnpm"
+     onlyIf { !skipWebapp }
+     dependsOn("pnpmInstall")
+     workingDir = webappDir
+     commandLine(pnpm, "run", "build")
+     inputs.dir(File(webappDir, "src"))
+     inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"))
+     outputs.dir(File(webappDir, "build"))
 }
 
 // Copy webapp build output to resources
 tasks.register<Copy>("copyWebappBuild") {
     dependsOn("buildWebapp")
-    from("../webapp/build")
+     onlyIf { !skipWebapp }
+    from("../webapp-v2/build")
     into("src/main/resources/application")
 }
 
 tasks.register<Copy>("copyWebappStatic") {
     dependsOn("buildWebapp")
-    from("../webapp/build/static")
+     onlyIf { !skipWebapp }
+    from("../webapp-v2/build/static")
     into("src/main/resources/welcome/static")
 }
 
 // Clean webapp build artifacts
 tasks.register<Delete>("cleanWebapp") {
-    delete("../webapp/build")
+    delete("../webapp-v2/build")
     delete("src/main/resources/application/static")
     delete("src/main/resources/welcome/static")
 }
@@ -164,21 +182,20 @@ tasks.clean {
 }
 
 
-tasks.register<com.github.gradle.node.npm.task.NpmTask>("installSass") {
-    args.set(listOf("install", "sass", "--save-dev"))
-}
 
-tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
-    dependsOn("installSass")
-    command.set("sass")
-    workingDir.set(file("${project.projectDir}"))
-    args.set(
-        listOf(
-            "src/main/resources/shared:build/resources/main/css",
-            "--style=expanded",
-            "--source-map"
-        )
-    )
+tasks.register<Exec>("compileSass") {
+     group = "webapp"
+     description = "Compiles shared SCSS to build/resources/main/css"
+     onlyIf { !skipWebapp }
+     workingDir = projectDir
+     commandLine(
+         pnpm, "dlx", "sass@$sassVersion",
+         "src/main/resources/shared:build/resources/main/css",
+         "--style=expanded",
+         "--source-map"
+     )
+     inputs.dir("src/main/resources/shared")
+     outputs.dir(layout.buildDirectory.dir("resources/main/css"))
 }
 
 tasks.named("processResources") {
