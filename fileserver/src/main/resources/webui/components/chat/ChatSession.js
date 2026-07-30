@@ -1,5 +1,6 @@
 import {h, clear} from '../../core/dom.js';
   import {store} from '../../core/store.js';
+  import {persist} from '../../core/persist.js';
   import {tabs} from '../tabs/TabModel.js';
   import {ui} from '../../core/ui.js';
   import {announce} from '../../core/a11y.js';
@@ -23,6 +24,30 @@ import {h, clear} from '../../core/dom.js';
    */
 
   let seq = 0;
+  /**
+   * The theme the agent UI should adopt so that it matches this workspace (#3).
+   * The agent app only knows 'light' | 'dark' | 'auto', so the extra
+   * high-contrast workspace theme is reported as its nearest equivalent.
+   */
+  export function currentTheme() {
+      const theme = document.documentElement.getAttribute('data-theme')
+          || persist.get('theme', 'auto') || 'auto';
+      return theme === 'hc' ? 'dark' : theme;
+  }
+  /**
+   * Adds `?theme=` to a session URL without disturbing the `#session` fragment
+   * the server handed us (the fragment, not the query, identifies the session).
+   */
+  export function withTheme(url) {
+      try {
+          const parsed = new URL(url, location.href);
+          parsed.searchParams.set('theme', currentTheme());
+          return parsed.toString();
+      } catch (e) {
+          return url;
+      }
+  }
+
 
   /** Asks the server for a patch-chat session over `paths`; answers its URL. */
   export async function requestChatSession({paths = [], name} = {}) {
@@ -59,7 +84,8 @@ import {h, clear} from '../../core/dom.js';
           virtual: true, pinned: true,
           stat: {
               path, type: 'file', size: 0, readOnly: true, mimeType: 'text/html',
-              chatUrl: url, chatPrompt: prompt, title: label,
+              /* Open the agent UI already in the workspace's theme (#3). */
+              chatUrl: withTheme(url), chatPrompt: prompt, title: label,
           },
       });
   }

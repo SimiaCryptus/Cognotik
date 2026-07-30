@@ -8,7 +8,7 @@ import {ImageViewer, BinaryPlaceholder} from '../components/editors/SimpleEditor
 import {HtmlPreview} from '../components/editors/HtmlPreview.js';
 import {openQuickPick} from '../components/overlays/QuickPick.js';
 import {TerminalPanel} from '../components/terminal/TerminalPanel.js';
-import {ChatSessionEditor, openChatTab, requestChatSession} from '../components/chat/ChatSession.js';
+import {ChatSessionEditor, openChatTab, requestChatSession, withTheme} from '../components/chat/ChatSession.js';
 import {tabs} from '../components/tabs/TabModel.js';
 import {fs} from '../core/fsclient.js';
 import {caps} from '../core/capabilities.js';
@@ -20,7 +20,7 @@ import {announce} from '../core/a11y.js';
 import {raise} from '../core/errors.js';
 import {copyText} from '../core/clipboard.js';
 import {keysFor} from '../core/keymap.js';
-import {basename, dirname, extname, join, validateName} from '../core/paths.js';
+import {basename, dirname, extname, join, segments, validateName} from '../core/paths.js';
 import {buildContext} from '../core/context.js';
 import config from '../config.js';
 
@@ -395,10 +395,19 @@ function openPreviewTab(path) {
   * clean path with the detected content type, which is what a new browser tab
   * (and any link a user may share) wants.
   */
+function classicBase() {
+     const state = store.get();
+     /* Derive it from the API base when it was never recorded: silently falling
+        back to `/file?path=…` is what turned "open in new tab" into a download. */
+     const base = state.classicBase || String(state.base || '').replace(/\/\.fsapi\/v\d+\/?$/, '');
+     return String(base || '').replace(/\/$/, '');
+}
 function publicUrl(path) {
-     const classic = store.get().classicBase;
-     const rel = String(path ?? '/').replace(/^\/+/, '');
-     return classic ? `${classic.replace(/\/$/, '')}/${rel}` : fs.fileUrl(path);
+     const base = classicBase();
+     if (!base) return fs.fileUrl(path);
+     /* Encode per segment so '/' stays a separator and spaces still resolve. */
+     const rel = segments(path).map(encodeURIComponent).join('/');
+     return rel ? `${base}/${rel}` : `${base}/`;
 }
 
 /** File/folder actions: one registration serves menubar, context menu and palette. */
@@ -667,10 +676,10 @@ function registerFileActions() {
         }],
         selection: {min: 0, kinds: ['file', 'dir']},
         run: (ctx) => {
-            const base = store.get().classicBase;
+            const base = classicBase();
             if (!base) return;
             const path = ctx.resources[0]?.path || '/';
-            window.open(base.replace(/\/$/, '') + path, '_blank', 'noopener');
+            window.open(publicUrl(path), '_blank', 'noopener');
         },
     });
 
@@ -716,10 +725,20 @@ function registerTerminalActions(shell) {
         id: 'terminal', title: 'Terminal', icon: '⌨', location: 'bottom', order: 10,
         create: () => new TerminalPanel(),
     });
+    /**
+     * Mounts the panel *collapsed* and only reveals the dock once a session
+     * actually exists, so a failed start never leaves an empty resizable strip
+     * above the status bar (#1).
+     */
     const openTerminal = async ({cwd = '/', command, label} = {}) => {
-        const panel = shell.showBottomPanel('terminal', {focus: true});
+        const panel = shell.showBottomPanel('terminal', {reveal: false});
         if (!panel) return null;
-        return panel.openSession({cwd, command, label});
+        const session = await panel.openSession({cwd, command, label});
+        if (session) {
+            shell.setBottomVisible(true);
+            panel.focus();
+        }
+        return session;
     };
     ui.openTerminal = openTerminal;
     registerCommand({
@@ -731,10 +750,18 @@ function registerTerminalActions(shell) {
                  ui.toast({severity: 'info', message: 'This server does not provide terminal sessions'});
                  return;
              }
-             const panel = shell.showBottomPanel('terminal', {toggle: true, focus: true});
-             /* Never reveal an empty dock: open a session, and let the panel
-                collapse it again when the last one is closed (#7). */
-              if (panel && shell.isBottomVisible()) await panel.ensureSession();
+             if (shell.isBottomVisible() && store.get().panels.bottom === 'terminal') {
+                 shell.setBottomVisible(false);
+                 return;
+             }
+             /* Reveal only once there is something to show, and let the panel
+                collapse it again when the last session is closed (#7). */
+             const panel = shell.showBottomPanel('terminal', {reveal: false});
+             const session = panel && await panel.ensureSession();
+             if (session) {
+                 shell.setBottomVisible(true);
+                 panel.focus();
+             }
          },
     });
     registerCommand({
@@ -1083,7 +1110,8 @@ async function serverActionResult(descriptor, payload, ctx) {
          return {
              kind: 'toast', severity: 'warn',
              message: `${descriptor.title}: session ready — allow pop-ups to open it automatically`,
-             actions: [{label: 'Open', run: () => window.open(payload.url, '_blank', 'noopener')}],
+             /* Carry the workspace theme across, exactly as the hosted tab does (#3). */
+             actions: [{label: 'Open', run: () => window.open(withTheme(payload.url), '_blank', 'noopener')}],
          };
      }
      if (payload.task) {

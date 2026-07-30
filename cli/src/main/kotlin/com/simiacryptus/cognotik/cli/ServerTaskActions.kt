@@ -163,12 +163,18 @@ object ServerTaskActions {
               which is exactly AutoFix's unit of work; without this anchor it
               was effectively invisible for the common case. */
            ActionMenu("explorer/empty", "7_run", 50),
+           /* Parity with "Run…": every surface that offers to run something also
+              offers to run-and-fix it, including the editor and its tab. */
+           ActionMenu("tab/context", "7_run", 50),
+           ActionMenu("editor/context", "7_run", 50),
           ),
            /* AutoFix works *in a directory*, but it must be offered everywhere
               "Run…" is: a file selection simply names its parent folder, which is
               exactly what the client's sendSelection = "folder" sends. Restricting
-              this to `dir` made it invisible for a file selection. */
-           selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
+              this to `dir` made it invisible for a file selection, and capping the
+              count hid it for a multi-selection (only the first item is used, and
+              only to name its folder). */
+           selection = ActionSelection(min = 0, kinds = listOf("file", "dir")),
           hiddenParams = setOf("dir", "autoFix"),
           sendSelection = "folder", selectionParam = "dir",
         ),

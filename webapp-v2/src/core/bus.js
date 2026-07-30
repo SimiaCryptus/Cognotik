@@ -21,6 +21,7 @@ export const bus = new Bus();
 
 export const Events = Object.freeze({
     VERBOSE_CHANGED: 'verbose-changed',
+     THEME_CHANGED: 'theme-changed',
     CONFIG_LOADED: 'config-loaded',
     CONNECTION_CHANGED: 'connection-changed',
     CONNECTION_ERROR: 'connection-error',

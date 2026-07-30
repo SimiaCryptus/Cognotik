@@ -1,6 +1,7 @@
 import mermaid from 'mermaid';
 import {createLogger} from '../util/logger.js';
 import {isVisible} from '../util/dom.js';
+import {isDarkTheme} from '../config/theme.js';
 
 /** reverse-spec §10.2 — initialised EXACTLY once, from here (fixes §20.3). */
 
@@ -13,7 +14,8 @@ export function initMermaid() {
     mermaid.initialize({
         startOnLoad: false,
         securityLevel: 'loose',
-        theme: 'default',
+         // Themes are applied before any renderer initialises (boot step 0).
+         theme: isDarkTheme() ? 'dark' : 'default',
         logLevel: 3
     });
     initialized = true;

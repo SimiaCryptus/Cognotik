@@ -1,7 +1,7 @@
 /*
-     * Structural CSS only. The colour/layout theme system (the full
-     * --theme-* / --font-* custom-property contract) is deliberately deferred:
-     * see reverse-spec §19.1. Everything here is behaviour-critical.
+     * Structural CSS only. Every colour comes from a `--theme-*` custom property
+     * defined in styles/themes.css (one block per theme, selected with
+     * `html[data-theme="<id>"]` by config/theme.js). Never hard-code a colour here.
      */
 
 :root {
@@ -11,12 +11,6 @@
     --spacing-md: 0.75rem;
     --spacing-lg: 1rem;
     --border-radius-md: 0.5rem;
-    --theme-surface: #ffffff;
-    --theme-background: #f5f5f5;
-    --theme-border: #dddddd;
-    --theme-text: #222222;
-    --theme-primary: #007bff;
-    --theme-error: #b00020;
 }
 
 * {
@@ -79,12 +73,12 @@ body {
 
 .message-user {
     align-self: flex-end;
-    background: #e7f1ff;
+     background: var(--theme-user-bubble);
 }
 
 .message-system {
     font-size: 0.9em;
-    opacity: 0.85;
+     color: var(--theme-text-muted);
 }
 
 .message-error {
@@ -263,8 +257,8 @@ body {
 }
 
 .connection-banner {
-    background: #fff3cd;
-    color: #665200;
+     background: var(--theme-warning-background);
+     color: var(--theme-warning-text);
     padding: var(--spacing-sm);
     border-radius: var(--border-radius-md);
     margin-bottom: var(--spacing-sm);
@@ -307,8 +301,8 @@ body {
     padding: 0.5em 1em;
     font-size: 0.875rem;
     cursor: pointer;
-    color: #fff;
-    background: #4caf50;
+     color: var(--theme-accent-contrast);
+     background: var(--theme-accent);
     border: none;
     border-radius: 0.3125rem;
 }
@@ -329,7 +323,7 @@ body {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgb(0 0 0 / 45%);
+     background: var(--theme-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -381,8 +375,8 @@ body {
     display: block;
     text-align: center;
     padding: var(--spacing-sm);
-    background: #ffeb3b;
-    color: #000;
+     background: var(--theme-archive-background);
+     color: var(--theme-archive-text);
 }
 
 /* ------------------------------------------------------- accessibility */

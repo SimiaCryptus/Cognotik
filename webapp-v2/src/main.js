@@ -1,3 +1,5 @@
+/* Theme tokens first: base.css consumes the --theme-* custom properties. */
+import './styles/themes.css';
 import './styles/base.css';
 
 /* Renderers must be initialised before any content is mounted (§1.2 step 2). */
@@ -23,6 +25,7 @@ import {installVerboseShortcut, syncVerboseDom} from './render/verbose.js';
 
 import {applyAppConfig, fetchAppInfo, loadDevWebSocketConfig} from './config/app-config.js';
 import {applyArchiveBodyClass, isArchive, loadArchivedMessages} from './config/archive.js';
+import {getTheme, installTheme, listThemes, setTheme} from './config/theme.js';
 
 const log = createLogger('App');
 
@@ -33,10 +36,14 @@ const log = createLogger('App');
 export function boot(options = {}) {
     const root = options.root || document.getElementById('root');
     if (!root) throw new Error('Failed to find the root element');
+     // 0. theme — before renderers/DOM so nothing paints with the wrong palette.
+     //    ?theme=dark | ?theme=light | ?theme=auto (default: persisted, else auto)
+     const theme = installTheme({theme: options.theme});
+
 
     // 1. session identity
     const sessionId = resolveSessionId(options.sessionId);
-    log.info(`Starting Cognotik chat v${APP_VERSION}`, {sessionId, archive: isArchive, dev: IS_DEV});
+     log.info(`Starting Cognotik chat v${APP_VERSION}`, {sessionId, theme, archive: isArchive, dev: IS_DEV});
 
     // 2. renderers
     initMermaid();
@@ -88,7 +95,7 @@ export function boot(options = {}) {
         store.hydrate(loadArchivedMessages());
         view.render();
         runPipeline();
-        return {sessionId, store, view, transport: null};
+         return {sessionId, theme, store, view, transport: null};
     }
 
     const composer = new Composer({host: shell.composerHost, transport, store});
@@ -125,15 +132,22 @@ export function boot(options = {}) {
          }
      }, (err) => log.error('appInfo pipeline rejected', err));
 
-    return {sessionId, store, view, transport, composer};
+     return {sessionId, theme, store, view, transport, composer};
 }
 installGlobalErrorHandlers();
 
 
 try {
      const app = boot();
-     // Triage surface: `__cognotik.diagnostics()`, `__cognotik.transport.stats()`.
-     window.__cognotik = {...app, diagnostics: dumpDiagnostics};
+      // Triage/control surface: `__cognotik.diagnostics()`,
+      // `__cognotik.transport.stats()`, `__cognotik.setTheme('dark')`.
+      window.__cognotik = {
+          ...app,
+          diagnostics: dumpDiagnostics,
+          setTheme,
+          getTheme,
+          listThemes
+      };
     log.info('Application started successfully');
 } catch (error) {
      log.error('Critical: failed to start application', {error, diagnostics: dumpDiagnostics()});

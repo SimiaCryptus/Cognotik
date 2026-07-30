@@ -171,8 +171,9 @@ export class AppShell extends Component {
          this.track(bus.on('panel:empty', ({id}) => {
              if (store.get().panels.bottom === id) this.setBottomVisible(false);
          }));
-         /* Double-clicking the divider collapses/restores, as in an IDE. */
-         this.track(on(this.bottomSplitter, 'dblclick', () => this.setBottomVisible(this.bottom.hidden)));
+         /* The divider is only rendered while the dock is open (#1), so a
+            double-click can only mean "collapse". */
+         this.track(on(this.bottomSplitter, 'dblclick', () => this.setBottomVisible(false)));
         let dragging = false;
          const endDrag = (event) => {
              if (!dragging) return;
@@ -184,6 +185,8 @@ export class AppShell extends Component {
              }
          };
         this.track(on(this.bottomSplitter, 'pointerdown', (event) => {
+             /* Defence in depth: a collapsed dock has no height to drag. */
+             if (this.bottom.hidden) return;
              /* Without this the browser claims the gesture (text selection /
                 native drag) and the pointermove stream dies after one event, so
                 the split looked unresizable. */
@@ -208,13 +211,14 @@ export class AppShell extends Component {
          this.track(on(this.bottomSplitter, 'pointercancel', endDrag));
          this.track(on(this.bottomSplitter, 'lostpointercapture', endDrag));
         this.track(on(this.bottomSplitter, 'keydown', (event) => {
+            if (this.bottom.hidden) return;
             const step = event.shiftKey ? 64 : 16;
             const height = this.bottom.getBoundingClientRect().height;
             if (event.key === 'ArrowUp') this.setBottomHeight(height + step);
              else if (event.key === 'ArrowDown') {
                  if (height - step < 96) this.setBottomVisible(false);
                  else this.setBottomHeight(height - step);
-             } else if (event.key === 'Enter') this.setBottomVisible(this.bottom.hidden);
+             } else if (event.key === 'Enter') this.setBottomVisible(false);
             else if (event.key === 'Escape') this.setBottomVisible(false);
             else return;
             event.preventDefault();
@@ -241,8 +245,14 @@ export class AppShell extends Component {
      }
 
 
-    /** Mounts (once) and reveals a registered `location: 'bottom'` panel. */
-    showBottomPanel(id, {toggle = false, focus = false} = {}) {
+    /**
+     * Mounts (once) a registered `location: 'bottom'` panel.
+     *
+     * `reveal: false` mounts it while keeping the dock collapsed, so a caller
+     * that may fail (or produce nothing) never leaves an empty, resizable strip
+     * above the status bar (#1).
+     */
+    showBottomPanel(id, {toggle = false, focus = false, reveal = true} = {}) {
         const visible = !this.bottom.hidden;
         if (toggle && visible && store.get().panels.bottom === id) {
             this.setBottomVisible(false);
@@ -259,8 +269,8 @@ export class AppShell extends Component {
         else instance.mount(this.bottom);
         this.bottom.setAttribute('aria-label', allPanels('bottom').find((p) => p.id === id)?.title || id);
         store.set({panels: {...store.get().panels, bottom: id}});
-        this.setBottomVisible(true);
-        if (focus) instance.focus?.();
+        if (reveal) this.setBottomVisible(true);
+        if (focus && this.isBottomVisible()) instance.focus?.();
         return instance;
     }
 

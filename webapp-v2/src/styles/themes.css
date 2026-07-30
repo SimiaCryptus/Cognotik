@@ -1,0 +1,96 @@
+/*
+     * Theme tokens — the ONLY place colours are declared.
+     *
+     * Contract:
+     *   - `config/theme.js` writes `data-theme="<id>"` on <html>.
+     *   - Every other stylesheet consumes `var(--theme-*)` and never a literal colour.
+     *
+     * Adding a theme ("solarized", "high-contrast", …):
+     *   1. copy the `[data-theme="dark"]` block, rename the selector,
+     *   2. override the tokens you care about (unset ones inherit the light defaults),
+     *   3. register it in THEMES in `src/config/theme.js`.
+     */
+
+    /* ------------------------------------------------------------- light (default) */
+
+    :root,
+    [data-theme="light"] {
+        color-scheme: light;
+
+        --theme-background: #f5f5f5;
+        --theme-surface: #ffffff;
+        --theme-surface-alt: #f0f2f5;
+        --theme-border: #dddddd;
+
+        --theme-text: #222222;
+        --theme-text-muted: #5a6272;
+
+        --theme-primary: #007bff;
+        --theme-primary-contrast: #ffffff;
+        --theme-accent: #4caf50;
+        --theme-accent-contrast: #ffffff;
+        --theme-error: #b00020;
+
+        --theme-user-bubble: #e7f1ff;
+        --theme-code-background: #f6f8fa;
+
+        --theme-warning-background: #fff3cd;
+        --theme-warning-text: #665200;
+
+        --theme-overlay: rgb(0 0 0 / 45%);
+
+        --theme-archive-background: #ffeb3b;
+        --theme-archive-text: #000000;
+    }
+
+    /* ---------------------------------------------------------------------- dark */
+
+    [data-theme="dark"] {
+        color-scheme: dark;
+
+        --theme-background: #14171c;
+        --theme-surface: #1c2027;
+        --theme-surface-alt: #23282f;
+        --theme-border: #333a44;
+
+        --theme-text: #e6e8 eb;
+        --theme-text: #e6e8eb;
+        --theme-text-muted: #9aa4b2;
+
+        --theme-primary: #4c9aff;
+        --theme-primary-contrast: #0b0d10;
+        --theme-accent: #3f9d54;
+        --theme-accent-contrast: #f2f5f7;
+        --theme-error: #ff6b6b;
+
+        --theme-user-bubble: #202a3a;
+        --theme-code-background: #11141a;
+
+        --theme-warning-background: #3a3113;
+        --theme-warning-text: #ffd666;
+
+        --theme-overlay: rgb(0 0 0 / 65%);
+
+        --theme-archive-background: #6b5d0f;
+        --theme-archive-text: #f5f0d0;
+    }
+
+    /*
+     * Template for a new theme — see the header comment.
+     *
+     * [data-theme="high-contrast"] {
+     *     color-scheme: dark;
+     *     --theme-background: #000;
+     *     --theme-surface: #000;
+     *     --theme-text: #fff;
+     *     --theme-border: #fff;
+     *     --theme-primary: #ffe700;
+     * }
+     */
+
+    /* Server-emitted HTML sometimes ships its own light-ish code background. */
+    [data-theme] pre[class*="language-"],
+    [data-theme] code[class*="language-"] {
+        background: var(--theme-code-background);
+        color: var(--theme-text);
+    }
