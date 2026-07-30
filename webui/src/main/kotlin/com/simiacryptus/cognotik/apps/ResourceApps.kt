@@ -30,10 +30,10 @@ open class ResourceApps(
     )
 
     override fun init() {
+        val json = classLoader.getResourceAsStream(resourcePath)
+            ?.bufferedReader()?.readText()
+            ?: throw IllegalStateException("$resourcePath not found on classpath")
         try {
-            val json = classLoader.getResourceAsStream(resourcePath)
-                ?.bufferedReader()?.readText()
-                ?: throw IllegalStateException("$resourcePath not found on classpath")
             val type = object : TypeToken<List<AppJsonEntry>>() {}.type
             val entries: List<AppJsonEntry> = Gson().fromJson(json, type)
             for (entry in entries) {
@@ -69,7 +69,7 @@ open class ResourceApps(
             }
             log.info("Registered ${entries.size} app entries from apps.json")
         } catch (e: Exception) {
-            log.error("Failed to load app directory from apps.json: ${e.message}", e)
+            log.error("Failed to load app directory from apps.json ($resourcePath): ${e.message}", e)
         }
     }
 
