@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -110,14 +111,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
 
   private fun execute(opts: CliOptions): Int {
     val servicesCache = mutableMapOf<File, FileApplicationServices>()
-    ApplicationServices.fileApplicationServices = { rootDir ->
-      servicesCache.getOrPut(rootDir) {
-        object : FileApplicationServices(rootDir) {
-          override val userSettingsManager: UserSettingsInterface
-            get() = UserSettingsManager(rootDir)
-        }
-      }
-    }
+    CliSupport.installFileServices()
     val root = opts.root
     val docsFolder = opts.docsFolder ?: root
     if (!root.isDirectory) throw IllegalArgumentException("root is not a directory: ${root.absolutePath}")

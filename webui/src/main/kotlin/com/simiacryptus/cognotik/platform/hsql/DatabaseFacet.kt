@@ -425,12 +425,8 @@ class DatabaseFacet(
     companion object {
         private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
 
-        var root: String? = System.getProperty("cognotik.db.root") ?: File(
-            System.getProperty(
-                "user.home",
-                "."
-            )
-        ).resolve(".cognotik").absolutePath
+        var root: String = System.getProperty("cognotik.db.root")
+            ?: File(System.getProperty("user.home", ".")).resolve(".cognotik").absolutePath
         val dbName = System.getProperty("cognotik.db.dbName")
         val serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
         val serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")

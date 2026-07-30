@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.UnifiedHarness
@@ -46,6 +47,7 @@ object CliSupport {
    */
   fun installFileServices() {
     val servicesCache = mutableMapOf<File, FileApplicationServices>()
+    DatabaseFacet.root = File(".").absolutePath
     ApplicationServices.fileApplicationServices = { rootDir ->
       servicesCache.getOrPut(rootDir) {
         object : FileApplicationServices(rootDir) {

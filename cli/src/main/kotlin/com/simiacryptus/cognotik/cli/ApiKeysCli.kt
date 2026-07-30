@@ -5,6 +5,7 @@ package com.simiacryptus.cognotik.cli
     import com.simiacryptus.cognotik.platform.ApplicationServices
     import com.simiacryptus.cognotik.platform.FileApplicationServices
     import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+    import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
     import com.simiacryptus.cognotik.platform.model.ApiData
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
@@ -266,14 +267,7 @@ package com.simiacryptus.cognotik.cli
       private fun installServices(root: File) {
         try {
           val cache = mutableMapOf<File, FileApplicationServices>()
-          ApplicationServices.fileApplicationServices = { rootDir ->
-            cache.getOrPut(rootDir) {
-              object : FileApplicationServices(rootDir) {
-                override val userSettingsManager: UserSettingsInterface
-                  get() = UserSettingsManager(rootDir)
-              }
-            }
-          }
+          CliSupport.installFileServices()
         } catch (e: Exception) {
           // Already configured (and possibly locked) by a host process; use whatever is installed.
           System.err.println("warning: using pre-installed application services: ${e.message}")

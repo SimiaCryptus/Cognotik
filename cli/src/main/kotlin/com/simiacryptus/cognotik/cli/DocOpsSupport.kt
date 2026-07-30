@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.UnifiedHarness
@@ -49,18 +50,6 @@ object DocOpsSupport {
       ?: System.getProperty("user.email")
       ?: "user@localhost"
   )
-
-  /** Idempotent per (root) - safe to call from every request. */
-  fun installFileApplicationServices() {
-    ApplicationServices.fileApplicationServices = { rootDir ->
-      servicesCache.getOrPut(rootDir) {
-        object : FileApplicationServices(rootDir) {
-          override val userSettingsManager: UserSettingsInterface
-            get() = UserSettingsManager(rootDir)
-        }
-      }
-    }
-  }
 
   /**
    * Minimal, headless equivalent of what the app server does at boot: register dynamic enums
