@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import java.io.File
+import kotlin.system.exitProcess
 
 /**
  * Shared, headless bootstrap for the reference CLIs (`docops`, `autofix`, ...).
@@ -88,6 +89,19 @@ object CliSupport {
   } else {
     "Available models (${available.size}):\n" +
         available.values.map { it.modelId }.distinct().sorted().joinToString("\n") { "  $it" }
+  }
+
+  fun escapeJs(s: String): String = s
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
+    .replace("'", "\\'")
+    .replace("\n", "\\n")
+    .replace("\r", "\\r")
+
+  fun fail(message: String): Nothing {
+    System.err.println("error: $message")
+    System.err.println()
+    exitProcess(2)
   }
 
   fun resolveModel(modelId: String, available: Map<String, ChatModel>): ChatModel {
