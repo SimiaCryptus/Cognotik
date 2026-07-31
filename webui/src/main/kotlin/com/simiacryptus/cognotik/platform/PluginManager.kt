@@ -261,7 +261,9 @@ class PluginManager(
 
     val plugin = clazz.getDeclaredConstructor().newInstance() as CognotikPlugin
     log.info("Initializing plugin: {} from {}", plugin.pluginName, canonicalPath)
-    plugin.init()
+    try { plugin.init() } catch (e: Throwable) {
+      log.warn("Failed to initialize plugin: {} from {}", plugin.pluginName, canonicalPath, e)
+    }
 
     synchronized(this) {
       val existing = loadedPlugins.getOrDefault(canonicalPath, emptyList())

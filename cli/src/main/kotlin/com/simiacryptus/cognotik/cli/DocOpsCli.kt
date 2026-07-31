@@ -60,7 +60,8 @@ import kotlin.system.exitProcess
  */
 object DocOpsCli {
 
-private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", "help")
+  private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", "help")
+
   /** Cap on how many context files are enumerated per task by [printPlan]. */
   private const val MAX_CONTEXT_FILES_SHOWN = 8
 
@@ -81,19 +82,20 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     try {
       exitCode = execute(opts)
     } catch (e: Throwable) {
-       System.err.println("docops: ${e.javaClass.simpleName}: ${e.message ?: e.toString()}")
-       generateSequence(e.cause) { it.cause }.take(3).forEach {
-         System.err.println("  caused by: ${it.javaClass.simpleName}: ${it.message}")
-       }
-       if (System.getenv("COGNOTIK_DEBUG") == null) {
-         System.err.println("  (set COGNOTIK_DEBUG=1 for a stack trace)")
-       }
+      System.err.println("docops: ${e.javaClass.simpleName}: ${e.message ?: e.toString()}")
+      generateSequence(e.cause) { it.cause }.take(3).forEach {
+        System.err.println("  caused by: ${it.javaClass.simpleName}: ${it.message}")
+      }
+      if (System.getenv("COGNOTIK_DEBUG") == null) {
+        System.err.println("  (set COGNOTIK_DEBUG=1 for a stack trace)")
+      }
       if (System.getenv("COGNOTIK_DEBUG") != null) e.printStackTrace()
       exitCode = 1
     }
     // One-shot CLI: never linger.
     exitProcess(exitCode)
   }
+
   /**
    * Programmatic entry point: identical to [main] but returns the exit code instead of
    * killing the JVM, so an embedding process (e.g. the file server's `docops` FS action)
@@ -122,12 +124,12 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
         printStatus(JsonFileDocStatusStore(root).read())
         return 0
       }
-       // Credential setup needs the settings store but no model and no server.
-       "keys" -> return ApiKeysCli.configure(
-         root = root,
-         user = defaultUser(),
-         installServices = false,
-       )
+      // Credential setup needs the settings store but no model and no server.
+      "keys" -> return ApiKeysCli.configure(
+        root = root,
+        user = defaultUser(),
+        installServices = false,
+      )
 
       "vars" -> {
         val files = resolveDocFiles(opts, root, docsFolder)
@@ -144,7 +146,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
       }
     }
 
-     val user = defaultUser()
+    val user = defaultUser()
     bootstrapPlatform(user)
 
     if (opts.command == "models") {
@@ -245,12 +247,12 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
    * (task types, providers, runtimes), install a single-local-user auth stack, and tell the
    * orchestrator how to build chat clients from a model + user pair.
    */
-   private fun defaultUser(): User = User(
-     id = "1",
-     email = System.getenv("EMAIL")
-       ?: System.getProperty("user.email")
-       ?: "user@localhost"
-   )
+  private fun defaultUser(): User = User(
+    id = "1",
+    email = System.getenv("EMAIL")
+      ?: System.getProperty("user.email")
+      ?: "user@localhost"
+  )
 
   private fun bootstrapPlatform(user: User) {
     require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" }
@@ -385,50 +387,50 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
 
   private fun printPlan(plan: WorkPlan<PlatformTaskKind>, root: File, mode: UpdateMode) {
     println("Plan: ${plan.tasks.size} task(s) in ${plan.queues.size} queue(s) [mode=$mode]")
-     var taskNumber = 0
-     plan.queues.filter { !it.isEmpty }.forEachIndexed { queueIndex, queue ->
-       println("  Queue ${queueIndex + 1}/${plan.queues.size} (${queue.tasks.size} task(s), run sequentially):")
-       queue.tasks.forEach { planned ->
-         taskNumber++
-         val target = planned.target.relativeToOrAbsolute(root)
-         val verb = if (planned.target.file.exists()) "update" else "create"
-         println("    [$taskNumber] $verb ${'$'}target  [${planned.task.taskType.name}]")
-         val data = planned.task.data
-         data.main_file?.let { main ->
-           val mainPath = relative(root, main)
-           if (mainPath != target) println("         main:    $mainPath")
-         }
-         if (data.doc_files.isNotEmpty()) {
-           println("         doc(s):  " + data.doc_files.joinToString(", ") { relative(root, it) })
-         }
-         val context = data.related_files.orEmpty()
-         if (context.isNotEmpty()) {
-           println("         context (${context.size}):")
-           context.take(MAX_CONTEXT_FILES_SHOWN).forEach { println("           - ${relative(root, it)}") }
-           if (context.size > MAX_CONTEXT_FILES_SHOWN) {
-             println("           - ... and ${context.size - MAX_CONTEXT_FILES_SHOWN} more")
-           }
-         }
-         if (planned.preparation.deleteTargetBeforeRun) {
-           println("         note:    existing target is deleted before this task runs")
-         }
-       }
-     }
-     val targets = plan.tasks.map { it.target }.distinct().sorted()
-     if (targets.isNotEmpty()) {
-       println("Target files (${targets.size}):")
-       targets.forEach { target ->
-         val verb = if (target.file.exists()) "update" else "create"
-         println("  ${verb.padEnd(6)} ${target.relativeToOrAbsolute(root)}")
-       }
-     }
+    var taskNumber = 0
+    plan.queues.filter { !it.isEmpty }.forEachIndexed { queueIndex, queue ->
+      println("  Queue ${queueIndex + 1}/${plan.queues.size} (${queue.tasks.size} task(s), run sequentially):")
+      queue.tasks.forEach { planned ->
+        taskNumber++
+        val target = planned.target.relativeToOrAbsolute(root)
+        val verb = if (planned.target.file.exists()) "update" else "create"
+        println("    [$taskNumber] $verb ${'$'}target  [${planned.task.taskType.name}]")
+        val data = planned.task.data
+        data.main_file?.let { main ->
+          val mainPath = relative(root, main)
+          if (mainPath != target) println("         main:    $mainPath")
+        }
+        if (data.doc_files.isNotEmpty()) {
+          println("         doc(s):  " + data.doc_files.joinToString(", ") { relative(root, it) })
+        }
+        val context = data.related_files.orEmpty()
+        if (context.isNotEmpty()) {
+          println("         context (${context.size}):")
+          context.take(MAX_CONTEXT_FILES_SHOWN).forEach { println("           - ${relative(root, it)}") }
+          if (context.size > MAX_CONTEXT_FILES_SHOWN) {
+            println("           - ... and ${context.size - MAX_CONTEXT_FILES_SHOWN} more")
+          }
+        }
+        if (planned.preparation.deleteTargetBeforeRun) {
+          println("         note:    existing target is deleted before this task runs")
+        }
+      }
+    }
+    val targets = plan.tasks.map { it.target }.distinct().sorted()
+    if (targets.isNotEmpty()) {
+      println("Target files (${targets.size}):")
+      targets.forEach { target ->
+        val verb = if (target.file.exists()) "update" else "create"
+        println("  ${verb.padEnd(6)} ${target.relativeToOrAbsolute(root)}")
+      }
+    }
     if (plan.skipped.isNotEmpty()) {
       println("Skipped (${plan.skipped.size}):")
-       plan.skipped.forEach { println("  ${it.target.relativeToOrAbsolute(root)}: ${it.reason}") }
+      plan.skipped.forEach { println("  ${it.target.relativeToOrAbsolute(root)}: ${it.reason}") }
     }
     if (plan.failed.isNotEmpty()) {
       println("Failed to plan (${plan.failed.size}):")
-       plan.failed.forEach { println("  ${it.target.relativeToOrAbsolute(root)}: ${it.error}") }
+      plan.failed.forEach { println("  ${it.target.relativeToOrAbsolute(root)}: ${it.error}") }
     }
   }
 
@@ -472,6 +474,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     val paths: MutableList<String> = mutableListOf()
     var root: File = File(".").canonicalFile
     var docsFolder: File? = null
+
     /** Explicit single documents from repeated `--doc FILE`. */
     val docFiles: MutableList<String> = mutableListOf()
     var mode: String = "PatchToUpdate"
@@ -489,6 +492,7 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
     var autoFix: Boolean = true
     var help: Boolean = false
     val templateVars: MutableMap<String, String> = linkedMapOf()
+
     /** True when the user named documents explicitly instead of scanning `--docs`. */
     val hasExplicitDocs: Boolean get() = paths.isNotEmpty() || docFiles.isNotEmpty()
   }
@@ -533,7 +537,8 @@ private val COMMANDS = setOf("plan", "run", "status", "vars", "models", "keys", 
           opts.serverless = true
           opts.monitor = false
         }
-        arg =="--email" -> email = args.getOrNull(++i) ?: throw IllegalArgumentException("missing value for --email")
+
+        arg == "--email" -> email = args.getOrNull(++i) ?: throw IllegalArgumentException("missing value for --email")
 
         arg == "--open" -> opts.openBrowser = true
         arg == "--no-auto-fix" -> opts.autoFix = false

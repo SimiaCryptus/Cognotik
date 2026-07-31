@@ -33,7 +33,11 @@ class PluginStartupActivity : ProjectActivity {
 
     init {
         require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
-        ResourceApps("apps/apps.json").init()
+        try {
+            ResourceApps("apps/apps.json").init()
+        } catch (e: Exception) {
+            log.error("Failed to load apps.json", e)
+        }
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
