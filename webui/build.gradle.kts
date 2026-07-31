@@ -126,18 +126,94 @@ dependencies {
 
 /* ---------------------------------------------------------------------------
   * Frontend build (pnpm). No gradle-node plugin: just shell out to pnpm.
-  * Requires `pnpm` on PATH (e.g. `corepack enable`).
+   * Prefers `pnpm` on PATH (e.g. `corepack enable`), but degrades gracefully:
+   * if pnpm cannot be located and the webapp output is already present, the
+   * pre-built resources are reused instead of failing the build.
   * Use -PskipWebapp to build the JVM artifacts without touching the frontend.
+   * Use -PpnpmPath=/path/to/pnpm (or PNPM_PATH env var) to point at pnpm.
+   * Use -PstrictWebapp to fail when pnpm is missing and nothing is pre-built.
   * ------------------------------------------------------------------------ */
 val webappDir = file("${project.projectDir}/../webapp-v2")
-val pnpm = if (System.getProperty("os.name").lowercase().contains("windows")) "pnpm.cmd" else "/home/andrew/.local/share/pnpm/bin/pnpm" // TODO: Fix this hack with a more robust and configurable discovery
+val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+
+fun locatePnpm(): String? {
+     val explicit = (providers.gradleProperty("pnpmPath").orNull
+         ?: System.getenv("PNPM_PATH"))?.takeIf { it.isNotBlank() }
+     if (explicit != null) {
+         val f = File(explicit)
+         if (f.isFile && f.canExecute()) return f.absolutePath
+         logger.warn("Configured pnpm path '$explicit' is not an executable file; falling back to discovery.")
+     }
+     val candidateNames = if (isWindows) listOf("pnpm.cmd", "pnpm.exe", "pnpm.bat", "pnpm") else listOf("pnpm")
+     val home = System.getProperty("user.home") ?: ""
+     val searchDirs = buildList {
+         (System.getenv("PATH") ?: "").split(File.pathSeparator)
+             .filter { it.isNotBlank() }
+             .forEach { add(File(it)) }
+         System.getenv("PNPM_HOME")?.takeIf { it.isNotBlank() }?.let { add(File(it)) }
+         if (home.isNotBlank()) {
+             add(File(home, ".local/share/pnpm"))
+             add(File(home, ".local/share/pnpm/bin"))
+             add(File(home, ".local/bin"))
+             add(File(home, "AppData/Local/pnpm"))
+             add(File(home, "AppData/Roaming/npm"))
+         }
+         add(File("/usr/local/bin"))
+         add(File("/usr/bin"))
+         add(File("/opt/homebrew/bin"))
+     }
+     for (dir in searchDirs) {
+         for (name in candidateNames) {
+             val f = File(dir, name)
+             if (f.isFile && f.canExecute()) return f.absolutePath
+         }
+     }
+     return null
+}
+
+val pnpmExecutable: String? = locatePnpm()
+
+/* Fallback command so Exec tasks stay configurable even when pnpm is absent;
+  * such tasks are disabled via onlyIf and never actually run. */
+val pnpm: String = pnpmExecutable ?: if (isWindows) "pnpm.cmd" else "pnpm"
 val skipWebapp = providers.gradleProperty("skipWebapp").isPresent
+val strictWebapp = providers.gradleProperty("strictWebapp").isPresent
 val sassVersion = "1.83.0"
+
+fun File.hasContent(): Boolean = isDirectory && (listFiles()?.isNotEmpty() ?: false)
+
+val prebuiltWebappPresent =
+     File(webappDir, "build").hasContent() ||
+         File(projectDir, "src/main/resources/application").hasContent()
+
+/* Decide once, at configuration time, whether the frontend tasks can run. */
+val webappBuildEnabled: Boolean = when {
+     skipWebapp -> false
+     pnpmExecutable != null -> true
+     prebuiltWebappPresent -> {
+         logger.lifecycle(
+             "pnpm executable not found; reusing pre-built webapp resources " +
+                 "(pass -PpnpmPath=/path/to/pnpm to rebuild the frontend)."
+         )
+         false
+     }
+     strictWebapp -> throw GradleException(
+         "pnpm executable not found and no pre-built webapp resources are available. " +
+             "Install pnpm (corepack enable), set -PpnpmPath=/path/to/pnpm, or build with -PskipWebapp."
+     )
+     else -> {
+         logger.warn(
+             "pnpm executable not found and no pre-built webapp resources were detected; " +
+                 "skipping frontend build. The resulting artifact may not contain the web UI."
+         )
+         false
+     }
+}
 
 tasks.register<Exec>("pnpmInstall") {
      group = "webapp"
      description = "Installs webapp-v2 dependencies via pnpm"
-     onlyIf { !skipWebapp }
+      onlyIf { webappBuildEnabled }
      workingDir = webappDir
      commandLine(pnpm, "install")
      inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"))
@@ -147,7 +223,7 @@ tasks.register<Exec>("pnpmInstall") {
 tasks.register<Exec>("buildWebapp") {
      group = "webapp"
      description = "Builds webapp-v2 via pnpm"
-     onlyIf { !skipWebapp }
+      onlyIf { webappBuildEnabled }
      dependsOn("pnpmInstall")
      workingDir = webappDir
      commandLine(pnpm, "run", "build")
@@ -159,20 +235,23 @@ tasks.register<Exec>("buildWebapp") {
 // Copy webapp build output to resources
 tasks.register<Copy>("copyWebappBuild") {
     dependsOn("buildWebapp")
-     onlyIf { !skipWebapp }
+      /* Nothing to copy when the frontend build was skipped and no output exists. */
+      onlyIf { !skipWebapp && File(webappDir, "build").hasContent() }
     from("../webapp-v2/build")
     into("src/main/resources/application")
 }
 
 tasks.register<Copy>("copyWebappStatic") {
     dependsOn("buildWebapp")
-     onlyIf { !skipWebapp }
+      onlyIf { !skipWebapp && File(webappDir, "build/static").hasContent() }
     from("../webapp-v2/build/static")
     into("src/main/resources/welcome/static")
 }
 
 // Clean webapp build artifacts
 tasks.register<Delete>("cleanWebapp") {
+     /* Never wipe pre-built output we cannot regenerate without pnpm. */
+     onlyIf { pnpmExecutable != null }
     delete("../webapp-v2/build")
     delete("src/main/resources/application/static")
     delete("src/main/resources/welcome/static")
@@ -186,7 +265,7 @@ tasks.clean {
 tasks.register<Exec>("compileSass") {
      group = "webapp"
      description = "Compiles shared SCSS to build/resources/main/css"
-     onlyIf { !skipWebapp }
+      onlyIf { webappBuildEnabled && File(projectDir, "src/main/resources/shared").hasContent() }
      workingDir = projectDir
      commandLine(
          pnpm, "dlx", "sass@$sassVersion",

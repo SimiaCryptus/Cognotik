@@ -31,7 +31,6 @@ package com.simiacryptus.cognotik.platform.hsql
         @BeforeEach
         fun setUp() {
             SecureString.key = SecureString.randomKey()
-            DatabaseFacet.root = null
             // Use null root => in-memory ephemeral HSQL database (mem:<dbName>).
             manager = UserSettingsDB()
             // Clean DB between tests to ensure isolation.

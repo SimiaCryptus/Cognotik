@@ -2,8 +2,16 @@ import {h} from '../../core/dom.js';
 import {fs} from '../../core/fsclient.js';
 import {formatBytes, basename} from '../../core/paths.js';
 import {isImage} from '../../core/mime.js';
+import {publicUrl} from '../../core/urls.js';
 
-/** image/* viewer: alt text is the filename, keyboard zoom included. */
+/**
+* image/* viewer: alt text is the filename, keyboard zoom included.
+*
+* The bytes are requested through the clean (classic) path so the browser sees
+* the detected content type; `/file?path=…` answers application/octet-stream,
+* which a nosniff-protected <img> refuses. If that path does not exist the
+* v2 endpoint is used as a fallback.
+*/
 export class ImageViewer {
     static id = 'image';
 
@@ -14,14 +22,32 @@ export class ImageViewer {
     constructor(ctx) {
         this.ctx = ctx;
         this.zoom = 1;
-        this.img = h('img', {alt: basename(ctx.tab.path), src: fs.fileUrl(ctx.tab.path)});
+        this.zoomLabel = h('span', {class: 'fs-image__zoom', role: 'status', text: '100%'});
+        this.caption = h('p', {class: 'fs-image__caption'});
+        this.img = h('img', {
+            alt: basename(ctx.tab.path), src: publicUrl(ctx.tab.path), decoding: 'async',
+        });
+        this.img.addEventListener('load', () => {
+            this.caption.textContent =
+                `${this.img.naturalWidth} × ${this.img.naturalHeight} px · ${formatBytes(ctx.tab.size)}`;
+        });
+        this.img.addEventListener('error', () => {
+            if (this.img.dataset.fallback) {
+                this.caption.textContent = 'This image could not be displayed.';
+                return;
+            }
+            this.img.dataset.fallback = '1';
+            this.img.src = fs.fileUrl(ctx.tab.path);
+        });
         this.el = h('div', {class: 'fs-image', tabindex: '0'}, [
             h('div', {role: 'toolbar', 'aria-label': 'Image'}, [
                 h('button', {type: 'button', text: 'Zoom in', onclick: () => this.setZoom(this.zoom * 1.25)}),
                 h('button', {type: 'button', text: 'Zoom out', onclick: () => this.setZoom(this.zoom / 1.25)}),
                 h('button', {type: 'button', text: 'Fit', onclick: () => this.setZoom(1)}),
+                this.zoomLabel,
             ]),
             this.img,
+            this.caption,
         ]);
         this.el.addEventListener('keydown', (event) => {
             if (event.key === '+' || event.key === '=') this.setZoom(this.zoom * 1.25);
@@ -33,6 +59,7 @@ export class ImageViewer {
     setZoom(value) {
         this.zoom = Math.min(8, Math.max(0.1, value));
         this.img.style.transform = `scale(${this.zoom})`;
+        this.zoomLabel.textContent = `${Math.round(this.zoom * 100)}%`;
         this.ctx.onCursor?.({});
     }
 

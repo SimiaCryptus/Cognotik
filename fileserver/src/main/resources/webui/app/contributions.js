@@ -6,6 +6,8 @@ import {MonacoEditor} from '../components/editors/MonacoEditor.js';
 import {PlainTextEditor} from '../components/editors/PlainTextEditor.js';
 import {ImageViewer, BinaryPlaceholder} from '../components/editors/SimpleEditors.js';
 import {HtmlPreview} from '../components/editors/HtmlPreview.js';
+import {MarkdownPreview} from '../components/editors/MarkdownPreview.js';
+import {TablePreview} from '../components/editors/TablePreview.js';
 import {openQuickPick} from '../components/overlays/QuickPick.js';
 import {TerminalPanel} from '../components/terminal/TerminalPanel.js';
 import {ChatSessionEditor, openChatTab, requestChatSession, withTheme} from '../components/chat/ChatSession.js';
@@ -20,7 +22,8 @@ import {announce} from '../core/a11y.js';
 import {raise} from '../core/errors.js';
 import {copyText} from '../core/clipboard.js';
 import {keysFor} from '../core/keymap.js';
-import {basename, dirname, extname, join, segments, validateName} from '../core/paths.js';
+import {basename, dirname, extname, join, validateName} from '../core/paths.js';
+import {classicBase, publicUrl} from '../core/urls.js';
 import {buildContext} from '../core/context.js';
 import config from '../config.js';
 
@@ -51,6 +54,21 @@ function registerEditors() {
          priority: 200,
          canOpen: HtmlPreview.canOpen,
          create: (ctx) => new HtmlPreview(ctx)
+     });
+     /* Rendered Markdown / delimited text. Like HtmlPreview these are only ever
+        matched by a preview tab (their stat carries `previewKind`), so the same
+        document still opens in Monaco for editing. */
+     registerEditor({
+         id: MarkdownPreview.id,
+         priority: 260,
+         canOpen: MarkdownPreview.canOpen,
+         create: (ctx) => new MarkdownPreview(ctx),
+     });
+     registerEditor({
+         id: TablePreview.id,
+         priority: 250,
+         canOpen: TablePreview.canOpen,
+         create: (ctx) => new TablePreview(ctx),
      });
     registerEditor({
         id: MonacoEditor.id,
@@ -367,47 +385,53 @@ function registerEditorActions() {
 }
 
 
+/* ------------------------------------------------------------------ preview */
+/** Documents the browser renders itself, inside a sandboxed iframe. */
+const IFRAME_PREVIEW = new Set(['html', 'htm', 'xhtml', 'svg', 'pdf']);
+/** Rendered by MarkdownPreview (marked.js from /lib/). */
+const MARKDOWN_PREVIEW = new Set(['md', 'markdown', 'mdown', 'mkd', 'mkdn']);
+/** Rendered by TablePreview. */
+const TABLE_PREVIEW = new Set(['csv', 'tsv', 'tab']);
+/** Rendered by ImageViewer (the real editor, not a virtual tab). */
+const IMAGE_PREVIEW = new Set([
+     'png', 'apng', 'jpg', 'jpeg', 'jfif', 'gif', 'webp', 'avif', 'bmp', 'ico', 'tif', 'tiff',
+]);
 /** Extensions worth rendering rather than editing (see 'file.view'). */
-const PREVIEWABLE = new Set(['html', 'htm', 'xhtml', 'svg', 'pdf']);
+const PREVIEWABLE = new Set([
+     ...IFRAME_PREVIEW, ...MARKDOWN_PREVIEW, ...TABLE_PREVIEW, ...IMAGE_PREVIEW,
+]);
+
+function previewKindFor(path) {
+     const ext = extname(path);
+     if (MARKDOWN_PREVIEW.has(ext)) return 'markdown';
+     if (TABLE_PREVIEW.has(ext)) return 'table';
+     if (IMAGE_PREVIEW.has(ext)) return 'image';
+     return 'iframe';
+}
 /** Extensions for which "Run…" is meaningful; '' covers launchers (gradlew). */
 const RUNNABLE = new Set([
      '', 'sh', 'bash', 'zsh', 'py', 'js', 'mjs', 'cjs', 'ts', 'rb', 'pl', 'php',
      'ps1', 'bat', 'cmd', 'jar', 'exe', 'kts', 'groovy', 'gradle',
 ]);
 
-/** Opens a read-only preview tab hosting the file in a sandboxed iframe. */
-function openPreviewTab(path) {
-     const previewPath = `fs-preview:${path}`;
-     return tabs.open(previewPath, {
-         pinned: true, virtual: true,
-         stat: {
-             path: previewPath, type: 'file', size: 0, readOnly: true,
-             mimeType: 'text/html', previewUrl: publicUrl(path), sourcePath: path,
-         },
-     });
-}
 /**
-  * The user- and SEO-friendly URL for a file: `/files/root/dir/page.html`.
+  * Opens a read-only preview tab for `path`.
   *
-  * The v2 endpoint (`/file?path=…`) defaults to application/octet-stream for
-  * programmatic readers, so a browser navigating to it downloads the file
-  * instead of rendering it. The classic servlet serves the same bytes under a
-  * clean path with the detected content type, which is what a new browser tab
-  * (and any link a user may share) wants.
+  * HTML/SVG/PDF are hosted in a sandboxed iframe, Markdown and CSV/TSV are
+  * rendered by their own editors, and an image simply opens in the image
+  * viewer — it needs no second representation.
   */
-function classicBase() {
-     const state = store.get();
-     /* Derive it from the API base when it was never recorded: silently falling
-        back to `/file?path=…` is what turned "open in new tab" into a download. */
-     const base = state.classicBase || String(state.base || '').replace(/\/\.fsapi\/v\d+\/?$/, '');
-     return String(base || '').replace(/\/$/, '');
-}
-function publicUrl(path) {
-     const base = classicBase();
-     if (!base) return fs.fileUrl(path);
-     /* Encode per segment so '/' stays a separator and spaces still resolve. */
-     const rel = segments(path).map(encodeURIComponent).join('/');
-     return rel ? `${base}/${rel}` : `${base}/`;
+function openPreviewTab(path) {
+     const kind = previewKindFor(path);
+     if (kind === 'image') return ui.openPath(path, {pinned: true});
+     const previewPath = `fs-preview:${path}`;
+     const stat = {
+         path: previewPath, type: 'file', size: 0, readOnly: true,
+         mimeType: 'text/html', sourcePath: path, title: basename(path),
+     };
+     if (kind === 'iframe') stat.previewUrl = publicUrl(path);
+     else stat.previewKind = kind;
+     return tabs.open(previewPath, {pinned: true, virtual: true, stat});
 }
 
 /** File/folder actions: one registration serves menubar, context menu and palette. */
@@ -433,7 +457,7 @@ function registerFileActions() {
     });
      registerAction({
          id: 'file.view', title: 'View', icon: '🌐',
-         description: 'Render the document in a preview tab',
+         description: 'Render the document (Markdown, HTML, table, image) in a preview tab',
          menus: [
              {anchor: 'explorer/context', group: '1_open', order: 5},
              {anchor: 'tab/context', group: '1_open', order: 5},
@@ -443,7 +467,10 @@ function registerFileActions() {
          hideWhenDisabled: true,
          enablement: (ctx) => PREVIEWABLE.has(extname(ctx.resources[0]?.path || '')),
          update: (ctx, p) => {
-             p.text = `View ${ctx.resources[0].name}`;
+             const kind = previewKindFor(ctx.resources[0].path);
+             p.text = kind === 'markdown' || kind === 'table'
+                 ? `Preview ${ctx.resources[0].name}`
+                 : `View ${ctx.resources[0].name}`;
          },
          run: async (ctx) => {
              await ui.openPreview(ctx.resources[0].path);

@@ -444,11 +444,11 @@
 }
 
 .fs-image img {
-    max-width: 100%;
-    border-radius: var(--fs-radius-md);
-    box-shadow: var(--fs-shadow-2);
-    transform-origin: center top;
-    transition: transform var(--fs-motion) var(--fs-ease-out);
+     max-width: 100%;
+     border-radius: var(--fs-radius-md);
+     box-shadow: var(--fs-shadow-2);
+     transform-origin: center top;
+     transition: transform var(--fs-motion) var(--fs-ease-out);
     /* Checkerboard so transparent PNGs read correctly in both themes. */
     background-image:
             linear-gradient(45deg, var(--fs-bg-sunken) 25%, transparent 25%),
@@ -457,6 +457,17 @@
             linear-gradient(-45deg, transparent 75%, var(--fs-bg-sunken) 75%);
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+.fs-image__zoom {
+    padding-inline: var(--fs-space-3);
+    color: var(--fs-fg-subtle);
+    font-size: var(--fs-text-xs);
+    font-variant-numeric: tabular-nums;
+}
+.fs-image__caption {
+    color: var(--fs-fg-subtle);
+    font-size: var(--fs-text-xs);
+    font-variant-numeric: tabular-nums;
 }
 
 /* ------------------------------------------------------------- overlays */
@@ -1252,4 +1263,132 @@ dialog.fs-modal::backdrop {
     width: 100%;
     border: 0;
     background: #ffffff;
+}
+.fs-preview__status {
+    color: var(--fs-fg-subtle);
+    font-size: var(--fs-text-xs);
+}
+/* -------------------------------------------------------- markdown preview */
+.fs-markdown {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--fs-space-6) clamp(var(--fs-space-5), 5vw, var(--fs-space-8));
+    background: var(--fs-bg);
+    line-height: 1.65;
+    font-size: var(--fs-text-md);
+}
+.fs-markdown:focus-visible {
+    outline: 2px solid var(--fs-focus-ring);
+    outline-offset: -3px;
+}
+.fs-markdown__body {
+    max-width: 84ch;
+    margin-inline: auto;
+}
+.fs-markdown__body > * + * {
+    margin-block-start: var(--fs-space-4);
+}
+.fs-markdown h1, .fs-markdown h2, .fs-markdown h3,
+.fs-markdown h4, .fs-markdown h5, .fs-markdown h6 {
+    margin-block-start: var(--fs-space-6);
+    letter-spacing: var(--fs-tracking-tight);
+}
+.fs-markdown h1, .fs-markdown h2 {
+    padding-block-end: var(--fs-space-2);
+    border-block-end: 1px solid var(--fs-hairline);
+}
+.fs-markdown a {
+    text-decoration: underline;
+}
+.fs-markdown img {
+    max-width: 100%;
+    border-radius: var(--fs-radius);
+}
+.fs-markdown code {
+    padding: 1px 4px;
+    background: var(--fs-bg-sunken);
+    border-radius: var(--fs-radius-xs);
+}
+.fs-markdown pre {
+    padding: var(--fs-space-4);
+    overflow: auto;
+    background: var(--fs-bg-sunken);
+    border: 1px solid var(--fs-hairline);
+    border-radius: var(--fs-radius-md);
+}
+.fs-markdown pre code {
+    padding: 0;
+    background: transparent;
+}
+.fs-markdown blockquote {
+    padding: var(--fs-space-1) var(--fs-space-4);
+    border-inline-start: 3px solid var(--fs-accent);
+    background: var(--fs-accent-soft);
+    border-radius: 0 var(--fs-radius) var(--fs-radius) 0;
+    color: var(--fs-fg-muted);
+}
+.fs-markdown hr {
+    border: 0;
+    border-block-start: 1px solid var(--fs-hairline);
+}
+.fs-markdown table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.fs-markdown th, .fs-markdown td {
+    padding: var(--fs-space-2) var(--fs-space-3);
+    border: 1px solid var(--fs-border);
+    text-align: start;
+}
+.fs-markdown thead th {
+    background: var(--fs-bg-sunken);
+}
+.fs-markdown :is(ul, ol) {
+    padding-inline-start: var(--fs-space-6);
+}
+.fs-markdown li + li {
+    margin-block-start: var(--fs-space-2);
+}
+/* ----------------------------------------------------------- table preview */
+.fs-table-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: var(--fs-bg);
+}
+.fs-table-wrap:focus-visible {
+    outline: 2px solid var(--fs-focus-ring);
+    outline-offset: -3px;
+}
+table.fs-table {
+    border-collapse: collapse;
+    font-family: var(--fs-font-mono);
+    font-size: var(--fs-text-xs);
+}
+.fs-table th, .fs-table td {
+    max-width: 48ch;
+    padding: 2px var(--fs-space-3);
+    border: 1px solid var(--fs-border);
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: start;
+}
+.fs-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--fs-bg-sunken);
+    font-weight: 650;
+}
+.fs-table tbody tr:nth-child(even) {
+    background: color-mix(in oklab, var(--fs-fg) 3%, transparent);
+}
+.fs-table tbody tr:hover {
+    background: var(--fs-hover);
+}
+.fs-table td.num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
 }

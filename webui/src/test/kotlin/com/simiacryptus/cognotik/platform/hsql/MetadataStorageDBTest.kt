@@ -32,7 +32,6 @@ class MetadataStorageDBTest {
 
     @BeforeEach
     fun setUp() {
-        DatabaseFacet.root = null
         // Use null root => in-memory ephemeral HSQL database (mem:<dbName>).
         storage = MetadataStorageDB()
         // Clean DB between tests to ensure isolation

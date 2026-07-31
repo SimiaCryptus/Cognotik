@@ -195,7 +195,6 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
 class DataStorageTest : StorageInterfaceTest(run {
     SecureString.key = SecureString.randomKey()
-    DatabaseFacet.root = null
     DataStorage(
         Files.createTempDirectory("sessionDataTest").toFile(),
         MetadataStorageDB()
