@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
     alias(libs.plugins.qodana)
-    alias(libs.plugins.kover)
 }
 
 group = "com.cognotik"
@@ -207,13 +206,6 @@ intellijPlatform {
     pluginVerification {
         ides {
             recommended()
-            // Optionally add a few more specific versions for broader compatibility testing
-            //ide(
-            //    providers.gradleProperty("platformType").get(),
-            //    providers.gradleProperty("platformVersion").get()
-            //)
-            // ide("IC", "2024.3")
-            // ide("IC", "2024.2")
         }
     }
 }

@@ -359,18 +359,7 @@ open class AudioProcessingAgent(
                 } catch (e: BudgetException) {
                     throw e
                 } catch (e: ExecutionException) {
-                    when(e) {
-                        is InterruptedException, is java.util.concurrent.CancellationException -> {
-                            log.error(
-                                "Segment {} of {} was interrupted or cancelled during rendering; substituting empty result.",
-                                index + 1,
-                                parsed.size,
-                                e
-                            )
-                            (parsed[index].text to null)
-                        }
-                        else -> throw e.cause ?: e
-                    }
+                    throw e.cause ?: e
                 } catch (e: Exception) {
                     log.error(
                         "Error retrieving result for segment {} of {}; substituting empty result.",

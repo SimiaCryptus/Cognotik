@@ -59,7 +59,6 @@ class OpenAIEmbeddingClient(
         "model" to (request.model ?: model.modelId),
         "input" to when {
           request.input is String -> request.input
-          request.input is List<*> -> request.input
           else -> listOf(request.input.toString())
         },
         "encoding_format" to "float"
