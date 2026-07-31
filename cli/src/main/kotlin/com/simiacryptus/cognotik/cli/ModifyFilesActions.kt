@@ -44,15 +44,29 @@ package com.simiacryptus.cognotik.cli
 
       val isEnabled: Boolean get() = ModifyFilesFsAction.isEnabled
 
+      @Volatile
+      private var config: Config? = null
+
       @Synchronized
-      fun install(cfg: Config) = ModifyFilesFsAction.install(
+      fun install(cfg: Config) {
+        config = cfg
+        apply(cfg)
+      }
+
+      /** Re-binds the chat to the current [ModelSelection] (the web UI changed it). */
+      @Synchronized
+      fun refreshModels() {
+        config?.let { apply(it) }
+      }
+
+      private fun apply(cfg: Config) = ModifyFilesFsAction.install(
         ModifyFilesFsAction.Config(
           root = { cfg.root.canonicalFile },
           user = { FileServerCli.user },
           chatUri = cfg.chatUri,
           readOnly = cfg.readOnly,
-          smartModel = cfg.smartModel,
-          fastModel = cfg.fastModel,
+          smartModel = ModelSelection.smart ?: cfg.smartModel,
+          fastModel = ModelSelection.fast ?: cfg.fastModel,
           showLineNumbers = cfg.showLineNumbers,
           budget = cfg.budget,
         )

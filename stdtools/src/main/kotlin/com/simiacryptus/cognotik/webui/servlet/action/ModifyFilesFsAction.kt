@@ -4,6 +4,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
     import com.simiacryptus.cognotik.models.ModelSchema
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
+    import com.simiacryptus.cognotik.platform.model.defaultUser
     import com.simiacryptus.cognotik.text.patch.PatchProcessors
     import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
     import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -54,6 +55,9 @@ package com.simiacryptus.cognotik.webui.servlet.action
      *     first request, so a server that never sees a modify request never starts it.
      *  4. **Path safety**: every requested path is canonicalised and must stay under the
      *     resolved root; folders are expanded with [FileSelectionUtils].
+     *  5. **Models are live.** [Config.smartModel]/[Config.fastModel] only seed
+     *     [ModelSelection]; the pair is resolved per request, so "Select Models…" also
+     *     retargets the patch chat.
      */
     object ModifyFilesFsAction {
 
@@ -70,13 +74,17 @@ package com.simiacryptus.cognotik.webui.servlet.action
         /** Base URI of the chat UI; resolved lazily so the server can start on demand. */
         val chatUri: () -> URI,
         val readOnly: Boolean = false,
+        /** Start-up default only; [ModelSelection] wins once anything is selected. */
         val smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL"),
         val fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL"),
         /**
          * Model resolution. Defaults to the installed DocOps endpoint's resolution, so a
-         * swapped proxy also decides which models a patch chat may use.
+         * swapped proxy also decides which models a patch chat may use. The ids handed to it
+         * are the current [ModelSelection], falling back to the configured defaults.
          */
-        val models: (User) -> DocProcessorServlet.Models = { user -> defaultModels(user, smartModel, fastModel) },
+        val models: (User) -> DocProcessorServlet.Models = { user ->
+          defaultModels(user, ModelSelection.smartOr(smartModel), ModelSelection.fastOr(fastModel))
+        },
         /** Default for `?lineNumbers=` (IntelliJ: the MultiDiffChatWithLineNumbers variant). */
         val showLineNumbers: Boolean = false,
         val budget: Double = 2.0,
@@ -102,11 +110,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
           fastModel = fast,
           imageModel = null,
           audioModel = null,
-          available = try {
-            user.userSettings().models()
-          } catch (e: Exception) {
-            emptyMap()
-          },
+          /* Same (cached, failure-tolerant) enumeration the model picker offers. */
+          available = ModelSelection.availableModels(user),
         )
       }
 
@@ -114,6 +119,13 @@ package com.simiacryptus.cognotik.webui.servlet.action
       @Synchronized
       fun install(cfg: Config) {
         config = cfg
+        /* Share the request-scoped user with the picker, and seed (never clobber) the pair. */
+        ModelSelection.installDefaults(
+          user = { ctx -> ctx?.let { cfg.user(it) } ?: defaultUser },
+          smart = cfg.smartModel,
+          fast = cfg.fastModel,
+        )
+        ModelSelectionActions.install()
         if (!installed.compareAndSet(false, true)) return
         FsAction.register(
           FsAction(
@@ -188,7 +200,10 @@ package com.simiacryptus.cognotik.webui.servlet.action
         val models = try {
           cfg.models(user)
         } catch (e: IllegalArgumentException) {
-          return FsJson.fail(ctx.resp, FsErrorCode.EINVAL, MODIFY_OP, e.message ?: "no smart model configured")
+          return FsJson.fail(
+            ctx.resp, FsErrorCode.EINVAL, MODIFY_OP,
+            (e.message ?: "no smart model configured") + "; pick one with the \"Select Models…\" action"
+          )
         }
 
         val session = Session.newUserID()
@@ -216,7 +231,10 @@ package com.simiacryptus.cognotik.webui.servlet.action
         )
 
         /* Starts the chat server on first use; see Config.chatUri. */
-        val url = cfg.chatUri().resolve("/#$session").toString()
+//        http://localhost:12891/proxy/?session=U-20260731-bx1tRLb0
+        val url = cfg.chatUri()
+          .resolve("/proxy/?session=$session")
+          .toString()
         println("modify: session $session over ${selected.size} file(s) -> $url")
 
         val sb = StringBuilder("{")

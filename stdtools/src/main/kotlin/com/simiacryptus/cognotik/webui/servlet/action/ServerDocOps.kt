@@ -213,7 +213,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
         } catch (e: IllegalArgumentException) {
           throw IllegalArgumentException(
             (e.message ?: "no smart model selected") +
-                "\nSelect one (--smart-model / COGNOTIK_SMART_MODEL) or configure the DocOps endpoint default."
+                "\nSelect one with the \"Select Models…\" action (POST .fsapi/v1/models?smart=<id>)," +
+                " with --smart-model / COGNOTIK_SMART_MODEL, or configure the DocOps endpoint default."
           )
         }
         println(

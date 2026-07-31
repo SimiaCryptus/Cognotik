@@ -67,10 +67,13 @@ open class SimpleFileServlet(
     /* The IDE action worked on a folder selection too, so the toolbar offers the current dir. */
     val modify = if (!modifyEnabled || readOnly) "" else
       """<a class="zip-link" style="background-color:#198754;" href="#" onclick="return cognotikModify(event,null)">✏️ Modify files…</a>"""
-    if (!tasksEnabled) return ide + modify
+    /* One selection drives every agentic surface, so it sits next to them. */
+    val models = if (!tasksEnabled && !modifyEnabled) "" else
+      """<a class="zip-link" style="background-color:#0dcaf0;color:#000;" href="#" onclick="return cognotikModels(event)">🧠 Models…</a>"""
+    if (!tasksEnabled) return ide + modify + models
     val fix = if (readOnly) "" else
       """<a class="zip-link" style="background-color:#d63384;" href="#" onclick="return cognotikAutoFix(event)">🩺 AutoFix…</a>"""
-    return ide + modify +
+    return ide + modify + models +
         """<a class="zip-link" style="background-color:#0d6efd;" href="#" onclick="return cognotikDocOps(event,'plan','')">📘 DocOps plan</a>""" +
         fix +
         """<a class="zip-link" style="background-color:#495057;" href="#" onclick="return cognotikTasks(event)">🗒 Tasks</a>"""
@@ -216,6 +219,36 @@ open class SimpleFileServlet(
                 cognotikSetOutput(list.map(function (t) {
                   return t.id + '  ' + t.state + '  ' + t.kind + '  ' + t.label;
                 }).join('\n') || '(no tasks yet)');
+              }).catch(function (e) { cognotikStatus('request failed: ' + e); });
+              return false;
+            }
+            /* An empty answer means "leave unchanged": cognotikUrl drops blank values. */
+            function cognotikModels(ev) {
+              if (ev) ev.preventDefault();
+              cognotikStatus('loading models ...');
+              cognotikCall('GET', 'models', {}).then(function (res) {
+                var body = (res && res.body) || {};
+                if (body.error) {
+                  cognotikStatus('error: ' + (body.error.message || ''));
+                  return;
+                }
+                var list = body.available || [];
+                cognotikStatus('models: smart=' + (body.smart || 'none') + ' fast=' + (body.fast || 'none'));
+                cognotikSetOutput(list.length ? list.join('\n') : '(no providers configured)');
+                var head = list.length ? 'Available:\n' + list.join('\n') + '\n\n' : '';
+                var smart = window.prompt(head + 'Smart model (blank = keep "' + (body.smart || 'none') + '"):', body.smart || '');
+                if (smart === null) return;
+                var fast = window.prompt('Fast model (blank = keep "' + (body.fast || 'none') + '"):', body.fast || '');
+                if (fast === null) return;
+                cognotikCall('POST', 'models', { smart: smart, fast: fast }).then(function (r) {
+                  var next = (r && r.body) || {};
+                  if (next.error) {
+                    cognotikStatus('error: ' + (next.error.message || ''));
+                    return;
+                  }
+                  cognotikStatus(next.message || ('models: smart=' + (next.smart || 'none') + ' fast=' + (next.fast || 'none')));
+                  cognotikSetOutput(JSON.stringify({ smart: next.smart, fast: next.fast }, null, 2));
+                }).catch(function (e) { cognotikStatus('request failed: ' + e); });
               }).catch(function (e) { cognotikStatus('request failed: ' + e); });
               return false;
             }

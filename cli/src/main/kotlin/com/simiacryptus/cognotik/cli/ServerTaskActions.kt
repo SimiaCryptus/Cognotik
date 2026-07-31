@@ -52,31 +52,56 @@ package com.simiacryptus.cognotik.cli
 
       val isEnabled: Boolean get() = DocOpsFsActions.isEnabled
 
+      @Volatile
+      private var config: Config? = null
+
+      @Volatile
+      private var docServlet: CliDocProcessorServlet? = null
+
       /** Idempotent: builds/publishes the endpoint and (re)installs the configuration. */
       @Synchronized
       fun install(cfg: Config) {
+        config = cfg
         /*
-         * Built here (and re-built on reconfiguration) so both entry points - the FS API
-         * action and the /docops HTTP mount - share one DocProcessorServlet. Its constructor
-         * publishes it via DocOpsServlets, which is what ServerDocOps resolves.
+         * Built once so both entry points - the FS API action and the /docops HTTP mount -
+         * share one DocProcessorServlet. Its constructor publishes it via DocOpsServlets,
+         * which is what ServerDocOps resolves. Re-creating it on reconfiguration would
+         * orphan the instance Jetty already mounted, so the servlet reads the live
+         * ModelSelection instead of holding model ids of its own.
          */
-        val servlet = CliDocProcessorServlet(
+        val servlet = docServlet ?: CliDocProcessorServlet(
           root = cfg.root.canonicalFile,
           docsFolder = cfg.docsFolder?.canonicalFile,
-          smartModel = cfg.smartModel,
-          fastModel = cfg.fastModel,
           readOnly = cfg.readOnly,
           mode = cfg.docOpsMode,
           concurrency = cfg.docOpsConcurrency,
           monitor = cfg.monitor,
-        ).also { FileServerCli.docProcessorServlet = it }
+        ).also {
+          docServlet = it
+          FileServerCli.docProcessorServlet = it
+        }
+        apply(cfg, servlet)
+      }
+
+      /**
+       * Re-binds the actions to the current [ModelSelection] (the web UI changed it).
+       * AutoFix takes its models by value, so it genuinely has to be re-installed.
+       */
+      @Synchronized
+      fun refreshModels() {
+        val cfg = config ?: return
+        val servlet = docServlet ?: return
+        apply(cfg, servlet)
+      }
+
+      private fun apply(cfg: Config, servlet: CliDocProcessorServlet) {
         DocOpsFsActions.install(
           DocOpsFsActions.Config(
             root = { servlet.taskRoot },
             user = { FileServerCli.user },
             readOnly = cfg.readOnly,
-            smartModel = cfg.smartModel,
-            fastModel = cfg.fastModel,
+            smartModel = ModelSelection.smart ?: cfg.smartModel,
+            fastModel = ModelSelection.fast ?: cfg.fastModel,
             timeoutMinutes = cfg.timeoutMinutes,
             monitor = cfg.monitor,
             monitorFactory = { EphemeralMonitor() },

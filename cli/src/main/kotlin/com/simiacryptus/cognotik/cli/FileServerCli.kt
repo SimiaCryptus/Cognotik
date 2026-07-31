@@ -120,6 +120,14 @@ object FileServerCli {
                   'docops run' and 'autofix' mutate the workspace, run in the background and
                   return a task id; everything else answers inline. Both are refused with
                   EROFS on a read-only mount.
+                Model selection (start-up flags are only the initial value):
+                  GET  {mount}/.fsapi/v1/models[?refresh=true]
+                  POST {mount}/.fsapi/v1/models?smart=<id>&fast=<id>
+                   The IDE view's Tools menu gains "🧠 Select Models…" (two dropdowns filled
+                   live from the models your API keys expose) and the classic listing gains a
+                   "🧠 Models…" button. An omitted parameter is left unchanged; the choice
+                   applies immediately to DocOps, AutoFix and the patch chat.
+
                  Patch chat (port of the IDE's ModifyFilesAction), enabled by default:
                        --no-modify        Do not expose the modify operation
                        --line-numbers     Number the code summary given to the model
@@ -235,13 +243,22 @@ object FileServerCli {
     user = cliUser
 
     available = availableModels(cliUser)
-    models = CliSupport.resolveModels(
-      user = cliUser,
-      smartModel = smartModel,
-      fastModel = fastModel,
-      imageModel = imageModel,
-      audioModel = audioModel,
-    )
+    /* The pair is runtime state now: the web UI may replace it at any time. */
+    ModelSelection.install(user = { FileServerCli.user }, smart = smartModel, fast = fastModel)
+    ModelSelectionActions.install()
+    models = try {
+      CliSupport.resolveModels(
+        user = cliUser,
+        smartModel = ModelSelection.smart,
+        fastModel = ModelSelection.fast,
+        imageModel = imageModel,
+        audioModel = audioModel,
+      )
+    } catch (e: Exception) {
+      /* Starting without a model is no longer fatal - pick one from the web UI. */
+      System.err.println("warning: ${e.message}")
+      null
+    }
 
     val baseDir = File(dirArg ?: ".").canonicalFile
     if (!baseDir.exists() || !baseDir.isDirectory) {
@@ -286,6 +303,25 @@ object FileServerCli {
         )
       )
     }
+    /* One selection, every toolchain: re-bind whatever is installed when it changes. */
+    ModelSelection.onChange {
+      if (tasksEnabled) ServerTaskActions.refreshModels()
+      if (modifyEnabled) ModifyFilesActions.refreshModels()
+      models = try {
+        CliSupport.resolveModels(
+          user = FileServerCli.user,
+          smartModel = ModelSelection.smart,
+          fastModel = ModelSelection.fast,
+          imageModel = imageModel,
+          audioModel = audioModel,
+          quiet = true,
+        )
+      } catch (e: Exception) {
+        models
+      }
+      println("Models -> ${ModelSelection.summary()}")
+    }
+
 
     val server = start(
       baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
@@ -306,6 +342,8 @@ object FileServerCli {
           ", exec ${if (execPermissive) "unrestricted" else "allowlisted"}"
     )
     val apiBase = "http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1"
+    println("  Models    -> ${ModelSelection.summary()} (${ModelSelection.modelIds().size} available)")
+    println("               GET/POST $apiBase/models — or the IDE view's Tools ▸ Select Models…")
     if (tasksEnabled) {
       println("  Tasks     -> docops/autofix enabled (root ${taskRoot.absolutePath})")
       println("               POST $apiBase/docops?command=plan")

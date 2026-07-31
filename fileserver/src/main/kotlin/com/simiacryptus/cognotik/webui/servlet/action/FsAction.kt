@@ -31,6 +31,11 @@ data class ActionParam(
    val dynamic: Boolean = false,
    /** Renders as a checkbox list (multiple values) rather than a single-value select. */
    val multi: Boolean = false,
+   /**
+    * Hint for an empty control. For a [dynamic] single-value select it also labels the
+    * "leave unset" entry, which is what makes "omit = leave unchanged" legible.
+    */
+   val placeholder: String? = null,
 ) {
   fun describe(): Map<String, Any?> = linkedMapOf(
     "name" to name,
@@ -42,7 +47,8 @@ data class ActionParam(
     "label" to label,
      "options" to options,
      "dynamic" to dynamic,
-     "multi" to multi
+     "multi" to multi,
+     "placeholder" to placeholder
   )
 
   /** Shape expected by the web UI's `ui.form()` parameter schema. */
@@ -63,7 +69,8 @@ data class ActionParam(
     "default" to default,
      "help" to description.ifBlank { null },
      "dynamic" to dynamic,
-     "multi" to multi
+     "multi" to multi,
+     "placeholder" to placeholder
   )
 }
 /**

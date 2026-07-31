@@ -53,8 +53,9 @@ package com.simiacryptus.cognotik.cli
 
 
       override val defaultMode: String get() = mode
-      override val defaultSmartModel: String? get() = smartModel
-      override val defaultFastModel: String? get() = fastModel
+      /* Live, so a model chosen from the web UI applies to the already-mounted servlet. */
+      override val defaultSmartModel: String? get() = ModelSelection.smart ?: smartModel
+      override val defaultFastModel: String? get() = ModelSelection.fast ?: fastModel
       override val defaultImageModel: String? get() = imageModel
       override val defaultAudioModel: String? get() = audioModel
       override val defaultConcurrency: Int get() = concurrency
