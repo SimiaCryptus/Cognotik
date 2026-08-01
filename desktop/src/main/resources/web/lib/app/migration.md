@@ -39,8 +39,8 @@
     ```
 
     ```diff
-    - <script src="utils/marked.min.js"></script>
-    + <script src="/lib/app/marked.min.js"></script>
+    - <script src="/lib/marked.min.js"></script>
+    + <script src="/lib/marked.min.js"></script>
       <script type="module" src="app.js"></script>
     ```
 
@@ -98,7 +98,7 @@
         // ideUrlTemplate: '{appRoot}/ui/?session={sessionId}#/'    // optional
       };
     </script>
-    <script src="/lib/app/marked.min.js"></script>
+    <script src="/lib/marked.min.js"></script>
     <script type="module" src="app.js"></script>
     ```
 
@@ -164,7 +164,7 @@
     ## 5. Per-app migration checklist
 
     - [ ] Replace `./utils/<module>.js` imports with `/lib/app/<module>.js`.
-    - [ ] Replace `<script src="utils/marked.min.js">` with `<script src="/lib/app/marked.min.js">`.
+    - [ ] Replace `<script src="/lib/marked.min.js">`.
     - [ ] Delete the app-local `utils/` directory (or replace with re-export shims).
     - [ ] If the deployment is **not** at the host root, set `window.COGNOTIK_CONFIG.serverBase` (or a meta tag).
     - [ ] Add the shared menubar: `import { initMenu } from '/lib/app/menu.js'; initMenu({ appName: '…' });`

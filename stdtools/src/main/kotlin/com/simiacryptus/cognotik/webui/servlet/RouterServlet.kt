@@ -420,7 +420,7 @@ class RouterServlet(
                <meta charset="UTF-8">
                <title>${escapeHtml(displayName)}</title>
                <script src="/modules/theme.js"></script>
-               <script src="/modules/marked.min.js"></script>
+               <script src="/lib/marked.min.js"></script>
                <link rel="stylesheet" href="/menubar.css">
               ${if (videoLandingUrl != null) """<link rel="alternate" type="text/html" href="${escapeHtml(videoLandingUrl)}" title="${escapeHtml("$displayName Demo Video")}">""" else ""}
                <style>

@@ -51,7 +51,7 @@ lives at `utils/marked.min.js`. Include it in your HTML **before** your module s
 
 ```html
 <!-- Local copy of marked — used by utils/ui.js renderMarkdown() -->
-<script src="utils/marked.min.js"></script>
+<script src="/lib/marked.min.js"></script>
 <script type="module" src="app.js"></script>
 ```
 
@@ -546,7 +546,7 @@ Returns an HTML string for a full usage breakdown table, sorted by cost descendi
 
 When building a new app on top of these utilities, follow these conventions:
 
-1. **Vendor `marked` locally.** Include `<script src="utils/marked.min.js"></script>` in your HTML so
+1. **Vendor `marked` locally.** Include `<script src="/lib/marked.min.js"></script>` in your HTML so
    `renderMarkdown()` works offline. Do **not** pull `marked` from a CDN.
 2. **Render markdown previews inline.** For every `.md` artifact your app generates, give it a
    `<div class="markdown-preview">` next to the step's action buttons, and call `renderMarkdown(readFile(...))`
