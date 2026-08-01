@@ -7,6 +7,7 @@
  *   • Git status + operations (init / commit / branches / log)
  *   • Sessions: currently running tasks and all known sessions, with navigation
  *   • Token usage summary + per-model breakdown
+*   • Available budget indicator + "Usage & Credits" (buy credits) dialog
  *
  * Usage:
  *   import { initMenu } from '/lib/app/menu.js';
@@ -22,6 +23,7 @@ import {serverUrl, getConfig} from './config.js';
 
 const STYLE_ID = 'cognotik-menu-style';
 const MENU_ID = 'cognotik-menu';
+const DEFAULT_BUDGET_REFRESH_MS = 60000;
 
 const MENU_CSS = `
 .cog-menu { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: #1d2330; color: #e7ecf3; box-shadow: 0 1px 4px rgba(0,0,0,.35); z-index: 900; }
@@ -57,6 +59,21 @@ const MENU_CSS = `
 .cog-menu table th, .cog-menu table td { border-bottom: 1px solid #2f394d; padding: .25rem .4rem; text-align: left; }
 .cog-menu .git-status-box { font-size: .85rem; }
 .cog-menu .git-changes-list { list-style: none; padding-left: 0; }
+.cog-menu button.cog-budget-btn { display: inline-flex; align-items: center; gap: .3rem; }
+.cog-menu button.cog-budget-btn.budget-warning { background: #b7791f; border-color: #b7791f; color: #fff; }
+.cog-menu button.cog-budget-btn.budget-critical { background: #c53030; border-color: #c53030; color: #fff; }
+.cog-budget-banner { padding: .35rem .8rem; font-size: .82rem; background: #b7791f; color: #fff; }
+.cog-budget-banner.critical { background: #c53030; }
+.cog-budget-banner a { color: #fff !important; text-decoration: underline; }
+.cog-budget-banner[hidden] { display: none; }
+.cog-credits-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.cog-credits-overlay[hidden] { display: none; }
+.cog-credits-dialog { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: #1d2330; color: #e7ecf3; width: min(1100px, 92vw); height: 85vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.cog-credits-head { display: flex; align-items: center; gap: .6rem; padding: .5rem .8rem; border-bottom: 1px solid #333d52; }
+.cog-credits-head strong { flex: 1 1 auto; font-size: .95rem; }
+.cog-credits-head button { font: inherit; background: #2c3446; color: #e7ecf3; border: 1px solid #3c4760; border-radius: 5px; padding: .2rem .6rem; cursor: pointer; }
+.cog-credits-head button:hover { background: #38425a; }
+.cog-credits-dialog iframe { flex: 1 1 auto; width: 100%; border: none; background: #fff; }
 @media (max-width: 700px) { .cog-menu-grow { display: none; } }
 `;
 
@@ -227,6 +244,31 @@ function statusTagClass(status) {
     if (s === 'ERROR' || s === 'FAILED') return 'error';
     return '';
 }
+/**
+  * Format a currency amount the same way the homepage menubar does.
+  * @param {number|null} amount
+  * @returns {string}
+  */
+export function formatBudget(amount) {
+     if (typeof amount !== 'number' || isNaN(amount)) return '\u2014';
+     const sign = amount < 0 ? '-' : '';
+     return sign + '$' + Math.abs(amount).toFixed(2);
+}
+/**
+  * Fetch the currently available budget from the shared usage JSON endpoint.
+  * Endpoint may be overridden via `configure({ usageJsonEndpoint })` or the
+  * `usageJsonUrl` menu option.
+  * @param {string|null} [endpoint]
+  * @returns {Promise<number|null>} available budget, or null if unknown
+  */
+export async function fetchBudget(endpoint = null) {
+     const url = endpoint
+         || getConfig().usageJsonEndpoint
+         || serverUrl('/usage/?format=json');
+     const data = await fetchJson(url);
+     if (!data) return null;
+     return (typeof data.available_budget === 'number') ? data.available_budget : null;
+}
 
 function contextLabel(ctx, opts) {
     const bits = [];
@@ -266,6 +308,10 @@ function buildLinksHtml(ctx, opts) {
  * @param {boolean} [options.showGit=true]
  * @param {boolean} [options.showSessions=true]
  * @param {boolean} [options.showUsage=true]
+* @param {boolean} [options.showBudget=true] - Show available budget + credits dialog
+* @param {number}  [options.budgetRefreshMs=60000] - 0 disables auto-refresh
+* @param {string}  [options.usageUrl] - Page shown in the credits dialog (default `/usage/`)
+* @param {string}  [options.usageJsonUrl] - JSON endpoint for the budget amount
  * @param {boolean} [options.showIde=true]
  * @param {boolean} [options.sticky=true]
  * @param {string} [options.newSessionPath='new']
@@ -284,6 +330,10 @@ export function initMenu(options = {}) {
         showGit: true,
         showSessions: true,
         showUsage: true,
+         showBudget: true,
+         budgetRefreshMs: DEFAULT_BUDGET_REFRESH_MS,
+         usageUrl: null,
+         usageJsonUrl: null,
         showIde: true,
         sticky: true,
         newSessionPath: 'new',
@@ -309,11 +359,13 @@ export function initMenu(options = {}) {
                 <div class="cog-menu-links">${buildLinksHtml(ctx, opts)}</div>
                 <div class="cog-menu-grow"></div>
                 <div class="cog-menu-tabs">
+                     ${opts.showBudget ? '<button type="button" class="cog-budget-btn" data-budget-btn title="Usage and available credits">&#128202; <span data-budget-amount>Budget</span></button>' : ''}
                     ${opts.showGit ? `<button type="button" data-tab="git" aria-expanded="false"${ctx.basePath ? '' : ' disabled title="No session context"'}>Git</button>` : ''}
                     ${opts.showSessions ? '<button type="button" data-tab="sessions" aria-expanded="false">Sessions</button>' : ''}
                     ${opts.showUsage ? '<button type="button" data-tab="usage" aria-expanded="false">Usage</button>' : ''}
                 </div>
             </div>
+             <div class="cog-budget-banner" data-budget-banner role="alert" aria-live="polite" hidden></div>
             <section class="cog-menu-panel" data-panel="git" hidden>
                 <div class="cog-panel-head">
                     <strong>Git</strong>
@@ -393,12 +445,105 @@ export function initMenu(options = {}) {
     document.addEventListener('click', onDocClick);
 
     function onKeydown(e) {
-        if (e.key === 'Escape') closeAll();
+         if (e.key !== 'Escape') return;
+         if (creditsOverlay && !creditsOverlay.hidden) {
+             closeCredits();
+             return;
+         }
+         closeAll();
     }
 
     function onDocClick(e) {
+         if (creditsOverlay && creditsOverlay.contains(e.target)) return;
         if (!nav.contains(e.target)) closeAll();
     }
+     // ---- Budget / Credits -------------------------------------------------
+     const usageUrl = opts.usageUrl || serverUrl('/usage/');
+     let creditsOverlay = null;
+     let budgetTimer = null;
+     function ensureCreditsOverlay() {
+         if (creditsOverlay) return creditsOverlay;
+         creditsOverlay = document.createElement('div');
+         creditsOverlay.className = 'cog-credits-overlay';
+         creditsOverlay.hidden = true;
+         creditsOverlay.innerHTML = `
+             <div class="cog-credits-dialog" role="dialog" aria-modal="true" aria-label="Usage and Credits">
+                 <div class="cog-credits-head">
+                     <strong>&#128202; Usage &amp; Credits</strong>
+                     <button type="button" data-credits-close>Close</button>
+                 </div>
+                 <iframe data-credits-frame src="about:blank" title="Usage and Credits"></iframe>
+             </div>`;
+         creditsOverlay.addEventListener('click', e => {
+             if (e.target === creditsOverlay) closeCredits();
+         });
+         creditsOverlay.querySelector('[data-credits-close]')
+             .addEventListener('click', closeCredits);
+         document.body.appendChild(creditsOverlay);
+         return creditsOverlay;
+     }
+     function openCredits() {
+         const overlay = ensureCreditsOverlay();
+         // (Re)load each time so balances/checkout state are fresh.
+         overlay.querySelector('[data-credits-frame]').src = usageUrl;
+         overlay.hidden = false;
+     }
+     function closeCredits() {
+         if (!creditsOverlay || creditsOverlay.hidden) return;
+         creditsOverlay.hidden = true;
+         creditsOverlay.querySelector('[data-credits-frame]').src = 'about:blank';
+         // Balance may have changed (credits purchased) — refresh immediately.
+         refreshBudget();
+     }
+     function renderBudgetBanner(banner, budget) {
+         if (!banner) return;
+         if (typeof budget !== 'number' || isNaN(budget) || budget >= 1.00) {
+             banner.hidden = true;
+             banner.classList.remove('critical');
+             banner.innerHTML = '';
+             return;
+         }
+         banner.hidden = false;
+         if (budget < 0.01) {
+             banner.classList.add('critical');
+             banner.innerHTML = `<strong>&#128683; Insufficient credits (${escapeHtml(formatBudget(budget))}).</strong> ` +
+                 'You need credits to launch AI sessions. ' +
+                 `<a href="${attr(usageUrl)}" data-credits-open>Add credits now &rarr;</a>`;
+         } else {
+             banner.classList.remove('critical');
+             banner.innerHTML = `<strong>&#9888;&#65039; Low balance: ${escapeHtml(formatBudget(budget))}.</strong> ` +
+                 'Your available credits are running low. ' +
+                 `<a href="${attr(usageUrl)}" data-credits-open>Top up credits &rarr;</a>`;
+         }
+         const link = banner.querySelector('[data-credits-open]');
+         if (link) link.addEventListener('click', e => {
+             e.preventDefault();
+             openCredits();
+         });
+     }
+     async function refreshBudget() {
+         if (!opts.showBudget) return null;
+         const btn = nav.querySelector('[data-budget-btn]');
+         const amountEl = nav.querySelector('[data-budget-amount]');
+         const banner = nav.querySelector('[data-budget-banner]');
+         if (!btn || !amountEl) return null;
+         const budget = await fetchBudget(opts.usageJsonUrl);
+         btn.classList.remove('budget-warning', 'budget-critical');
+         if (budget === null) {
+             amountEl.textContent = 'Budget';
+             btn.removeAttribute('data-budget');
+             btn.title = 'Usage and available credits';
+             renderBudgetBanner(banner, null);
+             return null;
+         }
+         amountEl.textContent = formatBudget(budget);
+         btn.setAttribute('data-budget', String(budget));
+         btn.title = 'Available budget: ' + formatBudget(budget) + ' \u2014 click to view usage & buy credits';
+         if (budget < 0.01) btn.classList.add('budget-critical');
+         else if (budget < 1.00) btn.classList.add('budget-warning');
+         renderBudgetBanner(banner, budget);
+         return budget;
+     }
 
     // ---- Git -------------------------------------------------------------
     async function gitAction(action) {
@@ -533,10 +678,25 @@ export function initMenu(options = {}) {
 
     nav.querySelector('[data-sessions="refresh"]')?.addEventListener('click', refreshSessions);
     nav.querySelector('[data-usage="refresh"]')?.addEventListener('click', refreshUsage);
+     nav.querySelector('[data-budget-btn]')?.addEventListener('click', openCredits);
+     if (opts.showBudget) {
+         refreshBudget();
+         if (opts.budgetRefreshMs > 0) {
+             budgetTimer = setInterval(refreshBudget, opts.budgetRefreshMs);
+         }
+     }
 
     function destroy() {
         document.removeEventListener('keydown', onKeydown);
         document.removeEventListener('click', onDocClick);
+         if (budgetTimer) {
+             clearInterval(budgetTimer);
+             budgetTimer = null;
+         }
+         if (creditsOverlay && creditsOverlay.parentNode) {
+             creditsOverlay.parentNode.removeChild(creditsOverlay);
+             creditsOverlay = null;
+         }
         if (nav.parentNode) nav.parentNode.removeChild(nav);
     }
 
@@ -545,12 +705,15 @@ export function initMenu(options = {}) {
         context: ctx,
         open,
         close: closeAll,
+         openCredits,
+         closeCredits,
         refresh() {
-            return Promise.all([refreshGit(), refreshSessions(), refreshUsage()]);
+             return Promise.all([refreshGit(), refreshSessions(), refreshUsage(), refreshBudget()]);
         },
         refreshGit,
         refreshSessions,
         refreshUsage,
+         refreshBudget,
         destroy
     };
 }
@@ -560,5 +723,7 @@ export const MenuUtils = {
     getMenuContext,
     getIdeUrl,
     fetchSessionList,
-    fetchRunningTasks
+     fetchRunningTasks,
+     fetchBudget,
+     formatBudget
 };
