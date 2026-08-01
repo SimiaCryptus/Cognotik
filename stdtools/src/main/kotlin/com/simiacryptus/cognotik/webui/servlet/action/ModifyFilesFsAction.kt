@@ -55,8 +55,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
      *     first request, so a server that never sees a modify request never starts it.
      *  4. **Path safety**: every requested path is canonicalised and must stay under the
      *     resolved root; folders are expanded with [FileSelectionUtils].
-     *  5. **Models are live.** [Config.smartModel]/[Config.fastModel] only seed
-     *     [ModelSelection]; the pair is resolved per request, so "Select Models…" also
+     *  5. **Models are live.** The pair is read from the calling user's settings on every
+     *     request (there is no configured default), so "Select Models…" immediately
      *     retargets the patch chat.
      */
     object ModifyFilesFsAction {
@@ -74,17 +74,12 @@ package com.simiacryptus.cognotik.webui.servlet.action
         /** Base URI of the chat UI; resolved lazily so the server can start on demand. */
         val chatUri: () -> URI,
         val readOnly: Boolean = false,
-        /** Start-up default only; [ModelSelection] wins once anything is selected. */
-        val smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL"),
-        val fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL"),
         /**
          * Model resolution. Defaults to the installed DocOps endpoint's resolution, so a
-         * swapped proxy also decides which models a patch chat may use. The ids handed to it
-         * are the current [ModelSelection], falling back to the configured defaults.
+          * swapped proxy also decides which models a patch chat may use. Either way the ids
+          * come from the calling user's persisted selection - there is no other source.
          */
-        val models: (User) -> DocProcessorServlet.Models = { user ->
-          defaultModels(user, ModelSelection.smartOr(smartModel), ModelSelection.fastOr(fastModel))
-        },
+         val models: (User) -> DocProcessorServlet.Models = { user -> defaultModels(user) },
         /** Default for `?lineNumbers=` (IntelliJ: the MultiDiffChatWithLineNumbers variant). */
         val showLineNumbers: Boolean = false,
         val budget: Double = 2.0,
@@ -103,15 +98,16 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
       val isEnabled: Boolean get() = config != null
 
-      private fun defaultModels(user: User, smart: String?, fast: String?): DocProcessorServlet.Models {
-        DocOpsServlets.current?.let { return it.modelsFor(user, smart, fast) }
+       private fun defaultModels(user: User): DocProcessorServlet.Models {
+         DocOpsServlets.current?.let { return it.modelsFor(user) }
+        /* No endpoint installed: read the same authoritative source it would. */
+        val settings = user.userSettings()
         return DocProcessorServlet.models(
-          smartModel = smart,
-          fastModel = fast,
+          smartModel = settings.smartModel?.takeIf { it.isNotBlank() },
+          fastModel = settings.fastModel?.takeIf { it.isNotBlank() },
           imageModel = null,
           audioModel = null,
-          /* Same (cached, failure-tolerant) enumeration the model picker offers. */
-          available = ModelSelection.availableModels(user),
+          available = settings.models(),
         )
       }
 
@@ -119,12 +115,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
       @Synchronized
       fun install(cfg: Config) {
         config = cfg
-        /* Share the request-scoped user with the picker, and seed (never clobber) the pair. */
-        ModelSelection.installDefaults(
-          user = { ctx -> ctx?.let { cfg.user(it) } ?: defaultUser },
-          smart = cfg.smartModel,
-          fast = cfg.fastModel,
-        )
+         /* Share the request-scoped user with the picker; the pair itself lives in settings. */
+         ModelSelection.install(user = { ctx -> ctx?.let { cfg.user(it) } ?: defaultUser })
         ModelSelectionActions.install()
         if (!installed.compareAndSet(false, true)) return
         FsAction.register(

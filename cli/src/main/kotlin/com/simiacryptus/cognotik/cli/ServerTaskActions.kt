@@ -29,10 +29,6 @@ package com.simiacryptus.cognotik.cli
      */
     object ServerTaskActions {
 
-      const val DOCOPS_OP = DocOpsFsActions.DOCOPS_OP
-      const val AUTOFIX_OP = DocOpsFsActions.AUTOFIX_OP
-      const val TASKS_OP = com.simiacryptus.cognotik.webui.servlet.action.FsTasks.TASKS_OP
-
       data class Config(
         /** Project root handed to the tools (defaults to the served directory). */
         val root: File,
@@ -100,8 +96,6 @@ package com.simiacryptus.cognotik.cli
             root = { servlet.taskRoot },
             user = { FileServerCli.user },
             readOnly = cfg.readOnly,
-            smartModel = ModelSelection.smart ?: cfg.smartModel,
-            fastModel = ModelSelection.fast ?: cfg.fastModel,
             timeoutMinutes = cfg.timeoutMinutes,
             monitor = cfg.monitor,
             monitorFactory = { EphemeralMonitor() },

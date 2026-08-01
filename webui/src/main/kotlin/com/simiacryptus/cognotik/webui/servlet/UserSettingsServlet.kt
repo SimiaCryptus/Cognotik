@@ -33,6 +33,9 @@ class UserSettingsServlet : HttpServlet() {
           )//.validate()
         }.toMutableList(),
         collectSessionData = settings.collectSessionData,
+        passwordHash = settings.passwordHash,
+        smartModel = settings.smartModel,
+        fastModel = settings.fastModel,
       ).jsonCast<Map<String,Any>>() + mapOf(
         "user" to user
       )
@@ -100,7 +103,10 @@ class UserSettingsServlet : HttpServlet() {
     }.toMutableList()
     val reconstructedSettings = UserSettings(
       apis = reconstructedApis,
-        collectSessionData = settings.collectSessionData,
+      collectSessionData = settings.collectSessionData,
+      passwordHash = settings.passwordHash,
+      smartModel = settings.smartModel,
+      fastModel = settings.fastModel
     )
     userSettingsManager.updateUserSettings(
       user,

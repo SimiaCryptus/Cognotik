@@ -41,7 +41,7 @@ import kotlin.system.exitProcess
 val globalID = Session.newGlobalID()
 
 open class CognotikApps(
-    localName: String, publicName: String, port: Int
+    localName: String, publicName: String?, port: Int
 ) : ApplicationDirectory(
     localName = localName, publicName = publicName, port = port
 ) {

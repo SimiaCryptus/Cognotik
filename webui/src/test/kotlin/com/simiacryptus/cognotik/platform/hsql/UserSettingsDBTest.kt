@@ -79,7 +79,7 @@ class UserSettingsDBTest {
   @Test
   fun `updateUserSettings persists settings`() {
     val newSettings = UserSettings(
-      apis = mutableListOf(apiData("openai", "https://api.openai.com"))
+      apis = mutableListOf(apiData("openai", "https://api.openai.com")),
     )
     manager.updateUserSettings(testUser, newSettings)
 
@@ -89,7 +89,7 @@ class UserSettingsDBTest {
 
   @Test
   fun `getUserSettings uses cache after first load`() {
-    val settings = UserSettings(apis = mutableListOf(apiData("provider", "url")))
+    val settings = UserSettings(apis = mutableListOf(apiData("provider", "url")),)
     manager.updateUserSettings(testUser, settings)
 
     val first = manager.getUserSettings(testUser)
@@ -101,7 +101,7 @@ class UserSettingsDBTest {
 
   @Test
   fun `settings persist across manager instances`() {
-    val settings = UserSettings(apis = mutableListOf(apiData("key", "value")))
+    val settings = UserSettings(apis = mutableListOf(apiData("key", "value")),)
     manager.updateUserSettings(testUser, settings)
 
     // Create a new manager pointing to the same in-memory DB. The DB is
@@ -115,13 +115,12 @@ class UserSettingsDBTest {
   @Test
   fun `updateUserSettings preserves existing passwordHash when new one is null`() {
     val originalHash = "original-hash-123"
-    val initial = UserSettings(passwordHash = originalHash)
+    val initial = UserSettings(passwordHash = originalHash,)
     manager.updateUserSettings(testUser, initial)
 
     // Update with null password hash
     val update = UserSettings(
-      passwordHash = null,
-      apis = mutableListOf(apiData("a", "b"))
+      apis = mutableListOf(apiData("a", "b")),
     )
     manager.updateUserSettings(testUser, update)
 
@@ -135,10 +134,10 @@ class UserSettingsDBTest {
   @Test
   fun `updateUserSettings preserves existing passwordHash when new one is blank`() {
     val originalHash = "original-hash-456"
-    val initial = UserSettings(passwordHash = originalHash)
+    val initial = UserSettings(passwordHash = originalHash,)
     manager.updateUserSettings(testUser, initial)
 
-    val update = UserSettings(passwordHash = "")
+    val update = UserSettings(passwordHash = "",)
     manager.updateUserSettings(testUser, update)
 
     val manager2 = UserSettingsDB()
@@ -148,11 +147,11 @@ class UserSettingsDBTest {
 
   @Test
   fun `updateUserSettings overwrites passwordHash when new one is set`() {
-    val initial = UserSettings(passwordHash = "old-hash")
+    val initial = UserSettings(passwordHash = "old-hash",)
     manager.updateUserSettings(testUser, initial)
 
     val newHash = "new-hash"
-    val update = UserSettings(passwordHash = newHash)
+    val update = UserSettings(passwordHash = newHash,)
     manager.updateUserSettings(testUser, update)
 
     val manager2 = UserSettingsDB()
@@ -162,8 +161,8 @@ class UserSettingsDBTest {
 
   @Test
   fun `different users have independent settings`() {
-    val settings1 = UserSettings(apis = mutableListOf(apiData("a", "1")))
-    val settings2 = UserSettings(apis = mutableListOf(apiData("b", "2")))
+    val settings1 = UserSettings(apis = mutableListOf(apiData("a", "1")),)
+    val settings2 = UserSettings(apis = mutableListOf(apiData("b", "2")),)
 
     manager.updateUserSettings(testUser, settings1)
     manager.updateUserSettings(otherUser, settings2)
@@ -179,7 +178,7 @@ class UserSettingsDBTest {
 
   @Test
   fun `updateUserSettings is idempotent`() {
-    val settings = UserSettings(apis = mutableListOf(apiData("k", "v")))
+    val settings = UserSettings(apis = mutableListOf(apiData("k", "v")),)
     manager.updateUserSettings(testUser, settings)
     manager.updateUserSettings(testUser, settings)
     manager.updateUserSettings(testUser, settings)
@@ -196,7 +195,7 @@ class UserSettingsDBTest {
       name = "Blank",
       id = "blank-id"
     )
-    val settings = UserSettings(apis = mutableListOf(apiData("x", "y")))
+    val settings = UserSettings(apis = mutableListOf(apiData("x", "y")),)
     manager.updateUserSettings(userBlankEmail, settings)
 
     val manager2 = UserSettingsDB()
@@ -206,7 +205,7 @@ class UserSettingsDBTest {
 
   @Test
   fun `concurrent getUserSettings returns consistent results`() {
-    val settings = UserSettings(apis = mutableListOf(apiData("k", "v")))
+    val settings = UserSettings(apis = mutableListOf(apiData("k", "v")),)
     manager.updateUserSettings(testUser, settings)
 
     val threadCount = 20
@@ -246,7 +245,7 @@ class UserSettingsDBTest {
       executor.submit {
         try {
           val settings = UserSettings(
-            apis = mutableListOf(apiData("idx", i.toString()))
+            apis = mutableListOf(apiData("idx", i.toString())),
           )
           manager.updateUserSettings(testUser, settings)
         } finally {
@@ -276,14 +275,13 @@ class UserSettingsDBTest {
   @Test
   fun `updating cached user returns merged settings from cache`() {
     val initial = UserSettings(
+      apis = mutableListOf(apiData("a", "1")),
       passwordHash = "hash1",
-      apis = mutableListOf(apiData("a", "1"))
     )
     manager.updateUserSettings(testUser, initial)
 
     val update = UserSettings(
-      passwordHash = null,
-      apis = mutableListOf(apiData("b", "2"))
+      apis = mutableListOf(apiData("b", "2")),
     )
     manager.updateUserSettings(testUser, update)
 

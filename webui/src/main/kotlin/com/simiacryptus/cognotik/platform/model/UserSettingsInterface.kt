@@ -1,23 +1,9 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ToolData
-import com.simiacryptus.cognotik.models.ToolProvider.Companion.discoverAllToolsFromPath
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.util.encrypt
 
 /**
  * Interface for managing user-specific settings and configurations.
@@ -54,6 +40,8 @@ data class UserSettings(
     val apis: MutableList<ApiData> = mutableListOf(),
     val collectSessionData: Boolean = false,
     val passwordHash: String? = null,
+    val smartModel: String? = null,
+    val fastModel: String? = null,
 )
 
 /**

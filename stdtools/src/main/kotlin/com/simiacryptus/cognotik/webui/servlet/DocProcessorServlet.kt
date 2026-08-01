@@ -72,10 +72,6 @@ package com.simiacryptus.cognotik.webui.servlet
 
       /** Default `?mode=` when the request names none. */
       protected open val defaultMode: String get() = "PatchExisting"
-      protected open val defaultSmartModel: String? get() = null
-      protected open val defaultFastModel: String? get() = null
-      protected open val defaultImageModel: String? get() = null
-      protected open val defaultAudioModel: String? get() = null
       protected open val defaultAutoFix: Boolean get() = true
       protected open val defaultConcurrency: Int get() = 4
 
@@ -385,31 +381,35 @@ package com.simiacryptus.cognotik.webui.servlet
       open fun availableModels(user: User): Map<String, ChatModel> = user.userSettings().models()
 
       /**
-       * Resolves the four model roles for a programmatic (non-HTTP) invocation, honouring this
-       * servlet's defaults. Throws [IllegalArgumentException] when no smart model can be
-       * determined (the message includes the available ids).
+       * Resolves the four model roles for a programmatic (non-HTTP) invocation from [user]'s
+       * persisted settings - the only source of a selection. Throws [IllegalArgumentException]
+       * when no smart model has been selected (the message includes the available ids).
        */
       open fun modelsFor(
         user: User,
-        smartModel: String? = null,
-        fastModel: String? = null,
-        imageModel: String? = null,
-        audioModel: String? = null,
-      ): Models = models(
-        smartModel = smartModel?.takeIf { it.isNotBlank() } ?: defaultSmartModel,
-        fastModel = fastModel?.takeIf { it.isNotBlank() } ?: defaultFastModel,
-        imageModel = imageModel?.takeIf { it.isNotBlank() } ?: defaultImageModel,
-        audioModel = audioModel?.takeIf { it.isNotBlank() } ?: defaultAudioModel,
-        available = availableModels(user),
-      )
+      ): Models = user.userSettings().let { settings ->
+        models(
+          smartModel = settings.smartModel.takeIf { !it.isNullOrBlank() },
+          fastModel = settings.fastModel.takeIf { !it.isNullOrBlank() },
+          imageModel = null,
+          audioModel = null,
+          available = settings.models(),
+        )
+      }
 
-      protected open fun resolveModels(request: HttpServletRequest, user: User): Models = models(
-        smartModel = request.getParameter("smartModel")?.takeIf { it.isNotBlank() } ?: defaultSmartModel,
-        fastModel = request.getParameter("fastModel")?.takeIf { it.isNotBlank() } ?: defaultFastModel,
-        imageModel = request.getParameter("imageModel")?.takeIf { it.isNotBlank() } ?: defaultImageModel,
-        audioModel = request.getParameter("audioModel")?.takeIf { it.isNotBlank() } ?: defaultAudioModel,
-        available = availableModels(user),
-      )
+      /** Query parameters are a per-request override of the caller's stored selection. */
+      protected open fun resolveModels(request: HttpServletRequest, user: User): Models {
+        val settings = user.userSettings()
+        return models(
+          smartModel = request.getParameter("smartModel")?.takeIf { it.isNotBlank() }
+            ?: settings.smartModel.takeIf { !it.isNullOrBlank() },
+          fastModel = request.getParameter("fastModel")?.takeIf { it.isNotBlank() }
+            ?: settings.fastModel.takeIf { !it.isNullOrBlank() },
+          imageModel = request.getParameter("imageModel")?.takeIf { it.isNotBlank() },
+          audioModel = request.getParameter("audioModel")?.takeIf { it.isNotBlank() },
+          available = settings.models(),
+        )
+      }
 
       protected fun writeError(response: HttpServletResponse, status: Int, message: String) {
         response.status = status
