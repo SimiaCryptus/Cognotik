@@ -237,6 +237,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
           .toString()
         println("modify: session $session over ${selected.size} file(s) -> $url")
 
+        // TODO: use JsonUtil.toJson(mapOf(...))
         val sb = StringBuilder("{")
         sb.append("\"session\":\"").append(FsJson.esc(session.toString())).append("\",")
         sb.append("\"url\":\"").append(FsJson.esc(url)).append("\",")

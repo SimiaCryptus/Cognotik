@@ -13,13 +13,12 @@ enough to bootstrap the file server on any machine with Bash, Java and
 ## Quick start
 
 ```shell
-# Fetch the launcher
-curl -fsSLO https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/2.1.20/cli/dist/fileserver
-chmod +x fileserver
-
-# Run it (downloads the latest release jar on first use)
-./fileserver --port 8080 /srv/files
+curl -fsSLO https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/2.1.20/cli/dist/fileserver && chmod +x fileserver && ./fileserver --port 8080 .
 ```
+
+This command launches the micro-ide in the current directory, serving files on port 8080. 
+The first time it runs, it will download the latest release jar from GitHub, verify it, and then run it.
+Subsequent runs will use the cached jar unless `--update` is specified.
 
 Show the launcher's own help:
 
