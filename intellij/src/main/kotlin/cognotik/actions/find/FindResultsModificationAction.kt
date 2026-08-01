@@ -17,11 +17,12 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -34,226 +35,227 @@ import java.text.SimpleDateFormat
 import javax.swing.Icon
 
 class FindResultsModificationAction(
-    name: String? = "Modify Find Results",
-    description: String? = "Modify files based on find results",
-    icon: Icon? = null
+  name: String? = "Modify Find Results",
+  description: String? = "Modify files based on find results",
+  icon: Icon? = null
 ) : BaseAction(name, description, icon) {
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+  override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-    override fun handle(event: AnActionEvent) {
-        val folder = event.getSelectedFolder()
-        val root: Path = if (null != folder) {
-            folder.toFile.toPath()
-        } else {
-            getModuleRootForFile(
-                event.getSelectedFile()?.parent?.toFile
-                    ?: throw RuntimeException("No file or folder selected")
-            ).toPath()
-        }
-        val project = event.project ?: return
-        val usageView = event.getData(UsageView.USAGE_VIEW_KEY) ?: return
-        val usages = usageView.usages.toTypedArray()
-        if (usages.isEmpty()) {
-            UITools.showWarning(project, "No find results selected for modification")
-            return
-        }
-        val modificationParams = showModificationDialog(project, *usages) ?: return
+  override fun handle(event: AnActionEvent) {
+    val folder = event.getSelectedFolder()
+    val root: Path = if (null != folder) {
+      folder.toFile.toPath()
+    } else {
+      getModuleRootForFile(
+        event.getSelectedFile()?.parent?.toFile
+          ?: throw RuntimeException("No file or folder selected")
+      ).toPath()
+    }
+    val project = event.project ?: return
+    val usageView = event.getData(UsageView.USAGE_VIEW_KEY) ?: return
+    val usages = usageView.usages.toTypedArray()
+    if (usages.isEmpty()) {
+      UITools.showWarning(project, "No find results selected for modification")
+      return
+    }
+    val modificationParams = showModificationDialog(project, *usages) ?: return
+    try {
+      val session = Session.newUserID()
+      SessionProxyServer.metadataStorage.setSessionName(
+        null,
+        session,
+        "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+      )
+      val fileListMap = usages.groupBy { getFile(it) }
+      SessionProxyServer.chats[session] = PatchApp(
+        root = root.toFile(),
+        modificationParams = modificationParams,
+        project = event.project ?: return,
+        usages = fileListMap
+      )
+      ApplicationServer.appInfoMap[session] = AppInfoData(
+        applicationName = "Code Chat",
+        inputCnt = 1,
+        stickyInput = false,
+        loadImages = false,
+        showMenubar = false
+      )
+      UITools.runAsync(event.project, "Opening Browser", true) { progress ->
+        Thread.sleep(500)
         try {
-            val session = Session.newUserID()
-            SessionProxyServer.metadataStorage.setSessionName(
-                null,
-                session,
-                "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-            )
-            val fileListMap = usages.groupBy { getFile(it) }
-            SessionProxyServer.chats[session] = PatchApp(
-                root = root.toFile(),
-                modificationParams = modificationParams,
-                project = event.project ?: return,
-                usages = fileListMap
-            )
-            ApplicationServer.appInfoMap[session] = AppInfoData(
-                applicationName = "Code Chat",
-                inputCnt = 1,
-                stickyInput = false,
-                loadImages = false,
-                showMenubar = false
-            )
-            UITools.runAsync(event.project, "Opening Browser", true) { progress ->
-                Thread.sleep(500)
-                try {
-                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
-                        AppSettingsState.instance.listeningEndpoint,
-                        AppSettingsState.instance.listeningPort
-                    ).server.uri.resolve("/#$session")
-                    log.info("Opening browser to $uri")
-                    browse(uri)
-                } catch (e: Throwable) {
-                    val message = "Failed to open browser: ${e.message}"
-                    log.error(message, e)
-                    UITools.showErrorDialog(message, "Error")
-                }
-            }
-        } catch (ex: Exception) {
-            UITools.error(log, "Error modifying files", ex)
+          val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+            AppSettingsState.instance.listeningEndpoint,
+            AppSettingsState.instance.listeningPort
+          ).server.uri.resolve("/#$session")
+          log.info("Opening browser to $uri")
+          browse(uri)
+        } catch (e: Throwable) {
+          val message = "Failed to open browser: ${e.message}"
+          log.error(message, e)
+          UITools.showErrorDialog(message, "Error")
         }
+      }
+    } catch (ex: Exception) {
+      UITools.error(log, "Error modifying files", ex)
+    }
+  }
+
+  private fun getFile(it: Usage) = when {
+    it is UsageInfo2UsageAdapter -> {
+      it.file
     }
 
-    private fun getFile(it: Usage) = when {
-        it is UsageInfo2UsageAdapter -> {
-            it.file
-        }
-
-        else -> {
-            it.location?.editor?.file
-        }
+    else -> {
+      it.location?.editor?.file
     }
+  }
 
-    inner class PatchApp(
-        override val root: File,
-        val modificationParams: ModificationParams,
-        val project: Project,
-        val usages: Map<VirtualFile?, List<Usage>>,
-    ) : ApplicationServer(
-        applicationName = "Multi-file Patch Chat",
-        path = "/patchChat",
-        showMenubar = false,
-    ) {
-        override val inputCnt = 1
-        override val stickyInput = false
+  inner class PatchApp(
+    override val root: File,
+    val modificationParams: ModificationParams,
+    val project: Project,
+    val usages: Map<VirtualFile?, List<Usage>>,
+  ) : ApplicationServer(
+    applicationName = "Multi-file Patch Chat",
+    path = "/patchChat",
+    showMenubar = false,
+  ) {
+    override val inputCnt = 1
+    override val stickyInput = false
 
-        override fun newSession(user: User, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)!!
-            val task = socketManager.newTask(cancelable = false)
-            val tabs = TabbedDisplay(task)
-            usages.entries.map { (file, usages) ->
-                val task = socketManager.newTask(cancelable = false, root = false)
-                tabs[file?.name ?: "Unknown"] = task.placeholder
-                lateinit var fileListingMarkdown: String
-                lateinit var prompt: String
-                ApplicationManager.getApplication().runReadAction {
-                    file ?: return@runReadAction
-                    fileListingMarkdown =
-                        "## ${file.name}\n\n```${file.extension}\n${getFilteredLines(project, file, usages)}\n```\n"
-                    task.add(renderMarkdown(fileListingMarkdown))
-                    prompt = """
+    override fun newSession(user: User, session: Session): SocketManager {
+      val socketManager = super.newSession(user, session)!!
+      val task = socketManager.newTask(cancelable = false)
+      val tabs = TabbedDisplay(task)
+      usages.entries.map { (file, usages) ->
+        val task = socketManager.newTask(cancelable = false, root = false)
+        tabs[file?.name ?: "Unknown"] = task.placeholder
+        lateinit var fileListingMarkdown: String
+        lateinit var prompt: String
+        ApplicationManager.getApplication().runReadAction {
+          file ?: return@runReadAction
+          fileListingMarkdown =
+            "## ${file.name}\n\n```${file.extension}\n${getFilteredLines(project, file, usages)}\n```\n"
+          task.add(renderMarkdown(fileListingMarkdown))
+          prompt = """
                     You are a code modification assistant. You will receive code files and locations where changes are needed.
                     Your task is to suggest appropriate modifications based on the replacement text provided.
                     Usage locations:
                     """.trimIndent() + usages.joinToString("\n") { "* `${it.presentation.plainText}`" } +
-                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + AppSettingsState.instance.processor.patchFormatPrompt
-                }
-                socketManager.pool.submit {
-                    //val api = api.getChildClient(task)
-                    val response = ChatAgent(
-                        prompt = prompt,
-                        model = AppSettingsState.instance.smartChatClient.getChildClient(task)
-                    ).answer(
-                        listOf(
-                            fileListingMarkdown
-                        ),
-                    ).replace(Regex("""/\* L\d+ \*/"""), "")
-                        .replace(Regex("""/\* <<< \*/"""), "")
-                    DiffInstrumentor(
-                        AppSettingsState.instance.processor,
-                        SessionRenderer(task),
-                    ).instrument(
-                    root = root.toPath(),
-                    response = response,
-                    handle = { newCodeMap: Map<Path, String> ->
-                      newCodeMap.forEach { (path, newCode) ->
-                        task.complete("Updated $path")
-                      }
-                    },
-                    shouldAutoApply = { it: Path -> modificationParams.autoApply },
-                        defaultFile = file?.toFile?.path,
-                        resolver = ::resolveToRelativePath,
-                  ).apply {
-                        task.complete(renderMarkdown(this))
-                    }
-                }
-            }.toTypedArray().forEach { it.get() }
-            return socketManager
+              "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + AppSettingsState.instance.processor.patchFormatPrompt
         }
-
+        socketManager.pool.submit {
+          //val api = api.getChildClient(task)
+          val response = ChatAgent(
+            prompt = prompt,
+            model = AppSettingsState.instance.smartChatClient.getChildClient(task)
+          ).answer(
+            listOf(
+              fileListingMarkdown
+            ),
+          ).replace(Regex("""/\* L\d+ \*/"""), "")
+            .replace(Regex("""/\* <<< \*/"""), "")
+          DiffInstrumentor(
+            AppSettingsState.instance.processor,
+            SessionRenderer(task),
+          ).instrument(
+            root = root.toPath(),
+            response = response,
+            handle = { newCodeMap: Map<Path, String> ->
+              newCodeMap.forEach { (path, newCode) ->
+                task.complete("Updated $path")
+              }
+            },
+            shouldAutoApply = { it: Path -> modificationParams.autoApply },
+            defaultFile = file?.toFile?.path,
+            resolver = ::resolveToRelativePath,
+            prefilterFilename = ::prefilterFilename
+          ).apply {
+            task.complete(renderMarkdown(this))
+          }
+        }
+      }.toTypedArray().forEach { it.get() }
+      return socketManager
     }
 
-    private fun getSmallestContainingEntity(psiRoot: PsiFile?, usage: Usage) =
-        PsiUtil.getSmallestContainingEntity(
-            element = psiRoot!!,
-            selectionStart = usage.navigationOffset,
-            selectionEnd = usage.presentation.plainText.length + usage.navigationOffset - 1
-        )
+  }
 
-    private fun formatLine(index: Int, line: String, isFocused: Boolean) = when {
-        isFocused -> "/* L$index */ $line /* <<< */"
-        else -> "/* L$index */ $line"
-    }
-
-    private fun getFilteredLines(project: Project, file: VirtualFile, usages: List<Usage>): String? {
-        val document =
-            PsiDocumentManager.getInstance(project).getDocument(file.findPsiFile(project) ?: return null) ?: return null
-        val psiRoot: PsiFile? = file.findPsiFile(project)
-        val byContainer = usages.groupBy {
-            getSmallestContainingEntity(
-                psiRoot,
-                it
-            )
-        }.entries.sortedBy { it.key?.textRange?.startOffset }.toTypedArray()
-        val filteredLines = document.text.lines().mapIndexed { index: Int, line: String ->
-            val lineStart = document.getLineStartOffset(index)
-            val lineEnd = document.getLineEndOffset(index)
-            val containers = byContainer.map { it.key }.filter { psiElement ->
-                psiElement ?: return@filter false
-                val textRange = psiElement.textRange
-                val startOffset = textRange.startOffset
-                val endOffset = textRange.endOffset
-                when {
-                    startOffset >= lineEnd -> false
-                    endOffset <= lineStart -> false
-                    else -> true
-                }
-            }
-            val intersectingUsages = usages.filter { usage ->
-
-                val startOffset = usage.navigationOffset
-                val endOffset = startOffset + 1
-
-                when {
-                    startOffset >= lineEnd -> false
-                    endOffset <= lineStart -> false
-                    else -> true
-                }
-            }
-            when {
-                intersectingUsages.isNotEmpty() -> formatLine(index, line, true)
-                containers.isNotEmpty() -> formatLine(index, line, false)
-                else -> "..."
-            }
-        }.joinToString("\n").replace("(?:\\.\\.\\.\n){2,}".toRegex(), "...\n")
-        return filteredLines
-    }
-
-    override fun isEnabled(event: AnActionEvent): Boolean {
-        if (!super.isEnabled(event)) return false
-        val usageView = event.getData(UsageView.USAGE_VIEW_KEY)
-        return usageView != null && usageView.usages.isNotEmpty()
-    }
-
-    private fun showModificationDialog(project: Project, vararg usages: Usage): ModificationParams? {
-        val dialog = FindResultsModificationDialog(project)
-        val config = dialog.showAndGetConfig()
-        return if (config != null) {
-            ModificationParams(
-                replacementText = config.replacementText ?: "",
-                autoApply = config.autoApply
-            )
-        } else null
-    }
-
-    data class ModificationParams(
-        val replacementText: String,
-        val autoApply: Boolean
+  private fun getSmallestContainingEntity(psiRoot: PsiFile?, usage: Usage) =
+    PsiUtil.getSmallestContainingEntity(
+      element = psiRoot!!,
+      selectionStart = usage.navigationOffset,
+      selectionEnd = usage.presentation.plainText.length + usage.navigationOffset - 1
     )
+
+  private fun formatLine(index: Int, line: String, isFocused: Boolean) = when {
+    isFocused -> "/* L$index */ $line /* <<< */"
+    else -> "/* L$index */ $line"
+  }
+
+  private fun getFilteredLines(project: Project, file: VirtualFile, usages: List<Usage>): String? {
+    val document =
+      PsiDocumentManager.getInstance(project).getDocument(file.findPsiFile(project) ?: return null) ?: return null
+    val psiRoot: PsiFile? = file.findPsiFile(project)
+    val byContainer = usages.groupBy {
+      getSmallestContainingEntity(
+        psiRoot,
+        it
+      )
+    }.entries.sortedBy { it.key?.textRange?.startOffset }.toTypedArray()
+    val filteredLines = document.text.lines().mapIndexed { index: Int, line: String ->
+      val lineStart = document.getLineStartOffset(index)
+      val lineEnd = document.getLineEndOffset(index)
+      val containers = byContainer.map { it.key }.filter { psiElement ->
+        psiElement ?: return@filter false
+        val textRange = psiElement.textRange
+        val startOffset = textRange.startOffset
+        val endOffset = textRange.endOffset
+        when {
+          startOffset >= lineEnd -> false
+          endOffset <= lineStart -> false
+          else -> true
+        }
+      }
+      val intersectingUsages = usages.filter { usage ->
+
+        val startOffset = usage.navigationOffset
+        val endOffset = startOffset + 1
+
+        when {
+          startOffset >= lineEnd -> false
+          endOffset <= lineStart -> false
+          else -> true
+        }
+      }
+      when {
+        intersectingUsages.isNotEmpty() -> formatLine(index, line, true)
+        containers.isNotEmpty() -> formatLine(index, line, false)
+        else -> "..."
+      }
+    }.joinToString("\n").replace("(?:\\.\\.\\.\n){2,}".toRegex(), "...\n")
+    return filteredLines
+  }
+
+  override fun isEnabled(event: AnActionEvent): Boolean {
+    if (!super.isEnabled(event)) return false
+    val usageView = event.getData(UsageView.USAGE_VIEW_KEY)
+    return usageView != null && usageView.usages.isNotEmpty()
+  }
+
+  private fun showModificationDialog(project: Project, vararg usages: Usage): ModificationParams? {
+    val dialog = FindResultsModificationDialog(project)
+    val config = dialog.showAndGetConfig()
+    return if (config != null) {
+      ModificationParams(
+        replacementText = config.replacementText ?: "",
+        autoApply = config.autoApply
+      )
+    } else null
+  }
+
+  data class ModificationParams(
+    val replacementText: String,
+    val autoApply: Boolean
+  )
 
 }

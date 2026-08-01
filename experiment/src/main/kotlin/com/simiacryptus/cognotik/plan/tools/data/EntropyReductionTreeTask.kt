@@ -585,19 +585,6 @@ class EntropyReductionTreeTask(
   }
 
   /**
-   * Legacy Shannon entropy for a single field (kept for backward compatibility in stats display).
-   */
-  private fun shannonEntropy(data: List<Map<String, String>>, field: String): Double {
-    val counts = data.groupingBy { it[field] ?: "" }.eachCount()
-    val total = data.size.toDouble()
-    if (total == 0.0) return 0.0
-    return -counts.values.sumOf {
-      val p = it / total
-      if (p > 0.0) p * log2(p) else 0.0
-    }
-  }
-
-  /**
    * Compute the best encoding strategy name for a field (for display purposes).
    */
   private fun bestEncodingStrategy(data: List<Map<String, String>>, field: String): String {

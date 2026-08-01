@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 
+@Suppress("unused")
 object GenerateQRImageTaskTest {
 
   @JvmStatic

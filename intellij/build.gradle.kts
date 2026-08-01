@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
     alias(libs.plugins.qodana)
-    alias(libs.plugins.kover)
 }
 
 group = "com.cognotik"
@@ -23,12 +22,30 @@ repositories {
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
+    implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
+    implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
+    implementation("org.apache.pdfbox:jbig2-imageio:3.0.4")
 
     implementation(project("$projectPrefix:core")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
+    implementation(project("$projectPrefix:lwcore")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
+    implementation(project("$projectPrefix:docops")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
+    implementation(project("$projectPrefix:text")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
     implementation(project("$projectPrefix:groovy")) {
         exclude(group = "com.fasterxml.jackson.core")
+    }
+    implementation(project("$projectPrefix:fileserver")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
     }
     implementation(project("$projectPrefix:webui")) {
         exclude(group = "org.seleniumhq.selenium")
@@ -78,10 +95,6 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
     implementation(libs.tinkerpop)
-
-    implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
-    implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
-    implementation("org.apache.pdfbox:jbig2-imageio:3.0.4")
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
@@ -192,11 +205,7 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            // Use specific IDE versions that are known to be available
-            ide(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
-            // Optionally add a few more specific versions for broader compatibility testing
-            // ide("IC", "2024.3")
-            // ide("IC", "2024.2")
+            recommended()
         }
     }
 }

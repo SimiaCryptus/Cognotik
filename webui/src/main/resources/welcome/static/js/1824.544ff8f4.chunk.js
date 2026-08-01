@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkskyenet_ui=self.webpackChunkskyenet_ui||[]).push([[1824],{1824(e,s,k){k.d(s,{createEventModelingServices:()=>n.g});var n=k(1496);k(9313)}}]);

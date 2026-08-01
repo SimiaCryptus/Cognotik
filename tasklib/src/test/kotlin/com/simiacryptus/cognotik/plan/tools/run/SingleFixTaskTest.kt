@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
+import com.simiacryptus.cognotik.autofix.SingleFixTask
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.run.SingleFixTask.SingleFixTaskExecutionConfigData
+import com.simiacryptus.cognotik.autofix.SingleFixTask.SingleFixTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Timeout
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+@Suppress("unused")
 object SingleFixTaskTest {
 
   @JvmStatic

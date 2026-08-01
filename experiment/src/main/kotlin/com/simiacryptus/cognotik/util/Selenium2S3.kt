@@ -54,8 +54,6 @@ open class Selenium2S3(
     (driver as WebDriver).quit()
   }
 
-  var loadImages: Boolean = false
-
   private val httpClient by lazy {
     HttpAsyncClientBuilder.create()
       .useSystemProperties()

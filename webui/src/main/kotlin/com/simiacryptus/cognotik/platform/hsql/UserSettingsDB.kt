@@ -60,7 +60,7 @@ open class UserSettingsDB : UserSettingsInterface {
          return ageMs < cacheTtlMillis
      }
 
-    override fun getUserSettings(user: User): UserSettings {
+    override fun  getUserSettings(user: User): UserSettings {
         log.debug("Retrieving user settings for user: {}", user)
          cache[user]?.let { entry ->
              if (isFresh(entry)) {

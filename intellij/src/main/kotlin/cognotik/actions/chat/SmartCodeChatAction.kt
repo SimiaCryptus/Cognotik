@@ -10,9 +10,10 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -153,6 +154,7 @@ class SmartCodeChatAction : BaseAction() {
                 }
               },
               resolver = ::resolveToRelativePath,
+              prefilterFilename = ::prefilterFilename
             )
           } + "</div>"
 

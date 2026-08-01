@@ -13,7 +13,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.*
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor

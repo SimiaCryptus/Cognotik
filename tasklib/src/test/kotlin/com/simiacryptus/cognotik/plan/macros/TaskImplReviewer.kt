@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.platform.model.defaultUser
 import com.simiacryptus.cognotik.util.FileGenerator
 import com.simiacryptus.cognotik.util.UnifiedHarness
-import com.simiacryptus.cognotik.util.UpdateModes
+import com.simiacryptus.cognotik.docops.UpdateModes
 import java.io.File
 
 object TaskImplReviewer : FileGenerator() {

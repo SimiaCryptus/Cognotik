@@ -1,17 +1,27 @@
 package com.simiacryptus.cognotik.platform.hsql
 
+import com.simiacryptus.cognotik.platform.hsql.UsageTest.Companion.tempDBDir
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import java.io.File
 import java.util.*
 
 class MetadataStorageDBTest {
 
+    companion object {
+
+        @BeforeAll
+        @JvmStatic
+        fun setupAll() {
+            DatabaseFacet.root = tempDBDir
+        }
+
+    }
 
     private lateinit var storage: MetadataStorageDB
 
@@ -32,7 +42,6 @@ class MetadataStorageDBTest {
 
     @BeforeEach
     fun setUp() {
-        DatabaseFacet.root = null
         // Use null root => in-memory ephemeral HSQL database (mem:<dbName>).
         storage = MetadataStorageDB()
         // Clean DB between tests to ensure isolation

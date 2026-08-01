@@ -18,15 +18,13 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.log
-import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.text.patch.PatchProcessor
+import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -38,6 +36,7 @@ import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import org.slf4j.LoggerFactory
 import java.io.File
+import kotlin.jvm.java
 import kotlin.random.Random
 
 

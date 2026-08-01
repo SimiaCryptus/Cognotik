@@ -18,7 +18,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.newProcessor
+import com.simiacryptus.cognotik.docops.DocProcessor.Companion.newProcessor
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit

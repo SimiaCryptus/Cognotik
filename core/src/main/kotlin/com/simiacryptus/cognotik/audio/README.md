@@ -38,7 +38,15 @@ The module implements a sophisticated Voice Activity Detection (VAD) system:
 - **`PercentileTool`:** A statistical utility used by the discriminator to track value distributions, calculate
   KL-Divergence between speech/silence profiles, and determine optimal entropy-based thresholds.
 
-### 4. Transcription: `TranscriptionProcessor`
+### 4. Model Configuration: `AudioModels`
+
+Represents an AI model configuration used for audio-related tasks:
+
+- **`AudioModelType`:** Enum distinguishing between `Transcription` and `TextToSpeech` model types.
+- **Provider Integration:** Implements the `AIModel` interface, associating a `modelId` with an `APIProvider`
+   (e.g., OpenAI) for use by downstream clients such as `TranscriptionClient`.
+
+### 5. Transcription: `TranscriptionProcessor`
 
 Orchestrates the interaction with AI models:
 
@@ -46,7 +54,7 @@ Orchestrates the interaction with AI models:
 - **Context Management:** Supports prompt injection and updates to maintain transcription continuity.
 - **Asynchronous Execution:** Processes audio packets in a dedicated thread to prevent UI or capture lag.
 
-### 5. Orchestration: `DictationManager`
+### 6. Orchestration: `DictationManager`
 
 An abstract base class that ties all components together into a functional pipeline:
 

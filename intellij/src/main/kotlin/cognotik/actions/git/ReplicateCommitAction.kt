@@ -18,10 +18,12 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.text.util.isBinary
+import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -37,186 +39,186 @@ import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.walk
 
 class ReplicateCommitAction : BaseAction() {
-    private val log = Logger.getInstance(ReplicateCommitAction::class.java)
+  private val log = Logger.getInstance(ReplicateCommitAction::class.java)
 
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+  override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-    override fun handle(event: AnActionEvent) {
-        val project = event.project ?: return
+  override fun handle(event: AnActionEvent) {
+    val project = event.project ?: return
+    try {
+      val settings = getUserSettings(event) ?: run {
+        Messages.showErrorDialog(project, "Could not determine working directory", "Configuration Error")
+        return
+      }
+
+      val dataContext = event.dataContext
+      val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
+      val folder = event.getSelectedFolder()
+      val root = if (null != folder) {
+        folder.toFile.toPath()
+      } else {
+        project.basePath?.let { File(it).toPath() }
+      }!!
+
+      val virtualFiles1 = event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
+      val files = expand(virtualFiles1)
+      val changes = event.getData(VcsDataKeys.CHANGES)
+      val session = Session.newUserID()
+
+      UITools.run(project, "Replicating Commit", true) { progress ->
+        progress.text = "Generating diff info..."
+        val diffInfo = generateDiffInfo(files, changes)
+        progress.text = "Creating patch application..."
+        val patchApp = object : PatchApp(root.toFile(), session, settings, diffInfo) {
+          override fun codeFiles() = getFiles(virtualFiles)
+            .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
+            .map { root.relativize(it) ?: it }.toSet()
+
+          override fun codeSummary(paths: List<Path>): String = paths
+            .filter { it.toFile().exists() }
+            .joinToString("\n\n") { path ->
+              "# ${settings.workingDirectory.toPath().relativize(path)}\n$tripleTilde${
+                path.toString().split('.').lastOrNull()
+              }\n${
+                path.toFile().readText(Charsets.UTF_8)
+              }\n$tripleTilde"
+            }
+
+          override fun projectSummary(): String {
+            val codeFiles = codeFiles()
+            val str = codeFiles
+              .asSequence()
+              .filter { settings.workingDirectory.toPath()?.resolve(it)?.toFile()?.exists() == true }
+              .distinct().sorted()
+              .joinToString("\n") { path ->
+                "* ${path} - ${
+                  settings.workingDirectory.toPath()?.resolve(path)?.toFile()?.length() ?: "?"
+                } bytes".trim()
+              }
+            return str
+          }
+        }
+        progress.text = "Setting up session..."
+        SessionProxyServer.metadataStorage.setSessionName(
+          null,
+          session,
+          "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+        )
+        SessionProxyServer.chats[session] = patchApp
+        ApplicationServer.appInfoMap[session] = AppInfoData(
+          applicationName = "Code Chat",
+          inputCnt = 1,
+          stickyInput = false,
+          loadImages = false,
+          showMenubar = false
+        )
+      }
+      ApplicationManager.getApplication().executeOnPooledThread {
+        Thread.sleep(500)
         try {
-            val settings = getUserSettings(event) ?: run {
-                Messages.showErrorDialog(project, "Could not determine working directory", "Configuration Error")
-                return
-            }
+          val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+            AppSettingsState.instance.listeningEndpoint,
+            AppSettingsState.instance.listeningPort
+          ).server.uri.resolve("/#$session")
+          log.info("Opening browser to $uri")
+          browse(uri)
+        } catch (e: Throwable) {
+          log.error("Error opening browser", e)
+          UITools.showErrorDialog("Failed to open browser: ${e.message}", "Error")
+        }
+      }
+    } catch (e: Exception) {
+      log.error("Error in ReplicateCommitAction", e)
+      Messages.showErrorDialog(project, "Operation failed: ${e.message}", "Error")
+    }
+  }
 
-            val dataContext = event.dataContext
-            val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-            val folder = event.getSelectedFolder()
-            val root = if (null != folder) {
-                folder.toFile.toPath()
-            } else {
-                project.basePath?.let { File(it).toPath() }
-            }!!
+  override fun isEnabled(event: AnActionEvent): Boolean {
+    if (!super.isEnabled(event)) return false
+    val changes = event.getData(VcsDataKeys.CHANGES)
+    return changes != null && changes.isNotEmpty()
+  }
 
-            val virtualFiles1 = event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
-            val files = expand(virtualFiles1)
-            val changes = event.getData(VcsDataKeys.CHANGES)
-            val session = Session.newUserID()
-
-            UITools.run(project, "Replicating Commit", true) { progress ->
-                progress.text = "Generating diff info..."
-                val diffInfo = generateDiffInfo(files, changes)
-                progress.text = "Creating patch application..."
-                val patchApp = object : PatchApp(root.toFile(), session, settings, diffInfo) {
-                    override fun codeFiles() = getFiles(virtualFiles)
-                        .filter { it.toFile().length() < 1024 * 1024 / 2 }
-
-                        .map { root.relativize(it) ?: it }.toSet()
-
-                    override fun codeSummary(paths: List<Path>): String = paths
-                        .filter { it.toFile().exists() }
-                        .joinToString("\n\n") { path ->
-                            "# ${settings.workingDirectory.toPath().relativize(path)}\n$tripleTilde${
-                                path.toString().split('.').lastOrNull()
-                            }\n${
-                                path.toFile().readText(Charsets.UTF_8)
-                            }\n$tripleTilde"
-                        }
-
-                    override fun projectSummary(): String {
-                        val codeFiles = codeFiles()
-                        val str = codeFiles
-                            .asSequence()
-                            .filter { settings.workingDirectory.toPath()?.resolve(it)?.toFile()?.exists() == true }
-                            .distinct().sorted()
-                            .joinToString("\n") { path ->
-                                "* ${path} - ${
-                                    settings.workingDirectory.toPath()?.resolve(path)?.toFile()?.length() ?: "?"
-                                } bytes".trim()
-                            }
-                        return str
-                    }
-                }
-                progress.text = "Setting up session..."
-                SessionProxyServer.metadataStorage.setSessionName(
-                    null,
-                    session,
-                    "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-                )
-                SessionProxyServer.chats[session] = patchApp
-                ApplicationServer.appInfoMap[session] = AppInfoData(
-                    applicationName = "Code Chat",
-                    inputCnt = 1,
-                    stickyInput = false,
-                    loadImages = false,
-                    showMenubar = false
-                )
-            }
-            ApplicationManager.getApplication().executeOnPooledThread {
-                Thread.sleep(500)
-                try {
-                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
-                        AppSettingsState.instance.listeningEndpoint,
-                        AppSettingsState.instance.listeningPort
-                    ).server.uri.resolve("/#$session")
-                    log.info("Opening browser to $uri")
-                    browse(uri)
-                } catch (e: Throwable) {
-                    log.error("Error opening browser", e)
-                    UITools.showErrorDialog("Failed to open browser: ${e.message}", "Error")
-                }
-            }
+  private fun generateDiffInfo(files: Array<VirtualFile>?, changes: Array<out Change>?): String {
+    val map = changes?.toList()
+      ?.associateBy { (it.beforeRevision?.file ?: it.afterRevision?.file)!!.toString() }
+    val entries = map?.entries
+      ?.filter { (file, change) ->
+        try {
+          val find = files?.find { it.toNioPath().toFile().absolutePath == File(file).absolutePath }
+          find != null
         } catch (e: Exception) {
-            log.error("Error in ReplicateCommitAction", e)
-            Messages.showErrorDialog(project, "Operation failed: ${e.message}", "Error")
+          log.error("Error comparing changes", e)
+          false
         }
-    }
+      }
+    return entries
+      ?.joinToString("\n\n") { (file, change) ->
+        val before = change.beforeRevision?.content
+        val after = change.afterRevision?.content
+        if ((before ?: after)!!.isBinary)
+          return@joinToString "# Binary: ${change.afterRevision?.file}".prependIndent("  ")
+        if (before == null) return@joinToString "# Deleted: ${change.afterRevision?.file}\n${after}".replace(
+          "\n",
+          "\n  "
+        )
+        if (after == null) return@joinToString "# Added: ${change.beforeRevision?.file}\n${before}".replace(
+          "\n",
+          "\n  "
+        )
+        val diff = AppSettingsState.instance.processor.generatePatch(before, after)
+        "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
+      } ?: "No changes found"
+  }
 
-    override fun isEnabled(event: AnActionEvent): Boolean {
-        if (!super.isEnabled(event)) return false
-        val changes = event.getData(VcsDataKeys.CHANGES)
-        return changes != null && changes.isNotEmpty()
-    }
+  abstract inner class PatchApp(
+    override val root: File,
+    val session: Session,
+    val settings: Settings,
+    val diffInfo: String,
+  ) : ApplicationServer(
+    applicationName = "Replicate Commit",
+    path = "/replicateCommit",
+    showMenubar = false,
+  ) {
+    abstract fun codeFiles(): Set<Path>
+    abstract fun codeSummary(paths: List<Path>): String
+    override val inputCnt = 1
+    override val stickyInput = false
 
-    private fun generateDiffInfo(files: Array<VirtualFile>?, changes: Array<out Change>?): String {
-        val map = changes?.toList()
-            ?.associateBy { (it.beforeRevision?.file ?: it.afterRevision?.file)!!.toString() }
-        val entries = map?.entries
-            ?.filter { (file, change) ->
-                try {
-                    val find = files?.find { it.toNioPath().toFile().absolutePath == File(file).absolutePath }
-                    find != null
-                } catch (e: Exception) {
-                    log.error("Error comparing changes", e)
-                    false
-                }
-            }
-        return entries
-            ?.joinToString("\n\n") { (file, change) ->
-                val before = change.beforeRevision?.content
-                val after = change.afterRevision?.content
-                if ((before ?: after)!!.isBinary)
-                    return@joinToString "# Binary: ${change.afterRevision?.file}".prependIndent("  ")
-                if (before == null) return@joinToString "# Deleted: ${change.afterRevision?.file}\n${after}".replace(
-                    "\n",
-                    "\n  "
-                )
-                if (after == null) return@joinToString "# Added: ${change.beforeRevision?.file}\n${before}".replace(
-                    "\n",
-                    "\n  "
-                )
-                val diff = AppSettingsState.instance.processor.generatePatch(before, after)
-                "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
-            } ?: "No changes found"
-    }
-
-    abstract inner class PatchApp(
-        override val root: File,
-        val session: Session,
-        val settings: Settings,
-        val diffInfo: String,
-    ) : ApplicationServer(
-        applicationName = "Replicate Commit",
-        path = "/replicateCommit",
-        showMenubar = false,
+    override fun userMessage(
+      session: Session,
+      user: User,
+      userMessage: String,
+      ui: SocketManager
     ) {
-        abstract fun codeFiles(): Set<Path>
-        abstract fun codeSummary(paths: List<Path>): String
-        override val inputCnt = 1
-        override val stickyInput = false
-
-        override fun userMessage(
-            session: Session,
-            user: User,
-            userMessage: String,
-            ui: SocketManager
-        ) {
-            val task = ui.newTask()
-            task.echo(userMessage)
-            Thread {
-                run(ui, task, session, settings, userMessage, diffInfo)
-            }.start()
-        }
-
-        abstract fun projectSummary(): String
+      val task = ui.newTask()
+      task.echo(userMessage)
+      Thread {
+        run(ui, task, session, settings, userMessage, diffInfo)
+      }.start()
     }
 
-    private fun PatchApp.run(
-        ui: SocketManager,
-        task: SessionTask,
-        session: Session,
-        settings: Settings,
-        userMessage: String = "",
-        diffInfo: String
-    ) {
-        try {
-            val planTxt = projectSummary()
-            task.add(renderMarkdown(planTxt))
-            Retryable(task) {
-                val task = ui.newTask(false)
-                val plan = ParsedAgent(
-                    resultClass = ParsedTasks::class.java,
-                    prompt = """
+    abstract fun projectSummary(): String
+  }
+
+  private fun PatchApp.run(
+    ui: SocketManager,
+    task: SessionTask,
+    session: Session,
+    settings: Settings,
+    userMessage: String = "",
+    diffInfo: String
+  ) {
+    try {
+      val planTxt = projectSummary()
+      task.add(renderMarkdown(planTxt))
+      Retryable(task) {
+        val task = ui.newTask(false)
+        val plan = ParsedAgent(
+          resultClass = ParsedTasks::class.java,
+          prompt = """
                       You are a helpful AI that helps people with coding.
 
                       You will be answering questions about the following project:
@@ -231,44 +233,44 @@ class ReplicateCommitAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartChatClient,
-                    parsingModel = AppSettingsState.instance.fastChatClient,
-                ).answer(
-                    listOf(
-                        "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
-                    ),
-                )
-              val map = mapOf(
-                "Text" to plan.text.renderMarkdown(true),
-                "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(true),
-              )
-              task.add(
-                TabbedDisplay.displayMapInTabs(
-                  map,
-                  null,
-                  map.entries.map { it.value.length + it.key.length }.sum() > 10000
-                )
-                )
-                plan.obj.errors?.map { planTask ->
-                    Retryable(task) {
-                        val task = ui.newTask(false)
-                        val paths =
-                            ((planTask.fixFiles ?: emptyList()) + (planTask.relatedFiles ?: emptyList())).flatMap {
-                                toPaths(settings.workingDirectory.toPath(), it)
-                            }
-                        val codeSummary = codeSummary(paths)
-                        val response = ChatAgent(
-                            prompt = """
+          model = AppSettingsState.instance.smartChatClient,
+          parsingModel = AppSettingsState.instance.fastChatClient,
+        ).answer(
+          listOf(
+            "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
+          ),
+        )
+        val map = mapOf(
+          "Text" to plan.text.renderMarkdown(true),
+          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(true),
+        )
+        task.add(
+          TabbedDisplay.displayMapInTabs(
+            map,
+            null,
+            map.entries.map { it.value.length + it.key.length }.sum() > 10000
+          )
+        )
+        plan.obj.errors?.map { planTask ->
+          Retryable(task) {
+            val task = ui.newTask(false)
+            val paths =
+              ((planTask.fixFiles ?: emptyList()) + (planTask.relatedFiles ?: emptyList())).flatMap {
+                toPaths(settings.workingDirectory.toPath(), it)
+              }
+            val codeSummary = codeSummary(paths)
+            val response = ChatAgent(
+              prompt = """
                   You are a helpful AI that helps people with coding.
 
                   You will be answering questions about the following code:
 
                   """.trimIndent() + codeSummary + "\n" + { AppSettingsState.instance.processor.patchFormatPrompt } +
-                                    "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
-                            model = AppSettingsState.instance.smartChatClient
-                        ).answer(
-                            listOf(
-                                """
+                  "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
+              model = AppSettingsState.instance.smartChatClient
+            ).answer(
+              listOf(
+                """
                               We are working on executing the following directive:
 
                               """.trimIndent() + tripleTilde + """
@@ -277,109 +279,110 @@ class ReplicateCommitAction : BaseAction() {
 
                               Focus on the task at hand:
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
-                            ),
-                        )
-                        val markdown =
-                            DiffInstrumentor(
-                                AppSettingsState.instance.processor,
-                                SessionRenderer(task),
-                            ).instrument(
-                            root = root.toPath(),
-                            response = response,
-                            handle = { newCodeMap: Map<Path, String> ->
-                              newCodeMap.forEach { (path, newCode) ->
-                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                              }
-                            },
-                                resolver = ::resolveToRelativePath,
-                          )
-                        task.add(renderMarkdown(markdown))
-                        task.placeholder
-                    }
-                    ""
-                }?.joinToString { it }?.apply { task.add(this) }
-                task.placeholder
-            }
-        } catch (e: Exception) {
-            task.error(e)
-        }
+              ),
+            )
+            val markdown =
+              DiffInstrumentor(
+                AppSettingsState.instance.processor,
+                SessionRenderer(task),
+              ).instrument(
+                root = root.toPath(),
+                response = response,
+                handle = { newCodeMap: Map<Path, String> ->
+                  newCodeMap.forEach { (path, newCode) ->
+                    task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                  }
+                },
+                resolver = ::resolveToRelativePath,
+                prefilterFilename = ::prefilterFilename
+              )
+            task.add(renderMarkdown(markdown))
+            task.placeholder
+          }
+          ""
+        }?.joinToString { it }?.apply { task.add(this) }
+        task.placeholder
+      }
+    } catch (e: Exception) {
+      task.error(e)
     }
+  }
 
-    data class ParsedTasks(
-        val errors: List<ParsedTask>? = null
-    )
+  data class ParsedTasks(
+    val errors: List<ParsedTask>? = null
+  )
 
-    data class ParsedTask(
-        @Description("The task to be performed")
-        val message: String? = null,
-        @Description("Files identified as needing modification and issue-related files")
-        val relatedFiles: List<String>? = null,
-        @Description("Files identified as needing modification and issue-related files")
-        val fixFiles: List<String>? = null
-    )
+  data class ParsedTask(
+    @Description("The task to be performed")
+    val message: String? = null,
+    @Description("Files identified as needing modification and issue-related files")
+    val relatedFiles: List<String>? = null,
+    @Description("Files identified as needing modification and issue-related files")
+    val fixFiles: List<String>? = null
+  )
 
-    data class Settings(
-        var workingDirectory: File,
-    )
+  data class Settings(
+    var workingDirectory: File,
+  )
 
-    private fun getFiles(
-        virtualFiles: Array<out VirtualFile>?
-    ): MutableSet<Path> {
-        val codeFiles = mutableSetOf<Path>()
+  private fun getFiles(
+    virtualFiles: Array<out VirtualFile>?
+  ): MutableSet<Path> {
+    val codeFiles = mutableSetOf<Path>()
 
-        virtualFiles?.forEach { file ->
-            if (file.isDirectory) {
-                if (file.name.startsWith(".")) return@forEach
-                if (FileSelectionUtils.isGitignore(file.toNioPath())) return@forEach
-                codeFiles.addAll(getFiles(file.children))
-            } else {
-                codeFiles.add((file.toNioPath()))
-            }
-        }
-        return codeFiles
+    virtualFiles?.forEach { file ->
+      if (file.isDirectory) {
+        if (file.name.startsWith(".")) return@forEach
+        if (FileSelectionUtils.isGitignore(file.toNioPath())) return@forEach
+        codeFiles.addAll(getFiles(file.children))
+      } else {
+        codeFiles.add((file.toNioPath()))
+      }
     }
+    return codeFiles
+  }
 
-    private fun getUserSettings(event: AnActionEvent?): Settings? {
-        val root = (event ?: return null).getSelectedFolder()?.toNioPath() ?: event.project?.basePath?.let {
-            File(
-                it
-            ).toPath()
-        }
-        val files = event.getSelectedFiles().map { it.path.let { File(it).toPath() } }.toMutableSet()
-        if (files.isEmpty()) Files.walk(root)
-            .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }
-            .toList().filterNotNull().forEach { files.add(it) }
-        return Settings(root?.toFile() ?: return null)
+  private fun getUserSettings(event: AnActionEvent?): Settings? {
+    val root = (event ?: return null).getSelectedFolder()?.toNioPath() ?: event.project?.basePath?.let {
+      File(
+        it
+      ).toPath()
     }
+    val files = event.getSelectedFiles().map { it.path.let { File(it).toPath() } }.toMutableSet()
+    if (files.isEmpty()) Files.walk(root)
+      .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }
+      .toList().filterNotNull().forEach { files.add(it) }
+    return Settings(root?.toFile() ?: return null)
+  }
 
-    private fun expand(data: Array<VirtualFile>?): Array<VirtualFile>? {
-        return data?.flatMap {
-            if (it.isDirectory) {
-                expand(it.children.toList().toTypedArray())?.toList() ?: listOf()
-            } else {
-                listOf(it)
-            }
-        }?.toTypedArray()
+  private fun expand(data: Array<VirtualFile>?): Array<VirtualFile>? {
+    return data?.flatMap {
+      if (it.isDirectory) {
+        expand(it.children.toList().toTypedArray())?.toList() ?: listOf()
+      } else {
+        listOf(it)
+      }
+    }?.toTypedArray()
+  }
+
+  companion object {
+    val tripleTilde = "`" + "``"
+
+
+    @OptIn(ExperimentalPathApi::class)
+    fun toPaths(root: Path, it: String): Iterable<Path> {
+
+      if (it.contains("*")) {
+        val prefix = it.substringBefore("*")
+        val suffix = it.substringAfter("*")
+        val files = root.walk().toList()
+        val pathList = files.filter {
+          it.toString().startsWith(prefix) && it.toString().endsWith(suffix)
+        }.toList()
+        return pathList
+      } else {
+        return listOf(Path.of(it))
+      }
     }
-
-    companion object {
-        val tripleTilde = "`" + "``"
-
-
-        @OptIn(ExperimentalPathApi::class)
-        fun toPaths(root: Path, it: String): Iterable<Path> {
-
-            if (it.contains("*")) {
-                val prefix = it.substringBefore("*")
-                val suffix = it.substringAfter("*")
-                val files = root.walk().toList()
-                val pathList = files.filter {
-                    it.toString().startsWith(prefix) && it.toString().endsWith(suffix)
-                }.toList()
-                return pathList
-            } else {
-                return listOf(Path.of(it))
-            }
-        }
-    }
+  }
 }

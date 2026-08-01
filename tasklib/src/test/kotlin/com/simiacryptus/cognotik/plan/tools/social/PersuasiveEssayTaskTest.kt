@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
+@Suppress("unused")
 object PersuasiveEssayTaskTest {
 
   @JvmStatic

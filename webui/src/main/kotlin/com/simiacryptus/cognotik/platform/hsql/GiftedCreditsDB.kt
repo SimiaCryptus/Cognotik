@@ -73,12 +73,24 @@ class GiftedCreditsDB(
         name = "gifted_credits",
         tables = listOf(GiftsTable, GiftClaimsTable)
     )
+    /**
+     * Route all Exposed DSL access through [ExposedDatabase], which delegates
+     * connection acquisition to [DatabaseFacet.getConnection]. That path
+     * includes retry-with-demotion handling for file-backed databases that
+     * cannot be opened (falling back to an in-memory database) and keeps the
+     * shared connection (and therefore the in-memory database) alive for the
+     * lifetime of the application. Using [DatabaseFacet.database] directly
+     * bypasses all of that and can leave an in-memory fallback without a
+     * durable connection or a correctly-initialized schema.
+     */
+    private val database = ExposedDatabase.get(facet)
+
 
     init {
         // Trigger lazy database initialization and schema creation.
         try {
             log.debug("Initializing Exposed schema for GiftedCreditsDB")
-            transaction(facet.database) {
+           transaction(database) {
                 // Touch the tables to ensure schema is created via the facet.
                 GiftsTable.selectAll().limit(1).toList()
                 GiftClaimsTable.selectAll().limit(1).toList()
@@ -141,7 +153,7 @@ class GiftedCreditsDB(
         val id = UUID.randomUUID().toString()
         log.debug("Generated new gift id={}", id)
         try {
-            transaction(facet.database) {
+           transaction(database) {
                 GiftsTable.insert {
                     it[GiftsTable.id] = id
                    it[GiftsTable.amountGranted] = amountGranted
@@ -164,7 +176,7 @@ class GiftedCreditsDB(
             } catch (e: Exception) {
                 log.error("Failed to debit creator='{}' for gift id={}; attempting rollback delete", creatorId, id, e)
                 try {
-                    transaction(facet.database) {
+                   transaction(database) {
                         GiftsTable.deleteWhere { GiftsTable.id eq id }
                     }
                     log.info("Rolled back gift row id={} after debit failure", id)
@@ -198,7 +210,7 @@ class GiftedCreditsDB(
             return null
         }
         try {
-            return transaction(facet.database) {
+           return transaction(database) {
                 fetchGiftById(id)
             }
         } catch (e: Exception) {
@@ -220,7 +232,7 @@ class GiftedCreditsDB(
         }
 
         return try {
-            transaction(facet.database) {
+           transaction(database) {
                 // 1. Check if the user has already claimed this gift
                 val alreadyClaimed = GiftClaimsTable
                     .selectAll()
@@ -311,7 +323,7 @@ class GiftedCreditsDB(
     override fun listGifts(): List<GiftedCreditsInterface.Gift> {
         log.debug("Listing all gifts")
         try {
-            return transaction(facet.database) {
+           return transaction(database) {
                 val claimCountExpr = GiftClaimsTable.userId.count()
                 val rows = GiftsTable
                     .leftJoin(GiftClaimsTable, { GiftsTable.id }, { GiftClaimsTable.giftId })
@@ -353,7 +365,7 @@ class GiftedCreditsDB(
     override fun listClaims(giftId: String?, userId: String?): List<GiftedCreditsInterface.Claim> {
         log.debug("Listing claims with filters giftId={}, userId={}", giftId, userId)
         try {
-            return transaction(facet.database) {
+           return transaction(database) {
                 val query = GiftClaimsTable.selectAll()
                 if (!giftId.isNullOrBlank()) {
                     query.andWhere { GiftClaimsTable.giftId eq giftId }

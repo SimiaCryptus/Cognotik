@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import java.io.File
 
+@Suppress("unused")
 object PersonaChatModeTest {
 
   @JvmStatic

@@ -118,6 +118,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     }
   }
 
+  @Suppress("unused")
   data class NarrativeCharacterReference(
     @Description("The name of the character this reference is for")
     var character_name: String = "",
@@ -140,28 +141,6 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
       return null
     }
   }
-
-  data class NarrativePlotContinuityDetails(
-    @Description("Overall story arc or narrative structure (e.g., 'three-act structure', 'hero's journey')")
-    var narrative_structure: String = "",
-    @Description("Key plot points that must be included, in order")
-    var key_plot_points: List<String> = emptyList(),
-    @Description("Setting details (time period, location, world-building notes)")
-    var setting_details: String = "",
-    @Description("Themes or motifs to weave throughout the story")
-    var themes: List<String> = emptyList(),
-    @Description("Tone and mood guidelines")
-    var tone: String = "",
-    @Description("Previously established story context or backstory that this narrative continues from")
-    var prior_story_context: String = "",
-    @Description("Specific continuity constraints")
-    var continuity_constraints: List<String> = emptyList(),
-    @Description("Desired ending or resolution notes")
-    var ending_notes: String = "",
-    @Description("Any additional requirements or notes")
-    var additional_notes: String = ""
-  )
-
 
   data class NarrativeOutline(
     @Description("The title of the narrative")

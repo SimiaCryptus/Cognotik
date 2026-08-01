@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiFileFactory
 import com.intellij.testFramework.LightVirtualFile
+import com.simiacryptus.cognotik.text.validate.GrammarValidator
 
 class IntelliJPsiValidator(private val project: Project, val extension: String, val filename: String) :
     GrammarValidator {

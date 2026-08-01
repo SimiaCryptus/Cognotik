@@ -384,22 +384,6 @@ class CounterfactualAnalysisTask(
     }
   }
 
-  private fun isTextFile(file: java.io.File): Boolean {
-    val textExtensions = setOf(
-      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
-      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
-    )
-    return textExtensions.contains(file.extension.lowercase())
-  }
-
-  private fun extractDocumentContent(file: java.io.File) = try {
-    file.readText()
-  } catch (e: Exception) {
-    log.warn("Failed to extract content from ${file.name}", e)
-    "Error reading file: ${e.message}"
-  }
-
-
   companion object {
     private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
 

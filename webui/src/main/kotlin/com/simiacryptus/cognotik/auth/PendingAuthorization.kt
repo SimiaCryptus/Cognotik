@@ -44,11 +44,6 @@ class PendingAuthorization(
          */
         fun getAll(): Map<String, PendingAuthorization> = pendingAuthorizations.toMap()
 
-        /**
-         * Get all pending authorizations that are still in PENDING state.
-         */
-        fun getPending(): List<PendingAuthorization> =
-            pendingAuthorizations.values.filter { it.status == Status.PENDING }
 
         /**
          * Get a specific pending authorization by ID.
@@ -59,19 +54,6 @@ class PendingAuthorization(
          * Remove a pending authorization (e.g., after completion or cancellation).
          */
         fun remove(id: String): PendingAuthorization? = pendingAuthorizations.remove(id)
-         /**
-          * Remove all completed or failed authorizations.
-          */
-         fun removeCompleted() {
-             val completed = pendingAuthorizations.entries.filter {
-                 it.value.status == Status.COMPLETED || it.value.status == Status.FAILED
-             }
-             for ((id, _) in completed) {
-                 pendingAuthorizations.remove(id)
-                 log.debug("Removed completed/failed authorization: {}", id)
-             }
-         }
-
 
         /**
          * Execute a pending authorization flow by ID.

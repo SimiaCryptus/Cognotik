@@ -1,0 +1,246 @@
+/* ============================================================================
+ * The shell: header · activity rail · sidebar · splitter · editor · status.
+ * Grid areas and [data-sidebar] states are a JS contract (AppShell) — the
+ * column template must keep its four tracks.
+ * ========================================================================== */
+
+.fs-shell {
+    display: grid;
+    height: 100vh;
+    height: 100dvh;
+    grid-template-columns: auto var(--fs-sidebar-w) 7px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        "header header header header"
+        "activity sidebar splitter editor"
+        "status status status status";
+    isolation: isolate;
+    animation: fs-fade var(--fs-motion-slow) var(--fs-ease-out) both;
+}
+
+.fs-shell[data-sidebar="hidden"] {
+    grid-template-columns: auto 0 0 minmax(0, 1fr);
+}
+
+/* ------------------------------------------------------------------ header */
+
+.fs-header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-3);
+    min-height: var(--fs-header-h);
+    padding: var(--fs-space-2) var(--fs-space-3);
+    background: var(--fs-chrome);
+    -webkit-backdrop-filter: var(--fs-blur);
+    backdrop-filter: var(--fs-blur);
+    border-block-end: 1px solid var(--fs-hairline);
+    z-index: 3;
+}
+
+.fs-header__spacer {
+    flex: 1;
+    min-width: var(--fs-space-2);
+}
+
+.fs-header__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fs-space-3);
+    padding-inline: var(--fs-space-2) var(--fs-space-1);
+    font-weight: 680;
+    font-size: var(--fs-text-md);
+    letter-spacing: var(--fs-tracking-tight);
+    white-space: nowrap;
+}
+
+/* A quiet mark instead of a logo file: it re-tints with the accent. */
+.fs-header__title::before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    border-radius: 5px;
+    background:
+            linear-gradient(145deg,
+            color-mix(in oklab, var(--fs-accent) 92%, #fff),
+            var(--fs-accent) 45%,
+            color-mix(in oklab, var(--fs-accent) 70%, #000));
+    box-shadow: 0 1px 3px color-mix(in oklab, var(--fs-accent) 45%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+
+.fs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fs-space-2);
+    padding: 1px var(--fs-space-3);
+    border-radius: var(--fs-radius-pill);
+    border: 1px solid color-mix(in oklab, var(--fs-warn) 45%, transparent);
+    background: var(--fs-warn-soft);
+    color: var(--fs-warn);
+    font-size: var(--fs-text-xs);
+    font-weight: 650;
+    letter-spacing: var(--fs-tracking-wide);
+    text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------ activity rail */
+
+.fs-activity {
+    grid-area: activity;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fs-space-2);
+    padding: var(--fs-space-3) var(--fs-space-2);
+    background: var(--fs-chrome);
+    -webkit-backdrop-filter: var(--fs-blur);
+    backdrop-filter: var(--fs-blur);
+    border-inline-end: 1px solid var(--fs-hairline);
+    z-index: 2;
+}
+
+.fs-activity button {
+    position: relative;
+    width: var(--fs-rail-size);
+    height: var(--fs-rail-size);
+    padding: 0;
+    border-radius: var(--fs-radius-md);
+    font-size: 15px;
+    color: var(--fs-fg-muted);
+}
+
+.fs-activity button:hover {
+    color: var(--fs-fg);
+    background: var(--fs-hover);
+}
+
+.fs-activity button[aria-pressed="true"] {
+    color: var(--fs-accent);
+    background: var(--fs-accent-soft);
+}
+
+/* The IDE-style indicator bar. */
+.fs-activity button[aria-pressed="true"]::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: -7px;
+    inset-block: 5px;
+    width: 3px;
+    border-radius: var(--fs-radius-pill);
+    background: var(--fs-accent);
+}
+
+/* ----------------------------------------------------------------- sidebar */
+
+.fs-sidebar {
+    grid-area: sidebar;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--fs-chrome);
+    -webkit-backdrop-filter: var(--fs-blur);
+    backdrop-filter: var(--fs-blur);
+    border-inline-end: 1px solid var(--fs-hairline);
+    z-index: 2;
+}
+
+/* --------------------------------------------------------------- splitters */
+
+.fs-splitter {
+    grid-area: splitter;
+    position: relative;
+    cursor: col-resize;
+    background: transparent;
+    touch-action: none;
+}
+
+.fs-splitter::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    width: 2px;
+    border-radius: var(--fs-radius-pill);
+    background: transparent;
+    transition: background-color var(--fs-motion-fast) var(--fs-ease);
+}
+
+.fs-splitter:hover::after,
+.fs-splitter:focus-visible::after {
+    background: var(--fs-accent);
+}
+
+.fs-splitter:focus-visible {
+    outline: none;
+}
+
+/* -------------------------------------------------------------------- main */
+
+.fs-main {
+    grid-area: editor;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: var(--fs-bg);
+    border-start-start-radius: var(--fs-radius-lg);
+    border-inline-start: 1px solid var(--fs-hairline);
+    box-shadow: var(--fs-shadow-1);
+    overflow: hidden;
+}
+
+.fs-shell[data-sidebar="hidden"] .fs-main {
+    border-start-start-radius: 0;
+}
+
+/* ------------------------------------------------------------------ status */
+
+.fs-status {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-4);
+    min-height: var(--fs-status-h);
+    padding-inline: var(--fs-space-4);
+    background: var(--fs-chrome);
+    -webkit-backdrop-filter: var(--fs-blur);
+    backdrop-filter: var(--fs-blur);
+    border-block-start: 1px solid var(--fs-hairline);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    z-index: 3;
+}
+
+/* --------------------------------------------------------------- responsive */
+
+@media (max-width: 860px) {
+    .fs-shell {
+        grid-template-columns: auto 0 0 minmax(0, 1fr);
+    }
+
+    /* Drawer: the sidebar floats above the editor instead of squeezing it. */
+    .fs-shell[data-sidebar="drawer"] .fs-sidebar {
+        position: fixed;
+        inset-block: var(--fs-header-h) var(--fs-status-h);
+        inset-inline-start: calc(var(--fs-rail-size) + var(--fs-space-4));
+        width: min(84vw, 340px);
+        z-index: calc(var(--fs-z-overlay) - 1);
+        border-radius: var(--fs-radius-lg);
+        border: 1px solid var(--fs-border);
+        box-shadow: var(--fs-shadow-4);
+        animation: fs-pop var(--fs-motion) var(--fs-ease-out) both;
+    }
+
+    .fs-header__title span:not(.sr-only) {
+        display: none;
+    }
+}
+
+@media (max-width: 620px) {
+    .fs-header__classic {
+        display: none;
+    }
+}

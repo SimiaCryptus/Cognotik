@@ -30,9 +30,11 @@ The module uses a provider-based architecture for API interactions:
 
 The **`PromptOptimization`** class implements a genetic algorithm to evolve and improve system prompts. It uses:
 
-* **Mutation**: Rephrasing, summarizing, or expanding prompts.
+* **Mutation**: Applies one of several directives (weighted at random), including Rephrase, Randomize, Summarize,
+  Expand, Reorder, and Remove Duplicate.
 * **Recombination**: Combining successful prompts to create better descendants.
-* **Evaluation**: Scoring prompts based on test cases and expectations.
+* **Evaluation**: Scoring prompts based on test cases and `Expectation` implementations, which use the configured
+  `EmbeddingModel` and `EmbeddingClientInterface` to judge response quality.
 
 ## Supported Models
 
@@ -78,3 +80,5 @@ println("Cosine Distance: $distance")
 * **Reliability**: Clients are designed to work with `HttpClientManager` to provide performance logging and reliability
   features.
 * **Cost Tracking**: The `onUsage` callback allows applications to track token consumption and costs in real-time.
+* **Provider Abstraction**: `EmbeddingModel.instance(...)` resolves the appropriate `EmbeddingClientInterface`
+  implementation via `APIProvider.getEmbeddingClient(...)`, decoupling model selection from transport details.

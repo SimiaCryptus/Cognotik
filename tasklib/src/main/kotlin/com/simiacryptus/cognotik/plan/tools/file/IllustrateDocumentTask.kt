@@ -6,15 +6,16 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -620,6 +621,7 @@ class IllustrateDocumentTask(
           shouldAutoApply = { _: Path -> true },
           defaultFile = documentFile,
           resolver = ::resolveToRelativePath,
+          prefilterFilename = ::prefilterFilename
         ) + "\n\n## Auto-applied image insertion patches"
       })
       semaphore.release()
@@ -639,6 +641,7 @@ class IllustrateDocumentTask(
           },
           defaultFile = documentFile,
           resolver = ::resolveToRelativePath,
+          prefilterFilename = ::prefilterFilename
         ) + acceptButtonFooter(subTask.ui) {
           subTask.complete()
           semaphore.release()

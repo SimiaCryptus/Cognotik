@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.AudioSegment
 import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.util.BudgetException
-import com.simiacryptus.cognotik.util.NonRetryableException
+import com.simiacryptus.cognotik.exceptions.BudgetException
+import com.simiacryptus.cognotik.exceptions.NonRetryableException
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
 import java.util.concurrent.ExecutionException
@@ -359,18 +359,7 @@ open class AudioProcessingAgent(
                 } catch (e: BudgetException) {
                     throw e
                 } catch (e: ExecutionException) {
-                    when(e) {
-                        is InterruptedException, is java.util.concurrent.CancellationException -> {
-                            log.error(
-                                "Segment {} of {} was interrupted or cancelled during rendering; substituting empty result.",
-                                index + 1,
-                                parsed.size,
-                                e
-                            )
-                            (parsed[index].text to null)
-                        }
-                        else -> throw e.cause ?: e
-                    }
+                    throw e.cause ?: e
                 } catch (e: Exception) {
                     log.error(
                         "Error retrieving result for segment {} of {}; substituting empty result.",

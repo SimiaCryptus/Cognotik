@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData

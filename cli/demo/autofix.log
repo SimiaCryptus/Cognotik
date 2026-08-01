@@ -1,0 +1,14 @@
+Plan: 1 command(s) in /home/andrew/code/Cognotik/cli/demo
+  [1] ./test.sh
+  mode: auto-apply patches
+Models: smart=claude-sonnet-5 fast=claude-haiku-4-5-20251001 image=claude-haiku-4-5-20251001 audio=claude-haiku-4-5-20251001
+Starting ephemeral monitor server (stops when this command exits)...
+Monitor: http://localhost:46425/
+Session U-20260729-e2gTOnbF -> http://localhost:46425/#U-20260729-e2gTOnbF
+Running 1 command(s) with auto-fix=true (timeout 30m)...
+WARN  Completed metadata database schema initialization for jdbc:h2:tcp://localhost:37651//home/andrew/code/Cognotik/cli/demo/.cognotik/default;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE|metadata with 6 DDL failure(s) out of 7
+WARN  Validation failed for list element with message: null
+
+### Success
+All commands executed successfully with exit code 0.
+Transcripts: /home/andrew/code/Cognotik/cli/demo/.cognotik/autofix/run-20260729_172040

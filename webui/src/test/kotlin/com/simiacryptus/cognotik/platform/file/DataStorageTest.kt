@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.hsql.MetadataStorageDB
+import com.simiacryptus.cognotik.platform.hsql.UsageTest.Companion.tempDBDir
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -10,6 +11,7 @@ import com.simiacryptus.cognotik.util.SecureString
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -19,6 +21,13 @@ import java.util.*
 abstract class StorageInterfaceTest(val storage: StorageInterface) {
     companion object {
         private val log = LoggerFactory.getLogger(StorageInterfaceTest::class.java)
+
+        @BeforeAll
+        @JvmStatic
+        fun setupAll() {
+            DatabaseFacet.root = tempDBDir
+        }
+
     }
 
     @Test
@@ -195,7 +204,6 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
 class DataStorageTest : StorageInterfaceTest(run {
     SecureString.key = SecureString.randomKey()
-    DatabaseFacet.root = null
     DataStorage(
         Files.createTempDirectory("sessionDataTest").toFile(),
         MetadataStorageDB()

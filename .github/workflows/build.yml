@@ -114,6 +114,12 @@ jobs:
           echo "Starting experiment JAR build..."
           ./gradlew :experiment:jar
           echo "Experiment JAR build completed"
+      - name: Build CLI fat JAR
+        run: |
+          echo "Starting CLI fat JAR build..."
+          ./gradlew :cli:shadowJar
+          echo "CLI fat JAR build completed"
+
 
       - name: Prepare Plugin Artifact
         id: artifact
@@ -136,6 +142,22 @@ jobs:
           echo "Found experiment artifact: $FILENAME"
           echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
           echo "Experiment artifact preparation completed"
+      - name: Prepare CLI Artifact
+        id: cli-artifact
+        shell: bash
+        run: |
+          echo "Preparing CLI fat JAR artifact..."
+          cd ${{ github.workspace }}/cli/build/libs
+          FILENAME=`ls *-all.jar | head -1`
+          if [ -z "$FILENAME" ]; then
+            echo "Error: No CLI fat JAR (*-all.jar) found"
+            ls -la
+            exit 1
+          fi
+          echo "Found CLI artifact: $FILENAME"
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+          echo "CLI artifact preparation completed"
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -150,6 +172,13 @@ jobs:
           name: experiment-jar
           path: experiment/build/libs/*.jar
           retention-days: 30
+      - name: Upload CLI fat JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-fatjar
+          path: cli/build/libs/*-all.jar
+          retention-days: 30
+
 
       - name: List uploaded artifacts
         run: |
@@ -157,10 +186,13 @@ jobs:
           ls -la intellij/build/distributions/
           echo "Uploaded experiment artifacts:"
           ls -la experiment/build/libs/
+          echo "Uploaded CLI artifacts:"
+          ls -la cli/build/libs/
 
   build-windows-installer:
     name: Build Windows Installer
     runs-on: windows-latest
+    if: github.event_name != 'pull_request'
     needs: [ build ]
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
@@ -231,6 +263,7 @@ jobs:
   build-linux-installer:
     name: Build Linux Installer
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     needs: [ build ]
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
@@ -296,6 +329,7 @@ jobs:
   build-mac-installer:
     name: Build Mac Installer
     runs-on: macos-latest
+    if: github.event_name != 'pull_request'
     needs: [ build ]
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
@@ -590,6 +624,11 @@ jobs:
         with:
           name: experiment-jar
           path: ./experiment-jar
+      - name: Download CLI fat JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-fatjar
+          path: ./cli-jar
 
 
       - name: Upload Plugin Release Asset
@@ -658,3 +697,17 @@ jobs:
           echo "Found JAR file: $JAR_FILE"
           gh release upload "v${{ needs.build.outputs.version }}" \
             "$JAR_FILE"
+      - name: Upload CLI Fat JAR Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading CLI fat JAR asset..."
+          CLI_JAR=$(find ./cli-jar -name "*-all.jar" -type f | head -1)
+          if [ -z "$CLI_JAR" ]; then
+            echo "Error: No CLI fat JAR (*-all.jar) found in cli-jar directory"
+            ls -la ./cli-jar
+            exit 1
+          fi
+          echo "Found CLI fat JAR: $CLI_JAR"
+          gh release upload "v${{ needs.build.outputs.version }}" \
+            "$CLI_JAR"

@@ -3,6 +3,8 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.docops.DocProcessor
+import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.platform.model.Session

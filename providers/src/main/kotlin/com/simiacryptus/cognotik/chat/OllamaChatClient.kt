@@ -58,7 +58,6 @@ class OllamaChatClient(
         OllamaMessage(
           role = message.role.toString(),
           content = when (val content = message.content) {
-            is String -> content
             is List<*> -> content.joinToString("\n") {
               when (it) {
                 is ModelSchema.ContentPart -> it.text ?: ""

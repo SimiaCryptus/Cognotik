@@ -74,6 +74,7 @@ class FetchMethod(
 
      fun values(): List<FetchMethod> = DynamicEnum.values(FetchMethod::class.java)
 
+     @Suppress("unused")
      fun valueOf(name: String): FetchMethod = DynamicEnum.valueOf(FetchMethod::class.java, name)
    }
 }

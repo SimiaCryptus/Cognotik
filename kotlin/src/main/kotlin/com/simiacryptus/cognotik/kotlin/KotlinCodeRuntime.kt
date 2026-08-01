@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.kotlin
 
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
-import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineFactoryBase
 import org.jetbrains.kotlin.cli.common.repl.ScriptArgsWithTypes

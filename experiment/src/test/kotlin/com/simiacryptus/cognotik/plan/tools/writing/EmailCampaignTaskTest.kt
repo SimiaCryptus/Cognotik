@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.io.File
 
+@Suppress("unused")
 object EmailCampaignTaskTest {
 
   @JvmStatic

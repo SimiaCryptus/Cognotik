@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Timeout
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+@Suppress("unused")
 
 object SeleniumSessionTaskTest {
 

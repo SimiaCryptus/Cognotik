@@ -11,11 +11,12 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -28,165 +29,165 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 
 class TestResultAutofixAction : BaseAction() {
-    companion object {
-        private val log = getLogger(TestResultAutofixAction::class.java)
-        val tripleTilde = "`" + "``"
+  companion object {
+    private val log = getLogger(TestResultAutofixAction::class.java)
+    val tripleTilde = "`" + "``"
 
 
-        fun getFiles(
-            virtualFiles: Array<out Path>?
-        ): MutableSet<Path> {
-            val codeFiles = mutableSetOf<Path>()
+    fun getFiles(
+      virtualFiles: Array<out Path>?
+    ): MutableSet<Path> {
+      val codeFiles = mutableSetOf<Path>()
 
-            virtualFiles?.forEach { file ->
-                if (file.fileName.startsWith(".")) return@forEach
-                if (isGitignore(file)) return@forEach
-                if (file.toFile().isDirectory) {
-                    codeFiles.addAll(getFiles(file.toFile().listFiles().map { it.toPath() }.toTypedArray()))
-                } else {
-                    codeFiles.add(file)
-                }
-            }
-            return codeFiles
+      virtualFiles?.forEach { file ->
+        if (file.fileName.startsWith(".")) return@forEach
+        if (isGitignore(file)) return@forEach
+        if (file.toFile().isDirectory) {
+          codeFiles.addAll(getFiles(file.toFile().listFiles().map { it.toPath() }.toTypedArray()))
+        } else {
+          codeFiles.add(file)
         }
-
-        fun getProjectStructure(projectPath: VirtualFile?): String {
-            return getProjectStructure(Path.of((projectPath ?: return "Project path is null").path))
-        }
-
-        fun getProjectStructure(root: Path): String {
-            val codeFiles = getFiles(arrayOf(root))
-                .filter { it.toFile().length() < 1024 * 1024 / 2 }
-
-                .map { root.relativize(it) ?: it }.toSet()
-            val str = codeFiles
-                .asSequence()
-                .filter { root.resolve(it).toFile().exists() }
-                .distinct().sorted()
-                .joinToString("\n") { path ->
-                    "* ${path} - ${root.resolve(path).toFile().length()} bytes".trim()
-                }
-            return str
-        }
-
-        fun findGitRoot(virtualFile: VirtualFile?): VirtualFile? {
-            var current: VirtualFile? = virtualFile
-            while (current != null) {
-                if (current.findChild(".git") != null) {
-                    return current
-                }
-                current = current.parent
-            }
-            return null
-        }
+      }
+      return codeFiles
     }
 
-    override fun handle(e: AnActionEvent) {
-        val testProxy = e.getData(AbstractTestProxy.DATA_KEY) as? SMTestProxy ?: return
-        val dataContext = e.dataContext
-        val virtualFile = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)?.firstOrNull() ?: return
-        val root = Companion.findGitRoot(virtualFile)
-        UITools.runAsync(e.project, "Analyzing Test Result", true) { progress ->
-            progress.isIndeterminate = true
-            progress.text = "Analyzing test failure..."
-            try {
-                val testInfo = getTestInfo(testProxy)
-                val projectStructure = getProjectStructure(root)
-                openAutofixWithTestResult(e, testInfo, projectStructure)
-            } catch (ex: Throwable) {
-                UITools.error(log, "Error analyzing test result", ex)
-            }
+    fun getProjectStructure(projectPath: VirtualFile?): String {
+      return getProjectStructure(Path.of((projectPath ?: return "Project path is null").path))
+    }
+
+    fun getProjectStructure(root: Path): String {
+      val codeFiles = getFiles(arrayOf(root))
+        .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
+        .map { root.relativize(it) ?: it }.toSet()
+      val str = codeFiles
+        .asSequence()
+        .filter { root.resolve(it).toFile().exists() }
+        .distinct().sorted()
+        .joinToString("\n") { path ->
+          "* ${path} - ${root.resolve(path).toFile().length()} bytes".trim()
         }
+      return str
     }
 
-    override fun isEnabled(e: AnActionEvent): Boolean {
-        if (!super.isEnabled(e)) return false
-        val testProxy = e.getData(AbstractTestProxy.DATA_KEY)
-        return testProxy != null
-    }
-
-    private fun getTestInfo(testProxy: SMTestProxy): String {
-        val sb = StringBuilder(256)
-
-        sb.appendLine("Test Name: ${testProxy.name}")
-        sb.appendLine("Duration: ${testProxy.duration} ms")
-
-        if (testProxy.errorMessage != null) {
-            sb.appendLine("Error Message:")
-            sb.appendLine(testProxy.errorMessage)
+    fun findGitRoot(virtualFile: VirtualFile?): VirtualFile? {
+      var current: VirtualFile? = virtualFile
+      while (current != null) {
+        if (current.findChild(".git") != null) {
+          return current
         }
+        current = current.parent
+      }
+      return null
+    }
+  }
 
-        if (testProxy.stacktrace != null) {
-            sb.appendLine("Stacktrace:")
-            sb.appendLine(testProxy.stacktrace)
-        }
+  override fun handle(e: AnActionEvent) {
+    val testProxy = e.getData(AbstractTestProxy.DATA_KEY) as? SMTestProxy ?: return
+    val dataContext = e.dataContext
+    val virtualFile = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)?.firstOrNull() ?: return
+    val root = Companion.findGitRoot(virtualFile)
+    UITools.runAsync(e.project, "Analyzing Test Result", true) { progress ->
+      progress.isIndeterminate = true
+      progress.text = "Analyzing test failure..."
+      try {
+        val testInfo = getTestInfo(testProxy)
+        val projectStructure = getProjectStructure(root)
+        openAutofixWithTestResult(e, testInfo, projectStructure)
+      } catch (ex: Throwable) {
+        UITools.error(log, "Error analyzing test result", ex)
+      }
+    }
+  }
 
-        return sb.toString()
+  override fun isEnabled(e: AnActionEvent): Boolean {
+    if (!super.isEnabled(e)) return false
+    val testProxy = e.getData(AbstractTestProxy.DATA_KEY)
+    return testProxy != null
+  }
+
+  private fun getTestInfo(testProxy: SMTestProxy): String {
+    val sb = StringBuilder(256)
+
+    sb.appendLine("Test Name: ${testProxy.name}")
+    sb.appendLine("Duration: ${testProxy.duration} ms")
+
+    if (testProxy.errorMessage != null) {
+      sb.appendLine("Error Message:")
+      sb.appendLine(testProxy.errorMessage)
     }
 
-    private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
-        val session = Session.newUserID()
-        SessionProxyServer.metadataStorage.setSessionName(
-            null,
-            session,
-            "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-        )
-        SessionProxyServer.chats[session] =
-            TestResultAutofixApp(session, testInfo, e.project?.basePath, projectStructure)
-        ApplicationServer.appInfoMap[session] = AppInfoData(
-            applicationName = "Code Chat",
-            inputCnt = 0,
-            stickyInput = true,
-            loadImages = false,
-            showMenubar = false
-        )
-
-        Thread {
-            Thread.sleep(500)
-            try {
-                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
-                    AppSettingsState.instance.listeningEndpoint,
-                    AppSettingsState.instance.listeningPort
-                ).server.uri.resolve("/#$session")
-                log.info("Opening browser to $uri")
-                browse(uri)
-            } catch (e: Throwable) {
-                log.warn("Error opening browser", e)
-            }
-        }.start()
+    if (testProxy.stacktrace != null) {
+      sb.appendLine("Stacktrace:")
+      sb.appendLine(testProxy.stacktrace)
     }
 
-    inner class TestResultAutofixApp(
-        val session: Session,
-        val testInfo: String,
-        val projectPath: String?,
-        val projectStructure: String
-    ) : ApplicationServer(
-        applicationName = "Test Result Autofix",
-        path = "/fixTest",
-        showMenubar = false,
+    return sb.toString()
+  }
+
+  private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
+    val session = Session.newUserID()
+    SessionProxyServer.metadataStorage.setSessionName(
+      null,
+      session,
+      "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+    )
+    SessionProxyServer.chats[session] =
+      TestResultAutofixApp(session, testInfo, e.project?.basePath, projectStructure)
+    ApplicationServer.appInfoMap[session] = AppInfoData(
+      applicationName = "Code Chat",
+      inputCnt = 0,
+      stickyInput = true,
+      loadImages = false,
+      showMenubar = false
+    )
+
+    Thread {
+      Thread.sleep(500)
+      try {
+        val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+          AppSettingsState.instance.listeningEndpoint,
+          AppSettingsState.instance.listeningPort
+        ).server.uri.resolve("/#$session")
+        log.info("Opening browser to $uri")
+        browse(uri)
+      } catch (e: Throwable) {
+        log.warn("Error opening browser", e)
+      }
+    }.start()
+  }
+
+  inner class TestResultAutofixApp(
+    val session: Session,
+    val testInfo: String,
+    val projectPath: String?,
+    val projectStructure: String
+  ) : ApplicationServer(
+    applicationName = "Test Result Autofix",
+    path = "/fixTest",
+    showMenubar = false,
+  ) {
+    override val inputCnt = 1
+    override val stickyInput = false
+    override fun newSession(user: User, session: Session): SocketManager {
+      val socketManager = super.newSession(user, session)!!
+      val task = socketManager.newTask(cancelable = false)
+      task.add("Analyzing test result and suggesting fixes...")
+      Thread {
+        runAutofix(task, socketManager)
+      }.start()
+      return socketManager
+    }
+
+    private fun runAutofix(
+      task: SessionTask, socketManager: SocketManager
     ) {
-        override val inputCnt = 1
-        override val stickyInput = false
-        override fun newSession(user: User, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)!!
-            val task = socketManager.newTask(cancelable = false)
-            task.add("Analyzing test result and suggesting fixes...")
-            Thread {
-                runAutofix(task, socketManager)
-            }.start()
-            return socketManager
-        }
-
-        private fun runAutofix(
-            task: SessionTask, socketManager: SocketManager
-        ) {
-            Retryable(task) {
-                try {
-                    val task = socketManager.newTask(cancelable = false, root = false)
-                    val plan = ParsedAgent(
-                        resultClass = ParsedErrors::class.java,
-                        prompt = """
+      Retryable(task) {
+        try {
+          val task = socketManager.newTask(cancelable = false, root = false)
+          val plan = ParsedAgent(
+            resultClass = ParsedErrors::class.java,
+            prompt = """
                         You are a helpful AI that helps people with coding.
                         Given the response of a test failure, identify one or more distinct errors.
                         For each error:
@@ -198,67 +199,67 @@ class TestResultAutofixAction : BaseAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartChatClient,
-                        parsingModel = AppSettingsState.instance.fastChatClient,
-                    ).answer(listOf(testInfo))
-                    if (plan.obj.errors.isNullOrEmpty()) {
-                        task.add("No errors identified in test result")
-                        return@Retryable task.placeholder
-                    }
+            model = AppSettingsState.instance.smartChatClient,
+            parsingModel = AppSettingsState.instance.fastChatClient,
+          ).answer(listOf(testInfo))
+          if (plan.obj.errors.isNullOrEmpty()) {
+            task.add("No errors identified in test result")
+            return@Retryable task.placeholder
+          }
 
-                  val map = mapOf(
-                    "Text" to plan.text.renderMarkdown(true),
-                    "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
-                      true
-                    ),
-                  )
-                  task.add(
-                    TabbedDisplay.displayMapInTabs(
-                      map,
-                      null,
-                      map.entries.map { it.value.length + it.key.length }.sum() > 10000
-                    )
-                    )
+          val map = mapOf(
+            "Text" to plan.text.renderMarkdown(true),
+            "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
+              true
+            ),
+          )
+          task.add(
+            TabbedDisplay.displayMapInTabs(
+              map,
+              null,
+              map.entries.map { it.value.length + it.key.length }.sum() > 10000
+            )
+          )
 
-                    plan.obj.errors?.forEach { error ->
-                        Retryable(task) {
-                            val task = socketManager.newTask(cancelable = false, root = false)
-                            val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
-                            val summary = filesToFix.joinToString("\n\n") { filePath ->
-                                val file = File(projectPath, filePath)
-                                if (file.exists()) {
-                                    """
+          plan.obj.errors?.forEach { error ->
+            Retryable(task) {
+              val task = socketManager.newTask(cancelable = false, root = false)
+              val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
+              val summary = filesToFix.joinToString("\n\n") { filePath ->
+                val file = File(projectPath, filePath)
+                if (file.exists()) {
+                  """
                                     # $filePath
                                     $tripleTilde${filePath.split('.').lastOrNull()}
                                     ${file.readText()}
                                     $tripleTilde
                                     """.trimIndent()
-                                } else {
-                                    "# $filePath\nFile not found"
-                                }
-                            }
-                            generateAndAddResponse(task, error, summary, socketManager)
-                            return@Retryable task.placeholder
-                        }
-                    }
-                    return@Retryable task.placeholder
-                } catch (e: Exception) {
-                    log.error("Error in autofix process: ${e.message}", e)
-                    task.error(e)
-                    throw e
+                } else {
+                  "# $filePath\nFile not found"
                 }
+              }
+              generateAndAddResponse(task, error, summary, socketManager)
+              return@Retryable task.placeholder
             }
+          }
+          return@Retryable task.placeholder
+        } catch (e: Exception) {
+          log.error("Error in autofix process: ${e.message}", e)
+          task.error(e)
+          throw e
         }
+      }
+    }
 
-        private fun generateAndAddResponse(
-            task: SessionTask,
-            error: ParsedError,
-            summary: String,
-            socketManager: SocketManager
-        ) {
-            task.add("Generating fix suggestions...")
-            val response = ChatAgent(
-                prompt = """
+    private fun generateAndAddResponse(
+      task: SessionTask,
+      error: ParsedError,
+      summary: String,
+      socketManager: SocketManager
+    ) {
+      task.add("Generating fix suggestions...")
+      val response = ChatAgent(
+        prompt = """
                 You are a helpful AI that helps people with coding.
                 Suggest fixes for the following test failure:
                 $testInfo
@@ -274,35 +275,36 @@ $projectStructure
                 The diff format should use + for line additions, - for line deletions.
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
-                model = AppSettingsState.instance.smartChatClient
-            ).answer(listOf(error.message ?: ""))
-            task.add("Processing suggested fixes...")
+        model = AppSettingsState.instance.smartChatClient
+      ).answer(listOf(error.message ?: ""))
+      task.add("Processing suggested fixes...")
 
-          val markdown = DiffInstrumentor(
-            AppSettingsState.instance.processor,
-            SessionRenderer(task),
-          ).instrument(
-              root = root.toPath(),
-              response = response,
-              handle = { newCodeMap: Map<Path, String> ->
-                newCodeMap.forEach { (path, newCode) ->
-                  task.add("Applying changes to $path...")
-                  task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                }
-              },
-            resolver = ::resolveToRelativePath,
-            )
-            task.add("<div>${renderMarkdown(markdown)}</div>")
-        }
+      val markdown = DiffInstrumentor(
+        AppSettingsState.instance.processor,
+        SessionRenderer(task),
+      ).instrument(
+        root = root.toPath(),
+        response = response,
+        handle = { newCodeMap: Map<Path, String> ->
+          newCodeMap.forEach { (path, newCode) ->
+            task.add("Applying changes to $path...")
+            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+          }
+        },
+        resolver = ::resolveToRelativePath,
+        prefilterFilename = ::prefilterFilename
+      )
+      task.add("<div>${renderMarkdown(markdown)}</div>")
     }
+  }
 
-    data class ParsedErrors(
-        val errors: List<ParsedError>? = null
-    )
+  data class ParsedErrors(
+    val errors: List<ParsedError>? = null
+  )
 
-    data class ParsedError(
-        val message: String? = null,
-        val relatedFiles: List<String>? = null,
-        val fixFiles: List<String>? = null
-    )
+  data class ParsedError(
+    val message: String? = null,
+    val relatedFiles: List<String>? = null,
+    val fixFiles: List<String>? = null
+  )
 }

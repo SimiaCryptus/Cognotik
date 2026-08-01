@@ -268,6 +268,7 @@ class ApiProviderServlet : HttpServlet() {
   companion object {
     private val log = LoggerFactory.getLogger(ApiProviderServlet::class.java)
 
+    @Suppress("LombokKotlinCompilerPlugin")
     fun UserSettings.models(): Map<String, ChatModel> {
       val models = mutableListOf<ChatModel>()
 

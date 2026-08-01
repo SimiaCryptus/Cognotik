@@ -18,6 +18,8 @@ exception classes.
 
 The base class for all AI service-related errors. It extends `java.io.IOException` and includes an `isFatal` flag to
 help calling code determine if a retry is appropriate.
+### [NonRetryableException / BudgetException](NonRetryableException.kt)
+`NonRetryableException` is a `RuntimeException` used to signal errors that should not be retried. `BudgetException` extends it to specifically indicate that a configured budget or spending limit has been exceeded.
 
 ### Fatal Exceptions
 
@@ -41,6 +43,14 @@ These exceptions represent temporary conditions or policy-driven rejections:
   process the request.
 * **[SafetyException](SafetyException.kt)**: Thrown when a request is rejected by the provider's safety filters.
 * **[ModerationException](ModerationException.kt)**: A general exception for content moderation failures.
+### Other Exceptions
+* **[FailedToImplementException](FailedToImplementException.kt)**: A `RuntimeException` thrown when generated code
+  fails to meet implementation requirements. It optionally carries the offending `language`, `code`, and `prefix`
+  for diagnostic purposes.
+* **[MultiExeption](MultiExeption.kt)**: Aggregates multiple `Throwable` instances into a single exception, combining
+  their stack traces into a formatted message. Useful when several independent failures occur during a batch
+  operation and need to be reported together.
+
 
 ## Usage
 

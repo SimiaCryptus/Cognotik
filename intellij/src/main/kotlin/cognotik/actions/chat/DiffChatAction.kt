@@ -12,12 +12,13 @@ import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.InMemoryFileSystem
+import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.text.ui.InMemoryFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
@@ -136,7 +137,7 @@ class DiffChatAction : BaseAction() {
                   val virtualFs = InMemoryFileSystem()
                   val virtualRoot = Paths.get("/virtual")
                   val virtualFile = virtualRoot.resolve("file.txt")
-                  virtualFs.putFile(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
+                  virtualFs.writeText(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
                   val renderer = SessionRenderer(task)
                   val instrumentor = DiffInstrumentor(
                     processor = AppSettingsState.instance.processor,
@@ -152,12 +153,13 @@ class DiffChatAction : BaseAction() {
                           selectionEnd = selectionStart + newCode.length
                           document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
                         }
-                        virtualFs.putFile(virtualFile, newCode)
+                        virtualFs.writeText(virtualFile, newCode)
                       }
                     },
                     shouldAutoApply = { false },
                     defaultFile = "file.txt",
                     resolver = { root, _ -> "file.txt" },
+                    prefilterFilename = ::prefilterFilename
                   )
                 }                
             }</div>"""

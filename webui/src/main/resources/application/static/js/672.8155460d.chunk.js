@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkskyenet_ui=self.webpackChunkskyenet_ui||[]).push([[672],{672(e,s,k){k.d(s,{createCynefinServices:()=>n.t});var n=k(7355);k(9313)}}]);

@@ -16,7 +16,6 @@ The base interface for all image generation clients. It defines two primary meth
 
 A data class representing an image generation model. It includes:
 
-- `modelName`: The technical identifier for the API.
 - `provider`: The `APIProvider` (e.g., OpenAI, Gemini).
 - `maxPrompt`: Maximum allowed prompt length.
 - `pricingFunction`: A logic block to calculate costs based on image dimensions and quality.
@@ -58,3 +57,6 @@ Provides access to OpenAI's DALL-E series:
 
 Both clients support usage tracking via an `onUsage` callback, which provides information about the model used and the
 calculated cost based on the specific model's pricing logic.
+- `name`: The display name for the model.
+- `modelId`: The technical identifier used for the API request.
+- `quality`: The quality setting for generation (defaults to "standard").

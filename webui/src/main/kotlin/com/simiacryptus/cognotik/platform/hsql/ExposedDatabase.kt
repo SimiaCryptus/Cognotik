@@ -42,7 +42,7 @@ object ExposedDatabase {
                         val raw = facet.getConnection()
                         NonClosingConnection(raw)
                     } catch (e: Exception) {
-                        log.error("Failed to obtain JDBC connection for Exposed facet '{}': {}", facet, e.message, e)
+                        log.info("Failed to obtain JDBC connection for Exposed facet '{}': {}", facet, e.message, e)
                         throw e
                     }
                 }
@@ -62,7 +62,7 @@ object ExposedDatabase {
                     }
                 }
             } catch (e: Exception) {
-                log.error("Failed to initialize Exposed schema for facet '{}': {}", facet, e.message, e)
+                log.info("Failed to initialize Exposed schema for facet '{}': {}", facet, e.message, e)
             }
             db
         }

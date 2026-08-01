@@ -50,9 +50,6 @@ abstract class LoginMethod(
         fun register(method: LoginMethod) = register(LoginMethod::class.java, method)
 
         @JvmStatic
-        fun unregister(name: String) = unregister(LoginMethod::class.java, name)
-
-        @JvmStatic
         fun valueOf(name: String): LoginMethod = valueOf(LoginMethod::class.java, name)
 
         @JvmStatic

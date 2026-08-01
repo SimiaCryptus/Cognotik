@@ -554,28 +554,6 @@ Begin your meta-cognitive reflection now:
     return instructions.joinToString("\n\n")
   }
 
-  private fun generateReflectionSummary(reflectionResult: String): String {
-    // Extract key points for a concise summary
-    val lines = reflectionResult.lines()
-    val keyPoints = mutableListOf<String>()
-
-    // Look for bullet points or numbered items
-    lines.forEach { line ->
-      val trimmed = line.trim()
-      if (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) {
-        if (trimmed.length > 10) { // Avoid very short items
-          keyPoints.add(trimmed.removePrefix("-").removePrefix("*").trim())
-        }
-      }
-    }
-
-    return if (keyPoints.isNotEmpty()) {
-      "**Key Insights:**\n" + keyPoints.take(5).joinToString("\n") { "- $it" }
-    } else {
-      "Reflection analysis completed. See detailed results above."
-    }
-  }
-
   companion object {
       private val log: Logger = getLogger(MetaCognitiveReflectionTask::class.java)
 

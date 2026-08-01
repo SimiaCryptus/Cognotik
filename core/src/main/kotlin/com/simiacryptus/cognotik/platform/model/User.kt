@@ -29,6 +29,7 @@ data class User(
     }
 
 }
+
 @JvmField
 @JsonIgnore
 var defaultUser = User(

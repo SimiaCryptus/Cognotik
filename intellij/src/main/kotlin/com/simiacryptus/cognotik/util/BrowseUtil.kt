@@ -17,6 +17,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.URI
+import kotlin.collections.mutableListOf
 
 object BrowseUtil {
     const val BROWSER_SYSTEM_DEFAULT = "System Default"

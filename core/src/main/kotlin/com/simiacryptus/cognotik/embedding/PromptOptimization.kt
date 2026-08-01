@@ -33,6 +33,7 @@ open class PromptOptimization(
 
   data class Turn(val userMessage: String, val expectations: List<Expectation>)
 
+  @Suppress("unused")
   open fun runGeneticGenerations(
     systemPrompts: List<String>,
     testCases: List<TestCase>,
@@ -245,6 +246,7 @@ open class PromptOptimization(
 
 abstract class Expectation {
   companion object {
+    @Suppress("unused")
     private val log = LoggerFactory.getLogger(Expectation::class.java)
   }
 

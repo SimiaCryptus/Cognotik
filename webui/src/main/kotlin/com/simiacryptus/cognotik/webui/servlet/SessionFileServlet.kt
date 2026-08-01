@@ -7,6 +7,11 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.authenticate
 import com.simiacryptus.cognotik.webui.application.getCookie
+import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
+import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
+import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
+import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
+import com.simiacryptus.cognotik.webui.servlet.handler.FsException
 import com.simiacryptus.cognotik.webui.servlet.util.PathUtils.parsePath
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
@@ -22,10 +27,118 @@ import java.net.URLEncoder
     maxFileSize = 1024 * 1024 * 50,      // 50MB
     maxRequestSize = 1024 * 1024 * 100   // 100MB
 )
-open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
+open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemServlet() {
     companion object {
         private val log = LoggerFactory.getLogger(SessionFileServlet::class.java)
     }
+     /**
+      * Path (relative to the servlet context) where [WebUiServlet] is mounted.
+      * See `ApplicationServer.configure`.
+      */
+     open val webUiPath: String = "/ui"
+     /**
+      * FS API capability switches. Unlike `FileServerCli` this server is multi-user and
+      * usually reachable from more than loopback, so the *hardened* profile is the default:
+      * no interactive terminals, and `/exec` limited to the read-mostly git allowlist.
+      */
+     open val fsApiReadOnly: Boolean = false
+     open val fsApiTerminalEnabled: Boolean = false
+     open val fsApiExecEnabled: Boolean = true
+     /**
+      * The FS API is dispatched from [FilesystemServlet.service] and therefore bypasses the
+      * doGet/doPost pre-flight below; authenticate here or the session sandbox is wide open.
+      */
+     override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+         val route = FsApiRoute.parse(req.pathInfo ?: req.servletPath)
+         if (route != null) {
+             val sessionId = sessionIdOf(req)
+             if (sessionId.isNullOrBlank() || sessionId == ".fsapi") {
+                 log.warn("FS API request without a session prefix: ${req.pathInfo}")
+                 FsErrors.write(
+                     resp, FsException(
+                         FsErrorCode.EINVAL, "fsapi", null,
+                         "FS API requests must be scoped to a session: {mount}/<session>/.fsapi/v1/<op>"
+                     )
+                 )
+                 return
+             }
+             // The FS API is consumed by fetch()-style clients (the IDE view) that expect a
+             // JSON body on *every* response. isAuthenticatedForSession() is built for the
+             // classic HTML browser and reacts to a missing/invalid session by issuing a 307
+             // redirect to /login/...; to a fetch() client that redirect is indistinguishable
+             // from a dead endpoint, which is exactly why the IDE view falls back to a generic
+             // "No FS API endpoint answered /meta" message instead of an actionable one. Report
+             // a proper FS API error here instead, consistent with the "missing session" case
+             // above.
+             val session = Session(sessionId)
+             val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+             if (user == null && !session.isGlobal()) {
+                 log.debug("FS API request rejected (unauthenticated): ${req.pathInfo}")
+                 FsErrors.write(
+                     resp, FsException(
+                         FsErrorCode.EACCES, "fsapi", null,
+                         "Not authenticated for session '$sessionId'; log in and retry"
+                     )
+                 )
+                 return
+             }
+         }
+         super.service(req, resp)
+     }
+     /** First path segment of the request (the session id), FS API routes included. */
+     protected fun sessionIdOf(req: HttpServletRequest): String? {
+         val raw = FsApiRoute.parse(req.pathInfo ?: req.servletPath)?.prefix
+             ?: (req.pathInfo ?: req.servletPath ?: "/")
+         return raw.split("/").firstOrNull { it.isNotBlank() }
+     }
+     /**
+      * Node-space "/" for this mount. Deliberately *not* [getDir]: the FS API must not
+      * perform the `.md -> .html/.pdf` substitution that the HTML browser does (nodejs.md A4),
+      * and it must always resolve against the writable user directory.
+      */
+     override fun getFsApiRoot(req: HttpServletRequest, resp: HttpServletResponse): File? {
+         val sessionId = sessionIdOf(req) ?: return null
+         val session = Session(sessionId)
+         val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+         if (user == null && !session.isGlobal()) {
+             log.warn("FS API: no user for session ${session.sessionId}")
+             return null
+         }
+         onSession(session, user)
+         return dataStorage.getUserDir(user, session).apply { if (!exists()) mkdirs() }
+     }
+     override fun getFsApiConfig(req: HttpServletRequest): FsApiConfig = FsApiConfig(
+         readOnly = fsApiReadOnly,
+         execAllowlist = if (fsApiExecEnabled && isGitEnabled(req)) mapOf("git" to GIT_SUBCOMMANDS) else emptyMap(),
+         execAllowAny = false,
+         execRestrictArguments = true,
+         terminalEnabled = fsApiTerminalEnabled && !fsApiReadOnly,
+     )
+     /**
+      * docs/ui.md §21.3 — the classic listing links to the equivalent SPA path.
+      * The SPA is a shared, session-agnostic mount; it derives the FS API base itself
+      * from `?session=<id>` (siblings `/ui/` and `/fileIndex/<id>/.fsapi/v1`), with the
+      * directory carried in the location hash.
+      */
+     override fun getToolbarActions(req: HttpServletRequest, currentPath: String): String {
+         val sessionId = sessionIdOf(req) ?: return ""
+         val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
+         val encodedSession = URLEncoder.encode(sessionId, "UTF-8")
+        return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$webUiPath/?session=$encodedSession#$hash">🧭 Open in IDE view</a>"""
+     }
+     /**
+      * Directory-listing GET requests (e.g. `/fileIndex/<session>/`) are redirected to the
+      * new IDE-style UI by default, so the legacy HTML browser is only shown when explicitly
+      * requested via `?legacy=1`. The underlying FS API and file-serving endpoints (used by
+      * both UIs, and by any legacy integrations) are unaffected.
+      */
+     override fun newUiRedirectUrl(req: HttpServletRequest, currentPath: String): String? {
+         val sessionId = sessionIdOf(req) ?: return null
+         val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
+         val encodedSession = URLEncoder.encode(sessionId, "UTF-8")
+        return "${req.contextPath}$webUiPath/?session=$encodedSession#$hash"
+     }
+
 
     override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File? {
         return try {
@@ -811,7 +924,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
      * If not authenticated, writes a 307 redirect to the login page and returns false.
      * The caller should return immediately after a false result.
      */
-    private fun isAuthenticatedForSession(request: HttpServletRequest, response: HttpServletResponse): Boolean {
+     protected fun isAuthenticatedForSession(request: HttpServletRequest, response: HttpServletResponse): Boolean {
         return try {
             val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
             val pathSegments = parsePath(pathInfo)

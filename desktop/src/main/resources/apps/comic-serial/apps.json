@@ -1,0 +1,28 @@
+[
+  {
+    "id": "app-resume-customizer",
+    "name": "Resume Customizer",
+    "icon": "📄",
+    "description": "AI-powered pipeline for tailoring resumes to specific job postings, including analysis, research, and rendering.",
+    "type": "docops",
+    "path": "apps/resume-customizer",
+    "badge": null,
+    "badgeClass": null,
+    "cardClass": null,
+    "category": "productivity",
+    "tags": ["ai", "resume", "docops", "career"]
+  },
+  {
+    "id": "app-goal-planner",
+    "name": "Goal Planner",
+    "icon": "🎯",
+    "description": "Plan and track personal or professional goals with AI-assisted breakdowns and progress tracking.",
+    "type": "docops",
+    "path": "apps/goal-planner",
+    "badge": null,
+    "badgeClass": null,
+    "cardClass": null,
+    "category": "productivity",
+    "tags": ["ai", "planning", "docops", "goals"]
+  }
+]

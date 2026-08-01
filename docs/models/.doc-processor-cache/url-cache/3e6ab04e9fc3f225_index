@@ -1,0 +1,1017 @@
+{"https://chatgpt.com":{"team-sign-up":{"$":0},"pricing":{"$":4},"plans":{"k12-teachers":{"$":8}},"business":{"education":{"$":9}},"contact-sales":{"$":10}},"https://help.openai.com":{"en":{"articles":{"8792828-what-is-chatgpt-team":{"$":1},"9793128":{"$":6}}}},"https://openai.com":{"contact-sales":{"$":2},"business-data":{"$":3},"enterprise-privacy":{"$":5},"index":{"bug-bounty-program":{"$":11}},"policies":{"how-your-data-is-used-to-improve-model-performance":{"$":13}}},"https://platform.openai.com":{"$":7},"https://trust.openai.com":{"$":12}}
+
+<!--$!-->
+<!--/$-->
+<main>
+ <span>OpenAI</span>
+ <div>
+  <div>
+   <h1>Pricing</h1>
+   <p>See pricing for our business and enterprise plans.</p>
+  </div>
+  <div role="tabpanel">
+   <div>
+    <div>
+     <article>
+      <div>
+       <img src="https://images.ctfassets.net/kftzwdyauwt9/5VpL5Fj00dC65H8mTi1jHn/9dded36b68c5120e69f1b101638d2529/chat-1.png?w=3840&amp;q=90&amp;fm=webp">
+       <h3>Business</h3>
+       <p>A secure workspace with company context and tools for teams, built for growing companies</p>
+      </div>
+      <div>
+       <span>$20</span>
+       <div>/ user / month</div>
+      </div>
+      Get started (opens in a new window) {0}
+      <div>
+       <div>
+        <div>What's included:</div>
+        <ul>
+         <li>
+          <svg></svg>
+          <p>Access ChatGPT and Codex across desktop and mobile apps</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>AI for chat, coding, analysis, and workflows</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>Connect tools like Microsoft 365, Google Drive, Slack, Github, Linear, Figma, and more</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>Build on company knowledge and team context with custom team agent plugins</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>Centralized billing and administration</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>Usage analytics, budgeting, and spend controls</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>Secure workspace with SAML SSO and MFA</p>
+         </li>
+         <li>
+          <svg></svg>
+          <p>No training on your business data by default</p>
+         </li>
+        </ul>
+       </div>
+       <p>*2+ users, billed annually.<!-- -->$25.00 per user per month when billed monthly.<!-- -->Unlimited subject to abuse guardrails.Learn more⁠(opens in a new window) {1}</p>
+      </div>
+     </article>
+     <article>
+      <div>
+       <img src="https://images.ctfassets.net/kftzwdyauwt9/s2GhJeU3baS4ToFbNYOTs/35171dcb81bd64418aec716692646f6e/chat-2.png?w=3840&amp;q=90&amp;fm=webp">
+       <h3>Enterprise</h3>
+       <p>Enterprise-grade AI, security, and support for businesses operating at scale</p>
+      </div>
+      <div>
+       <div>Custom pricing</div>
+       <div>Contact our sales team to discuss pricing.</div>
+      </div>
+      Contact sales {2}
+      <div>
+       <div>What's included:</div>
+       <ul>
+        <li>
+         <svg></svg>
+         <p>Expanded context window that supports longer inputs and larger files</p>
+        </li>
+        <li>
+         <svg></svg>
+         <p>Enterprise-level security and controls, including SCIM, EKM, user analytics, domain verification, and role-based access controls</p>
+        </li>
+        <li>
+         <svg></svg>
+         <p>Advanced data privacy with custom data retention policies, encryption at rest and in transit, and no training on your business data by default.Learn more⁠ {3}</p>
+        </li>
+        <li>
+         <svg></svg>
+         <p>Support for data residency in ten regions</p>
+        </li>
+        <li>
+         <svg></svg>
+         <p>24/7 priority support, SLAs, custom legal terms, and access to AI advisors (eligible customers)</p>
+        </li>
+        <li>
+         <svg></svg>
+         <p>Invoicing and billing, volume discounts</p>
+        </li>
+       </ul>
+      </div>
+     </article>
+    </div>
+    <div>
+     <h3>Looking for personal plans?</h3>
+     <p>Visit ChatGPT.com for consumer pricing</p>
+     Learn more (opens in a new window) {4}
+    </div>
+    <div role="region">
+     <div>
+      <div>
+       <div>
+        <p>Pricing</p>
+        <h2>Compare features across plans</h2>
+       </div>
+       <div>
+        <div>
+         <div>
+          <p>Business</p>
+          Try ChatGPT Business (opens in a new window) {0}
+         </div>
+         <div>
+          <p>Enterprise</p>
+          Contact sales (opens in a new window) {2}
+         </div>
+        </div>
+        <div>
+         <div>
+          <h3>Essentials</h3>
+          <div>
+           <div>
+            <h6>Messages and interactions</h6>
+            <div>
+             <span>Unlimited*</span><span>Plan: Business, Feature: Messages and interactions, Unlimited*</span>
+            </div>
+            <div>
+             <span>Unlimited*</span><span>Plan: Enterprise, Feature: Messages and interactions, Unlimited*</span>
+            </div>
+           </div>
+           <div>
+            <h6>Chat history</h6>
+            <div>
+             <span>Unlimited*</span><span>Plan: Business, Feature: Chat history, Unlimited*</span>
+            </div>
+            <div>
+             <span>Unlimited*</span><span>Plan: Enterprise, Feature: Chat history, Unlimited*</span>
+            </div>
+           </div>
+           <div>
+            <h6>Access on web, iOS, Android</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Access on web, iOS, Android, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Access on web, iOS, Android, Yes</span>
+            </div>
+           </div>
+          </div>
+         </div>
+         <div>
+          <h3>Models</h3>
+          <div>
+           <div>
+            <h6>GPT-5.5 Instant</h6>
+            <div>
+             <span>Unlimited*</span><span>Plan: Business, Feature: GPT-5.5 Instant, Unlimited*</span>
+            </div>
+            <div>
+             <span>Unlimited*</span><span>Plan: Enterprise, Feature: GPT-5.5 Instant, Unlimited*</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT-5.6 Sol</h6>
+            <div>
+             <span>Flexible**</span><span>Plan: Business, Feature: GPT-5.6 Sol, Flexible**</span>
+            </div>
+            <div>
+             <span>Flexible**</span><span>Plan: Enterprise, Feature: GPT-5.6 Sol, Flexible**</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT-5.6 Sol Pro</h6>
+            <div>
+             <span>Flexible**</span><span>Plan: Business, Feature: GPT-5.6 Sol Pro, Flexible**</span>
+            </div>
+            <div>
+             <span>Flexible**</span><span>Plan: Enterprise, Feature: GPT-5.6 Sol Pro, Flexible**</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT-5.6 Terra</h6>
+            <div>
+             <span>Flexible**</span><span>Plan: Business, Feature: GPT-5.6 Terra, Flexible**</span>
+            </div>
+            <div>
+             <span>Flexible**</span><span>Plan: Enterprise, Feature: GPT-5.6 Terra, Flexible**</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT-5.6 Luna</h6>
+            <div>
+             <span>Flexible**</span><span>Plan: Business, Feature: GPT-5.6 Luna, Flexible**</span>
+            </div>
+            <div>
+             <span>Flexible**</span><span>Plan: Enterprise, Feature: GPT-5.6 Luna, Flexible**</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT-5 Thinking Mini</h6>
+            <div>
+             <span>Flexible**</span><span>Plan: Business, Feature: GPT-5 Thinking Mini, Flexible**</span>
+            </div>
+            <div>
+             <span>Flexible**</span><span>Plan: Enterprise, Feature: GPT-5 Thinking Mini, Flexible**</span>
+            </div>
+           </div>
+           <div>
+            <h6>Legacy models</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Legacy models, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Legacy models, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Response times</h6>
+            <div>
+             <span>Fast</span><span>Plan: Business, Feature: Response times, Fast</span>
+            </div>
+            <div>
+             <span>Fastest</span><span>Plan: Enterprise, Feature: Response times, Fastest</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT Instant total context window</h6>
+            <div>
+             <span>54K</span><span>Plan: Business, Feature: GPT Instant total context window, 54K</span>
+            </div>
+            <div>
+             <span>128K</span><span>Plan: Enterprise, Feature: GPT Instant total context window, 128K</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT Instant input maximum***</h6>
+            <div>
+             <span>~40 pages</span><span>Plan: Business, Feature: GPT Instant input maximum***, ~40 pages</span>
+            </div>
+            <div>
+             <span>~250 pages</span><span>Plan: Enterprise, Feature: GPT Instant input maximum***, ~250 pages</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT Reasoning total context window</h6>
+            <div>
+             <span>256K</span><span>Plan: Business, Feature: GPT Reasoning total context window, 256K</span>
+            </div>
+            <div>
+             <span>256K</span><span>Plan: Enterprise, Feature: GPT Reasoning total context window, 256K</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPT Reasoning input maximum***</h6>
+            <div>
+             <span>~320 pages</span><span>Plan: Business, Feature: GPT Reasoning input maximum***, ~320 pages</span>
+            </div>
+            <div>
+             <span>~320 pages</span><span>Plan: Enterprise, Feature: GPT Reasoning input maximum***, ~320 pages</span>
+            </div>
+           </div>
+           <div>
+            <h6>Regular quality &amp; speed updates</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Regular quality &amp; speed updates, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Regular quality &amp; speed updates, Yes</span>
+            </div>
+           </div>
+          </div>
+         </div>
+         <div>
+          <h3>Features</h3>
+          <div>
+           <div>
+            <h6>ChatGPT Work</h6>
+            <div>
+             <span>Desktop, web, and mobile</span><span>Plan: Business, Feature: ChatGPT Work, Desktop, web, and mobile</span>
+            </div>
+            <div>
+             <span>Desktop, web, and mobile</span><span>Plan: Enterprise, Feature: ChatGPT Work, Desktop, web, and mobile</span>
+            </div>
+           </div>
+           <div>
+            <h6>Codex</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Codex, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Codex, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Plugins</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Plugins, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Plugins, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Voice</h6>
+            <div>
+             <span>Expanded</span><span>Plan: Business, Feature: Voice, Expanded</span>
+            </div>
+            <div>
+             <span>Flexible**</span><span>Plan: Enterprise, Feature: Voice, Flexible**</span>
+            </div>
+           </div>
+           <div>
+            <h6>Voice with video</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Voice with video, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Voice with video, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Skills beta</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Skills beta, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Skills beta, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Memory</h6>
+            <div>
+             <span>Expanded</span><span>Plan: Business, Feature: Memory, Expanded</span>
+            </div>
+            <div>
+             <span>Expanded</span><span>Plan: Enterprise, Feature: Memory, Expanded</span>
+            </div>
+           </div>
+           <div>
+            <h6>Memory with past chats</h6>
+            <div>
+             <span>Coming soon</span><span>Plan: Business, Feature: Memory with past chats, Coming soon</span>
+            </div>
+            <div>
+             <span>Coming soon</span><span>Plan: Enterprise, Feature: Memory with past chats, Coming soon</span>
+            </div>
+           </div>
+           <div>
+            <h6>Memory sources</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Memory sources, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Memory sources, No</span>
+            </div>
+           </div>
+           <div>
+            <h6>Search</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Search, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Search, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Canvas</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Canvas, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Canvas, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Code edits on macOS</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Code edits on macOS, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Code edits on macOS, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>File uploads</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: File uploads, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: File uploads, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Projects</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Projects, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Projects, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Shared projects</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Shared projects, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Shared projects, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Scheduled tasks</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Scheduled tasks, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Scheduled tasks, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Sites</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Sites, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Sites, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Built-in browser</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Built-in browser, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Built-in browser, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Workspace agents</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Workspace agents, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Workspace agents, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Data analysis</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Data analysis, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Data analysis, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Vision</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Vision, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Vision, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Apps connecting to internal tools</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Apps connecting to internal tools, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Apps connecting to internal tools, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Interactive apps</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Interactive apps, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Interactive apps, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Excel, PowerPoint, and Google Sheets extensions</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Excel, PowerPoint, and Google Sheets extensions, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Excel, PowerPoint, and Google Sheets extensions, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Company knowledge</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Company knowledge, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Company knowledge, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Developer mode (beta)</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Developer mode (beta), Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Developer mode (beta), Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>ChatGPT record mode</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: ChatGPT record mode, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: ChatGPT record mode, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Discover &amp; use GPTs</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Discover &amp; use GPTs, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Discover &amp; use GPTs, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Create &amp; share GPTs</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Create &amp; share GPTs, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Create &amp; share GPTs, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Share GPTs with your workspace</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Share GPTs with your workspace, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Share GPTs with your workspace, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Opportunities to test new features</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Opportunities to test new features, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Opportunities to test new features, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Image generation</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Image generation, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Image generation, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Image generation with Thinking</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Image generation with Thinking, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Image generation with Thinking, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Interactive tables and charts</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Interactive tables and charts, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Interactive tables and charts, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Deep research</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Deep research, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Deep research, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Apps for deep research</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Apps for deep research, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Apps for deep research, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Study mode</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Study mode, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Study mode, Yes</span>
+            </div>
+           </div>
+          </div>
+         </div>
+         <div>
+          <h3>Privacy</h3>
+          <div>
+           <h6>Content is used to train our models</h6>
+           <div>
+            <span>No.Read our Privacy commitment {5}</span><span>Plan: Business, Feature: Content is used to train our models, No.</span>
+           </div>
+           <div>
+            <span>No.Read our Privacy commitment {5}</span><span>Plan: Enterprise, Feature: Content is used to train our models, No.</span>
+           </div>
+          </div>
+         </div>
+         <div>
+          <h3>Security &amp; Administration</h3>
+          <div>
+           <div>
+            <h6>SAML SSO</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: SAML SSO, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: SAML SSO, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Unified billing</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Unified billing, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Unified billing, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Dedicated workspace</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Dedicated workspace, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Dedicated workspace, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>GPTs analytics and management</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: GPTs analytics and management , Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: GPTs analytics and management , Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Admin console</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Admin console, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Admin console, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Bulk member management</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Bulk member management, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Bulk member management, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Admin roles</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Admin roles, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Admin roles, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Soc 2 Type 2 compliance</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Soc 2 Type 2 compliance, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Soc 2 Type 2 compliance, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Domain verification</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Domain verification, Yes</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Domain verification, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>ISO 27001, 27017, 27018, and 27701 certified</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: ISO 27001, 27017, 27018, and 27701 certified, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: ISO 27001, 27017, 27018, and 27701 certified, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>SCIM</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: SCIM, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: SCIM, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Enterprise Key Management</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Enterprise Key Management, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Enterprise Key Management, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Role-based access controls</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Role-based access controls, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Role-based access controls, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Analytics dashboard</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Analytics dashboard, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Analytics dashboard, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Compliance API Logs Platform</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Compliance API Logs Platform, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Compliance API Logs Platform, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>IP allowlisting</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: IP allowlisting, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: IP allowlisting, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Data residency in US, EU, UK, JP, CA, KR, SG, IN, AU, UAE</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Data residency in US, EU, UK, JP, CA, KR, SG, IN, AU, UAE, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Data residency in US, EU, UK, JP, CA, KR, SG, IN, AU, UAE, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Branded workspace</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Branded workspace, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Branded workspace, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Global admin console</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Global admin console, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Global admin console, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Connector registry</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Connector registry, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Connector registry, Yes</span>
+            </div>
+           </div>
+          </div>
+         </div>
+         <div>
+          <h3>Customer Service</h3>
+          <div>
+           <div>
+            <h6>Enhanced support</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Enhanced support, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Enhanced support, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Dedicated onboarding</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Dedicated onboarding, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Dedicated onboarding, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Ongoing account management</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Ongoing account management, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Ongoing account management, Yes</span>
+            </div>
+           </div>
+           <div>
+            <h6>Custom security review</h6>
+            <div>
+             <svg></svg>
+             <span>Plan: Business, Feature: Custom security review, No</span>
+            </div>
+            <div>
+             <svg></svg>
+             <span>Plan: Enterprise, Feature: Custom security review, Yes</span>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+        Try ChatGPT Business (opens in a new window) {0}
+       </div>
+      </div>
+      <div>
+       <p><i><sup><span>*Usage must be reasonable and comply with our</span></sup></i>policies⁠(opens in a new window) {6}</p>
+       <p><i><sup><span>**Enterprise and Business can purchase credits for more access</span></sup></i></p>
+       <p><i><sup><span>***ChatGPT manages a shared context window to understand your request, track the conversation, retrieve relevant information, and generate responses. The portion available for user input is smaller than the total window, as space is also used for system instructions (including tools and personality), memories (if enabled), and internal processing (reviewing information, reasoning, and response generation). The reported space for user input is an approximation and may change dynamically based on features in use and any memory content.</span></sup></i></p>
+      </div>
+     </div>
+    </div>
+    <h2>Trusted by teams at</h2>
+    <h2>FAQ</h2>
+   </div>
+  </div>
+  <div>
+   <h2><span>Start creating with OpenAI’s powerful models.</span></h2>
+   <div>Get started (opens in a new window) {7}Contact sales {2}</div>
+  </div>
+ </div>
+ <!--$-->
+ <!--/$-->
+</main>
+<!--$!-->
+<!--/$-->
+<div>
+ <p>The free version of ChatGPT is available to everyone. Paid plans (Go, Plus, Business, and Enterprise) are priced per user per month. We offer monthly plans for Go, Plus and Business and annual plans for Business and Enterprise.</p>
+ <p>The free version of ChatGPT is available to everyone. Upgrading to Go, Plus, Business, or Enterprise offers a more powerful experience through additional features and access to GPT‑5.4.</p>
+ <p>Yes. We offerChatGPT for Teachers⁠(opens in a new window) {8}, a free plan for verified U.S. K–12 educators through June 2027, andChatGPT Edu⁠(opens in a new window) {9}, an affordable plan that lets universities deploy AI across their campus communities. Both plans include enhanced security and privacy controls, with additional administrative features available for schools, districts, and universities.Contact our team {2}to learn more.</p>
+ <p>Yes. Through OpenAI for Nonprofits, nonprofits can now access up to a 75% discount on ChatGPT Business orChatGPT Enterprise.Contact our sales team⁠(opens in a new window) {10}to get started.</p>
+ <p>Go, Free, and Plus plans are designed to be used by individuals. Business and Enterprise are for businesses. Business plans are available starting at 2 users. Pleasecontact sales {2}to learn more about our Enterprise plan.</p>
+ <p>You can purchase ChatGPT Go, Plus, Pro, or Business with any major credit card. For ChatGPT Enterprise, pleasecontact sales {2}for alternative payment options such as invoicing.</p>
+ <p>All data is encrypted in transit (TLS 1.2). Data at rest is encrypted at rest (AES-256), and strict access controls are used to limit who can access data. Our security team has an on-call rotation that has 24/7/365 coverage and is paged in case of any potential security incident. We offer aBug Bounty Program {11}for responsible disclosure of vulnerabilities discovered on our platform and products. Please visit ourTrust Portal⁠(opens in a new window) {12}for more details.</p>
+ <p>We give you control over your data. Read more abouthow your data is used {13}and ourEnterprise privacy {5}.</p>
+</div>

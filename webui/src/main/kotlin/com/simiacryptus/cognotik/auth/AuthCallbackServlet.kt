@@ -287,22 +287,6 @@ class AuthCallbackServlet : HttpServlet() {
         }
 
         /**
-         * Registers a new web-flow auth request. The callback handler will redirect
-         * the user's browser to the login finalization URL on success rather than
-         * rendering the static success page. An optional [future] may also be
-         * supplied for callers that still want to observe completion locally.
-         */
-        fun registerWebFlow(
-            loginMethodName: String,
-            future: CompletableFuture<String?>? = null
-        ): String {
-            val sessionId = UUID.randomUUID().toString()
-            if (future != null) pendingRequests[sessionId] = future
-            webFlowSessions[sessionId] = WebFlowEntry(loginMethodName)
-            return sessionId
-        }
-
-        /**
          * Marks an already-registered session as a web flow (so it will redirect
          * to the /login/ finalization URL on success).
          */
@@ -329,10 +313,5 @@ class AuthCallbackServlet : HttpServlet() {
             val trimmed = base.trimEnd('/')
             return "$trimmed/$sessionId"
         }
-
-        /**
-         * Number of currently pending auth requests (for diagnostics).
-         */
-        fun pendingCount(): Int = pendingRequests.size
     }
 }

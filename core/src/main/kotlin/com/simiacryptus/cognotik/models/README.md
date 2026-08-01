@@ -10,7 +10,6 @@ providers.
 
 The base interface for all AI models. It defines the basic properties:
 
-- `modelName`: The identifier for the model.
 - `provider`: The `APIProvider` that hosts the model.
 
 ### [APIProvider](APIProvider.kt)
@@ -31,6 +30,11 @@ An abstract base class and registry for AI service providers. It handles:
 - **Mistral / DeepSeek / Perplexity**: Specialized LLM providers.
 - **AWS**: Integration with Amazon Bedrock/SageMaker endpoints.
 - **SearchAPI / Google / Github**: Specialized providers for search and repository metadata.
+
+Provider registration follows the `DynamicEnum` pattern: each provider (e.g. in
+[ServiceProviders](ServiceProviders.kt)) is instantiated as an anonymous object and registered via
+`DynamicEnum.register(APIProvider::class.java, instance)`, allowing lookups through
+`APIProvider.valueOf(name)` and `APIProvider.values()`.
 
 ### [LLMModel](LLMModel.kt)
 
@@ -90,3 +94,22 @@ installedTools.forEach { tool ->
     println("Found ${tool.provider?.name} at ${tool.path}")
 }
 ```
+To generate silent audio and concatenate it with another segment:
+```kotlin
+val silence = AudioSegment.silence(durationSeconds = 1.0, format = "wav")
+val combined = silence + otherAudioSegment
+combined.writeAudio(Paths.get("output.wav"))
+```
+- `modelId`: The identifier for the model.
+- `pricing(usage)`: Computes the cost for a given `ModelSchema.Usage` (defaults to `0.0`).
+### [AudioSegment](AudioSegment.kt)
+A data class representing an audio payload (Base64-encoded) with associated format metadata
+(`format`, `sampleRate`, `channels`, `bitsPerSample`). It supports:
+- **Format Conversion**: `convert(targetFormat)` handles WAV/PCM (`L16`) conversions natively and
+   falls back to `ffmpeg` for other formats (e.g., mp3).
+- **Concatenation**: The `+` operator merges two segments of matching sample rate, channel count,
+   and bit depth, handling WAV, MP3 (via `ffmpeg` concat), and raw PCM concatenation.
+- **File I/O**: `writeAudio(path)` writes the segment to disk, auto-converting to match the target
+   file extension.
+- **Utilities**: Static helpers for generating `silence(...)`, stripping/adding WAV headers
+   (`stripWavHeader`, `pcmToWav`).
