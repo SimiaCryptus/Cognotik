@@ -1,7 +1,9 @@
-import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from './utils/docops.js';
-import { readFile, writeFile, deleteFile, listFiles } from './utils/fileIO.js';
-import { parseSessionUrl, getProxyUrl } from './utils/session.js';
-import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLinks.js';
+import {runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller} from '/lib/app/docops.js';
+import {readFile, writeFile, deleteFile, listFiles} from '/lib/app/fileIO.js';
+import {parseSessionUrl, getProxyUrl} from '/lib/app/session.js';
+import {updateSessionLinks, createSessionLinkManager} from '/lib/app/sessionLinks.js';
+import {serverUrl} from '/lib/app/config.js';
+import {initMenu} from '/lib/app/menu.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -9,28 +11,36 @@ import {
     setBadge,
     createBatchLogger,
     getFileIcon
-} from './utils/ui.js';
+} from '/lib/app/ui.js';
 import {
     loadApiProviders,
     populateModelDropdowns,
     saveModelSelections,
     loadModelSelections
-} from './utils/models.js';
+} from '/lib/app/models.js';
 import {
     fetchUsageData,
     renderUsageSummary,
     createUsageTableHtml
-} from './utils/usage.js';
+} from '/lib/app/usage.js';
 
-(function() {
+(function () {
     'use strict';
 
     // ========================================================================
     // Session & URL Setup
     // ========================================================================
-    const { basePath, sessionId } = parseSessionUrl();
+    const {basePath, sessionId} = parseSessionUrl();
     if (!sessionId) {
         console.warn('Could not determine session from URL path.');
+    }
+    // ========================================================================
+    // Shared Menubar (/lib/app/menu.js)
+    // ========================================================================
+    try {
+        initMenu({appName: 'Philosophical Calculator'});
+    } catch (e) {
+        console.warn('Menu initialization failed:', e);
     }
 
     // ========================================================================
@@ -60,7 +70,9 @@ import {
 
     function refreshModelDropdowns() {
         var selectMap = getModelSelectElements();
-        var selectArray = MODEL_KEYS.map(function(k) { return selectMap[k]; }).filter(Boolean);
+        var selectArray = MODEL_KEYS.map(function (k) {
+            return selectMap[k];
+        }).filter(Boolean);
         if (selectArray.length === 0) return;
         var saved = loadModelSelections(MODEL_STORAGE_PREFIX, MODEL_KEYS);
         populateModelDropdowns(availableModels, selectArray, saved);
@@ -77,12 +89,12 @@ import {
         }
 
         var html = '<div class="provider-list">';
-        providerNames.forEach(function(name) {
+        providerNames.forEach(function (name) {
             var models = availableModels[name];
             html += '<div class="provider-item">';
             html += '<div class="provider-name">🔌 ' + escapeHtml(name) + ' <span class="provider-model-count">(' + models.length + ' model' + (models.length !== 1 ? 's' : '') + ')</span></div>';
             html += '<div class="provider-models">';
-            models.forEach(function(model) {
+            models.forEach(function (model) {
                 var desc = model.description || '';
                 html += '<span class="provider-model-tag" title="' + escapeHtml(desc) + '">' + escapeHtml(model.name) + '</span>';
             });
@@ -97,7 +109,7 @@ import {
         var selectMap = getModelSelectElements();
         // Per best practice: only include non-empty model keys
         var result = {};
-        MODEL_KEYS.forEach(function(k) {
+        MODEL_KEYS.forEach(function (k) {
             var el = selectMap[k];
             if (el && el.value) result[k] = el.value;
         });
@@ -201,18 +213,27 @@ import {
 
     var statusPoller = createStatusPoller(basePath, handleStatusUpdate, 3000);
 
-    function startStatusPolling() { statusPoller.start(); }
-    function stopStatusPolling() { statusPoller.stop(); }
+    function startStatusPolling() {
+        statusPoller.start();
+    }
+
+    function stopStatusPolling() {
+        statusPoller.stop();
+    }
 
     // ========================================================================
     // Navigation
     // ========================================================================
-    document.querySelectorAll('.nav-link').forEach(function(link) {
-        link.addEventListener('click', function(e) {
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+        link.addEventListener('click', function (e) {
             e.preventDefault();
             var sectionId = this.dataset.section;
-            document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); });
-            document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+            document.querySelectorAll('.nav-link').forEach(function (l) {
+                l.classList.remove('active');
+            });
+            document.querySelectorAll('.section').forEach(function (s) {
+                s.classList.remove('active');
+            });
             this.classList.add('active');
             var section = document.getElementById(sectionId);
             if (section) section.classList.add('active');
@@ -222,10 +243,14 @@ import {
     // ========================================================================
     // Results Tabs
     // ========================================================================
-    document.querySelectorAll('.results-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            document.querySelectorAll('.results-tab').forEach(function(t) { t.classList.remove('active'); });
-            document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.results-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.results-tab').forEach(function (t) {
+                t.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-panel').forEach(function (p) {
+                p.classList.remove('active');
+            });
             this.classList.add('active');
             var panel = document.getElementById(this.dataset.tab);
             if (panel) panel.classList.add('active');
@@ -237,11 +262,13 @@ import {
     // ========================================================================
     var saveModelBtn = document.getElementById('save-model-settings');
     if (saveModelBtn) {
-        saveModelBtn.addEventListener('click', function() {
+        saveModelBtn.addEventListener('click', function () {
             var models = getSelectedModels();
             // Make sure to also persist empty selections (server default)
             var toSave = {};
-            MODEL_KEYS.forEach(function(k) { toSave[k] = models[k] || ''; });
+            MODEL_KEYS.forEach(function (k) {
+                toSave[k] = models[k] || '';
+            });
             saveModelSelections(MODEL_STORAGE_PREFIX, toSave);
             setStatus('model-status', '✓ Model settings saved', 'success');
         });
@@ -249,7 +276,7 @@ import {
 
     var reloadModelBtn = document.getElementById('reload-models');
     if (reloadModelBtn) {
-        reloadModelBtn.addEventListener('click', async function() {
+        reloadModelBtn.addEventListener('click', async function () {
             this.disabled = true;
             setStatus('model-status', 'Loading models…', '');
             try {
@@ -266,7 +293,7 @@ import {
     // ========================================================================
     // Save Notes / Instruct
     // ========================================================================
-    document.getElementById('save-notes').addEventListener('click', async function() {
+    document.getElementById('save-notes').addEventListener('click', async function () {
         var content = document.getElementById('notes-editor').value;
         if (!content.trim()) {
             setStatus('notes-status', '✗ Notes cannot be empty', 'error');
@@ -283,7 +310,7 @@ import {
         }
     });
 
-    document.getElementById('save-instruct').addEventListener('click', async function() {
+    document.getElementById('save-instruct').addEventListener('click', async function () {
         var content = document.getElementById('instruct-editor').value;
         try {
             this.disabled = true;
@@ -325,15 +352,15 @@ import {
         }
     }
 
-    document.querySelectorAll('.btn-view').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    document.querySelectorAll('.btn-view').forEach(function (btn) {
+        btn.addEventListener('click', function () {
             viewFile(this.dataset.file, this.dataset.viewer);
         });
     });
 
     // Results refresh buttons
-    document.querySelectorAll('.btn-refresh[data-file]').forEach(function(btn) {
-        btn.addEventListener('click', async function() {
+    document.querySelectorAll('.btn-refresh[data-file]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
             var viewerId = this.dataset.viewer;
             var viewer = document.getElementById(viewerId);
             if (!viewer) return;
@@ -356,8 +383,8 @@ import {
     });
 
     // Auto-load results when switching to Results tab
-    document.querySelectorAll('.results-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
+    document.querySelectorAll('.results-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
             var tabId = this.dataset.tab;
             var panel = document.getElementById(tabId);
             if (!panel) return;
@@ -375,8 +402,8 @@ import {
     // ========================================================================
     // Run Single Operation
     // ========================================================================
-    document.querySelectorAll('.btn-run').forEach(function(btn) {
-        btn.addEventListener('click', async function() {
+    document.querySelectorAll('.btn-run').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
             var opPath = this.dataset.op;
             var badgeId = this.dataset.badge;
             var outputPath = this.dataset.output;
@@ -400,9 +427,9 @@ import {
                 var taskId = await execDocOp(opPath, outputPath);
                 var cleanTaskId = taskId ? String(taskId).trim() : '';
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
-                    updateLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                    updateLinks(outputPath, {status: 'RUNNING', sessionId: cleanTaskId});
                 }
-                await waitForTask(basePath, outputPath, 600000, function(target, taskInfo) {
+                await waitForTask(basePath, outputPath, 600000, function (target, taskInfo) {
                     handleStatusUpdate(target, taskInfo);
                 });
                 setBadge(badgeId, 'done');
@@ -445,9 +472,9 @@ import {
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                     var proxyUrl = getProxyUrl(cleanTaskId);
                     batchLog.logHtml('Session: <a href="' + escapeHtml(proxyUrl) + '" target="_blank" class="monitor-link">📡 Monitor (' + escapeHtml(cleanTaskId.substring(0, 12)) + '…)</a>', 'info');
-                    updateLinks(step.output, { status: 'RUNNING', sessionId: cleanTaskId });
+                    updateLinks(step.output, {status: 'RUNNING', sessionId: cleanTaskId});
                 }
-                await waitForTask(basePath, step.output, 600000, function(target, taskInfo) {
+                await waitForTask(basePath, step.output, 600000, function (target, taskInfo) {
                     handleStatusUpdate(target, taskInfo);
                 });
                 setBadge(step.badge, 'done');
@@ -466,7 +493,8 @@ import {
                                 viewer.classList.add('visible');
                             }
                         }
-                    } catch (e) { /* non-critical */ }
+                    } catch (e) { /* non-critical */
+                    }
                 }
 
                 if (step.afterFn) await step.afterFn();
@@ -481,7 +509,7 @@ import {
     // ========================================================================
     // Core Pipeline (Summarize → Draft)
     // ========================================================================
-    document.getElementById('run-core-pipeline').addEventListener('click', async function() {
+    document.getElementById('run-core-pipeline').addEventListener('click', async function () {
         var notesContent = document.getElementById('notes-editor').value;
         if (!notesContent.trim()) {
             alert('Please enter your notes first.');
@@ -526,27 +554,123 @@ import {
 
     var lensDefinitions = [
         // Analysis Lenses
-        { key: 'brainstorm', category: 'analysis', op: 'ops/brainstorm_op.md', output: 'brainstorm.md', badge: 'badge-brainstorm', viewer: 'viewer-brainstorm', label: 'Brainstorm' },
-        { key: 'dialectical', category: 'analysis', op: 'ops/dialectical_op.md', output: 'dialectical.md', badge: 'badge-dialectical', viewer: 'viewer-dialectical', label: 'Dialectical Analysis' },
-        { key: 'socratic', category: 'analysis', op: 'ops/socratic_op.md', output: 'socratic.md', badge: 'badge-socratic', viewer: 'viewer-socratic', label: 'Socratic Dialogue' },
-        { key: 'perspectives', category: 'analysis', op: 'ops/perspectives_op.md', output: 'perspectives.md', badge: 'badge-perspectives', viewer: 'viewer-perspectives', label: 'Multi-Perspective Analysis' },
-        { key: 'gametheory', category: 'analysis', op: 'ops/gametheory_op.md', output: 'gametheory.md', badge: 'badge-gametheory', viewer: 'viewer-gametheory', label: 'Game Theory Analysis' },
-        { key: 'debate', category: 'analysis', op: 'ops/debate_op.md', output: 'debate.md', badge: 'badge-debate', viewer: 'viewer-debate', label: 'Historical Figure Debate' },
-        { key: 'protocol', category: 'analysis', op: 'ops/protocol_op.md', output: 'protocol.md', badge: 'badge-protocol', viewer: 'viewer-protocol', label: 'Unrunnable Protocol Analysis' },
+        {
+            key: 'brainstorm',
+            category: 'analysis',
+            op: 'ops/brainstorm_op.md',
+            output: 'brainstorm.md',
+            badge: 'badge-brainstorm',
+            viewer: 'viewer-brainstorm',
+            label: 'Brainstorm'
+        },
+        {
+            key: 'dialectical',
+            category: 'analysis',
+            op: 'ops/dialectical_op.md',
+            output: 'dialectical.md',
+            badge: 'badge-dialectical',
+            viewer: 'viewer-dialectical',
+            label: 'Dialectical Analysis'
+        },
+        {
+            key: 'socratic',
+            category: 'analysis',
+            op: 'ops/socratic_op.md',
+            output: 'socratic.md',
+            badge: 'badge-socratic',
+            viewer: 'viewer-socratic',
+            label: 'Socratic Dialogue'
+        },
+        {
+            key: 'perspectives',
+            category: 'analysis',
+            op: 'ops/perspectives_op.md',
+            output: 'perspectives.md',
+            badge: 'badge-perspectives',
+            viewer: 'viewer-perspectives',
+            label: 'Multi-Perspective Analysis'
+        },
+        {
+            key: 'gametheory',
+            category: 'analysis',
+            op: 'ops/gametheory_op.md',
+            output: 'gametheory.md',
+            badge: 'badge-gametheory',
+            viewer: 'viewer-gametheory',
+            label: 'Game Theory Analysis'
+        },
+        {
+            key: 'debate',
+            category: 'analysis',
+            op: 'ops/debate_op.md',
+            output: 'debate.md',
+            badge: 'badge-debate',
+            viewer: 'viewer-debate',
+            label: 'Historical Figure Debate'
+        },
+        {
+            key: 'protocol',
+            category: 'analysis',
+            op: 'ops/protocol_op.md',
+            output: 'protocol.md',
+            badge: 'badge-protocol',
+            viewer: 'viewer-protocol',
+            label: 'Unrunnable Protocol Analysis'
+        },
         // Output Lenses
-        { key: 'persuasive', category: 'output', op: 'ops/persuasive_op.md', output: 'persuasive.md', badge: 'badge-persuasive', viewer: 'viewer-persuasive', label: 'Persuasive Essay' },
-        { key: 'narrative', category: 'output', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
-        { key: 'comic', category: 'output', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
-        { key: 'technical', category: 'output', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Tutorial' },
-        { key: 'webpage', category: 'output', op: 'ops/webpage_op.md', output: 'page.html', badge: 'badge-webpage', viewer: 'viewer-webpage', label: 'HTML Webpage Generation' }
+        {
+            key: 'persuasive',
+            category: 'output',
+            op: 'ops/persuasive_op.md',
+            output: 'persuasive.md',
+            badge: 'badge-persuasive',
+            viewer: 'viewer-persuasive',
+            label: 'Persuasive Essay'
+        },
+        {
+            key: 'narrative',
+            category: 'output',
+            op: 'ops/narrative_op.md',
+            output: 'narrative.md',
+            badge: 'badge-narrative',
+            viewer: 'viewer-narrative',
+            label: 'Narrative Dramatization'
+        },
+        {
+            key: 'comic',
+            category: 'output',
+            op: 'ops/comic_op.md',
+            output: 'comic.md',
+            badge: 'badge-comic',
+            viewer: 'viewer-comic',
+            label: 'Comic Book Generation'
+        },
+        {
+            key: 'technical',
+            category: 'output',
+            op: 'ops/technical_explanation_op.md',
+            output: 'technical_explanation.md',
+            badge: 'badge-technical',
+            viewer: 'viewer-technical',
+            label: 'Technical Tutorial'
+        },
+        {
+            key: 'webpage',
+            category: 'output',
+            op: 'ops/webpage_op.md',
+            output: 'page.html',
+            badge: 'badge-webpage',
+            viewer: 'viewer-webpage',
+            label: 'HTML Webpage Generation'
+        }
     ];
 
     // ========================================================================
     // Run Selected Lenses
     // ========================================================================
-    document.getElementById('run-selected-lenses').addEventListener('click', async function() {
+    document.getElementById('run-selected-lenses').addEventListener('click', async function () {
         var selectedKeys = [];
-        document.querySelectorAll('.lens-check:checked').forEach(function(cb) {
+        document.querySelectorAll('.lens-check:checked').forEach(function (cb) {
             selectedKeys.push(cb.value);
         });
 
@@ -595,31 +719,43 @@ import {
     });
 
     // Select/Deselect All
-    document.getElementById('select-all-lenses').addEventListener('click', function() {
-        document.querySelectorAll('.lens-check').forEach(function(cb) { cb.checked = true; });
+    document.getElementById('select-all-lenses').addEventListener('click', function () {
+        document.querySelectorAll('.lens-check').forEach(function (cb) {
+            cb.checked = true;
+        });
     });
 
-    document.getElementById('deselect-all-lenses').addEventListener('click', function() {
-        document.querySelectorAll('.lens-check').forEach(function(cb) { cb.checked = false; });
+    document.getElementById('deselect-all-lenses').addEventListener('click', function () {
+        document.querySelectorAll('.lens-check').forEach(function (cb) {
+            cb.checked = false;
+        });
     });
     var selectAllAnalysisBtn = document.getElementById('select-all-analysis');
     if (selectAllAnalysisBtn) {
-        selectAllAnalysisBtn.addEventListener('click', function() {
+        selectAllAnalysisBtn.addEventListener('click', function () {
             var analysisKeys = lensDefinitions
-                .filter(function(l) { return l.category === 'analysis'; })
-                .map(function(l) { return l.key; });
-            document.querySelectorAll('.lens-check').forEach(function(cb) {
+                .filter(function (l) {
+                    return l.category === 'analysis';
+                })
+                .map(function (l) {
+                    return l.key;
+                });
+            document.querySelectorAll('.lens-check').forEach(function (cb) {
                 cb.checked = analysisKeys.indexOf(cb.value) >= 0;
             });
         });
     }
     var selectAllOutputsBtn = document.getElementById('select-all-outputs');
     if (selectAllOutputsBtn) {
-        selectAllOutputsBtn.addEventListener('click', function() {
+        selectAllOutputsBtn.addEventListener('click', function () {
             var outputKeys = lensDefinitions
-                .filter(function(l) { return l.category === 'output'; })
-                .map(function(l) { return l.key; });
-            document.querySelectorAll('.lens-check').forEach(function(cb) {
+                .filter(function (l) {
+                    return l.category === 'output';
+                })
+                .map(function (l) {
+                    return l.key;
+                });
+            document.querySelectorAll('.lens-check').forEach(function (cb) {
                 cb.checked = outputKeys.indexOf(cb.value) >= 0;
             });
         });
@@ -644,21 +780,21 @@ import {
 
         // Fall back to file existence checks
         var fileChecks = [
-            { file: 'summary.md', badge: 'badge-summary' },
-            { file: 'content.md', badge: 'badge-content' },
-            { file: 'brainstorm.md', badge: 'badge-brainstorm' },
-            { file: 'dialectical.md', badge: 'badge-dialectical' },
-            { file: 'socratic.md', badge: 'badge-socratic' },
-            { file: 'perspectives.md', badge: 'badge-perspectives' },
-            { file: 'persuasive.md', badge: 'badge-persuasive' },
-            { file: 'gametheory.md', badge: 'badge-gametheory' },
-            { file: 'narrative.md', badge: 'badge-narrative' },
-            { file: 'debate.md', badge: 'badge-debate' },
-            { file: 'protocol.md', badge: 'badge-protocol' },
-            { file: 'comic.md', badge: 'badge-comic' },
-            { file: 'technical_explanation.md', badge: 'badge-technical' },
-            { file: 'illustrated_content.md', badge: 'badge-illustration' },
-            { file: 'page.html', badge: 'badge-webpage' }
+            {file: 'summary.md', badge: 'badge-summary'},
+            {file: 'content.md', badge: 'badge-content'},
+            {file: 'brainstorm.md', badge: 'badge-brainstorm'},
+            {file: 'dialectical.md', badge: 'badge-dialectical'},
+            {file: 'socratic.md', badge: 'badge-socratic'},
+            {file: 'perspectives.md', badge: 'badge-perspectives'},
+            {file: 'persuasive.md', badge: 'badge-persuasive'},
+            {file: 'gametheory.md', badge: 'badge-gametheory'},
+            {file: 'narrative.md', badge: 'badge-narrative'},
+            {file: 'debate.md', badge: 'badge-debate'},
+            {file: 'protocol.md', badge: 'badge-protocol'},
+            {file: 'comic.md', badge: 'badge-comic'},
+            {file: 'technical_explanation.md', badge: 'badge-technical'},
+            {file: 'illustrated_content.md', badge: 'badge-illustration'},
+            {file: 'page.html', badge: 'badge-webpage'}
         ];
 
         for (var i = 0; i < fileChecks.length; i++) {
@@ -670,7 +806,8 @@ import {
                 if (content !== null && content.trim().length > 0) {
                     setBadge(check.badge, 'done');
                 }
-            } catch (e) { /* leave as pending */ }
+            } catch (e) { /* leave as pending */
+            }
         }
 
         if (anyRunning) startStatusPolling();
@@ -685,14 +822,18 @@ import {
             if (notes !== null) {
                 document.getElementById('notes-editor').value = notes;
             }
-        } catch (e) { console.warn('Could not load notes:', e); }
+        } catch (e) {
+            console.warn('Could not load notes:', e);
+        }
 
         try {
             var instruct = await readFile(basePath, 'instruct.md');
             if (instruct !== null) {
                 document.getElementById('instruct-editor').value = instruct;
             }
-        } catch (e) { console.warn('Could not load instruct.md:', e); }
+        } catch (e) {
+            console.warn('Could not load instruct.md:', e);
+        }
     }
 
     // ========================================================================
@@ -711,25 +852,25 @@ import {
     var uploadedFilesList = document.getElementById('uploaded-files-list');
 
     // Prevent default drag behaviors on the whole document
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
-        document.body.addEventListener(eventName, function(e) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (eventName) {
+        document.body.addEventListener(eventName, function (e) {
             e.preventDefault();
             e.stopPropagation();
         }, false);
     });
 
     if (uploadZone) {
-        ['dragenter', 'dragover'].forEach(function(eventName) {
-            uploadZone.addEventListener(eventName, function() {
+        ['dragenter', 'dragover'].forEach(function (eventName) {
+            uploadZone.addEventListener(eventName, function () {
                 uploadZone.classList.add('drag-over');
             }, false);
         });
-        ['dragleave', 'drop'].forEach(function(eventName) {
-            uploadZone.addEventListener(eventName, function() {
+        ['dragleave', 'drop'].forEach(function (eventName) {
+            uploadZone.addEventListener(eventName, function () {
                 uploadZone.classList.remove('drag-over');
             }, false);
         });
-        uploadZone.addEventListener('drop', function(e) {
+        uploadZone.addEventListener('drop', function (e) {
             var files = e.dataTransfer.files;
             if (files && files.length > 0) {
                 handleFileUpload(files);
@@ -738,7 +879,7 @@ import {
     }
 
     if (fileInput) {
-        fileInput.addEventListener('change', function() {
+        fileInput.addEventListener('change', function () {
             if (this.files && this.files.length > 0) {
                 handleFileUpload(this.files);
             }
@@ -776,7 +917,7 @@ import {
         var contentType = file.type || 'application/octet-stream';
         var resp = await fetch(basePath + '/' + filePath, {
             method: 'PUT',
-            headers: { 'Content-Type': contentType },
+            headers: {'Content-Type': contentType},
             body: file
         });
         if (!resp.ok) {
@@ -791,17 +932,17 @@ import {
             var entries = await listFiles(basePath, 'notes');
             var files = [];
             if (Array.isArray(entries)) {
-                files = entries.filter(function(e) {
+                files = entries.filter(function (e) {
                     if (typeof e === 'string') return true;
                     if (e && e.type === 'file') return true;
                     if (e && !e.type && e.name) return true;
                     return false;
-                }).map(function(e) {
+                }).map(function (e) {
                     if (typeof e === 'string') return e;
                     return e.name || e.fileName || String(e);
                 });
             }
-            files = files.filter(function(f) {
+            files = files.filter(function (f) {
                 return f && f !== '.' && f !== '..' && f !== '_files.json' && f !== '.gitignore';
             });
             renderFileList(files);
@@ -833,8 +974,8 @@ import {
         html += '</div>';
         uploadedFilesList.innerHTML = html;
 
-        uploadedFilesList.querySelectorAll('.file-delete-btn').forEach(function(btn) {
-            btn.addEventListener('click', async function() {
+        uploadedFilesList.querySelectorAll('.file-delete-btn').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
                 var filename = this.dataset.filename;
                 if (!confirm('Delete notes/' + filename + '?')) return;
                 try {
@@ -850,7 +991,7 @@ import {
 
     var refreshFileListBtn = document.getElementById('refresh-file-list');
     if (refreshFileListBtn) {
-        refreshFileListBtn.addEventListener('click', function() {
+        refreshFileListBtn.addEventListener('click', function () {
             refreshUploadedFileList();
         });
     }
@@ -933,7 +1074,7 @@ import {
         toolbar.innerHTML = toolbarHtml;
         viewer.parentElement.insertBefore(toolbar, viewer);
 
-        toolbar.querySelector('.btn-toggle-mode').addEventListener('click', function() {
+        toolbar.querySelector('.btn-toggle-mode').addEventListener('click', function () {
             var vid = this.dataset.viewer;
             var current = viewerModes[vid] || 'rendered';
             viewerModes[vid] = current === 'rendered' ? 'markdown' : 'rendered';
@@ -949,7 +1090,7 @@ import {
             }
         });
 
-        toolbar.querySelector('.btn-zoom').addEventListener('click', function() {
+        toolbar.querySelector('.btn-zoom').addEventListener('click', function () {
             var vid = this.dataset.viewer;
             openZoomOverlay(vid);
         });
@@ -980,7 +1121,8 @@ import {
                     zDoc.open();
                     zDoc.write(raw);
                     zDoc.close();
-                } catch (e) { /* ignore */ }
+                } catch (e) { /* ignore */
+                }
             }
         } else if (viewerModes[vid] === 'markdown') {
             zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
@@ -1009,10 +1151,10 @@ import {
                 '</div>' +
                 '<div class="zoom-overlay-body" id="zoom-overlay-body"></div>';
             document.body.appendChild(overlay);
-            document.getElementById('zoom-close-btn').addEventListener('click', function() {
+            document.getElementById('zoom-close-btn').addEventListener('click', function () {
                 closeZoomOverlay();
             });
-            document.getElementById('zoom-toggle-mode').addEventListener('click', function() {
+            document.getElementById('zoom-toggle-mode').addEventListener('click', function () {
                 if (!zoomedViewerId) return;
                 var current = viewerModes[zoomedViewerId] || 'rendered';
                 viewerModes[zoomedViewerId] = current === 'rendered' ? 'markdown' : 'rendered';
@@ -1033,7 +1175,7 @@ import {
                     }
                 }
             });
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && zoomedViewerId) closeZoomOverlay();
             });
         }
@@ -1073,7 +1215,7 @@ import {
 
     var editContentBtn = document.getElementById('edit-content-btn');
     if (editContentBtn) {
-        editContentBtn.addEventListener('click', async function() {
+        editContentBtn.addEventListener('click', async function () {
             try {
                 var content = await readFile(basePath, 'content.md');
                 contentEditorEl.value = content || '';
@@ -1086,7 +1228,7 @@ import {
 
     var saveContentBtn = document.getElementById('save-content-btn');
     if (saveContentBtn) {
-        saveContentBtn.addEventListener('click', async function() {
+        saveContentBtn.addEventListener('click', async function () {
             var content = contentEditorEl.value;
             try {
                 this.disabled = true;
@@ -1111,7 +1253,7 @@ import {
 
     var closeContentEditorBtn = document.getElementById('close-content-editor-btn');
     if (closeContentEditorBtn) {
-        closeContentEditorBtn.addEventListener('click', function() {
+        closeContentEditorBtn.addEventListener('click', function () {
             contentEditorContainer.classList.remove('visible');
         });
     }
@@ -1125,7 +1267,7 @@ import {
 
     var pipelineEditBtn = document.getElementById('pipeline-edit-content-btn');
     if (pipelineEditBtn) {
-        pipelineEditBtn.addEventListener('click', async function() {
+        pipelineEditBtn.addEventListener('click', async function () {
             if (pipelineEditorContainer.classList.contains('visible')) {
                 if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
                 pipelineEditorContainer.classList.remove('visible');
@@ -1146,7 +1288,7 @@ import {
     }
 
     if (pipelineEditorEl) {
-        pipelineEditorEl.addEventListener('input', function() {
+        pipelineEditorEl.addEventListener('input', function () {
             pipelineEditorDirty = true;
             updatePipelineWordCount();
         });
@@ -1199,17 +1341,25 @@ import {
     }
 
     var pipelineSaveBtn = document.getElementById('pipeline-save-content-btn');
-    if (pipelineSaveBtn) pipelineSaveBtn.addEventListener('click', function() { savePipelineContent(false); });
+    if (pipelineSaveBtn) pipelineSaveBtn.addEventListener('click', function () {
+        savePipelineContent(false);
+    });
     var pipelineSaveBtnBottom = document.getElementById('pipeline-save-content-btn-bottom');
-    if (pipelineSaveBtnBottom) pipelineSaveBtnBottom.addEventListener('click', function() { savePipelineContent(false); });
+    if (pipelineSaveBtnBottom) pipelineSaveBtnBottom.addEventListener('click', function () {
+        savePipelineContent(false);
+    });
     var pipelineSaveCloseBtn = document.getElementById('pipeline-save-close-content-btn');
-    if (pipelineSaveCloseBtn) pipelineSaveCloseBtn.addEventListener('click', function() { savePipelineContent(true); });
+    if (pipelineSaveCloseBtn) pipelineSaveCloseBtn.addEventListener('click', function () {
+        savePipelineContent(true);
+    });
     var pipelineSaveCloseBtnBottom = document.getElementById('pipeline-save-close-content-btn-bottom');
-    if (pipelineSaveCloseBtnBottom) pipelineSaveCloseBtnBottom.addEventListener('click', function() { savePipelineContent(true); });
+    if (pipelineSaveCloseBtnBottom) pipelineSaveCloseBtnBottom.addEventListener('click', function () {
+        savePipelineContent(true);
+    });
 
     var pipelineCloseBtn = document.getElementById('pipeline-close-editor-btn');
     if (pipelineCloseBtn) {
-        pipelineCloseBtn.addEventListener('click', function() {
+        pipelineCloseBtn.addEventListener('click', function () {
             if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
             pipelineEditorContainer.classList.remove('visible');
             pipelineEditorDirty = false;
@@ -1217,8 +1367,8 @@ import {
     }
 
     // Markdown formatting toolbar
-    document.querySelectorAll('.pipeline-editor-tool').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    document.querySelectorAll('.pipeline-editor-tool').forEach(function (btn) {
+        btn.addEventListener('click', function () {
             var action = this.dataset.action;
             var ta = pipelineEditorEl;
             if (!ta) return;
@@ -1244,7 +1394,7 @@ import {
                     break;
                 case 'bullet':
                     if (selected) {
-                        insert = selected.split('\n').map(function(line) {
+                        insert = selected.split('\n').map(function (line) {
                             return '- ' + line;
                         }).join('\n');
                     } else {
@@ -1254,7 +1404,7 @@ import {
                     break;
                 case 'quote':
                     if (selected) {
-                        insert = selected.split('\n').map(function(line) {
+                        insert = selected.split('\n').map(function (line) {
                             return '> ' + line;
                         }).join('\n');
                     } else {
@@ -1281,7 +1431,7 @@ import {
     });
 
     if (pipelineEditorEl) {
-        pipelineEditorEl.addEventListener('keydown', function(e) {
+        pipelineEditorEl.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 savePipelineContent(false);
@@ -1296,10 +1446,10 @@ import {
     var USAGE_POLL_INTERVAL = 10000;
 
     function getUsageUrls() {
-        if (!sessionId) return { html: null, json: null };
+        if (!sessionId) return {html: null, json: null};
         return {
-            html: '/proxy/usage?sessionId=' + encodeURIComponent(sessionId),
-            json: '/proxy/usage?sessionId=' + encodeURIComponent(sessionId) + '&format=json'
+            html: serverUrl('/proxy/usage?sessionId=' + encodeURIComponent(sessionId)),
+            json: serverUrl('/proxy/usage?sessionId=' + encodeURIComponent(sessionId) + '&format=json')
         };
     }
 
@@ -1373,7 +1523,7 @@ import {
         if (usagePollTimer) return;
         var autoRefresh = document.getElementById('usage-auto-refresh');
         if (autoRefresh && !autoRefresh.checked) return;
-        usagePollTimer = setInterval(function() {
+        usagePollTimer = setInterval(function () {
             var auto = document.getElementById('usage-auto-refresh');
             if (auto && !auto.checked) {
                 stopUsagePolling();
@@ -1395,21 +1545,21 @@ import {
 
     var refreshUsageBtn = document.getElementById('refresh-usage');
     if (refreshUsageBtn) {
-        refreshUsageBtn.addEventListener('click', function() {
+        refreshUsageBtn.addEventListener('click', function () {
             refreshUsage();
         });
     }
 
     var usageAutoRefresh = document.getElementById('usage-auto-refresh');
     if (usageAutoRefresh) {
-        usageAutoRefresh.addEventListener('change', function() {
+        usageAutoRefresh.addEventListener('change', function () {
             if (this.checked) startUsagePolling();
             else stopUsagePolling();
         });
     }
 
-    document.querySelectorAll('.nav-link').forEach(function(link) {
-        link.addEventListener('click', function() {
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+        link.addEventListener('click', function () {
             if (this.dataset.section === 'section-usage') {
                 refreshUsage();
                 startUsagePolling();

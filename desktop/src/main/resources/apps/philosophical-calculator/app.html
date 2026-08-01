@@ -963,7 +963,13 @@
     </section>
 </main>
 
-<script src="marked.min.js"></script>
+<!--
+   Only required when this deployment is NOT mounted at the host root.
+   <script>
+     window.COGNOTIK_CONFIG = { serverBase: '/cognotik' };
+   </script>
+-->
+<script src="/lib/app/marked.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

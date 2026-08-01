@@ -3,6 +3,8 @@
  */
 
 'use strict';
+import {serverUrl} from './config.js';
+
 
 /**
  * Run a DocOps operation
@@ -24,8 +26,8 @@ export async function runDocOp(sessionId, opPath, targetPath, models = {}) {
     if (models.fastModel) params.set('fastModel', models.fastModel);
     if (models.imageModel) params.set('imageModel', models.imageModel);
 
-    const url = '/docops?' + params.toString();
-    const resp = await fetch(url, { method: 'POST' });
+    const url = serverUrl('/docops') + '?' + params.toString();
+    const resp = await fetch(url, {method: 'POST'});
 
     if (!resp.ok) {
         const errText = await resp.text().catch(() => '');

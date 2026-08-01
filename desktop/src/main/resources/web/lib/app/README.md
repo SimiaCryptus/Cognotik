@@ -1,8 +1,7 @@
 # Resume Customizer — Utility Modules
 
-This directory contains shared utility modules used throughout the Resume Customizer application (and related apps
-such as Goal Planner). Each module is a self-contained ES module with named exports and a convenience namespace
-export.
+This directory contains shared utility modules used throughout the Resume Customizer application (and related apps such
+as Goal Planner). Each module is a self-contained ES module with named exports and a convenience namespace export.
 
 NOTE: These assets can be accessed via the path `/lib/app/` (absolute path to same host)
 
@@ -10,17 +9,19 @@ NOTE: These assets can be accessed via the path `/lib/app/` (absolute path to sa
 
 ## Module Overview
 
-| Module            | Namespace Export   | Purpose                                                            |
-|-------------------|--------------------|--------------------------------------------------------------------|
-| `docops.js`       | `DocOpsUtils`      | Run DocOps operations and poll task status                         |
-| `fileIO.js`       | `FileIOUtils`      | Read, write, delete, and list session files                        |
-| `git.js`          | `GitUtils`         | Git repository operations via the Git API                          |
-| `marked.min.js`   | *(global)*         | Vendored markdown renderer (loaded via `<script>`, not ES module)  |
-| `models.js`       | `ModelUtils`       | Load and manage AI model/provider selections                       |
-| `session.js`      | `SessionUtils`     | Parse session URLs and build proxy links                           |
-| `sessionLinks.js` | `SessionLinkUtils` | Render live session monitoring links in the DOM                    |
-| `ui.js`           | `UIUtils`          | Markdown rendering, toasts, badges, logging                        |
-| `usage.js`        | `UsageUtils`       | Fetch, aggregate, and render AI token usage                        |
+| Module            | Namespace Export   | Purpose                                                           |
+|-------------------|--------------------|-------------------------------------------------------------------|
+| `config.js`       | `ConfigUtils`      | Runtime configuration: server base URL, app/session overrides     |
+| `docops.js`       | `DocOpsUtils`      | Run DocOps operations and poll task status                        |
+| `fileIO.js`       | `FileIOUtils`      | Read, write, delete, and list session files                       |
+| `git.js`          | `GitUtils`         | Git repository operations via the Git API                         |
+| `marked.min.js`   | *(global)*         | Vendored markdown renderer (loaded via `<script>`, not ES module) |
+| `menu.js`         | `MenuUtils`        | Common application menubar: nav, IDE link, git, sessions, usage   |
+| `models.js`       | `ModelUtils`       | Load and manage AI model/provider selections                      |
+| `session.js`      | `SessionUtils`     | Parse session URLs and build proxy links                          |
+| `sessionLinks.js` | `SessionLinkUtils` | Render live session monitoring links in the DOM                   |
+| `ui.js`           | `UIUtils`          | Markdown rendering, toasts, badges, logging                       |
+| `usage.js`        | `UsageUtils`       | Fetch, aggregate, and render AI token usage                       |
 
 ---
 
@@ -37,10 +38,16 @@ import { DocOpsUtils } from './utils/docops.js';
 DocOpsUtils.runDocOp(sessionId, opPath, targetPath);
 ```
 
+> **Migration note:** these modules now live at the host-absolute path `/lib/app/`. New apps should import
+> them from there (`import { runDocOp } from '/lib/app/docops.js';`) and load marked from
+> `/lib/app/marked.min.js`. If your deployment is **not** mounted at the host root, set
+> `window.COGNOTIK_CONFIG.serverBase` (or `<meta name="cognotik-server-base">`) before your module script.
+> See [`migration.md`](./migration.md) for the full checklist.
+
 ### Loading `marked` locally
 
-`ui.js` calls the global `marked` object for markdown rendering. **Do not load `marked` from a CDN** — a vendored
-copy lives at `utils/marked.min.js`. Include it in your HTML **before** your module script:
+`ui.js` calls the global `marked` object for markdown rendering. **Do not load `marked` from a CDN** — a vendored copy
+lives at `utils/marked.min.js`. Include it in your HTML **before** your module script:
 
 ```html
 <!-- Local copy of marked — used by utils/ui.js renderMarkdown() -->
@@ -53,6 +60,37 @@ This keeps the app functional offline and avoids CDN/CSP issues.
 ---
 
 ## Module Reference
+
+### `config.js` — Runtime Configuration
+
+Resolves the *server base* used by every absolute API endpoint (`/docops`, `/apiProviders/`, `/proxy/…`)
+plus optional app/session overrides. Defaults to `''` (host root), so existing apps need no changes.
+
+#### `configure(overrides)`
+
+Sets configuration at runtime and returns the effective config.
+
+   ```js
+   import { configure } from '/lib/app/config.js';
+   configure({ serverBase: '/cognotik' });
+   ```
+
+#### `getConfig()`
+
+Returns the effective configuration, merging (in priority order): `configure()` values,
+`window.COGNOTIK_CONFIG`, `<meta name="cognotik-*">` tags, `<html data-server-base>`, then defaults. | Key | Default |
+Purpose | |--------------------|--------------------------------------------|---------------------------------------------| |
+`serverBase`       | `''`                                       | Prefix for absolute server endpoints | |
+`appId`            | `null`                                     | Override URL-derived app id | | `sessionId`        |
+`null`                                     | Override URL-derived session id | | `basePath`         |
+`null`                                     | Override URL-derived session base path | | `sessionsEndpoint` |
+`null`                                     | Session list endpoint used by `menu.js`     | | `ideUrlTemplate`   |
+`'{appRoot}/ui/?session={sessionId}#/'`    | Template for the filesystem IDE link |
+
+#### `serverUrl(path)`
+
+Joins `path` onto `serverBase`. Absolute URLs are returned unchanged.
+---
 
 ### `docops.js` — DocOps Execution
 
@@ -193,6 +231,72 @@ Returns commit history (default: last 20 commits).
 Converts a status API response into an HTML string suitable for direct `innerHTML` injection.
 
 ---
+
+### `menu.js` — Common Application Menubar
+
+Renders a shared menubar at the top of any app page. It is fully self-contained (styles are injected) and context-aware.
+
+   ```js
+   import { initMenu } from '/lib/app/menu.js';
+   const menu = initMenu({ appName: 'Resume Customizer' });
+   ```
+
+#### `initMenu(options?)`
+
+| Option             | Type                    | Default            | Description                                     |
+   |--------------------|-------------------------|--------------------|-------------------------------------------------|
+| `mount`            | `HTMLElement \| string` | top of `<body>`    | Where to insert the bar                         |
+| `appName`          | `string`                | derived app id     | Label shown in the context chip                 |
+| `showGit`          | `boolean`               | `true`             | Show the Git panel                              |
+| `showSessions`     | `boolean`               | `true`             | Show the Sessions panel                         |
+| `showUsage`        | `boolean`               | `true`             | Show the Usage panel                            |
+| `showIde`          | `boolean`               | `true`             | Show the filesystem IDE link                    |
+| `sticky`           | `boolean`               | `true`             | `position: sticky` at the top                   |
+| `newSessionPath`   | `string`                | `'new'`            | Path segment appended to the app root           |
+| `getProxyUrl`      | `Function`              | `session.js` impl. | Builds monitor links                            |
+| `sessionIds`       | `Array \| Function`     | `null`             | Extra session IDs folded into usage totals      |
+| `extraLinks`       | `Array`                 | `[]`               | `[{ href, label, target }]` appended to the nav |
+| `sessionsEndpoint` | `string`                | auto-probed        | Endpoint returning the list of sessions         |
+
+Returns a controller:
+
+   ```js
+   menu.open('usage');       // 'git' | 'sessions' | 'usage'
+   menu.close();
+   await menu.refresh();     // refreshGit() + refreshSessions() + refreshUsage()
+   menu.context;             // { view, appId, sessionId, appRoot, basePath, pathname }
+   menu.destroy();
+   ```
+
+#### Navigation contexts
+
+`getMenuContext()` classifies the current URL as one of:
+| `view`     | Matches | Derived
+values | |------------|------------------------------------------------------|-----------------------------| |
+`home`     | `/`                                                  | — | | `app`      |
+`/<app>/…`                                           | `appId`, `appRoot`          | | `new`      |
+`/<app>/new`                                         | `appId`, `appRoot`          | | `session`  |
+`/<app>/fileIndex/<session>/…`                       | + `sessionId`, `basePath`   | | `ide`      |
+`/<app>/ui/?session=<session>#/`                     | + `sessionId`               | | `proxy`    |
+`/proxy/?session=<session>`                          | `sessionId`                 |
+
+#### `getIdeUrl(ctx)`
+
+Builds the filesystem IDE URL for a context, e.g.
+`/presentation-creator/ui/?session=U-20260801-TH2s9UEo#/`. Override the shape with
+`configure({ ideUrlTemplate })`.
+
+#### `fetchSessionList(ctx, endpoint?)`
+
+Returns `[{ sessionId, name, active }]`. When no endpoint is configured it probes, in order:
+`<appRoot>/api/sessions?format=json`, `<appRoot>/sessions?format=json`, `/api/sessions?format=json`. Set
+`configure({ sessionsEndpoint })` (or the `sessionsEndpoint` option) to pin it.
+
+#### `fetchRunningTasks(basePath)`
+
+Reads `docops.status.json` and returns `[{ target, status, taskId }]` — used to render the *currently running* list and
+to fold task session IDs into usage aggregation.
+   ---
 
 ### `models.js` — AI Model Management
 
@@ -443,26 +547,26 @@ Returns an HTML string for a full usage breakdown table, sorted by cost descendi
 When building a new app on top of these utilities, follow these conventions:
 
 1. **Vendor `marked` locally.** Include `<script src="utils/marked.min.js"></script>` in your HTML so
-`renderMarkdown()` works offline. Do **not** pull `marked` from a CDN.
+   `renderMarkdown()` works offline. Do **not** pull `marked` from a CDN.
 2. **Render markdown previews inline.** For every `.md` artifact your app generates, give it a
-`<div class="markdown-preview">` next to the step's action buttons, and call `renderMarkdown(readFile(...))`
-whenever the file changes (on init, after a docops run, after a manual save). See `goal-planner/app.js`'s
-`refreshMarkdownPreview()` and `MARKDOWN_PREVIEWS` map for the pattern.
+   `<div class="markdown-preview">` next to the step's action buttons, and call `renderMarkdown(readFile(...))`
+   whenever the file changes (on init, after a docops run, after a manual save). See `goal-planner/app.js`'s
+   `refreshMarkdownPreview()` and `MARKDOWN_PREVIEWS` map for the pattern.
 3. **Keep session links visible for the life of the page.** Track every docops task you've started in a
-`Map<target, taskInfo>` and render a persistent "Active Sessions" panel from it. Update that map from **every**
-status callback (both per-step `waitForTask` and global `pollExistingTasks`), so links remain available even
-after a task completes. `sessionLinks.js`'s built-in container helpers clear their DOM on every render — they
-are not a substitute for a persistent panel.
-4. **Call the status poller on a schedule** (e.g. `setInterval(pollExistingTasks, 15000)`) so the page recovers
-state after a reload or navigation. Always re-render the active-sessions panel from the poller as well.
+   `Map<target, taskInfo>` and render a persistent "Active Sessions" panel from it. Update that map from **every**
+   status callback (both per-step `waitForTask` and global `pollExistingTasks`), so links remain available even after a
+   task completes. `sessionLinks.js`'s built-in container helpers clear their DOM on every render — they are not a
+   substitute for a persistent panel.
+4. **Call the status poller on a schedule** (e.g. `setInterval(pollExistingTasks, 15000)`) so the page recovers state
+   after a reload or navigation. Always re-render the active-sessions panel from the poller as well.
 5. **Omit empty model keys** when calling `runDocOp` — send only the roles the user has actually chosen. The server
-rejects empty-string model values for optional roles like `imageModel`.
-6. **Mirror button state from files on disk.** Use `fileExists()` / `listFiles()` in `refreshStatus()` to decide
-which buttons are enabled and which `View`/`Open` links are visible. This keeps the UI correct after reloads.
-7. **Log verbosely to the console and to the on-page activity log.** The DocOps pipeline is asynchronous; users
-benefit from a clear running narrative, and developers benefit from machine-readable console output.
-8. **Handle unhandled errors.** Install `window.addEventListener('error', …)` and `'unhandledrejection'` handlers
-that pipe messages into the activity log — this surfaces silent failures during async polling.
+   rejects empty-string model values for optional roles like `imageModel`.
+6. **Mirror button state from files on disk.** Use `fileExists()` / `listFiles()` in `refreshStatus()` to decide which
+   buttons are enabled and which `View`/`Open` links are visible. This keeps the UI correct after reloads.
+7. **Log verbosely to the console and to the on-page activity log.** The DocOps pipeline is asynchronous; users benefit
+   from a clear running narrative, and developers benefit from machine-readable console output.
+8. **Handle unhandled errors.** Install `window.addEventListener('error', …)` and `'unhandledrejection'` handlers that
+   pipe messages into the activity log — this surfaces silent failures during async polling.
 
 ---
 
@@ -470,21 +574,25 @@ that pipe messages into the activity log — this surfaces silent failures durin
 
 1. Create `utils/myUtil.js` with named exports.
 2. Add a namespace export at the bottom:
+
 ```js
 export const MyUtils = { myFunction, anotherFunction };
 ```
+
 3. Import in your page script:
+
 ```js
 import { myFunction } from './utils/myUtil.js';
 ```
+
 4. Document it in this README.
 
 ---
 
 ## Dependencies
 
-| Dependency | Source                        | Used By                      |
-|------------|-------------------------------|------------------------------|
-| `marked`   | Vendored: `utils/marked.min.js` | `ui.js` — `renderMarkdown()` |
+| Dependency | Source                             | Used By                      |
+|------------|------------------------------------|------------------------------|
+| `marked`   | Vendored: `/lib/app/marked.min.js` | `ui.js` — `renderMarkdown()` |
 
 All other utilities depend only on the browser Fetch API and standard DOM APIs. No build step is required.
