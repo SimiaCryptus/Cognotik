@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+#
+# Launcher for the Cognotik CLI file server.
+#
+# Downloads the published `cli-<version>-all.jar` from GitHub releases (as a peer
+# file to this script) if it is not already present, then runs it.
+#
+# Usage:
+#   ./fileserver [options] [--] [args passed to FileServerCli...]
+#
+# Options:
+#   --version <v>   Pin a specific release version (e.g. 2.1.19) instead of
+#                   auto-resolving the most recent release. (--version=<v> too)
+#   --update        Re-resolve the latest release and re-download the jar.
+#   --offline       Never use the network; require a jar already next to me.
+#   -h, --help      Show this help.
+#
+# Environment:
+#   COGNOTIK_VERSION    Same as --version.
+#   COGNOTIK_REPO       GitHub "owner/repo" to fetch releases from.
+#                       (default: SimiaCryptus/Cognotik)
+#   COGNOTIK_CACHE_TTL  Seconds to cache the "latest version" lookup (default 86400).
+#   JAVA_HOME           If set, $JAVA_HOME/bin/java is used.
+#   JAVA_OPTS           Extra JVM options (word-split, e.g. "-Xmx2g -Dfoo=bar").
+
+set -Eeuo pipefail
+
+# --- Locate ourselves (resolving symlinks) so the script is CWD-independent ----
+self="${BASH_SOURCE[0]}"
+while [[ -L "$self" ]]; do
+  target="$(readlink "$self")"
+  [[ "$target" == /* ]] && self="$target" || self="$(dirname -- "$self")/$target"
+done
+SCRIPT_DIR="$(cd -- "$(dirname -- "$self")" && pwd -P)"
+
+REPO="${COGNOTIK_REPO:-SimiaCryptus/Cognotik}"
+FALLBACK_VERSION="2.1.19"
+CACHE_TTL="${COGNOTIK_CACHE_TTL:-86400}"
+VERSION_CACHE="$SCRIPT_DIR/.cognotik-latest-version"
+MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli"
+
+die() { printf 'fileserver: %s\n' "$*" >&2; exit 1; }
+info() { printf 'fileserver: %s\n' "$*" >&2; }
+
+usage() {
+  sed -n '3,27p' "$self" | sed 's/^# \{0,1\}//'
+}
+
+# --- Parse our own options; stop at the first unknown arg -----------------------
+VERSION="${COGNOTIK_VERSION:-}"
+update=0
+offline=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version)   [[ $# -ge 2 ]] || die "--version requires an argument"
+                 VERSION="$2"; shift 2 ;;
+    --version=*) VERSION="${1#*=}"; shift ;;
+    --update)    update=1; shift ;;
+    --offline)   offline=1; shift ;;
+    -h|--help)   usage; exit 0 ;;
+    --)          shift; break ;;
+    *)           break ;;
+  esac
+done
+VERSION="${VERSION#v}"
+
+# --- Java ----------------------------------------------------------------------
+if [[ -n "${JAVA_HOME:-}" && -x "$JAVA_HOME/bin/java" ]]; then
+  JAVA_BIN="$JAVA_HOME/bin/java"
+else
+  command -v java >/dev/null 2>&1 || die "no 'java' on PATH and JAVA_HOME is not usable"
+  JAVA_BIN="$(command -v java)"
+fi
+
+# --- HTTP helpers --------------------------------------------------------------
+have() { command -v "$1" >/dev/null 2>&1; }
+
+http_get() { # url -> stdout (quiet, best-effort)
+  if have curl; then
+    curl -fsSL --retry 2 --connect-timeout 10 -- "$1"
+  elif have wget; then
+    wget -qO- --tries=2 --timeout=10 -- "$1"
+  else
+    return 127
+  fi
+}
+
+http_effective_url() { # url -> final redirect target
+  if have curl; then
+    curl -fsSLI -o /dev/null -w '%{url_effective}' --connect-timeout 10 -- "$1"
+  else
+    return 1
+  fi
+}
+
+http_download() { # url dest
+  local url="$1" dest="$2" tmp
+  tmp="$(mktemp -- "${dest}.part.XXXXXX")" || die "cannot create temp file next to $dest"
+  # shellcheck disable=SC2064
+  trap "rm -f -- '$tmp'" RETURN
+  info "downloading $url"
+  if have curl; then
+    curl -fL --retry 2 --connect-timeout 10 --progress-bar -o "$tmp" -- "$url" \
+      || die "download failed: $url"
+  elif have wget; then
+    wget -O "$tmp" --tries=2 --timeout=10 -- "$url" \
+      || die "download failed: $url"
+  else
+    die "neither curl nor wget is available to download $url"
+  fi
+  # Sanity check: a jar is a zip ("PK").
+  [[ -s "$tmp" && "$(head -c 2 -- "$tmp")" == "PK" ]] \
+    || die "downloaded file is not a valid jar: $url"
+  mv -f -- "$tmp" "$dest" || die "cannot move jar into place: $dest"
+}
+
+# --- Version resolution --------------------------------------------------------
+cache_is_fresh() {
+  [[ -s "$VERSION_CACHE" ]] || return 1
+  local mins=$(( CACHE_TTL / 60 )); (( mins > 0 )) || mins=1
+  [[ -n "$(find "$VERSION_CACHE" -maxdepth 0 -mmin "-$mins" 2>/dev/null)" ]]
+}
+
+newest_local_version() {
+  local -a jars=() j newest
+  shopt -s nullglob
+  jars=( "$SCRIPT_DIR"/cli-*-all.jar )
+  shopt -u nullglob
+  (( ${#jars[@]} )) || return 1
+  newest="${jars[0]}"
+  for j in "${jars[@]}"; do [[ "$j" -nt "$newest" ]] && newest="$j"; done
+  j="${newest##*/cli-}"; printf '%s\n' "${j%-all.jar}"
+}
+
+resolve_latest_version() {
+  if (( ! update )) && cache_is_fresh; then
+    cat -- "$VERSION_CACHE"; return 0
+  fi
+  local v="" json url
+  if json="$(http_get "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null)"; then
+    v="$(printf '%s' "$json" \
+         | grep -m1 '"tag_name"' \
+         | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/')"
+  fi
+  if [[ -z "$v" ]] && url="$(http_effective_url "https://github.com/$REPO/releases/latest" 2>/dev/null)"; then
+    v="${url##*/}"; v="${v#v}"
+    [[ "$v" == "latest" || "$v" == *"/"* ]] && v=""
+  fi
+  [[ -n "$v" ]] || return 1
+  printf '%s\n' "$v" >"$VERSION_CACHE" 2>/dev/null || true
+  printf '%s\n' "$v"
+}
+
+if [[ -z "$VERSION" ]]; then
+  if (( offline )); then
+    VERSION="$(newest_local_version)" \
+      || die "--offline given but no cli-*-all.jar found in $SCRIPT_DIR"
+  elif VERSION="$(resolve_latest_version)"; then
+    :
+  elif VERSION="$(newest_local_version)"; then
+    info "could not reach GitHub; using local version $VERSION"
+  else
+    info "could not resolve latest release; falling back to $FALLBACK_VERSION"
+    VERSION="$FALLBACK_VERSION"
+  fi
+fi
+
+JAR="$SCRIPT_DIR/cli-$VERSION-all.jar"
+URL="https://github.com/$REPO/releases/download/v$VERSION/cli-$VERSION-all.jar"
+
+# --- Fetch if needed -----------------------------------------------------------
+if (( update )) || [[ ! -f "$JAR" ]]; then
+  (( offline )) && die "jar not present and --offline was given: $JAR"
+  [[ -w "$SCRIPT_DIR" ]] || die "cannot write to $SCRIPT_DIR (needed to store $JAR)"
+  http_download "$URL" "$JAR"
+fi
+
+[[ -s "$JAR" ]] || die "jar missing or empty: $JAR"
+
+# --- Run -----------------------------------------------------------------------
+# shellcheck disable=SC2206  # deliberate word-splitting of JAVA_OPTS
+read -r -a java_opts <<< "${JAVA_OPTS:-}"
+
+exec "$JAVA_BIN" "${java_opts[@]}" -cp "$JAR" "$MAIN_CLASS" "$@"
