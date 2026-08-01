@@ -62,6 +62,12 @@ package com.simiacryptus.cognotik.webui.servlet.action
     object ModifyFilesFsAction {
 
       const val MODIFY_OP = "modify"
+     /**
+      * Read-only companion to [MODIFY_OP]: resolves the chat UI URL of a session
+      * that already exists. Clients that hold an id (the IDE view rendering a
+      * `docops.status.json`) must not have to re-derive `{chatUri}/proxy/?session=…`.
+      */
+     const val SESSION_OP = "session"
 
       /** Guard rail: the summary goes into a prompt, not into a mmap. */
       private const val MAX_FILES = 64
@@ -154,6 +160,23 @@ package com.simiacryptus.cognotik.webui.servlet.action
           ) { ctx -> handleModify(ctx) },
           replace = true,
         )
+       /* Same URL construction as handleModify, exposed for existing sessions so
+          that exactly one place owns the '{chatUri}/proxy/?session=…' contract. */
+       FsAction.register(
+         FsAction(
+           op = SESSION_OP,
+           method = "GET",
+           description = "Resolve the chat UI URL of an existing session id",
+           parameters = listOf(
+             ActionParam(
+               "id", required = false,
+               description = "session id; omit to fetch only the base and the URL template"
+             ),
+           ),
+           mutating = false,
+         ) { ctx -> handleSessionLink(ctx) },
+         replace = true,
+       )
       }
 
       /*
@@ -240,6 +263,35 @@ package com.simiacryptus.cognotik.webui.servlet.action
         sb.append("]}")
         FsJson.write(ctx.resp, 200, sb.toString())
       }
+     /** Ids are echoed into a URL: keep them to the shape [Session.newUserID] produces. */
+     private val SESSION_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+     /**
+      * `GET {mount}/.fsapi/v1/session[?id=…]` ->
+      * `{ "base": "...", "template": "…/proxy/?session={session}", "session": …, "url": … }`
+      *
+      * The template is answered even without an id so a client can resolve a whole
+      * document of session ids (a `docops.status.json`) in one round trip.
+      */
+     private fun handleSessionLink(ctx: FsActionContext) {
+       val cfg = config
+         ?: return FsJson.fail(ctx.resp, FsErrorCode.ENOSYS, SESSION_OP, "session links are not enabled")
+       val id = ctx.req.getParameter("id")?.trim().orEmpty()
+       if (id.isNotBlank() && !SESSION_ID.matches(id)) {
+         return FsJson.fail(ctx.resp, FsErrorCode.EINVAL, SESSION_OP, "malformed session id")
+       }
+       val chatUri = cfg.chatUri()
+       val base = chatUri.resolve("/").toString().trimEnd('/')
+       val template = chatUri.resolve("/proxy/?session=").toString() + "{session}"
+       val url = if (id.isBlank()) null else chatUri.resolve("/proxy/?session=$id").toString()
+       val sb = StringBuilder("{")
+       sb.append("\"base\":\"").append(FsJson.esc(base)).append("\",")
+       sb.append("\"template\":\"").append(FsJson.esc(template)).append("\",")
+       sb.append("\"session\":").append(id.takeIf { it.isNotBlank() }?.let { "\"" + FsJson.esc(it) + "\"" } ?: "null")
+       sb.append(",\"url\":").append(url?.let { "\"" + FsJson.esc(it) + "\"" } ?: "null")
+       sb.append("}")
+       FsJson.write(ctx.resp, 200, sb.toString())
+     }
+
 
       /** Canonicalise, jail to [root], expand folders — the IDE's VIRTUAL_FILE_ARRAY equivalent. */
       private fun select(root: File, paths: List<String>): Set<Path> {

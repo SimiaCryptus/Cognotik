@@ -1392,3 +1392,141 @@ table.fs-table {
     text-align: end;
     font-variant-numeric: tabular-nums;
 }
+/* ------------------------------------------------- docops session index */
+.fs-docops {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--fs-space-5) clamp(var(--fs-space-4), 4vw, var(--fs-space-7));
+    background: var(--fs-bg);
+}
+.fs-docops:focus-visible {
+    outline: 2px solid var(--fs-focus-ring);
+    outline-offset: -3px;
+}
+.fs-docops__summary {
+    max-width: 96ch;
+    margin-inline: auto;
+    padding-block-end: var(--fs-space-3);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    font-variant-numeric: tabular-nums;
+}
+.fs-docops__list {
+    display: grid;
+    gap: var(--fs-space-2);
+    max-width: 96ch;
+    margin-inline: auto;
+}
+.fs-docops__row {
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-3);
+    padding: var(--fs-space-3) var(--fs-space-4);
+    background: var(--fs-bg-elevated);
+    border: 1px solid var(--fs-border);
+    border-radius: var(--fs-radius-md);
+    transition: border-color var(--fs-motion-fast) var(--fs-ease),
+    background-color var(--fs-motion-fast) var(--fs-ease);
+}
+.fs-docops__row:hover {
+    border-color: var(--fs-border-strong);
+    background: var(--fs-bg-overlay);
+}
+.fs-docops__status {
+    flex: 0 0 auto;
+    min-width: 9ch;
+    padding: 1px var(--fs-space-3);
+    border-radius: var(--fs-radius-pill);
+    background: var(--fs-bg-sunken);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    font-weight: 650;
+    letter-spacing: var(--fs-tracking-wide);
+    text-transform: uppercase;
+    text-align: center;
+}
+.fs-docops__status[data-status="RUNNING"],
+.fs-docops__status[data-status="IN_PROGRESS"],
+.fs-docops__status[data-status="STARTED"] {
+    background: var(--fs-accent-soft);
+    color: var(--fs-accent);
+}
+.fs-docops__status[data-status="COMPLETED"],
+.fs-docops__status[data-status="DONE"] {
+    background: var(--fs-ok-soft);
+    color: var(--fs-ok);
+}
+.fs-docops__status[data-status="FAILED"],
+.fs-docops__status[data-status="ERROR"],
+.fs-docops__status[data-status="CANCELLED"] {
+    background: var(--fs-danger-soft);
+    color: var(--fs-danger);
+}
+.fs-docops__main {
+    flex: 1;
+    min-width: 0;
+}
+.fs-docops__target {
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fs-accent);
+    font-weight: 600;
+    text-align: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+.fs-docops__target:hover {
+    color: var(--fs-accent-strong);
+    background: none;
+    text-decoration: underline;
+}
+.fs-docops__meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fs-fg-subtle);
+    font-family: var(--fs-font-mono);
+    font-size: var(--fs-text-xs);
+}
+.fs-docops__actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--fs-space-2);
+    align-items: center;
+}
+.fs-docops__actions button,
+.fs-docops__actions a {
+    padding: 2px var(--fs-space-3);
+    border-radius: var(--fs-radius-pill);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    font-weight: 600;
+    text-decoration: none;
+}
+.fs-docops__actions button:hover,
+.fs-docops__actions a:hover {
+    color: var(--fs-accent);
+    background: var(--fs-accent-soft);
+}
+.fs-docops__actions .fs-docops__open {
+    color: var(--fs-fg-on-accent);
+    background: var(--fs-accent);
+    box-shadow: var(--fs-shadow-1);
+}
+.fs-docops__actions .fs-docops__open:hover {
+    color: var(--fs-fg-on-accent);
+    background: var(--fs-accent-strong);
+}
+.fs-docops__empty {
+    max-width: 96ch;
+    margin-inline: auto;
+    padding: var(--fs-space-5);
+    color: var(--fs-fg-muted);
+    font-style: italic;
+    text-align: center;
+}
