@@ -52,11 +52,11 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
     private fun serveStaticPage(resp: HttpServletResponse?) {
         resp?.contentType = "text/html"
-        val inputStream = this::class.java.getResourceAsStream("/welcome/welcome.html")
+        val inputStream = this::class.java.getResourceAsStream("/web/index.html")
         if (inputStream != null) {
             inputStream.copyTo(resp?.outputStream!!)
         } else {
-            log.error("Failed to load welcome.html resource")
+            log.error("Failed to load index.html resource")
             resp?.sendError(500, "Welcome page not found")
         }
     }

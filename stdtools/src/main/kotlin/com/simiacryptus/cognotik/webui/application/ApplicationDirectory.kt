@@ -80,9 +80,9 @@ abstract class ApplicationDirectory(
     }
 
   open val welcomeResources: Resource = ResourceCollection(
-    *allResources("welcome").map(Resource::newResource).toTypedArray()
+    *allResources("web").map(Resource::newResource).toTypedArray()
   )
-    .also { log.debug("Initialized welcome resources with ${allResources("welcome").size} resource(s)") }
+    .also { log.debug("Initialized web resources with ${allResources("web").size} resource(s)") }
   open val userInfoServlet: HttpServlet = UserInfoServlet()
     .also { log.debug("Initialized UserInfoServlet") }
   open val userSettingsServlet: HttpServlet = UserSettingsServlet()
@@ -197,7 +197,7 @@ abstract class ApplicationDirectory(
   open fun webAppContexts(): Array<WebAppContext> {
     return listOfNotNull(
       run { log.debug("Creating web app contexts"); null },
-      newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).also { ctx ->
+      newWebAppContext("/", welcomeResources, "web", welcomeServlet).also { ctx ->
         val sitemapHolder = ServletHolder(sitemapServlet)
         sitemapHolder.registration.setMultipartConfig(MultipartConfigElement("./tmp"))
         ctx.addServlet(sitemapHolder, "/robots.txt")
