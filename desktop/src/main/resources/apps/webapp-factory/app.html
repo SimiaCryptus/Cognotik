@@ -730,7 +730,14 @@ A simple, elegant task management web application for small teams.
         </div>
     </section>
 </div>
-<script src="marked.min.js"></script>
+<!--
+   Only needed when this deployment is NOT mounted at the host root
+   (e.g. behind a reverse-proxy path prefix). Must run BEFORE app.js.
+<script>
+   window.COGNOTIK_CONFIG = { serverBase: '/cognotik' };
+</script>
+-->
+<script src="/lib/app/marked.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

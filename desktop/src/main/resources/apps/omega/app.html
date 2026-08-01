@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ω Omega — DocOps App Generator</title>
+     <!--
+       Only needed when this deployment is NOT mounted at the host root.
+       See /lib/app/migration.md §2.
+       <script>
+         window.COGNOTIK_CONFIG = { serverBase: '/cognotik' };
+       </script>
+     -->
     <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -594,7 +601,7 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
     </section>
 </div>
 
-<script src="marked.min.js"></script>
+<script src="/lib/marked.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

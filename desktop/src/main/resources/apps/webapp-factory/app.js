@@ -2,25 +2,25 @@ import {
     parseSessionUrl,
     getProxyUrl,
     getAppRoot
-} from './utils/session.js';
+} from '/lib/app/session.js';
 import {
     readFile,
     writeFile,
     fileExists,
     listFiles
-} from './utils/fileIO.js';
+} from '/lib/app/fileIO.js';
 import {
     runDocOp,
     fetchDocopsStatus,
     waitForTask,
     createStatusPoller
-} from './utils/docops.js';
+} from '/lib/app/docops.js';
 import {
     loadApiProviders,
     populateModelDropdowns,
     saveModelSelections,
     loadModelSelections
-} from './utils/models.js';
+} from '/lib/app/models.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -28,7 +28,7 @@ import {
     setBadge,
     createBatchLogger,
     getFileIcon
-} from './utils/ui.js';
+} from '/lib/app/ui.js';
 import {
     gitApiCall,
     getStatus as gitGetStatus,
@@ -37,7 +37,7 @@ import {
     getBranches as gitGetBranches,
     checkout as gitCheckout,
     getLog as gitGetLog
-} from './utils/git.js';
+} from '/lib/app/git.js';
 import {
     fetchUsageData,
     aggregateUsage,
@@ -45,10 +45,13 @@ import {
     formatCost,
     renderUsageSummary,
     createUsageTableHtml
-} from './utils/usage.js';
+} from '/lib/app/usage.js';
 import {
     createSessionLinkManager
-} from './utils/sessionLinks.js';
+} from '/lib/app/sessionLinks.js';
+import {
+     initMenu
+} from '/lib/app/menu.js';
 
 (function() {
     'use strict';
@@ -708,7 +711,7 @@ import {
     }
 
     // ==================================================
-    // === Status polling (using utils/docops.js poller) ===
+     // === Status polling (using /lib/app/docops.js poller) ===
     // ==================================================
     function startStatusPolling() {
         if (statusPoller) return;
@@ -1262,7 +1265,7 @@ import {
     });
 
     // ==================================================
-    // === Git Operations (using utils/git.js) ===
+     // === Git Operations (using /lib/app/git.js) ===
     // ==================================================
     async function refreshGitStatus() {
         const display = document.getElementById('git-status-display');
@@ -1549,7 +1552,7 @@ import {
     }
 
     // ==================================================
-    // === Usage Tracking (using utils/usage.js) ===
+     // === Usage Tracking (using /lib/app/usage.js) ===
     // ==================================================
     function renderUsageTable(usageData, containerId) {
         const container = document.getElementById(containerId);
@@ -1918,6 +1921,7 @@ import {
     // ==================================================
     // === Initialize ===
     // ==================================================
+     initMenu({ appName: '🏗️ Webapp Builder' });
     updateLaunchLinks();
     loadInitialFiles();
     checkExistingFiles();

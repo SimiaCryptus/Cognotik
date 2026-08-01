@@ -12,15 +12,15 @@
  *   - "0ab"   : after choosing B from 0a
  *   - etc.
  */
-import { parseSessionUrl, getProxyUrl } from './utils/session.js';
+import { parseSessionUrl, getProxyUrl } from '/lib/app/session.js';
 import {
     loadApiProviders,
     populateModelDropdowns,
     saveModelSelections,
     loadModelSelections
-} from './utils/models.js';
-import { readFile, writeFile, fileExists, listFiles } from './utils/fileIO.js';
-import { runDocOp, waitForTask, createStatusPoller } from './utils/docops.js';
+} from '/lib/app/models.js';
+import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
+import { runDocOp, waitForTask, createStatusPoller } from '/lib/app/docops.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -28,8 +28,9 @@ import {
     setBadge,
     showToast,
     createBatchLogger
-} from './utils/ui.js';
-import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLinks.js';
+} from '/lib/app/ui.js';
+import { updateSessionLinks, createSessionLinkManager } from '/lib/app/sessionLinks.js';
+import { initMenu } from '/lib/app/menu.js';
 
 'use strict';
 
@@ -99,6 +100,12 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
     try {
         logger = createBatchLogger('activity-log');
+         try {
+             initMenu({ appName: 'Interactive Stories' });
+             console.log('[init] Shared menubar initialized.');
+         } catch (menuErr) {
+             console.warn('[init] Shared menubar failed to initialize:', menuErr);
+         }
         console.group('[init] App initialization started');
         console.log('[init] sessionId:', sessionId, '| basePath:', basePath);
         log('App initializing…', 'info');

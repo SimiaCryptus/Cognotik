@@ -1,25 +1,26 @@
-// Comic Serial App — refactored to use utils/ modules
-import { parseSessionUrl, getProxyUrl, getAppRoot } from './utils/session.js';
-import { readFile, writeFile, fileExists, listFiles } from './utils/fileIO.js';
-import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from './utils/docops.js';
-import { loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections } from './utils/models.js';
-import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLinks.js';
+// Comic Serial App — uses the shared front-end library at /lib/app/
+import { parseSessionUrl, getProxyUrl, getAppRoot } from '/lib/app/session.js';
+import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
+import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from '/lib/app/docops.js';
+import { loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections } from '/lib/app/models.js';
+import { updateSessionLinks, createSessionLinkManager } from '/lib/app/sessionLinks.js';
+import { initMenu } from '/lib/app/menu.js';
 import {
-    renderMarkdown,
-    escapeHtml,
-    setStatus,
-    setBadge,
-    showToast,
-    createBatchLogger
-} from './utils/ui.js';
+     renderMarkdown,
+     escapeHtml,
+     setStatus,
+     setBadge,
+     showToast,
+     createBatchLogger
+} from '/lib/app/ui.js';
 import {
-    fetchUsageData,
-    formatTokenCount,
-    formatCost,
-    aggregateUsage,
-    renderUsageSummary,
-    createUsageTableHtml
-} from './utils/usage.js';
+     fetchUsageData,
+     formatTokenCount,
+     formatCost,
+     aggregateUsage,
+     renderUsageSummary,
+     createUsageTableHtml
+} from '/lib/app/usage.js';
 
 (function() {
     'use strict';
@@ -1378,6 +1379,11 @@ import {
     });
 
     // Bootstrap
+     try {
+         initMenu({ appName: 'Comic Serial Generator' });
+     } catch (e) {
+         console.warn('Failed to init shared menu:', e);
+     }
     loadInitialFiles();
     checkExistingFiles();
     initModels();

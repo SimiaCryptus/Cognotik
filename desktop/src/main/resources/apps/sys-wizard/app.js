@@ -1,7 +1,7 @@
-// === Imports from utils/ ===
-import { parseSessionUrl, getProxyUrl, getAppRoot } from './utils/session.js';
-import { readFile, writeFile, fileExists, listFiles } from './utils/fileIO.js';
-import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from './utils/docops.js';
+// === Imports from the shared front-end library (/lib/app/) ===
+import { parseSessionUrl, getProxyUrl, getAppRoot } from '/lib/app/session.js';
+import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
+import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from '/lib/app/docops.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -9,27 +9,34 @@ import {
     setBadge,
     showToast,
     createBatchLogger
-} from './utils/ui.js';
+} from '/lib/app/ui.js';
 import {
     updateSessionLinks as updateSessionLinksUtil,
     createSessionLinkManager
-} from './utils/sessionLinks.js';
+} from '/lib/app/sessionLinks.js';
 import {
     loadApiProviders as loadApiProvidersUtil,
     populateModelDropdowns as populateModelDropdownsUtil,
     saveModelSelections,
     loadModelSelections
-} from './utils/models.js';
+} from '/lib/app/models.js';
 import {
     fetchUsageData,
     formatTokenCount,
     formatCost,
     aggregateUsage,
     renderUsageSummary
-} from './utils/usage.js';
+} from '/lib/app/usage.js';
+import { initMenu } from '/lib/app/menu.js';
 
 (function() {
     'use strict';
+     // === Shared menubar ===
+     try {
+         initMenu({ appName: '🧙 System Wizard' });
+     } catch (e) {
+         console.warn('Menu initialisation failed:', e);
+     }
 
     // === URL Parsing & Session Setup ===
     const { basePath, sessionId } = parseSessionUrl();
