@@ -10,4 +10,5 @@ build/
 /.kotlin/
 /.intellijPlatform/
 .cognotik*
+*.db
 
