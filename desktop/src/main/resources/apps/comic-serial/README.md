@@ -8,7 +8,7 @@
     ```
     comic-serial/
     ├── app.html   # entry point (Idea / Pipeline / Series / Models tabs)
-    ├── app.js     # ES module, imports everything shared from /lib/app/
+    ├── app.js     # ES module, imports everything shared from /app/
     ├── style.css  # tokens + all styling
     ├── ops/       # DocOp definitions
     └── README.md

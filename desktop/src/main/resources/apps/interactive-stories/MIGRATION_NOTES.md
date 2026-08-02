@@ -1,9 +1,9 @@
 # interactive-stories — `/lib/app` migration notes
 
-  * `app.html`: `./utils/marked.min.js` → `/lib/app/marked.min.js` (still a classic
+  * `app.html`: `./utils/marked.min.js` → `/app/marked.min.js` (still a classic
     script, since `ui.js#renderMarkdown()` looks for the global `marked`).
-  * `app.js`: all six `./utils/*.js` imports rewritten to `/lib/app/*.js`, plus a new
-    `initMenu()` call from `/lib/app/menu.js`.
+  * `app.js`: all six `./utils/*.js` imports rewritten to `/app/*.js`, plus a new
+    `initMenu()` call from `/app/menu.js`.
   * `apps/interactive-stories/utils/` can now be deleted — nothing else in this app
     references it (`style.css` and the `ops/*.md` prompts contain no `utils/` paths).
   * No `configure()` call is needed: this deployment is mounted at the host root, so

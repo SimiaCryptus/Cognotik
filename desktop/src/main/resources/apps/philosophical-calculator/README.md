@@ -9,7 +9,7 @@ re-examines that article through a battery of philosophical, rhetorical and crea
 | File        | Purpose                                         |
 |-------------|-------------------------------------------------|
 | `app.html`  | Single entry point (tabs, steps, viewers)        |
-| `app.js`    | ES-module controller; all shared code from `/lib/app/` |
+| `app.js`    | ES-module controller; all shared code from `/app/` |
 | `style.css` | All styling; design tokens declared at `:root`   |
 | `ops/`      | DocOp definitions consumed by `runDocOp()`       |
 

@@ -1,13 +1,13 @@
-// Comic Serial App — shared front-end library at /lib/app/
-    import { parseSessionUrl, getProxyUrl } from '/lib/app/session.js';
-    import { readFile, writeFile, fileExists } from '/lib/app/fileIO.js';
-    import { runDocOp, waitForTask, fetchDocopsStatus, createStatusPoller } from '/lib/app/docops.js';
-    import { loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections } from '/lib/app/models.js';
-    import { updateSessionLinks } from '/lib/app/sessionLinks.js';
-    import { initMenu } from '/lib/app/menu.js';
+// Comic Serial App — shared front-end library at /app/
+    import { parseSessionUrl, getProxyUrl } from '/app/session.js';
+    import { readFile, writeFile, fileExists } from '/app/fileIO.js';
+    import { runDocOp, waitForTask, fetchDocopsStatus, createStatusPoller } from '/app/docops.js';
+    import { loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections } from '/app/models.js';
+    import { updateSessionLinks } from '/app/sessionLinks.js';
+    import { initMenu } from '/app/menu.js';
     import {
         renderMarkdown, escapeHtml, setStatus, setBadge, showToast, createBatchLogger
-    } from '/lib/app/ui.js';
+    } from '/app/ui.js';
 
     /* ========================================
      * Constants

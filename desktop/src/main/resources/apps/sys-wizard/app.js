@@ -1,7 +1,7 @@
-// === Imports from the shared front-end library (/lib/app/) ===
-import { parseSessionUrl, getProxyUrl, getAppRoot } from '/lib/app/session.js';
-import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
-import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from '/lib/app/docops.js';
+// === Imports from the shared front-end library (/app/) ===
+import { parseSessionUrl, getProxyUrl, getAppRoot } from '/app/session.js';
+import { readFile, writeFile, fileExists, listFiles } from '/app/fileIO.js';
+import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from '/app/docops.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -9,25 +9,25 @@ import {
     setBadge,
     showToast,
     createBatchLogger
-} from '/lib/app/ui.js';
+} from '/app/ui.js';
 import {
     updateSessionLinks as updateSessionLinksUtil,
     createSessionLinkManager
-} from '/lib/app/sessionLinks.js';
+} from '/app/sessionLinks.js';
 import {
     loadApiProviders as loadApiProvidersUtil,
     populateModelDropdowns as populateModelDropdownsUtil,
     saveModelSelections,
     loadModelSelections
-} from '/lib/app/models.js';
+} from '/app/models.js';
 import {
     fetchUsageData,
     formatTokenCount,
     formatCost,
     aggregateUsage,
     renderUsageSummary
-} from '/lib/app/usage.js';
-import { initMenu } from '/lib/app/menu.js';
+} from '/app/usage.js';
+import { initMenu } from '/app/menu.js';
 
 (function() {
     'use strict';

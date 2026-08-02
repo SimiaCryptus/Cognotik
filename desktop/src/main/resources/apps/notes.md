@@ -16,7 +16,7 @@ behaviour per app.
 ## 0. TL;DR
 
 * Three files per app: **`app.html`**, **`app.js`**, **`style.css`**. Nothing else.
-* All shared behaviour comes from **`/lib/app/*.js`** — never re-implement it locally.
+* All shared behaviour comes from **`/app/*.js`** — never re-implement it locally.
 * The **shared menubar** (`initMenu()`) owns Usage, Sessions, Git and Downloads.
   No app ships its own tabs for these.
 * Modern ES modules (`import` / `const` / `async`). No IIFEs, no `var`, no frameworks.
@@ -36,8 +36,8 @@ Delete any of the following found in an app:
 
 | Duplicated UI to remove                | Typical symptoms                                              |
 |----------------------------------------|---------------------------------------------------------------|
-| `💰 Usage` tab / section / totals      | imports from `/lib/app/usage.js`, cost or token tables         |
-| `🔀 Git` tab / section                 | imports from `/lib/app/git.js`, status/commit/branch controls  |
+| `💰 Usage` tab / section / totals      | imports from `/app/usage.js`, cost or token tables         |
+| `🔀 Git` tab / section                 | imports from `/app/git.js`, status/commit/branch controls  |
 | `📡 Active Sessions` / `Task Sessions` | local `renderActiveSessionsPanel()`-style helpers              |
 | `📦 Download` / ZIP export tab         | hand-rolled archive links                                      |
 | App switcher / home link               | duplicated navigation next to the menubar                      |
@@ -92,7 +92,7 @@ apps/<app-name>/
 
 Rules:
 
-* **No** local `utils/` directory. Shared code lives at `/lib/app/`.
+* **No** local `utils/` directory. Shared code lives at `/app/`.
 * **No** vendored third-party JS. Use `/lib/*.min.js`.
 * **No** build step, bundler, transpiler or `node_modules`.
 * `app.js` may be split only if a module exceeds ~1500 lines, and then only
@@ -126,7 +126,7 @@ strict and scoped.
 
 ---
 
-## 4. Shared library — `/lib/app/`
+## 4. Shared library — `/app/`
 
 Import only what you need; never copy these into an app.
 
@@ -146,17 +146,17 @@ Import only what you need; never copy these into an app.
 Standard bootstrap:
 
 ```js
-import { parseSessionUrl, getProxyUrl } from '/lib/app/session.js';
-import { readFile, writeFile, fileExists } from '/lib/app/fileIO.js';
-import { runDocOp, waitForTask, createStatusPoller } from '/lib/app/docops.js';
-import { renderMarkdown, setStatus, setBadge, showToast } from '/lib/app/ui.js';
-import { initMenu } from '/lib/app/menu.js';
+import { parseSessionUrl, getProxyUrl } from '/app/session.js';
+import { readFile, writeFile, fileExists } from '/app/fileIO.js';
+import { runDocOp, waitForTask, createStatusPoller } from '/app/docops.js';
+import { renderMarkdown, setStatus, setBadge, showToast } from '/app/ui.js';
+import { initMenu } from '/app/menu.js';
 
 const { basePath, sessionId, appId } = parseSessionUrl();
 initMenu({ appName: 'My App' });
 ```
 
-If an app needs behaviour that does not exist yet, add it to `/lib/app/` so every
+If an app needs behaviour that does not exist yet, add it to `/app/` so every
 app can use it — do not add it locally.
 
 ---
@@ -466,7 +466,7 @@ Run this against **every** app — new or existing — before considering work c
 - [ ] `/lib/marked.min.js` loaded before the module
 - [ ] `initMenu({ appName })` called on boot
 - [ ] No local Usage / Git / Sessions / Download UI
-- [ ] All shared behaviour imported from `/lib/app/`, with standard signatures
+- [ ] All shared behaviour imported from `/app/`, with standard signatures
 - [ ] Design tokens used — zero hard-coded colours
 - [ ] Usable and tested at 360 px, 768 px, 1280 px
 - [ ] Tabs have `role`/`aria-*`; all inputs have labels
@@ -498,6 +498,6 @@ been tested at 360, 768 and 1280 px.
 
 ## 17. See also
 
-* `/lib/app/migration.md` — moving an app off local `utils/`
+* `/app/migration.md` — moving an app off local `utils/`
 * `apps/README.md` — app catalogue and platform overview
 * Per-app `README.md` — pipeline and op-file documentation

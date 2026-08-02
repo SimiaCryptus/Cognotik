@@ -12,15 +12,15 @@
  *   - "0ab"   : after choosing B from 0a
  *   - etc.
  */
-import { parseSessionUrl, getProxyUrl } from '/lib/app/session.js';
+import { parseSessionUrl, getProxyUrl } from '/app/session.js';
 import {
     loadApiProviders,
     populateModelDropdowns,
     saveModelSelections,
     loadModelSelections
-} from '/lib/app/models.js';
-import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
-import { runDocOp, waitForTask, createStatusPoller, fetchDocopsStatus } from '/lib/app/docops.js';
+} from '/app/models.js';
+import { readFile, writeFile, fileExists, listFiles } from '/app/fileIO.js';
+import { runDocOp, waitForTask, createStatusPoller, fetchDocopsStatus } from '/app/docops.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -28,9 +28,9 @@ import {
     setBadge,
     showToast,
     createBatchLogger
-} from '/lib/app/ui.js';
-import { updateSessionLinks, createSessionLinkManager } from '/lib/app/sessionLinks.js';
-import { initMenu } from '/lib/app/menu.js';
+} from '/app/ui.js';
+import { updateSessionLinks, createSessionLinkManager } from '/app/sessionLinks.js';
+import { initMenu } from '/app/menu.js';
 
 
 const APP_PREFIX = 'interactiveStories';

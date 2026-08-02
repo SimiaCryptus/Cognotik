@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-02T02:33:25.648Z",
+  "generatedAt": "2026-08-02T17:21:14.755Z",
   "cdn": "https://cdn.jsdelivr.net/npm",
   "packages": {
     "mermaid": {
@@ -37,6 +37,236 @@
       "bytes": 39903,
       "sha256": "3e7e7d7feb3e5d58cb6c804f68ab5c24cc7e5eb6270fd6e5cbb9124739217d0c",
       "integrity": "sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 40808,
+      "sha256": "3de784d07b9fa8f104c10928a878ee879cf3305cae5195cba663c9c2bb0195eb",
+      "integrity": "sha384-J100qCjhK4tLcQXp7G/t738GlUJqXEqKXVdNOnwGL/SBiFCtvdbDuXQwSmzihq4p"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 9908,
+      "sha256": "af04542b29eaac04550a140c5f1760a649783989426f2540855bf4157819367d",
+      "integrity": "sha384-4y+2s3kVmFv2qffpuxpFgTQmi9r7njQZY3QEXP2LygL735DGnmDlWMfkhEsNEoj1"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 9600,
+      "sha256": "26683bf201fb258a2237d9754616de9d4ecf4cc1cd39dd1902476df7d75f1d16",
+      "integrity": "sha384-K6ErdJpfBs5JsIaU7zc2e6NslVEX1O8L5G8H8tpppH941xHfxSx/XKAofKtCpdcL"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Fraktur-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 22340,
+      "sha256": "721921bab0d001ebff0206c24cb5de6ca136467bf1843a7aa32030ba061d1e92",
+      "integrity": "sha384-/ID2mQxQjInRqJU7dlhqe8ETEfz2NHl3RerX2w52SrbBMlmzacFcFVCWawgQPS72"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Fraktur-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 21480,
+      "sha256": "870673df72e70f87c91a5a317d558c2c3b54392264ad79bbadc6d424ae8765fe",
+      "integrity": "sha384-mTOhoFaZCzo/qdICIPa5fIfswUAiYLlO1bPsfpV1tGvZI3qR3Uwqwy+m5NoWtTCZ"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Main-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Main-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 34464,
+      "sha256": "88b98cad3688915e50da55553ff6ad185e0dce134b47f176e91b100f8a9b175c",
+      "integrity": "sha384-BSBl3odBOVMt/+QnYXlotT7hpQxhtuDFeCxt83+OVRuk8meaOjDGOrgul7LyHoen"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Main-Italic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Main-Italic.woff",
+      "version": "3.2.2",
+      "bytes": 20832,
+      "sha256": "355254db9ca10a09a3b5f0929d74eb4670f44fbe864c07526a06213e0a0caf6c",
+      "integrity": "sha384-vOrilE19Hvk/9iCzaUEq4zRWFyJ2+gin9851VOpZ1YT5GIW0k9YHsFFuVxhbuoPn"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 34160,
+      "sha256": "1cb1c39ea642f26a4dfed230b4aea1c3c218689421f6e9c0a7c1811693c4fa07",
+      "integrity": "sha384-p3AOOFqjfipWVUZxGZ3OsK9ftW9XWNRY7LtgfnXg5MsMvWE1j8E5KD5Vcef7rMTs"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Math-BoldItalic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Math-BoldItalic.woff",
+      "version": "3.2.2",
+      "bytes": 19776,
+      "sha256": "8ea8dbb1b02e6f730f55b4cb5d413b785b9f5c39807d0a0fa7da206a0824a457",
+      "integrity": "sha384-cSFtBcB7DNPXZL9BP7LGK6tLyX3BshScsrVj0uFwezNS0tYF6Qg/2hX5e2C51Ce7"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff",
+      "version": "3.2.2",
+      "bytes": 19360,
+      "sha256": "a009bea404f7a500ded48f8b9ad9cf16e12504b3195dd9e25975289b8256b0f0",
+      "integrity": "sha384-vd/tFmOLPFI/PejEUimgXyFL50k/NYkNL/ReA4THPRFfD5jCxQvEnn3coQhiYn6o"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Math-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Math-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 19288,
+      "sha256": "c01d3321e89b403c4b811aa153c4e618eda3421f92d8a072a02c8d190782a191",
+      "integrity": "sha384-5O1Nw9Un5i2/Zrr1RnKXU9sx5hHn4BajNmkAyQp3MJEx06HEdysubDaDeD23anYh"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_SansSerif-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 15944,
+      "sha256": "32792104b5ef69eded905b6d1598ed05d8087684d38e7a94d52e3c38ba16f47e",
+      "integrity": "sha384-YoCwqyWyARMYcx7HqSoCTKrPvSgwX/WBo/wCDp6KcbNheN9VjkJG2zqSN3FcZGQU"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_SansSerif-Italic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Italic.woff",
+      "version": "3.2.2",
+      "bytes": 14628,
+      "sha256": "fc6ddf5df402b263cfb158aed8e89972542c34b719cd87b1db30461985f7bd5b",
+      "integrity": "sha384-G3y8utMtjEBtrUGjj4QoIFeGAd8367SjhhCm2e0OdHloc+U8o2YHiWXBbFjIbG0J"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_SansSerif-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 12660,
+      "sha256": "b418136e3b384baaadecb70bd3c48a8da9825210130b2897db808c44efc883cb",
+      "integrity": "sha384-wfb0AxYEymEWxB4SFYKhP78l87ZzZhqhbVTjL0QsEmIMK0Q2LXKc73l+tuqJSbaL"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Script-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Script-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 11852,
+      "sha256": "af96f67d7accf5fd2a4a682d0b9f8b339f8ea6fe34c310c1694c8ba7f6ddc96f",
+      "integrity": "sha384-qgZx9RvL/Unr/XTmPjXxeMWQMu0my+qJ2V/7L45V1XnRLa/CmungHAduApagpjD6"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size1-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size1-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 5792,
+      "sha256": "c49810b53ecc0d87d8028762c518924197dd9d3f905b08f99ea241301085b9cb",
+      "integrity": "sha384-ys62eBAN3sZHV78Ams0Hf7tcsoJVwFm4P5LYJYiL7u9Ld6Yg3WvCnsMXzKrhJqgv"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size2-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size2-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 5464,
+      "sha256": "30e889b58cbc51adfbb038ab1a96dc4025aa3542a3cff7712fc55ece510675e2",
+      "integrity": "sha384-XuBmAwKdDtZvnDlIo4vWkQ7wt6jRUF0A/W+VnqvwKA9YkMoL2zBoi+nSoS+avBUg"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size3-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size3-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 3244,
+      "sha256": "5cda41563a095bd70c78e2dda13d0f8cb922c71c90fffd0a0044c65173a66e83",
+      "integrity": "sha384-53fNKngkS9cdZD5iJem4KvTifKRjuUr5CD5GBcGmtrCpZFjhPIg2b+Ah0TIXcTmX"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size4-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size4-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 5148,
+      "sha256": "3bc6ecaae7ecf6f8d7f8ea07bddbaca8601e2cb6e89d6aef58e78d9f6d8a398f",
+      "integrity": "sha384-61o3f+bHTTkL+k1YMEKx5LOjRvyUtGRjh5ahNiYBTCGTs30LkC9EsRb49d61B14g"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Typewriter-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Typewriter-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 17604,
+      "sha256": "c56da8d69f1a0208b8e0703656c3264b6dd748bd452524c82b0385b60f6a68c1",
+      "integrity": "sha384-691oE843IEknJv4SOD9g7nQZVg3yZ/9I3sMG/AHqL4vTOFrDn1kihswVqFSY4UpZ"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Vector-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 1116,
+      "sha256": "36e0d72d8a7afc696a3e7a5c7369807634640de9b02257bca447bdf126221a27",
+      "integrity": "sha384-Mx7rmHwX5y5LSky1XSZ9UYn84eSOZjfhNAi+vI6dQRa5nXjjRK/WwJBpbGmb6QIE"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Vector-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 1136,
+      "sha256": "72bc573386dd1d48c5bbd286302ca9e3400c5eb0f298e7cfbf945b9d08fc688f",
+      "integrity": "sha384-sqhOdMG39nGNxBhGsgUDKH8duHuPl5B8ASGp6G3i0Sy8jtuYtIKT0Aq8Pv0QVY7j"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Zero.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Zero.woff",
+      "version": "3.2.2",
+      "bytes": 1368,
+      "sha256": "481e39042508ae313a60618af1e37146ab93e9324c98e4c78b8f17fe55d41e0b",
+      "integrity": "sha384-o1selG1mtGbrFYmRwR7ixEo/2Jalq/jeTjvkmLFhELagOoEBP89cnfl/e8WDzn+o"
     },
     {
       "name": "mathjax",

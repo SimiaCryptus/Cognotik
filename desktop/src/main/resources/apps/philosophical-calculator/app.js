@@ -1,9 +1,9 @@
 /* Philosophical Calculator — Cognotik DocOps app */
-    import {createStatusPoller, fetchDocopsStatus, runDocOp, waitForTask} from '/lib/app/docops.js';
-    import {deleteFile, listFiles, readFile, writeFile} from '/lib/app/fileIO.js';
-    import {getProxyUrl, parseSessionUrl} from '/lib/app/session.js';
-    import {createSessionLinkManager, updateSessionLinks} from '/lib/app/sessionLinks.js';
-    import {initMenu} from '/lib/app/menu.js';
+    import {createStatusPoller, fetchDocopsStatus, runDocOp, waitForTask} from '/app/docops.js';
+    import {deleteFile, listFiles, readFile, writeFile} from '/app/fileIO.js';
+    import {getProxyUrl, parseSessionUrl} from '/app/session.js';
+    import {createSessionLinkManager, updateSessionLinks} from '/app/sessionLinks.js';
+    import {initMenu} from '/app/menu.js';
     import {
         createBatchLogger,
         escapeHtml,
@@ -12,13 +12,13 @@
         setBadge,
         setStatus,
         showToast
-    } from '/lib/app/ui.js';
+    } from '/app/ui.js';
     import {
         loadApiProviders,
         loadModelSelections,
         populateModelDropdowns,
         saveModelSelections
-    } from '/lib/app/models.js';
+    } from '/app/models.js';
     
     // ========================================================================
     // Global error reporting

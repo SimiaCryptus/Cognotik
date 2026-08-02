@@ -11,7 +11,7 @@
 *   • Available budget indicator + "Usage & Credits" (buy credits) dialog
  *
  * Usage:
- *   import { initMenu } from '/lib/app/menu.js';
+ *   import { initMenu } from '/app/menu.js';
  *   const menu = initMenu({ appName: 'Resume Customizer' });
  */
 

@@ -1,10 +1,10 @@
 /*
      * Ω Omega — DocOps App Generator (front-end)
      *
-     * Migrated to the shared front-end library served from /lib/app/.
+     * Migrated to the shared front-end library served from /app/.
      * The app-local `utils/` directory (and the vendored marked.min.js) have been deleted.
      *
-     * Library surface used here (see /lib/app/migration.md):
+     * Library surface used here (see /app/migration.md):
      *   session.js       parseSessionUrl(), getProxyUrl()
      *   fileIO.js        readFile(), writeFile(), fileExists(), listFiles()   [session-relative]
      *   docops.js        runDocOp(), waitForTask(), fetchDocopsStatus()
@@ -19,21 +19,21 @@
      *   config.js        configure()   — only required when not hosted at the host root
      */
 
-    import { parseSessionUrl, getProxyUrl }          from '/lib/app/session.js';
+    import { parseSessionUrl, getProxyUrl }          from '/app/session.js';
     import { readFile, writeFile, fileExists,
-             listFiles }                             from '/lib/app/fileIO.js';
+             listFiles }                             from '/app/fileIO.js';
     import { runDocOp, waitForTask,
-             fetchDocopsStatus }                     from '/lib/app/docops.js';
+             fetchDocopsStatus }                     from '/app/docops.js';
     import { escapeHtml, renderMarkdown, setStatus,
              setBadge, updatePipelineNode,
-             logBatch, logBatchHtml }                from '/lib/app/ui.js';
-    import { updateSessionLinks }                    from '/lib/app/sessionLinks.js';
+             logBatch, logBatchHtml }                from '/app/ui.js';
+    import { updateSessionLinks }                    from '/app/sessionLinks.js';
     import { loadApiProviders, populateModelSelects,
              getSelectedModels, saveModelSelections,
-             resetModelSelections, countModels }     from '/lib/app/models.js';
-    import { gitApiCall }                            from '/lib/app/git.js';
-    import { fetchUsage }                            from '/lib/app/usage.js';
-    import { initMenu }                              from '/lib/app/menu.js';
+             resetModelSelections, countModels }     from '/app/models.js';
+    import { gitApiCall }                            from '/app/git.js';
+    import { fetchUsage }                            from '/app/usage.js';
+    import { initMenu }                              from '/app/menu.js';
 
     // === Session context ===
     const { basePath, sessionId, appId } = parseSessionUrl();

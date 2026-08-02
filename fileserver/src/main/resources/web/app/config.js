@@ -1,8 +1,8 @@
 /**
- * Runtime configuration for the shared `/lib/app/` modules.
+ * Runtime configuration for the shared `/app/` modules.
  *
  * Because these modules moved from `<app>/utils/<module>.js` to the host-absolute
- * path `/lib/app/<module>.js`, they can no longer assume that the page that loaded
+ * path `/app/<module>.js`, they can no longer assume that the page that loaded
  * them lives at the server root. Anything that talks to an *absolute* server
  * endpoint (`/docops`, `/proxy/...`, `/apiProviders/...`) must be resolved through
  * `serverUrl()` so that a deployment behind a path prefix keeps working.

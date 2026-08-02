@@ -1,21 +1,21 @@
-import { parseSessionUrl, getProxyUrl, getAppRoot } from '/lib/app/session.js';
+import { parseSessionUrl, getProxyUrl, getAppRoot } from '/app/session.js';
 import {
     loadApiProviders,
     populateModelDropdowns,
     saveModelSelections,
     loadModelSelections
-} from '/lib/app/models.js';
+} from '/app/models.js';
 import {
     readFile,
     writeFile,
     fileExists,
     listFiles
-} from '/lib/app/fileIO.js';
+} from '/app/fileIO.js';
 import {
     runDocOp,
     waitForTask,
     createStatusPoller
-} from '/lib/app/docops.js';
+} from '/app/docops.js';
 import {
     renderMarkdown,
     setStatus,
@@ -24,8 +24,8 @@ import {
     createBatchLogger,
     getFileIcon,
     escapeHtml
-} from '/lib/app/ui.js';
-import { initMenu } from '/lib/app/menu.js';
+} from '/app/ui.js';
+import { initMenu } from '/app/menu.js';
 
 (async function main() {
     'use strict';

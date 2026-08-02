@@ -1,16 +1,16 @@
 /* Webapp Builder — Cognotik DocOps app */
-    import { parseSessionUrl, getProxyUrl } from '/lib/app/session.js';
-    import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
-    import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from '/lib/app/docops.js';
+    import { parseSessionUrl, getProxyUrl } from '/app/session.js';
+    import { readFile, writeFile, fileExists, listFiles } from '/app/fileIO.js';
+    import { runDocOp, fetchDocopsStatus, waitForTask, createStatusPoller } from '/app/docops.js';
     import {
         loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections
-    } from '/lib/app/models.js';
+    } from '/app/models.js';
     import {
         renderMarkdown, escapeHtml, setStatus, setBadge, showToast, createBatchLogger, getFileIcon
-    } from '/lib/app/ui.js';
-    import { updateSessionLinks } from '/lib/app/sessionLinks.js';
-    import { getStatus as gitGetStatus, initRepository as gitInit, commit as gitCommit } from '/lib/app/git.js';
-    import { initMenu } from '/lib/app/menu.js';
+    } from '/app/ui.js';
+    import { updateSessionLinks } from '/app/sessionLinks.js';
+    import { getStatus as gitGetStatus, initRepository as gitInit, commit as gitCommit } from '/app/git.js';
+    import { initMenu } from '/app/menu.js';
 
     /* ── Constants ─────────────────────────────────────────────── */
 
