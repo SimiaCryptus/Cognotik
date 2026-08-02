@@ -20,7 +20,7 @@ import {
     loadModelSelections
 } from '/lib/app/models.js';
 import { readFile, writeFile, fileExists, listFiles } from '/lib/app/fileIO.js';
-import { runDocOp, waitForTask, createStatusPoller } from '/lib/app/docops.js';
+import { runDocOp, waitForTask, createStatusPoller, fetchDocopsStatus } from '/lib/app/docops.js';
 import {
     renderMarkdown,
     escapeHtml,
@@ -32,7 +32,6 @@ import {
 import { updateSessionLinks, createSessionLinkManager } from '/lib/app/sessionLinks.js';
 import { initMenu } from '/lib/app/menu.js';
 
-'use strict';
 
 const APP_PREFIX = 'interactiveStories';
 const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel', 'audioModel'];
@@ -45,6 +44,26 @@ const AUTO_IMAGE_KEY = `${APP_PREFIX}.autoImage`;
 const AUTO_AUDIO_KEY = `${APP_PREFIX}.autoAudio`;
 const HIGHLIGHT_KEY = `${APP_PREFIX}.highlightReadalong`;
 const STYLESHEET_FILE = 'stylesheet_instructions.md';
+const STYLESHEET_TARGET = 'style.css';
+/** Every DocOp this app can run, hoisted out of the call sites (§14.12). */
+const OPS = Object.freeze({
+     initialNode: 'ops/initial_node.md',
+     choice: 'ops/choice.md',
+     initialImage: 'ops/initial_image.md',
+     choiceImage: 'ops/choice_image.md',
+     initialAudio: 'ops/initial_audio.md',
+     choiceAudio: 'ops/choice_audio.md',
+     updateStylesheet: 'ops/update_stylesheet.md'
+});
+// Global error reporting — registered once, at module scope (§13).
+window.addEventListener('error', e => {
+     console.error('[uncaught]', e.error ?? e.message, `(${e.filename}:${e.lineno})`);
+     log(`Uncaught error: ${e.message} (${e.filename}:${e.lineno})`, 'error');
+});
+window.addEventListener('unhandledrejection', e => {
+     console.error('[rejection]', e.reason);
+     log(`Unhandled promise rejection: ${e.reason}`, 'error');
+});
 
 const { basePath, sessionId } = parseSessionUrl();
 console.log('[app] Parsed session URL — basePath:', basePath, '| sessionId:', sessionId);
@@ -90,6 +109,92 @@ function timeEnd(label) {
     const formatted = ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
     console.debug('[timer] END', label, '→', formatted);
     return formatted;
+}
+// -------------------------------------------------------------------------
+// Status-poller lifecycle — started on demand, stopped when idle (§12, §14.9)
+// -------------------------------------------------------------------------
+let _pollerRunning = false;
+let _pollerIdleTimer = null;
+let _inFlightTasks = 0;
+function ensurePollerRunning() {
+     if (_pollerIdleTimer != null) {
+         clearTimeout(_pollerIdleTimer);
+         _pollerIdleTimer = null;
+     }
+     if (!statusPoller || _pollerRunning) return;
+     statusPoller.start();
+     _pollerRunning = true;
+     console.log('[ensurePollerRunning] Status poller started (3s).');
+}
+function stopPoller() {
+     if (_pollerIdleTimer != null) {
+         clearTimeout(_pollerIdleTimer);
+         _pollerIdleTimer = null;
+     }
+     if (!statusPoller || !_pollerRunning) return;
+     statusPoller.stop();
+     _pollerRunning = false;
+     console.log('[stopPoller] Status poller stopped (idle).');
+}
+function beginTask() {
+     _inFlightTasks++;
+     ensurePollerRunning();
+}
+function endTask() {
+     _inFlightTasks = Math.max(0, _inFlightTasks - 1);
+     if (_inFlightTasks > 0) return;
+     if (_pollerIdleTimer != null) clearTimeout(_pollerIdleTimer);
+     // Linger briefly so the terminal status of the last task is observed.
+     _pollerIdleTimer = setTimeout(stopPoller, 8000);
+}
+/** Toggle the shared `.hidden` class instead of writing inline styles (§14.5). */
+function setHidden(el, hidden) {
+     if (el) el.classList.toggle('hidden', Boolean(hidden));
+}
+/**
+  * In-page replacement for window.confirm() (§11.5, §14.4).
+  * Renders a confirmation bar inside `hostId` and resolves true/false.
+  */
+function confirmInline(hostId, message, confirmLabel = 'Confirm') {
+     return new Promise(resolve => {
+         const host = document.getElementById(hostId);
+         if (!host) {
+             console.warn('[confirmInline] Host not found:', hostId);
+             resolve(false);
+             return;
+         }
+         host.querySelector('.confirm-bar')?.remove();
+         const bar = document.createElement('div');
+         bar.className = 'confirm-bar';
+         bar.setAttribute('role', 'alertdialog');
+         bar.setAttribute('aria-live', 'assertive');
+         const text = document.createElement('p');
+         text.className = 'confirm-text';
+         text.textContent = message;
+         const row = document.createElement('div');
+         row.className = 'button-row';
+         const yes = document.createElement('button');
+         yes.type = 'button';
+         yes.className = 'btn btn-primary';
+         yes.textContent = confirmLabel;
+         const no = document.createElement('button');
+         no.type = 'button';
+         no.className = 'btn btn-secondary';
+         no.textContent = 'Cancel';
+         row.append(yes, no);
+         bar.append(text, row);
+         host.appendChild(bar);
+         const finish = value => {
+             bar.remove();
+             resolve(value);
+         };
+         yes.addEventListener('click', () => finish(true));
+         no.addEventListener('click', () => finish(false));
+         bar.addEventListener('keydown', e => {
+             if (e.key === 'Escape') finish(false);
+         });
+         yes.focus();
+     });
 }
 
 // -------------------------------------------------------------------------
@@ -217,10 +322,11 @@ async function init() {
         });
 
         // Start global status poller
-         statusPoller = createStatusPoller(basePath, onStatusUpdate, 2000);
-        statusPoller.start();
-         log('Status poller started (interval: 2s).', 'info');
-         console.log('[init] Status poller started — interval: 2000ms.');
+         // Created here, but only *started* while work is in flight (§12).
+         statusPoller = createStatusPoller(basePath, onStatusUpdate, 3000);
+         window.addEventListener('pagehide', stopPoller);
+         console.log('[init] Status poller created (started on demand, 3s interval).');
+         await restoreBadges();
 
         // If initial node already exists, load it
         console.log('[init] Checking for existing initial node at', `${STORY_DIR}/${INITIAL_NODE}.md`);
@@ -245,10 +351,40 @@ async function init() {
         showToast(`Init error: ${err.message}`, 'error');
     }
 
-    window.addEventListener('error', e => log(`Uncaught error: ${e.message} (${e.filename}:${e.lineno})`, 'error'));
-    window.addEventListener('unhandledrejection', e => log(`Unhandled promise rejection: ${e.reason}`, 'error'));
-    window.addEventListener('error', e => console.error('[window] Uncaught error:', e.message, `(${e.filename}:${e.lineno})`));
-    window.addEventListener('unhandledrejection', e => console.error('[window] Unhandled promise rejection:', e.reason));
+}
+/**
+  * Restore step badges from docops.status.json so a reload reflects whatever the
+  * server already knows about in-flight / completed tasks (§12).
+  */
+async function restoreBadges() {
+     try {
+         const status = await fetchDocopsStatus(basePath);
+         const entries = Object.entries(status?.tasks ?? status ?? {});
+         console.log('[restoreBadges] docops status entries:', entries.length);
+         let anyRunning = false;
+         for (const [target, info] of entries) {
+             if (!info || typeof info !== 'object' || !info.status) continue;
+             trackedSessions.set(target, info);
+             lastTaskStatus.set(target, info.status);
+             linkManager.update(target, info);
+             const running = ['RUNNING', 'PENDING', 'IN_PROGRESS'].includes(info.status);
+             if (running) anyRunning = true;
+             const state = running ? 'running' : info.status === 'FAILED' ? 'error' : 'done';
+             if (target === `${STORY_DIR}/${INITIAL_NODE}.md`) {
+                 setBadge('badge-idea', 'done');
+                 setBadge('badge-tree', state);
+             } else if (target.startsWith(`${STORY_DIR}/`)) {
+                 setBadge('badge-node', state);
+             } else if (target === STYLESHEET_TARGET) {
+                 setBadge('badge-stylesheet', state);
+             }
+         }
+         if (anyRunning) ensurePollerRunning();
+         log(`Restored ${entries.length} task record(s) from docops status.`, 'info');
+     } catch (e) {
+         console.warn('[restoreBadges] Could not restore badges from docops status:', e);
+         log(`Could not restore task status: ${e.message}`, 'warning');
+     }
 }
 
 // -------------------------------------------------------------------------
@@ -449,7 +585,12 @@ async function onStartStory() {
     if (await fileExists(basePath, target)) {
         log(`Initial node already exists at "${target}". Prompting user for confirmation.`, 'info');
         console.log('[onStartStory] Initial node already exists — prompting user for confirmation.');
-        if (!confirm('An initial story node already exists. Regenerate it? This will overwrite the current root node (existing branches will remain on disk).')) {
+         const proceed = await confirmInline(
+             'idea-card',
+             'An initial story node already exists. Regenerate it? This overwrites the current root node (existing branches remain on disk).',
+             'Regenerate'
+         );
+         if (!proceed) {
             log('User cancelled regeneration of initial node.', 'info');
             console.log('[onStartStory] User cancelled regeneration.');
             await loadNode(INITIAL_NODE);
@@ -463,15 +604,16 @@ async function onStartStory() {
     startBtn.disabled = true;
     setBadge('badge-tree', 'running');
     setStatus('idea-status', 'Generating initial node...', 'info', 0);
-    log(`Starting story — op: ops/initial_node.md → target: "${target}".`, 'info');
+     log(`Starting story — op: ${OPS.initialNode} → target: "${target}".`, 'info');
     timeStart('startStory');
     console.group('[onStartStory] Generating initial story node…');
-    console.log('[onStartStory] op: ops/initial_node.md | target:', target, '| overrides:', getModelOverrides());
+     console.log('[onStartStory] op:', OPS.initialNode, '| target:', target, '| overrides:', getModelOverrides());
 
     try {
+         beginTask();
         const taskId = await runDocOp(
             sessionId,
-            'ops/initial_node.md',
+             OPS.initialNode,
             target,
             getModelOverrides()
         );
@@ -501,6 +643,7 @@ async function onStartStory() {
         setBadge('badge-tree', 'error');
         showToast(`Failed: ${e.message}`, 'error');
     } finally {
+         endTask();
         startBtn.disabled = false;
         console.groupEnd();
     }
@@ -514,7 +657,7 @@ async function onChoice(letter) {
         return;
     }
     const target = `${STORY_DIR}/${currentNode}${letter}.md`;
-    const opPath = `ops/choice.md`;
+     const opPath = OPS.choice;
     const templateVars = { CHOICE: letter, CHOICE_LABEL: letter.toUpperCase() };
     console.log(`[onChoice] letter="${letter}" | currentNode="${currentNode}" | target="${target}" | op="${opPath}" | templateVars=`, templateVars);
 
@@ -570,6 +713,7 @@ async function onChoice(letter) {
         setBadge('badge-node', 'error');
         showToast(`Failed: ${e.message}`, 'error');
     } finally {
+         endTask();
         buttons.forEach(b => b.disabled = false);
         console.groupEnd();
     }
@@ -609,7 +753,12 @@ async function refreshTree() {
 function renderTree() {
     const container = document.getElementById('story-tree');
     if (allNodes.size === 0) {
-        container.innerHTML = '<p class="empty-state">No story started yet. Save your idea and click "Begin Story".</p>';
+         container.innerHTML = `
+             <div class="empty-state">
+                 <div class="empty-icon" aria-hidden="true">🌱</div>
+                 <p class="empty-title">No story started yet</p>
+                 <p class="empty-desc">Save your idea above, then press <strong>Begin Story</strong>.</p>
+             </div>`;
         return;
     }
 
@@ -643,14 +792,16 @@ function renderTree() {
     const frag = document.createDocumentFragment();
     ordered.forEach(({ id, ancestorIsLast }) => {
         const depth = ancestorIsLast.length;
-        const div = document.createElement('div');
-        div.className = 'tree-node' + (id === currentNode ? ' active' : '');
-        div.dataset.nodeId = id;
+         const node = document.createElement('button');
+         node.type = 'button';
+         node.className = 'tree-node' + (id === currentNode ? ' active' : '');
+         node.dataset.nodeId = id;
+         if (id === currentNode) node.setAttribute('aria-current', 'true');
 
         let label = '📖 Root';
         if (id !== INITIAL_NODE) {
-            const lastChoice = id.charAt(id.length - 1).toUpperCase();
-            label = `↳ Branch ${lastChoice} <span style="opacity:0.6;">(${id})</span>`;
+             const lastChoice = escapeHtml(id.charAt(id.length - 1).toUpperCase());
+             label = `↳ Branch ${lastChoice} <span class="tree-node-id">(${escapeHtml(id)})</span>`;
         }
 
         let indent = '';
@@ -660,9 +811,9 @@ function renderTree() {
             }
             indent += ancestorIsLast[depth - 1] ? '└ ' : '├ ';
         }
-        div.innerHTML = `<span class="tree-indent">${escapeHtml(indent)}</span><span>${label}</span>`;
-        div.addEventListener('click', () => loadNode(id));
-        frag.appendChild(div);
+         node.innerHTML = `<span class="tree-indent" aria-hidden="true">${escapeHtml(indent)}</span><span class="tree-label">${label}</span>`;
+         node.addEventListener('click', () => loadNode(id));
+         frag.appendChild(node);
     });
 
     container.innerHTML = '';
@@ -749,9 +900,9 @@ function applyParsedChoicesToUI(nodeId, parsed) {
     if (endPanel) endPanel.remove();
     if (parsed.isEndState) {
         // Hide the choice buttons, show an end-state message
-        choiceActions.style.display = 'block';
-        if (choiceButtons) choiceButtons.style.display = 'none';
-        if (choicePromptEl) choicePromptEl.style.display = 'none';
+         setHidden(choiceActions, false);
+         setHidden(choiceButtons, true);
+         setHidden(choicePromptEl, true);
         endPanel = document.createElement('div');
         endPanel.id = 'end-state-panel';
         endPanel.className = 'end-state-panel';
@@ -767,9 +918,9 @@ function applyParsedChoicesToUI(nodeId, parsed) {
         return;
     }
     // Not an end-state — show choice buttons
-    if (choiceButtons) choiceButtons.style.display = '';
+     setHidden(choiceButtons, false);
     if (choicePromptEl) {
-        choicePromptEl.style.display = '';
+         setHidden(choicePromptEl, false);
         choicePromptEl.textContent = parsed.choicePrompt || 'Continue the story by choosing a path:';
     }
     ['a', 'b', 'c'].forEach(letter => {
@@ -808,7 +959,7 @@ function applyParsedChoicesToUI(nodeId, parsed) {
             }
             if (descEl) {
                 descEl.innerHTML = bodyHtml;
-                descEl.style.display = '';
+                 setHidden(descEl, false);
             } else {
                 const newDesc = document.createElement('span');
                 newDesc.className = 'choice-desc';
@@ -817,7 +968,7 @@ function applyParsedChoicesToUI(nodeId, parsed) {
             }
         } else {
             // Fallback: no parsed text — hide description if present
-            if (descEl) descEl.style.display = 'none';
+             setHidden(descEl, true);
         }
     });
 }
@@ -855,7 +1006,7 @@ async function loadNode(nodeId) {
     _ttsPlainText = _ttsOffsetIndex.plainText;
     _ttsCharOffset = 0;
     _ttsActiveSpan = null;
-    document.getElementById('choice-actions').style.display = 'block';
+     setHidden(document.getElementById('choice-actions'), false);
     setBadge('badge-node', 'done');
 
     document.querySelectorAll('.tree-node').forEach(el => {
@@ -1446,11 +1597,12 @@ function updateReadAloudButton() {
     const btn = document.getElementById('read-aloud');
     const label = document.getElementById('read-aloud-label');
     if (!btn || !label) return;
+     const icon = document.getElementById('read-aloud-icon');
     if (isSpeaking) {
-        btn.firstChild.textContent = '⏹ ';
+         if (icon) icon.textContent = '⏹';
         label.textContent = 'Stop Reading';
     } else {
-        btn.firstChild.textContent = '🔊 ';
+         if (icon) icon.textContent = '🔊';
         label.textContent = 'Read Aloud';
     }
 }
@@ -1514,10 +1666,10 @@ async function onReadAloudToggle() {
 function getImageOpForNode(nodeId) {
     // Initial node uses initial_image.md; branches use the templated choice_image.md
     // (the CHOICE template var is supplied separately).
-    if (nodeId === INITIAL_NODE) return 'ops/initial_image.md';
+     if (nodeId === INITIAL_NODE) return OPS.initialImage;
     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-        return 'ops/choice_image.md';
+         return OPS.choiceImage;
     }
     return null;
 }
@@ -1540,13 +1692,13 @@ async function loadNodeImage(nodeId) {
          // Force reload even if browser cached the previous version
          img.removeAttribute('src');
         img.src = url;
-        container.style.display = 'block';
+         setHidden(container, false);
         label.textContent = 'Regenerate Image';
         log(`Image found for node "${nodeId}" — loaded from "${imgPath}".`, 'info');
         console.log(`[loadNodeImage] Image found for node "${nodeId}" — src: ${url}`);
     } else {
         img.removeAttribute('src');
-        container.style.display = 'none';
+         setHidden(container, true);
         label.textContent = 'Generate Image';
         log(`No image found for node "${nodeId}" (${imgPath}).`, 'info');
         console.log(`[loadNodeImage] No image found for node "${nodeId}" at "${imgPath}".`);
@@ -1598,7 +1750,7 @@ async function generateImageForNode(nodeId) {
     const container = document.getElementById('node-image-container');
     isGeneratingImage = true;
     btn.disabled = true;
-    container.style.display = 'block';
+     setHidden(container, false);
     statusEl.textContent = `Generating image for node ${nodeId}...`;
     statusEl.className = 'status-msg info';
     log(`Generating image for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
@@ -1606,6 +1758,7 @@ async function generateImageForNode(nodeId) {
     console.group(`[generateImageForNode] Generating image for node "${nodeId}"…`);
     console.log(`[generateImageForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
     try {
+         beginTask();
         const taskId = await runDocOp(
             sessionId,
             opPath,
@@ -1640,6 +1793,7 @@ async function generateImageForNode(nodeId) {
         statusEl.className = 'status-msg error';
         showToast(`Image failed: ${e.message}`, 'error');
     } finally {
+         endTask();
         isGeneratingImage = false;
         if (currentNode === nodeId) {
             document.getElementById('generate-image').disabled = false;
@@ -1653,10 +1807,10 @@ async function generateImageForNode(nodeId) {
 function getAudioOpForNode(nodeId) {
     // Initial node uses initial_audio.md; branches use the templated choice_audio.md
     // (the CHOICE template var is supplied separately).
-    if (nodeId === INITIAL_NODE) return 'ops/initial_audio.md';
+     if (nodeId === INITIAL_NODE) return OPS.initialAudio;
     const lastChar = nodeId.charAt(nodeId.length - 1).toLowerCase();
     if (lastChar === 'a' || lastChar === 'b' || lastChar === 'c') {
-        return 'ops/choice_audio.md';
+         return OPS.choiceAudio;
     }
     return null;
 }
@@ -1681,7 +1835,7 @@ async function loadNodeAudio(nodeId) {
          audio.removeAttribute('src');
         audio.src = url;
          audio.load();
-        container.style.display = 'block';
+         setHidden(container, false);
         label.textContent = 'Regenerate Audio';
         log(`Audio found for node "${nodeId}" — loaded from "${audioPath}".`, 'info');
         console.log(`[loadNodeAudio] Audio found for node "${nodeId}" — src: ${url}`);
@@ -1728,7 +1882,7 @@ async function loadNodeAudio(nodeId) {
     } else {
         audio.removeAttribute('src');
         audio.load();
-        container.style.display = 'none';
+         setHidden(container, true);
         label.textContent = 'Generate Audio';
         log(`No audio found for node "${nodeId}" (${audioPath}).`, 'info');
         console.log(`[loadNodeAudio] No audio found for node "${nodeId}" at "${audioPath}".`);
@@ -1786,7 +1940,7 @@ async function generateAudioForNode(nodeId) {
     const container = document.getElementById('node-audio-container');
     isGeneratingAudio = true;
     btn.disabled = true;
-    container.style.display = 'block';
+     setHidden(container, false);
     statusEl.textContent = `Generating audio for node ${nodeId}...`;
     statusEl.className = 'status-msg info';
     log(`Generating audio for node "${nodeId}" — op: ${opPath} → target: "${target}".`, 'info');
@@ -1794,6 +1948,7 @@ async function generateAudioForNode(nodeId) {
     console.group(`[generateAudioForNode] Generating audio for node "${nodeId}"…`);
     console.log(`[generateAudioForNode] op: ${opPath} | target: ${target} | overrides:`, getModelOverrides(), '| templateVars:', templateVars);
     try {
+         beginTask();
         const taskId = await runDocOp(
             sessionId,
             opPath,
@@ -1827,6 +1982,7 @@ async function generateAudioForNode(nodeId) {
         statusEl.className = 'status-msg error';
         showToast(`Audio failed: ${e.message}`, 'error');
     } finally {
+         endTask();
         isGeneratingAudio = false;
         if (currentNode === nodeId) {
             document.getElementById('generate-audio').disabled = false;
@@ -1845,7 +2001,7 @@ function onStatusUpdate(target, taskInfo) {
     // Pick container based on target
     const containerId = target === `${STORY_DIR}/${INITIAL_NODE}.md`
         ? 'initial-links'
-        : target === 'style.css'
+         : target === STYLESHEET_TARGET
             ? 'stylesheet-links'
             : 'node-links';
     updateSessionLinks(target, taskInfo, getProxyUrl, containerId);
@@ -1864,7 +2020,7 @@ function onStatusUpdate(target, taskInfo) {
         log(`Poller: task for "${target}" completed — refreshing tree and assets.`, 'info');
         console.log(`[onStatusUpdate] Task COMPLETED for "${target}" — triggering refresh.`);
         _handleCompletedAsset(target);
-    } else if (taskInfo.status === 'COMPLETED' && target === 'style.css') {
+     } else if (taskInfo.status === 'COMPLETED' && target === STYLESHEET_TARGET) {
         log(`Poller: stylesheet update completed.`, 'info');
         console.log('[onStatusUpdate] Stylesheet task COMPLETED.');
         setBadge('badge-stylesheet', 'done');
@@ -2025,20 +2181,21 @@ async function onUpdateStylesheet() {
     btn.disabled = true;
     setBadge('badge-stylesheet', 'running');
     setStatus('stylesheet-status', 'Updating stylesheet…', 'info', 0);
-    log('Starting stylesheet update — op: ops/update_stylesheet.md → target: style.css.', 'info');
+     log(`Starting stylesheet update — op: ${OPS.updateStylesheet} → target: ${STYLESHEET_TARGET}.`, 'info');
     timeStart('updateStylesheet');
     console.group('[onUpdateStylesheet] Updating stylesheet…');
-    console.log('[onUpdateStylesheet] op: ops/update_stylesheet.md | target: style.css | overrides:', getModelOverrides());
+     console.log('[onUpdateStylesheet] op:', OPS.updateStylesheet, '| target:', STYLESHEET_TARGET, '| overrides:', getModelOverrides());
     try {
+         beginTask();
         const taskId = await runDocOp(
             sessionId,
-            'ops/update_stylesheet.md',
-            'style.css',
+             OPS.updateStylesheet,
+             STYLESHEET_TARGET,
             getModelOverrides()
         );
         log(`DocOp started for stylesheet update — task: ${formatTaskId(taskId)}.`, 'info');
         console.log('[onUpdateStylesheet] runDocOp() returned taskId:', taskId);
-        await waitForTask(basePath, 'style.css', 600000, (tgt, info) => {
+         await waitForTask(basePath, STYLESHEET_TARGET, 600000, (tgt, info) => {
             trackedSessions.set(tgt, info);
             linkManager.update(tgt, info);
             updateSessionLinks(tgt, info, getProxyUrl, 'stylesheet-links');
@@ -2057,6 +2214,7 @@ async function onUpdateStylesheet() {
         setBadge('badge-stylesheet', 'error');
         showToast(`Stylesheet update failed: ${e.message}`, 'error');
     } finally {
+         endTask();
         btn.disabled = false;
         console.groupEnd();
     }

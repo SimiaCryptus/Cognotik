@@ -155,8 +155,11 @@ export function openQuickPick({title = '', placeholder = '', items, onAccept, in
     });
 }
 
+/** Answers whether a picker was actually open (Escape falls through if not). */
 export function close() {
-    current?.close(null);
+     if (!current) return false;
+     current.close(null);
+     return true;
 }
 
 export function initQuickPick() {

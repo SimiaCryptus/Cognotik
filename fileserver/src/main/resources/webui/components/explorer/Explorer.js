@@ -106,6 +106,10 @@ export class Explorer extends Component {
     focus() {
         this.view.focusPath(this.model.focus || this.model.rows()[0]?.path || '/');
     }
+     /** The drawer (or panel) was revealed: it may have been measured at 0 px. */
+     onShown() {
+         this.view.update();
+     }
 
     async onExternalChange(dirs) {
         for (const dir of dirs) {

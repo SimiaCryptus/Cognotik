@@ -262,9 +262,12 @@ function registerCoreCommands(shell) {
              /* The keybinding preventDefault()s Escape, which suppresses the
                 native <dialog> cancel: dismiss action/parameter dialogs here. */
              const {closeTopModal} = await import('../components/overlays/Modal.js');
-            closeContextMenu();
-            close();
-             closeTopModal();
+             let closed = false;
+             closed = closeContextMenu() || closed;
+             closed = close() || closed;
+             closed = closeTopModal() || closed;
+             /* Nothing was stacked above: Escape dismisses the mobile drawer. */
+             if (!closed) shell.closeDrawer?.();
         },
     });
 }

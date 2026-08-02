@@ -15,6 +15,8 @@ export class TreeView extends Component {
         this.rows = [];
         this.typeahead = '';
         this.typeaheadTimer = null;
+         /* A touch screen has no hover and no cheap double tap. */
+         this.coarse = !!window.matchMedia?.('(pointer: coarse)').matches;
     }
 
     render() {
@@ -79,6 +81,13 @@ export class TreeView extends Component {
                 text: this.model.query ? 'No matches' : 'Empty folder'
             }));
         }
+         /* Rows are taller on a coarse pointer than --fs-row-h suggests, and the
+            virtualiser's spacers must agree with reality. */
+         const first = this.inner.querySelector('.fs-tree__row');
+         if (first) {
+             const measured = first.getBoundingClientRect().height;
+             if (measured > 0) this.rowHeight = measured;
+         }
          if (this.el.scrollTop !== scrollTop) this.el.scrollTop = scrollTop;
     }
 
@@ -167,10 +176,14 @@ export class TreeView extends Component {
         const additive = event.ctrlKey || event.metaKey;
         const range = event.shiftKey;
         this.applySelection(node, {additive, range});
-        /* Only the twisty reacts to a single click; opening needs a double click
-           (or Enter) so the tree is not "over-reactive" while browsing. */
-        if (node.type === 'dir' && event.target.closest('.fs-tree__twisty')) {
+         const twisty = !!event.target.closest('.fs-tree__twisty');
+         /* With a precise pointer only the twisty reacts to a single click, so
+            the tree is not "over-reactive" while browsing; on a touch screen a
+            single tap has to do everything. */
+         if (node.type === 'dir' && (twisty || this.coarse)) {
             this.model.toggle(node.path);
+         } else if (node.type === 'file' && this.coarse && !additive && !range) {
+             this.props.onActivate?.(node, {preview: true});
         }
     }
 

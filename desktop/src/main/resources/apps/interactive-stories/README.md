@@ -1,81 +1,107 @@
-# 📖 Interactive Stories
+# Interactive Stories
 
-**Your story. Your choices. Powered by AI.**
+    Craft branching, choose-your-own-adventure narratives with AI-generated prose,
+    illustrations and narration.
 
-Interactive Stories lets you craft rich, branching narratives — no writing experience required. Describe a premise, hit a button, and watch an AI spin it into a living story tree where every decision opens a new path. Come back anytime to explore the roads not taken.
+    ## Files
 
----
+    ```
+    interactive-stories/
+    ├── app.html   # single entry point
+    ├── app.js     # single ES-module entry point
+    ├── style.css  # all styling (design-token based)
+    ├── ops/       # DocOp definitions
+    └── README.md
+    ```
 
-## ✨ What can it do?
+    ## Pipeline
 
-- **Generate a full story from a single idea.** Just describe a setting, character, or situation — the AI does the rest.
-- **Branch in any direction.** Every scene ends with three choices (A, B, C). Pick one and the story continues down that path. Change your mind? Jump back to any earlier point and try a different route.
-- **Illustrate every scene.** Generate a unique AI image for each story node so you can *see* the world you're building.
-- **Narrate your story aloud.** Generate ambient audio narration for any scene, or use your browser's built-in text-to-speech with word-by-word highlighting so you can follow along.
-- **Make it look the way you want.** Describe a visual style in plain English and the app will update its own stylesheet to match — dark and moody, bright and whimsical, whatever fits your story.
+    | Step | Badge              | Input                        | Op                          | Output                  |
+    |------|--------------------|------------------------------|-----------------------------|-------------------------|
+    | 1    | `badge-idea`       | user text                    | — (direct write)            | `story_idea.md`         |
+    | 2    | `badge-tree`       | `story_idea.md`              | `ops/initial_node.md`       | `story/0.md`            |
+    | 3    | `badge-node`       | parent node + chosen letter  | `ops/choice.md`             | `story/<path><a\|b\|c>.md` |
+    | 3a   | —                  | `story/0.md`                 | `ops/initial_image.md`      | `story/0.png`           |
+    | 3b   | —                  | `story/<path>.md`            | `ops/choice_image.md`       | `story/<path>.png`      |
+    | 3c   | —                  | `story/0.md`                 | `ops/initial_audio.md`      | `story/0.wav`           |
+    | 3d   | —                  | `story/<path>.md`            | `ops/choice_audio.md`       | `story/<path>.wav`      |
+    | 4    | `badge-stylesheet` | `stylesheet_instructions.md` | `ops/update_stylesheet.md`  | `style.css`             |
 
----
+    ### Node naming
 
-## 🚀 Getting started
+    Story nodes live in `story/` and are named by their choice path:
 
-### 1. Choose your AI models
-At the top of the page, pick a **Smart Model** (for rich story writing), a **Fast Model** (for quick tasks), an **Image Model**, and an **Audio Model**. Your choices are saved automatically between visits.
+    * `0`   — the root node
+    * `0a`  — after choosing **A** at the root
+    * `0ab` — after choosing **B** at `0a`
 
-### 2. Write your premise
-Type your story idea into the **Story Idea** box. It can be as short as a sentence or as detailed as a paragraph — the AI will work with whatever you give it.
+    Illustrations and narration for a node share its id with a `.png` / `.wav`
+    extension. A node with no parsable `A/B/C` list is treated as an **end state**
+    and renders the "The story has reached its end" panel instead of choice buttons.
 
-> *"A weary detective in a rain-soaked cyberpunk city receives a mysterious letter from a long-dead colleague…"*
+    ### Template variables
 
-Click **✨ Begin Story** to generate the opening scene.
+    `ops/choice.md`, `ops/choice_image.md` and `ops/choice_audio.md` receive:
 
-### 3. Read and choose
-Your opening scene appears in the **Current Node** panel. Read it, then click one of the three choice buttons (A, B, or C) to continue the story down that branch. Each new scene is generated fresh by the AI.
+    * `CHOICE` — the lowercase branch letter (`a`, `b`, `c`)
+    * `CHOICE_LABEL` — the uppercase branch letter (narrative op only)
 
-### 4. Explore the tree
-The **Story Tree** panel shows every scene you've generated so far. Click any node to jump back to it — already-explored branches show a ✓ and load instantly. New branches are generated on demand.
+    ## Op files
 
-### 5. Add images and audio
-- Click **🖼 Generate Image** to create an illustration for the current scene.
-- Click **🎙 Generate Audio** to create a narrated audio track.
-- Enable **Auto-generate images** or **Auto-generate audio** to have these created automatically every time a new scene loads.
+    | File                        | Purpose                                                        |
+    |-----------------------------|----------------------------------------------------------------|
+    | `ops/initial_node.md`       | Turn `story_idea.md` into the opening scene plus three choices. |
+    | `ops/choice.md`             | Continue the story along the `CHOICE` branch of the parent node.|
+    | `ops/initial_image.md`      | Illustrate the root node.                                       |
+    | `ops/choice_image.md`       | Illustrate the `CHOICE` branch node.                            |
+    | `ops/initial_audio.md`      | Narrate the root node to `story/0.wav`.                         |
+    | `ops/choice_audio.md`       | Narrate the `CHOICE` branch node.                               |
+    | `ops/update_stylesheet.md`  | Rewrite `style.css` from `stylesheet_instructions.md`.          |
 
-### 6. Read aloud
-Click **🔊 Read Aloud** to have the current scene read to you using your browser's text-to-speech. Words are highlighted as they're spoken so you can follow along. You can also pick a preferred voice from the **Voice** dropdown at the top.
+    ## Local preferences (`localStorage`)
 
-### 7. Immersive mode
-Click the **⛶** button (or press **F**) to enter full-screen immersive mode — just you and the story, no distractions. Press **Esc** to return.
+    All keys are namespaced `interactiveStories.*`:
 
-### 8. Restyle the app
-Scroll down to **🎨 Update Stylesheet**, describe the look you want in plain English, and click **🖌 Update Stylesheet**. Reload the page to see your changes applied.
+    * `autoRead`, `autoImage`, `autoAudio`, `highlightReadalong` — toolbar toggles
+    * `voice` — selected browser TTS voice URI
+    * model selections via `saveModelSelections()` / `loadModelSelections()`
 
----
+    No story content is ever stored in `localStorage`; the filesystem is the source
+    of truth and badges are restored from `docops.status.json` on load.
 
-## 💡 Tips
+    ## Read-aloud
 
-- **Your idea is auto-saved** as you type, so you won't lose it if you navigate away.
-- **Branches are never overwritten.** Clicking an existing branch just navigates to it. Only the root scene asks for confirmation if you regenerate it.
-- **The Activity Log** at the bottom shows what the AI is working on in real time. Use the 🔄 button on the Story Tree to manually refresh if you think a new scene has finished generating.
-- **Stories can go deep.** The AI naturally steers toward an ending as your path grows longer, but you can keep branching for as long as you like.
-- **Each story is self-contained.** The AI keeps track of characters, locations, and world rules behind the scenes so your story stays consistent across branches.
+    Two independent mechanisms:
 
----
+    1. **Browser TTS** (`speechSynthesis`) with sentence-level read-along
+       highlighting. Falls back to a timer-driven highlight when the browser or
+       voice does not emit `boundary` events.
+    2. **Generated narration** (`story/<id>.wav`) which takes precedence over TTS
+       when present and auto-read is enabled.
 
-## 📁 What gets saved?
+    Both respect browser autoplay policy: playback is deferred until the first user
+    gesture, and the Read Aloud button shows "Click to Read" while deferred.
 
-Everything lives in your session folder:
+    ## Keyboard
 
-| File | What it is |
-|---|---|
-| `story_idea.md` | Your saved premise |
-| `story/0.md` | The opening scene |
-| `story/0a.md`, `story/0b.md`, … | Scenes reached by choosing A, B, or C |
-| `story/0ab.md`, `story/0ac.md`, … | Deeper branches, and so on |
-| `story/*.png` | Illustrations for each scene |
-| `story/*.wav` | Audio narration for each scene |
-| `style.css` | The app's visual style (updated by the stylesheet tool) |
+    | Key      | Action                                     |
+    |----------|--------------------------------------------|
+    | `F`      | Toggle immersive mode (when not in a field) |
+    | `Escape` | Exit immersive mode / dismiss confirmation  |
 
-The branching path is encoded right in the filename — `0abc` means you chose A from the root, then B, then C — so the entire history is visible at a glance.
+    ## Conformance
 
----
+    | Axis           | Status | Note |
+    |----------------|:------:|------|
+    | 3-file layout  |   ✅   |      |
+    | Modern JS      |   ✅   |      |
+    | Menubar        |   ✅   | `initMenu({ appName: 'Interactive Stories' })` |
+    | No dup. chrome |   ✅   | Usage/Git/Sessions/Download owned by the menubar |
+    | Viewport       |   ✅   |      |
+    | Mobile         |   ✅   | Verified at 360 / 768 / 1280 px |
 
-Enjoy your story. 🌿
+    ### Outstanding
+
+    * The end-state panel is still injected with `innerHTML` from a static template
+      literal. It contains no model- or user-supplied data, but should move to a
+      `<template>` element when `app.html` is next touched.

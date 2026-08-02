@@ -85,6 +85,60 @@ export async function checkout(basePath, branch, create = false) {
         body: JSON.stringify({branch, create})
     });
 }
+/**
+* Create a new branch, optionally rooted at a past commit / tag / branch.
+* Equivalent to `git branch <branch> [startPoint]` (+ `git checkout` when requested).
+* @param {string} basePath - Base path for the session
+* @param {string} branch - New branch name
+* @param {string|null} [startPoint] - Commit-ish to branch from; null/empty = current HEAD
+* @param {boolean} [checkoutAfter=true] - Check the new branch out immediately
+* @returns {Promise<Object>} Branch result
+*/
+export async function createBranch(basePath, branch, startPoint = null, checkoutAfter = true) {
+    return await gitApiCall(basePath, 'branch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            branch,
+            startPoint: startPoint || null,
+            create: true,
+            checkout: !!checkoutAfter
+        })
+    });
+}
+/**
+* Hard-reset the index and working tree to a ref. DESTRUCTIVE — uncommitted
+* changes to tracked files are lost. Equivalent to `git reset --hard <ref>`.
+* @param {string} basePath - Base path for the session
+* @param {string} [ref='HEAD'] - Commit-ish to reset to
+* @returns {Promise<Object>} Reset result
+*/
+export async function resetHard(basePath, ref = 'HEAD') {
+    return await gitApiCall(basePath, 'reset', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mode: 'hard', ref: ref || 'HEAD'})
+    });
+}
+/**
+* Remove untracked files from the working tree. DESTRUCTIVE.
+* Defaults match `git clean -fdx` (force, directories, ignored files).
+* @param {string} basePath - Base path for the session
+* @param {Object} [options]
+* @param {boolean} [options.directories=true] - -d
+* @param {boolean} [options.ignored=true] - -x
+* @param {boolean} [options.force=true] - -f
+* @param {boolean} [options.dryRun=false] - -n
+* @returns {Promise<Object>} Clean result (may include `removed` paths)
+*/
+export async function clean(basePath, options = {}) {
+    const {directories = true, ignored = true, force = true, dryRun = false} = options;
+    return await gitApiCall(basePath, 'clean', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({directories, ignored, force, dryRun})
+    });
+}
 
 /**
  * Get commit log
@@ -187,6 +241,9 @@ export const GitUtils = {
     commit,
     getBranches,
     checkout,
+    createBranch,
+    resetHard,
+    clean,
     getLog,
     formatStatus
 };

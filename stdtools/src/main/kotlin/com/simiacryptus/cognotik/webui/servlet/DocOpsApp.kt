@@ -93,23 +93,20 @@ open class DocOpsApp(
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
     }
-    // Automatically initialize a git repository and make an initial commit
-    if (!GitOperationHandler.isGitRepository(sessionRoot)) {
-      try {
-        GitOperationHandler.executeGitCommand(sessionRoot, "git", "init")
-        GitOperationHandler.executeGitCommand(sessionRoot, "git", "add", "-A")
-        GitOperationHandler.executeGitCommand(
-          sessionRoot,
-          "git",
-          "commit",
-          "-m",
-          "Initial commit from DocOps app session"
-        )
-      } catch (e: Exception) {
-        // Log but don't fail session creation if git init fails
-        LoggerFactory.getLogger(DocOpsApp::class.java)
-          .warn("Failed to initialize git repository for session: ${e.message}", e)
-      }
+    try {
+      GitOperationHandler.executeGitCommand(sessionRoot, "git", "init")
+      GitOperationHandler.executeGitCommand(sessionRoot, "git", "add", "-A")
+      GitOperationHandler.executeGitCommand(
+        sessionRoot,
+        "git",
+        "commit",
+        "-m",
+        "Initial commit from DocOps app session"
+      )
+    } catch (e: Exception) {
+      // Log but don't fail session creation if git init fails
+      LoggerFactory.getLogger(DocOpsApp::class.java)
+        .warn("Failed to initialize git repository for session: ${e.message}", e)
     }
     return newSession
   }

@@ -140,6 +140,9 @@ function position(menu, x, y) {
     menu.style.top = `${Math.max(4, top)}px`;
 }
 
+/** Answers whether a menu was actually open (Escape falls through if not). */
 export function closeContextMenu() {
-    open?.close();
+     if (!open) return false;
+     open.close();
+     return true;
 }

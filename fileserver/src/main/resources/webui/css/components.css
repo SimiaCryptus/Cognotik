@@ -1530,3 +1530,87 @@ table.fs-table {
     font-style: italic;
     text-align: center;
 }
+/* ------------------------------------------------------- touch & small screens
+  * Hit targets, hover-only affordances and overlay geometry. Written against
+  * the *pointer*, not the viewport, so a touch laptop benefits too — and with
+  * max()/min() so the density tokens keep their say.
+  * ------------------------------------------------------------------------- */
+@media (hover: none) {
+     /* Nothing ever hovers: a close button that only appears on hover is a
+        close button that does not exist. */
+     .fs-tab__close,
+     .fs-terminal__tab .fs-tab__close {
+         opacity: 1;
+     }
+}
+@media (pointer: coarse) {
+     button,
+     [role="menuitem"],
+     [role="tab"],
+     [role="treeitem"] {
+         /* Kills the 300 ms double-tap-zoom delay; dblclick still fires. */
+         touch-action: manipulation;
+     }
+     .fs-tree__row {
+         height: max(var(--fs-row-h), 34px);
+         line-height: max(var(--fs-row-h), 34px);
+         gap: var(--fs-space-3);
+     }
+     .fs-activity button {
+         width: max(var(--fs-rail-size), 40px);
+         height: max(var(--fs-rail-size), 40px);
+         font-size: 17px;
+     }
+     .fs-explorer__toolbar button,
+     .fs-terminal__toolbar button {
+         width: 34px;
+         height: 34px;
+     }
+     .fs-explorer__filter {
+         height: 34px;
+     }
+     .fs-tab {
+         min-height: max(var(--fs-tab-h), 40px);
+         padding-inline: var(--fs-space-4) var(--fs-space-3);
+     }
+     .fs-tab__close {
+         width: 26px;
+         height: 26px;
+     }
+     .fs-menu [role="menuitem"],
+     .fs-quickpick__item {
+         padding-block: var(--fs-space-3);
+     }
+     .fs-menubar button {
+         padding-block: var(--fs-space-2);
+     }
+}
+@media (max-width: 620px) {
+     .fs-toasts {
+         inset-inline: var(--fs-space-3);
+         max-width: none;
+     }
+     .fs-quickpick {
+         margin-top: 4vh;
+         width: 96vw;
+     }
+     .fs-quickpick__list {
+         max-height: 62vh;
+     }
+     .fs-menu {
+         max-width: calc(100vw - var(--fs-space-5));
+     }
+     dialog.fs-modal {
+         min-width: 0;
+         width: calc(100vw - var(--fs-space-5));
+         padding: var(--fs-space-5);
+     }
+     .fs-tab {
+         max-width: 170px;
+     }
+     .fs-preview__toolbar,
+     .fs-chat__toolbar {
+         overflow-x: auto;
+         scrollbar-width: none;
+     }
+}

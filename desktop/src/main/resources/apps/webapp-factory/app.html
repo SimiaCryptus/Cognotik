@@ -1,743 +1,493 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>🏗️ Webapp Builder</title>
-    <link href="style.css" rel="stylesheet">
-    <style>
-        /* Usage tracking styles */
-        .usage-summary-banner {
-            display: flex;
-            gap: 1.5rem;
-            padding: 1rem 1.25rem;
-            background: var(--color-surface, #1e1e2e);
-            border: 1px solid var(--color-border, #333);
-            border-radius: 8px;
-            margin: 1rem 0;
-            flex-wrap: wrap;
-        }
-        .usage-summary-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            min-width: 140px;
-        }
-        .usage-summary-label {
-            font-size: 0.78rem;
-            color: var(--color-text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .usage-summary-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--color-text, #eee);
-        }
-        .usage-summary-value.usage-cost {
-            color: var(--color-accent, #f5a623);
-        }
-        .usage-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
-        .usage-table th {
-            text-align: left;
-            padding: 0.6rem 0.75rem;
-            border-bottom: 2px solid var(--color-border, #333);
-            color: var(--color-text-muted, #888);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-        .usage-table td {
-            padding: 0.55rem 0.75rem;
-            border-bottom: 1px solid var(--color-border, #222);
-        }
-        .usage-table code {
-            font-size: 0.85rem;
-            background: var(--color-bg, #111);
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-        }
-        .usage-table .usage-totals-row {
-            border-top: 2px solid var(--color-border, #444);
-            background: var(--color-surface, rgba(255,255,255,0.03));
-        }
-        .usage-cost-cell {
-            color: var(--color-accent, #f5a623);
-            font-weight: 600;
-        }
-        .task-usage-entry {
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--color-border, #333);
-            border-radius: 8px;
-            margin-bottom: 0.75rem;
-            background: var(--color-surface, rgba(255,255,255,0.02));
-        }
-        .task-usage-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.4rem;
-        }
-        .task-usage-cost {
-            font-weight: 700;
-            color: var(--color-accent, #f5a623);
-            font-size: 1.05rem;
-        }
-        .task-usage-details {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-        .task-usage-model {
-            font-size: 0.82rem;
-            color: var(--color-text-muted, #888);
-        }
-        .task-usage-model code {
-            font-size: 0.8rem;
-            background: var(--color-bg, #111);
-            padding: 0.1rem 0.35rem;
-            border-radius: 3px;
-        }
-    </style>
-</head>
-<body>
-<div id="app">
-    <header>
-        <div class="header-logo">🏗️</div>
-        <h1>Webapp Builder</h1>
-        <p class="subtitle">Describe your idea → AI builds a complete, runnable web application</p>
-        <div class="header-tags">
-            <span class="header-tag">HTML</span>
-            <span class="header-tag">CSS</span>
-            <span class="header-tag">JavaScript</span>
-            <span class="header-tag">AI-Powered</span>
-        </div>
-    </header>
-    <nav id="pipeline-nav">
-        <ul>
-            <li><a class="nav-link active" data-section="section-input" href="#section-input">💡 Idea</a></li>
-            <li><a class="nav-link" data-section="section-pipeline" href="#section-pipeline">⚙️ Pipeline</a></li>
-            <li><a class="nav-link" data-section="section-test" href="#section-test">🧪 Test</a></li>
-            <li><a class="nav-link" data-section="section-update" href="#section-update">✏️ Update</a></li>
-            <li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
-            <li><a class="nav-link" data-section="section-git" href="#section-git">🔀 Git</a></li>
-            <li><a class="nav-link" data-section="section-usage" href="#section-usage">💰 Usage</a></li>
-            <li><a class="nav-link-launch" id="nav-launch-app" href="#" target="_blank" title="Open your built webapp in a new tab">🚀 Launch App</a></li>
-        </ul>
-    </nav>
-    <!-- Section: Idea Input -->
-    <section class="section active" id="section-input">
-        <h2>💡 Describe Your Webapp</h2>
-        <div class="card">
-            <h3>What do you want to build?</h3>
-            <p class="help-text">Describe your web application in detail — what it does, who it's for, key features,
-                design preferences, etc. The AI will generate a complete, runnable webapp with HTML, CSS, and JavaScript.</p>
-            <textarea id="idea-editor" placeholder="Example:
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🏗️ Webapp Builder</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+    <div id="app">
+        <header class="app-header">
+            <div class="app-logo" aria-hidden="true">🏗️</div>
+            <h1>Webapp Builder</h1>
+            <p class="app-subtitle">Describe your idea → AI builds a complete, runnable web application</p>
+            <ul class="app-tags">
+                <li class="tag">HTML</li>
+                <li class="tag">CSS</li>
+                <li class="tag">JavaScript</li>
+                <li class="tag">AI-Powered</li>
+            </ul>
+            <a class="btn btn-launch app-launch" id="app-launch-link" target="_blank" rel="noopener">🚀 Launch App</a>
+        </header>
+
+        <nav class="tab-nav" role="tablist" aria-label="Webapp Builder sections">
+            <button type="button" class="tab active" role="tab" id="tab-input"
+                    data-section="section-input" aria-controls="section-input" aria-selected="true">💡 Idea</button>
+            <button type="button" class="tab" role="tab" id="tab-pipeline"
+                    data-section="section-pipeline" aria-controls="section-pipeline" aria-selected="false">⚙️ Pipeline</button>
+            <button type="button" class="tab" role="tab" id="tab-test"
+                    data-section="section-test" aria-controls="section-test" aria-selected="false">🧪 Test</button>
+            <button type="button" class="tab" role="tab" id="tab-update"
+                    data-section="section-update" aria-controls="section-update" aria-selected="false">✏️ Update</button>
+            <button type="button" class="tab" role="tab" id="tab-results"
+                    data-section="section-results" aria-controls="section-results" aria-selected="false">📊 Results</button>
+        </nav>
+
+        <main>
+            <div class="app-preview-banner" id="app-preview-banner">
+                <div class="preview-banner-icon" aria-hidden="true">🚀</div>
+                <div class="preview-banner-text">
+                    <strong>Your webapp is ready!</strong>
+                    <span>Open the generated application in a new tab to see it live.</span>
+                </div>
+                <a class="btn btn-launch" id="banner-launch-link" target="_blank" rel="noopener">🚀 Launch App</a>
+            </div>
+
+            <!-- ── Idea ───────────────────────────────────────────── -->
+            <section class="section active" id="section-input" role="tabpanel" aria-labelledby="tab-input">
+                <div class="section-header">
+                    <h2>💡 Describe Your Webapp</h2>
+                    <p class="section-subtitle">Tell the AI what to build, pick your models, and choose a build strategy.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>What do you want to build?</h3></div>
+                    <p class="hint">Describe your web application in detail — what it does, who it's for, key features and
+                        design preferences. The AI will generate a complete, runnable webapp with HTML, CSS and JavaScript.</p>
+                    <label class="field-label" for="idea-editor">Webapp idea (Markdown)</label>
+                    <textarea id="idea-editor" rows="20" spellcheck="true" placeholder="Example:
 # Task Tracker Pro
 A simple, elegant task management web application for small teams.
-## Target Users
-- Small teams (2-10 people)
-- Freelancers managing multiple projects
 ## Key Features
 - Create, edit, and delete tasks
-- Organize tasks into projects and categories
-- Assign tasks to team members
-- Set due dates and priority levels
 - Kanban board view and list view
-- Simple search and filtering
 - Dark mode support
-## Tech Preferences
-- Single-page application
-- Clean, modern UI with CSS Grid/Flexbox
-- Local storage for persistence (no backend required)
-- Vanilla JS or lightweight framework
 ## Design
-- Minimalist aesthetic
-- Responsive design for mobile and desktop
-- Accessible (WCAG 2.1 AA)" rows="24" spellcheck="true"></textarea>
-            <div class="button-row">
-                <button class="btn btn-primary" id="save-idea">💾 Save Idea</button>
-                <span class="status-msg" id="idea-status"></span>
-            </div>
-        </div>
-        <div class="card">
-            <h3>🤖 Model Settings</h3>
-            <p class="help-text">Select which AI models to use for generating your webapp. Models are loaded from your configured API providers.</p>
-            <div class="model-settings-grid">
-                <div class="model-setting">
-                    <label for="model-smart">Smart Model</label>
-                    <p class="model-setting-desc">Primary model for code generation and architecture decisions.</p>
-                    <select id="model-smart" class="model-select">
-                        <option value="">Loading models…</option>
-                    </select>
-                </div>
-                <div class="model-setting">
-                    <label for="model-fast">Fast Model</label>
-                    <p class="model-setting-desc">Secondary model for quick tasks like parsing and formatting.</p>
-                    <select id="model-fast" class="model-select">
-                        <option value="">Loading models…</option>
-                    </select>
-                </div>
-                 <div class="model-setting">
-                     <label for="model-image">Image Model</label>
-                     <p class="model-setting-desc">Model used for image generation or vision tasks (required by the pipeline).</p>
-                     <select id="model-image" class="model-select">
-                         <option value="">Loading models…</option>
-                     </select>
-                 </div>
-            </div>
-            <div class="button-row">
-                <button class="btn btn-secondary" id="save-models">💾 Save Model Settings</button>
-                <button class="btn btn-secondary" id="refresh-models">🔄 Refresh Models</button>
-                <span class="status-msg" id="model-status"></span>
-            </div>
-        </div>
-        <div class="card">
-            <h3>🛠️ Render Mode</h3>
-            <p class="help-text">Choose how the AI should build your webapp. Both modes produce the same kind of output, but use different planning strategies under the hood.</p>
-            <div class="render-mode-options">
-                <label class="render-mode-option">
-                    <input type="radio" name="render-mode" value="ops/render_op.md" checked>
-                    <div class="render-mode-content">
-                        <strong>🏗️ Full Pipeline (SubPlan)</strong>
-                        <p class="render-mode-desc">Uses a structured sub-plan to break the build into multiple coordinated tasks. More thorough; better for complex apps. Higher token usage.</p>
-                    </div>
-                </label>
-                <label class="render-mode-option">
-                    <input type="radio" name="render-mode" value="ops/render_simple_op.md">
-                    <div class="render-mode-content">
-                        <strong>⚡ Simple Mode</strong>
-                        <p class="render-mode-desc">Generates the project in a single pass without an explicit sub-plan. Faster and cheaper; great for small or simple apps.</p>
-                    </div>
-                </label>
-            </div>
-            <div class="button-row">
-                <span class="status-msg" id="render-mode-status"></span>
-            </div>
-        </div>
-    </section>
-    <!-- App Preview Banner (shown when app is built) -->
-    <div class="app-preview-banner" id="app-preview-banner" style="display:none;">
-        <div class="preview-banner-content">
-            <div class="preview-banner-icon">🚀</div>
-            <div class="preview-banner-text">
-                <strong>Your webapp is ready!</strong>
-                <span>Open the generated application in a new tab to see it live.</span>
-            </div>
-            <a class="btn btn-launch" id="btn-launch-app-banner" href="#" target="_blank">
-                🚀 Launch App
-            </a>
-        </div>
-    </div>
-    <!-- Section: Pipeline -->
-    <section class="section" id="section-pipeline">
-        <h2>⚙️ Pipeline Execution</h2>
-        <!-- Pipeline Diagram -->
-        <div class="card">
-            <h3>Pipeline Overview</h3>
-            <div id="pipeline-diagram">
-                <div class="pipeline-stage" data-stage="input">
-                    <div class="stage-icon">💡</div>
-                    <div class="stage-label">Idea</div>
-                    <div class="stage-status" id="stage-status-input">Ready</div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-stage" data-stage="render">
-                    <div class="stage-icon">🏗️</div>
-                    <div class="stage-label">Build Project</div>
-                    <div class="stage-status" id="stage-status-render">Pending</div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-stage" data-stage="output">
-                    <div class="stage-icon">✅</div>
-                    <div class="stage-label">Complete</div>
-                    <div class="stage-status" id="stage-status-output">Pending</div>
-                </div>
-            </div>
-        </div>
-        <!-- Step 1: Render Project -->
-        <div class="card">
-            <h3>Step 1: Build Webapp</h3>
-            <div class="step-group">
-                <div class="step">
-                    <div class="step-header">
-                        <span class="step-number">1</span>
-                        <span class="step-title">Generate Project</span>
-                        <span class="step-badge" id="badge-render">pending</span>
-                    </div>
-                    <p class="step-desc">Takes your webapp idea and generates a complete project with HTML, CSS, and JavaScript.
-                        The AI agent plans the architecture and implements all files.</p>
+- Minimalist, responsive, accessible (WCAG 2.1 AA)"></textarea>
                     <div class="button-row">
-                        <button class="btn btn-run" data-badge="badge-render"
-                                data-op="ops/render_op.md"
-                                data-output="code/" data-viewer="viewer-render">▶ Run
-                        </button>
+                        <button type="button" class="btn btn-primary" id="save-idea">💾 Save Idea</button>
+                        <span class="status-msg" id="idea-status" role="status" aria-live="polite"></span>
                     </div>
-                    <div class="viewer" id="viewer-render"></div>
                 </div>
-            </div>
-        </div>
-        <!-- Run All -->
-        <div class="card">
-            <h3>🚀 Execution</h3>
-            <p class="help-text">Run the full build pipeline. The AI will read your idea and generate a complete, runnable web application.</p>
-            <div class="button-row">
-                <button class="btn btn-accent" id="run-all">▶ Run Pipeline</button>
-                <button class="btn btn-secondary" id="btn-zip-project-pipeline" title="Download project as ZIP">📦 Download ZIP</button>
-            </div>
-            <div class="log-output" id="batch-log"></div>
-        </div>
-    </section>
-    <!-- Section: Update / Refine -->
-    <section class="section" id="section-update">
-        <h2>✏️ Refine Your Webapp</h2>
-        <div class="card">
-            <h3>📝 Update Notes</h3>
-            <p class="help-text">Already built your webapp? Write notes describing what you'd like to change, fix, or improve.
-                The AI will read your notes and update the existing project accordingly.</p>
-            <textarea id="notes-editor" placeholder="Example:
+
+                <div class="card">
+                    <div class="card-header"><h3>🤖 Model Settings</h3></div>
+                    <p class="hint">Select which AI models to use for generating your webapp. Models are loaded from your
+                        configured API providers.</p>
+                    <div class="model-grid">
+                        <div class="model-setting">
+                            <label class="field-label" for="model-smart">Smart model</label>
+                            <p class="hint hint-sm">Primary model for code generation and architecture decisions.</p>
+                            <select id="model-smart" class="select">
+                                <option value="">Loading models…</option>
+                            </select>
+                        </div>
+                        <div class="model-setting">
+                            <label class="field-label" for="model-fast">Fast model</label>
+                            <p class="hint hint-sm">Secondary model for quick tasks like parsing and formatting.</p>
+                            <select id="model-fast" class="select">
+                                <option value="">Loading models…</option>
+                            </select>
+                        </div>
+                        <div class="model-setting">
+                            <label class="field-label" for="model-image">Image model</label>
+                            <p class="hint hint-sm">Model used for image generation or vision tasks.</p>
+                            <select id="model-image" class="select">
+                                <option value="">Loading models…</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-primary" id="save-models">💾 Save Model Settings</button>
+                        <button type="button" class="btn btn-secondary" id="refresh-models">🔄 Refresh Models</button>
+                        <span class="status-msg" id="model-status" role="status" aria-live="polite"></span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>🛠️ Render Mode</h3></div>
+                    <fieldset class="render-mode">
+                        <legend class="hint">Choose how the AI should build your webapp. Both modes produce the same kind
+                            of output but use different planning strategies.</legend>
+                        <label class="render-mode-option" for="render-mode-full">
+                            <input type="radio" id="render-mode-full" name="render-mode" value="ops/render_op.md" checked>
+                            <span class="render-mode-content">
+                                <strong>🏗️ Full Pipeline (SubPlan)</strong>
+                                <span class="hint hint-sm">Uses a structured sub-plan to break the build into multiple
+                                    coordinated tasks. More thorough; better for complex apps. Higher token usage.</span>
+                            </span>
+                        </label>
+                        <label class="render-mode-option" for="render-mode-simple">
+                            <input type="radio" id="render-mode-simple" name="render-mode" value="ops/render_simple_op.md">
+                            <span class="render-mode-content">
+                                <strong>⚡ Simple Mode</strong>
+                                <span class="hint hint-sm">Generates the project in a single pass without an explicit
+                                    sub-plan. Faster and cheaper; great for small or simple apps.</span>
+                            </span>
+                        </label>
+                    </fieldset>
+                    <span class="status-msg" id="render-mode-status" role="status" aria-live="polite"></span>
+                </div>
+            </section>
+
+            <!-- ── Pipeline ───────────────────────────────────────── -->
+            <section class="section" id="section-pipeline" role="tabpanel" aria-labelledby="tab-pipeline">
+                <div class="section-header">
+                    <h2>⚙️ Pipeline Execution</h2>
+                    <p class="section-subtitle">Turn your idea into a complete, runnable project.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>Pipeline Overview</h3></div>
+                    <ol class="pipeline-diagram" id="pipeline-diagram">
+                        <li class="pipeline-stage" data-stage="input">
+                            <span class="stage-icon" aria-hidden="true">💡</span>
+                            <span class="stage-label">Idea</span>
+                            <span class="stage-status" id="stage-status-input">Ready</span>
+                        </li>
+                        <li class="pipeline-stage" data-stage="render">
+                            <span class="stage-icon" aria-hidden="true">🏗️</span>
+                            <span class="stage-label">Build Project</span>
+                            <span class="stage-status" id="stage-status-render">Pending</span>
+                        </li>
+                        <li class="pipeline-stage" data-stage="output">
+                            <span class="stage-icon" aria-hidden="true">✅</span>
+                            <span class="stage-label">Complete</span>
+                            <span class="stage-status" id="stage-status-output">Pending</span>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>Step 1: Build Webapp</h3></div>
+                    <div class="step">
+                        <div class="step-header">
+                            <span class="step-number">1</span>
+                            <span class="step-title">Generate Project</span>
+                            <span class="step-badge pending" id="badge-render">pending</span>
+                        </div>
+                        <p class="step-desc">Takes your webapp idea and generates a complete project with HTML, CSS and
+                            JavaScript. The AI agent plans the architecture and implements all files.</p>
+                        <div class="button-row">
+                            <button type="button" class="btn btn-primary btn-run" id="btn-run-render"
+                                    data-op="ops/render_op.md"
+                                    data-output="code/"
+                                    data-badge="badge-render"
+                                    data-links="session-links-render">▶ Run</button>
+                        </div>
+                        <div class="session-link-container" id="session-links-render" data-session-links="code/"></div>
+                        <div class="viewer" id="viewer-render"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>🚀 Execution</h3></div>
+                    <p class="hint">Run the full build pipeline. The AI will read your idea and generate a complete,
+                        runnable web application.</p>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-accent" id="run-all">▶ Run Pipeline</button>
+                    </div>
+                    <div class="log-output" id="batch-log" role="log" aria-live="polite"></div>
+                </div>
+            </section>
+
+            <!-- ── Test ───────────────────────────────────────────── -->
+            <section class="section" id="section-test" role="tabpanel" aria-labelledby="tab-test">
+                <div class="section-header">
+                    <h2>🧪 Test Your Webapp</h2>
+                    <p class="section-subtitle">Run the generated app in headless Chrome and inspect the results.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>🤖 Headless Browser Test</h3></div>
+                    <p class="hint">Load your generated webapp in a Selenium-controlled headless Chrome browser and capture
+                        diagnostic artifacts: a screenshot, the browser console output, a network access log and the
+                        fully-rendered HTML. Diagnostics are captured shortly after page load so asynchronous content has
+                        time to render.</p>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-primary btn-run" id="run-test"
+                                data-op="ops/test_op.md"
+                                data-output="code/test.md"
+                                data-badge="badge-test"
+                                data-links="session-links-test">▶ Run Test</button>
+                        <button type="button" class="btn btn-secondary" id="btn-refresh-test-artifacts">🔄 Refresh Artifacts</button>
+                        <span class="step-badge pending" id="badge-test">pending</span>
+                        <span class="status-msg" id="test-status" role="status" aria-live="polite"></span>
+                    </div>
+                    <div class="session-link-container" id="session-links-test" data-session-links="code/test.md"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>🔍 Review Test Results with AI</h3></div>
+                    <p class="hint">After running the test, have the AI examine the captured artifacts and write a summary
+                        of findings — including bugs, issues or unexpected behaviours — into your update notes. You can then
+                        run the Update operation to apply fixes.</p>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-primary btn-run" id="run-review"
+                                data-op="ops/review_op.md"
+                                data-output="notes.md"
+                                data-badge="badge-review"
+                                data-links="session-links-review">🔍 Review Results</button>
+                        <span class="step-badge pending" id="badge-review">pending</span>
+                        <span class="status-msg" id="review-status" role="status" aria-live="polite"></span>
+                    </div>
+                    <div class="session-link-container" id="session-links-review" data-session-links="notes.md"></div>
+                    <div class="viewer" id="viewer-review"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>📸 Screenshot</h3></div>
+                    <p class="hint">Visual snapshot of the rendered page.</p>
+                    <div id="test-screenshot-container">
+                        <div class="empty-state">
+                            <div class="empty-icon" aria-hidden="true">📸</div>
+                            <p class="empty-title">No screenshot yet</p>
+                            <p class="empty-desc">Run <strong>Run Test</strong> above to capture one.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>🖥️ Browser Console Output</h3></div>
+                    <p class="hint">Messages logged to the browser console during page load.</p>
+                    <div class="console-panel">
+                        <div class="console-header"><span class="console-title">console.log</span></div>
+                        <div class="console-output" id="test-console-output">
+                            <div class="console-entry console-info">No console output yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>🌐 Network Access Log</h3></div>
+                    <p class="hint">All HTTP requests made by the page during loading and rendering.</p>
+                    <div id="test-network-container">
+                        <div class="empty-state">
+                            <div class="empty-icon" aria-hidden="true">🌐</div>
+                            <p class="empty-title">No network log yet</p>
+                            <p class="empty-desc">Run the test to capture request activity.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>📄 Rendered HTML</h3></div>
+                    <p class="hint">The page HTML after JavaScript has executed and async content has loaded.</p>
+                    <div id="test-html-container">
+                        <div class="empty-state">
+                            <div class="empty-icon" aria-hidden="true">📄</div>
+                            <p class="empty-title">No rendered HTML yet</p>
+                            <p class="empty-desc">Run the test to capture the DOM snapshot.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>💡 About Headless Testing</h3></div>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">⏱️</span>
+                            <div>
+                                <strong>Timing</strong>
+                                <p class="tip-text">Artifacts are captured a short delay after the page-load event so async
+                                    content can render.</p>
+                            </div>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">🐛</span>
+                            <div>
+                                <strong>Debug Errors</strong>
+                                <p class="tip-text">Check the console output for JavaScript exceptions, then use Review to
+                                    turn them into update notes.</p>
+                            </div>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">🌐</span>
+                            <div>
+                                <strong>Network Issues</strong>
+                                <p class="tip-text">The network log helps identify missing resources, broken links or
+                                    slow-loading assets.</p>
+                            </div>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">📐</span>
+                            <div>
+                                <strong>Visual Verification</strong>
+                                <p class="tip-text">The screenshot lets you see the rendered page without launching a
+                                    browser yourself.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Update ─────────────────────────────────────────── -->
+            <section class="section" id="section-update" role="tabpanel" aria-labelledby="tab-update">
+                <div class="section-header">
+                    <h2>✏️ Refine Your Webapp</h2>
+                    <p class="section-subtitle">Describe what to change, then let the AI update the existing project.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>📝 Update Notes</h3></div>
+                    <p class="hint">Already built your webapp? Write notes describing what you'd like to change, fix or
+                        improve. The AI will read your notes and update the existing project accordingly.</p>
+                    <label class="field-label" for="notes-editor">Update notes (Markdown)</label>
+                    <textarea id="notes-editor" rows="16" spellcheck="true" placeholder="Example:
 # Feedback &amp; Changes
 ## Bug Fixes
 - The dark mode toggle doesn't persist after page reload
-- Task cards overlap on mobile screens
 ## New Features
-- Add a &quot;due today&quot; filter to the sidebar
 - Add drag-and-drop reordering for tasks
-- Show a confirmation dialog before deleting a task
 ## Design Changes
-- Make the header smaller and sticky
-- Use a blue accent color instead of green
-- Increase font size in task cards for readability
-## General Notes
-- The overall structure is great, just needs these tweaks
-- Keep the existing kanban board layout" rows="18" spellcheck="true"></textarea>
-            <div class="button-row">
-                <button class="btn btn-primary" id="save-notes">💾 Save Notes</button>
-                <span class="status-msg" id="notes-status"></span>
-            </div>
-        </div>
-        <div class="card">
-            <h3>🔄 Apply Updates</h3>
-            <p class="help-text">Run the update operation to apply your notes to the existing project.
-                The AI will read your feedback and modify the generated code accordingly.</p>
-            <div class="step">
-                <div class="step-header">
-                    <span class="step-number">↻</span>
-                    <span class="step-title">Update Project</span>
-                    <span class="step-badge" id="badge-update">pending</span>
-                </div>
-                <p class="step-desc">Reads your update notes and applies changes to the existing webapp project files.</p>
-                <div class="button-row">
-                    <button class="btn btn-run" id="run-update"
-                            data-badge="badge-update"
-                            data-op="ops/update_op.md"
-                            data-output="code/" data-viewer="viewer-update">▶ Run Update
-                    </button>
-                </div>
-                <div class="viewer" id="viewer-update"></div>
-            </div>
-        </div>
-        <div class="card">
-            <h3>💡 Tips for Good Update Notes</h3>
-            <div class="tips-grid">
-                <div class="tip-item">
-                    <span class="tip-icon">🎯</span>
-                    <div>
-                        <strong>Be Specific</strong>
-                        <p class="tip-text">Instead of "make it better", say "increase the font size of headings to 1.5rem"</p>
+- Use a blue accent colour instead of green"></textarea>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-primary" id="save-notes">💾 Save Notes</button>
+                        <span class="status-msg" id="notes-status" role="status" aria-live="polite"></span>
                     </div>
                 </div>
-                <div class="tip-item">
-                    <span class="tip-icon">🐛</span>
-                    <div>
-                        <strong>Describe Bugs Clearly</strong>
-                        <p class="tip-text">Explain what happens vs. what should happen: "Clicking delete removes all tasks, should only remove the selected one"</p>
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <span class="tip-icon">📋</span>
-                    <div>
-                        <strong>Prioritize Changes</strong>
-                        <p class="tip-text">List the most important changes first so critical fixes are addressed even if the AI runs out of context</p>
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <span class="tip-icon">🔄</span>
-                    <div>
-                        <strong>Iterate</strong>
-                        <p class="tip-text">You can run multiple update cycles — refine a little at a time for best results</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Section: Results -->
-    <section class="section" id="section-results">
-        <h2>📊 Results</h2>
-        <div class="results-tabs">
-            <button class="results-tab active" data-tab="tab-preview">🖥️ Live Preview</button>
-            <button class="results-tab" data-tab="tab-files">📁 Project Files</button>
-            <button class="results-tab" data-tab="tab-readme">📄 README</button>
-            <button class="results-tab" data-tab="tab-download">📦 Download</button>
-            <button class="results-tab" data-tab="tab-usage">💰 Usage</button>
-        </div>
-        <div class="results-content">
-            <div class="tab-panel active" id="tab-preview">
+
                 <div class="card">
-                    <div class="button-row" style="margin-top:0;">
-                        <button class="btn btn-primary" id="btn-preview-refresh">🔄 Reload Preview</button>
-                        <a class="btn btn-launch" id="btn-preview-launch" href="#" target="_blank">🚀 Open in New Tab</a>
-                        <button class="btn btn-secondary" id="btn-preview-clear-console">🧹 Clear Console</button>
-                        <button class="btn btn-accent" id="btn-fix-errors" style="display:none;">🔧 Fix Errors with AI</button>
-                    </div>
-                    <div id="preview-iframe-container" class="preview-iframe-container">
-                        <div class="preview-placeholder" id="preview-placeholder">
-                            <p class="placeholder">Run the pipeline to generate your webapp, then it will appear here.</p>
+                    <div class="card-header"><h3>🔄 Apply Updates</h3></div>
+                    <p class="hint">Run the update operation to apply your notes to the existing project.</p>
+                    <div class="step">
+                        <div class="step-header">
+                            <span class="step-number">↻</span>
+                            <span class="step-title">Update Project</span>
+                            <span class="step-badge pending" id="badge-update">pending</span>
                         </div>
-                        <iframe id="preview-iframe" class="preview-iframe" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups allow-downloads" style="display:none; width:100%; min-height:600px; height:80vh; border:none; background:#fff;"></iframe>
-                    </div>
-                    <div class="console-panel" id="console-panel">
-                        <div class="console-header">
-                            <span class="console-title">🖥️ Console Output</span>
-                            <span class="console-counts" id="console-counts"></span>
+                        <p class="step-desc">Reads your update notes and applies changes to the existing webapp files.</p>
+                        <div class="button-row">
+                            <button type="button" class="btn btn-primary btn-run" id="btn-run-update"
+                                    data-op="ops/update_op.md"
+                                    data-output="code/"
+                                    data-badge="badge-update"
+                                    data-links="session-links-update">▶ Run Update</button>
                         </div>
-                        <div class="console-output" id="console-output">
-                            <div class="console-entry console-info">Waiting for app to load…</div>
+                        <div class="session-link-container" id="session-links-update" data-session-links="code/"></div>
+                        <div class="viewer" id="viewer-update"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>💡 Tips for Good Update Notes</h3></div>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">🎯</span>
+                            <div>
+                                <strong>Be Specific</strong>
+                                <p class="tip-text">Instead of “make it better”, say “increase the heading font size to
+                                    1.5rem”.</p>
+                            </div>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">🐛</span>
+                            <div>
+                                <strong>Describe Bugs Clearly</strong>
+                                <p class="tip-text">Explain what happens versus what should happen.</p>
+                            </div>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">📋</span>
+                            <div>
+                                <strong>Prioritise Changes</strong>
+                                <p class="tip-text">List the most important changes first so critical fixes land even if
+                                    context runs out.</p>
+                            </div>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon" aria-hidden="true">🔄</span>
+                            <div>
+                                <strong>Iterate</strong>
+                                <p class="tip-text">Run multiple update cycles — refine a little at a time for best
+                                    results.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="tab-panel" id="tab-files">
-                <div class="card">
-                    <div class="button-row">
-                        <button class="btn btn-secondary" id="btn-refresh-files-results">🔄 Refresh File List</button>
-                        <a class="btn btn-launch" id="btn-open-app-results" href="#" target="_blank">🚀 Launch App</a>
-                        <button class="btn btn-secondary" id="btn-zip-from-results" title="Download project as ZIP">📦 ZIP</button>
-                    </div>
-                    <div id="result-session-link" class="session-link-container" style="display:none;"></div>
-                    <div id="files-results-container">
-                        <p class="placeholder">Run the pipeline to generate project files.</p>
-                    </div>
+            </section>
+
+            <!-- ── Results ────────────────────────────────────────── -->
+            <section class="section" id="section-results" role="tabpanel" aria-labelledby="tab-results">
+                <div class="section-header">
+                    <h2>📊 Results</h2>
+                    <p class="section-subtitle">Preview the running app, browse the generated files and read the README.</p>
                 </div>
-            </div>
-            <div class="tab-panel" id="tab-readme">
-                <div class="card">
-                    <div class="button-row">
-                        <button class="btn btn-secondary" data-file="code/README.md" data-viewer="result-readme">🔄 Refresh
-                        </button>
-                    </div>
-                    <div class="result-viewer" id="result-readme">
-                        <p class="placeholder">Run the pipeline to generate the project README.</p>
-                    </div>
+
+                <div class="results-tabs" role="tablist" aria-label="Result views">
+                    <button type="button" class="results-tab active" role="tab" id="rtab-preview"
+                            data-tab="tab-preview" aria-controls="tab-preview" aria-selected="true">🖥️ Live Preview</button>
+                    <button type="button" class="results-tab" role="tab" id="rtab-files"
+                            data-tab="tab-files" aria-controls="tab-files" aria-selected="false">📁 Project Files</button>
+                    <button type="button" class="results-tab" role="tab" id="rtab-readme"
+                            data-tab="tab-readme" aria-controls="tab-readme" aria-selected="false">📄 README</button>
                 </div>
-            </div>
-            <div class="tab-panel" id="tab-download">
-                <div class="card">
-                    <h3>📦 Download Project</h3>
-                    <p class="help-text">Download your generated webapp files as a ZIP archive. You can download the entire project or specific subdirectories.</p>
-                    <div class="button-row">
-                        <button class="btn btn-accent" id="btn-zip-whole-project">📦 Download Entire Session</button>
-                        <button class="btn btn-primary" id="btn-zip-code-only">📁 Download Code Only</button>
-                    </div>
-                    <p class="help-text" style="margin-top:1rem;">Or download a specific path:</p>
-                    <div class="button-row">
-                        <input type="text" id="zip-custom-path" placeholder="/code" style="flex:1; padding:0.55rem 0.75rem; background:var(--color-bg); color:var(--color-text); border:1px solid var(--color-border); border-radius:6px; font-size:0.9rem; font-family:inherit;">
-                        <button class="btn btn-secondary" id="btn-zip-custom">📦 Download Path</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Section: Test (Selenium Diagnostics) -->
-    <section class="section" id="section-test">
-        <h2>🧪 Test Your Webapp</h2>
-        <div class="card">
-            <h3>🤖 Headless Browser Test</h3>
-            <p class="help-text">Load your generated webapp in a Selenium-controlled headless Chrome browser and capture
-                diagnostic artifacts: a screenshot, the browser's console output, a network access log, and the
-                fully-rendered HTML. Diagnostics are captured shortly after the page-load event completes so that
-                asynchronous content has time to render.</p>
-            <div class="button-row">
-                <button class="btn btn-run" id="run-test"
-                        data-badge="badge-test"
-                        data-op="ops/test_op.md"
-                        data-output="code/test.md">▶ Run Test
-                </button>
-                <button class="btn btn-secondary" id="btn-refresh-test-artifacts">🔄 Refresh Artifacts</button>
-                <span class="step-badge" id="badge-test">pending</span>
-                <span class="status-msg" id="test-status"></span>
-            </div>
-            <div id="test-session-link" class="session-link-container" style="display:none;"></div>
-        </div>
-        <div class="card">
-            <h3>🔍 Review Test Results with AI</h3>
-            <p class="help-text">After running the test, have the AI examine the captured artifacts (screenshot, console
-                output, network log, rendered HTML) and write a summary of findings — including bugs, issues, or unexpected
-                behaviors — into your update notes. You can then run the Update operation to apply fixes.</p>
-            <div class="button-row">
-                <button class="btn btn-run" id="run-review"
-                        data-badge="badge-review"
-                        data-op="ops/review_op.md"
-                        data-output="notes.md">🔍 Review Results
-                </button>
-                <span class="step-badge" id="badge-review">pending</span>
-                <span class="status-msg" id="review-status"></span>
-            </div>
-            <div id="review-session-link" class="session-link-container" style="display:none;"></div>
-            <div class="viewer" id="viewer-review"></div>
-        </div>
-        <div class="card">
-            <h3>📸 Screenshot</h3>
-            <p class="help-text">Visual snapshot of the rendered page.</p>
-            <div id="test-screenshot-container">
-                <p class="placeholder">No screenshot yet. Run the test to capture one.</p>
-            </div>
-        </div>
-        <div class="card">
-            <h3>🖥️ Browser Console Output</h3>
-            <p class="help-text">Messages logged to the browser console during page load (errors, warnings, logs).</p>
-            <div class="console-panel">
-                <div class="console-header">
-                    <span class="console-title">console.log</span>
-                </div>
-                <div class="console-output" id="test-console-output">
-                    <div class="console-entry console-info">No console output yet.</div>
-                </div>
-            </div>
-        </div>
-        <div class="card">
-            <h3>🌐 Network Access Log</h3>
-            <p class="help-text">All HTTP requests made by the page during loading and rendering.</p>
-            <div id="test-network-container">
-                <pre class="placeholder" style="white-space:pre-wrap;">No network log yet.</pre>
-            </div>
-        </div>
-        <div class="card">
-            <h3>📄 Rendered HTML</h3>
-            <p class="help-text">The page's HTML after JavaScript has executed and all asynchronous content has loaded.</p>
-            <div id="test-html-container">
-                <pre class="placeholder">No rendered HTML yet.</pre>
-            </div>
-        </div>
-        <div class="card">
-            <h3>💡 About Headless Testing</h3>
-            <div class="tips-grid">
-                <div class="tip-item">
-                    <span class="tip-icon">⏱️</span>
-                    <div>
-                        <strong>Timing</strong>
-                        <p class="tip-text">Artifacts are captured a short delay (default 1 second) after the page-load event so async content can render.</p>
+
+                <div class="tab-panel active" id="tab-preview" role="tabpanel" aria-labelledby="rtab-preview">
+                    <div class="card">
+                        <div class="button-row button-row-flush">
+                            <button type="button" class="btn btn-primary" id="btn-preview-refresh">🔄 Reload Preview</button>
+                            <a class="btn btn-launch" id="preview-launch-link" target="_blank" rel="noopener">🚀 Open in New Tab</a>
+                            <button type="button" class="btn btn-secondary" id="btn-preview-clear-console">🧹 Clear Console</button>
+                            <button type="button" class="btn btn-accent btn-fix-errors" id="btn-fix-errors">🔧 Fix Errors with AI</button>
+                        </div>
+                        <div class="preview-frame-container">
+                            <div class="empty-state" id="preview-placeholder">
+                                <div class="empty-icon" aria-hidden="true">🖥️</div>
+                                <p class="empty-title">Nothing to preview yet</p>
+                                <p class="empty-desc">Go to the <strong>Pipeline</strong> tab and run the build.</p>
+                            </div>
+                            <iframe id="preview-iframe" class="preview-frame" title="Generated webapp preview"
+                                    sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups allow-downloads"></iframe>
+                        </div>
+                        <div class="console-panel">
+                            <div class="console-header">
+                                <span class="console-title">🖥️ Console Output</span>
+                                <span class="console-counts" id="console-counts"></span>
+                            </div>
+                            <div class="console-output" id="console-output">
+                                <div class="console-entry console-info">Waiting for app to load…</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="tip-item">
-                    <span class="tip-icon">🐛</span>
-                    <div>
-                        <strong>Debug Errors</strong>
-                        <p class="tip-text">Check the console output for JavaScript exceptions. You can copy these into the Update tab to ask the AI to fix them.</p>
+
+                <div class="tab-panel" id="tab-files" role="tabpanel" aria-labelledby="rtab-files">
+                    <div class="card">
+                        <div class="button-row button-row-flush">
+                            <button type="button" class="btn btn-secondary" id="btn-refresh-files">🔄 Refresh File List</button>
+                            <a class="btn btn-launch" id="results-launch-link" target="_blank" rel="noopener">🚀 Launch App</a>
+                        </div>
+                        <div class="session-link-container" id="session-links-results" data-session-links="code/"></div>
+                        <div id="files-container">
+                            <div class="empty-state">
+                                <div class="empty-icon" aria-hidden="true">📁</div>
+                                <p class="empty-title">No project files yet</p>
+                                <p class="empty-desc">Go to the <strong>Pipeline</strong> tab and run the build.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="tip-item">
-                    <span class="tip-icon">🌐</span>
-                    <div>
-                        <strong>Network Issues</strong>
-                        <p class="tip-text">The network log helps identify missing resources, broken links, or slow-loading assets.</p>
+
+                <div class="tab-panel" id="tab-readme" role="tabpanel" aria-labelledby="rtab-readme">
+                    <div class="card">
+                        <div class="button-row button-row-flush">
+                            <button type="button" class="btn btn-secondary" id="btn-refresh-readme">🔄 Refresh</button>
+                        </div>
+                        <div class="viewer visible" id="result-readme">
+                            <div class="empty-state">
+                                <div class="empty-icon" aria-hidden="true">📄</div>
+                                <p class="empty-title">No README generated yet</p>
+                                <p class="empty-desc">Go to the <strong>Pipeline</strong> tab and run the build.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="tip-item">
-                    <span class="tip-icon">📐</span>
-                    <div>
-                        <strong>Visual Verification</strong>
-                        <p class="tip-text">The screenshot lets you see how the rendered page looks without launching a browser yourself.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Section: Git Version Control -->
-    <section class="section" id="section-git">
-        <h2>🔀 Version Control</h2>
-        <!-- Git Status -->
-        <div class="card">
-            <h3>📊 Repository Status</h3>
-            <p class="help-text">View the current state of your project's Git repository. Initialize a repo to start tracking changes.</p>
-            <div class="button-row">
-                <button class="btn btn-primary" id="btn-git-status">🔄 Refresh Status</button>
-                <button class="btn btn-accent" id="btn-git-init">🎬 Initialize Repository</button>
-                <span class="status-msg" id="git-status-msg"></span>
-            </div>
-            <div id="git-status-display" class="viewer" style="display:none; margin-top:1rem;">
-                <p class="placeholder">Click "Refresh Status" to view repository state.</p>
-            </div>
-        </div>
-        <!-- Git Commit -->
-        <div class="card">
-            <h3>💾 Commit Changes</h3>
-            <p class="help-text">Stage all changes and create a new commit. This automatically runs <code>git add -A</code> before committing.</p>
-            <div class="button-row" style="margin-top:0;">
-                <input type="text" id="git-commit-message" placeholder="Describe your changes…" style="flex:1; padding:0.55rem 0.75rem; background:var(--color-bg); color:var(--color-text); border:1px solid var(--color-border); border-radius:6px; font-size:0.9rem; font-family:inherit;">
-                <button class="btn btn-run" id="btn-git-commit">💾 Commit</button>
-            </div>
-            <span class="status-msg" id="git-commit-status"></span>
-        </div>
-        <!-- Git Branches -->
-        <div class="card">
-            <h3>🌿 Branches</h3>
-            <p class="help-text">View, create, and switch between branches to manage different versions of your webapp.</p>
-            <div class="button-row">
-                <button class="btn btn-primary" id="btn-git-branches">🔄 Refresh Branches</button>
-            </div>
-            <div id="git-branches-display" class="viewer" style="display:none; margin-top:1rem;">
-                <p class="placeholder">Click "Refresh Branches" to view available branches.</p>
-            </div>
-            <div style="margin-top:1rem; border-top:1px solid var(--color-border); padding-top:1rem;">
-                <p class="help-text" style="margin-bottom:0.5rem;">Switch or create a branch:</p>
-                <div class="button-row" style="margin-top:0;">
-                    <input type="text" id="git-branch-name" placeholder="Branch name…" style="flex:1; padding:0.55rem 0.75rem; background:var(--color-bg); color:var(--color-text); border:1px solid var(--color-border); border-radius:6px; font-size:0.9rem; font-family:inherit;">
-                    <button class="btn btn-secondary" id="btn-git-checkout">🔀 Switch</button>
-                    <button class="btn btn-accent" id="btn-git-create-branch">✨ Create &amp; Switch</button>
-                </div>
-                <span class="status-msg" id="git-branch-status"></span>
-            </div>
-        </div>
-        <!-- Git Log -->
-        <div class="card">
-            <h3>📜 Commit History</h3>
-            <p class="help-text">View the recent commit history for the current branch.</p>
-            <div class="button-row">
-                <button class="btn btn-primary" id="btn-git-log">🔄 Refresh Log</button>
-                <label style="display:flex; align-items:center; gap:0.4rem; color:var(--color-text-muted); font-size:0.88rem;">
-                    Show
-                    <select id="git-log-count" class="model-select" style="width:auto; min-width:70px; padding:0.35rem 1.8rem 0.35rem 0.5rem;">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    commits
-                </label>
-            </div>
-            <div id="git-log-display" class="viewer" style="display:none; margin-top:1rem; max-height:600px;">
-                <p class="placeholder">Click "Refresh Log" to view commit history.</p>
-            </div>
-        </div>
-        <!-- Quick Actions -->
-        <div class="card">
-            <h3>⚡ Quick Actions</h3>
-            <p class="help-text">Common workflows combining multiple Git operations.</p>
-            <div class="tips-grid">
-                <div class="tip-item" style="cursor:pointer;" id="quick-snapshot">
-                    <span class="tip-icon">📸</span>
-                    <div>
-                        <strong>Take Snapshot</strong>
-                        <p class="tip-text">Initialize repo (if needed), then commit all current changes with a timestamped message.</p>
-                    </div>
-                </div>
-                <div class="tip-item" style="cursor:pointer;" id="quick-branch-experiment">
-                    <span class="tip-icon">🧪</span>
-                    <div>
-                        <strong>Start Experiment</strong>
-                        <p class="tip-text">Commit current work, create a new "experiment" branch, and switch to it.</p>
-                    </div>
-                </div>
-                <div class="tip-item" style="cursor:pointer;" id="quick-backup-zip">
-                    <span class="tip-icon">💾</span>
-                    <div>
-                        <strong>Backup &amp; Download</strong>
-                        <p class="tip-text">Commit all changes, then download the entire project as a ZIP archive.</p>
-                    </div>
-                </div>
-            </div>
-            <span class="status-msg" id="git-quick-status"></span>
-        </div>
-    </section>
-    <!-- Section: Usage Tracking -->
-    <section class="section" id="section-usage">
-        <h2>💰 Usage Tracking</h2>
-        <div class="card">
-            <h3>📊 Session Usage Summary</h3>
-            <p class="help-text">View token usage and estimated costs for all AI model calls made during this session.
-                Usage is tracked per model and includes prompt tokens, completion tokens, and cost estimates.</p>
-            <div class="button-row">
-                <button class="btn btn-primary" id="btn-refresh-usage">🔄 Refresh Usage</button>
-                <button class="btn btn-secondary" id="btn-usage-json">📋 View Raw JSON</button>
-                <span class="status-msg" id="usage-status"></span>
-            </div>
-            <div id="usage-summary-banner" class="usage-summary-banner" style="display:none;">
-                <div class="usage-summary-item">
-                    <span class="usage-summary-label">Total Prompt Tokens</span>
-                    <span class="usage-summary-value" id="usage-total-prompt">0</span>
-                </div>
-                <div class="usage-summary-item">
-                    <span class="usage-summary-label">Total Completion Tokens</span>
-                    <span class="usage-summary-value" id="usage-total-completion">0</span>
-                </div>
-                <div class="usage-summary-item">
-                    <span class="usage-summary-label">Total Cost</span>
-                    <span class="usage-summary-value usage-cost" id="usage-total-cost">$0.00</span>
-                </div>
-            </div>
-            <div id="usage-table-container">
-                <p class="placeholder">No usage data yet. Run a pipeline operation to generate usage data.</p>
-            </div>
-        </div>
-        <div class="card">
-            <h3>📈 Per-Task Usage</h3>
-            <p class="help-text">Usage breakdown for individual task sessions. Each pipeline run or update creates a separate task session with its own usage tracking.</p>
-            <div class="button-row">
-                <button class="btn btn-primary" id="btn-refresh-task-usage">🔄 Refresh Task Usage</button>
-            </div>
-            <div id="task-usage-container">
-                <p class="placeholder">Task-level usage will appear here after pipeline runs.</p>
-            </div>
-        </div>
-        <div class="card">
-            <h3>💡 About Usage Tracking</h3>
-            <div class="tips-grid">
-                <div class="tip-item">
-                    <span class="tip-icon">🔢</span>
-                    <div>
-                        <strong>Token Counting</strong>
-                        <p class="tip-text">Prompt tokens are the input sent to the AI model. Completion tokens are the output generated. Both contribute to cost.</p>
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <span class="tip-icon">💵</span>
-                    <div>
-                        <strong>Cost Estimates</strong>
-                        <p class="tip-text">Costs are estimated based on the model's pricing. Actual billing may vary slightly depending on your API provider.</p>
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <span class="tip-icon">🔄</span>
-                    <div>
-                        <strong>Session Scope</strong>
-                        <p class="tip-text">Usage is tracked per session. Each browser session gets its own usage counter that resets when a new session starts.</p>
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <span class="tip-icon">📡</span>
-                    <div>
-                        <strong>Live Monitoring</strong>
-                        <p class="tip-text">Click on any task session link to view detailed usage for that specific AI operation in real time.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</div>
-<!--
-   Only needed when this deployment is NOT mounted at the host root
-   (e.g. behind a reverse-proxy path prefix). Must run BEFORE app.js.
-<script>
-   window.COGNOTIK_CONFIG = { serverBase: '/cognotik' };
-</script>
--->
-<script src="/lib/marked.min.js"></script>
-<script type="module" src="app.js"></script>
-</body>
-</html>
+            </section>
+        </main>
+    </div>
+    <script src="/lib/marked.min.js"></script>
+    <script type="module" src="app.js"></script>
+    </body>
+    </html>

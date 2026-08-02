@@ -4,7 +4,8 @@
  * Renders a shared menubar into any Cognotik app page:
  *   • Context-aware navigation (host root, app root, new session, session, IDE)
  *   • Link to the filesystem IDE view for the current session
- *   • Git status + operations (init / commit / branches / log)
+*   • Git status + operations (init / commit / branches / new branch / log /
+*     hard reset / clean), destructive actions gated behind a confirmation
  *   • Sessions: currently running tasks and all known sessions, with navigation
  *   • Token usage summary + per-model breakdown
 *   • Available budget indicator + "Usage & Credits" (buy credits) dialog
@@ -15,7 +16,10 @@
  */
 
 import {getProxyUrl as defaultGetProxyUrl} from './session.js';
-import {getStatus, initRepository, commit, getBranches, checkout, getLog, formatStatus} from './git.js';
+import {
+     getStatus, initRepository, commit, getBranches, checkout, getLog, formatStatus,
+     createBranch, resetHard, clean as cleanWorkingTree
+} from './git.js';
 import {fetchDocopsStatus} from './docops.js';
 import {aggregateUsage, createUsageTableHtml, renderUsageSummary} from './usage.js';
 import {escapeHtml, showToast} from './ui.js';
@@ -42,6 +46,9 @@ const MENU_CSS = `
 .cog-menu button:hover:not(:disabled) { background: #38425a; }
 .cog-menu button[aria-expanded="true"] { background: #4a90d9; border-color: #4a90d9; color: #fff; }
 .cog-menu button:disabled { opacity: .45; cursor: not-allowed; }
+.cog-menu button.cog-danger { background: #5a2b2b; border-color: #7a3a3a; color: #ffd9d9; }
+.cog-menu button.cog-danger:hover:not(:disabled) { background: #7a3a3a; }
+.cog-menu .cog-danger-link { color: #ff9b9b !important; }
 .cog-menu-panel { border-top: 1px solid #333d52; background: #232a39; padding: .6rem .8rem; max-height: 55vh; overflow: auto; }
 .cog-panel-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; flex-wrap: wrap; }
 .cog-panel-head strong { font-size: .95rem; }
@@ -374,7 +381,10 @@ export function initMenu(options = {}) {
                         <button type="button" data-git="init">Init</button>
                         <button type="button" data-git="commit">Commit&hellip;</button>
                         <button type="button" data-git="branches">Branches</button>
+                        <button type="button" data-git="new-branch">New Branch&hellip;</button>
                         <button type="button" data-git="log">Log</button>
+                        <button type="button" class="cog-danger" data-git="reset" title="git reset --hard">Reset&nbsp;--hard</button>
+                        <button type="button" class="cog-danger" data-git="clean" title="git clean -fdx">Clean&nbsp;-fdx</button>
                     </div>
                 </div>
                 <div data-git-output><p class="cog-muted">Open to load status&hellip;</p></div>
@@ -546,7 +556,59 @@ export function initMenu(options = {}) {
      }
 
     // ---- Git -------------------------------------------------------------
-    async function gitAction(action) {
+    function confirmDestructive(title, detail) {
+        return window.confirm(`${title}\n\n${detail}\n\nThis cannot be undone. Continue?`);
+    }
+
+    /** Prompt for a name and create (+ check out) a branch at `startPoint` (or HEAD). */
+    async function promptNewBranch(startPoint) {
+        const short = startPoint ? String(startPoint).slice(0, 7) : '';
+        const label = short ? 'commit ' + short : 'current HEAD';
+        const raw = window.prompt(`New branch name (from ${label}):`, '');
+        if (raw === null) return false;
+        const name = raw.trim();
+        if (!name || name.startsWith('-') || /[\s~^:?*\[\]\\]/.test(name)) {
+            showToast('Invalid branch name', 'error');
+            return false;
+        }
+        await createBranch(ctx.basePath, name, startPoint || null, true);
+        showToast(`Created and checked out ${name}` + (short ? ` at ${short}` : ''), 'success');
+        return true;
+    }
+
+    /** Wire up action links rendered inside the git output area. */
+    function bindGitOutputActions() {
+        gitOut.querySelectorAll('[data-checkout]').forEach(a => {
+            a.addEventListener('click', async ev => {
+                ev.preventDefault();
+                try {
+                    await checkout(ctx.basePath, a.dataset.checkout, false);
+                    showToast('Checked out ' + a.dataset.checkout, 'success');
+                } catch (e) {
+                    showToast('Checkout failed: ' + (e.message || String(e)), 'error');
+                }
+                gitAction('status');
+            });
+        });
+        gitOut.querySelectorAll('[data-branch-from]').forEach(a => {
+            a.addEventListener('click', async ev => {
+                ev.preventDefault();
+                try {
+                    if (await promptNewBranch(a.dataset.branchFrom || '')) await gitAction('status');
+                } catch (e) {
+                    showToast('Branch failed: ' + (e.message || String(e)), 'error');
+                }
+            });
+        });
+        gitOut.querySelectorAll('[data-reset-to]').forEach(a => {
+            a.addEventListener('click', ev => {
+                ev.preventDefault();
+                gitAction('reset', a.dataset.resetTo);
+            });
+        });
+    }
+
+    async function gitAction(action, ref = null) {
         if (!ctx.basePath) return;
         gitOut.innerHTML = '<p class="cog-muted">Working&hellip;</p>';
         try {
@@ -572,27 +634,60 @@ export function initMenu(options = {}) {
                 gitOut.innerHTML = '<ul class="cog-list">' + list.map(b => {
                         const name = typeof b === 'string' ? b : (b.name || '');
                         return `<li><span class="cog-tag${name === current ? ' completed' : ''}">${escapeHtml(name === current ? 'current' : 'branch')}</span>` +
-                            `<a href="#" data-checkout="${attr(name)}">${escapeHtml(name)}</a></li>`;
+                            `<a href="#" data-checkout="${attr(name)}">${escapeHtml(name)}</a>` +
+                            `<a href="#" data-branch-from="${attr(name)}" title="Create a new branch starting at ${attr(name)}">branch from</a></li>`;
                     }).join('') + '</ul>' +
-                    '<p class="cog-muted">Click a branch to check it out.</p>';
-                gitOut.querySelectorAll('[data-checkout]').forEach(a => {
-                    a.addEventListener('click', async ev => {
-                        ev.preventDefault();
-                        await checkout(ctx.basePath, a.dataset.checkout, false);
-                        showToast('Checked out ' + a.dataset.checkout, 'success');
-                        gitAction('status');
-                    });
-                });
+                    '<p class="cog-muted">Click a branch to check it out. ' +
+                    '<a href="#" data-branch-from="">New branch from HEAD&hellip;</a></p>';
+                bindGitOutputActions();
             } else if (action === 'log') {
                 const data = await getLog(ctx.basePath, 20);
                 const commits = data.commits || data.log || [];
                 gitOut.innerHTML = commits.length
-                    ? '<ul class="cog-list">' + commits.map(c =>
-                    `<li><span class="cog-tag">${escapeHtml(String(c.hash || c.id || '').slice(0, 7))}</span>` +
-                    `<span>${escapeHtml(c.message || '')}</span>` +
-                    `<span class="cog-muted">${escapeHtml(c.author || '')} ${escapeHtml(c.date || '')}</span></li>`
-                ).join('') + '</ul>'
+                    ? '<ul class="cog-list">' + commits.map(c => {
+                        const hash = String(c.hash || c.id || '');
+                        return `<li><span class="cog-tag">${escapeHtml(hash.slice(0, 7))}</span>` +
+                            `<span>${escapeHtml(c.message || '')}</span>` +
+                            `<span class="cog-muted">${escapeHtml(c.author || '')} ${escapeHtml(c.date || '')}</span>` +
+                            (hash
+                                ? `<a href="#" data-branch-from="${attr(hash)}" title="Create a new branch at this commit">branch</a>` +
+                                  `<a href="#" class="cog-danger-link" data-reset-to="${attr(hash)}" title="git reset --hard to this commit">reset</a>`
+                                : '') +
+                            '</li>';
+                    }).join('') + '</ul>' +
+                    '<p class="cog-muted">Use <em>branch</em> to start a new branch at a past commit, ' +
+                    '<em>reset</em> to hard-reset onto it.</p>'
                     : '<p class="cog-muted">No commits.</p>';
+                bindGitOutputActions();
+            } else if (action === 'new-branch') {
+                await promptNewBranch(ref || '');
+                gitOut.innerHTML = formatStatus(await getStatus(ctx.basePath));
+            } else if (action === 'reset') {
+                const target = ref || 'HEAD';
+                const short = String(target).slice(0, 7);
+                const ok = confirmDestructive(
+                    `git reset --hard ${short}`,
+                    'All uncommitted changes to tracked files will be permanently discarded' +
+                    (ref ? `, and the current branch will be moved to ${short}.` : '.'));
+                if (ok) {
+                    await resetHard(ctx.basePath, target);
+                    showToast('Hard reset to ' + short, 'success');
+                }
+                gitOut.innerHTML = formatStatus(await getStatus(ctx.basePath));
+            } else if (action === 'clean') {
+                const ok = confirmDestructive(
+                    'git clean -fdx',
+                    'All untracked and ignored files and directories (including build output and ' +
+                    'local-only files) will be deleted from the working tree.');
+                if (ok) {
+                    const res = await cleanWorkingTree(ctx.basePath, {
+                        directories: true, ignored: true, force: true
+                    });
+                    const removed = (res && (res.removed || res.files || res.paths)) || [];
+                    showToast('Working tree cleaned' +
+                        (removed.length ? ` (${removed.length} path(s) removed)` : ''), 'success');
+                }
+                gitOut.innerHTML = formatStatus(await getStatus(ctx.basePath));
             }
         } catch (e) {
             gitOut.innerHTML = `<p class="cog-muted">Git error: ${escapeHtml(e.message || String(e))}</p>`;

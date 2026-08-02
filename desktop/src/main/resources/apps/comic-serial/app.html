@@ -1,358 +1,249 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comic Serial Generator</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<!-- Header -->
-<header class="app-header">
-    <h1>📚 Comic Serial Generator</h1>
-    <p class="subtitle">Turn your ideas into an ongoing comic book series — one episode at a time</p>
-</header>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Comic Serial Generator</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+    <header class="app-header">
+        <h1>📚 Comic Serial Generator</h1>
+        <p class="subtitle">Turn your ideas into an ongoing comic book series — one episode at a time</p>
+    </header>
 
-<!-- Navigation Tabs -->
-<nav class="tab-nav">
-    <a href="#" class="nav-link active" data-section="section-input">💡 Idea</a>
-    <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
-    <a href="#" class="nav-link" data-section="section-series">📖 Series</a>
-    <a href="#" class="nav-link" data-section="section-usage">💰 Usage</a>
-    <a href="#" class="nav-link" data-section="section-settings">🤖 Models</a>
-</nav>
+    <nav class="tab-nav" role="tablist" aria-label="Comic Serial sections">
+        <button type="button" role="tab" id="tab-input" class="nav-link active"
+                data-section="section-input" aria-controls="section-input" aria-selected="true">💡 Idea</button>
+        <button type="button" role="tab" id="tab-pipeline" class="nav-link"
+                data-section="section-pipeline" aria-controls="section-pipeline" aria-selected="false" tabindex="-1">⚙️ Pipeline</button>
+        <button type="button" role="tab" id="tab-series" class="nav-link"
+                data-section="section-series" aria-controls="section-series" aria-selected="false" tabindex="-1">📖 Series</button>
+        <button type="button" role="tab" id="tab-settings" class="nav-link"
+                data-section="section-settings" aria-controls="section-settings" aria-selected="false" tabindex="-1">🤖 Models</button>
+    </nav>
 
-<!-- Main Content -->
-<main>
+    <main>
 
-    <!-- ===== INPUT SECTION ===== -->
-    <div id="section-input" class="section active">
-        <h2>💡 Your Idea</h2>
-        <div class="card">
-            <h3>Article / Story Concept</h3>
-            <p class="help-text">
-                Write or paste the article, story idea, or concept you want turned into a comic serial.
-                This will serve as the foundation for the first episode and guide the tone of all sequels.
-            </p>
-            <textarea id="idea-editor" rows="16"
-                      placeholder="Enter your story idea, article, or concept here...&#10;&#10;Example:&#10;A lone astronaut discovers an ancient alien library on Europa. Each book she opens reveals a chapter of Earth's forgotten history — but reading them slowly rewrites her own memories..."></textarea>
-            <div class="button-row">
-                <button id="save-idea" class="btn btn-primary">💾 Save Idea</button>
-                <span id="idea-status" class="status-msg"></span>
+        <!-- ===== IDEA ===== -->
+        <section id="section-input" class="section active" role="tabpanel" aria-labelledby="tab-input">
+            <div class="section-header">
+                <h2>💡 Your Idea</h2>
+                <p class="section-subtitle">The seed that every episode grows from.</p>
             </div>
-        </div>
-    </div>
-
-    <!-- ===== PIPELINE SECTION ===== -->
-    <div id="section-pipeline" class="section">
-        <h2>⚙️ Pipeline</h2>
-
-        <!-- Pipeline Diagram -->
-        <div class="card pipeline-overview">
-            <h3>How It Works</h3>
-            <div id="pipeline-diagram">
-                <div class="pipeline-stage" data-stage="idea">
-                    <div class="stage-icon">💡</div>
-                    <div class="stage-label">Idea</div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-stage" data-stage="comic1">
-                    <div class="stage-icon">🎨</div>
-                    <div class="stage-label">Comic #1</div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-stage" data-stage="sequel">
-                    <div class="stage-icon">📖</div>
-                    <div class="stage-label">Comic #2</div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-stage" data-stage="more">
-                    <div class="stage-icon">♾️</div>
-                    <div class="stage-label">…and more</div>
-                </div>
-                <div class="pipeline-arrow">→</div>
-                <div class="pipeline-stage" data-stage="htmlbook">
-                    <div class="stage-icon">📕</div>
-                    <div class="stage-label">HTML Book</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 1: Generate First Comic -->
-        <div class="card">
-            <div class="step">
-                <div class="step-header">
-                    <span class="step-number">1</span>
-                    <span class="step-title">Generate First Comic</span>
-                    <span id="badge-comic-1" class="step-badge pending">pending</span>
-                </div>
-                <p class="step-desc">
-                    Create the first episode of your comic serial from the original idea.
-                    This establishes the characters, setting, art style, and narrative arc.
+            <div class="card">
+                <div class="card-header"><h3>Article / Story Concept</h3></div>
+                <p class="hint">
+                    Write or paste the article, story idea, or concept you want turned into a comic serial.
+                    This becomes the foundation for the first episode and guides the tone of all sequels.
+                    Changes auto-save a moment after you stop typing.
                 </p>
+                <label class="field-label" for="idea-editor">Story idea</label>
+                <textarea id="idea-editor" rows="14"
+                          placeholder="Enter your story idea, article, or concept here…&#10;&#10;Example:&#10;A lone astronaut discovers an ancient alien library on Europa. Each book she opens reveals a chapter of Earth's forgotten history — but reading them slowly rewrites her own memories…"></textarea>
                 <div class="button-row">
-                    <button class="btn btn-primary btn-run"
-                            data-op="ops/comic_op.md"
-                            data-output="comic_1.md"
-                            data-badge="badge-comic-1"
-                            data-viewer="viewer-comic-1">
-                        🎨 Generate Comic #1
-                    </button>
-                    <button class="btn btn-secondary btn-view"
-                            data-file="comic_1.md"
-                            data-viewer="viewer-comic-1">
-                        👁 View
-                    </button>
+                    <button type="button" id="save-idea" class="btn btn-primary">💾 Save Idea</button>
+                    <span id="idea-status" class="status-msg" role="status" aria-live="polite"></span>
                 </div>
-                <div id="viewer-comic-1" class="viewer"></div>
             </div>
-        </div>
+        </section>
 
-        <!-- Step 2: Generate Sequels -->
-        <div class="card">
-            <div class="step">
-                <div class="step-header">
-                    <span class="step-number">2+</span>
-                    <span class="step-title">Generate Next Episode</span>
-                    <span id="badge-sequel" class="step-badge pending">pending</span>
+        <!-- ===== PIPELINE ===== -->
+        <section id="section-pipeline" class="section" role="tabpanel" aria-labelledby="tab-pipeline" hidden>
+            <div class="section-header">
+                <h2>⚙️ Pipeline</h2>
+                <p class="section-subtitle">Generate episodes, then compile them into one comicbook.</p>
+            </div>
+
+            <div class="card pipeline-overview">
+                <div class="card-header"><h3>How It Works</h3></div>
+                <ol id="pipeline-diagram" aria-label="Pipeline stages">
+                    <li class="pipeline-stage"><span class="stage-icon" aria-hidden="true">💡</span><span class="stage-label">Idea</span></li>
+                    <li class="pipeline-arrow" aria-hidden="true">→</li>
+                    <li class="pipeline-stage"><span class="stage-icon" aria-hidden="true">🎨</span><span class="stage-label">Comic #1</span></li>
+                    <li class="pipeline-arrow" aria-hidden="true">→</li>
+                    <li class="pipeline-stage"><span class="stage-icon" aria-hidden="true">📖</span><span class="stage-label">Comic #2</span></li>
+                    <li class="pipeline-arrow" aria-hidden="true">→</li>
+                    <li class="pipeline-stage"><span class="stage-icon" aria-hidden="true">♾️</span><span class="stage-label">…and more</span></li>
+                    <li class="pipeline-arrow" aria-hidden="true">→</li>
+                    <li class="pipeline-stage stage-final"><span class="stage-icon" aria-hidden="true">📕</span><span class="stage-label">HTML Book</span></li>
+                </ol>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Generate First Comic</span>
+                        <span id="badge-comic-1" class="step-badge pending">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        Create the first episode from the original idea. This establishes the characters,
+                        setting, art style, and narrative arc.
+                    </p>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-primary btn-run"
+                                data-op="ops/comic_op.md"
+                                data-output="comic_1.md"
+                                data-badge="badge-comic-1"
+                                data-viewer="viewer-comic-1">🎨 Generate Comic #1</button>
+                        <button type="button" class="btn btn-secondary btn-view"
+                                data-file="comic_1.md"
+                                data-viewer="viewer-comic-1">👁 View</button>
+                    </div>
+                    <div class="session-link-container" id="links-comic-1" data-session-links="comic_1.md"></div>
+                    <div id="viewer-comic-1" class="viewer"></div>
                 </div>
-                <p class="step-desc">
-                    Continue the story! Each new episode builds on the previous one while staying
-                    true to the original idea. Generate as many episodes as you like.
-                </p>
-                <div class="sequel-controls">
+            </div>
+
+            <!-- Step 2+ -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2+</span>
+                        <span class="step-title">Generate Next Episode</span>
+                        <span id="badge-sequel" class="step-badge pending">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        Continue the story. Each new episode builds on the previous one while staying
+                        true to the original idea.
+                    </p>
                     <div class="sequel-info">
                         <span class="label">Current episodes:</span>
                         <span id="episode-count" class="episode-count">0</span>
-                        <span class="label">→ Next will be:</span>
+                        <span class="label">Next will be:</span>
                         <span id="next-episode-label" class="episode-count">#1</span>
                     </div>
                     <div class="button-row">
-                        <button class="btn btn-accent" id="generate-sequel">
-                            📖 Generate Next Episode
-                        </button>
-                        <button class="btn btn-secondary" id="refresh-count">
-                            🔄 Refresh Count
-                        </button>
+                        <button type="button" class="btn btn-accent" id="generate-sequel">📖 Generate Next Episode</button>
+                        <button type="button" class="btn btn-secondary" id="refresh-count">🔄 Refresh Count</button>
                     </div>
-                </div>
-                <div id="viewer-sequel" class="viewer"></div>
-            </div>
-        </div>
-
-        <!-- Batch: Generate Multiple -->
-        <div class="card">
-            <div class="step">
-                <div class="step-header">
-                    <span class="step-number">⚡</span>
-                    <span class="step-title">Batch Generation</span>
-                </div>
-                <p class="step-desc">
-                    Generate multiple episodes in sequence. The pipeline will create the first comic
-                    (if needed) and then generate the requested number of sequels.
-                </p>
-                <div class="batch-controls">
-                    <label for="batch-count">Number of episodes to generate:</label>
-                    <div class="batch-input-row">
-                        <input type="number" id="batch-count" min="1" max="20" value="3" class="batch-input">
-                        <button class="btn btn-accent" id="run-batch">🚀 Generate Series</button>
-                    </div>
-                </div>
-                <div id="batch-log" class="batch-log"></div>
-            </div>
-        </div>
-        <!-- Step 3: Compile HTML Book -->
-        <div class="card">
-            <div class="step">
-                <div class="step-header">
-                    <span class="step-number">3</span>
-                    <span class="step-title">Compile HTML Comicbook</span>
-                    <span id="badge-htmlbook" class="step-badge pending">pending</span>
-                </div>
-                <p class="step-desc">
-                    Compile all generated comic episodes into a single, self-contained HTML comicbook.
-                    Images are referenced inline, captions are displayed below panels, and the page is
-                    styled for a polished reading experience.
-                </p>
-                <div class="button-row">
-                    <button class="btn btn-primary" id="generate-htmlbook">
-                        📕 Generate HTML Book
-                    </button>
-                    <button class="btn btn-secondary btn-view"
-                            data-file="comicbook.html"
-                            data-viewer="viewer-htmlbook">
-                        👁 View
-                    </button>
-                    <button class="btn btn-secondary" id="open-htmlbook-tab">
-                        🔗 Open in New Tab
-                    </button>
-                </div>
-                <div id="viewer-htmlbook" class="viewer"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== SERIES SECTION ===== -->
-    <div id="section-series" class="section">
-        <h2>📖 Comic Series</h2>
-
-        <div class="card">
-            <div class="series-header">
-                <h3>Your Episodes</h3>
-                <div class="button-row">
-                    <button class="btn btn-secondary" id="refresh-series">🔄 Refresh</button>
-                    <button class="btn btn-accent" id="series-add-episode">📖 Generate Next Episode</button>
-                    <button class="btn btn-primary" id="series-compile-book">📕 Compile Book</button>
-                    <button class="btn btn-secondary" id="series-view-book">🔗 View Book</button>
+                    <div class="session-link-container" id="links-sequel"></div>
+                    <div id="viewer-sequel" class="viewer"></div>
                 </div>
             </div>
-        </div>
 
-        <div id="series-container" class="series-container">
+            <!-- Batch -->
             <div class="card">
-                <p class="placeholder">No episodes yet. Go to the Pipeline tab to start generating your comic series!</p>
-            </div>
-        </div>
-    </div>
-    <!-- ===== USAGE SECTION ===== -->
-    <div id="section-usage" class="section">
-        <h2>💰 Usage & Costs</h2>
-        <div class="card">
-            <h3>Session Usage</h3>
-            <p class="help-text">
-                Track token usage and estimated costs for AI operations in this session.
-                Usage is broken down by model, showing prompt tokens, completion tokens, and cost.
-            </p>
-            <div class="button-row">
-                <button class="btn btn-primary" id="refresh-usage">🔄 Refresh Usage</button>
-                <button class="btn btn-secondary" id="toggle-usage-format">{ } JSON View</button>
-                <span id="usage-status" class="status-msg"></span>
-            </div>
-        </div>
-        <!-- Usage Summary Cards -->
-        <div id="usage-summary" class="usage-summary">
-            <div class="usage-summary-card">
-                <div class="usage-summary-icon">📤</div>
-                <div class="usage-summary-detail">
-                    <span class="usage-summary-value" id="usage-total-prompt">—</span>
-                    <span class="usage-summary-label">Prompt Tokens</span>
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">⚡</span>
+                        <span class="step-title">Batch Generation</span>
+                    </div>
+                    <p class="step-desc">
+                        Generate multiple episodes in sequence. The pipeline creates the first comic
+                        (if needed), then the requested number of sequels, then compiles the book.
+                    </p>
+                    <div class="batch-controls">
+                        <label class="field-label" for="batch-count">Number of episodes to generate</label>
+                        <div class="batch-input-row">
+                            <input type="number" id="batch-count" min="1" max="20" value="3" class="batch-input">
+                            <button type="button" class="btn btn-accent" id="run-batch">🚀 Generate Series</button>
+                        </div>
+                    </div>
+                    <div id="batch-log" class="batch-log" role="log" aria-live="polite"></div>
                 </div>
             </div>
-            <div class="usage-summary-card">
-                <div class="usage-summary-icon">📥</div>
-                <div class="usage-summary-detail">
-                    <span class="usage-summary-value" id="usage-total-completion">—</span>
-                    <span class="usage-summary-label">Completion Tokens</span>
+
+            <!-- Step 3 -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <span class="step-title">Compile HTML Comicbook</span>
+                        <span id="badge-htmlbook" class="step-badge pending">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        Compile every generated episode into a single, self-contained HTML comicbook with
+                        inline panels and captions.
+                    </p>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-primary" id="generate-htmlbook">📕 Generate HTML Book</button>
+                        <button type="button" class="btn btn-secondary btn-view"
+                                data-file="comicbook.html"
+                                data-viewer="viewer-htmlbook">👁 View</button>
+                        <button type="button" class="btn btn-secondary" id="open-htmlbook-tab">🔗 Open in New Tab</button>
+                    </div>
+                    <div class="session-link-container" id="links-htmlbook" data-session-links="comicbook.html"></div>
+                    <div id="viewer-htmlbook" class="viewer"></div>
                 </div>
             </div>
-            <div class="usage-summary-card">
-                <div class="usage-summary-icon">🪙</div>
-                <div class="usage-summary-detail">
-                    <span class="usage-summary-value" id="usage-total-tokens">—</span>
-                    <span class="usage-summary-label">Total Tokens</span>
+        </section>
+
+        <!-- ===== SERIES ===== -->
+        <section id="section-series" class="section" role="tabpanel" aria-labelledby="tab-series" hidden>
+            <div class="section-header">
+                <h2>📖 Comic Series</h2>
+                <p class="section-subtitle">Every episode generated so far, newest expanded.</p>
+            </div>
+
+            <div class="card">
+                <div class="series-header">
+                    <h3>Your Episodes</h3>
+                    <div class="button-row">
+                        <button type="button" class="btn btn-secondary" id="refresh-series">🔄 Refresh</button>
+                        <button type="button" class="btn btn-accent" id="series-add-episode">📖 Next Episode</button>
+                        <button type="button" class="btn btn-primary" id="series-compile-book">📕 Compile Book</button>
+                        <button type="button" class="btn btn-secondary" id="series-view-book">🔗 View Book</button>
+                    </div>
+                </div>
+                <span id="series-status" class="status-msg" role="status" aria-live="polite"></span>
+            </div>
+
+            <div id="series-container" class="series-container"></div>
+        </section>
+
+        <!-- ===== MODELS ===== -->
+        <section id="section-settings" class="section" role="tabpanel" aria-labelledby="tab-settings" hidden>
+            <div class="section-header">
+                <h2>🤖 Model Settings</h2>
+                <p class="section-subtitle">Per-step overrides for this app's generation ops.</p>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>AI Model Selection</h3></div>
+                <p class="hint">
+                    The smart model handles creative writing, the fast model handles parsing and lighter
+                    tasks, and the image model draws the panels. Leave a field empty to use the default.
+                </p>
+                <div class="model-settings-grid">
+                    <div class="model-setting">
+                        <label class="field-label" for="comic-smart-model">🧠 Smart Model</label>
+                        <p class="setting-desc">Creative writing, story generation, complex reasoning.</p>
+                        <select id="comic-smart-model" class="model-select">
+                            <option value="">Loading models…</option>
+                        </select>
+                    </div>
+                    <div class="model-setting">
+                        <label class="field-label" for="comic-fast-model">⚡ Fast Model</label>
+                        <p class="setting-desc">Parsing, formatting, lighter processing tasks.</p>
+                        <select id="comic-fast-model" class="model-select">
+                            <option value="">Loading models…</option>
+                        </select>
+                    </div>
+                    <div class="model-setting">
+                        <label class="field-label" for="comic-image-model">🎨 Image Model</label>
+                        <p class="setting-desc">Comic panel artwork and illustrations.</p>
+                        <select id="comic-image-model" class="model-select">
+                            <option value="">Loading models…</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="button-row">
+                    <button type="button" id="save-model-settings" class="btn btn-primary">💾 Save Model Settings</button>
+                    <button type="button" id="reset-model-settings" class="btn btn-secondary">↩ Reset to Defaults</button>
+                    <span id="model-status" class="status-msg" role="status" aria-live="polite"></span>
                 </div>
             </div>
-            <div class="usage-summary-card usage-summary-cost">
-                <div class="usage-summary-icon">💵</div>
-                <div class="usage-summary-detail">
-                    <span class="usage-summary-value" id="usage-total-cost">—</span>
-                    <span class="usage-summary-label">Estimated Cost</span>
-                </div>
+            <div class="card">
+                <div class="card-header"><h3>Current Configuration</h3></div>
+                <div id="model-summary" class="model-summary"></div>
             </div>
-        </div>
-        <!-- Usage Table -->
-        <div class="card" id="usage-table-card">
-            <h3>Breakdown by Model</h3>
-            <div id="usage-table-container">
-                <p class="placeholder">No usage data yet. Run some operations first, then click "Refresh Usage".</p>
-            </div>
-        </div>
-        <!-- JSON View (hidden by default) -->
-        <div class="card" id="usage-json-card" style="display: none;">
-            <h3>Raw JSON</h3>
-            <pre id="usage-json-output" class="usage-json-output"></pre>
-        </div>
-        <!-- Per-Task Usage -->
-        <div class="card">
-            <h3>Task Sessions</h3>
-            <p class="help-text">
-                View usage for individual task sessions. Each comic generation or compilation
-                runs in its own session with separate usage tracking.
-            </p>
-            <div id="task-sessions-container">
-                <p class="placeholder">No task sessions recorded yet.</p>
-            </div>
-        </div>
-         <!-- Active / Historical Sessions -->
-         <div class="card">
-             <h3>Active Sessions</h3>
-             <p class="help-text">
-                 Monitoring links for every task started in this app. Links remain available
-                 after tasks complete so you can review the logs.
-             </p>
-             <div id="active-sessions-panel">
-                 <p class="placeholder">No sessions started yet.</p>
-             </div>
-         </div>
-    </div>
+        </section>
 
+    </main>
 
-</main>
-     <!-- ===== SETTINGS SECTION ===== -->
-     <div id="section-settings" class="section">
-         <h2>🤖 Model Settings</h2>
-         <div class="card">
-             <h3>AI Model Selection</h3>
-             <p class="help-text">
-                 Choose which AI models to use for generating your comics. The smart model handles
-                 creative writing and complex tasks, the fast model handles parsing and lighter tasks,
-                 and the image model is used for any image generation.
-             </p>
-             <div class="model-settings-grid">
-                 <div class="model-setting">
-                     <label for="comic-smart-model">🧠 Smart Model</label>
-                     <p class="setting-desc">Used for creative writing, story generation, and complex reasoning.</p>
-                     <select id="comic-smart-model" class="model-select">
-                         <option value="">Loading models...</option>
-                     </select>
-                 </div>
-                 <div class="model-setting">
-                     <label for="comic-fast-model">⚡ Fast Model</label>
-                     <p class="setting-desc">Used for parsing, formatting, and lighter processing tasks.</p>
-                     <select id="comic-fast-model" class="model-select">
-                         <option value="">Loading models...</option>
-                     </select>
-                 </div>
-                 <div class="model-setting">
-                     <label for="comic-image-model">🎨 Image Model</label>
-                     <p class="setting-desc">Used for generating comic panel artwork and illustrations.</p>
-                     <select id="comic-image-model" class="model-select">
-                         <option value="">Loading models...</option>
-                     </select>
-                 </div>
-             </div>
-             <div class="button-row">
-                 <button id="save-model-settings" class="btn btn-primary">💾 Save Model Settings</button>
-                 <button id="reset-model-settings" class="btn btn-secondary">↩ Reset to Defaults</button>
-                 <span id="model-status" class="status-msg"></span>
-             </div>
-         </div>
-         <div class="card">
-             <h3>Current Configuration</h3>
-             <div id="model-summary" class="model-summary">
-                 <p class="placeholder">No models configured yet.</p>
-             </div>
-         </div>
-     </div>
-
-<!-- Loading overlay -->
-<div id="loading-overlay" class="hidden">
-    <div class="loading-spinner"></div>
-    <div id="loading-text">Processing...</div>
-</div>
-
-<!-- Scripts -->
-<script src="/lib/marked.min.js"></script>
-<script type="module" src="app.js"></script>
-</body>
-</html>
+    <script src="/lib/marked.min.js"></script>
+    <script type="module" src="app.js"></script>
+    </body>
+    </html>
