@@ -240,7 +240,7 @@ HTML browser and the FS API.
 |--------------|--------------------------------------------------------------|
 | `.hidden`    | Matched paths appear non-existent (ENOENT) to all operations |
 | `.readonly`  | Matched paths reject all mutations (EACCES)                  |
-| `.writeable` | Acts as a **whitelist**: anything _not_ matched is read-only |
+| `.writeable_` | Acts as a **whitelist**: anything _not_ matched is read-only |
 
 Patterns follow `.gitignore` syntax and match relative to the directory containing the marker file. The marker files
 themselves are always hidden/read-only so they cannot be tampered with through the API.

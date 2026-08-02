@@ -526,7 +526,14 @@ object FsApiHandler {
         throw FsException(FsErrorCode.EIO, syscall, target.virtual, "failed to create parent directories")
       }
     }
-    if (FileAccessControl.isReadOnly(root, parent)) {
+    /*
+     * The parent's own read-only bit must not veto a target the ACLs permit: a
+     * `.writeable` whitelist names *files*, so the containing folder is (correctly)
+     * read-only while its whitelisted entries are not. A genuinely read-only tree
+     * (`.readonly`) already propagates to every descendant, so the target check
+     * performed by requireWritable() is the authoritative one.
+     */
+    if (FileAccessControl.isReadOnly(root, target.file) && FileAccessControl.isReadOnly(root, parent)) {
       throw FsException(FsErrorCode.EACCES, syscall, target.virtual, "parent directory is read-only")
     }
   }

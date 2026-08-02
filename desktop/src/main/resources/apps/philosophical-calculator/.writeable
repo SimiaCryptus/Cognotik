@@ -2,6 +2,7 @@
 # Uses .gitignore-style syntax: listed paths are ALLOWED to be written
 # Everything not listed here should be treated as read-only
 notes/**
+notes/
 instruct.md
 
 # Article and essay outputs

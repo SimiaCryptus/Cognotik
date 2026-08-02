@@ -614,7 +614,7 @@ function registerFileActions() {
             group: '4_refactor'
         }],
         selection: {min: 1, max: 1, kinds: ['file', 'dir']},
-        enablement: (ctx) => !caps.readOnly && !ctx.resources[0]?.readOnly,
+        enablement: (ctx) => !caps.readOnly && writable(ctx.resources[0]),
         disabledReason: 'This item is read-only',
         update: (ctx, p) => {
             if (ctx.resources[0]) p.text = `Rename ${ctx.resources[0].name}…`;
@@ -658,7 +658,7 @@ function registerFileActions() {
         id: 'file.delete', title: 'Delete…', keys: ['Delete'],
         menus: [{anchor: 'explorer/context', group: '9_danger', order: 10}],
         selection: {min: 1, kinds: ['file', 'dir']},
-        enablement: (ctx) => !caps.readOnly && !ctx.resources.some((r) => r.readOnly),
+        enablement: (ctx) => !caps.readOnly && ctx.resources.every(writable),
         disabledReason: 'One or more items are read-only',
         update: (ctx, p) => {
             p.text = ctx.resources.length > 1 ? `Delete ${ctx.resources.length} items…` : `Delete ${ctx.resources[0]?.name ?? ''}…`;
@@ -782,6 +782,19 @@ function targetFolder(ctx) {
     if (!first) return '/';
     return first.type === 'dir' ? first.path : dirname(first.path);
 }
+/**
+* Whether the UI should let the user *attempt* to modify this resource.
+*
+* A folder we cannot write to is *not* a veto: individual files inside it may
+* be whitelisted (`.writeable`), and creating/renaming/deleting those needs no
+* permission on the parent. The server owns that decision and answers EACCES
+* when it really means it, which surfaces as a toast — far better than an
+* action greyed out on a guess.
+*/
+function writable(resource) {
+    return !resource || resource.type === 'dir' || !resource.readOnly;
+}
+
 
 /** POSIX-ish quoting so a file name with spaces survives the shell. */
 function shellQuote(value) {

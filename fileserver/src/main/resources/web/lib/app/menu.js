@@ -2,8 +2,8 @@
  * menu.js — common application menu bar
  *
  * Renders a shared menubar into any Cognotik app page:
- *   • Context-aware navigation (host root, app root, new session, session, IDE)
- *   • Link to the filesystem IDE view for the current session
+  *   • Context-aware navigation (host root, app root, new session, session, files)
+  *   • Link to the filesystem ("Files") view for the current session
 *   • Git status + operations (init / commit / branches / new branch / log /
 *     hard reset / clean), destructive actions gated behind a confirmation
  *   • Sessions: currently running tasks and all known sessions, with navigation
@@ -279,7 +279,7 @@ export async function fetchBudget(endpoint = null) {
 
 function contextLabel(ctx, opts) {
     const bits = [];
-    if (opts.appName) bits.push(opts.appName);
+    //if (opts.appName) bits.push(opts.appName);
     if (ctx.sessionId) bits.push(ctx.sessionId);
     if (!bits.length) bits.push(ctx.view);
     return bits.join(' · ');
@@ -288,16 +288,17 @@ function contextLabel(ctx, opts) {
 function buildLinksHtml(ctx, opts) {
     const links = [];
     if (ctx.appRoot) {
-        links.push({href: serverUrl(ctx.appRoot + '/'), label: 'App', active: ctx.view === 'app'});
+         const appLabel = opts.appName || ctx.appId || 'App';
+         links.push({href: serverUrl(ctx.appRoot + '/'), label: appLabel, active: ctx.view === 'app'});
         links.push({
             href: serverUrl(ctx.appRoot + '/' + opts.newSessionPath),
-            label: 'New Session',
+             label: 'New',
             active: ctx.view === 'new'
         });
     }
     if (opts.showIde) {
         const ide = getIdeUrl(ctx);
-        if (ide) links.push({href: ide, label: 'IDE', target: '_blank', active: ctx.view === 'ide'});
+         if (ide) links.push({href: ide, label: 'Files', target: '_blank', active: ctx.view === 'ide'});
     }
     (opts.extraLinks || []).forEach(l => links.push(l));
 
@@ -362,8 +363,8 @@ export function initMenu(options = {}) {
     nav.innerHTML = `
             <div class="cog-menu-bar">
                 <a class="cog-menu-brand" href="${attr(serverUrl('/'))}">&#129504; Cognotik</a>
-                <span class="cog-menu-context" title="${attr(ctx.pathname)}">${escapeHtml(contextLabel(ctx, opts))}</span>
                 <div class="cog-menu-links">${buildLinksHtml(ctx, opts)}</div>
+                <span class="cog-menu-context" title="${attr(ctx.pathname)}">${escapeHtml(contextLabel(ctx, opts))}</span>
                 <div class="cog-menu-grow"></div>
                 <div class="cog-menu-tabs">
                      ${opts.showBudget ? '<button type="button" class="cog-budget-btn" data-budget-btn title="Usage and available credits">&#128202; <span data-budget-amount>Budget</span></button>' : ''}

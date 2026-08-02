@@ -76,7 +76,11 @@ export function buildContext(options = {}) {
         editorSelection,
         selection: paths,
         caps,
-        readOnly: caps.readOnly || resources.some((r) => r.readOnly),
+        /* Only a read-only *file* makes the context read-only. A folder we may
+           not write to can still contain files whitelisted in `.writeable`, so
+           the parent's mode must never pre-emptively disable an operation —
+           the server answers EACCES when it really means it. */
+        readOnly: caps.readOnly || resources.some((r) => r.type === 'file' && r.readOnly),
         fs,
         ui,
         t,

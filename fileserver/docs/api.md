@@ -8,7 +8,7 @@ The file server exposes **two independent surfaces** from the same servlet mount
 | **FS API v1**    | Machine-facing remote filesystem (a `node:fs` backing store)                            | `{mount}/{prefix}/.fsapi/v1/{op}` |
 
 Both surfaces resolve paths against the same directory (`FileServlet.getDir` /
-`FilesystemServlet.getFsApiRoot`) and enforce the same access-control rules (`.hidden` / `.readonly` / `.writeable`).
+`FilesystemServlet.getFsApiRoot`) and enforce the same access-control rules (`.hidden` / `.readonly` / `.writeable_`).
 
 ---
 
@@ -66,9 +66,9 @@ the served root.
 |--------------|---------------------------------------------------------------------------------------|
 | `.hidden`    | Matched paths are treated as **non-existent** (`404` / `ENOENT`) for every operation. |
 | `.readonly`  | Matched paths cannot be modified (`403` / `EACCES` / `EROFS`).                        |
-| `.writeable` | Acts as a **whitelist**: anything in scope that is *not* matched becomes read-only.   |
+| `.writeable_` | Acts as a **whitelist**: anything in scope that is *not* matched becomes read-only.   |
 
-The marker files themselves are always hidden (`.hidden`) or read-only (`.readonly`, `.writeable`) so they cannot be
+The marker files themselves are always hidden (`.hidden`) or read-only (`.readonly`, `.writeable_`) so they cannot be
 tampered with through the server.
 
 Additional guarantees:

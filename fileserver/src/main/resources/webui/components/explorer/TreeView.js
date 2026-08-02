@@ -95,6 +95,9 @@ export class TreeView extends Component {
         const selected = this.model.selection.includes(node.path);
         const focused = this.model.focus === node.path;
         const badges = decorate(node);
+        /* A folder without write permission may still hold whitelisted files
+           (.writeable), so only a read-only *file* is flagged as such. */
+        const readOnly = node.type === 'file' && !!node.readOnly;
         const row = h('div', {
             class: 'fs-tree__row',
             role: 'treeitem',
@@ -104,9 +107,9 @@ export class TreeView extends Component {
             'aria-setsize': String(total),
             'aria-selected': String(selected),
             'aria-expanded': node.type === 'dir' ? String(this.model.expanded.has(node.path)) : null,
-            'aria-describedby': node.readOnly ? 'fs-readonly-hint' : null,
+            'aria-describedby': readOnly ? 'fs-readonly-hint' : null,
             tabindex: focused ? '0' : '-1',
-            dataset: {path: node.path, readonly: String(!!node.readOnly)},
+            dataset: {path: node.path, readonly: String(readOnly)},
             style: {paddingInlineStart: `${(node.level - 1) * 12 + 4}px`},
         }, [
             h('span', {
@@ -115,7 +118,7 @@ export class TreeView extends Component {
             }),
             h('span', {class: 'fs-tree__icon', 'aria-hidden': 'true', text: node.type === 'dir' ? '📁' : '📄'}),
             h('span', {class: 'fs-tree__label', text: node.name}),
-            node.readOnly ? h('span', {class: 'fs-tree__badge', 'aria-hidden': 'true', text: '🔒'}) : null,
+            readOnly ? h('span', {class: 'fs-tree__badge', 'aria-hidden': 'true', text: '🔒'}) : null,
             ...badges.map((b) => h('span', {
                 class: 'fs-tree__badge',
                 title: b.tooltip || '',
