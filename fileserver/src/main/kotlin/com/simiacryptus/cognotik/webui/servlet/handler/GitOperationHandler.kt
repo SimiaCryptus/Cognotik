@@ -69,8 +69,8 @@ object GitOperationHandler {
     resp.writer.write(FsJson.stringify(payload))
   }
 
-  fun executeGitCommand(workDir: File, vararg command: String): String {
-    log.debug("Executing git command in ${workDir.absolutePath}: ${command.joinToString(" ")}")
+  fun executeCommand(workDir: File, vararg command: String): String {
+    log.debug("Executing command in ${workDir.absolutePath}: ${command.joinToString(" ")}")
     val processBuilder = ProcessBuilder(*command)
       .directory(workDir)
       .redirectErrorStream(true)
@@ -78,7 +78,7 @@ object GitOperationHandler {
     val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
     val exitCode = process.waitFor()
     if (exitCode != 0) {
-      log.warn("Git command exited with code $exitCode: $output")
+      log.warn("Command exited with code $exitCode: $output")
     }
     return output
   }

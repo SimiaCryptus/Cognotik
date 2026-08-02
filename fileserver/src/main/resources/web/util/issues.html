@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Issues</title>
+    <style>
+        :root {
+            --bg: #f6f7f9;
+            --panel: #ffffff;
+            --panel-2: #fbfcfd;
+            --border: #dfe3e8;
+            --text: #1b1f24;
+            --muted: #5c6773;
+            --accent: #2563eb;
+            --accent-soft: #e8efff;
+            --danger: #c2410c;
+            --ok: #15803d;
+            --radius: 8px;
+            --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #14171c;
+                --panel: #1b1f26;
+                --panel-2: #20252d;
+                --border: #2e3540;
+                --text: #e6e9ee;
+                --muted: #97a1af;
+                --accent: #6ea8fe;
+                --accent-soft: #22304a;
+                --danger: #f08b5a;
+                --ok: #6ee7a8;
+                --shadow: none;
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        button, input, select, textarea {
+            font: inherit;
+            color: inherit;
+        }
+
+        button {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        button:hover { background: var(--panel-2); }
+
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        button.primary:hover { filter: brightness(1.05); }
+
+        button.danger { color: var(--danger); }
+
+        button:disabled { opacity: .5; cursor: not-allowed; }
+
+        input, select, textarea {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 8px;
+            width: 100%;
+        }
+
+        textarea { resize: vertical; }
+
+        a { color: var(--accent); }
+
+        /* --- app bar ------------------------------------------------ */
+        .app-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .app-bar h1 {
+            font-size: 15px;
+            margin: 0 6px 0 0;
+            font-weight: 650;
+        }
+
+        .chip {
+            font-size: 11px;
+            color: var(--muted);
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 2px 8px;
+            white-space: nowrap;
+            max-width: 40vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .spacer { flex: 1; }
+
+        #save-state { font-size: 12px; color: var(--muted); }
+
+        #save-state.dirty { color: var(--danger); }
+
+        #save-state.saved { color: var(--ok); }
+
+        /* --- layout ------------------------------------------------- */
+        .layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: minmax(300px, 420px) 1fr;
+            min-height: 0;
+        }
+
+        @media (max-width: 860px) {
+            .layout { grid-template-columns: 1fr; }
+            .detail-pane { display: none; }
+            body.detail-open .list-pane { display: none; }
+            body.detail-open .detail-pane { display: block; }
+        }
+
+        .list-pane {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--panel);
+        }
+
+        .filters {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            gap: 6px;
+        }
+
+        .filters .row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .filters select { width: auto; flex: 1; min-width: 0; }
+
+        .stats {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat {
+            cursor: pointer;
+            font-size: 11px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 1px 8px;
+            background: var(--panel-2);
+            color: var(--muted);
+        }
+
+        .stat.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+        .issue-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            flex: 1;
+        }
+
+        .issue {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .issue:hover { background: var(--panel-2); }
+
+        .issue.selected { background: var(--accent-soft); }
+
+        .issue .line1 {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+        }
+
+        .issue .num { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+
+        .issue .title { font-weight: 560; flex: 1; }
+
+        .issue.done .title { text-decoration: line-through; color: var(--muted); }
+
+        .issue .line2 {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .badge {
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0 7px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .st-open { color: #1d4ed8; border-color: #1d4ed8; }
+
+        .st-in_progress { color: #a16207; border-color: #a16207; }
+
+        .st-blocked { color: #b91c1c; border-color: #b91c1c; }
+
+        .st-resolved, .st-closed { color: var(--ok); border-color: var(--ok); }
+
+        .st-wontfix { color: var(--muted); }
+
+        .pr-critical { color: #b91c1c; border-color: #b91c1c; font-weight: 600; }
+
+        .pr-high { color: #c2410c; border-color: #c2410c; }
+
+        .label-chip { background: var(--panel-2); }
+
+        .overdue { color: var(--danger); font-weight: 600; }
+
+        .empty {
+            padding: 32px 16px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        /* --- detail -------------------------------------------------- */
+        .detail-pane {
+            overflow: auto;
+            min-height: 0;
+            padding: 14px 16px 60px;
+        }
+
+        .detail-head {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .detail-head .id { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        label.f {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--muted);
+        }
+
+        .md {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            background: var(--panel-2);
+            overflow-x: auto;
+        }
+
+        .md pre.plain {
+            margin: 0;
+            white-space: pre-wrap;
+            font: inherit;
+        }
+
+        .md :first-child { margin-top: 0; }
+
+        .md :last-child { margin-bottom: 0; }
+
+        .comment {
+            border-top: 1px solid var(--border);
+            padding: 8px 0;
+        }
+
+        .comment:first-of-type { border-top: none; }
+
+        .comment .who {
+            font-size: 11px;
+            color: var(--muted);
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .comment .who .spacer { flex: 1; }
+
+        .row-list {
+            list-style: none;
+            margin: 0 0 8px;
+            padding: 0;
+        }
+
+        .row-list li {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            padding: 3px 0;
+        }
+
+        .row-list li .spacer { flex: 1; }
+
+        .inline-form {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .history {
+            font-size: 12px;
+            color: var(--muted);
+            max-height: 180px;
+            overflow: auto;
+        }
+
+        .history div { padding: 2px 0; }
+
+        .icon-btn {
+            padding: 1px 6px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        /* --- toasts --------------------------------------------------- */
+        .toast-host {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 40;
+        }
+
+        .toast {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 8px 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+            max-width: 380px;
+        }
+
+        .toast.err { border-left-color: var(--danger); }
+
+        .toast.ok { border-left-color: var(--ok); }
+
+        .kbd {
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            padding: 0 4px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+<div id="menu-mount"></div>
+
+<header class="app-bar">
+    <h1>Issues</h1>
+    <span class="chip" id="base-chip" title="Storage location">…</span>
+    <button id="btn-new" class="primary" title="New issue (n)">+ New issue</button>
+    <button id="btn-reload" title="Discard local changes and reload from disk">Reload</button>
+    <button id="btn-export" title="Download issues.json">Export</button>
+    <button id="btn-import" title="Import issues.json">Import</button>
+    <span class="spacer"></span>
+    <span id="save-state">…</span>
+</header>
+
+<main class="layout">
+    <section class="list-pane">
+        <div class="filters">
+            <input id="q" type="search" placeholder="Search…  (is:open label:ui assignee:me)" autocomplete="off">
+            <div class="row">
+                <select id="f-status" title="Status"></select>
+                <select id="f-priority" title="Priority"></select>
+                <select id="f-type" title="Type"></select>
+            </div>
+            <div class="row">
+                <select id="f-label" title="Label"></select>
+                <select id="f-assignee" title="Assignee"></select>
+                <select id="f-sort" title="Sort order"></select>
+            </div>
+        </div>
+        <div class="stats" id="stats"></div>
+        <ul class="issue-list" id="issue-list"></ul>
+    </section>
+
+    <section class="detail-pane" id="detail"></section>
+</main>
+
+<div class="toast-host" id="toasts"></div>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+
+<script type="module">
+    /* =====================================================================
+     * Issue tracker UI — self-contained, session-local.
+     *
+     * Data lives in `{basePath}/issues.json`; the schema below is a runtime
+     * mirror of `web/util/issues.schema.ts` — keep the two in sync.
+     * ===================================================================== */
+
+    /* ------------------------- schema mirror ------------------------- */
+
+    const ISSUES_SCHEMA_VERSION = 1;
+    const ISSUES_FILE_NAME = 'issues.json';
+    const DEFAULT_ID_PREFIX = 'ISS';
+
+    const ISSUE_STATUSES = ['open', 'in_progress', 'blocked', 'resolved', 'closed', 'wontfix'];
+    const ACTIVE_STATUSES = ['open', 'in_progress', 'blocked'];
+    const TERMINAL_STATUSES = ['resolved', 'closed', 'wontfix'];
+    const ISSUE_PRIORITIES = ['critical', 'high', 'medium', 'low'];
+    const ISSUE_TYPES = ['bug', 'feature', 'task', 'question', 'docs', 'chore'];
+    const PRIORITY_RANK = {critical: 0, high: 1, medium: 2, low: 3};
+    const STATUS_RANK = {open: 0, in_progress: 1, blocked: 2, resolved: 3, closed: 4, wontfix: 5};
+    const SORTS = [
+        ['updated_desc', 'Recently updated'],
+        ['created_desc', 'Newest'],
+        ['created_asc', 'Oldest'],
+        ['priority_desc', 'Priority'],
+        ['status_asc', 'Status'],
+        ['number_asc', 'Number ↑'],
+        ['number_desc', 'Number ↓'],
+        ['title_asc', 'Title']
+    ];
+
+    const nowIso = () => new Date().toISOString();
+    const shortId = (p = 'c') => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+
+    const asString = (v, d = '') => (typeof v === 'string' ? v : v == null ? d : String(v));
+    const asNullableString = v => {
+        if (v == null) return null;
+        const s = String(v).trim();
+        return s === '' ? null : s;
+    };
+    const asArray = v => (Array.isArray(v) ? v : []);
+    const asObject = v => (v && typeof v === 'object' && !Array.isArray(v) ? {...v} : {});
+    const asIsoDate = (v, fb) => {
+        const s = asNullableString(v);
+        if (!s) return fb;
+        const t = Date.parse(s);
+        return Number.isNaN(t) ? fb : new Date(t).toISOString();
+    };
+    const oneOf = (v, allowed, fb) => {
+        const s = asString(v).trim().toLowerCase().replace(/[\s-]+/g, '_');
+        return allowed.includes(s) ? s : fb;
+    };
+
+    function createIssuesDocument(init = {}) {
+        const ts = nowIso();
+        return {
+            schemaVersion: ISSUES_SCHEMA_VERSION,
+            createdAt: init.createdAt || ts,
+            updatedAt: init.updatedAt || ts,
+            nextNumber: init.nextNumber || 1,
+            idPrefix: init.idPrefix || DEFAULT_ID_PREFIX,
+            labels: init.labels ? [...init.labels] : [],
+            issues: init.issues ? [...init.issues] : [],
+            meta: init.meta ? {...init.meta} : {}
+        };
+    }
+
+    function makeIssue(id, number, patch = {}) {
+        const ts = nowIso();
+        return {
+            id, number,
+            title: patch.title ?? 'Untitled issue',
+            body: patch.body ?? '',
+            status: patch.status ?? 'open',
+            priority: patch.priority ?? 'medium',
+            type: patch.type ?? 'task',
+            labels: patch.labels ? [...patch.labels] : [],
+            assignee: patch.assignee ?? null,
+            reporter: patch.reporter ?? null,
+            createdAt: ts,
+            updatedAt: ts,
+            closedAt: null,
+            dueDate: patch.dueDate ?? null,
+            estimate: patch.estimate ?? null,
+            parentId: patch.parentId ?? null,
+            relatedIds: [],
+            files: [],
+            comments: [],
+            history: [{at: ts, actor: patch.reporter ?? null, kind: 'created', from: null, to: null, note: null}],
+            meta: {}
+        };
+    }
+
+    function addIssue(doc, patch = {}) {
+        const number = Math.max(1, doc.nextNumber | 0);
+        const issue = makeIssue(`${doc.idPrefix}-${number}`, number, patch);
+        doc.nextNumber = number + 1;
+        doc.issues.push(issue);
+        doc.updatedAt = issue.updatedAt;
+        return issue;
+    }
+
+    function touchIssue(issue, event) {
+        issue.updatedAt = nowIso();
+        const terminal = TERMINAL_STATUSES.includes(issue.status);
+        if (terminal && !issue.closedAt) issue.closedAt = issue.updatedAt;
+        if (!terminal) issue.closedAt = null;
+        if (event) {
+            issue.history.push({
+                at: issue.updatedAt,
+                actor: event.actor ?? null,
+                kind: event.kind ?? 'edited',
+                from: event.from ?? null,
+                to: event.to ?? null,
+                note: event.note ?? null
+            });
+            if (issue.history.length > 200) issue.history.splice(0, issue.history.length - 200);
+        }
+        return issue;
+    }
+
+    function normalizeComment(raw, where, errors) {
+        const o = asObject(raw);
+        const createdAt = asIsoDate(o.createdAt, nowIso());
+        if (typeof o.body !== 'string') errors.push({path: `${where}.body`, message: 'comment body missing'});
+        return {
+            id: asNullableString(o.id) || shortId('c'),
+            author: asNullableString(o.author),
+            body: asString(o.body),
+            createdAt,
+            updatedAt: o.updatedAt == null ? null : asIsoDate(o.updatedAt, createdAt)
+        };
+    }
+
+    function normalizeIssue(raw, where, errors, fallbackNumber, idPrefix) {
+        const o = asObject(raw);
+        const n = Number(o.number);
+        const number = Number.isFinite(n) && n > 0 ? Math.floor(n) : fallbackNumber;
+        const status = oneOf(o.status, ISSUE_STATUSES, 'open');
+        if (o.status != null && status !== String(o.status)) {
+            errors.push({path: `${where}.status`, message: `unknown status "${o.status}" → "${status}"`});
+        }
+        const createdAt = asIsoDate(o.createdAt, nowIso());
+        let dueDate = asNullableString(o.dueDate);
+        if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+            const t = Date.parse(dueDate);
+            dueDate = Number.isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
+        }
+        let estimate = null;
+        if (o.estimate != null && o.estimate !== '') {
+            const e = Number(o.estimate);
+            estimate = Number.isFinite(e) && e >= 0 ? e : null;
+        }
+        const issue = {
+            id: asNullableString(o.id) || `${idPrefix}-${number}`,
+            number,
+            title: asString(o.title).trim() || 'Untitled issue',
+            body: asString(o.body),
+            status,
+            priority: oneOf(o.priority, ISSUE_PRIORITIES, 'medium'),
+            type: oneOf(o.type, ISSUE_TYPES, 'task'),
+            labels: asArray(o.labels).map(l => asString(l).trim()).filter(Boolean),
+            assignee: asNullableString(o.assignee),
+            reporter: asNullableString(o.reporter),
+            createdAt,
+            updatedAt: asIsoDate(o.updatedAt, createdAt),
+            closedAt: o.closedAt == null ? null : asIsoDate(o.closedAt, createdAt),
+            dueDate,
+            estimate,
+            parentId: asNullableString(o.parentId),
+            relatedIds: asArray(o.relatedIds).map(v => asString(v).trim()).filter(Boolean),
+            files: asArray(o.files).map(f => {
+                const fo = asObject(f);
+                const path = asNullableString(fo.path != null ? fo.path : f);
+                return path ? {path, note: asNullableString(fo.note)} : null;
+            }).filter(Boolean),
+            comments: asArray(o.comments).map((c, i) => normalizeComment(c, `${where}.comments[${i}]`, errors)),
+            history: asArray(o.history).map(h => {
+                const ho = asObject(h);
+                return {
+                    at: asIsoDate(ho.at, createdAt),
+                    actor: asNullableString(ho.actor),
+                    kind: asString(ho.kind, 'edited'),
+                    from: asNullableString(ho.from),
+                    to: asNullableString(ho.to),
+                    note: asNullableString(ho.note)
+                };
+            }),
+            meta: asObject(o.meta)
+        };
+        const terminal = TERMINAL_STATUSES.includes(issue.status);
+        if (terminal && !issue.closedAt) issue.closedAt = issue.updatedAt;
+        if (!terminal) issue.closedAt = null;
+        if (!issue.history.length) {
+            issue.history.push({at: issue.createdAt, actor: issue.reporter, kind: 'created', from: null, to: null, note: null});
+        }
+        return issue;
+    }
+
+    function normalizeIssuesDocument(raw, errors = []) {
+        const o = asObject(raw);
+        const rawIssues = Array.isArray(raw) ? raw : asArray(o.issues);
+        if (raw != null && !Array.isArray(raw) && !Array.isArray(o.issues)) {
+            errors.push({path: 'issues', message: 'missing "issues" array, defaulted to []'});
+        }
+        const idPrefix = (asNullableString(o.idPrefix) || DEFAULT_ID_PREFIX).replace(/[^A-Za-z0-9_]/g, '') || DEFAULT_ID_PREFIX;
+        const createdAt = asIsoDate(o.createdAt, nowIso());
+        const seen = new Set();
+        let maxNumber = 0;
+        const issues = rawIssues.map((r, i) => {
+            const issue = normalizeIssue(r, `issues[${i}]`, errors, i + 1, idPrefix);
+            while (seen.has(issue.id)) {
+                errors.push({path: `issues[${i}].id`, message: `duplicate id "${issue.id}", regenerated`});
+                issue.id = `${idPrefix}-${issue.number}-${shortId('d')}`;
+            }
+            seen.add(issue.id);
+            maxNumber = Math.max(maxNumber, issue.number);
+            return issue;
+        });
+        const declared = Number(o.nextNumber);
+        return {
+            schemaVersion: ISSUES_SCHEMA_VERSION,
+            createdAt,
+            updatedAt: asIsoDate(o.updatedAt, createdAt),
+            nextNumber: Number.isFinite(declared) && declared > maxNumber ? Math.floor(declared) : maxNumber + 1,
+            idPrefix,
+            labels: asArray(o.labels).map(l => {
+                const lo = asObject(l);
+                const name = asNullableString(lo.name != null ? lo.name : l);
+                return name ? {name, color: asNullableString(lo.color), description: asNullableString(lo.description)} : null;
+            }).filter(Boolean),
+            issues,
+            meta: asObject(o.meta)
+        };
+    }
+
+    function parseIssuesJson(text) {
+        try {
+            const errors = [];
+            return {ok: true, errors, value: normalizeIssuesDocument(JSON.parse(text), errors)};
+        } catch (e) {
+            return {ok: false, errors: [{path: '$', message: `invalid JSON: ${e.message}`}], value: createIssuesDocument()};
+        }
+    }
+
+    const serializeIssuesDocument = doc => JSON.stringify({...doc, schemaVersion: ISSUES_SCHEMA_VERSION}, null, 2) + '\n';
+
+    const emptyFilter = () => ({text: '', status: 'all', priority: 'all', type: 'all', label: 'all', assignee: 'all'});
+
+    function parseIssueQuery(query, base) {
+        const filter = {...(base || emptyFilter())};
+        const words = [];
+        for (const token of String(query || '').split(/\s+/).filter(Boolean)) {
+            const m = /^(is|status|label|assignee|type|priority):(.*)$/i.exec(token);
+            if (!m) {
+                words.push(token.toLowerCase());
+                continue;
+            }
+            const key = m[1].toLowerCase(), val = m[2].toLowerCase();
+            if (key === 'is' || key === 'status') filter.status = val === 'active' ? 'active' : oneOf(val, ISSUE_STATUSES, filter.status);
+            else if (key === 'label') filter.label = val;
+            else if (key === 'assignee') filter.assignee = val;
+            else if (key === 'type') filter.type = oneOf(val, ISSUE_TYPES, filter.type);
+            else if (key === 'priority') filter.priority = oneOf(val, ISSUE_PRIORITIES, filter.priority);
+        }
+        filter.text = words.join(' ');
+        return filter;
+    }
+
+    function issueMatches(issue, filter) {
+        if (filter.status === 'active') {
+            if (!ACTIVE_STATUSES.includes(issue.status)) return false;
+        } else if (filter.status !== 'all' && issue.status !== filter.status) return false;
+        if (filter.priority !== 'all' && issue.priority !== filter.priority) return false;
+        if (filter.type !== 'all' && issue.type !== filter.type) return false;
+        if (filter.label === 'none') {
+            if (issue.labels.length) return false;
+        } else if (filter.label !== 'all') {
+            const needle = filter.label.toLowerCase();
+            if (!issue.labels.some(l => l.toLowerCase() === needle)) return false;
+        }
+        if (filter.assignee === 'none') {
+            if (issue.assignee) return false;
+        } else if (filter.assignee !== 'all') {
+            if ((issue.assignee || '').toLowerCase() !== filter.assignee.toLowerCase()) return false;
+        }
+        const text = (filter.text || '').trim().toLowerCase();
+        if (!text) return true;
+        const hay = [
+            issue.id, `#${issue.number}`, issue.title, issue.body,
+            issue.assignee || '', issue.reporter || '', issue.labels.join(' '),
+            issue.comments.map(c => `${c.author || ''} ${c.body}`).join(' ')
+        ].join('\n').toLowerCase();
+        return text.split(/\s+/).every(w => hay.includes(w));
+    }
+
+    function sortIssues(issues, sort) {
+        const time = s => (s ? Date.parse(s) || 0 : 0);
+        const cmp = {
+            updated_desc: (a, b) => time(b.updatedAt) - time(a.updatedAt),
+            updated_asc: (a, b) => time(a.updatedAt) - time(b.updatedAt),
+            created_desc: (a, b) => time(b.createdAt) - time(a.createdAt),
+            created_asc: (a, b) => time(a.createdAt) - time(b.createdAt),
+            priority_desc: (a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || time(b.updatedAt) - time(a.updatedAt),
+            status_asc: (a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority],
+            number_asc: (a, b) => a.number - b.number,
+            number_desc: (a, b) => b.number - a.number,
+            title_asc: (a, b) => a.title.localeCompare(b.title)
+        };
+        return [...issues].sort(cmp[sort] || cmp.updated_desc);
+    }
+
+    function summarize(doc) {
+        const byStatus = Object.fromEntries(ISSUE_STATUSES.map(s => [s, 0]));
+        const today = new Date().toISOString().slice(0, 10);
+        let overdue = 0;
+        for (const i of doc.issues) {
+            byStatus[i.status] = (byStatus[i.status] || 0) + 1;
+            if (i.dueDate && i.dueDate < today && ACTIVE_STATUSES.includes(i.status)) overdue++;
+        }
+        const active = ACTIVE_STATUSES.reduce((n, s) => n + byStatus[s], 0);
+        return {total: doc.issues.length, active, done: doc.issues.length - active, byStatus, overdue};
+    }
+
+    const collectLabels = doc => {
+        const set = new Set(doc.labels.map(l => l.name));
+        doc.issues.forEach(i => i.labels.forEach(l => set.add(l)));
+        return [...set].sort((a, b) => a.localeCompare(b));
+    };
+    const collectAssignees = doc => {
+        const set = new Set();
+        doc.issues.forEach(i => i.assignee && set.add(i.assignee));
+        return [...set].sort((a, b) => a.localeCompare(b));
+    };
+
+    function mergeIssuesDocument(target, incoming) {
+        let added = 0;
+        for (const issue of incoming.issues) {
+            const clone = JSON.parse(JSON.stringify(issue));
+            clone.number = target.nextNumber++;
+            clone.id = `${target.idPrefix}-${clone.number}`;
+            clone.history.push({at: nowIso(), actor: null, kind: 'edited', from: issue.id, to: clone.id, note: 'imported'});
+            target.issues.push(clone);
+            added++;
+        }
+        for (const label of incoming.labels) {
+            if (!target.labels.some(l => l.name.toLowerCase() === label.name.toLowerCase())) target.labels.push(label);
+        }
+        if (added) target.updatedAt = nowIso();
+        return added;
+    }
+
+    /* --------------------------- plumbing --------------------------- */
+
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+    function serverBase() {
+        const cfg = (typeof window !== 'undefined' && window.COGNOTIK_CONFIG) || {};
+        if (typeof cfg.serverBase === 'string') return cfg.serverBase.replace(/\/$/, '');
+        const meta = document.querySelector('meta[name="cognotik-server-base"]');
+        if (meta) return (meta.getAttribute('content') || '').replace(/\/$/, '');
+        return (document.documentElement.dataset.serverBase || '').replace(/\/$/, '');
+    }
+
+    const appUrl = p => serverBase() + p;
+
+    /** The document lives next to this page, so the directory of the URL is the base path. */
+    function resolveBasePath() {
+        const params = new URLSearchParams(location.search);
+        const override = params.get('base') || (window.COGNOTIK_CONFIG && window.COGNOTIK_CONFIG.basePath);
+        if (override) return String(override).replace(/\/$/, '');
+        const p = decodeURI(location.pathname);
+        const dir = p.endsWith('/') ? p.slice(0, -1) : p.slice(0, p.lastIndexOf('/'));
+        return dir || '';
+    }
+
+    /* Prefer the shared file helpers; fall back to inline fetch if /app is unavailable. */
+    let io = {
+        async readFile(base, path) {
+            const r = await fetch(`${base}/${path}`, {cache: 'no-store'});
+            if (r.status === 404 || r.status === 400) return null;
+            if (!r.ok) throw new Error(`Failed to read ${path}: ${r.status}`);
+            return r.text();
+        },
+        async writeFile(base, path, content) {
+            const r = await fetch(`${base}/${path}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'text/plain; charset=utf-8'},
+                body: content
+            });
+            if (!r.ok) throw new Error(`Failed to write ${path}: ${r.status}`);
+            return true;
+        }
+    };
+    try {
+        const mod = await import(appUrl('/app/fileIO.js'));
+        if (mod && typeof mod.readFile === 'function' && typeof mod.writeFile === 'function') {
+            io = {readFile: mod.readFile, writeFile: mod.writeFile};
+        }
+    } catch { /* standalone mode */ }
+
+    /* Optional markdown rendering. */
+    function loadScript(src) {
+        return new Promise(resolve => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => resolve(true);
+            s.onerror = () => resolve(false);
+            document.head.appendChild(s);
+        });
+    }
+
+    await loadScript(appUrl('/app/marked.min.js'));
+    await loadScript(appUrl('/lib/purify.min.js'));
+
+    function renderMarkdown(md) {
+        const text = String(md || '');
+        if (!text.trim()) return '<p style="color:var(--muted);margin:0">No description.</p>';
+        try {
+            if (window.marked) {
+                const html = typeof window.marked.parse === 'function' ? window.marked.parse(text) : window.marked(text);
+                return window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
+            }
+        } catch { /* fall through */ }
+        return `<pre class="plain">${esc(text)}</pre>`;
+    }
+
+    function timeAgo(iso) {
+        const t = Date.parse(iso);
+        if (!t) return '';
+        const s = Math.max(0, (Date.now() - t) / 1000);
+        if (s < 60) return 'just now';
+        const units = [['m', 60], ['h', 3600], ['d', 86400], ['w', 604800], ['mo', 2592000], ['y', 31536000]];
+        let out = 'just now';
+        for (const [label, secs] of units) if (s >= secs) out = `${Math.floor(s / secs)}${label} ago`;
+        return out;
+    }
+
+    /* ---------------------------- state ----------------------------- */
+
+    const state = {
+        basePath: resolveBasePath(),
+        doc: createIssuesDocument(),
+        remoteStamp: null,      // updatedAt last seen on disk
+        fileExists: false,
+        selectedId: null,
+        filter: emptyFilter(),
+        sort: localStorage.getItem('issues.sort') || 'updated_desc',
+        dirty: false,
+        saving: false,
+        saveTimer: null,
+        previewBody: false,
+        me: localStorage.getItem('issues.author') || ''
+    };
+
+    const els = {
+        base: $('#base-chip'),
+        list: $('#issue-list'),
+        detail: $('#detail'),
+        stats: $('#stats'),
+        save: $('#save-state'),
+        q: $('#q'),
+        fStatus: $('#f-status'),
+        fPriority: $('#f-priority'),
+        fType: $('#f-type'),
+        fLabel: $('#f-label'),
+        fAssignee: $('#f-assignee'),
+        fSort: $('#f-sort'),
+        toasts: $('#toasts'),
+        importFile: $('#import-file')
+    };
+
+    els.base.textContent = `${state.basePath || '/'}/${ISSUES_FILE_NAME}`;
+    els.base.title = `Issues are stored in ${state.basePath || ''}/${ISSUES_FILE_NAME}`;
+
+    function toast(message, kind = '') {
+        const el = document.createElement('div');
+        el.className = `toast ${kind}`;
+        el.textContent = message;
+        els.toasts.appendChild(el);
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transition = 'opacity .3s';
+            setTimeout(() => el.remove(), 320);
+        }, kind === 'err' ? 7000 : 3000);
+    }
+
+    function setSaveState(text, cls = '') {
+        els.save.textContent = text;
+        els.save.className = cls;
+    }
+
+    /* ------------------------- load / save --------------------------- */
+
+    async function load({silent = false} = {}) {
+        setSaveState('loading…');
+        try {
+            const text = await io.readFile(state.basePath, ISSUES_FILE_NAME);
+            if (text === null) {
+                state.doc = createIssuesDocument();
+                state.fileExists = false;
+                state.remoteStamp = null;
+                setSaveState('no issues file yet');
+            } else {
+                const {value, errors} = parseIssuesJson(text);
+                state.doc = value;
+                state.fileExists = true;
+                state.remoteStamp = value.updatedAt;
+                setSaveState(`loaded ${value.issues.length} issue${value.issues.length === 1 ? '' : 's'}`);
+                if (errors.length && !silent) {
+                    toast(`${errors.length} problem(s) repaired while loading: ${errors[0].message}`, 'err');
+                    console.warn('[issues] validation:', errors);
+                }
+            }
+            state.dirty = false;
+        } catch (e) {
+            console.error(e);
+            toast(`Could not load ${ISSUES_FILE_NAME}: ${e.message}`, 'err');
+            setSaveState('load failed', 'dirty');
+        }
+        if (state.selectedId && !state.doc.issues.some(i => i.id === state.selectedId)) state.selectedId = null;
+        renderAll();
+    }
+
+    function markDirty() {
+        state.dirty = true;
+        setSaveState('unsaved changes…', 'dirty');
+        clearTimeout(state.saveTimer);
+        state.saveTimer = setTimeout(() => { save(); }, 700);
+    }
+
+    async function save({force = false} = {}) {
+        clearTimeout(state.saveTimer);
+        if (state.saving) {
+            state.saveTimer = setTimeout(() => save({force}), 400);
+            return;
+        }
+        state.saving = true;
+        setSaveState('saving…');
+        try {
+            if (!force && state.fileExists) {
+                // Optimistic concurrency: bail out if somebody else wrote the file.
+                const remoteText = await io.readFile(state.basePath, ISSUES_FILE_NAME);
+                if (remoteText !== null) {
+                    const remote = parseIssuesJson(remoteText).value;
+                    if (state.remoteStamp && remote.updatedAt !== state.remoteStamp) {
+                        state.saving = false;
+                        const overwrite = confirm(
+                            'issues.json was modified elsewhere since it was loaded.\n\n' +
+                            'OK = overwrite with my changes\nCancel = discard my changes and reload'
+                        );
+                        if (overwrite) return save({force: true});
+                        return load();
+                    }
+                }
+            }
+            state.doc.updatedAt = nowIso();
+            await io.writeFile(state.basePath, ISSUES_FILE_NAME, serializeIssuesDocument(state.doc));
+            state.remoteStamp = state.doc.updatedAt;
+            state.fileExists = true;
+            state.dirty = false;
+            setSaveState(`saved ${new Date().toLocaleTimeString()}`, 'saved');
+        } catch (e) {
+            console.error(e);
+            setSaveState('save failed — retrying', 'dirty');
+            toast(`Save failed: ${e.message}`, 'err');
+            try {
+                localStorage.setItem(`issues.backup.${state.basePath}`, serializeIssuesDocument(state.doc));
+            } catch { /* quota / private mode */ }
+            state.saveTimer = setTimeout(() => save({force}), 5000);
+        } finally {
+            state.saving = false;
+        }
+    }
+
+    /* --------------------------- rendering --------------------------- */
+
+    function fillSelect(select, options, value) {
+        select.innerHTML = options.map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join('');
+        select.value = value;
+    }
+
+    function renderFilterOptions() {
+        fillSelect(els.fStatus, [['all', 'Any status'], ['active', 'Active only'], ...ISSUE_STATUSES.map(s => [s, s.replace('_', ' ')])], state.filter.status);
+        fillSelect(els.fPriority, [['all', 'Any priority'], ...ISSUE_PRIORITIES.map(p => [p, p])], state.filter.priority);
+        fillSelect(els.fType, [['all', 'Any type'], ...ISSUE_TYPES.map(t => [t, t])], state.filter.type);
+        fillSelect(els.fLabel, [['all', 'Any label'], ['none', 'No label'], ...collectLabels(state.doc).map(l => [l, l])], state.filter.label);
+        fillSelect(els.fAssignee, [['all', 'Anyone'], ['none', 'Unassigned'], ...collectAssignees(state.doc).map(a => [a, a])], state.filter.assignee);
+        fillSelect(els.fSort, SORTS, state.sort);
+    }
+
+    function visibleIssues() {
+        const filter = parseIssueQuery(els.q.value, state.filter);
+        return sortIssues(state.doc.issues.filter(i => issueMatches(i, filter)), state.sort);
+    }
+
+    function renderStats() {
+        const s = summarize(state.doc);
+        const chip = (key, label, count, active) =>
+            `<span class="stat${active ? ' active' : ''}" data-status="${key}">${esc(label)} ${count}</span>`;
+        const parts = [
+            chip('all', 'All', s.total, state.filter.status === 'all'),
+            chip('active', 'Active', s.active, state.filter.status === 'active'),
+            ...ISSUE_STATUSES.filter(st => s.byStatus[st] > 0)
+                .map(st => chip(st, st.replace('_', ' '), s.byStatus[st], state.filter.status === st))
+        ];
+        if (s.overdue) parts.push(`<span class="stat overdue" data-status="active" title="Past due date">overdue ${s.overdue}</span>`);
+        els.stats.innerHTML = parts.join('');
+    }
+
+    function renderList() {
+        const issues = visibleIssues();
+        if (!issues.length) {
+            els.list.innerHTML = `<li class="empty">${state.doc.issues.length
+                ? 'No issues match the current filters.'
+                : 'No issues yet — press <span class="kbd">n</span> to create one.'}</li>`;
+            return;
+        }
+        const today = new Date().toISOString().slice(0, 10);
+        els.list.innerHTML = issues.map(i => {
+            const done = TERMINAL_STATUSES.includes(i.status);
+            const overdue = i.dueDate && i.dueDate < today && !done;
+            return `
+            <li class="issue${i.id === state.selectedId ? ' selected' : ''}${done ? ' done' : ''}" data-id="${esc(i.id)}" tabindex="0">
+              <div class="line1">
+                <span class="num">#${i.number}</span>
+                <span class="title">${esc(i.title)}</span>
+              </div>
+              <div class="line2">
+                <span class="badge st-${esc(i.status)}">${esc(i.status.replace('_', ' '))}</span>
+                <span class="badge pr-${esc(i.priority)}">${esc(i.priority)}</span>
+                <span class="badge">${esc(i.type)}</span>
+                ${i.labels.map(l => `<span class="badge label-chip">${esc(l)}</span>`).join('')}
+                ${i.assignee ? `<span>@${esc(i.assignee)}</span>` : ''}
+                ${overdue ? `<span class="overdue">due ${esc(i.dueDate)}</span>` : (i.dueDate ? `<span>due ${esc(i.dueDate)}</span>` : '')}
+                ${i.comments.length ? `<span>💬 ${i.comments.length}</span>` : ''}
+                <span>${esc(timeAgo(i.updatedAt))}</span>
+              </div>
+            </li>`;
+        }).join('');
+    }
+
+    function selected() {
+        return state.doc.issues.find(i => i.id === state.selectedId) || null;
+    }
+
+    function renderDetail() {
+        const issue = selected();
+        document.body.classList.toggle('detail-open', !!issue);
+        if (!issue) {
+            els.detail.innerHTML = `
+              <div class="empty">
+                <p>Select an issue, or create a new one.</p>
+                <p style="font-size:12px">
+                  <span class="kbd">n</span> new &nbsp; <span class="kbd">/</span> search &nbsp; <span class="kbd">Esc</span> close
+                </p>
+                <p style="font-size:12px">Query syntax: <code>is:open label:ui assignee:me priority:high some text</code></p>
+              </div>`;
+            return;
+        }
+        const opts = (values, current) => values
+            .map(v => `<option value="${esc(v)}"${v === current ? ' selected' : ''}>${esc(String(v).replace('_', ' '))}</option>`).join('');
+
+        els.detail.innerHTML = `
+        <div class="detail-head">
+          <span class="id">${esc(issue.id)}</span>
+          <span class="badge st-${esc(issue.status)}">${esc(issue.status.replace('_', ' '))}</span>
+          <span class="spacer"></span>
+          <button data-action="duplicate" title="Create a copy">Duplicate</button>
+          <button class="danger" data-action="delete">Delete</button>
+          <button data-action="close-detail" title="Close (Esc)">✕</button>
+        </div>
+
+        <input data-field="title" value="${esc(issue.title)}" placeholder="Issue title" style="font-size:16px;font-weight:600">
+
+        <div class="field-grid">
+          <div><label class="f">Status</label><select data-field="status">${opts(ISSUE_STATUSES, issue.status)}</select></div>
+          <div><label class="f">Priority</label><select data-field="priority">${opts(ISSUE_PRIORITIES, issue.priority)}</select></div>
+          <div><label class="f">Type</label><select data-field="type">${opts(ISSUE_TYPES, issue.type)}</select></div>
+          <div><label class="f">Assignee</label><input data-field="assignee" value="${esc(issue.assignee || '')}" placeholder="unassigned" list="people-list"></div>
+          <div><label class="f">Reporter</label><input data-field="reporter" value="${esc(issue.reporter || '')}" placeholder="—" list="people-list"></div>
+          <div><label class="f">Due date</label><input data-field="dueDate" type="date" value="${esc(issue.dueDate || '')}"></div>
+          <div><label class="f">Estimate (h)</label><input data-field="estimate" type="number" min="0" step="0.5" value="${issue.estimate == null ? '' : esc(issue.estimate)}"></div>
+          <div><label class="f">Labels (comma separated)</label><input data-field="labels" value="${esc(issue.labels.join(', '))}" placeholder="ui, backend"></div>
+        </div>
+        <datalist id="people-list">${collectAssignees(state.doc).map(a => `<option value="${esc(a)}"></option>`).join('')}</datalist>
+
+        <div class="card">
+          <h3>Description
+            <button class="icon-btn" data-action="toggle-preview" style="float:right">${state.previewBody ? 'Edit' : 'Preview'}</button>
+          </h3>
+          ${state.previewBody
+            ? `<div class="md">${renderMarkdown(issue.body)}</div>`
+            : `<textarea data-field="body" rows="8" placeholder="Markdown description…">${esc(issue.body)}</textarea>`}
+        </div>
+
+        <div class="card">
+          <h3>Linked files (${issue.files.length})</h3>
+          <ul class="row-list">
+            ${issue.files.map((f, idx) => `
+              <li>
+                <a href="${esc((state.basePath || '') + '/' + f.path)}" target="_blank" rel="noreferrer">${esc(f.path)}</a>
+                ${f.note ? `<span style="color:var(--muted)">— ${esc(f.note)}</span>` : ''}
+                <span class="spacer"></span>
+                <button class="icon-btn danger" data-action="remove-file" data-index="${idx}" title="Unlink">✕</button>
+              </li>`).join('') || '<li style="color:var(--muted)">None</li>'}
+          </ul>
+          <div class="inline-form">
+            <input id="file-path" placeholder="session-relative path, e.g. slides/deck.md">
+            <button data-action="add-file">Link</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Comments (${issue.comments.length})</h3>
+          ${issue.comments.map(c => `
+            <div class="comment">
+              <div class="who">
+                <strong>${esc(c.author || 'anonymous')}</strong>
+                <span>${esc(timeAgo(c.createdAt))}</span>
+                <span class="spacer"></span>
+                <button class="icon-btn danger" data-action="remove-comment" data-id="${esc(c.id)}" title="Delete comment">✕</button>
+              </div>
+              <div class="md">${renderMarkdown(c.body)}</div>
+            </div>`).join('') || '<div style="color:var(--muted)">No comments yet.</div>'}
+          <div style="margin-top:8px">
+            <input id="comment-author" placeholder="your name" value="${esc(state.me)}" style="max-width:220px;margin-bottom:6px">
+            <textarea id="comment-body" rows="3" placeholder="Leave a comment (markdown)…"></textarea>
+            <div style="margin-top:6px;display:flex;gap:6px">
+              <button class="primary" data-action="add-comment">Comment</button>
+              <button data-action="comment-and-close">Comment &amp; close</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Activity</h3>
+          <div class="history">
+            ${[...issue.history].reverse().map(h => `
+              <div>${esc(new Date(h.at).toLocaleString())} — <strong>${esc(h.kind)}</strong>
+              ${h.from || h.to ? `${esc(h.from || '—')} → ${esc(h.to || '—')}` : ''}
+              ${h.actor ? `by ${esc(h.actor)}` : ''}${h.note ? ` (${esc(h.note)})` : ''}</div>`).join('')}
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--muted)">
+            created ${esc(new Date(issue.createdAt).toLocaleString())} ·
+            updated ${esc(timeAgo(issue.updatedAt))}${issue.closedAt ? ` · closed ${esc(timeAgo(issue.closedAt))}` : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderAll() {
+        renderFilterOptions();
+        renderStats();
+        renderList();
+        renderDetail();
+    }
+
+    let listFrame = 0;
+
+    function renderListSoon() {
+        cancelAnimationFrame(listFrame);
+        listFrame = requestAnimationFrame(() => {
+            renderStats();
+            renderList();
+        });
+    }
+
+    /* ---------------------------- actions ---------------------------- */
+
+    function select(id) {
+        state.selectedId = id;
+        state.previewBody = false;
+        renderList();
+        renderDetail();
+        const el = els.detail.querySelector('[data-field="title"]');
+        if (el && document.activeElement === document.body) el.focus({preventScroll: true});
+    }
+
+    function newIssue() {
+        const issue = addIssue(state.doc, {title: '', reporter: state.me || null});
+        issue.title = 'Untitled issue';
+        select(issue.id);
+        markDirty();
+        renderFilterOptions();
+        const title = els.detail.querySelector('[data-field="title"]');
+        if (title) {
+            title.focus();
+            title.select();
+        }
+    }
+
+    function applyField(issue, field, rawValue) {
+        const before = issue[field];
+        switch (field) {
+            case 'title':
+                issue.title = String(rawValue);
+                break;
+            case 'body':
+                issue.body = String(rawValue);
+                break;
+            case 'assignee':
+            case 'reporter':
+                issue[field] = asNullableString(rawValue);
+                break;
+            case 'dueDate':
+                issue.dueDate = asNullableString(rawValue);
+                break;
+            case 'estimate': {
+                const n = Number(rawValue);
+                issue.estimate = rawValue === '' || !Number.isFinite(n) || n < 0 ? null : n;
+                break;
+            }
+            case 'labels':
+                issue.labels = String(rawValue).split(',').map(s => s.trim()).filter(Boolean);
+                break;
+            case 'status':
+                issue.status = oneOf(rawValue, ISSUE_STATUSES, issue.status);
+                break;
+            case 'priority':
+                issue.priority = oneOf(rawValue, ISSUE_PRIORITIES, issue.priority);
+                break;
+            case 'type':
+                issue.type = oneOf(rawValue, ISSUE_TYPES, issue.type);
+                break;
+            default:
+                return false;
+        }
+        const audited = ['status', 'priority', 'assignee'].includes(field);
+        touchIssue(issue, audited
+            ? {kind: field === 'assignee' ? 'assigned' : field, from: before == null ? null : String(before), to: issue[field] == null ? null : String(issue[field]), actor: state.me || null}
+            : null);
+        return true;
+    }
+
+    function addComment(issue, {closeAfter = false} = {}) {
+        const bodyEl = els.detail.querySelector('#comment-body');
+        const authorEl = els.detail.querySelector('#comment-author');
+        const body = (bodyEl && bodyEl.value || '').trim();
+        const author = asNullableString(authorEl && authorEl.value);
+        if (author) {
+            state.me = author;
+            try {
+                localStorage.setItem('issues.author', author);
+            } catch { /* ignore */ }
+        }
+        if (!body && !closeAfter) {
+            toast('Nothing to comment.');
+            return;
+        }
+        if (body) {
+            issue.comments.push({id: shortId('c'), author, body, createdAt: nowIso(), updatedAt: null});
+            touchIssue(issue, {kind: 'comment', actor: author});
+        }
+        if (closeAfter && issue.status !== 'closed') {
+            const from = issue.status;
+            issue.status = 'closed';
+            touchIssue(issue, {kind: 'status', from, to: 'closed', actor: author});
+        }
+        markDirty();
+        renderList();
+        renderDetail();
+    }
+
+    function exportJson() {
+        const blob = new Blob([serializeIssuesDocument(state.doc)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `issues-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
+    async function importJson(file) {
+        const text = await file.text();
+        const {value, errors, ok} = parseIssuesJson(text);
+        if (!ok) {
+            toast(errors[0].message, 'err');
+            return;
+        }
+        const replace = confirm(
+            `Import ${value.issues.length} issue(s).\n\nOK = replace everything\nCancel = merge (imported issues get new numbers)`
+        );
+        if (replace) {
+            state.doc = value;
+            state.selectedId = null;
+        } else {
+            const added = mergeIssuesDocument(state.doc, value);
+            toast(`Merged ${added} issue(s).`, 'ok');
+        }
+        markDirty();
+        renderAll();
+    }
+
+    /* ---------------------------- events ----------------------------- */
+
+    els.list.addEventListener('click', e => {
+        const li = e.target.closest('.issue');
+        if (li) select(li.dataset.id);
+    });
+    els.list.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const li = e.target.closest('.issue');
+        if (li) {
+            e.preventDefault();
+            select(li.dataset.id);
+        }
+    });
+
+    els.stats.addEventListener('click', e => {
+        const chip = e.target.closest('.stat');
+        if (!chip) return;
+        state.filter.status = chip.dataset.status;
+        renderFilterOptions();
+        renderStats();
+        renderList();
+    });
+
+    els.q.addEventListener('input', renderListSoon);
+    for (const [el, key] of [[els.fStatus, 'status'], [els.fPriority, 'priority'], [els.fType, 'type'], [els.fLabel, 'label'], [els.fAssignee, 'assignee']]) {
+        el.addEventListener('change', () => {
+            state.filter[key] = el.value;
+            renderStats();
+            renderList();
+        });
+    }
+    els.fSort.addEventListener('change', () => {
+        state.sort = els.fSort.value;
+        try {
+            localStorage.setItem('issues.sort', state.sort);
+        } catch { /* ignore */ }
+        renderList();
+    });
+
+    els.detail.addEventListener('input', e => {
+        const field = e.target.dataset.field;
+        const issue = selected();
+        if (!field || !issue) return;
+        if (applyField(issue, field, e.target.value)) {
+            markDirty();
+            renderListSoon();
+        }
+    });
+
+    els.detail.addEventListener('change', e => {
+        const field = e.target.dataset.field;
+        const issue = selected();
+        if (!field || !issue) return;
+        if (['status', 'priority', 'type', 'assignee', 'labels'].includes(field)) {
+            renderFilterOptions();
+            renderDetail();
+        }
+    });
+
+    els.detail.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const issue = selected();
+        if (!issue) return;
+        const action = btn.dataset.action;
+
+        if (action === 'close-detail') {
+            state.selectedId = null;
+            renderList();
+            renderDetail();
+        } else if (action === 'toggle-preview') {
+            state.previewBody = !state.previewBody;
+            renderDetail();
+        } else if (action === 'delete') {
+            if (!confirm(`Delete ${issue.id} — "${issue.title}"?`)) return;
+            state.doc.issues = state.doc.issues.filter(i => i.id !== issue.id);
+            state.selectedId = null;
+            markDirty();
+            renderAll();
+        } else if (action === 'duplicate') {
+            const copy = addIssue(state.doc, {
+                title: `${issue.title} (copy)`,
+                body: issue.body,
+                status: 'open',
+                priority: issue.priority,
+                type: issue.type,
+                labels: issue.labels,
+                assignee: issue.assignee,
+                reporter: state.me || null,
+                dueDate: issue.dueDate,
+                estimate: issue.estimate
+            });
+            select(copy.id);
+            markDirty();
+        } else if (action === 'add-comment') {
+            addComment(issue);
+        } else if (action === 'comment-and-close') {
+            addComment(issue, {closeAfter: true});
+        } else if (action === 'remove-comment') {
+            issue.comments = issue.comments.filter(c => c.id !== btn.dataset.id);
+            touchIssue(issue);
+            markDirty();
+            renderDetail();
+        } else if (action === 'add-file') {
+            const input = els.detail.querySelector('#file-path');
+            const path = asNullableString(input && input.value);
+            if (!path) return;
+            issue.files.push({path, note: null});
+            touchIssue(issue, {kind: 'edited', note: `linked ${path}`, actor: state.me || null});
+            markDirty();
+            renderDetail();
+        } else if (action === 'remove-file') {
+            issue.files.splice(Number(btn.dataset.index), 1);
+            touchIssue(issue);
+            markDirty();
+            renderDetail();
+        }
+    });
+
+    $('#btn-new').addEventListener('click', newIssue);
+    $('#btn-reload').addEventListener('click', () => {
+        if (state.dirty && !confirm('Discard unsaved changes and reload from disk?')) return;
+        load();
+    });
+    $('#btn-export').addEventListener('click', exportJson);
+    $('#btn-import').addEventListener('click', () => els.importFile.click());
+    els.importFile.addEventListener('change', () => {
+        const file = els.importFile.files && els.importFile.files[0];
+        els.importFile.value = '';
+        if (file) importJson(file).catch(e => toast(e.message, 'err'));
+    });
+
+    document.addEventListener('keydown', e => {
+        const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            save();
+            return;
+        }
+        if (typing) {
+            if (e.key === 'Escape') e.target.blur();
+            return;
+        }
+        if (e.key === '/') {
+            e.preventDefault();
+            els.q.focus();
+            els.q.select();
+        } else if (e.key.toLowerCase() === 'n') {
+            e.preventDefault();
+            newIssue();
+        } else if (e.key === 'Escape' && state.selectedId) {
+            state.selectedId = null;
+            renderList();
+            renderDetail();
+        }
+    });
+
+    window.addEventListener('beforeunload', e => {
+        if (!state.dirty) return;
+        save();
+        e.preventDefault();
+        e.returnValue = '';
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && state.dirty) save();
+    });
+
+    /* Expose a tiny console API for scripted/agent edits. */
+    window.Issues = {
+        state,
+        save: () => save(),
+        reload: () => load(),
+        add: patch => {
+            const i = addIssue(state.doc, patch || {});
+            markDirty();
+            renderAll();
+            return i;
+        },
+        doc: () => state.doc
+    };
+
+    await load();
+</script>
+</body>
+</html>

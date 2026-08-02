@@ -89,17 +89,19 @@ open class DocOpsApp(
       sessionTime = Date(),
       ownerId = user.id
     ))
+    val extractUtil = extractResources("web/util", sessionRoot)
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
     }
     try {
-      GitOperationHandler.executeGitCommand(sessionRoot, "git", "init")
-      GitOperationHandler.executeGitCommand(sessionRoot, "git", "add", "-A")
-      GitOperationHandler.executeGitCommand(
+      GitOperationHandler.executeCommand(sessionRoot, "git", "init")
+      GitOperationHandler.executeCommand(sessionRoot, "git", "add", "-A", ".")
+      GitOperationHandler.executeCommand(
         sessionRoot,
         "git",
         "commit",
+        "-a",
         "-m",
         "Initial commit from DocOps app session"
       )

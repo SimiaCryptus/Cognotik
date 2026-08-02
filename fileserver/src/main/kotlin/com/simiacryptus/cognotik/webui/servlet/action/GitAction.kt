@@ -20,7 +20,7 @@ class GitActionContext(
   fun flag(name: String, default: Boolean = false): Boolean =
     param(name)?.let { it.equals("true", ignoreCase = true) || it == "1" } ?: default
 
-  fun git(vararg command: String): String = GitOperationHandler.executeGitCommand(gitRoot, *command)
+  fun git(vararg command: String): String = GitOperationHandler.executeCommand(gitRoot, *command)
 }
 
 /**

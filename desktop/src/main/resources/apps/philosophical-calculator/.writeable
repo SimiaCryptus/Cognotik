@@ -4,6 +4,7 @@
 notes/**
 notes/
 instruct.md
+issues.json
 
 # Article and essay outputs
 content.md
