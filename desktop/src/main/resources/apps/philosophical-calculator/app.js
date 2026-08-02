@@ -45,7 +45,13 @@
     /** target path -> { badge, viewer } */
     const OUTPUTS = new Map([
         ['summary.md', {badge: 'badge-summary', viewer: 'viewer-summary'}],
-        [CONTENT_FILE, {badge: 'badge-content', viewer: 'viewer-content'}],
+       // content.md is produced by three separate steps (draft / update / illustrate),
+       // so a status update for this target must fan out to all of their badges.
+       [CONTENT_FILE, {
+           badge: 'badge-content',
+           viewer: 'viewer-content',
+           extraBadges: ['badge-update', 'badge-illustration']
+       }],
         ['brainstorm.md', {badge: 'badge-brainstorm', viewer: 'viewer-brainstorm'}],
         ['dialectical.md', {badge: 'badge-dialectical', viewer: 'viewer-dialectical'}],
         ['socratic.md', {badge: 'badge-socratic', viewer: 'viewer-socratic'}],
@@ -61,6 +67,11 @@
     ]);
 
     const badgeFor = target => OUTPUTS.get(target)?.badge;
+   const badgesFor = target => {
+       const entry = OUTPUTS.get(target);
+       if (!entry) return [];
+       return [entry.badge, ...(entry.extraBadges ?? [])].filter(Boolean);
+   };
     const viewerFor = target => OUTPUTS.get(target)?.viewer;
 
     // ========================================================================
@@ -245,12 +256,14 @@
 
     const handleStatusUpdate = (target, taskInfo) => {
         const status = taskInfo?.status;
-        const badgeId = badgeFor(target);
-        if (badgeId) {
-            if (status === 'RUNNING') setBadge(badgeId, 'running');
-            else if (status === 'COMPLETED') setBadge(badgeId, 'done');
-            else if (status === 'ERROR' || status === 'FAILED') setBadge(badgeId, 'error');
-        }
+       const badgeState =
+           status === 'RUNNING' ? 'running'
+               : status === 'COMPLETED' ? 'done'
+                   : (status === 'ERROR' || status === 'FAILED') ? 'error'
+                       : null;
+       if (badgeState) {
+           for (const badgeId of badgesFor(target)) setBadge(badgeId, badgeState);
+       }
         if (status === 'RUNNING') runningTargets.add(target);
         else runningTargets.delete(target);
         updateLinks(target, taskInfo);
@@ -668,7 +681,13 @@
                     updateLinks(output, {status: 'RUNNING', sessionId: taskId});
                 }
                 await waitForTask(basePath, output, TASK_TIMEOUT_MS, handleStatusUpdate);
-                setBadge(badgeId, 'done');
+               setBadge(badgeId, 'done');
+               // Sibling steps that share this target (e.g. content.md) are no longer running.
+               for (const sibling of badgesFor(output)) {
+                   if (sibling !== badgeId && $(sibling)?.classList.contains('running')) {
+                       setBadge(sibling, 'done');
+                   }
+               }
                 await showViewerAfterRun(viewerId, output);
             } catch (err) {
                 console.error('[runOperation]', op, err);

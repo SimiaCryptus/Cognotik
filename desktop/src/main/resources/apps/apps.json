@@ -104,6 +104,23 @@
       "Kids"
     ]
   },
+   {
+     "name": "Hallucipedia",
+     "icon": "📖",
+     "description": "An infinite, AI-hallucinated encyclopedia. Browse to any article path and it is written on demand, complete with Markdown, MathJax, Mermaid diagrams, and cross-links to pages that do not exist yet — until you visit them.",
+     "badge": "Experimental",
+     "badgeClass": "accent",
+     "type": "docops",
+     "path": "apps/hallucipedia",
+     "id": "app-hallucipedia",
+     "category": "Imagine",
+     "tags": [
+       "Teach",
+       "Kids"
+     ],
+     "exampleSessions": {
+     }
+   },
   {
     "name": "Omega App Factory",
     "icon": "🔮",
