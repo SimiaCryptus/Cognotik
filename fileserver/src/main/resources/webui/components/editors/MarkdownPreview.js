@@ -2,7 +2,7 @@ import {h, clear} from '../../core/dom.js';
   import {fs} from '../../core/fsclient.js';
   import {ui} from '../../core/ui.js';
   import {bus} from '../../core/bus.js';
-  import {renderMarkdown} from '../../core/markdown.js';
+import {renderMarkdown, enhanceMarkdown} from '../../core/markdown.js';
   import {publicUrl} from '../../core/urls.js';
   import {basename, dirname, join} from '../../core/paths.js';
 
@@ -13,6 +13,10 @@ import {h, clear} from '../../core/dom.js';
    * (see `ui.openPreview`), so the same file can be open twice: once for editing
    * (Monaco) and once for reading. Relative links and images resolve against the
    * document's own folder, through the clean file URL.
+  *
+  * ```mermaid fences become diagrams and TeX spans ($…$, $$…$$, \(…\), \[…\])
+  * are typeset by MathJax — both in a second pass, once the rendered fragment is
+  * in the document, because both libraries need real layout to measure.
    */
   export class MarkdownPreview {
       static id = 'markdown-preview';
@@ -24,6 +28,8 @@ import {h, clear} from '../../core/dom.js';
       constructor(ctx) {
           this.ctx = ctx;
           this.path = ctx.tab.stat.sourcePath || ctx.tab.path;
+         /* Guards against a slow render landing after a newer one (reload/watch). */
+         this.renderToken = 0;
           this.body = h('div', {class: 'fs-markdown__body'});
           this.scroller = h('article', {
               class: 'fs-markdown', tabindex: '0', 'aria-label': `Preview of ${basename(this.path)}`,
@@ -54,30 +60,46 @@ import {h, clear} from '../../core/dom.js';
       }
 
       async reload() {
+         const token = ++this.renderToken;
           this.status.textContent = 'Rendering…';
           let text = '';
           try {
               text = (await fs.readText(this.path)).text ?? '';
           } catch (error) {
+             if (token !== this.renderToken) return;
               clear(this.body);
               this.status.textContent = '';
               this.body.appendChild(h('p', {text: `Could not read ${basename(this.path)}: ${error?.message || error}`}));
               return;
           }
+         if (token !== this.renderToken) return;
           try {
               const fragment = await renderMarkdown(text, {resolveUrl: (value) => this.resolveUrl(value)});
+             if (token !== this.renderToken) return;
               clear(this.body);
               this.body.appendChild(fragment);
           } catch (error) {
               /* No lib/marked.min.js (air-gapped install?): show the source. */
               console.warn('markdown renderer unavailable', error);
+             if (token !== this.renderToken) return;
               clear(this.body);
               this.body.append(
-                  h('p', {class: 'fs-preview__status', text: 'lib/marked.min.js is unavailable — showing the source.'}),
+                  h('p', {class: 'fs-preview__status', text: '/lib/marked.min.js is unavailable — showing the source.'}),
                   h('pre', {text}),
               );
+             this.status.textContent = '';
+             return;
           }
-          this.status.textContent = '';
+         /* Diagrams and formulas: additive, and never fatal — a missing library
+            leaves the fence/TeX visible as source and says so in the toolbar. */
+         let warnings = [];
+         try {
+             ({warnings = []} = (await enhanceMarkdown(this.body)) || {});
+         } catch (error) {
+             console.warn('markdown enhancement failed', error);
+         }
+         if (token !== this.renderToken) return;
+         this.status.textContent = warnings.join(' · ');
       }
 
       /** Relative links/images resolve against the document's folder. */
@@ -94,6 +116,8 @@ import {h, clear} from '../../core/dom.js';
       }
 
       dispose() {
+         /* Cancels any render still in flight. */
+         this.renderToken++;
           this.offEvent?.();
       }
   }

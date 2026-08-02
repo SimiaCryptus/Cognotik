@@ -402,7 +402,7 @@ function registerEditorActions() {
 /* ------------------------------------------------------------------ preview */
 /** Documents the browser renders itself, inside a sandboxed iframe. */
 const IFRAME_PREVIEW = new Set(['html', 'htm', 'xhtml', 'svg', 'pdf']);
-/** Rendered by MarkdownPreview (marked.js from /lib/). */
+/** Rendered by MarkdownPreview (marked + mermaid + MathJax, all from /lib/). */
 const MARKDOWN_PREVIEW = new Set(['md', 'markdown', 'mdown', 'mkd', 'mkdn']);
 /** Rendered by TablePreview. */
 const TABLE_PREVIEW = new Set(['csv', 'tsv', 'tab']);

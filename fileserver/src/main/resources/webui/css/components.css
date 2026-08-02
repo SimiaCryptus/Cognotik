@@ -1350,6 +1350,47 @@ dialog.fs-modal::backdrop {
 .fs-markdown li + li {
     margin-block-start: var(--fs-space-2);
 }
+/* ------------------------------------------------- mermaid & math (markdown) */
+.fs-markdown .fs-mermaid {
+     display: flex;
+     justify-content: center;
+     padding: var(--fs-space-4);
+     overflow-x: auto;
+     background: var(--fs-bg-sunken);
+     border: 1px solid var(--fs-hairline);
+     border-radius: var(--fs-radius-md);
+}
+.fs-markdown .fs-mermaid svg {
+     max-width: 100%;
+     height: auto;
+}
+/* A diagram that failed to parse keeps its source, flagged rather than hidden. */
+.fs-markdown pre.fs-mermaid__error {
+     border-color: color-mix(in oklab, var(--fs-danger) 45%, var(--fs-border));
+     background: var(--fs-danger-soft);
+}
+/* Until MathJax replaces it, raw TeX should read as code, not as a mistake. */
+.fs-math {
+     font-family: var(--fs-font-mono);
+}
+.fs-math--display {
+     display: block;
+     margin-block: var(--fs-space-4);
+     overflow-x: auto;
+     overflow-y: hidden;
+     text-align: center;
+}
+.fs-markdown mjx-container {
+     max-width: 100%;
+     overflow-x: auto;
+     overflow-y: hidden;
+}
+.fs-markdown mjx-container[display="true"] {
+     margin-block: var(--fs-space-4) !important;
+}
+.fs-markdown mjx-container svg {
+     vertical-align: middle;
+}
 /* ----------------------------------------------------------- table preview */
 .fs-table-wrap {
     flex: 1;
