@@ -1,0 +1,662 @@
+{
+  "version": "1.0.0",
+  "title": "Cellular Automata — Detailed Reference",
+  "description": "Glossary of cellular automaton concepts including isometric and causal variants relevant to discrete spacetime models and multi-sheeted tiling diagnostics.",
+  "concepts": {
+    "cellular-automaton": {
+      "id": "cellular-automaton",
+      "term": "Cellular Automaton",
+      "aliases": ["CA", "cellular automata"],
+      "domain": "computation",
+      "crossDomains": ["mathematics", "physics"],
+      "difficulty": "foundational",
+      "tags": ["discrete", "dynamical-system", "lattice", "local-rule", "synchronous"],
+      "summary": "A discrete dynamical system on a lattice or graph where each cell updates synchronously based on a local rule applied to itself and its neighbors.",
+      "definition": "A **discrete dynamical system** on a lattice or graph, with:\n\n- A set of **cells** (lattice/graph vertices), each in one of finitely many **states**.\n- A **local update rule** determining each cell's new state from the states of itself and its neighbors.\n- **Synchronous updates** at discrete time steps (in the basic version).\n\nCAs are simultaneously:\n\n- **Mathematical structures** with rich combinatorial behavior.\n- **Computational models** (some are Turing-universal).\n- **Physical models** (idealizing local interactions, conservation laws).",
+      "examples": [
+        {
+          "title": "Conway's Game of Life",
+          "body": "The canonical CA on a 2D square lattice with Moore neighborhood and rule B3/S23. Despite its simplicity, it is Turing-universal and supports a vast zoology of stable, periodic, and moving patterns."
+        },
+        {
+          "title": "Elementary CA (Wolfram)",
+          "body": "1D binary CAs with a 3-cell neighborhood, yielding 256 possible rules. Rule 110 is Turing-universal. Wolfram classified these into four behavioral classes."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Wolfram, S. (2002). A New Kind of Science.",
+        "Berlekamp, E., Conway, J., Guy, R. (1982). Winning Ways for your Mathematical Plays."
+      ],
+      "relations": {
+        "requires": [{ "id": "cell-state" }, { "id": "neighborhood" }],
+        "related": [
+          { "id": "outer-totalistic-rule" },
+          { "id": "isometric-cellular-automaton" },
+          { "id": "causal-cellular-automaton" },
+          { "id": "phase-transition-ca" }
+        ],
+        "enabledBy": [
+          { "id": "conways-game-of-life" },
+          { "id": "turing-universal-ca" },
+          { "id": "glider" },
+          { "id": "still-life" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "cell-state": {
+      "id": "cell-state",
+      "term": "Cell State",
+      "aliases": ["state", "cell value"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["binary", "discrete", "lattice", "vertex"],
+      "summary": "The value stored at a vertex of a cellular automaton lattice or graph, most commonly binary but generalizable to k-valued states.",
+      "definition": "The value stored at a vertex. Most common: **binary** ($\\sigma \\in \\{0, 1\\}$), but can be multi-valued ($\\sigma \\in \\{0, 1, \\ldots, k-1\\}$).",
+      "examples": [
+        {
+          "title": "Binary state",
+          "body": "In Conway's Game of Life, each cell is either alive (1) or dead (0)."
+        },
+        {
+          "title": "Multi-valued state",
+          "body": "In a 3-state CA, cells may be in states {0, 1, 2}, allowing richer local dynamics such as excitable media models."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\sigma \\in \\{0, 1, \\ldots, k-1\\}",
+          "description": "General k-valued cell state",
+          "variables": {
+            "\\sigma": "cell state value",
+            "k": "number of distinct states"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "cellular-automaton" }, { "id": "outer-totalistic-rule" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "neighborhood": {
+      "id": "neighborhood",
+      "term": "Neighborhood",
+      "aliases": ["CA neighborhood", "local neighborhood"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["neighbors", "local", "von-neumann", "moore", "graph"],
+      "summary": "The set of cells whose states influence the update of a given cell, defined by the lattice geometry or graph structure.",
+      "definition": "The set of cells whose states influence the update of a given cell. Examples:\n\n- **von Neumann neighborhood** in 2D: 4 nearest neighbors.\n- **Moore neighborhood** in 2D: 8 neighbors (including diagonals).\n- On a general graph: typically the graph-theoretic 1-neighborhood.",
+      "examples": [
+        {
+          "title": "Von Neumann neighborhood",
+          "body": "In 2D, the 4 orthogonally adjacent cells (up, down, left, right). Used in many spreading and diffusion models."
+        },
+        {
+          "title": "Moore neighborhood",
+          "body": "In 2D, all 8 surrounding cells including diagonals. Used in Conway's Game of Life."
+        },
+        {
+          "title": "Graph 1-neighborhood",
+          "body": "On an arbitrary graph, the set of all vertices connected by a single edge to the given vertex. Used in isometric CAs on non-lattice graphs."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "cellular-automaton" },
+          { "id": "outer-totalistic-rule" },
+          { "id": "isometric-cellular-automaton" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "outer-totalistic-rule": {
+      "id": "outer-totalistic-rule",
+      "term": "Outer-Totalistic Rule",
+      "aliases": ["totalistic rule", "B/S rule"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["birth", "survival", "rule", "binary", "degree"],
+      "summary": "A CA update rule depending only on the current cell's state and the count of neighbors in each state, not their specific positions.",
+      "definition": "A rule depending only on:\n\n- The current cell's state.\n- The **count** of neighbors in each state (not their specific positions).\n\nFor binary CA on a degree-$k$ graph, an outer-totalistic rule is specified by:\n\n- **Birth set** $B \\subseteq \\{0, 1, \\ldots, k\\}$: dead cells with $b \\in B$ live neighbors become alive.\n- **Survival set** $S \\subseteq \\{0, 1, \\ldots, k\\}$: alive cells with $s \\in S$ live neighbors stay alive.\n\nNotation: \"B/S\" or \"B$\\ldots$/S$\\ldots$\" (e.g., Conway's Life is **B3/S23**).",
+      "examples": [
+        {
+          "title": "Conway's Game of Life (B3/S23)",
+          "body": "Birth set B={3}: a dead cell with exactly 3 live neighbors becomes alive. Survival set S={2,3}: a live cell with 2 or 3 live neighbors survives."
+        },
+        {
+          "title": "Day & Night (B3678/S34678)",
+          "body": "A symmetric rule where the complement of any pattern also evolves symmetrically. Supports complex structures similar to Life."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "B \\subseteq \\{0, 1, \\ldots, k\\}, \\quad S \\subseteq \\{0, 1, \\ldots, k\\}",
+          "description": "Birth and survival sets for a binary outer-totalistic rule on a degree-k graph",
+          "variables": {
+            "B": "birth set — neighbor counts causing a dead cell to become alive",
+            "S": "survival set — neighbor counts allowing a live cell to remain alive",
+            "k": "degree of the graph (number of neighbors per vertex)"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cell-state" }, { "id": "neighborhood" }],
+        "related": [
+          { "id": "birth-survival-set" },
+          { "id": "conways-game-of-life" },
+          { "id": "isometric-cellular-automaton" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "birth-survival-set" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "birth-survival-set": {
+      "id": "birth-survival-set",
+      "term": "Birth/Survival Set",
+      "aliases": ["B/S pair", "birth set", "survival set"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["birth", "survival", "rule-specification", "binary-ca"],
+      "summary": "The pair (B, S) of neighbor-count sets that fully specifies an outer-totalistic binary CA rule on a given graph.",
+      "definition": "The pair $(B, S)$ specifying an outer-totalistic rule. The full rule is determined by this data plus the underlying graph.",
+      "examples": [
+        {
+          "title": "Life: B={3}, S={2,3}",
+          "body": "The birth/survival pair for Conway's Game of Life. Dead cells with exactly 3 live neighbors are born; live cells with 2 or 3 live neighbors survive."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "outer-totalistic-rule" }],
+        "related": [{ "id": "conways-game-of-life" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "outer-totalistic-rule" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "conways-game-of-life": {
+      "id": "conways-game-of-life",
+      "term": "Conway's Game of Life",
+      "aliases": ["Game of Life", "Life", "B3/S23"],
+      "domain": "computation",
+      "crossDomains": ["mathematics"],
+      "difficulty": "foundational",
+      "tags": ["life", "turing-universal", "binary", "moore-neighborhood", "2d", "canonical"],
+      "summary": "The canonical binary 2D CA on a square lattice with Moore neighborhood and rule B3/S23, which is Turing-universal and supports gliders, still lifes, and oscillators.",
+      "definition": "The canonical CA: binary, 2D square lattice, Moore neighborhood, rule **B3/S23**:\n\n- A dead cell with exactly 3 live neighbors becomes alive.\n- A live cell with 2 or 3 live neighbors survives.\n- All other cells become dead.\n\nDespite this simplicity, Game of Life is **Turing-universal** and supports a vast zoology of stable, periodic, and moving patterns.",
+      "examples": [
+        {
+          "title": "Glider",
+          "body": "A 5-cell pattern that moves diagonally at speed c/4 (one cell every 4 generations), the simplest moving pattern in Life."
+        },
+        {
+          "title": "Glider gun",
+          "body": "A pattern that periodically emits gliders, used to construct logic gates and prove Turing universality."
+        },
+        {
+          "title": "Block (still life)",
+          "body": "A 2×2 square of live cells that remains unchanged indefinitely — the simplest still life."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Gardner, M. (1970). Mathematical Games: The fantastic combinations of John Conway's new solitaire game 'life'. Scientific American 223(4):120–123.",
+        "Berlekamp, E., Conway, J., Guy, R. (1982). Winning Ways for your Mathematical Plays."
+      ],
+      "relations": {
+        "requires": [{ "id": "outer-totalistic-rule" }, { "id": "neighborhood" }],
+        "related": [
+          { "id": "glider" },
+          { "id": "still-life" },
+          { "id": "turing-universal-ca" },
+          { "id": "phase-transition-ca" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "still-life": {
+      "id": "still-life",
+      "term": "Still Life",
+      "aliases": ["stable pattern", "fixed point"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["pattern", "stable", "fixed-point", "life"],
+      "summary": "A CA pattern that is unchanged by the update rule — a fixed point of the dynamics.",
+      "definition": "A pattern **unchanged by the update rule**. In Life: blocks, beehives, loaves, etc.",
+      "examples": [
+        {
+          "title": "Block",
+          "body": "A 2×2 square of live cells in Conway's Life. Each live cell has exactly 3 live neighbors, satisfying the survival condition, and no dead neighbor has exactly 3 live neighbors."
+        },
+        {
+          "title": "Beehive",
+          "body": "A 6-cell hexagonal arrangement in Conway's Life that remains stable indefinitely."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cellular-automaton" }],
+        "related": [{ "id": "conways-game-of-life" }, { "id": "glider" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "glider": {
+      "id": "glider",
+      "term": "Glider",
+      "aliases": ["CA glider", "moving pattern", "spaceship"],
+      "domain": "computation",
+      "crossDomains": ["physics"],
+      "difficulty": "intermediate",
+      "tags": ["pattern", "moving", "translation", "particle", "life", "information"],
+      "summary": "A stable moving CA pattern that translates itself across the lattice at a fixed speed and direction, acting as an information-carrying particle.",
+      "definition": "A **stable moving pattern** that translates itself across the lattice at a fixed speed and direction. The glider in Life is the canonical example — a 5-cell pattern moving diagonally at speed $c/4$ (4 generations per cell).\n\nGliders are the \"particles\" of CA universe — used to encode information and construct logic gates.",
+      "examples": [
+        {
+          "title": "Life glider",
+          "body": "A 5-cell pattern in Conway's Life that moves one cell diagonally every 4 generations (speed c/4). It cycles through 4 distinct phases before returning to its original shape at a displaced position."
+        },
+        {
+          "title": "Glider-based logic gate",
+          "body": "Two glider streams can be arranged to collide and annihilate or produce new gliders, implementing AND/OR/NOT gates and enabling Turing-universal computation."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "v = c/4",
+          "description": "Speed of the Life glider: one diagonal cell per 4 generations",
+          "variables": {
+            "v": "glider velocity",
+            "c": "maximum propagation speed (1 cell per generation)"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cellular-automaton" }],
+        "related": [
+          { "id": "conways-game-of-life" },
+          { "id": "turing-universal-ca" },
+          { "id": "vortex-scattering" },
+          { "id": "still-life" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "phase-transition-ca": {
+      "id": "phase-transition-ca",
+      "term": "Phase Transition (CA)",
+      "aliases": ["CA phase transition", "edge of chaos", "Wolfram class transition"],
+      "domain": "computation",
+      "crossDomains": ["physics", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["phase-transition", "edge-of-chaos", "wolfram", "percolation", "critical"],
+      "summary": "A sharp qualitative change in CA behavior as rule or graph parameters vary, analogous to phase transitions in statistical mechanics.",
+      "definition": "A **sharp qualitative change** in CA behavior as rule parameters (or graph parameters) vary. Examples:\n\n- Wolfram's **Class 1–4** classification by long-time behavior.\n- **Edge of chaos**: rules near the boundary between order and disorder, often the most computationally interesting.\n- **Percolation transitions** in spreading rules.\n\nPhase transitions in CAs mirror those in statistical mechanics, providing combinatorial models of critical phenomena.",
+      "examples": [
+        {
+          "title": "Wolfram Class 1–4",
+          "body": "Class 1: all cells die. Class 2: periodic/stable patterns. Class 3: chaotic behavior. Class 4: complex, long-lived patterns (e.g., Life). The transition between classes 2–3 and 4 is the 'edge of chaos'."
+        },
+        {
+          "title": "Percolation transition",
+          "body": "In a spreading CA (e.g., bootstrap percolation), there is a critical initial density above which the active region percolates the entire lattice and below which it dies out."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Wolfram, S. (1984). Universality and complexity in cellular automata. Physica D 10(1–2):1–35.",
+        "Langton, C. (1990). Computation at the edge of chaos. Physica D 42:12–37."
+      ],
+      "relations": {
+        "requires": [{ "id": "cellular-automaton" }],
+        "related": [
+          { "id": "conways-game-of-life" },
+          { "id": "turing-universal-ca" },
+          { "id": "causal-dynamical-triangulation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "turing-universal-ca": {
+      "id": "turing-universal-ca",
+      "term": "Turing-Universal CA",
+      "aliases": ["Turing-universal cellular automaton", "computationally universal CA"],
+      "domain": "computation",
+      "crossDomains": ["mathematics"],
+      "difficulty": "advanced",
+      "tags": ["turing", "universality", "undecidable", "computation", "glider-gun"],
+      "summary": "A CA capable of simulating any Turing machine, implying that its long-term behavior is undecidable in general.",
+      "definition": "A CA is **Turing-universal** if it can simulate any Turing machine, hence any algorithm. Conway's Game of Life is Turing-universal (proved by Berlekamp, Conway, Guy, and refined by many others) via glider-gun-based computer constructions.\n\nImplication: long-term behavior of universal CAs is **undecidable** — no algorithm can predict the future state in general without simulating step by step.",
+      "examples": [
+        {
+          "title": "Life computer",
+          "body": "Using glider guns, eaters, and reflectors, one can construct registers, logic gates, and a universal computer within Conway's Life. The construction proves Life is Turing-universal."
+        },
+        {
+          "title": "Rule 110",
+          "body": "Wolfram's 1D elementary CA Rule 110 is Turing-universal (proved by Matthew Cook, 2004), demonstrating universality in the simplest possible CA setting."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Cook, M. (2004). Universality in elementary cellular automata. Complex Systems 15(1):1–40.",
+        "Berlekamp, E., Conway, J., Guy, R. (1982). Winning Ways for your Mathematical Plays."
+      ],
+      "relations": {
+        "requires": [{ "id": "cellular-automaton" }, { "id": "glider" }],
+        "related": [{ "id": "conways-game-of-life" }, { "id": "phase-transition-ca" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "isometric-cellular-automaton": {
+      "id": "isometric-cellular-automaton",
+      "term": "Isometric Cellular Automaton",
+      "aliases": ["ICA", "isometric CA", "graph-isometric CA"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "isometric",
+        "graph",
+        "coordinate-free",
+        "multi-sheeted",
+        "tiling",
+        "isomorphism-invariant"
+      ],
+      "summary": "A CA whose update rule depends only on local graph geometry and is invariant under graph isomorphisms, making it suitable for non-regular graphs such as multi-sheeted tilings.",
+      "definition": "A CA whose **update rule depends only on local graph geometry**, not on coordinates or embedding. Equivalently: the rule is invariant under graph isomorphisms.\n\nICAs are the natural CA framework for **graphs that aren't regular lattices** — such as multi-sheeted tilings. The rule must \"see\" only:\n\n- The local adjacency structure.\n- The states of local cells.\n\nOn a regular lattice with constant degree, outer-totalistic rules are automatically isometric. On the project's adjacency graphs $\\mathcal{G}$ for multi-sheeted tilings, the ICA framework provides the right tool: rules can be specified by birth/survival sets even when the graph isn't a simple lattice.",
+      "examples": [
+        {
+          "title": "Outer-totalistic rule on a regular lattice",
+          "body": "On a degree-4 grid, any outer-totalistic rule is automatically isometric because all vertices have the same local structure."
+        },
+        {
+          "title": "ICA on a multi-sheeted pentagonal tiling",
+          "body": "On the project's adjacency graph G for a multi-sheeted tiling, vertices may have varying local geometry. An ICA rule uses only the adjacency structure and neighbor states, not coordinates, so it remains well-defined across all vertices."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cellular-automaton" }, { "id": "outer-totalistic-rule" }],
+        "related": [
+          { "id": "lazy-graph-generation" },
+          { "id": "adjacency-oracle" },
+          { "id": "vortex-scattering" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "lazy-graph-generation": {
+      "id": "lazy-graph-generation",
+      "term": "Lazy Graph Generation",
+      "aliases": ["on-demand graph construction", "lazy expansion"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["lazy", "on-demand", "graph", "infinite", "active-region", "cache", "seed"],
+      "summary": "On-demand construction of graph vertices and edges as CA dynamics expand, enabling efficient computation on infinite or very large graphs by storing only the active region.",
+      "definition": "**On-demand construction** of graph vertices and edges as the CA dynamics expand. Used when:\n\n- The graph is infinite or very large.\n- Only the active region matters at any given time.\n\nThe implementation: start with a seed (an initial vertex or small cluster), then expand the graph step-by-step as the active CA region grows. New vertices are added with their adjacency information cached.\n\nThis is essential for multi-sheeted tiling CAs, where the full graph may be enormous but only the active region needs storage.",
+      "examples": [
+        {
+          "title": "Seed-based expansion",
+          "body": "Begin with a single live cell at the origin. At each CA step, compute neighbors of all boundary cells using the adjacency oracle, add any new vertices to the graph, and then apply the CA update rule."
+        },
+        {
+          "title": "Multi-sheeted tiling CA",
+          "body": "The full multi-sheeted pentagonal tiling graph is infinite. Lazy generation stores only vertices within the current active region plus a one-step boundary, expanding as gliders or other patterns propagate outward."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "adjacency-oracle" }],
+        "related": [{ "id": "isometric-cellular-automaton" }, { "id": "cellular-automaton" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "adjacency-oracle": {
+      "id": "adjacency-oracle",
+      "term": "Adjacency Oracle",
+      "aliases": ["neighbor oracle", "adjacency procedure"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "algebra"],
+      "difficulty": "intermediate",
+      "tags": ["oracle", "adjacency", "exact-arithmetic", "on-demand", "neighbors"],
+      "summary": "An algorithmic procedure returning the neighbors of a vertex on demand using exact arithmetic, enabling lazy graph generation for multi-sheeted tiling CAs.",
+      "definition": "An algorithmic procedure returning **neighbors of a vertex on demand**, with exact arithmetic. The lazy graph generation relies on the adjacency oracle to compute each new vertex's neighbors as needed.",
+      "examples": [
+        {
+          "title": "Pentagonal tiling adjacency oracle",
+          "body": "Given a vertex identifier encoding its sheet and position in the multi-sheeted tiling, the oracle returns the list of adjacent vertex identifiers by applying the local geometric rules of the tiling, using exact rational or algebraic arithmetic."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "lazy-graph-generation" }, { "id": "isometric-cellular-automaton" }],
+        "enabledBy": [{ "id": "lazy-graph-generation" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "causal-cellular-automaton": {
+      "id": "causal-cellular-automaton",
+      "term": "Causal Cellular Automaton",
+      "aliases": ["causal CA", "causal automaton"],
+      "domain": "computation",
+      "crossDomains": ["physics"],
+      "difficulty": "advanced",
+      "tags": ["causal", "DAG", "discrete-spacetime", "light-cone", "conservation", "directed"],
+      "summary": "A CA whose update respects a causal ordering so that information propagates only forward in discrete time, serving as a toy model for discrete spacetime.",
+      "definition": "A CA whose update respects a **causal ordering**: information propagates only forward in some discrete time direction, and the value of a cell at time $t+1$ depends only on cells in its discrete causal past.\n\nCausal CAs serve as **toy models for discrete spacetime**:\n\n- The dependency graph has the structure of a directed acyclic graph (DAG).\n- Information cannot propagate faster than a discrete \"speed of light.\"\n- Conservation laws can be built in by carefully designing the rule.",
+      "examples": [
+        {
+          "title": "Discrete light cone",
+          "body": "In a causal CA on a 1D lattice, cell (x, t+1) depends only on cells (x-1, t), (x, t), (x+1, t). The set of cells that can influence (x, t) forms a discrete light cone expanding backward in time."
+        },
+        {
+          "title": "Reversible causal CA",
+          "body": "Billiard-ball models and Margolus neighborhood CAs are causal and reversible, conserving particle number and momentum, serving as discrete models of Hamiltonian mechanics."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Margolus, N. (1984). Physics-like models of computation. Physica D 10(1–2):81–95."
+      ],
+      "relations": {
+        "requires": [{ "id": "cellular-automaton" }],
+        "related": [
+          { "id": "causal-dynamical-triangulation" },
+          { "id": "isometric-cellular-automaton" },
+          { "id": "vortex-scattering" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "causal-dynamical-triangulation": {
+      "id": "causal-dynamical-triangulation",
+      "term": "Causal Dynamical Triangulation",
+      "aliases": ["CDT", "causal triangulation"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "advanced",
+      "tags": [
+        "quantum-gravity",
+        "CDT",
+        "spectral-dimension",
+        "dimensional-flow",
+        "triangulation",
+        "causal",
+        "planck-scale"
+      ],
+      "summary": "A quantum gravity approach using causally foliated triangulated spacetimes, notable for exhibiting dimensional flow from 4D at macroscopic scales to 2D at the Planck scale.",
+      "definition": "A quantum gravity approach using **causal triangulated spacetimes**: the dynamical variables are triangulated 4-manifolds equipped with a causal/time foliation.\n\nCDT shows **dimensional reduction**: macroscopic spacetime is 4D, but at the Planck scale the **spectral dimension** flows to 2. This phenomenon — dimensional flow from a discrete combinatorial structure — closely parallels what may happen in multi-sheeted tiling models.\n\nThe connection: both CDT and multi-sheeted pentagonal tilings are **discrete causal structures** (or quasi-causal: pentagonal tilings have a static graph but vortex holonomy plays a similar role to causal structure) where the **emergent dimension** differs from the embedding dimension.",
+      "examples": [
+        {
+          "title": "Spectral dimension flow",
+          "body": "In CDT simulations, the spectral dimension measured by a random walk on the triangulation is ~4 at large scales but flows to ~2 at short (Planck) scales, suggesting a fractal or lower-dimensional microstructure."
+        },
+        {
+          "title": "Analogy with multi-sheeted tilings",
+          "body": "Multi-sheeted pentagonal tilings may exhibit analogous dimensional flow: the effective dimension probed by CA light-cone growth or random walks may differ from the embedding dimension, paralleling CDT's Planck-scale behavior."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Ambjorn, J., Jurkiewicz, J., Loll, R. (2005). Reconstructing the universe. Physical Review D 72:064014.",
+        "Ambjorn, J., Jurkiewicz, J., Loll, R. (2004). Emergence of a 4D world from causal quantum gravity. Physical Review Letters 93:131301."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "causal-cellular-automaton" },
+          { "id": "phase-transition-ca" },
+          { "id": "vortex-scattering" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "vortex-scattering": {
+      "id": "vortex-scattering",
+      "term": "Vortex Scattering",
+      "aliases": ["glider scattering", "topological scattering", "vortex-induced rotation"],
+      "domain": "physics",
+      "crossDomains": ["topology", "computation"],
+      "difficulty": "advanced",
+      "tags": [
+        "vortex",
+        "glider",
+        "scattering",
+        "holonomy",
+        "aharonov-bohm",
+        "sheet-shift",
+        "pentagon",
+        "topology"
+      ],
+      "summary": "A topology-induced rotation of CA glider trajectories at vortex defects in the underlying graph, providing a direct signature of the multi-sheeted structure and its sheet-transition gauge field.",
+      "definition": "A **topology-induced rotation** of CA glider trajectories at vortex defects in the underlying graph. Phenomenology:\n\n- A glider moving toward a vortex passes by and emerges with **rotated direction**.\n- The rotation angle equals the **sheet shift accumulated** around the vortex (e.g., $36°$ per pentagon vortex).\n- Multiple passes around the vortex accumulate phase — **classical analogue of Aharonov–Bohm**.\n\nThis phenomenon is a direct signature of the multi-sheeted structure: gliders couple to the sheet-transition gauge field and acquire holonomy as they propagate.",
+      "examples": [
+        {
+          "title": "36° rotation at a pentagon vortex",
+          "body": "A glider traveling past a single pentagon vortex in the multi-sheeted tiling emerges with its direction rotated by 36°, corresponding to the holonomy of one sheet transition around the vortex."
+        },
+        {
+          "title": "Accumulated phase",
+          "body": "A glider orbiting a vortex multiple times accumulates 36° of rotation per orbit, analogous to the Aharonov–Bohm phase accumulated by a charged particle encircling a magnetic flux tube."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\Delta\\theta = 36° \\times n",
+          "description": "Total rotation angle after n circuits around a pentagon vortex",
+          "variables": {
+            "\\Delta\\theta": "accumulated rotation angle of the glider trajectory",
+            "n": "number of circuits around the vortex"
+          }
+        }
+      ],
+      "references": [
+        "Aharonov, Y., Bohm, D. (1959). Significance of electromagnetic potentials in the quantum theory. Physical Review 115(3):485–491."
+      ],
+      "relations": {
+        "requires": [{ "id": "glider" }, { "id": "isometric-cellular-automaton" }],
+        "related": [
+          { "id": "causal-cellular-automaton" },
+          { "id": "causal-dynamical-triangulation" },
+          { "id": "lazy-graph-generation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

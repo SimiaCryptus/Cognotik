@@ -1,0 +1,625 @@
+{
+  "version": "1.0.0",
+  "title": "O. Project-Specific Terminology",
+  "description": "Terms unique to or distinctively shaped by the multi-sheeted n-gon tiling project. These were coined or repurposed within the project to name specific phenomena observed in the pentagonal multi-sheeted framework.",
+  "concepts": {
+    "degeneracy-engine": {
+      "id": "degeneracy-engine",
+      "term": "The Degeneracy Engine",
+      "aliases": ["degeneracy engine", "norm-multiplicativity mechanism"],
+      "domain": "algebra",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "advanced",
+      "tags": [
+        "pentagonal-lattice",
+        "norm-multiplicativity",
+        "unique-factorization",
+        "distance-coincidences",
+        "golden-ratio",
+        "UFD",
+        "Erdos-distance"
+      ],
+      "summary": "The mechanism by which norm-multiplicativity and unique factorization in Z[φ] forces many distance coincidences in pentagonal lattices.",
+      "definition": "The **degeneracy engine** is the mechanism by which the algebraic structure of $\\mathbb{Z}[\\phi]$ — specifically, **norm-multiplicativity** combined with **unique factorization** — forces many distance coincidences in pentagonal lattices.\n\n### How It Works\n\n1. Each lattice point $p = a + b\\phi$ has squared distance to origin given by $|p|^2 = a^2 + ab\\phi - b^2\\phi + b^2\\phi^2 = \\ldots$ in $\\mathbb{Z}[\\phi]$.\n2. The integer-valued **norm** $N(p) = a^2 + ab - b^2$ is multiplicative: $N(pq) = N(p) N(q)$.\n3. Since $\\mathbb{Z}[\\phi]$ is a UFD, integers $n$ that are norms of $\\mathbb{Z}[\\phi]$ elements are exactly the integers whose prime factorization has compatible behavior under the splitting of primes in $\\mathbb{Z}[\\phi]$.\n4. A given norm value $n$ may be achieved by **many distinct factorizations**, each corresponding to a different lattice point at the corresponding distance.\n\nThe result: **distance rings have very high multiplicity**, producing the pinwheel distance-direction patterns characteristic of pentagonal lattices.\n\n### Significance\n\nThe degeneracy engine is **why pentagonal lattices are extremal for Erdős-type distance problems**. It is the algebraic source of the pentagonal pinwheel phenomenon, and it is what makes the pentagonal multi-sheeted framework a natural candidate for testing classical conjectures in combinatorial geometry.",
+      "examples": [
+        {
+          "title": "Norm multiplicativity in Z[φ]",
+          "body": "For lattice points $p = a + b\\phi$ and $q = c + d\\phi$ in $\\mathbb{Z}[\\phi]$, the norm satisfies $N(pq) = N(p)N(q)$. This means if $n = N(p)$ is achieved by $k$ distinct elements $p$, then $n^2 = N(p)^2$ is achieved by at least $k^2$ distinct products $pq$ (up to units), generating many lattice points at the same distance."
+        },
+        {
+          "title": "Distance ring multiplicity",
+          "body": "A norm value $n$ in $\\mathbb{Z}[\\phi]$ may factor in multiple ways due to the UFD structure. Each distinct factorization corresponds to a different lattice point at distance $\\sqrt{n}$ from the origin, producing high-multiplicity distance rings — the hallmark of the degeneracy engine."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "N(p) = a^2 + ab - b^2",
+          "description": "The integer-valued norm of a lattice point p = a + bφ in Z[φ]",
+          "variables": {
+            "p": "lattice point a + bφ in Z[φ]",
+            "a": "integer coefficient of the rational part",
+            "b": "integer coefficient of the φ part",
+            "φ": "golden ratio (1 + √5) / 2"
+          }
+        },
+        {
+          "expression": "N(pq) = N(p) \\cdot N(q)",
+          "description": "Norm multiplicativity: the norm of a product equals the product of norms",
+          "variables": {
+            "p": "element of Z[φ]",
+            "q": "element of Z[φ]"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "pinwheel-phenomenon", "label": "Pinwheel Phenomenon" }],
+        "related": [
+          { "id": "pinwheel-phenomenon", "label": "Pinwheel Phenomenon" },
+          { "id": "topological-tearing", "label": "Topological Tearing" }
+        ],
+        "enabledBy": [{ "id": "pinwheel-phenomenon", "label": "Pinwheel Phenomenon" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "pinwheel-phenomenon": {
+      "id": "pinwheel-phenomenon",
+      "term": "The Pinwheel Phenomenon",
+      "aliases": [
+        "pinwheel phenomenon",
+        "pentagonal pinwheel",
+        "pinwheel distance-direction pattern"
+      ],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "pentagonal-lattice",
+        "distance-direction",
+        "density",
+        "orientation-group",
+        "visualization",
+        "Delone-set"
+      ],
+      "summary": "The density of (distance, direction) pairs in pentagonal lattices: many lattice points lie at the same distance from a reference point but in different directions, with directions becoming dense in S¹.",
+      "definition": "The **pinwheel phenomenon** is the **density of (distance, direction) pairs** in pentagonal lattices: many lattice points lie at the same distance from a reference point, but in different directions, with the directions becoming dense in $S^1$.\n\n### Mechanism\n\nThe orientation group $\\Gamma = \\mathbb{Z}_{10}$ generates 10 distinct rotation angles per generator step. Combined with the degeneracy engine (many factorizations per norm), each distance ring contains points at many distinct angles.\n\nIterating the expansion process, the set of (distance, direction) pairs becomes **dense** in $\\mathbb{R}_{\\geq 0} \\times S^1$, in a quasi-uniform way — but with structured local patterns that distinguish pentagonal from generic Delone sets.\n\n### Visualization\n\nA typical visualization: plot all lattice points within distance $R$ of the origin and color by distance. The resulting plot looks like a **pinwheel** — concentric rings of points spinning around the origin, with each ring carrying many points at distinct angles. The visual analogy to a pinwheel toy gives the phenomenon its name.\n\n### Comparison\n\n| Lattice | Distance rings | Direction density |\n|---|---|---|\n| $\\mathbb{Z}^2$ | Sparse (sums of two squares) | $\\pi/2$-discrete |\n| $\\mathbb{Z}[i]$ | Same as $\\mathbb{Z}^2$ | $\\pi/2$-discrete |\n| Hexagonal lattice | Moderate (Eisenstein norms) | $\\pi/3$-discrete |\n| $\\mathbb{Z}[\\phi]^2$ | **Dense (golden norms)** | **$\\pi/5$-discrete and dense** |\n\nThe pentagonal lattice qualitatively differs from cubic and hexagonal lattices in having genuinely dense direction sets per distance ring.",
+      "examples": [
+        {
+          "title": "Pinwheel visualization",
+          "body": "Plot all lattice points of $\\mathbb{Z}[\\phi]^2$ within distance $R$ of the origin, colored by distance. The result is a pinwheel pattern: concentric rings of points, each ring containing many points at distinct angles, spinning around the origin."
+        },
+        {
+          "title": "Comparison with Z²",
+          "body": "In $\\mathbb{Z}^2$, the distance ring at radius $\\sqrt{5}$ contains only 8 points at angles that are multiples of $\\pi/2$ (plus $\\arctan(1/2)$ variants). In $\\mathbb{Z}[\\phi]^2$, the analogous ring contains many more points at angles that are dense in $S^1$, illustrating the qualitative difference."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "degeneracy-engine", "label": "Degeneracy Engine" }],
+        "related": [
+          { "id": "degeneracy-engine", "label": "Degeneracy Engine" },
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" }
+        ],
+        "enabledBy": [{ "id": "degeneracy-engine", "label": "Degeneracy Engine" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "signed3-rule": {
+      "id": "signed3-rule",
+      "term": "The signed3 Rule",
+      "aliases": ["signed3", "signed-3 rule", "canonical sheet-transition rule"],
+      "domain": "combinatorics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "sheet-transition",
+        "vortex",
+        "edge-labeling",
+        "holonomy",
+        "fiber-group",
+        "edge-fraction",
+        "2/3-fraction"
+      ],
+      "summary": "The project's default rule for assigning sheet-transition labels to edges around a vortex, using the alphabet {-1, 0, +1} with exactly two-thirds of edges carrying a non-zero shift.",
+      "definition": "The **signed3 rule** is the project's default rule for assigning sheet-transition labels to edges around a vortex. Edges receive labels from the set $\\{-1, 0, +1\\}$ cyclically, with exactly **two-thirds of edges carrying a non-zero shift**.\n\n### Construction\n\nFor a vortex vertex of degree $k$ (with $k$ incident edges) in a multi-sheeted pentagonal tiling:\n\n1. Walk around the vortex cyclically, visiting edges in counterclockwise order.\n2. Assign labels in the repeating pattern $(+1, -1, 0, +1, -1, 0, \\ldots)$.\n3. Verify the labels sum to the deficit $\\delta$ modulo the fiber group order.\n\nFor pentagonal lattices with $k = 3$ pentagons per vortex, the pattern $(+1, -1, 0)$ gives a total shift of $0$ — i.e., trivial holonomy in $\\mathbb{Z}_3$ — but when lifted to $\\mathbb{Z}_{10}$ with appropriate scaling, the holonomy is non-trivial.\n\n### The 2/3 Edge Fraction\n\nA key invariant: under signed3, exactly **2/3 of the edges** carry non-zero shift, independent of vortex degree. This **edge fraction** is one of the most robust observables of the rule.\n\n### Why \"signed3\"?\n\nThe \"signed\" refers to the use of both $+1$ and $-1$ (rather than just $\\{0, 1\\}$), and the \"3\" refers to the 3-symbol alphabet $\\{-1, 0, +1\\}$. The rule contrasts with simpler alternatives:\n\n- **unsigned1**: all non-vortex edges get $+1$ shift. Trivial; produces simple counting holonomy but no signed-loop structure.\n- **signed2**: edges get $\\{-1, +1\\}$. Vortex edge fraction is $1$; gives more holonomy but is harder to make consistent.\n- **signed3**: the default; gives the right balance between non-triviality and consistency, with the canonical $2/3$ edge fraction.\n\n### Alternative Rules\n\nThe framework supports other rules (parameterized by the fiber group and the desired vortex symmetry), but signed3 is the canonical baseline and the rule used in most project computations.",
+      "examples": [
+        {
+          "title": "Degree-3 vortex labeling",
+          "body": "For a vortex with 3 incident edges, walk counterclockwise and assign labels: edge 1 → +1, edge 2 → -1, edge 3 → 0. The sum is 0, giving trivial holonomy in Z₃. When lifted to Z₁₀, the non-trivial structure emerges."
+        },
+        {
+          "title": "Edge fraction verification",
+          "body": "In a tiling with 300 edges, under signed3, exactly 200 edges (2/3) carry non-zero shift labels (+1 or -1), and 100 edges carry label 0. This ratio is independent of tiling size and serves as a diagnostic for correct implementation."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho_V = \\frac{2}{3}",
+          "description": "The vortex edge fraction under the signed3 rule: exactly 2/3 of edges carry non-zero sheet shift",
+          "variables": {
+            "ρ_V": "vortex edge fraction"
+          }
+        },
+        {
+          "expression": "(+1, -1, 0, +1, -1, 0, \\ldots)",
+          "description": "The repeating cyclic label pattern assigned to edges around a vortex under signed3"
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "vortex-edge-fraction", "label": "Vortex Edge Fraction" }
+        ],
+        "related": [
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "vortex-edge-fraction", "label": "Vortex Edge Fraction" },
+          { "id": "vortex-rule", "label": "Vortex Rule" }
+        ],
+        "enabledBy": [
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "vortex-edge-fraction", "label": "Vortex Edge Fraction" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spinor-like-holonomy": {
+      "id": "spinor-like-holonomy",
+      "term": "Spinor-Like Holonomy",
+      "aliases": ["spinor-like holonomy", "discrete spinor structure", "combinatorial spinor"],
+      "domain": "topology",
+      "crossDomains": ["physics", "algebra", "combinatorics"],
+      "difficulty": "advanced",
+      "tags": [
+        "holonomy",
+        "spinor",
+        "SU2",
+        "SO3",
+        "double-cover",
+        "Z10",
+        "parity",
+        "vortex",
+        "discrete-topology",
+        "fermion"
+      ],
+      "summary": "The discrete combinatorial analogue of the SU(2)→SO(3) double-cover phenomenon: a single loop around a vortex returns the 'wrong' sheet, but two loops restore identity.",
+      "definition": "**Spinor-like holonomy** is the discrete combinatorial analogue of the $SU(2) \\to SO(3)$ double-cover phenomenon: a single loop around a vortex returns the **\"wrong\" sheet** (analogue of $-1$), but **two loops restore identity**.\n\n### How It Arises\n\nIn the pentagonal multi-sheeted framework with fiber group $\\mathbb{Z}_{10}$, consider the $\\mathbb{Z}_2$ quotient: each sheet has a **parity**. Under signed3, a loop around a vortex shifts the sheet by $\\pm 5 \\mod 10$, flipping parity. Two loops shift by $\\pm 10 \\equiv 0$, restoring parity.\n\nThus, in the parity sector:\n\n- **One loop**: parity flip ($\\equiv -1$).\n- **Two loops**: identity ($\\equiv +1$).\n\nThis is exactly the spinor structure of $SU(2) \\to SO(3)$, realized **discretely** by a combinatorial sheet-transition rule.\n\n### Significance\n\nSpinor-like holonomy is one of the most striking signatures of the multi-sheeted pentagon framework. It demonstrates that:\n\n1. Spinor structure is **not exclusively continuous** — it can emerge from discrete combinatorial topology.\n2. The pentagonal angular deficit, far from being a defect, is the **source** of this rich structure.\n3. Fermionic / spinorial behavior has a natural combinatorial home in multi-sheeted tilings, with implications for lattice formulations of fermions and for discrete quantum gravity.\n\n### Discrete vs. Continuous\n\n| Property | Continuous spinor | Discrete spinor-like |\n|---|---|---|\n| Domain | $SU(2)$-rep | $\\mathbb{Z}_{10}$ sheet bundle |\n| Single loop | $-1$ rotation | Sheet parity flip |\n| Double loop | $+1$ (identity) | Sheet parity restored |\n| Source | Group topology | Vortex holonomy |\n| Physical realization | Electrons, quarks | CA gliders on sheets |",
+      "examples": [
+        {
+          "title": "Single loop around a vortex",
+          "body": "Starting on sheet 0 and traversing a loop around a vortex under signed3 with fiber group Z₁₀, the sheet shift is ±5 mod 10. Arriving on sheet 5 is the 'wrong' sheet — analogous to the -1 phase acquired by a spinor under a 2π rotation."
+        },
+        {
+          "title": "Double loop restores identity",
+          "body": "Traversing the same vortex loop twice accumulates a shift of ±10 ≡ 0 mod 10, returning to the original sheet. This mirrors the 4π rotation required to return a spinor to its original state, realizing the SU(2)→SO(3) double-cover discretely."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\text{shift}_{\\text{one loop}} = \\pm 5 \\mod 10",
+          "description": "Sheet shift after one loop around a vortex under signed3 with fiber group Z₁₀, flipping sheet parity"
+        },
+        {
+          "expression": "\\text{shift}_{\\text{two loops}} = \\pm 10 \\equiv 0 \\mod 10",
+          "description": "Sheet shift after two loops around a vortex, restoring the original sheet (identity)"
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "signed3-rule", "label": "signed3 Rule" },
+          { "id": "sheet-stack", "label": "Sheet Stack" },
+          { "id": "vortex-rule", "label": "Vortex Rule" }
+        ],
+        "related": [
+          { "id": "signed3-rule", "label": "signed3 Rule" },
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "vortex-edge-fraction", "label": "Vortex Edge Fraction" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "vortex-edge-fraction": {
+      "id": "vortex-edge-fraction",
+      "term": "Vortex Edge Fraction",
+      "aliases": ["edge fraction", "vortex edge fraction ρ_V"],
+      "domain": "combinatorics",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": [
+        "vortex",
+        "edge-labeling",
+        "sheet-transition",
+        "invariant",
+        "2/3-fraction",
+        "signed3",
+        "diagnostic"
+      ],
+      "summary": "The fraction of edges in the tiling that carry non-zero sheet shift under a given vortex rule; equals exactly 2/3 under the signed3 rule.",
+      "definition": "The **vortex edge fraction** $\\rho_V$ is the fraction of edges in the tiling that carry **non-zero sheet shift** under a given vortex rule:\n\n$$\\rho_V = \\frac{|\\{e \\in E : \\tau(e) \\neq 0\\}|}{|E|}.$$\n\n### The 2/3 Theorem\n\nUnder the signed3 rule on pentagonal multi-sheeted tilings, the edge fraction satisfies\n\n$$\\rho_V = \\frac{2}{3}$$\n\nexactly (in the infinite limit, and approximately for finite samples). This is a direct combinatorial consequence of the labeling pattern $(+1, -1, 0)$ used cyclically.\n\n### Significance\n\nThe $2/3$ fraction is a **canonical invariant** of the signed3 rule. It is:\n\n- Independent of the size of the tiling sample.\n- Independent of the specific topology of the multi-sheeted cover (as long as it's consistent).\n- A diagnostic for correct rule implementation.\n\nIf a computation reports a different vortex edge fraction under signed3, the implementation has a bug or the rule has been misapplied.",
+      "examples": [
+        {
+          "title": "Diagnostic check",
+          "body": "After implementing signed3 on a pentagonal tiling with 600 edges, count the edges with τ(e) ≠ 0. The expected count is 400 (= 600 × 2/3). Any significant deviation indicates a bug in the vortex rule implementation."
+        },
+        {
+          "title": "Comparison across rules",
+          "body": "Under unsigned1: ρ_V approaches 1 (all non-vortex edges carry shift). Under signed2: ρ_V = 1 (all edges carry ±1). Under signed3: ρ_V = 2/3. The fraction is a fingerprint of the rule."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho_V = \\frac{|\\{e \\in E : \\tau(e) \\neq 0\\}|}{|E|}",
+          "description": "Definition of the vortex edge fraction as the proportion of edges carrying non-zero sheet shift",
+          "variables": {
+            "ρ_V": "vortex edge fraction",
+            "E": "set of all edges in the tiling",
+            "τ(e)": "sheet-transition label of edge e"
+          }
+        },
+        {
+          "expression": "\\rho_V = \\frac{2}{3}",
+          "description": "The exact value of the vortex edge fraction under the signed3 rule (in the infinite limit)"
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "signed3-rule", "label": "signed3 Rule" }
+        ],
+        "related": [
+          { "id": "signed3-rule", "label": "signed3 Rule" },
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" }
+        ],
+        "enabledBy": [{ "id": "signed3-rule", "label": "signed3 Rule" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "vortex-rule": {
+      "id": "vortex-rule",
+      "term": "Vortex Rule",
+      "aliases": ["vortex labeling rule", "sheet-transition rule"],
+      "domain": "combinatorics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "vortex",
+        "edge-labeling",
+        "holonomy",
+        "fiber-group",
+        "angular-deficit",
+        "consistency",
+        "sheet-transition"
+      ],
+      "summary": "A rule for assigning sheet-transition labels to edges incident to a vortex vertex such that the total holonomy around the vortex matches the angular deficit modulo the fiber group.",
+      "definition": "A **vortex rule** is a rule for assigning sheet-transition labels $\\tau(e) \\in G$ to edges incident to a vortex vertex, such that the total holonomy around the vortex matches the angular deficit (modulo the fiber group).\n\n### Examples\n\n- **signed3** (default): labels in $\\{-1, 0, +1\\}$, $2/3$ edge fraction.\n- **unsigned1**: labels in $\\{0, 1\\}$, simpler but less expressive.\n- **signed2**: labels in $\\{-1, +1\\}$, full edge coverage.\n- **signed-k**: labels in $\\{-k, \\ldots, +k\\}$, $k$-step generalizations.\n- **custom**: any consistent assignment satisfying total-holonomy constraint.\n\n### Constraints\n\nEvery vortex rule must satisfy:\n\n1. **Local consistency**: sum of shifts around any vortex equals the deficit (mod fiber group).\n2. **Global consistency**: edges shared between vortices receive consistent labels from both sides.\n3. **Background closure**: non-vortex loops have trivial total shift.\n\nMost rules satisfy (1) by construction; (2) and (3) require careful global consistency checks.",
+      "examples": [
+        {
+          "title": "Local consistency check",
+          "body": "For a pentagonal vortex with angular deficit 36° and fiber group Z₁₀, the sum of edge labels around the vortex must equal 1 (mod 10), since 36° corresponds to 1/10 of a full rotation. Under signed3 with appropriate scaling, this constraint is satisfied."
+        },
+        {
+          "title": "Global consistency failure",
+          "body": "If two vortices share an edge, both vortex rules must assign the same label to that shared edge. A naive independent application of signed3 to each vortex may violate this, requiring a global consistency pass to resolve conflicts."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet-stack", "label": "Sheet Stack" }],
+        "related": [
+          { "id": "signed3-rule", "label": "signed3 Rule" },
+          { "id": "vortex-edge-fraction", "label": "Vortex Edge Fraction" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" }
+        ],
+        "enabledBy": [
+          { "id": "signed3-rule", "label": "signed3 Rule" },
+          { "id": "vortex-edge-fraction", "label": "Vortex Edge Fraction" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "multi-sheeted-pivot": {
+      "id": "multi-sheeted-pivot",
+      "term": "The Multi-Sheeted Pivot",
+      "aliases": ["multi-sheeted pivot", "sheet promotion", "topological resolution"],
+      "domain": "topology",
+      "crossDomains": ["geometry", "physics"],
+      "difficulty": "foundational",
+      "tags": [
+        "angular-deficit",
+        "multi-sheeted-cover",
+        "pentagon",
+        "Penrose",
+        "gauge-theory",
+        "Wilson-loop",
+        "bundle",
+        "conceptual-move"
+      ],
+      "summary": "The conceptual move at the heart of the project: viewing the pentagonal angular deficit not as a failure to tile but as a trigger for promoting the tiling to a multi-sheeted cover.",
+      "definition": "The **multi-sheeted pivot** is the conceptual move at the heart of the project: instead of viewing the pentagonal angular deficit as a **failure to tile** (the historical perspective: Penrose's two-tile resolution), view it as a **trigger for promoting the tiling to a multi-sheeted cover**.\n\n### Two Resolutions Compared\n\nThe angular deficit of $36°$ for the regular pentagon has two known resolutions:\n\n1. **Penrose's resolution**: introduce a **second tile shape** (kite + dart, or thick + thin rhomb), with matching rules forcing aperiodicity. Tiling lives on a **single sheet**.\n\n2. **Multi-sheeted resolution** (this project): keep the **single pentagon tile shape**, but promote to a **multi-sheeted cover** with vortex holonomy. Angular deficit absorbed into sheet topology.\n\nBoth are valid; both produce mathematically rich structures. The multi-sheeted pivot reveals connections to gauge theory, spinor topology, and quantum gravity that the Penrose resolution does not.\n\n### Why It Matters\n\nThe multi-sheeted pivot reframes the entire pentagonal tiling problem in **topological language**:\n\n- Sheets ↔ bundles.\n- Sheet transitions ↔ discrete connections.\n- Vortex holonomy ↔ Wilson loops.\n- Spinor-like behavior ↔ universal covers.\n\nThis linguistic shift opens the door to physics analogues in gauge theory, spinor topology, and quantum gravity. It is the project's distinctive intellectual contribution.",
+      "examples": [
+        {
+          "title": "Penrose vs. multi-sheeted resolution",
+          "body": "The angular deficit of 36° at a pentagonal vortex can be resolved by (1) introducing a second tile type with matching rules (Penrose), or (2) keeping a single tile type and assigning a sheet-transition label to the vortex edges (multi-sheeted pivot). The second approach preserves tile uniformity at the cost of introducing a non-trivial fiber bundle structure."
+        },
+        {
+          "title": "Gauge theory analogy",
+          "body": "Under the multi-sheeted pivot, the sheet-transition labels τ(e) ∈ G play the role of a discrete gauge connection, vortex holonomy corresponds to a Wilson loop, and the fiber group G is the gauge group. This makes the pentagonal tiling a discrete toy model for gauge theory on a curved background."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet-stack", "label": "Sheet Stack" }],
+        "related": [
+          { "id": "sheet-stack", "label": "Sheet Stack" },
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "topological-tearing", "label": "Topological Tearing" },
+          { "id": "reconnection-hierarchy", "label": "Reconnection Hierarchy" }
+        ],
+        "enabledBy": [
+          { "id": "sheet-stack", "label": "Sheet Stack" },
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "dimensional-flow", "label": "Dimensional Flow" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "topological-tearing": {
+      "id": "topological-tearing",
+      "term": "Topological Tearing",
+      "aliases": ["topological tearing", "floating-point tearing", "numerical tearing"],
+      "domain": "computation",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": [
+        "floating-point",
+        "exact-arithmetic",
+        "numerical-error",
+        "BFS",
+        "adjacency-graph",
+        "failure-mode",
+        "Z-phi",
+        "symbolic-arithmetic"
+      ],
+      "summary": "The failure mode in which floating-point arithmetic errors cause spuriously distinct identifications of tiles that should be identical, breaking the multi-sheeted topology and producing an artificially tree-like adjacency graph.",
+      "definition": "**Topological tearing** is the failure mode in which **floating-point arithmetic errors** cause spuriously distinct identifications of tiles that should be identical, breaking the multi-sheeted topology and producing an artificially tree-like adjacency graph.\n\n### Symptoms\n\n- Exponential growth of the BFS volume (instead of polynomial).\n- Missing cycles in the adjacency graph.\n- Failed vortex consistency checks.\n- Wrong dimensional estimates.\n- Lost spinor-like holonomy.\n\n### Cause\n\nComparing pentagonal lattice points $a_1 + b_1 \\phi$ and $a_2 + b_2 \\phi$ requires exact equality of $(a_1, b_1) = (a_2, b_2)$. Floating point cannot reliably do this — small errors in repeated multiplication produce false negatives.\n\n### Cure\n\n**Exact symbolic arithmetic** over $\\mathbb{Z}[\\phi]$ (or whichever ring is relevant). There is no half-measure fix; topological tearing requires fundamentally exact arithmetic.\n\n### The Name\n\n\"Topological tearing\" evokes the image of a fabric (the multi-sheeted cover) being torn into pieces by the slightest numerical inaccuracy. The phrase captures both the failure mode (tearing) and its source (topological identifications).",
+      "examples": [
+        {
+          "title": "BFS volume explosion",
+          "body": "In a correct implementation using exact Z[φ] arithmetic, BFS volume grows polynomially with radius (as expected for a 2D structure). With floating-point arithmetic, the same computation shows exponential growth because tiles that should be identified as the same are treated as distinct, creating a tree-like (non-reconnecting) graph."
+        },
+        {
+          "title": "False negative in point comparison",
+          "body": "The point (3 + 2φ) computed via two different multiplication paths may yield slightly different floating-point values, e.g., 6.23606... vs 6.23607..., causing the equality check to fail. In exact Z[φ] arithmetic, both paths yield the integer pair (3, 2), which compares equal."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "sheet-stack", "label": "Sheet Stack" }
+        ],
+        "related": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "degeneracy-engine", "label": "Degeneracy Engine" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "sheet-stack": {
+      "id": "sheet-stack",
+      "term": "Sheet Stack",
+      "aliases": ["sheet stack", "foliated structure", "multi-sheeted cover"],
+      "domain": "topology",
+      "crossDomains": ["geometry", "physics"],
+      "difficulty": "foundational",
+      "tags": [
+        "sheets",
+        "fiber-group",
+        "covering-space",
+        "foliation",
+        "bundle",
+        "sheet-transition",
+        "multi-sheeted"
+      ],
+      "summary": "The foliated structure of the multi-sheeted cover: a collection of copies of Rⁿ (the sheets) glued together along edges by sheet-transition functions.",
+      "definition": "The **sheet stack** is the foliated structure of the multi-sheeted cover: a collection of copies of $\\mathbb{R}^n$ (the **sheets**) glued together along edges by sheet-transition functions.\n\n### Picture\n\nImagine $|G|$ parallel copies of $\\mathbb{R}^n$ stacked vertically. Each copy is a **sheet**, indexed by an element of the fiber group $G$. A point in $\\mathcal{M}$ is specified by a base point in $\\mathbb{R}^n$ and a sheet index in $G$. Edges of the tiling glue sheets together: crossing an edge with shift $\\tau(e) = g$ moves you up the stack by $g$.\n\n### Why \"Stack\"?\n\nThe visual metaphor of stacking emphasizes that the sheets are **parallel copies** of the base, not deformations. The sheet stack is the **discrete analogue** of a foliation by space-like slices in physics, or a covering space in topology.",
+      "examples": [
+        {
+          "title": "Z₁₀ sheet stack",
+          "body": "With fiber group G = Z₁₀, the sheet stack consists of 10 parallel copies of the pentagonal tiling plane, indexed 0 through 9. An edge with label τ(e) = 3 connects a tile on sheet k to the corresponding tile on sheet (k+3) mod 10."
+        },
+        {
+          "title": "Covering space analogy",
+          "body": "The sheet stack is the discrete analogue of a covering space in topology. Just as the universal cover of S¹ is ℝ (infinitely many sheets), the sheet stack provides a finite-sheeted cover of the base tiling, with the fiber group G playing the role of the deck transformation group."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\mathcal{M} = \\mathbb{R}^n \\times G",
+          "description": "A point in the sheet stack is specified by a base point in Rⁿ and a sheet index in the fiber group G",
+          "variables": {
+            "M": "the multi-sheeted cover (sheet stack)",
+            "G": "fiber group (e.g. Z₁₀)",
+            "n": "dimension of the base space"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "topological-tearing", "label": "Topological Tearing" }
+        ],
+        "enabledBy": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "vortex-rule", "label": "Vortex Rule" },
+          { "id": "spinor-like-holonomy", "label": "Spinor-Like Holonomy" },
+          { "id": "topological-tearing", "label": "Topological Tearing" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "dimensional-flow": {
+      "id": "dimensional-flow",
+      "term": "Dimensional Flow",
+      "aliases": ["dimensional flow", "UV-IR dimensional flow", "scale-dependent dimension"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "advanced",
+      "tags": [
+        "spectral-dimension",
+        "effective-dimension",
+        "UV",
+        "IR",
+        "asymptotic-safety",
+        "quantum-gravity",
+        "BFS",
+        "scaling"
+      ],
+      "summary": "The scale-dependence of effective and spectral dimensions in pentagonal multi-sheeted tilings, where UV (short-scale) and IR (long-scale) values differ, analogous to the Asymptotic Safety scenario in quantum gravity.",
+      "definition": "**Dimensional flow** is the scale-dependence of effective and spectral dimensions: the UV (short-scale) and IR (long-scale) values differ, often markedly.\n\n### In the Pentagon\n\nEmpirically, pentagonal multi-sheeted tilings show:\n\n- **UV regime** (small BFS radii): $d_{\\text{eff}}$, $d_{\\text{spec}}$ approach $\\sim 2$ — the topological tearing-free limit reveals near-2D scaling.\n- **IR regime** (large BFS radii): $d_{\\text{eff}}$, $d_{\\text{spec}}$ approach $2$ exactly — Euclidean scaling far from vortices.\n\nNear vortices, transient deviations occur. The flow itself — the **shape of the interpolation** — is the project's prediction.\n\n### Connection to Asymptotic Safety\n\nThe Asymptotic Safety scenario in quantum gravity predicts UV spectral dimension $\\to 2$, with IR spectral dimension $\\to 4$. The multi-sheeted pentagon's UV → IR flow is **structurally analogous**, though in lower ambient dimension. The convergence of these patterns is one of the project's most suggestive empirical findings.",
+      "examples": [
+        {
+          "title": "BFS volume scaling",
+          "body": "Measuring BFS volume V(r) as a function of radius r in a pentagonal multi-sheeted tiling, the effective dimension d_eff = d log V / d log r varies with r. At small r (UV), d_eff ≈ 2 with corrections from vortex structure. At large r (IR), d_eff → 2 exactly, recovering Euclidean scaling."
+        },
+        {
+          "title": "Asymptotic Safety analogy",
+          "body": "In the Asymptotic Safety program, the spectral dimension of spacetime flows from 4 (IR) to 2 (UV). The pentagonal multi-sheeted tiling shows a structurally similar flow in 2D, providing a discrete combinatorial toy model for this quantum gravity phenomenon."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{eff}}(r) = \\frac{d \\log V(r)}{d \\log r}",
+          "description": "Effective dimension as a function of BFS radius r, defined via the volume growth rate",
+          "variables": {
+            "d_eff": "effective dimension at scale r",
+            "V(r)": "BFS volume (number of tiles within radius r)",
+            "r": "BFS radius"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "topological-tearing", "label": "Topological Tearing" }
+        ],
+        "related": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "reconnection-hierarchy", "label": "Reconnection Hierarchy" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "reconnection-hierarchy": {
+      "id": "reconnection-hierarchy",
+      "term": "Reconnection Hierarchy",
+      "aliases": [
+        "reconnection hierarchy",
+        "four-level hierarchy",
+        "expansion family classification"
+      ],
+      "domain": "combinatorics",
+      "crossDomains": ["topology", "geometry"],
+      "difficulty": "advanced",
+      "tags": [
+        "reconnection",
+        "BFS",
+        "adjacency-graph",
+        "classification",
+        "multi-sheeted",
+        "pinwheel-polygon",
+        "infinite-tree",
+        "expansion-family"
+      ],
+      "summary": "The four-level organizing principle for classifying expansion families by their reconnection behavior: from full single-sheet reconnection to non-reconnective infinite trees.",
+      "definition": "The **reconnection hierarchy** is the project's four-level vocabulary for classifying expansion families by their reconnection behavior:\n\n- **Level 0**: full reconnection on a single sheet.\n- **Level 1**: multi-sheeted full reconnection (the pentagonal case).\n- **Level 2**: edge-restricted reconnection (pinwheel polygons).\n- **Level 3**: non-reconnective (infinite tree).\n\nThis hierarchy is **the** organizing principle of the project's classification work. Each level corresponds to a qualitatively different topological and combinatorial structure, with distinct BFS volume growth rates, holonomy properties, and dimensional flow behaviors.",
+      "examples": [
+        {
+          "title": "Level 0 vs Level 1",
+          "body": "A square tiling on a single sheet is Level 0: every tile eventually reconnects to every other tile on the same sheet. The pentagonal multi-sheeted tiling is Level 1: full reconnection occurs, but only across all 10 sheets simultaneously — a single sheet alone does not reconnect."
+        },
+        {
+          "title": "Level 3 failure mode",
+          "body": "A tiling affected by topological tearing (floating-point errors) behaves as Level 3: the adjacency graph is an infinite tree with no cycles, BFS volume grows exponentially, and no holonomy is detectable. Fixing the arithmetic restores Level 1 behavior."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "sheet-stack", "label": "Sheet Stack" }
+        ],
+        "related": [
+          { "id": "multi-sheeted-pivot", "label": "Multi-Sheeted Pivot" },
+          { "id": "dimensional-flow", "label": "Dimensional Flow" },
+          { "id": "topological-tearing", "label": "Topological Tearing" }
+        ],
+        "enabledBy": [{ "id": "dimensional-flow", "label": "Dimensional Flow" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

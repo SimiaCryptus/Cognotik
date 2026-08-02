@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="Langton&#39;s ants write a colored substrate that gates where Conway&#39;s Life is allowed to live. Three feedback layers — ants → substrate → life → substrate → ants — produce highways, colonies, and fractal boundaries. For a playable take on Conway&#39;s Life and 50+ other rulesets, see the sister site The…"
+    />
+    <title>Layered Cellular Automata — Mathematical Explorations</title>
+    <link
+      rel="canonical"
+      href="https://math.cognotik.com/companion/layered-cellular-automata/index.html"
+    />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta property="og:title" content="Layered Cellular Automata — Mathematical Explorations" />
+    <meta
+      property="og:description"
+      content="Langton&#39;s ants write a colored substrate that gates where Conway&#39;s Life is allowed to live. Three feedback layers — ants → substrate → life → substrate → ants — produce highways, colonies, and fractal boundaries. For a playable take on Conway&#39;s Life and 50+ other rulesets, see the sister site The…"
+    />
+    <meta
+      property="og:url"
+      content="https://math.cognotik.com/companion/layered-cellular-automata/index.html"
+    />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layered Cellular Automata — Mathematical Explorations" />
+    <meta
+      name="twitter:description"
+      content="Langton&#39;s ants write a colored substrate that gates where Conway&#39;s Life is allowed to live. Three feedback layers — ants → substrate → life → substrate → ants — produce highways, colonies, and fractal boundaries. For a playable take on Conway&#39;s Life and 50+ other rulesets, see the sister site The…"
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "Layered Cellular Automata",
+            "description": "Langton's ants write a colored substrate that gates where Conway's Life is allowed to live. Three feedback layers — ants → substrate → life → substrate → ants — produce highways, colonies, and fractal boundaries. For a playable take on Conway's Life and 50+ other rulesets, see the sister site The…",
+            "url": "https://math.cognotik.com/companion/layered-cellular-automata/index.html",
+            "inLanguage": "en",
+            "author": { "@type": "Person", "name": "SimiaCryptus" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Mathematical Explorations",
+              "url": "https://math.cognotik.com/"
+            },
+            "mainEntityOfPage": "https://math.cognotik.com/companion/layered-cellular-automata/index.html"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Mathematical Explorations",
+                "item": "https://math.cognotik.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Layered Cellular Automata",
+                "item": "https://math.cognotik.com/companion/layered-cellular-automata/index.html"
+              }
+            ]
+          },
+          {
+            "@type": "VideoObject",
+            "name": "Layered Cellular Automata — demonstration",
+            "description": "Langton's ants write a colored substrate that gates where Conway's Life is allowed to live. Three feedback layers — ants → substrate → life → substrate → ants — produce highways, colonies, and fractal boundaries. For a playable take on Conway's Life and 50+ other rulesets, see the sister site The…",
+            "thumbnailUrl": "https://math.cognotik.com/og-image.png",
+            "contentUrl": "https://math.cognotik.com/videos/Binary_Coded_Layered_Autonoma.mp4",
+            "uploadDate": "2026-06-17"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <div class="crumbs">
+        <a href="../../index.html">Home</a> › <a href="../index.html">Companion pages</a> ›
+        <span>Layered Cellular Automata</span>
+      </div>
+      <div class="page-head">
+        <div class="page-icon" aria-hidden="true">CA</div>
+        <div>
+          <h1>Layered Cellular Automata</h1>
+        </div>
+      </div>
+      <p class="subtitle">
+        Langton's ants write a colored substrate that gates where Conway's Life is allowed to live.
+        Three feedback layers — ants → substrate → life → substrate → ants — produce highways,
+        colonies, and fractal boundaries. For a playable take on Conway's Life and 50+ other
+        rulesets, see the sister site
+        <a href="https://aol.cognotik.com/" target="_blank" rel="noopener">The Arcade of Life ↗</a>.
+      </p>
+      <p>
+        <a class="cta" href="../../experiments/layered_ca/index.html"
+          >Open the interactive lab <span class="arrow">→</span></a
+        >
+        <a class="cta ghost" href="./video.html">Watch the video <span class="arrow">→</span></a>
+      </p>
+      <div class="media">
+        <video
+          controls
+          preload="metadata"
+          playsinline
+          aria-label="Layered Cellular Automata demonstration video"
+        >
+          <source src="../../videos/Binary_Coded_Layered_Autonoma.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <article>
+        <h1>Binary Coded Layered Autonoma</h1>
+        <p>
+          An interactive cellular automaton that combines <strong>Langton&#39;s Ant</strong>,
+          <strong>multi-color substrates</strong>, and
+          <strong>Conway&#39;s Game of Life</strong> into a single layered system. Multiple ants
+          traverse a colored grid, encoding their movement rules in binary, while a
+          selectively-activated life simulation evolves on top of the substrate they create.
+        </p>
+        <p>
+          Open <code>layered_automata.html</code> in a browser to run the simulation — no build step
+          or dependencies required.
+        </p>
+        <h2>Concept</h2>
+        <p>The system layers three interacting subsystems:</p>
+        <ol>
+          <li>
+            <strong>Multi-Color Substrate (2–8 colors)</strong> — a grid of colored cells that ants
+            modify as they move.
+          </li>
+          <li>
+            <strong>Binary-Coded Ants</strong> — Langton-style ants whose turn behavior (Left/Right)
+            is encoded as a binary string indexed by the substrate color underneath them.
+          </li>
+          <li>
+            <strong>Selective Conway&#39;s Life</strong> — a Game-of-Life layer that only evolves on
+            cells whose substrate color is enabled by an <em>activation mask</em>, with
+            positive/negative modes that create or inhibit life.
+          </li>
+        </ol>
+        <p>
+          The interplay between these layers produces highway structures, fractal boundaries, and
+          emergent life colonies tuned to specific color patterns.
+        </p>
+        <h2>How It Works</h2>
+        <h3>Ant Movement</h3>
+        <p>
+          Each ant reads the substrate color at its current cell and consults its binary
+          <strong>Ant Rule</strong>:
+        </p>
+        <ul>
+          <li>Bit <code>0</code> → turn Left</li>
+          <li>Bit <code>1</code> → turn Right</li>
+        </ul>
+        <p>
+          The ant then increments the cell&#39;s color (mod <code>numColors</code>), marks the cell,
+          and steps forward. With <code>numColors = 4</code> and rule <code>0101</code>, this
+          generalizes Langton&#39;s classic <code>LRLR</code> ant.
+        </p>
+        <h3>Life Activation Mask</h3>
+        <p>
+          A second binary string — the <strong>Activation Mask</strong> — determines which substrate
+          colors are eligible to host life. Each color also has an <strong>Activation Mode</strong>:
+        </p>
+        <ul>
+          <li><strong>Positive (+)</strong>: ant presence spawns life and clears inhibition</li>
+          <li>
+            <strong>Negative (−)</strong>: ant presence kills life and creates an
+            <em>inhibition zone</em> that suppresses spawning (decays at ~ 10%/generation)
+          </li>
+        </ul>
+        <h3>Conway&#39;s Life Layer</h3>
+        <p>
+          Life evolves only on <strong>marked</strong> cells whose substrate color is mask-enabled
+          and not inhibited. The rules are extended:
+        </p>
+        <ul>
+          <li>
+            <strong>Search radius</strong> (1–5) — neighborhood size for counting live neighbors
+          </li>
+          <li><strong>Birth</strong> — exact neighbor count required to spawn life</li>
+          <li><strong>Survival min/max</strong> — neighbor range that keeps a live cell alive</li>
+          <li>
+            <strong>Mutual inhibition</strong> — neighbors only count if they share the same
+            activation mode (+ or −) as the cell being evaluated
+          </li>
+        </ul>
+        <p>
+          Negative-mode cells use slightly relaxed survival/birth thresholds, making them more
+          fragile.
+        </p>
+        <h3>Multi-Ant System</h3>
+        <p>Up to 8 ants can run simultaneously with configurable:</p>
+        <ul>
+          <li>
+            <strong>Spawn modes</strong>: <code>center</code>, <code>corners</code>,
+            <code>edges</code>, <code>random</code>, <code>grid</code>
+          </li>
+          <li>
+            <strong>Synchronization</strong>:
+            <ul>
+              <li><code>synchronized</code> — all ants share the same rule and mask</li>
+              <li><code>independent</code> — each ant gets a randomized rule/mask</li>
+              <li><code>offset</code> — each ant uses a rotated version of the base rule</li>
+            </ul>
+          </li>
+        </ul>
+        <h2>Controls</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Control</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Simulation Speed</strong></td>
+              <td>Delay between generations (1–2000 ms)</td>
+            </tr>
+            <tr>
+              <td><strong>Number of Substrate Colors</strong></td>
+              <td>2–8 colors (sets rule/mask length)</td>
+            </tr>
+            <tr>
+              <td><strong>Number of Ants</strong></td>
+              <td>1–8 simultaneous ants</td>
+            </tr>
+            <tr>
+              <td><strong>Ant Spawn Mode</strong></td>
+              <td>How ants are initially placed</td>
+            </tr>
+            <tr>
+              <td><strong>Ant Synchronization</strong></td>
+              <td>How rules are shared across ants</td>
+            </tr>
+            <tr>
+              <td><strong>Ant Rule</strong></td>
+              <td>Per-color L/R turn instruction (clickable bits)</td>
+            </tr>
+            <tr>
+              <td><strong>Life Activation Mask</strong></td>
+              <td>Per-color flag for life eligibility</td>
+            </tr>
+            <tr>
+              <td><strong>Activation Mode</strong></td>
+              <td>Per-color +/− toggle (spawn vs. inhibit)</td>
+            </tr>
+            <tr>
+              <td><strong>Life Search Radius</strong></td>
+              <td>Neighborhood radius for life rules</td>
+            </tr>
+            <tr>
+              <td><strong>Birth / Survival Min / Survival Max</strong></td>
+              <td>Generalized Conway thresholds</td>
+            </tr>
+            <tr>
+              <td><strong>Ant Activation Radius</strong></td>
+              <td>Radius around ants where life is seeded/inhibited</td>
+            </tr>
+            <tr>
+              <td><strong>Activation Probability</strong></td>
+              <td>Per-cell chance of activation within radius</td>
+            </tr>
+            <tr>
+              <td><strong>Grid Size</strong></td>
+              <td>50×50 up to 500×500</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Buttons</h3>
+        <ul>
+          <li><strong>Start / Stop</strong> — toggle continuous simulation</li>
+          <li><strong>Step</strong> — advance a single generation</li>
+          <li><strong>Reset</strong> — clear grids and respawn ants</li>
+          <li><strong>Randomize All</strong> — randomize rule, mask, and parameters</li>
+          <li><strong>Random Rule</strong> — randomize only the ant rule</li>
+          <li><strong>Random Mask</strong> — randomize only the activation mask &amp; modes</li>
+        </ul>
+        <h2>Stats Panel</h2>
+        <ul>
+          <li><strong>Generation</strong> — total simulation steps</li>
+          <li><strong>Ant Steps</strong> — combined steps across all ants</li>
+          <li><strong>Marked Cells</strong> — cells visited at least once by an ant</li>
+          <li><strong>Live Cells</strong> — currently alive Conway cells</li>
+          <li><strong>Inhibited Cells</strong> — cells suppressed by negative activation</li>
+          <li><strong>Active Ants</strong> — number of ants currently running</li>
+          <li><strong>Current Mask</strong> — the active life-activation bitstring</li>
+        </ul>
+        <h2>Visualization</h2>
+        <ul>
+          <li>
+            <strong>Substrate</strong> is rendered using the configurable color palette (only marked
+            cells are drawn).
+          </li>
+          <li><strong>Live cells</strong> appear as bright green squares.</li>
+          <li><strong>Inhibited cells</strong> are tinted red.</li>
+          <li>
+            <strong>Ants</strong> are shown as colored squares with a yellow direction indicator and
+            an ID label (when multiple ants are present).
+          </li>
+          <li>
+            <strong>Click the canvas</strong> to enter fullscreen zoom mode; press
+            <strong>Esc</strong> or click again to exit.
+          </li>
+        </ul>
+        <h2>Tips for Interesting Patterns</h2>
+        <ul>
+          <li>
+            Start with <code>numColors = 4</code>, rule <code>0101</code> (classic Langton&#39;s
+            ant) to observe the famous ~10,000-step highway emergence.
+          </li>
+          <li>
+            Try rule <code>1100</code> or <code>0011</code> with 4 colors for symmetric expanding
+            patterns.
+          </li>
+          <li>
+            Mix positive and negative activation modes to create competing life regions with
+            shifting boundaries.
+          </li>
+          <li>
+            Use multiple ants with the <code>offset</code> synchronization to generate kaleidoscopic
+            interference patterns.
+          </li>
+          <li>
+            Larger life search radii (3–5) combined with higher birth thresholds produce slow,
+            organic-looking growth.
+          </li>
+          <li>
+            Use <strong>Randomize All</strong> repeatedly to discover novel rule combinations.
+          </li>
+        </ul>
+        <h2>Files</h2>
+        <ul>
+          <li><code>layered_automata.html</code> — self-contained simulation (HTML + CSS + JS)</li>
+          <li><code>README.md</code> — this document</li>
+        </ul>
+        <h2>Implementation Notes</h2>
+        <ul>
+          <li>
+            Rendering uses a single <code>ImageData</code> buffer for substrate and life cells (fast
+            bulk pixel writes), with ants drawn via standard canvas calls for glow effects.
+          </li>
+          <li>Grid wraps toroidally on all edges.</li>
+          <li>
+            Inhibition decays stochastically (10% chance per generation) so negative regions slowly
+            heal.
+          </li>
+          <li>
+            Neighbor counting respects activation-mode matching, producing emergent segregation
+            between positive and negative life populations.
+          </li>
+        </ul>
+      </article>
+      <section class="related">
+        <h2>More from Mathematical Explorations</h2>
+        <ul>
+          <li>
+            <a href="../pentagonal-lattice-geometry/index.html">Pentagonal Lattice Geometry</a> — A
+            multi-sheeted covering construction in which the regular pentagon develops fractional
+            dimension (d ≈ 2.37)…
+          </li>
+          <li>
+            <a href="../space-color-symmetry/index.html">Space-Color Symmetry</a> — A pixel canvas
+            where symmetry doesn&#39;t just mirror your strokes — it rewires the diffusion graph.
+            Heat flows…
+          </li>
+          <li>
+            <a href="../geometric-entropy/index.html">Geometric Entropy</a> — A continuous analogue
+            of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize…
+          </li>
+          <li>
+            <a href="../spacelike-knots/index.html">Spacelike Knots</a> — A knot equipped with a
+            Minkowski metric, turning crossings into causal inversions. The distance matrix…
+          </li>
+          <li>
+            <a href="../fractal-learning/index.html">Fractal Learning</a> — Inverse
+            iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so
+            the depth-N…
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

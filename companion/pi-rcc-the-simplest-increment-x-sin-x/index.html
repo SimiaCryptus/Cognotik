@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it falls outside RCC&#39;s classified class, yet still attains optimal RC₁ cost. Develops derivative engineering and the tower of continua (ℚ → algebraic → analytic → elliptic/modular → periods). Where RCC defines the…"
+    />
+    <title>PI_RCC — The Simplest Increment: x + sin(x) — Mathematical Explorations</title>
+    <link
+      rel="canonical"
+      href="https://math.cognotik.com/companion/pi-rcc-the-simplest-increment-x-sin-x/index.html"
+    />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta
+      property="og:title"
+      content="PI_RCC — The Simplest Increment: x + sin(x) — Mathematical Explorations"
+    />
+    <meta
+      property="og:description"
+      content="A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it falls outside RCC&#39;s classified class, yet still attains optimal RC₁ cost. Develops derivative engineering and the tower of continua (ℚ → algebraic → analytic → elliptic/modular → periods). Where RCC defines the…"
+    />
+    <meta
+      property="og:url"
+      content="https://math.cognotik.com/companion/pi-rcc-the-simplest-increment-x-sin-x/index.html"
+    />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="PI_RCC — The Simplest Increment: x + sin(x) — Mathematical Explorations"
+    />
+    <meta
+      name="twitter:description"
+      content="A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it falls outside RCC&#39;s classified class, yet still attains optimal RC₁ cost. Develops derivative engineering and the tower of continua (ℚ → algebraic → analytic → elliptic/modular → periods). Where RCC defines the…"
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Article",
+            "headline": "PI_RCC — The Simplest Increment: x + sin(x)",
+            "description": "A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it falls outside RCC's classified class, yet still attains optimal RC₁ cost. Develops derivative engineering and the tower of continua (ℚ → algebraic → analytic → elliptic/modular → periods). Where RCC defines the…",
+            "url": "https://math.cognotik.com/companion/pi-rcc-the-simplest-increment-x-sin-x/index.html",
+            "inLanguage": "en",
+            "author": { "@type": "Person", "name": "SimiaCryptus" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Mathematical Explorations",
+              "url": "https://math.cognotik.com/"
+            },
+            "mainEntityOfPage": "https://math.cognotik.com/companion/pi-rcc-the-simplest-increment-x-sin-x/index.html"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Mathematical Explorations",
+                "item": "https://math.cognotik.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "PI_RCC — The Simplest Increment: x + sin(x)",
+                "item": "https://math.cognotik.com/companion/pi-rcc-the-simplest-increment-x-sin-x/index.html"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <div class="crumbs">
+        <a href="../../index.html">Home</a> › <a href="../index.html">Companion pages</a> ›
+        <span>PI_RCC — The Simplest Increment: x + sin(x)</span>
+      </div>
+      <div class="page-head">
+        <div class="page-icon" aria-hidden="true">PI_RCC</div>
+        <div>
+          <h1>PI_RCC — The Simplest Increment: x + sin(x)</h1>
+          <p class="subtitle">Trilogy II · stress-testing the boundary</p>
+        </div>
+      </div>
+      <p class="subtitle">
+        A cubic-convergent iteration for π whose outer recurrence is <em>not</em> hypergeometric —
+        it falls outside RCC's classified class, yet still attains optimal RC₁ cost. Develops
+        derivative engineering and the tower of continua (ℚ → algebraic → analytic →
+        elliptic/modular → periods).
+        <em>Where RCC defines the cost classes, PI_RCC shows their boundary is permeable.</em>
+      </p>
+      <p>
+        <a class="cta" href="../../essays/PI_RCC/index.html"
+          >Open the interactive lab <span class="arrow">→</span></a
+        >
+      </p>
+
+      <article>
+        <h1>
+          The Simplest Increment: How x + sin(x) Reveals the Architecture of Mathematical Continua
+        </h1>
+        <h2>A Fixed-Point Engine for π</h2>
+        <p>There is a deceptively simple iteration that converges to π with cubic speed:</p>
+        <pre><code>x_{n+1} = x_n + sin(x_n)
+</code></pre>
+        <p>
+          Start with a seed sufficiently close to π, apply this map repeatedly, and the error
+          collapses at a rate proportional to its own cube. Three correct digits become nine. Nine
+          become twenty-seven. The convergence is violent once it begins.
+        </p>
+        <p>
+          But the interesting question is not <em>that</em> it converges. The interesting question
+          is <em>what kind of machine it is</em>, and what that reveals about the structure of the
+          numbers it generates.
+        </p>
+        <hr />
+        <h2>The Local Error Map</h2>
+        <p>Let α = π, and define the error at step n as e_n = x_n − π. A single iteration gives:</p>
+        <pre><code>x_{n+1} = x_n + sin(x_n) = π + e_n + sin(π + e_n)
+</code></pre>
+        <p>Using the identity sin(π + e) = −sin(e), and expanding sin(e) for small e:</p>
+        <pre><code>sin(e_n) = e_n − e_n³/6 + O(e_n⁵)
+</code></pre>
+        <p>So:</p>
+        <pre><code>sin(π + e_n) = −e_n + e_n³/6 + O(e_n⁵)
+</code></pre>
+        <p>And therefore:</p>
+        <pre><code>e_{n+1} = e_n + (−e_n + e_n³/6 + O(e_n⁵)) = e_n³/6 + O(e_n⁵)
+</code></pre>
+        <p>
+          The linear term cancels exactly. The quadratic term is absent by symmetry. What remains
+          is:
+        </p>
+        <pre><code>e_{n+1} ≈ (1/6) e_n³
+</code></pre>
+        <p>
+          This is cubic convergence. One iteration cubes the error, scaled by 1/6. The mechanism
+          responsible is not clever numerics — it is the identity sin(π + e) = −sin(e), which forces
+          both the linear coefficient and the quadratic coefficient of the error map to vanish at
+          the fixed point, leaving the cubic term to dominate.
+        </p>
+        <p>
+          A note on the basin: this analysis is <em>local</em>. The fixed point at π is in fact
+          <em>superattracting</em>: the multiplier of the iteration map F(x) = x + sin(x) at π is
+          F′(π) = 1 + cos(π) = 0, so the linear term of the error map vanishes exactly and there is
+          no linear contraction or repulsion — the dynamics are governed entirely by the leading
+          nonzero (here cubic) term. (An earlier framing called this &quot;repelling,&quot; which is
+          wrong: a zero multiplier is the signature of superattraction, not repulsion.) For seeds
+          within roughly |x₀ − π| &lt; π/2, the cubic contraction dominates immediately and the
+          iteration plunges toward π at the advertised rate. Outside this basin, sin can carry an
+          iterate toward a <em>different</em> fixed point (any multiple of π is fixed, since sin(kπ)
+          = 0), so the map is not globally a contraction toward π. Bootstrapping a seed of ~20
+          digits via a Machin-style formula and then handing it to the cubic engine is the natural
+          pairing.
+        </p>
+        <hr />
+        <h2>Three Conditions, Not Two</h2>
+        <p>
+          The cubic convergence is not accidental, and it does not follow from two conditions on the
+          map. It follows from three.
+        </p>
+        <p>Write F(x) = x + g(x) and expand the error map about a fixed point α:</p>
+        <pre><code>e_{n+1} = (1 + g′(α))·e_n + (g″(α)/2)·e_n² + (g‴(α)/6)·e_n³ + ...
+</code></pre>
+        <p>
+          For cubic convergence, the coefficients of e_n and e_n² must both vanish. That requires:
+        </p>
+        <ol>
+          <li><strong>g(α) = 0</strong>: α is a fixed point.</li>
+          <li><strong>g′(α) = −1</strong>: the linear coefficient cancels.</li>
+          <li><strong>g″(α) = 0</strong>: the quadratic coefficient cancels.</li>
+        </ol>
+        <p>
+          All three must hold <em>independently</em>. The first two do not imply the third in
+          general. A function satisfying only the first two yields a <em>quadratic</em> engine, not
+          a cubic one.
+        </p>
+        <p>For g(x) = sin(x) and α = π, all three hold simultaneously and exactly:</p>
+        <ul>
+          <li>sin(π) = 0 ✓</li>
+          <li>sin′(π) = cos(π) = −1 ✓</li>
+          <li>sin″(π) = −sin(π) = 0 ✓</li>
+        </ul>
+        <p>
+          This is not a generic accident. It is a consequence of the fact that sin is an odd
+          function reflected about π — the same symmetry that produces sin(π + e) = −sin(e) also
+          forces every even derivative to vanish at π. The sine function at π is therefore a
+          <em>particularly clean</em> example of a cubic engine: a single elementary function
+          satisfies all three conditions, and in fact all higher even-order coefficients vanish too,
+          so the next non-trivial term in the error expansion is the quintic.
+        </p>
+        <p>The design template, stated correctly, is:</p>
+        <ol>
+          <li>Choose a constant α you want to approximate.</li>
+          <li>Find an analytic g with g(α) = 0, g′(α) = −1, <em>and</em> g″(α) = 0.</li>
+          <li>Iterate x ↦ x + g(x).</li>
+          <li>Evaluate g(x) via its Taylor series, truncated to the required tolerance.</li>
+        </ol>
+        <p>
+          The third condition is not a free parameter — it is a genuine constraint that excludes
+          most candidate functions. Finding analytic g with rational Taylor coefficients satisfying
+          all three simultaneously is a real problem, not a recipe to be applied mechanically. The
+          fact that sin at π satisfies all three (and more) is a small miracle of trigonometric
+          symmetry. Whether the template can be instantiated cleanly for other constants — e, ζ(3),
+          Γ(1/3) — is an open research question, not a corollary.
+        </p>
+        <hr />
+        <h2>A Single Iteration as a Rational Certificate Engine</h2>
+        <p>
+          Now consider what it means to <em>implement</em> one step of this iteration exactly, using
+          rational arithmetic.
+        </p>
+        <p>
+          Fix a rational seed x = p/q, already close to π. The output of one iteration is x +
+          sin(x). Since sin(x) is irrational for rational x ≠ 0, we cannot compute it exactly.
+          Instead, we truncate its Taylor series:
+        </p>
+        <pre><code>s_m(x) = Σ_{k=0}^{m} (−1)^k · x^{2k+1} / (2k+1)!
+</code></pre>
+        <p>This gives a rational approximant to the next iterate:</p>
+        <pre><code>y_m = x + s_m(x)
+</code></pre>
+        <p>
+          The sequence y<em
+            >m converges to x + sin(x) as m → ∞. Each y_m is a rational number paired with a
+            computable error bound — a _certificate</em
+          >
+          that the true iterate lies within an explicit interval around y_m. This is, in essence,
+          interval arithmetic with rational endpoints: the framework of validated numerics (Moore,
+          Rump, Tucker) applied to a specific transcendental update.
+        </p>
+        <h3>Inner Convergence Rate</h3>
+        <p>
+          For fixed x near π, the Taylor series for sin(x) converges super-geometrically. The ratio
+          of successive terms is:
+        </p>
+        <pre><code>|x|² / ((2m+3)(2m+2)) → 0
+</code></pre>
+        <p>
+          as m grows. The factorial in the denominator overwhelms any fixed power of x. To achieve
+          truncation error ≤ η, it suffices to take:
+        </p>
+        <pre><code>m = O(log(1/η) / log log(1/η))
+</code></pre>
+        <p>
+          This is better than geometric convergence — the number of terms needed grows essentially
+          logarithmically in the required precision.
+        </p>
+        <h3>Denominator Growth</h3>
+        <p>
+          If x = p/q is rational, then each term x^{2k+1}/(2k+1)! has denominator bounded by
+          q^{O(k)} · (2k+1)!. The common denominator of the partial sum up to index m has bit-length
+          controlled by
+        </p>
+        <pre><code>log D_m = O(m)
+</code></pre>
+        <p>
+          where the linear bound follows from the prime number theorem applied to
+          log(lcm(1,...,2m+1)) ~ 2m. (A naive analysis gives O(m log m); the tighter linear bound
+          comes from the Chebyshev function ψ.) Substituting m = O(log(1/η) / log log(1/η)):
+        </p>
+        <pre><code>log D_m = O(log(1/η) / log log(1/η))
+</code></pre>
+        <p>
+          So the bit-length of the rational certificate y_m, accurate to tolerance η, is essentially
+        </p>
+        <pre><code>bits(η) = O(log(1/η))
+</code></pre>
+        <p>
+          matching the information-theoretic lower bound up to constants. The &quot;log log&quot;
+          overhead one might naively expect is absorbed by the tightened denominator analysis. The
+          certificates are not merely near-optimal — they are optimal in bit-length up to a constant
+          factor.
+        </p>
+        <h3>Composing Inner and Outer Tolerances</h3>
+        <p>
+          To achieve outer error ε after one iteration, we need the inner approximation error η to
+          be small compared to the cubic term e_n³ ≈ ε. Setting η = Θ(ε), the full cost of one
+          iteration — as a rational certificate for the next approximation to π — is:
+        </p>
+        <pre><code>bits(ε) = O(log(1/ε))
+</code></pre>
+        <p>And the number of outer iterations needed to reach precision ε from a good seed is:</p>
+        <pre><code>N(ε) = O(log log(1/ε))
+</code></pre>
+        <p>
+          because each step cubes the error. The total cost is an optimal-bit-length rational
+          certificate engine for π, built from nothing more than the Taylor series for sine and a
+          single nonlinear recurrence.
+        </p>
+        <p>
+          For 100-digit precision (ε ≈ 10⁻¹⁰⁰), this gives certificates on the order of a few
+          thousand bits, with roughly log₃(100/d₀) outer iterations where d₀ is the seed precision
+          in digits. Manageable, but not free — and a polynomial factor slower than Chudnovsky&#39;s
+          series, which remains the practical champion for large-scale computation.
+        </p>
+        <hr />
+        <h2>What Kind of Engine Is This?</h2>
+        <p>
+          Let us be precise about a framework that the rest of this article will lean on. By a
+          <strong>rational certificate engine</strong> for a constant α, I mean: an algorithm that,
+          on input ε, produces a rational number r together with a proof that |r − α| ≤ ε, where the
+          proof is checkable in time polynomial in log(1/ε). Engines are classified by two
+          parameters: the number of iterations needed to reach precision ε, and the bit-length of
+          the rational certificates they produce at each step. I will call this informal framework
+          <strong>Rational Certificate Complexity (RCC)</strong> — a relative of, and intended
+          companion to, the established traditions of computable analysis (Weihrauch, Ko, Müller)
+          and validated numerics. Treat RCC here as a working classification scheme, not as a
+          settled formal theory; making it fully precise is itself part of what the example
+          motivates.
+        </p>
+        <p>The classical families are:</p>
+        <ul>
+          <li>
+            <strong>Hypergeometric series</strong> (Ramanujan, Chudnovsky): linear convergence in
+            iteration count, but each term is cheap and the series is directly summable.
+          </li>
+          <li>
+            <strong>AGM / elliptic methods</strong>: quadratic convergence, with each step requiring
+            an arithmetic-geometric mean computation.
+          </li>
+          <li>
+            <strong>Newton-type recurrences</strong>: quadratic or higher convergence, derived from
+            root-finding applied to an algebraic or analytic equation, requiring derivative
+            evaluation and division.
+          </li>
+        </ul>
+        <p>The x + sin(x) engine fits none of these categories cleanly.</p>
+        <p>
+          It is not a hypergeometric series — the outer recurrence is nonlinear and cannot be
+          expressed as a ratio of consecutive hypergeometric terms in the iteration index.
+        </p>
+        <p>
+          It is not a Newton method — Newton&#39;s method for sin(x) = 0 gives x_{n+1} = x<em
+            >n − tan(x_n), a different map with different structure that requires evaluating
+            _both</em
+          >
+          sin and cos and performing a division. The x + sin(x) iteration achieves cubic convergence
+          without division and without derivative evaluation.
+        </p>
+        <p>It is not an AGM — there is no arithmetic-geometric mean in sight.</p>
+        <p>
+          What it is: a
+          <strong>nonlinear fixed-point map with engineered derivative structure</strong>, whose
+          inner evaluation is a hypergeometric series. The outer recurrence is cubic and
+          non-classical. The inner engine is near-RC₁. The combination is a hybrid that sits outside
+          the standard taxonomy. (Here RC₁ refers to the log-cost, information-theoretically optimal
+          class defined in the companion essay on Rational Certificate Complexity: bit-length
+          Θ(log(1/ε)). &quot;Near-RC₁&quot; means the inner Taylor evaluation achieves Θ(log(1/ε))
+          certificate bit-length up to the constant factors derived above, i.e. it lands in RC₁ for
+          the per-iteration subproblem.)
+        </p>
+        <p>
+          A skeptic might press here: is this really new, or is the iteration merely an arbitrary
+          smooth map that happens to have fixed points at arithmetically interesting locations? This
+          is the right pressure to apply, and it admits a precise answer. The distinction between an
+          iteration that <em>certifies</em> and one that merely <em>cohabits</em> with an
+          interesting object is whether the iteration&#39;s local step rule encodes the structure
+          that makes the target reachable from rational data at a controlled rate. For the Euclidean
+          algorithm — the gold standard of certifying iteration — each greedy floor step
+          <em>is</em> a best-approximation step, and the algorithm&#39;s invariants coincide with
+          the optimality structure being computed. For x + sin(x), the analogous coupling is weaker
+          but real: the local step rule is determined by the Taylor expansion of sin, whose
+          coefficients are rational and computable, and the engineered derivative condition at π is
+          what couples the step rule to the target. The coupling is <em>analytic</em> rather than
+          <em>Diophantine</em> — the iteration does not certify the irrationality measure of π or
+          produce best rational approximations in the continued-fraction sense — but it does certify
+          rational <em>enclosures</em> of π at controlled bit-cost, which is a different and
+          legitimate notion of certification.
+        </p>
+        <p>
+          This is precisely why the engine is a new entry rather than a member of an existing
+          family: it certifies in a sense that hypergeometric, AGM, and Newton methods also certify
+          (rational enclosures at controlled cost), but via a coupling mechanism — derivative
+          engineering at the target — that none of them use.
+        </p>
+        <hr />
+        <h2>The Derivative Condition as a Design Principle</h2>
+        <p>
+          The deeper point is that the cubic convergence is engineered, not stumbled upon. The map
+          F(x) = x + g(x) is built so that the first two derivatives of the
+          <em>error map</em> vanish at α — a codimension-2 condition on g, achievable here because
+          sin has a symmetry that delivers both cancellations for free.
+        </p>
+        <p>
+          This is what I will call <strong>derivative engineering</strong>: choosing g not by what
+          it computes but by the shape of its Taylor expansion at the target. The classical
+          optimization heuristic — pick a function whose value matches your target — is replaced by
+          a stricter requirement: pick a function whose value, slope, <em>and</em> curvature align
+          with the target in a specific way. The convergence order of the resulting iteration is
+          then a theorem about Taylor coefficients, not a numerical observation.
+        </p>
+        <p>Stated this way, the principle generalizes. The general higher-order template:</p>
+        <ul>
+          <li>
+            To achieve convergence of order k+1 at α via F(x) = x + g(x), require g(α) = 0, g′(α) =
+            −1, and g^(j)(α) = 0 for j = 2, ..., k.
+          </li>
+        </ul>
+        <p>
+          For k = 2 we recover the cubic engine. For k = 4 we would need <em>five</em> conditions on
+          g simultaneously, which is correspondingly harder to satisfy with elementary functions.
+          The sine function at π happens to satisfy every condition up to k = ∞ in the even
+          derivatives — a remarkable degeneracy that makes it the canonical example of derivative
+          engineering applied to the analytic layer.
+        </p>
+        <p>
+          Crucially, derivative engineering is not the same as Newton&#39;s method or its
+          higher-order cousins (Halley, Householder). Those methods <em>compute</em> derivatives at
+          runtime and use them to construct corrections. Derivative engineering <em>bakes</em> the
+          derivative conditions into the choice of g, so that no derivative needs to be evaluated
+          during the iteration itself. The runtime computation is just g(x). The mathematical work
+          has all been done in advance, in the choice of g.
+        </p>
+        <hr />
+        <h2>Saturation and the Architecture of Continua</h2>
+        <p>The reason this engine matters is not its speed. It matters because of where it sits.</p>
+        <p>
+          The real numbers are not a monolith. They are a tower of generative mechanisms, each
+          producing a layer of the continuum, each eventually saturating:
+        </p>
+        <p>
+          <strong>ℚ</strong> is the closure of the integers under division. It saturates: once you
+          allow all ratios of integers, you have everything the mechanism can produce, and √2 is
+          provably outside it.
+        </p>
+        <p>
+          <strong>Algebraic numbers</strong> are the closure of ℚ under polynomial roots. This
+          mechanism saturates too: π and e are provably outside it, unreachable by any finite
+          sequence of root extractions.
+        </p>
+        <p>
+          <strong>Analytic numbers</strong> — the constants generated by convergent power series,
+          differential equations, and infinite products with rational coefficients — form the next
+          layer. This is where π, e, ζ(3), and Γ(1/3) live. The mechanism is powerful. But it
+          saturates.
+        </p>
+        <p>
+          <strong>Elliptic and modular constants</strong> — the AGM limit, complete elliptic
+          integrals, values of modular forms — require a new closure operator. They are not
+          expressible as limits of rational processes in the naive sense; they require the machinery
+          of genus-1 algebraic geometry.
+        </p>
+        <p>
+          <strong>Periods</strong> — integrals of algebraic differential forms over algebraic
+          domains — form a still larger class, requiring algebraic-differential closure.
+        </p>
+        <p>
+          And beyond all of these: the random reals, the Kolmogorov-infinite reals, the numbers that
+          require infinite information to specify and admit no finite generative description at all.
+        </p>
+        <p>
+          Two clarifications are owed here. First, the <em>placement</em> of specific constants
+          within this hierarchy is in many cases conjectural rather than established. We know π is
+          transcendental; we conjecture but do not know that ζ(5) is irrational. The tower is a
+          research program, not a completed edifice. Second, the <em>boundaries</em> between layers
+          are sharp ontologically (a number either is or is not algebraic) but gradual
+          epistemologically — we approach each boundary through increasingly sophisticated engines
+          without always knowing precisely when we have crossed it. The distinction matters because
+          the rest of this article will speak of the tower as if it had a definite shape; the reader
+          should keep in mind that several of its floors are under construction.
+        </p>
+        <h2>
+          Each layer is a mechanism. Each mechanism saturates. To describe numbers outside a given
+          layer, you must expand the mechanism itself. This is not a philosophical observation but a
+          structural fact about closure operators: a mechanism generates exactly the numbers
+          reachable by its operations, and once you have taken all limits, all roots, all integrals
+          it permits, you have everything and nothing more.
+        </h2>
+        <h2>Promotion as Functional Recursion</h2>
+        <p>
+          There is a way to read the ascent from one layer of the tower to the next that makes the x
+          + sin(x) engine feel less like an oddity and more like an instance of a general pattern.
+          The promotion from ℚ to the algebraic numbers is itself a form of
+          <em>functional recursion</em> — and once that is made explicit, every later promotion
+          turns out to be the same move applied to a richer alphabet of operations. Consider what it
+          means to pass from ℚ to ℚ(√2), and then to the full algebraic closure ℚ̄. The naive picture
+          is <em>enlargement by fiat</em>: we declare √2 to exist and adjoin it. But the operative
+          picture is recursive. The algebraic closure is the least fixed point of an operator Φ
+          acting on fields:
+        </p>
+        <pre><code>Φ(K) = K ∪ { roots of polynomials with coefficients in K }
+ℚ̄ = least fixed point of Φ above ℚ = ⋃_{n≥0} Φⁿ(ℚ)
+</code></pre>
+        <p>
+          This is a functional recursion in the precise sense of fixed-point semantics: Φ is
+          monotone, the chain ℚ ⊆ Φ(ℚ) ⊆ Φ²(ℚ) ⊆ ... is increasing, and the closure is the colimit.
+          Saturation is exactly the statement that Φ reaches a fixed point — Φ(ℚ̄) = ℚ̄ — so that no
+          further application of the operator produces anything new. The algebraic numbers are not
+          &quot;all numbers of a certain kind&quot;; they are
+          <em>everything reachable by iterating a single operator</em>, and nothing else. The
+          recursion is genuinely functional rather than merely set-theoretic because each step is
+          mediated by an <em>evaluation map</em>. To produce a root of a polynomial p ∈ K[x] is to
+          apply a partial function — root extraction — whose domain is the polynomials over the
+          current field and whose codomain is the next field. The operator Φ is the closure of K
+          under the application of these functions. The recursion unfolds the tower:
+        </p>
+        <pre><code>ℚ ──root-of──▶ Φ(ℚ) ──root-of──▶ Φ²(ℚ) ──root-of──▶ ... ──▶ ℚ̄
+</code></pre>
+        <p>
+          Each arrow is the application of a function to data already in hand. This is structurally
+          identical to how a recursive program builds its result: a base case (ℚ), a step rule
+          (adjoin roots), and a fixed point witnessing termination of the generative process
+          (saturation at ℚ̄). What changes as we climb the tower is only the
+          <em>alphabet of admissible functions</em> defining the step rule:
+        </p>
+        <ul>
+          <li>
+            <strong>ℚ from ℤ</strong>: the step function is division — the recursion closes ℤ under
+            the partial map (a, b) ↦ a/b.
+          </li>
+          <li>
+            <strong>ℚ̄ from ℚ</strong>: the step function is root extraction — the recursion closes ℚ
+            under (p) ↦ roots of p.
+          </li>
+          <li>
+            <strong>Analytic layer</strong>: the step functions are limits of rational power series
+            and solutions of differential equations with rational data.
+          </li>
+          <li>
+            <strong>Elliptic/modular layer</strong>: the step functions include the AGM iteration
+            and evaluation of modular forms. At every level the <em>form</em> of the promotion is
+            the same — least fixed point of a monotone operator built from an evaluation map — and
+            only the operator&#39;s primitives differ. The tower of continua is therefore a tower of
+            recursions, each one a functional closure whose saturation is the precise content of
+            &quot;this mechanism can produce no more.&quot;
+          </li>
+        </ul>
+        <h3>Inversion as the Primitive Promotion</h3>
+        <p>
+          It is worth dwelling on the very first rung, because it exposes the recursion pattern in
+          its most stripped-down form. The promotion from ℤ to ℚ is built from a
+          <em>single</em> operation applied repeatedly: inversion. Division (a, b) ↦ a/b is not a
+          primitive at all — it is the composite of multiplication, which ℤ already has, with
+          inversion b ↦ b⁻¹, which it lacks. The entire content of the promotion ℤ ⇒ ℚ is the act of
+          closing under the partial map
+        </p>
+        <pre><code>ι : b ↦ b⁻¹   (defined for b ≠ 0)
+</code></pre>
+        <p>and then re-closing under the ring operations already present. Concretely:</p>
+        <pre><code>Ψ(R) = R ∪ { b⁻¹ : b ∈ R, b ≠ 0 } closed under +, ×
+ℚ = least fixed point of Ψ above ℤ
+</code></pre>
+        <p>
+          Iterating ι and the ring operations generates every rational: 1/q from q, then p · (1/q)
+          from p and 1/q, and the chain saturates the moment every nonzero element already has its
+          inverse present. ℚ is the localization of ℤ that this inversion-recursion produces, and
+          saturation is exactly the statement that ℚ is closed under ι — every nonzero rational
+          already has a rational inverse, so no further inversion produces anything new. The point
+          of isolating inversion is that it makes the <em>inversion promotion pattern</em> and the
+          <em>recursion promotion pattern</em> visibly the same move. Both are least-fixed-point
+          computations over a monotone operator built from an evaluation map; the inversion case is
+          simply the one where the evaluation map is the unary partial function ι and the closure is
+          taken in a ring. Root extraction at the next rung is the same shape with ι replaced by
+          &quot;roots of p,&quot; and the analytic layer is the same shape again with the alphabet
+          enlarged to limits and differential-equation solutions. The two patterns do not merely
+          resemble each other — inversion <em>is</em> the recursion pattern instantiated at its
+          simplest possible alphabet: a single unary operation closed under the structure already in
+          hand. This overlap is what licenses reading the whole tower as one phenomenon. The
+          inversion promotion that builds ℚ from ℤ is the minimal nontrivial instance of the
+          functional recursion that builds every later layer. Where derivative engineering, later,
+          tunes a step rule <em>within</em> a fixed alphabet, the ℤ ⇒ ℚ promotion shows the opposite
+          extreme: the smallest possible <em>new</em> alphabet — one unary map — still produces a
+          genuine new continuum by the very same recursive mechanism. Inversion and recursion are
+          not two patterns that happen to align; they are one pattern seen at its base case. This
+          reframing pays an immediate dividend for understanding the x + sin(x) engine. The engine
+          does not introduce a new <em>layer</em> — it does not enlarge the alphabet of closure
+          operations. What it does is operate <em>within</em> the analytic layer&#39;s recursion
+          while engineering the step rule itself. Where the algebraic promotion fixes its step
+          function (root extraction) and asks what is reachable, derivative engineering holds the
+          layer fixed and asks: among the functions the analytic recursion already admits, which
+          step rules g couple to a target constant α with vanishing first and second
+          error-derivatives? The iteration x ↦ x + g(x) is then a functional recursion whose step
+          function has been <em>tuned</em> — not adjoined — so that its fixed point is α and its
+          approach is cubic. Seen this way, the cubic engine is the same kind of object as the
+          algebraic closure, one rung up: a least-fixed-point computation whose operator is an
+          evaluation map. The novelty is not in the recursive form, which is universal across the
+          tower, but in the discovery that the <em>step function</em> of such a recursion is itself
+          a design surface. Promotion builds new continua by enlarging the alphabet; derivative
+          engineering builds new engines by sculpting a single letter of the alphabet already
+          present. Both are functional recursion. Only the locus of freedom differs.
+        </p>
+        <h3>ℚ#: The Closure Under a Single Transcendental Evaluation</h3>
+        <p>
+          There is a sharper way to see where π enters this picture, and it begins with an
+          observation that is easy to state and surprisingly consequential:
+          <strong>sin(1) is transcendental.</strong> By the Lindemann–Weierstrass theorem, sin(1) =
+          (e^i − e^{−i})/2i is transcendental, because 1 is a nonzero algebraic number and the
+          theorem forbids any nonzero algebraic argument from producing an algebraic sine value. So
+          sin, evaluated at the most elementary nonzero rational of all — the unit 1 — already
+          escapes the algebraic floor entirely. This is the same phenomenon as inversion, viewed
+          through a different lens. Inversion ι : b ↦ b⁻¹ was the minimal unary partial map whose
+          closure promoted ℤ to ℚ. The sine evaluation map
+        </p>
+        <pre><code>σ : x ↦ sin(x)   (defined for all x)
+</code></pre>
+        <p>
+          is a unary <em>total</em> map whose closure promotes ℚ to something strictly larger.
+          Define:
+        </p>
+        <pre><code>Σ(K) = K ∪ { sin(x) : x ∈ K } closed under +, ×, and ι
+ℚ# = least fixed point of Σ above ℚ
+</code></pre>
+        <p>
+          ℚ# is the smallest field containing ℚ and closed under taking sines. It is a genuine new
+          continuum, built by exactly the recursion pattern the tower runs on: a base case (ℚ), a
+          unary evaluation map (σ), and a closure under the structure already in hand. The very
+          first nontrivial element it produces — sin(1) — is already transcendental, so ℚ# is not
+          contained in the algebraic numbers. Yet sin(1) lives
+          <em>inside our basic computational field</em> in the operational sense that matters for a
+          certificate engine: it is the value at a rational point of a function whose Taylor
+          coefficients are rational and whose evaluation is near-RC₁. ℚ# is the layer of constants
+          reachable by finitely many sine evaluations, inversions, and ring operations starting from
+          ℚ — transcendental in value, but rational in <em>generation</em>. The point of naming ℚ#
+          is that it is the inversion promotion repeated at a richer alphabet. Where ℤ ⇒ ℚ closed
+          under the unary map ι, ℚ ⇒ ℚ# closes under the unary map σ. Both are least-fixed-point
+          computations over a monotone operator built from a single evaluation map. The only change
+          is which letter we have added to the alphabet — and the remarkable fact is that adding
+          <em>one transcendental analytic letter</em> jumps the closure clean over the algebraic
+          floor in a single step, where inversion stayed inside ℚ.
+        </p>
+        <h3>π as the Inversion of σ</h3>
+        <p>
+          Now the cubic engine snaps into place as the next move in this very sequence. ℚ# is closed
+          under <em>forward</em> application of sine: it contains sin(x) for every x it holds. But
+          it is not closed under the <em>inverse</em> relation — under solving sin(x) = 0 for x, or
+          equivalently under finding the fixed points of x ↦ x + sin(x). And the canonical solution
+          of sin(x) = 0, the first positive root, is <strong>π</strong>. This is exactly the
+          inversion pattern again, one rung up. The promotion ℤ ⇒ ℚ closed ℤ under the inverse of
+          multiplication; the promotion ℚ ⇒ ℚ# closed ℚ under the forward sine map; the promotion ℚ#
+          ⇒ ℚ#(π) closes ℚ# under the <em>inverse</em> of the sine map at its zero. π is to σ what
+          1/q is to multiplication-by-q: the object you must adjoin to make a forward-only operation
+          invertible. Inversion built ℚ by undoing multiplication; the cubic engine builds π by
+          undoing sine.
+        </p>
+        <pre><code>ℤ ──ι (invert ×)──▶ ℚ ──σ (apply sin)──▶ ℚ# ──σ⁻¹ (invert sin at 0)──▶ ℚ#(π)
+</code></pre>
+        <p>
+          And here the x + sin(x) iteration is revealed as the <em>constructive witness</em> of that
+          final arrow. Inverting sine is not an algebraic operation — there is no formula for σ⁻¹
+          inside ℚ#. What there is instead is a fixed-point recurrence whose step rule is built from
+          σ itself: x ↦ x + sin(x). The iteration computes σ⁻¹(0) = π by repeatedly applying the
+          very map whose inverse it is solving, and the engineered derivative conditions (g′(π) =
+          −1, g″(π) = 0) are precisely what make this self-referential inversion converge cubically
+          rather than merely linearly. The map that <em>applies</em> sine, lightly tuned, becomes
+          the engine that <em>inverts</em> it. This is why the cubic engine is not an oddity grafted
+          onto the tower but a direct continuation of its generating pattern. Each rung either adds
+          a forward evaluation map or inverts one already present:
+        </p>
+        <ul>
+          <li>ℤ ⇒ ℚ: <strong>invert</strong> multiplication (the map ι).</li>
+          <li>ℚ ⇒ ℚ#: <strong>apply</strong> the transcendental map σ (sine).</li>
+          <li>
+            ℚ# ⇒ ℚ#(π): <strong>invert</strong> σ at its zero — and the constructive content of that
+            inversion <em>is</em> the x + sin(x) engine. π, on this reading, is not merely a
+            constant that the cubic engine happens to converge to. It is the element forced into
+            existence by closing ℚ# under the inverse of the same sine map that generated ℚ#&#39;s
+            transcendence in the first place. The constant and the engine are two faces of one
+            inversion: sin(1) is what σ produces going forward, π is what σ produces when inverted,
+            and x + sin(x) is the recursion that carries out the inversion using nothing but forward
+            applications of σ. The generating pattern that built ℚ from ℤ by inversion, and ℚ# from
+            ℚ by sine-application, completes its next step by inverting sine — and the cubic engine
+            is exactly that step, made constructive.
+          </li>
+        </ul>
+        <hr />
+        <h2>The Simplest Increment</h2>
+        <p>
+          The x + sin(x) iteration is interesting precisely because it sits at one of these
+          boundaries.
+        </p>
+        <p>
+          It uses only analytic primitives — the Taylor series for sine, rational arithmetic,
+          limits. It does not require elliptic functions, modular forms, or algebraic geometry. In
+          that sense, it lives inside the analytic layer.
+        </p>
+        <p>
+          But its <em>outer structure</em> — the nonlinear fixed-point recurrence with engineered
+          derivative conditions — is not expressible as a hypergeometric term in the iteration
+          index. It is not a classical analytic engine. It is something new: a cubic engine built by
+          <em>designing the derivative structure</em> of an analytic function at a target constant,
+          with no machinery beyond what the analytic layer already provides.
+        </p>
+        <p>
+          This is the minimal possible expansion of the analytic mechanism that yields a new class
+          of rational-certificate engines. It introduces exactly one new structural degree of
+          freedom: the constraint that g and its first few derivatives align with specific values at
+          α. This is not a new closure operator. It is not a jump to a higher layer of the tower. It
+          is the smallest possible mutation of the existing machinery that produces behavior the
+          existing machinery cannot classify under its standard headings.
+        </p>
+        <p>
+          The result is a new continuum of constants — provisional and incomplete, but real: all
+          analytic constants α for which there exists an analytic function g with rational Taylor
+          coefficients satisfying g(α) = 0, g′(α) = −1, g″(α) = 0, reachable by this class of cubic
+          engines, with rational-certificate profiles that sit just outside the classical RCC
+          families. Whether this continuum is large or small, whether it captures e and ζ(3) or only
+          π and a few near-relatives, is a research question. The point is that the question is now
+          well-posed.
+        </p>
+        <hr />
+        <h2>Why This Matters</h2>
+        <p>
+          The practical utility of x + sin(x) as a π-computing algorithm is modest. It requires a
+          good seed. It cannot compete with Chudnovsky or AGM for large-scale computation — the
+          polynomial factor gap is real and not closeable by polish. As a numerical method, it is a
+          curiosity.
+        </p>
+        <p>
+          But as a <em>theoretical object</em>, it is something more precise. It demonstrates three
+          things:
+        </p>
+        <p>
+          First, that the RCC taxonomy is not closed — new engine classes can be synthesized by
+          engineering derivative conditions rather than by inventing new series or new geometric
+          structures. A precise statement of this claim, in the vocabulary of the companion RCC
+          essay: the x + sin(x) engine is <em>not</em> hypergeometric as an outer recurrence (its
+          term ratio in the iteration index is not a rational function of the index), so it falls
+          outside the regular/hypergeometric class that RCC classifies. Yet its certificate profile
+          — Θ(log(1/ε)) bits per iteration, Θ(log log(1/ε)) iterations — places its
+          <em>composite</em> cost in the optimal logarithmic regime. It is thus an RC₁-cost engine
+          that is provably outside the hypergeometric family RCC restricts to, which is exactly why
+          it constitutes a new entry rather than a reclassification of an existing one.
+        </p>
+        <p>
+          Second, that the line between &quot;this iteration certifies&quot; and &quot;this
+          iteration merely converges&quot; is doing real conceptual work, and that the right place
+          to locate that line is in the coupling between the local step rule and the target — not in
+          the convergence rate, not in the fixed-point structure alone, but in
+          <em>what makes the rate achievable from rational data</em>.
+        </p>
+        <p>
+          Third, that the boundary between analytic closure and the next mechanism layer is not a
+          wall but a gradient — traversable in small steps, each step yielding a new class of
+          engines and a new continuum of reachable constants.
+        </p>
+        <p>The deeper principle it illustrates is this:</p>
+        <blockquote>
+          <p>
+            Every family of constants corresponds to a closure mechanism. Every closure mechanism
+            saturates. New constants require new mechanisms. And the smallest possible new mechanism
+            is the one that introduces exactly one new structural degree of freedom — no more.
+          </p>
+        </blockquote>
+        <p>
+          The x + sin(x) iteration is that smallest increment, applied to the analytic layer. It is
+          not the last word on the structure of the continuum. The design template it suggests has
+          not yet been instantiated for any constant other than π. The RCC framework it leans on is
+          not yet fully formal. The continuum tower it sits in is largely conjectural above the
+          algebraic floor.
+        </p>
+        <p>
+          But it is a clean, precise, and surprisingly deep example of how mathematical mechanisms
+          grow — by the smallest mutation that the existing machinery cannot already classify,
+          applied at exactly the point where the classification breaks.
+        </p>
+      </article>
+      <section class="related">
+        <h2>More from Mathematical Explorations</h2>
+        <ul>
+          <li>
+            <a href="../quadratic-quasi-newton/index.html">Quadratic Quasi-Newton</a> — A new
+            optimization algorithm for smooth functions that interpolates between gradient descent
+            and L-BFGS.
+          </li>
+          <li>
+            <a href="../rcc-rational-certificate-complexity/index.html"
+              >RCC — Rational Certificate Complexity</a
+            >
+            — The foundation of the trilogy. Treats every convergence sequence as a rational
+            certificate engine, measures…
+          </li>
+          <li>
+            <a href="../nam-numbers-as-machines/index.html">NAM — Numbers as Machines</a> — A
+            generator-based numerics library where every number is a forkable, deterministic nano-VM
+            emitting an…
+          </li>
+          <li>
+            <a href="../the-extension-ladder-one-way-to-watch-number-systems-grow/index.html"
+              >The Extension Ladder: One Way to Watch Number Systems Grow</a
+            >
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

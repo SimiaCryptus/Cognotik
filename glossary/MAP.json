@@ -1,0 +1,930 @@
+{
+  "version": "1.0.0",
+  "title": "Conceptual Map of the Multi-Sheeted N-gon Tiling Project",
+  "description": "A structured JSON representation of the conceptual map for the multi-sheeted N-gon tiling project, capturing the relationships between algebra, geometry, group theory, topology, physics, computation, and dimensional analysis as visualized in MAP.md.",
+  "concepts": {
+    "top-level-thematic-architecture": {
+      "id": "top-level-thematic-architecture",
+      "term": "Top-Level Thematic Architecture",
+      "aliases": ["macro architecture", "project overview"],
+      "domain": "general",
+      "crossDomains": ["algebra", "geometry", "topology", "physics", "computation"],
+      "difficulty": "foundational",
+      "tags": ["overview", "architecture", "reconnection", "synthesis"],
+      "summary": "High-level flowchart showing how the major glossary sections feed into one another, with the reconnection framework at the center.",
+      "definition": "The top-level thematic architecture describes how the major conceptual sections of the project interrelate. The reconnection framework sits at the center, drawing from algebra and number theory (ℚ√5, ℤφ, Galois), geometric constructions (polygons, polyhedra, tilings), group theory (O(n), SU(2), Spin), and topology and bundles (covers, holonomy, defects). It feeds into project terminology (signed3, vortices), dimensions and scaling (d_eff, d_spec, d_w), spectral graph theory (Δ, DOS, KPM), and extremal geometry (Erdős, unit distances). Dimensions and scaling connect to physics connections, while spectral graph theory and algorithmic methods are mutually reinforcing. Fractals serve as an analogy to dimensional flow, and cellular automata emerge from project terminology.",
+      "examples": [
+        {
+          "title": "Central role of the reconnection framework",
+          "body": "Algebra (A), Geometry (B), Group Theory (D), and Topology (E) all feed into the Reconnection Framework (L), which then distributes insights into project terminology (O), dimensions (F), spectral graph theory (G), extremal geometry (K), and algorithmic methods (M)."
+        }
+      ],
+      "formulas": [],
+      "references": ["MAP.md §1"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "algebraic-backbone" },
+          { "id": "reconnection-hierarchy" },
+          { "id": "group-theoretic-web" },
+          { "id": "topology-stack" },
+          { "id": "dimensions-three-numbers" },
+          { "id": "spectral-pipeline" },
+          { "id": "physics-mind-map" },
+          { "id": "computational-toolkit" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "algebraic-backbone": {
+      "id": "algebraic-backbone",
+      "term": "Algebraic Backbone: ℚ(√5) and Its Children",
+      "aliases": ["ℚ(√5) hierarchy", "quadratic field hierarchy", "algebraic hierarchy"],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "ℚ(√5)",
+        "golden ratio",
+        "Galois",
+        "ring of integers",
+        "quadratic field",
+        "norm form",
+        "unit group"
+      ],
+      "summary": "The algebraic hierarchy rooted in ℚ(√5) that underwrites pentagonal tilings, from the rationals up through the ring of integers ℤ[φ] and its key elements.",
+      "definition": "The algebraic backbone of the project is the tower of fields and rings: ℚ ⊂ ℚ(√d) ⊂ ℚ(√5), with ring of integers ℤ[φ]. The golden ratio φ = (1+√5)/2 satisfies φ² = φ + 1 and serves as the fundamental unit. Its Galois conjugate ψ = (1−√5)/2 = −1/φ is the image under the non-trivial automorphism σ: φ ↦ ψ. The unit group is {±φ^k : k ∈ ℤ}. The norm form N(a+bφ) is multiplicative, and ℤ[φ] is a PID and UFD whose Pell solutions encode the self-similar structure of pentagonal tilings.",
+      "examples": [
+        {
+          "title": "Golden ratio arithmetic",
+          "body": "φ² = φ + 1, φ³ = 2φ + 1, φ^{-1} = φ − 1. These identities allow exact arithmetic over ℤ[φ] without floating-point error."
+        },
+        {
+          "title": "Norm computation",
+          "body": "N(a + bφ) = (a + bφ)(a + bψ) = a² + ab − b², which is multiplicative: N(αβ) = N(α)N(β)."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "φ = (1 + √5) / 2",
+          "description": "Definition of the golden ratio",
+          "variables": { "φ": "golden ratio" }
+        },
+        {
+          "expression": "φ² = φ + 1",
+          "description": "Minimal polynomial relation satisfied by φ"
+        },
+        {
+          "expression": "ψ = (1 − √5) / 2 = −1/φ",
+          "description": "Galois conjugate of φ under σ: √5 ↦ −√5"
+        },
+        {
+          "expression": "N(a + bφ) = a² + ab − b²",
+          "description": "Field norm from ℚ(√5) to ℚ, multiplicative"
+        }
+      ],
+      "references": ["MAP.md §2", "glossary.md §A"],
+      "relations": {
+        "requires": [{ "id": "top-level-thematic-architecture" }],
+        "related": [
+          { "id": "reconnection-hierarchy" },
+          { "id": "pentagon-to-multisheet" },
+          { "id": "erdos-extremal-distance" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "reconnection-hierarchy": {
+      "id": "reconnection-hierarchy",
+      "term": "Four-Level Reconnection Hierarchy",
+      "aliases": ["reconnection classification", "reconnection levels", "L0 L1 L2 L3"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "reconnection",
+        "Level 0",
+        "Level 1",
+        "Level 2",
+        "Level 3",
+        "orientation group",
+        "angular deficit",
+        "multi-sheeted"
+      ],
+      "summary": "The central four-level classification of polygons and polyhedra by their reconnection properties, determined by three successive criteria.",
+      "definition": "The reconnection hierarchy classifies polygons and polyhedra by three criteria applied in sequence:\n\n- **Criterion 1**: Is the orientation group Γ finite? If no → Level 3 (non-reconnective, infinite tree).\n- **Criterion 2**: Is there a single irrational base? If no → Level 2 (edge-restricted, pinwheel polygons), requiring an active edge subset E_A.\n- **Criterion 3**: Is the angular deficit δ zero? If yes → Level 0 (full reconnection, e.g. square, hexagon). If no → Level 1 (multi-sheeted full reconnection, e.g. regular pentagon), requiring a multi-sheeted cover with fiber group G.\n\nLevel 1 is the most structurally rich case, giving rise to spinor-like holonomy and the signed3 rule.",
+      "examples": [
+        {
+          "title": "Square and hexagon — Level 0",
+          "body": "Both have finite orientation groups and zero angular deficit at vertices in their standard tilings, so they achieve full reconnection on a single sheet."
+        },
+        {
+          "title": "Regular pentagon — Level 1",
+          "body": "The pentagon has a finite orientation group and a single irrational base (φ), but its angular deficit δ = 36° is non-zero, forcing a multi-sheeted cover."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "δ = 360° − Σ θ_i",
+          "description": "Angular deficit at a vertex, where θ_i are the interior angles of incident faces",
+          "variables": { "δ": "angular deficit", "θ_i": "interior angle of i-th incident face" }
+        }
+      ],
+      "references": ["MAP.md §3", "glossary.md §L"],
+      "relations": {
+        "requires": [{ "id": "algebraic-backbone" }, { "id": "pentagon-to-multisheet" }],
+        "related": [
+          { "id": "group-theoretic-web" },
+          { "id": "topology-stack" },
+          { "id": "top-level-thematic-architecture" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "pentagon-to-multisheet": {
+      "id": "pentagon-to-multisheet",
+      "term": "From Pentagon to Multi-Sheeted Cover",
+      "aliases": [
+        "pentagonal multi-sheet construction",
+        "36° deficit construction",
+        "spinor holonomy construction"
+      ],
+      "domain": "topology",
+      "crossDomains": ["geometry", "physics"],
+      "difficulty": "advanced",
+      "tags": [
+        "pentagon",
+        "angular deficit",
+        "vortex",
+        "sheet transition",
+        "holonomy",
+        "spinor",
+        "signed3",
+        "G-bundle"
+      ],
+      "summary": "Traces how the 36° angular deficit of the regular pentagon forces the multi-sheeted construction, giving rise to spinor-like holonomy and the signed3 rule.",
+      "definition": "The regular pentagon has interior angle 108°. When pentagons meet at a vertex in a tiling, the angular deficit δ = 36° cannot be absorbed by any flat arrangement, creating a topological defect — a vortex. To track orientation consistently across this defect, sheet transitions τ(e) ∈ G are assigned to edges, forming a discrete principal G-bundle. A loop around a vortex vertex applies the holonomy element of G; for the pentagon, this holonomy is spinor-like: one loop returns the walker to a different sheet (analogous to −1 in SU(2)), and two loops restore the identity. This is the discrete analogue of the SU(2) → SO(3) double cover. The signed3 rule encodes the resulting sheet shifts in {−1, 0, +1} with vortex fraction 2/3.",
+      "examples": [
+        {
+          "title": "Spinor analogy",
+          "body": "Just as a spin-1/2 particle acquires a factor of −1 under a 2π rotation and returns to +1 under 4π rotation, a walker on the pentagonal tiling acquires a non-trivial sheet shift after one loop around a vortex and returns to the original sheet after two loops."
+        },
+        {
+          "title": "Vortex fraction",
+          "body": "The signed3 rule assigns shifts in {−1, 0, +1} to edges near a vortex. The fraction of edges carrying a non-zero shift is 2/3, reflecting the 36° deficit distributed over the local star of the vertex."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "δ = 36°",
+          "description": "Angular deficit of the regular pentagon vertex in a pentagonal tiling"
+        },
+        {
+          "expression": "τ(e) ∈ G",
+          "description": "Sheet transition group element assigned to edge e",
+          "variables": { "τ(e)": "sheet transition at edge e", "G": "fiber group" }
+        },
+        {
+          "expression": "Hol(γ)² = id",
+          "description": "Spinor-like holonomy: two loops around a vortex restore the identity",
+          "variables": {
+            "Hol(γ)": "holonomy of loop γ around vortex",
+            "id": "identity element of G"
+          }
+        }
+      ],
+      "references": [
+        "MAP.md §4",
+        "MAP.md §14",
+        "glossary.md §E",
+        "glossary.md §L",
+        "glossary.md §O"
+      ],
+      "relations": {
+        "requires": [{ "id": "algebraic-backbone" }, { "id": "reconnection-hierarchy" }],
+        "related": [
+          { "id": "topology-stack" },
+          { "id": "group-theoretic-web" },
+          { "id": "spinor-holonomy-cycle" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "group-theoretic-web": {
+      "id": "group-theoretic-web",
+      "term": "Group-Theoretic Web",
+      "aliases": ["group cover chain", "finite and continuous groups", "group inclusions"],
+      "domain": "algebra",
+      "crossDomains": ["topology", "physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "O(n)",
+        "SO(n)",
+        "Spin(n)",
+        "SU(2)",
+        "SO(3)",
+        "icosahedral",
+        "binary icosahedral",
+        "dihedral",
+        "cyclic",
+        "symmetric",
+        "alternating",
+        "quaternion",
+        "Klein four-group"
+      ],
+      "summary": "A graph of the finite and continuous groups appearing in the project, showing the chain of covers and inclusions.",
+      "definition": "The project involves a web of groups connected by covering maps and inclusions:\n\n- **Continuous covers**: Spin(n) → SO(n), SU(2) → SO(3), O(n) ⊃ SO(n).\n- **Finite subgroups of SO(3)**: Icosahedral I ≅ A₅, Octahedral O ≅ S₄, Tetrahedral T ≅ A₄, Dihedral D_n, Cyclic ℤ_n.\n- **Binary lift**: SU(2) ⊃ 2I (binary icosahedral), with 2I → I the double cover.\n- **Symmetric/alternating**: S_n ⊃ A_n, with A_n containing I (n=5) and T (n=4).\n- **Small groups**: Quaternion group Q → Klein four-group K₄.\n\nThese groups classify the fiber groups G of the multi-sheeted covers and the orientation groups Γ of tilings.",
+      "examples": [
+        {
+          "title": "SU(2) as double cover of SO(3)",
+          "body": "The map SU(2) → SO(3) has kernel {±I}, making SU(2) the universal double cover of SO(3). The binary icosahedral group 2I ⊂ SU(2) is the preimage of I ⊂ SO(3) under this cover."
+        },
+        {
+          "title": "Icosahedral group as A₅",
+          "body": "The rotation symmetry group of the icosahedron is isomorphic to A₅, the alternating group on 5 elements, which is the unique simple group of order 60."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "1 → {±I} → SU(2) → SO(3) → 1",
+          "description": "Short exact sequence expressing SU(2) as the double cover of SO(3)"
+        },
+        {
+          "expression": "|2I| = 120, |I| = 60",
+          "description": "Orders of the binary icosahedral and icosahedral groups"
+        }
+      ],
+      "references": ["MAP.md §5", "glossary.md §D"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "topology-stack" },
+          { "id": "pentagon-to-multisheet" },
+          { "id": "reconnection-hierarchy" },
+          { "id": "physics-mind-map" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "topology-stack": {
+      "id": "topology-stack",
+      "term": "Topology Stack Behind Sheet Transitions",
+      "aliases": [
+        "covering space stack",
+        "bundle and connection hierarchy",
+        "discrete bundle formalism"
+      ],
+      "domain": "topology",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "advanced",
+      "tags": [
+        "covering space",
+        "branched cover",
+        "double cover",
+        "principal bundle",
+        "discrete bundle",
+        "connection",
+        "gauge connection",
+        "holonomy",
+        "monodromy"
+      ],
+      "summary": "The topology section's class hierarchy: how covering spaces, bundles, and connections combine to formalize the multi-sheeted structure.",
+      "definition": "The topological formalism underlying sheet transitions is organized as follows:\n\n- **CoveringSpace**: A map π: M → X that is a local homeomorphism, with a discrete set of sheets above each point. Specializations include BranchedCover (with ramification points), DoubleCover (2-fold, as in SU(2) → SO(3)), and PrincipalGBundle (with fiber group G acting on fibers).\n- **DiscreteBundle**: The combinatorial version of a principal G-bundle, where tiles play the role of sheets and edges carry group elements.\n- **Connection / GaugeConnection**: Assigns group elements to edges (lattice gauge theory), enabling parallel transport around loops.\n- **Holonomy**: The group element accumulated by parallel transport around a closed loop. Monodromy is holonomy around a topologically non-trivial loop.\n\nThe DiscreteBundle is assembled from a GaugeConnection, and the GaugeConnection determines the Holonomy, which specializes to Monodromy for loops encircling vortices.",
+      "examples": [
+        {
+          "title": "Discrete principal bundle on a pentagonal tiling",
+          "body": "Each tile is a sheet; each shared edge e carries a group element τ(e) ∈ G. Traversing a loop of edges multiplies the group elements, giving the holonomy of that loop."
+        },
+        {
+          "title": "Monodromy around a vortex",
+          "body": "A loop encircling a single vortex vertex accumulates a non-trivial holonomy element h ∈ G with h² = id but h ≠ id, the discrete spinor signature."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "Hol(γ) = ∏_{e ∈ γ} τ(e)",
+          "description": "Holonomy of a loop γ as the ordered product of edge group elements",
+          "variables": { "Hol(γ)": "holonomy", "τ(e)": "group element on edge e" }
+        }
+      ],
+      "references": ["MAP.md §6", "glossary.md §E"],
+      "relations": {
+        "requires": [{ "id": "group-theoretic-web" }, { "id": "pentagon-to-multisheet" }],
+        "related": [
+          { "id": "spinor-holonomy-cycle" },
+          { "id": "physics-mind-map" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "dimensions-three-numbers": {
+      "id": "dimensions-three-numbers",
+      "term": "Dimensions: Three Numbers, One Relation",
+      "aliases": ["Alexander–Orbach relation", "dimensional exponents", "d_eff d_spec d_w"],
+      "domain": "computation",
+      "crossDomains": ["physics", "geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "d_eff",
+        "d_spec",
+        "d_w",
+        "Alexander–Orbach",
+        "BFS",
+        "random walk",
+        "mean squared displacement",
+        "dimensional flow",
+        "spectral dimension"
+      ],
+      "summary": "The three dimensional exponents d_eff, d_spec, and d_w tied together by the Alexander–Orbach relation, derived from the adjacency graph.",
+      "definition": "From the adjacency graph 𝒢 of a tiling, three dimensional exponents are extracted:\n\n- **d_eff** (effective/connectivity dimension): BFS volume V(r) ~ r^{d_eff}.\n- **d_spec** (spectral dimension): Return probability of random walk P₀(t) ~ t^{−d_spec/2}.\n- **d_w** (walk dimension): Mean squared displacement ⟨Δx²⟩ ~ t^{2/d_w}.\n\nThese are related by the **Alexander–Orbach relation**: d_spec = 2 d_eff / d_w.\n\nDimensional flow (UV ≠ IR) arises when these exponents differ from the naive Euclidean dimension, with connections to asymptotic safety and causal dynamical triangulation (CDT) in quantum gravity.",
+      "examples": [
+        {
+          "title": "Euclidean lattice baseline",
+          "body": "For the standard 2D square lattice: d_eff = 2, d_w = 2, d_spec = 2. The Alexander–Orbach relation is trivially satisfied: 2 = 2·2/2."
+        },
+        {
+          "title": "Fractal tiling",
+          "body": "For a Sierpiński gasket graph: d_eff = log3/log2 ≈ 1.585, d_w = log5/log2 ≈ 2.322, d_spec = 2 log3/log5 ≈ 1.365, consistent with Alexander–Orbach."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "V(r) ~ r^{d_eff}",
+          "description": "BFS ball volume scaling defining the effective dimension",
+          "variables": {
+            "V(r)": "number of vertices within graph distance r",
+            "d_eff": "effective dimension"
+          }
+        },
+        {
+          "expression": "⟨Δx²⟩ ~ t^{2/d_w}",
+          "description": "Mean squared displacement of random walk defining walk dimension",
+          "variables": { "d_w": "walk dimension" }
+        },
+        {
+          "expression": "d_spec = 2 d_eff / d_w",
+          "description": "Alexander–Orbach relation connecting the three dimensional exponents",
+          "variables": {
+            "d_spec": "spectral dimension",
+            "d_eff": "effective dimension",
+            "d_w": "walk dimension"
+          }
+        }
+      ],
+      "references": ["MAP.md §7", "glossary.md §F"],
+      "relations": {
+        "requires": [{ "id": "spectral-pipeline" }],
+        "related": [
+          { "id": "random-walk-state-machine" },
+          { "id": "physics-mind-map" },
+          { "id": "fractal-dimensions-reference" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spectral-pipeline": {
+      "id": "spectral-pipeline",
+      "term": "Spectral Pipeline (Computational)",
+      "aliases": ["KPM pipeline", "DOS computation pipeline", "Chebyshev moment pipeline"],
+      "domain": "computation",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "KPM",
+        "Chebyshev",
+        "density of states",
+        "Laplacian",
+        "adjacency",
+        "spectral dimension",
+        "power-law fit",
+        "lazy graph"
+      ],
+      "summary": "The computational sequence from tile expansion through adjacency graph assembly to density of states and spectral dimension estimate.",
+      "definition": "The spectral pipeline converts a tiling into a spectral dimension estimate through the following stages:\n\n1. **Tile expansion**: Apply generators to expand the tiling from a seed.\n2. **Adjacency oracle**: Lazy neighbor lookup using spatial hashing.\n3. **Sparse adjacency A**: Assemble the sparse adjacency matrix.\n4. **Laplacian Δ = D − A**: Compute the graph Laplacian from degree matrix D and adjacency A.\n5. **KPM Chebyshev**: Apply the Kernel Polynomial Method using matrix-vector products to compute Chebyshev moments of the spectral density.\n6. **Density of states ρ(λ)**: Reconstruct from Chebyshev moments.\n7. **Power-law fit**: Fit the low-λ scaling ρ(λ) ~ λ^{d_spec/2 − 1} to extract d_spec.\n8. **Feedback**: The d_spec estimate informs further tile expansion decisions.",
+      "examples": [
+        {
+          "title": "KPM moment computation",
+          "body": "The m-th Chebyshev moment is μ_m = Tr[T_m(H)] ≈ (1/N) Σ_r ⟨r|T_m(H)|r⟩ estimated stochastically with random vectors |r⟩, requiring only matrix-vector products with H."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "Δ = D − A",
+          "description": "Graph Laplacian as degree matrix minus adjacency matrix",
+          "variables": { "Δ": "graph Laplacian", "D": "degree matrix", "A": "adjacency matrix" }
+        },
+        {
+          "expression": "ρ(λ) ~ λ^{d_spec/2 − 1}  as λ → 0",
+          "description": "Low-energy power-law scaling of the density of states used to extract spectral dimension",
+          "variables": { "ρ(λ)": "density of states", "d_spec": "spectral dimension" }
+        },
+        {
+          "expression": "μ_m = Tr[T_m(Δ)]",
+          "description": "m-th Chebyshev moment of the Laplacian spectral density",
+          "variables": { "μ_m": "m-th Chebyshev moment", "T_m": "Chebyshev polynomial of degree m" }
+        }
+      ],
+      "references": ["MAP.md §8", "glossary.md §G", "glossary.md §M"],
+      "relations": {
+        "requires": [{ "id": "top-level-thematic-architecture" }],
+        "related": [
+          { "id": "dimensions-three-numbers" },
+          { "id": "computational-toolkit" },
+          { "id": "random-walk-state-machine" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "random-walk-state-machine": {
+      "id": "random-walk-state-machine",
+      "term": "Random Walk State Machine on the Tiling",
+      "aliases": ["diffusion regimes", "walk dimension state diagram", "random walk phases"],
+      "domain": "computation",
+      "crossDomains": ["physics"],
+      "difficulty": "foundational",
+      "tags": [
+        "random walk",
+        "diffusion",
+        "sub-diffusion",
+        "Brownian",
+        "super-diffusion",
+        "walk dimension",
+        "stationary distribution"
+      ],
+      "summary": "A state diagram capturing the diffusion regimes of a random walk on the tiling, classified by the walk dimension d_w.",
+      "definition": "A random walk on the tiling adjacency graph passes through the following states:\n\n1. **Initialized**: Walk starts at a seed vertex.\n2. **Diffusing**: Active walk phase, classified by d_w:\n   - **SubDiffusion** (d_w > 2): Walk spreads slower than Brownian.\n   - **Brownian** (d_w = 2): Standard diffusion.\n   - **SuperDiffusion** (d_w < 2): Walk spreads faster than Brownian.\n3. **Mixing**: As t → ∞, all regimes approach the mixing phase.\n4. **Stationary**: Walk reaches the stationary distribution π.\n\nThe walk dimension d_w is extracted from the mean squared displacement ⟨Δx²⟩ ~ t^{2/d_w} and feeds into the Alexander–Orbach relation.",
+      "examples": [
+        {
+          "title": "Sub-diffusion on a fractal tiling",
+          "body": "On a Sierpiński gasket graph, d_w ≈ 2.32 > 2, so the walk is sub-diffusive: the walker is trapped by the fractal geometry and spreads more slowly than on a flat lattice."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "⟨Δx²⟩(t) ~ t^{2/d_w}",
+          "description": "Mean squared displacement as a function of time, defining the walk dimension",
+          "variables": { "d_w": "walk dimension", "t": "number of steps" }
+        }
+      ],
+      "references": ["MAP.md §9", "glossary.md §F"],
+      "relations": {
+        "requires": [{ "id": "dimensions-three-numbers" }],
+        "related": [{ "id": "spectral-pipeline" }, { "id": "computational-toolkit" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "erdos-extremal-distance": {
+      "id": "erdos-extremal-distance",
+      "term": "Erdős and Extremal Distance Geometry",
+      "aliases": ["unit distance problem", "distinct distances problem", "pentagonal distance web"],
+      "domain": "combinatorics",
+      "crossDomains": ["algebra", "geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "Erdős",
+        "unit distance",
+        "distinct distances",
+        "Guth–Katz",
+        "Spencer–Szemerédi–Trotter",
+        "Falconer",
+        "norm multiplicativity",
+        "distance rings",
+        "pinwheel",
+        "UFD"
+      ],
+      "summary": "How the pentagonal projected lattice plugs into classical combinatorial-geometry problems via norm-multiplicativity and high-multiplicity distance rings.",
+      "definition": "The projected lattice 𝓛 with vertices in ℤ[φ] has distances governed by the norm N(a+bφ) = a²+ab−b², which is multiplicative (UFD factorization). This creates **distance rings** — sets of vertices at a fixed distance from the origin — with high multiplicity, forming a **distance web**. This web is a **degeneracy engine** driving the **pinwheel phenomenon** (many edges of the same length at many angles).\n\nThe distance web connects to two classical problems:\n- **Erdős distinct distances problem**: How many distinct distances among n points? Guth–Katz proved Ω(n/log n).\n- **Unit distance problem**: How many unit-distance pairs among n points? Spencer–Szemerédi–Trotter gives O(n^{4/3}).\n\nThe fractal analogue is the **Falconer distance problem** for sets of non-integer Hausdorff dimension.",
+      "examples": [
+        {
+          "title": "Distance ring multiplicity",
+          "body": "The norm value N = 1 is achieved by (a,b) = (1,0), (0,1), (−1,1), (1,−1), (0,−1), (−1,0) — six lattice points at distance 1, giving a unit-distance ring of size 6 in ℤ[φ]."
+        },
+        {
+          "title": "Pinwheel phenomenon",
+          "body": "Because φ is irrational, the angles of unit-distance edges in ℤ[φ] are dense in [0°, 360°), producing the pinwheel effect: unit-distance edges point in arbitrarily many directions."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "N(αβ) = N(α)N(β)",
+          "description": "Multiplicativity of the norm in ℤ[φ], enabling UFD factorization of distances"
+        },
+        {
+          "expression": "f(n) = Ω(n / log n)",
+          "description": "Guth–Katz lower bound on distinct distances among n points in the plane"
+        },
+        {
+          "expression": "u(n) = O(n^{4/3})",
+          "description": "Spencer–Szemerédi–Trotter upper bound on unit-distance pairs among n points"
+        }
+      ],
+      "references": ["MAP.md §10", "glossary.md §K", "erdos.md"],
+      "relations": {
+        "requires": [{ "id": "algebraic-backbone" }],
+        "related": [
+          { "id": "fractal-dimensions-reference" },
+          { "id": "top-level-thematic-architecture" },
+          { "id": "quick-symbol-lookup" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "physics-mind-map": {
+      "id": "physics-mind-map",
+      "term": "Physics Connections Mind-Map",
+      "aliases": ["physics connections", "physical analogues", "quasicrystal physics"],
+      "domain": "physics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "quasicrystals",
+        "Penrose tiling",
+        "gauge theory",
+        "quantum gravity",
+        "topological matter",
+        "anyons",
+        "CDT",
+        "asymptotic safety",
+        "Mermin–Wagner",
+        "frustration"
+      ],
+      "summary": "A mind-map of the physics connections of the project, spanning quasicrystals, gauge theory, quantum gravity, topological matter, symmetry, and geometric frustration.",
+      "definition": "The project connects to physics in five major clusters:\n\n1. **Quasicrystals**: Shechtman's 1984 discovery, Penrose tiling, cut-and-project method, AKN 3D tiling, 5-fold diffraction.\n2. **Gauge theory**: Sheet transitions as gauge fields, BF theory, Aharonov–Bohm effect, lattice gauge theory.\n3. **Quantum gravity**: Asymptotic safety, causal dynamical triangulation (CDT), loop quantum gravity, spin networks, dimensional reduction.\n4. **Topological matter**: Anyons, braid statistics, topological insulators, topological computation.\n5. **Symmetry**: Mermin–Wagner theorem, conformal field theory (CFT), Bloch theorem.\n6. **Frustration**: Pyrochlore lattice, geometric frustration.",
+      "examples": [
+        {
+          "title": "Sheet transitions as gauge fields",
+          "body": "The edge group elements τ(e) ∈ G of the discrete bundle play the role of gauge fields in lattice gauge theory. The holonomy around a plaquette is the discrete analogue of the field strength (curvature)."
+        },
+        {
+          "title": "Dimensional reduction in quantum gravity",
+          "body": "In CDT and asymptotic safety, the spectral dimension flows from d_spec ≈ 4 in the IR to d_spec ≈ 2 in the UV. The tiling project exhibits analogous dimensional flow between d_eff and d_spec."
+        }
+      ],
+      "formulas": [],
+      "references": ["MAP.md §11", "glossary.md §J"],
+      "relations": {
+        "requires": [
+          { "id": "topology-stack" },
+          { "id": "group-theoretic-web" },
+          { "id": "dimensions-three-numbers" }
+        ],
+        "related": [
+          { "id": "pentagon-to-multisheet" },
+          { "id": "spinor-holonomy-cycle" },
+          { "id": "top-level-thematic-architecture" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "fractal-dimensions-reference": {
+      "id": "fractal-dimensions-reference",
+      "term": "Fractal Dimensions Reference",
+      "aliases": ["IFS fractals", "Hausdorff dimension table", "box-counting dimension"],
+      "domain": "geometry",
+      "crossDomains": ["computation"],
+      "difficulty": "foundational",
+      "tags": [
+        "fractal",
+        "IFS",
+        "Cantor set",
+        "Koch snowflake",
+        "Sierpiński triangle",
+        "Sierpiński carpet",
+        "Menger sponge",
+        "Hausdorff dimension",
+        "box-counting"
+      ],
+      "summary": "A reference comparison of fractal dimensions for the classical IFS fractals mentioned in the project.",
+      "definition": "Fractals generated by iterated function systems (IFS) have Hausdorff dimensions computed by the self-similarity formula d = log(N)/log(1/r), where N is the number of self-similar pieces and r is the scaling ratio:\n\n| Fractal | Dimension |\n|---|---|\n| Cantor set | log 2 / log 3 ≈ 0.631 |\n| Koch snowflake | log 4 / log 3 ≈ 1.262 |\n| Koch tetrahedron | log 6 / log 3 ≈ 1.631 |\n| Sierpiński triangle | log 3 / log 2 ≈ 1.585 |\n| Sierpiński carpet | log 8 / log 3 ≈ 1.893 |\n| Sierpiński tetrahedron | exactly 2 |\n| Menger sponge | log 20 / log 3 ≈ 2.727 |\n\nBox-counting dimension and Hausdorff dimension coincide for these self-similar sets. These serve as analogies for the dimensional flow observed in pentagonal tilings.",
+      "examples": [
+        {
+          "title": "Sierpiński tetrahedron dimension exactly 2",
+          "body": "The Sierpiński tetrahedron is composed of 4 copies scaled by 1/2, giving d = log4/log2 = 2 exactly, despite being embedded in 3D space."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d = log(N) / log(1/r)",
+          "description": "Self-similarity dimension for an IFS fractal with N pieces each scaled by ratio r",
+          "variables": {
+            "N": "number of self-similar pieces",
+            "r": "scaling ratio",
+            "d": "Hausdorff/self-similarity dimension"
+          }
+        }
+      ],
+      "references": ["MAP.md §12", "glossary.md §H"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "dimensions-three-numbers" },
+          { "id": "erdos-extremal-distance" },
+          { "id": "top-level-thematic-architecture" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "cellular-automata-sheeted": {
+      "id": "cellular-automata-sheeted",
+      "term": "Cellular Automata on Sheeted Tilings",
+      "aliases": ["CA on tilings", "isometric CA", "outer-totalistic CA on tilings"],
+      "domain": "computation",
+      "crossDomains": ["topology", "physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "cellular automata",
+        "isometric CA",
+        "outer-totalistic",
+        "Conway's Game of Life",
+        "glider",
+        "vortex scattering",
+        "causal CA",
+        "CDT",
+        "Turing universal",
+        "phase transition"
+      ],
+      "summary": "How cellular automaton concepts connect to the project's topological structure, from isometric local rules to vortex scattering and causal dynamical triangulation.",
+      "definition": "Cellular automata (CA) on sheeted tilings are defined by local geometric rules that respect the tiling's symmetry group:\n\n- **Isometric CA**: Rules that are invariant under the tiling's isometry group.\n- **Outer-totalistic rules**: Birth/survival sets depending only on the count of live neighbors (e.g. Conway's Game of Life).\n- **Gliders and still lifes**: Persistent structures in Life-like rules; gliders scatter non-trivially at sheet defects (vortex scattering).\n- **Causal CA → CDT**: Causal cellular automata on tilings are analogous to causal dynamical triangulation in quantum gravity.\n- **Lazy graph generation**: CA rules can drive on-demand expansion of the tiling graph.\n- **Turing universality**: Whether CA on sheeted tilings are Turing-universal is an open question.\n- **Phase transitions**: Outer-totalistic rules exhibit phase transitions between ordered and chaotic behavior.",
+      "examples": [
+        {
+          "title": "Glider scattering at a vortex",
+          "body": "A glider traveling on sheet 0 that encounters a vortex vertex may emerge on sheet 1 with a modified trajectory, due to the non-trivial holonomy of the vortex."
+        }
+      ],
+      "formulas": [],
+      "references": ["MAP.md §13", "glossary.md §I", "glossary.md §O"],
+      "relations": {
+        "requires": [{ "id": "pentagon-to-multisheet" }, { "id": "topology-stack" }],
+        "related": [
+          { "id": "physics-mind-map" },
+          { "id": "computational-toolkit" },
+          { "id": "top-level-thematic-architecture" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spinor-holonomy-cycle": {
+      "id": "spinor-holonomy-cycle",
+      "term": "Spinor-Like Holonomy Cycle",
+      "aliases": ["discrete spinor", "vortex double loop", "SU(2)→SO(3) discrete analogue"],
+      "domain": "topology",
+      "crossDomains": ["physics", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "spinor",
+        "holonomy",
+        "vortex",
+        "sheet transition",
+        "SU(2)",
+        "SO(3)",
+        "double cover",
+        "loop",
+        "discrete"
+      ],
+      "summary": "A sequence diagram showing why one loop around a vortex returns the walker to the wrong sheet and two loops restore identity — a discrete spinor.",
+      "definition": "The spinor-like holonomy cycle is the key topological phenomenon of the project:\n\n1. Walker starts on sheet 0.\n2. Walker traverses one loop around a vortex vertex, accumulating holonomy τ.\n3. Walker arrives on sheet 1 — the analogue of the −1 phase acquired by a spin-1/2 particle under a 2π rotation.\n4. Walker traverses a second loop around the same vortex, accumulating τ again.\n5. Walker returns to sheet 0 — identity restored, analogous to the 4π rotation returning a spinor to its original state.\n\nThis is the discrete analogue of the SU(2) → SO(3) double cover: the fiber group G acts like SU(2), and the base tiling like SO(3). The vortex is the discrete analogue of the non-contractible loop in SO(3) ≅ ℝP³.",
+      "examples": [
+        {
+          "title": "Spin-1/2 analogy",
+          "body": "A spin-1/2 particle under a 2π rotation acquires a factor of −1 (sheet 1), and under a 4π rotation returns to +1 (sheet 0). The pentagonal tiling walker exhibits the same behavior with sheets replacing the ±1 eigenvalues."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "τ² = id,  τ ≠ id",
+          "description": "The vortex holonomy τ is a non-trivial involution: one loop gives τ, two loops give identity",
+          "variables": { "τ": "vortex holonomy element in G", "id": "identity element" }
+        }
+      ],
+      "references": ["MAP.md §14", "glossary.md §E", "glossary.md §O"],
+      "relations": {
+        "requires": [
+          { "id": "pentagon-to-multisheet" },
+          { "id": "topology-stack" },
+          { "id": "group-theoretic-web" }
+        ],
+        "related": [{ "id": "physics-mind-map" }, { "id": "quick-symbol-lookup" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "computational-toolkit": {
+      "id": "computational-toolkit",
+      "term": "The Computational Toolkit",
+      "aliases": ["algorithmic stack", "exact arithmetic pipeline", "sparse LA toolkit"],
+      "domain": "computation",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "Maxima",
+        "exact arithmetic",
+        "ℤ[φ]",
+        "adjacency oracle",
+        "spatial hashing",
+        "memoization",
+        "sparse matrix",
+        "Lanczos",
+        "shift-invert",
+        "KPM",
+        "floating-point avoidance"
+      ],
+      "summary": "The algorithmic stack used to evaluate reconnection and dimensions, from symbolic computation over ℤ[φ] to sparse linear algebra.",
+      "definition": "The computational toolkit is organized as a pipeline from exact symbolic computation to numerical spectral analysis:\n\n1. **Symbolic computation (Maxima)**: Exact arithmetic over ℤ[φ] to avoid floating-point topological tearing.\n2. **Exact arithmetic over ℤ[φ]**: All coordinates and distances represented as a + bφ with a, b ∈ ℤ.\n3. **Adjacency oracle**: Determines neighbors of a tile on demand.\n4. **Spatial hashing**: O(1) lookup of tiles by position.\n5. **Memoization**: Cache computed neighbors to avoid redundant work.\n6. **Sparse adjacency A**: Assembled lazily from oracle queries.\n7. **Sparse linear algebra**: Three algorithms for spectral analysis:\n   - **Lanczos algorithm**: Tridiagonalization for extremal eigenvalues.\n   - **Shift-invert**: Interior eigenvalue computation.\n   - **KPM Chebyshev DOS**: Full density of states via Chebyshev moments.\n\nThe key design principle is that exact arithmetic over ℤ[φ] avoids the floating-point errors that would cause topological tearing — incorrect sheet assignments due to numerical imprecision.",
+      "examples": [
+        {
+          "title": "Floating-point tearing",
+          "body": "If tile positions are stored as floating-point numbers, two tiles that should share an edge may fail the equality test due to rounding, creating spurious disconnections in the adjacency graph. Exact ℤ[φ] arithmetic eliminates this."
+        }
+      ],
+      "formulas": [],
+      "references": ["MAP.md §15", "glossary.md §M"],
+      "relations": {
+        "requires": [{ "id": "algebraic-backbone" }],
+        "related": [
+          { "id": "spectral-pipeline" },
+          { "id": "random-walk-state-machine" },
+          { "id": "cellular-automata-sheeted" },
+          { "id": "cross-document-citation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "quick-symbol-lookup": {
+      "id": "quick-symbol-lookup",
+      "term": "Quick Symbol Lookup",
+      "aliases": ["symbol reference", "notation guide", "section N symbols"],
+      "domain": "general",
+      "crossDomains": ["algebra", "geometry", "topology", "computation"],
+      "difficulty": "foundational",
+      "tags": [
+        "symbols",
+        "notation",
+        "reference",
+        "ℚ",
+        "φ",
+        "ψ",
+        "Γ",
+        "G",
+        "d_eff",
+        "d_spec",
+        "d_w",
+        "Δ",
+        "ρ"
+      ],
+      "summary": "A class-like reference for the symbols of section N, grouped by role: algebra, geometry, group/bundle, graph/spectrum, dimensions, and families.",
+      "definition": "The project uses the following symbol conventions, grouped by role:\n\n**Algebra Symbols**:\n- ℚ: rationals\n- ℚ(√5): quadratic field\n- ℤ[φ]: ring of integers\n- φ: golden ratio\n- ψ: Galois conjugate\n- ζ_n: root of unity\n- N(·): field norm\n- σ: Galois automorphism\n- α: algebraic number\n\n**Geometry Symbols**:\n- θ: interior angle\n- δ: angular deficit\n- 𝓛: projected lattice\n- 𝓜: covering space\n- π: projection map\n- χ: Euler characteristic\n\n**Group/Bundle Symbols**:\n- Γ: orientation group\n- G: fiber group\n- 2I: binary icosahedral group\n- τ(e): sheet transition at edge e\n\n**Graph/Spectrum Symbols**:\n- 𝒢: adjacency graph\n- Δ: graph Laplacian\n- ρ(λ): density of states\n- k_close: loop closure count\n\n**Dimension Symbols**:\n- d_eff: effective/connectivity dimension\n- d_spec: spectral dimension\n- d_w: walk dimension\n\n**Family Symbols**:\n- 𝓕_A: restricted family\n- 𝔽: algebraic field\n- ℤ^n: hypercubic lattice",
+      "examples": [],
+      "formulas": [],
+      "references": ["MAP.md §16", "glossary.md §N"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "algebraic-backbone" },
+          { "id": "pentagon-to-multisheet" },
+          { "id": "group-theoretic-web" },
+          { "id": "topology-stack" },
+          { "id": "dimensions-three-numbers" },
+          { "id": "spectral-pipeline" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "cross-document-citation": {
+      "id": "cross-document-citation",
+      "term": "Cross-Document Citation Graph",
+      "aliases": ["document map", "project file index", "citation graph"],
+      "domain": "general",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": [
+        "documentation",
+        "citation",
+        "project structure",
+        "idea.md",
+        "affine.md",
+        "polyhedra.md",
+        "pinwheels.md",
+        "erdos.md",
+        "insights.md",
+        "sweep_ngon.md",
+        "analysis.md",
+        "experiment.md"
+      ],
+      "summary": "A map of which project documents primarily develop which clusters of glossary concepts.",
+      "definition": "The project's markdown documents each focus on specific concept clusters:\n\n| Document | Primary Concept Clusters |\n|---|---|\n| idea.md | Reconnection framework (L) |\n| affine.md | Reconnection framework (L), Algebra (A) |\n| polyhedra.md | 3D Geometry (B, C), Group theory (D) |\n| pinwheels.md | Pinwheel & extremal geometry (K) |\n| erdos.md | Pinwheel & extremal geometry (K) |\n| insights.md | Topology & bundles (E), Physics (J) |\n| sweep_ngon.md | Computation (M) |\n| analysis.md | Dimensions (F), Spectral graph theory (G) |\n| experiment.md | Computation (M), Spectral graph theory (G) |\n\nThis citation graph allows readers to navigate from a concept cluster to the document that develops it most fully.",
+      "examples": [
+        {
+          "title": "Finding the topology treatment",
+          "body": "To read the primary development of topology and bundles (section E), consult insights.md. For physics connections (section J), also consult insights.md."
+        }
+      ],
+      "formulas": [],
+      "references": ["MAP.md §17"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "top-level-thematic-architecture" },
+          { "id": "reconnection-hierarchy" },
+          { "id": "algebraic-backbone" },
+          { "id": "group-theoretic-web" },
+          { "id": "erdos-extremal-distance" },
+          { "id": "topology-stack" },
+          { "id": "physics-mind-map" },
+          { "id": "computational-toolkit" },
+          { "id": "dimensions-three-numbers" },
+          { "id": "spectral-pipeline" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

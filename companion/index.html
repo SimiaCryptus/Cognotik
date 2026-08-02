@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="Companion reference pages for every Mathematical Explorations lab and essay — full write-ups, demonstration videos, and links to the interactive experiments."
+    />
+    <title>Companion Pages — Mathematical Explorations</title>
+    <link rel="canonical" href="https://math.cognotik.com/companion/index.html" />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta property="og:title" content="Companion Pages — Mathematical Explorations" />
+    <meta
+      property="og:description"
+      content="Companion reference pages for every Mathematical Explorations lab and essay — full write-ups, demonstration videos, and links to the interactive experiments."
+    />
+    <meta property="og:url" content="https://math.cognotik.com/companion/index.html" />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Companion Pages — Mathematical Explorations" />
+    <meta
+      name="twitter:description"
+      content="Companion reference pages for every Mathematical Explorations lab and essay — full write-ups, demonstration videos, and links to the interactive experiments."
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "url": "https://math.cognotik.com/companion/index.html",
+        "name": "Companion Pages — Mathematical Explorations",
+        "description": "Companion reference pages for every Mathematical Explorations lab and essay — full write-ups, demonstration videos, and links to the interactive experiments.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "url": "https://math.cognotik.com/",
+          "name": "Mathematical Explorations"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <h1>Companion Reference Pages</h1>
+      <p class="subtitle">
+        Build-time rendered write-ups and video pages for every lab and essay. Each links back to
+        the live interactive experiment.
+      </p>
+      <h2 style="font-family: 'Fraunces', serif; margin-top: 2.5rem">Featured Laboratories</h2>
+      <div class="hub-grid">
+        <a class="hub-card" href="pentagonal-lattice-geometry/index.html">
+          <h3>Pentagonal Lattice Geometry</h3>
+          <p>
+            A multi-sheeted covering construction in which the regular pentagon develops fractional
+            dimension (d ≈ 2.37) and spinor-like holonomy — a discrete…
+          </p>
+          <p><a href="pentagonal-lattice-geometry/video.html">▶ Watch video</a></p>
+        </a>
+        <a class="hub-card" href="space-color-symmetry/index.html">
+          <h3>Space-Color Symmetry</h3>
+          <p>
+            A pixel canvas where symmetry doesn&#39;t just mirror your strokes — it rewires the
+            diffusion graph. Heat flows along symmetry orbits, producing…
+          </p>
+          <p><a href="space-color-symmetry/video.html">▶ Watch video</a></p>
+        </a>
+        <a class="hub-card" href="geometric-entropy/index.html">
+          <h3>Geometric Entropy</h3>
+          <p>
+            A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are
+            arranged to extremize the Shannon entropy of their…
+          </p>
+          <p><a href="geometric-entropy/video.html">▶ Watch video</a></p>
+        </a>
+        <a class="hub-card" href="spacelike-knots/index.html">
+          <h3>Spacelike Knots</h3>
+          <p>
+            A knot equipped with a Minkowski metric, turning crossings into causal inversions. The
+            distance matrix becomes a causal diagram: timelike,…
+          </p>
+          <p><a href="spacelike-knots/video.html">▶ Watch video</a></p>
+        </a>
+        <a class="hub-card" href="layered-cellular-automata/index.html">
+          <h3>Layered Cellular Automata</h3>
+          <p>
+            Langton&#39;s ants write a colored substrate that gates where Conway&#39;s Life is
+            allowed to live. Three feedback layers — ants → substrate → life →…
+          </p>
+          <p><a href="layered-cellular-automata/video.html">▶ Watch video</a></p>
+        </a>
+        <a class="hub-card" href="fractal-learning/index.html">
+          <h3>Fractal Learning</h3>
+          <p>
+            Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine
+            maps so the depth-N orbit of the origin matches a target…
+          </p>
+        </a>
+        <a class="hub-card" href="irrational-lattice/index.html">
+          <h3>Irrational Lattice</h3>
+          <p>
+            A new primitive: deterministic, algebraic “colored noise” for lattices. Coordinates in
+            ℚ(√D) deform ℤᵈ and snap back via a nearest-lattice map —…
+          </p>
+          <p><a href="irrational-lattice/video.html">▶ Watch video</a></p>
+        </a>
+        <a class="hub-card" href="relativistic-2-body-gravity/index.html">
+          <h3>Relativistic 2-Body Gravity</h3>
+          <p>
+            A 2-body gravitational system with relativistic adjustments and time-delayed (retarded)
+            interactions. Gravity propagates at finite speed c, breaking…
+          </p>
+          <p><a href="relativistic-2-body-gravity/video.html">▶ Watch video</a></p>
+        </a>
+      </div>
+      <h2 style="font-family: 'Fraunces', serif; margin-top: 2.5rem">Essays</h2>
+      <div class="hub-grid">
+        <a class="hub-card" href="quadratic-quasi-newton/index.html">
+          <span class="badge">Standalone · optimization</span>
+          <h3>Quadratic Quasi-Newton</h3>
+          <p>
+            A new optimization algorithm for smooth functions that interpolates between gradient
+            descent and L-BFGS.
+          </p>
+        </a>
+        <a class="hub-card" href="rcc-rational-certificate-complexity/index.html">
+          <span class="badge">Trilogy I · the foundational vocabulary</span>
+          <h3>RCC — Rational Certificate Complexity</h3>
+          <p>
+            The foundation of the trilogy. Treats every convergence sequence as a rational
+            certificate engine, measures its bit-length versus demanded tolerance…
+          </p>
+        </a>
+        <a class="hub-card" href="pi-rcc-the-simplest-increment-x-sin-x/index.html">
+          <span class="badge">Trilogy II · stress-testing the boundary</span>
+          <h3>PI_RCC — The Simplest Increment: x + sin(x)</h3>
+          <p>
+            A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it
+            falls outside RCC&#39;s classified class, yet still attains optimal…
+          </p>
+        </a>
+        <a class="hub-card" href="nam-numbers-as-machines/index.html">
+          <span class="badge">Trilogy III · the executable substrate</span>
+          <h3>NAM — Numbers as Machines</h3>
+          <p>
+            A generator-based numerics library where every number is a forkable, deterministic
+            nano-VM emitting an infinite digit stream. RCC&#39;s cost classes…
+          </p>
+        </a>
+        <a
+          class="hub-card"
+          href="the-extension-ladder-one-way-to-watch-number-systems-grow/index.html"
+        >
+          <h3>The Extension Ladder: One Way to Watch Number Systems Grow</h3>
+          <p></p>
+        </a>
+      </div>
+      <h2 style="font-family: 'Fraunces', serif; margin-top: 2.5rem">Short Demonstrations</h2>
+      <div class="hub-grid">
+        <a class="hub-card" href="mandelbrot-set/index.html">
+          <h3>Mandelbrot Set</h3>
+          <p>
+            Explore the fractal boundary defined by iteration of z ↦ z² + c in the complex plane.
+            Pan and zoom to examine its self-similar structure.
+          </p>
+        </a>
+        <a class="hub-card" href="prime-number-sieve/index.html">
+          <h3>Prime Number Sieve</h3>
+          <p>
+            A real-time visualization of the Sieve of Eratosthenes, illustrating the elimination of
+            composite numbers to isolate the primes.
+          </p>
+        </a>
+        <a class="hub-card" href="fourier-series/index.html">
+          <h3>Fourier Series</h3>
+          <p>
+            Construct periodic waveforms as sums of rotating phasors, illustrating how harmonic
+            components combine to approximate arbitrary signals.
+          </p>
+        </a>
+        <a class="hub-card" href="collatz-conjecture/index.html">
+          <h3>Collatz Conjecture</h3>
+          <p>
+            Trace the trajectory of any positive integer under the 3n + 1 iteration. Whether every
+            sequence reaches 1 remains an open problem.
+          </p>
+        </a>
+      </div>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

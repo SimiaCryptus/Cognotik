@@ -1,0 +1,158 @@
+/* Featured-card demo video integration */
+
+.featured-card-media {
+  position: relative;
+  width: 100%;
+  margin: 0.85rem 0 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(120, 130, 255, 0.12),
+    rgba(10, 10, 20, 0.6)
+  );
+  border: 1px solid rgba(150, 160, 255, 0.12);
+  aspect-ratio: 16 / 9;
+  line-height: 0;
+}
+
+/* Collapse the media box gracefully until a video is mounted */
+.featured-card-media:empty {
+  border-style: dashed;
+  border-color: rgba(150, 160, 255, 0.08);
+}
+
+.featured-card-media:empty::after {
+  content: 'demo';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(180, 190, 255, 0.35);
+}
+
+.featured-card-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #05050c;
+  opacity: 0.92;
+  transition:
+    opacity 0.35s ease,
+    transform 0.6s ease;
+}
+
+.featured-card:hover .featured-card-video,
+.featured-card:focus-within .featured-card-video {
+  opacity: 1;
+  transform: scale(1.015);
+}
+/* ── Touch-friendly play button overlay ─────────────────────── */
+.featured-card-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 5, 12, 0.25);
+  border: none;
+  cursor: pointer;
+  z-index: 2;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.featured-card-play::before {
+  content: '';
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(88, 166, 255, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(88, 166, 255, 0.6);
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+/* Triangular "play" glyph layered over the disc */
+.featured-card-play::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 11px 0 11px 18px;
+  border-color: transparent transparent transparent #05050c;
+  transform: translateX(2px);
+  transition: transform 0.25s ease;
+}
+.featured-card-play:hover::before,
+.featured-card-play:focus-visible::before {
+  transform: scale(1.08);
+  background: rgba(120, 184, 255, 0.95);
+}
+/* Hide the play button once the video is actively playing */
+.featured-card-media.is-playing .featured-card-play {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Same for the modal media container */
+.modal-media.is-playing .featured-card-play {
+  opacity: 0;
+  pointer-events: none;
+}
+/* On non-touch devices that support hover, the card hover already
+    starts playback — keep the button as a subtle affordance but let
+    it fade so it doesn't obscure the video. */
+@media (hover: hover) and (pointer: fine) {
+  .featured-card:hover .featured-card-play {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .featured-card-video {
+    transition: none;
+  }
+  .featured-card:hover .featured-card-video,
+  .featured-card:focus-within .featured-card-video {
+    transform: none;
+  }
+  .featured-card-play::before {
+    transition: none;
+  }
+}
+/* ── Video inside the expanded modal ────────────────────────── */
+.modal-media {
+  position: relative;
+  width: 100%;
+  margin: 1.5rem 1.75rem 0.5rem;
+  width: calc(100% - 3.5rem);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #05050c;
+  border: 1px solid rgba(150, 160, 255, 0.14);
+  aspect-ratio: 16 / 9;
+  line-height: 0;
+}
+.modal-media:empty {
+  display: none;
+}
+.modal-media .featured-card-video {
+  opacity: 1;
+}
+/* Larger, always-available play control in the modal */
+.modal-media .featured-card-play::before {
+  width: 68px;
+  height: 68px;
+}
+.modal-media .featured-card-play::after {
+  border-width: 14px 0 14px 23px;
+}

@@ -1,0 +1,10 @@
+.
+./Binary_Coded_Layered_Autonoma.mp4
+./Spacelike_Knots.mp4
+./Life_Lattice_Variants.mp4
+./Pentagon_Lattice_Geometry.mp4
+./Geometric_Entropy.mp4
+./Irrational_Lattice.mp4
+./dir.txt
+./Symmetry_Diffusion.mp4
+./Relativistic_Gravity.mp4

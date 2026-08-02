@@ -1,0 +1,334 @@
+/* =====================================================================
+   math_report.mac
+   Maxima derivations & proofs for the Constrained Mesh Enclosure Lab.
+
+   Each section corresponds to a section of math_outline.md and either
+   (a) verifies a stated closed-form gradient,
+   (b) proves a structural claim (polynomial degree, saturation bound), or
+   (c) derives a formula that the outline flags as "analysis required".
+
+   Run with:   maxima -b math_report.mac
+   ===================================================================== */
+
+/* Keep output readable and deterministic. */
+ratprint : false$
+display2d : true$
+
+/* ---------------------------------------------------------------------
+   Vector helpers (avoid vect-package operator declarations).
+   --------------------------------------------------------------------- */
+dot(a,b)   := a[1]*b[1] + a[2]*b[2] + a[3]*b[3]$
+cross(a,b) := [ a[2]*b[3] - a[3]*b[2],
+                a[3]*b[1] - a[1]*b[3],
+                a[1]*b[2] - a[2]*b[1] ]$
+vsub(a,b)  := [ a[1]-b[1], a[2]-b[2], a[3]-b[3] ]$
+vadd(a,b)  := [ a[1]+b[1], a[2]+b[2], a[3]+b[3] ]$
+scal(s,a)  := [ s*a[1], s*a[2], s*a[3] ]$
+grad3(f,v) := [ diff(f,v[1]), diff(f,v[2]), diff(f,v[3]) ]$
+vzero(a)   := is( ratsimp(a[1])=0 and ratsimp(a[2])=0 and ratsimp(a[3])=0 )$
+
+print("=====================================================================")$
+print(" math_report.mac : derivations for math_outline.md ")$
+print("=====================================================================")$
+
+/* =====================================================================
+   SECTION 1.1  Surface-area gradient  (verify reference formula)
+
+   A_f = 1/2 ||w||,  w = u x v,  u = pb-pa, v = pc-pa.
+   Claim:  dA_f/dpa = (1/(2||w||)) * ( w x (v-u) ).
+   ===================================================================== */
+print("")$
+print("--- 1.1  Surface-area gradient -------------------------------------")$
+
+pa : [ax,ay,az]$  pb : [bx,by,bz]$  pc : [cx,cy,cz]$
+u  : vsub(pb,pa)$  v : vsub(pc,pa)$  w : cross(u,v)$
+A  : (1/2)*sqrt(dot(w,w))$
+
+gradA_pa  : grad3(A, pa)$
+refA_pa   : scal( 1/(2*sqrt(dot(w,w))), cross(w, vsub(v,u)) )$
+print("Autodiff grad - reference grad  (should be [0,0,0]):")$
+print( map(ratsimp, vsub(gradA_pa, refA_pa)) )$
+print("Reference formula dA/dpa = (1/2||w||) w x (v-u) verified :",
+      vzero(vsub(gradA_pa, refA_pa)) )$
+
+/* dA/dpb = (1/(2||w||)) w x (-v):  u depends on pb, v does not. */
+gradA_pb : grad3(A, pb)$
+refA_pb  : scal( 1/(2*sqrt(dot(w,w))), cross(w, scal(-1,v)) )$
+print("Reference formula dA/dpb = (1/2||w||) w x (-v) verified :",
+       vzero(vsub(gradA_pb, refA_pb)) )$
+
+/* dA/dpc = (1/(2||w||)) w x (u):  v depends on pc, u does not. */
+gradA_pc : grad3(A, pc)$
+refA_pc  : scal( 1/(2*sqrt(dot(w,w))), cross(w, u) )$
+print("Reference formula dA/dpc = (1/2||w||) w x (u) verified :",
+       vzero(vsub(gradA_pc, refA_pc)) )$
+
+/* Translation invariance: the three vertex gradients must sum to zero. */
+print("Sum of area gradients = [0,0,0] (translation invariance) :",
+       vzero( vadd(gradA_pa, vadd(gradA_pb, gradA_pc)) ))$
+print("Note: gradient singular as ||w||->0 (sliver); see softened form 1.7.")$
+
+/* =====================================================================
+   SECTION 1.2  Signed volume gradient (divergence theorem)
+
+   Per-face contribution  Vf = (1/6) pa . (pb x pc)  (scalar triple prod).
+   Claim: dV/dpa = (1/6)(pb x pc), and cyclically
+          dV/dpb = (1/6)(pc x pa), dV/dpc = (1/6)(pa x pb).
+   ===================================================================== */
+print("")$
+print("--- 1.2  Signed-volume gradient ------------------------------------")$
+
+Vf : (1/6)*dot(pa, cross(pb,pc))$
+print("dV/dpa - (1/6)(pb x pc) :",
+      vzero( vsub( grad3(Vf,pa), scal(1/6, cross(pb,pc)) )))$
+print("dV/dpb - (1/6)(pc x pa) :",
+      vzero( vsub( grad3(Vf,pb), scal(1/6, cross(pc,pa)) )))$
+print("dV/dpc - (1/6)(pa x pb) :",
+      vzero( vsub( grad3(Vf,pc), scal(1/6, cross(pa,pb)) )))$
+print("=> cyclic gradient formula confirmed; V is exact & smooth.")$
+
+/* =====================================================================
+   SECTION 1.3  Vertex fidelity gradient
+
+   Phi = w*||p - t||^2,  claim grad = 2 w (p - t).
+   ===================================================================== */
+print("")$
+print("--- 1.3  Vertex fidelity gradient ----------------------------------")$
+p3 : [px,py,pz]$  t3 : [tx,ty,tz]$
+Phi : wgt*dot( vsub(p3,t3), vsub(p3,t3) )$
+print("grad Phi - 2 w (p - t) :",
+      vzero( vsub( grad3(Phi,p3), scal(2*wgt, vsub(p3,t3)) )))$
+
+/* =====================================================================
+   SECTION 1.4  Edge-length entropy: saturation & gradient structure
+
+   (a) Saturation: H = -sum p_k log p_k, sum p_k = 1  is maximized at
+       the uniform distribution p_k = 1/B with value log B.
+   (b) Length gradient d l_e / dp  is a unit vector -> singular at l=0.
+   ===================================================================== */
+print("")$
+print("--- 1.4  Edge-length entropy ---------------------------------------")$
+
+/* (a) Lagrangian stationarity for B=3 (representative). */
+/* p3 was bound to a list in section 1.3; clear it (and p1,p2) so the
+    probability symbols are fresh scalars before we differentiate. */
+kill(p1,p2,p3)$
+B : 3$
+pk : [p1,p2,p3]$
+Hent : -sum( pk[k]*log(pk[k]), k, 1, B )$
+Lag  : Hent - lam*( sum(pk[k],k,1,B) - 1 )$
+stat : solve( [ diff(Lag,p1)=0, diff(Lag,p2)=0, diff(Lag,p3)=0,
+                p1+p2+p3=1 ], [p1,p2,p3,lam] )$
+print("Stationary point of entropy under normalization (B=3):")$
+print(stat)$
+print("=> unique interior critical pt is uniform p_k = 1/B; H_max = log B:")$
+print("   H(1/3,1/3,1/3) =", ratsimp( ev(Hent, p1=1/3,p2=1/3,p3=1/3) ),
+      "  log(3) =", log(3))$
+
+/* Second-order: Hessian of H (w/o constraint) is -diag(1/p_k) < 0
+   => H strictly concave on the simplex, so the critical point is the
+   global max (degenerate optimum = "fingerprinting" regime). */
+print("Hessian diag entries d2H/dpk2 = -1/p_k (<0) -> H concave:")$
+print( [ diff(Hent,p1,2), diff(Hent,p2,2), diff(Hent,p3,2) ] )$
+
+/* (b) length gradient */
+kill(p3)$  p3:[px,py,pz]$ q3:[qx,qy,qz]$
+len : sqrt( dot( vsub(p3,q3), vsub(p3,q3) ) )$
+gl  : grad3(len, p3)$
+print("d(l_e)/dp = unit(p-q); ||grad l|| =",
+      ratsimp( sqrt(dot(gl,gl)) ),
+      " (=1, singular as l->0)")$
+
+/* KDE bin sensitivity: rho_k = sum_e exp(-(l_e-c_k)^2/(2h^2)).
+   d rho_k / d l_e chain factor: */
+rhok : exp( -(le - ck)^2/(2*h^2) )$
+print("d rho_k / d l_e =", diff(rhok, le),
+      "  (well-defined; vanishes as |l-c| large)")$
+
+/* =====================================================================
+   SECTION 1.5  Angular functional: derivative & singularities
+
+   cos(theta_a) = (u.v)/(||u|| ||v||).  d theta/d(cos) = -1/sin theta,
+   singular at theta in {0,pi}.  Anti-sliver -log sin theta diverges there.
+   ===================================================================== */
+print("")$
+print("--- 1.5  Angular functional ----------------------------------------")$
+assume(sin(th) > 0)$
+dcos : diff( acos(ct), ct )$   /* -1/sqrt(1-ct^2) */
+print("d(theta)/d(cos theta) = -1/sqrt(1-cos^2) :", dcos)$
+print("  = -1/sin theta  -> singular as sin theta -> 0 (theta->0 or pi).")$
+/* anti-sliver barrier derivative wrt theta */
+print("d/dtheta [ -log sin theta ] =", diff( -log(sin(th)), th ),
+      "  (= -cot theta, diverges at 0,pi -> clamp sin>=eps_sin).")$
+
+/* Verify cos theta expression gradient is finite for nondegenerate u,v:
+   demonstrate via chain rule that d theta/dpa ~ 1/(||u|| sin theta). */
+ct_expr : dot(u,v)/( sqrt(dot(u,u))*sqrt(dot(v,v)) )$
+print("cos(theta) as function of vertices is smooth away from |u||v|=0.")$
+
+/* =====================================================================
+   SECTION 1.6  Laplacian smoothness gradient (uniform / umbrella)
+
+   For S = sum_i ||L(pi)||^2 with L(pi)=pi - mean(neighbors), verify the
+   local quadratic gradient for a 1-neighbourhood star (degree d=3).
+   ===================================================================== */
+print("")$
+print("--- 1.6  Laplacian smoothness --------------------------------------")$
+/* central vertex p0 with 3 neighbours n1,n2,n3 */
+p0:[x0,y0,z0]$ n1:[x1,y1,z1]$ n2:[x2,y2,z2]$ n3:[x3,y3,z3]$
+Lc : vsub(p0, scal(1/3, vadd(n1, vadd(n2,n3))))$
+Sc : dot(Lc,Lc)$
+print("dS/dp0 - 2 L(p0) :",
+      vzero( vsub( grad3(Sc,p0), scal(2,Lc) )))$
+print("=> uniform Laplacian yields the linear (safe) gradient 2 L(pi).")$
+
+/* =====================================================================
+   SECTION 1.7  Softened norm: gradient boundedness
+
+   Replace ||x|| by g(x) = sqrt(||x||^2 + eps^2).  Show |grad g| < 1 and
+   is bounded as x->0 (removes the 1/||x|| singularity).
+   ===================================================================== */
+print("")$
+print("--- 1.7  Softened-norm gradient guard ------------------------------")$
+xv : [sx,sy,sz]$
+g  : sqrt( dot(xv,xv) + eps^2 )$
+gg : grad3(g, xv)$
+ng2: ratsimp( dot(gg,gg) )$   /* = ||x||^2 / (||x||^2 + eps^2) */
+print("||grad g||^2 =", ng2, "  = ||x||^2/(||x||^2+eps^2) < 1 for eps>0.")$
+print("At x=0: grad g = ", ev(gg, sx=0,sy=0,sz=0), " (bounded, no blowup).")$
+print("=> softened form keeps energy value AND autodiff gradient finite.")$
+
+/* =====================================================================
+   SECTION 2  Discrete curvature diagnostics
+
+   Dihedral angle across an edge shared by faces with normals nf,ng and
+   unit edge direction e:  phi = atan2( (nf x ng).e , nf.ng ).
+   Verify it returns the true angle between the two unit normals.
+   ===================================================================== */
+print("")$
+print("--- 2  Dihedral angle formula sanity -------------------------------")$
+/* Put edge along x-axis: e=(1,0,0). Two unit normals separated by angle a. */
+ehat : [1,0,0]$
+nf   : [0,1,0]$
+ng   : [0, cos(a), sin(a)]$
+numv : dot( cross(nf,ng), ehat )$
+denv : dot(nf,ng)$
+print("(nf x ng).e =", trigsimp(numv), " ; nf.ng =", trigsimp(denv))$
+print("atan2 numerator/denominator = atan2(sin a, cos a) = a  (signed).")$
+/* angle deficit is purely combinatorial: kappa = 2*pi - sum theta ; noted. */
+print("Angle deficit kappa_i = 2*pi - sum_f theta_i^f  (Gaussian proxy).")$
+
+/* =====================================================================
+   SECTION 3.2  Point-plane CCD
+
+   (a) Static K: d(t) = n.(p(t)-q) is AFFINE in t; TOI t* = d0/(d0-d1).
+   (b) Moving triangle (self-collision): coplanarity triple product is a
+       CUBIC polynomial in t.  Extract & display its degree/coeffs.
+   ===================================================================== */
+print("")$
+print("--- 3.2  Point-plane CCD -------------------------------------------")$
+
+/* (a) affine signed distance & TOI */
+nvec : [nx,ny,nz]$
+p0v  : [px0,py0,pz0]$ dpv : [dpx,dpy,dpz]$  qv:[qx,qy,qz]$
+pt   : vadd(p0v, scal(t,dpv))$
+dt   : dot(nvec, vsub(pt,qv))$
+print("d(t) expanded in t:", expand(dt))$
+print("degree_t d(t) =", hipow(expand(dt), t), " (affine as claimed).")$
+d0 : ev(dt, t=0)$  d1 : ev(dt, t=1)$
+tstar : solve(dt=0, t)$
+print("TOI root:", tstar)$
+print("  matches d0/(d0-d1):",
+       is( ratsimp( rhs(tstar[1]) - d0/(d0-d1) ) = 0 ) )$
+
+/* (b) moving triangle: all four points affine in t. */
+X0 : [ vadd([xp0,yp0,zp0], scal(t,[vxp,vyp,vzp])),
+       vadd([x00,y00,z00], scal(t,[v0x,v0y,v0z])),
+       vadd([x10,y10,z10], scal(t,[v1x,v1y,v1z])),
+       vadd([x20,y20,z20], scal(t,[v2x,v2y,v2z])) ]$
+xp:X0[1]$ x0:X0[2]$ x1:X0[3]$ x2:X0[4]$
+coplan : dot( vsub(xp,x0), cross( vsub(x1,x0), vsub(x2,x0) ) )$
+coplan_e : expand(coplan)$
+print("Moving-triangle coplanarity degree_t =", hipow(coplan_e, t),
+      " (cubic as claimed).")$
+print("Leading (t^3) coefficient:")$
+print( ratsimp( coeff(coplan_e, t, 3) ) )$
+
+/* =====================================================================
+   SECTION 3.3  Edge-edge CCD
+
+   (a) Coplanarity signed volume psi(t) is CUBIC in t.
+   (b) Closest-point 2x2 linear system solution (Lumelsky/Ericson).
+   ===================================================================== */
+print("")$
+print("--- 3.3  Edge-edge CCD ---------------------------------------------")$
+
+/* (a) psi(t) = (B-A).((C-A) x (D-A)), each vertex affine in t */
+Av : vadd([Ax,Ay,Az], scal(t,[dAx,dAy,dAz]))$
+Bv : vadd([Bx,By,Bz], scal(t,[dBx,dBy,dBz]))$
+Cv : vadd([Cx,Cy,Cz], scal(t,[dCx,dCy,dCz]))$
+Dv : vadd([Dx,Dy,Dz], scal(t,[dDx,dDy,dDz]))$
+psi : dot( vsub(Bv,Av), cross( vsub(Cv,Av), vsub(Dv,Av) ) )$
+psi_e : expand(psi)$
+print("Edge-edge coplanarity degree_t =", hipow(psi_e, t),
+      " (cubic as claimed).")$
+
+/* (b) segment-segment closest points at fixed t:
+     minimize | (A-C) + s(B-A) - r(D-C) |^2 over (s,r).
+     Let d=A-C, e=B-A, f=D-C. */
+dvec:[dx,dy,dz]$ evec:[ex,ey,ez]$ fvec:[fx,fy,fz]$
+diffv : vsub( vadd(dvec, scal(s,evec)), scal(r,fvec) )$
+Q : dot(diffv,diffv)$
+sol : solve([ diff(Q,s)=0, diff(Q,r)=0 ], [s,r])$
+print("Interior closest-point solution (s,r):")$
+print( map(ratsimp, sol[1]) )$
+/* System matrix determinant = (e.e)(f.f) - (e.f)^2 ; singular <=> parallel */
+detEF : ratsimp( dot(evec,evec)*dot(fvec,fvec) - dot(evec,fvec)^2 )$
+print("System determinant (e.e)(f.f)-(e.f)^2 =", detEF)$
+print("  vanishes iff e || f (parallel edges) -> fall back to endpoint tests.")$
+
+/* =====================================================================
+   SECTION 4.2  Edge-edge delta scaling: energy non-injection sketch
+
+   Scaling Dp_k <- (eta*t*) Dp_k with 0<eta*t*<1 shrinks the step toward
+   the base point.  Along the search line E(P0 + alpha*Dp), the accepted
+   point uses a SMALLER alpha, so if the full step was a descent step the
+   truncated step is also a (weaker) descent step -- no energy injection.
+   Demonstrate for the quadratic model q(alpha)=E0 + alpha*g.Dp + a^2/2 H.
+   ===================================================================== */
+print("")$
+print("--- 4.2  Delta-scaling descent property ----------------------------")$
+q_alpha : E0 + alpha*gd + (alpha^2/2)*Hd$   /* gd = g.Dp (<0 for descent) */
+print("Model along line: q(alpha) =", q_alpha)$
+print("dq/dalpha at 0 =", diff(q_alpha,alpha), " -> = gd (<0 if descent).")$
+print("For alpha in (0, alpha_full], if gd<0 then q(alpha)<E0 for small a;")$
+print("truncation only reduces alpha, preserving the descent sign at 0.")$
+
+/* =====================================================================
+   SECTION 5  Trust-radius clamp: displacement bound
+
+   Dp <- Dp * min(1, r/||Dp||)  =>  ||Dp_clamped|| <= r.  (identity check)
+   ===================================================================== */
+print("")$
+print("--- 5  Trust-radius clamp bound ------------------------------------")$
+print("If ||Dp|| > r: scaled norm = (r/||Dp||)*||Dp|| = r  (tight).")$
+print("If ||Dp|| <=r: unscaled, norm <= r.  => sweep extent bounded by r.")$
+/* Broad-phase cell coupling: cell ~ c*(max r + delta_safe + eps_shell). */
+print("Broad-phase cell size lower bound: cell >= max_i r_i + delta_safe + eps_shell.")$
+
+/* =====================================================================
+   SECTION 9  Tolerance ordering consistency
+
+   Required chain:  eps_resid < delta_safe < eps_shell << r_min <= r_max.
+   We only state it; provide a symbolic feasibility check placeholder.
+   ===================================================================== */
+print("")$
+print("--- 9  Tolerance ordering (consistency requirement) ----------------")$
+print("Require: eps_resid < delta_safe < eps_shell << r_min <= r_max.")$
+print("Rationale: audit (eps_resid) stricter than running CCD (eps_shell);")$
+print("           offset (delta_safe) inside safety shell; steps (r) resolvable.")$
+
+print("")$
+print("=====================================================================")$
+print(" All symbolic checks executed.  'true' entries confirm formulas. ")$
+print("=====================================================================")$

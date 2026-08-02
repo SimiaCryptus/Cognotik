@@ -1,0 +1,217 @@
+:root {
+  --bg: #1a1a1f;
+  --fg: #e8e8ec;
+  --accent: #6cf;
+  --panel: #26262e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+main {
+  width: 100%;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.6rem;
+  letter-spacing: 0.02em;
+}
+
+.blurb {
+  margin: 0 0 1rem;
+  color: #b0b0ba;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+canvas {
+  display: block;
+  max-width: 100%;
+  background: #000;
+  border-radius: 6px;
+  cursor: crosshair;
+  image-rendering: pixelated;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+button {
+  background: var(--accent);
+  color: #06121a;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}
+
+.status {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+kbd {
+  background: var(--panel);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  border: 1px solid #444;
+  font-size: 0.85em;
+}
+
+/* --- Control panel (knobs galore) --- */
+
+.panel-container {
+  margin-top: 1.25rem;
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.knob-group {
+  background: var(--panel);
+  border: 1px solid #3a3a44;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem 0.75rem;
+  margin: 0;
+}
+
+.knob-group legend {
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.knob {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  margin: 0.35rem 0;
+  font-size: 0.8rem;
+}
+
+.knob-label {
+  color: #c8c8d2;
+}
+
+.knob-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-size: 0.75rem;
+  min-width: 3ch;
+  text-align: right;
+}
+
+.knob input[type='range'] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.knob select {
+  grid-column: 1 / -1;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+
+.panel-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+/* Canvas wrapper + drag-to-resize handle. */
+.canvas-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+.resize-handle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  border-radius: 3px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.res-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+.res-input {
+  width: 5rem;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+.knob input:disabled {
+  opacity: 0.4;
+}
+
+/* Immersive fullscreen: center canvas on black, hide chrome. */
+canvas:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  object-fit: contain;
+  background: #000;
+  image-rendering: pixelated;
+}
+
+canvas:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+}

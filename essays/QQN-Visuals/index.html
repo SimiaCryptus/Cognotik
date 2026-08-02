@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>An Interactive Tutorial on QQN</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>Which direction? &rarr; Where on the curve?</h1>
+      <p class="subtitle">An interactive tutorial on the Quadratic Quasi-Newton (QQN) optimizer</p>
+    </header>
+
+    <!-- Global, collapsible control panel -->
+    <aside id="global-panel" class="global-panel">
+      <button id="global-panel-toggle" class="panel-toggle" aria-expanded="true">
+        Controls &#9776;
+      </button>
+      <div id="global-panel-body" class="panel-body">
+        <div class="control-group">
+          <label>Landscape</label>
+          <div id="landscape-thumbs" class="thumbs"></div>
+        </div>
+        <div class="control-group">
+          <label>Start point</label>
+          <div class="coord-row">
+            <input type="number" id="start-x" step="0.1" value="-1.2" />
+            <input type="number" id="start-y" step="0.1" value="1.0" />
+          </div>
+          <small>(drag on any contour to set)</small>
+        </div>
+        <div class="control-group transport">
+          <button id="transport-step">Step</button>
+          <button id="transport-play">Play</button>
+          <button id="transport-reset">Reset</button>
+        </div>
+        <div class="control-group">
+          <label>Layers</label>
+          <label class="chk"><input type="checkbox" id="layer-gradient" checked /> gradient</label>
+          <label class="chk"><input type="checkbox" id="layer-oracle" checked /> oracle</label>
+          <label class="chk"><input type="checkbox" id="layer-path" checked /> path</label>
+          <label class="chk"><input type="checkbox" id="layer-bracket" checked /> bracket</label>
+        </div>
+        <div class="control-group">
+          <label>Seed <span id="seed-val">1</span></label>
+          <input type="range" id="seed" min="1" max="100" value="1" />
+        </div>
+      </div>
+    </aside>
+
+    <main id="story"></main>
+
+    <footer class="site-footer">
+      <p>
+        Reference: <code>algorithm.md</code>, <code>background.md</code>. Pure ES6 + Canvas/WebGL.
+      </p>
+    </footer>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

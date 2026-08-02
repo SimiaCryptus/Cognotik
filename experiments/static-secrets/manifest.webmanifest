@@ -1,0 +1,24 @@
+{
+      "name": "Static Secrets",
+      "short_name": "Secrets",
+      "description": "Encrypted browser proxy that decrypts and renders static blobs client-side.",
+      "start_url": "./index.html",
+      "scope": "./",
+      "display": "standalone",
+      "background_color": "#1c1e26",
+      "theme_color": "#1c1e26",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any maskable"
+        },
+        {
+          "src": "./icons/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any maskable"
+        }
+      ]
+    }

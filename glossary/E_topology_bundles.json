@@ -1,0 +1,1109 @@
+{
+  "version": "1.0.0",
+  "title": "Topology and Bundle Theory — Glossary",
+  "description": "Topological and bundle-theoretic vocabulary used in the multi-sheeted n-gon tiling project. Covers sheets, covers, holonomies, and gauge structures — the geometric infrastructure underlying reconnection.",
+  "concepts": {
+    "manifold": {
+      "id": "manifold",
+      "term": "Manifold",
+      "aliases": ["topological manifold", "smooth manifold"],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "foundational",
+      "tags": ["manifold", "locally-euclidean", "topological-space", "dimension"],
+      "summary": "A locally Euclidean topological space where every point has a neighborhood homeomorphic to ℝⁿ.",
+      "definition": "A **locally Euclidean topological space** — every point has a neighborhood homeomorphic to $\\mathbb{R}^n$ for some fixed $n$ (the manifold's dimension).\n\nExamples:\n- $\\mathbb{R}^n$, $S^n$.\n- Surfaces (2-manifolds): sphere, torus, hyperbolic plane.\n- 3-manifolds: $\\mathbb{R}^3$, $S^3$, Poincaré dodecahedral space.",
+      "examples": [
+        {
+          "title": "Euclidean space",
+          "body": "$\\mathbb{R}^n$ is the simplest manifold of dimension $n$; every point has a neighborhood that is all of $\\mathbb{R}^n$."
+        },
+        {
+          "title": "Sphere",
+          "body": "$S^2$ is a 2-manifold: every point on the sphere has a neighborhood homeomorphic to $\\mathbb{R}^2$ (a small disk)."
+        },
+        {
+          "title": "Torus",
+          "body": "The torus $T^2$ is a 2-manifold obtained by identifying opposite edges of a square. Locally it looks like $\\mathbb{R}^2$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "cw-complex" },
+          { "id": "quotient-space" },
+          { "id": "simply-connected" },
+          { "id": "riemann-surface" }
+        ],
+        "enabledBy": [{ "id": "covering-space" }, { "id": "principal-bundle" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "cw-complex": {
+      "id": "cw-complex",
+      "term": "CW Complex",
+      "aliases": ["cell complex", "cellular complex"],
+      "domain": "topology",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["cw-complex", "cells", "topology", "tiling", "inductive-construction"],
+      "summary": "A topological space built inductively from cells (points, edges, disks, etc.) attached via specified maps.",
+      "definition": "A topological space built **inductively from cells**: 0-cells (points), 1-cells (edges), 2-cells (disks), etc., attached via specified maps. Every tiling defines a CW complex structure on its ambient space.",
+      "examples": [
+        {
+          "title": "Tiling as CW complex",
+          "body": "A planar tiling defines a CW complex: vertices are 0-cells, edges are 1-cells, and tile interiors are 2-cells. The attaching maps specify how each cell's boundary connects to lower-dimensional cells."
+        },
+        {
+          "title": "Sphere as CW complex",
+          "body": "$S^2$ can be given a CW structure with one 0-cell and one 2-cell, or with two 0-cells, one 1-cell, and two 2-cells (like a globe with north/south poles)."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\chi = c_0 - c_1 + c_2 - c_3 + \\cdots",
+          "description": "Euler characteristic as alternating sum of cell counts in a CW complex.",
+          "variables": {
+            "c_k": "number of k-cells"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }],
+        "related": [{ "id": "euler-characteristic" }, { "id": "discrete-connection" }],
+        "enabledBy": [{ "id": "discrete-principal-bundle" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "quotient-space": {
+      "id": "quotient-space",
+      "term": "Quotient Space",
+      "aliases": ["identification space", "quotient topology"],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["quotient", "equivalence-relation", "identification", "torus", "projective-plane"],
+      "summary": "A topological space obtained by identifying equivalent points under an equivalence relation.",
+      "definition": "The space obtained by **identifying equivalent points** under an equivalence relation.\n\nExamples:\n- $\\mathbb{R}^n / \\mathbb{Z}^n$ = torus $T^n$.\n- $S^2 / \\{\\pm 1\\}$ = projective plane $\\mathbb{RP}^2$.\n- Pentagon expansion family quotiented by translations = a quasiperiodic structure.",
+      "examples": [
+        {
+          "title": "Torus from the plane",
+          "body": "$\\mathbb{R}^2 / \\mathbb{Z}^2$ identifies points that differ by integer vectors, yielding the torus $T^2$. The square $[0,1]^2$ with opposite edges identified is a fundamental domain."
+        },
+        {
+          "title": "Projective plane",
+          "body": "$S^2 / \\{\\pm 1\\}$ identifies antipodal points on the sphere, yielding the real projective plane $\\mathbb{RP}^2$."
+        },
+        {
+          "title": "Quasiperiodic structure",
+          "body": "The pentagon expansion family quotiented by translations yields a quasiperiodic structure, encoding the self-similar nature of Penrose-type tilings."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }],
+        "related": [{ "id": "covering-space" }, { "id": "fundamental-group" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "punctured-plane": {
+      "id": "punctured-plane",
+      "term": "Punctured Plane",
+      "aliases": ["plane minus vortex set", "ℝ² \\ Σ"],
+      "domain": "topology",
+      "crossDomains": ["physics"],
+      "difficulty": "intermediate",
+      "tags": ["punctured-plane", "vortex", "base-space", "fundamental-group", "free-group"],
+      "summary": "The plane ℝ² with a discrete vortex set Σ removed; the base space of the pentagon's multi-sheeted bundle.",
+      "definition": "The space $\\mathbb{R}^2 \\setminus \\Sigma$ for a **vortex set $\\Sigma$** (a discrete set of points). Base space of the pentagon's multi-sheeted bundle: the punctures are the vertices around which sheet transitions accumulate.\n\nThe fundamental group of the punctured plane is the **free group** on $|\\Sigma|$ generators (one loop around each puncture).",
+      "examples": [
+        {
+          "title": "Single puncture",
+          "body": "$\\mathbb{R}^2 \\setminus \\{p\\}$ has fundamental group $\\mathbb{Z}$: loops are classified by their winding number around the removed point $p$."
+        },
+        {
+          "title": "Multiple vortices",
+          "body": "$\\mathbb{R}^2 \\setminus \\{p_1, \\ldots, p_k\\}$ has fundamental group $F_k$, the free group of rank $k$. Each generator corresponds to a loop encircling exactly one puncture."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\pi_1(\\mathbb{R}^2 \\setminus \\{p_1, \\ldots, p_k\\}) = F_k",
+          "description": "Fundamental group of the plane with k punctures is the free group of rank k.",
+          "variables": {
+            "F_k": "free group of rank k",
+            "p_i": "puncture points (vortices)"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }, { "id": "fundamental-group" }],
+        "related": [
+          { "id": "simply-connected" },
+          { "id": "topological-defect" },
+          { "id": "multi-sheeted-cover" }
+        ],
+        "enabledBy": [{ "id": "covering-space" }, { "id": "holonomy" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "simply-connected": {
+      "id": "simply-connected",
+      "term": "Simply Connected",
+      "aliases": ["trivial fundamental group", "1-connected"],
+      "domain": "topology",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["simply-connected", "fundamental-group", "contractible-loops", "covering-space"],
+      "summary": "A space with trivial fundamental group, meaning every loop is contractible.",
+      "definition": "Having **trivial fundamental group**: every loop is contractible. The plane $\\mathbb{R}^2$ is simply connected; the punctured plane is **not**.\n\nMulti-sheeted covers exist precisely because the underlying base is **not** simply connected.",
+      "examples": [
+        {
+          "title": "Euclidean plane",
+          "body": "$\\mathbb{R}^2$ is simply connected: any loop in the plane can be continuously shrunk to a point."
+        },
+        {
+          "title": "Punctured plane is not simply connected",
+          "body": "$\\mathbb{R}^2 \\setminus \\{0\\}$ is not simply connected: a loop encircling the origin cannot be contracted to a point without crossing the removed point."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\pi_1(X) = 1",
+          "description": "A space X is simply connected if and only if its fundamental group is trivial.",
+          "variables": {
+            "\\pi_1(X)": "fundamental group of X"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fundamental-group" }],
+        "related": [{ "id": "punctured-plane" }, { "id": "covering-space" }],
+        "enabledBy": [{ "id": "universal-cover" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "fundamental-group": {
+      "id": "fundamental-group",
+      "term": "Fundamental Group",
+      "aliases": ["π₁", "first homotopy group"],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["fundamental-group", "homotopy", "loops", "pi1", "winding-number"],
+      "summary": "The group of homotopy classes of loops based at a fixed point, with operation given by loop concatenation.",
+      "definition": "The **group of homotopy classes of loops** based at a fixed point. Operation: loop concatenation.\n\nFor our spaces:\n- $\\pi_1(\\mathbb{R}^n) = 1$ (trivial).\n- $\\pi_1(S^1) = \\mathbb{Z}$ (winding number).\n- $\\pi_1(T^2) = \\mathbb{Z}^2$ (two independent loops).\n- $\\pi_1(\\mathbb{R}^2 \\setminus \\{p\\}) = \\mathbb{Z}$ (encircling the puncture).\n- $\\pi_1(\\mathbb{R}^2 \\setminus \\{p_1, \\ldots, p_k\\}) = F_k$ (free group of rank $k$).\n- $\\pi_1(SO(3)) = \\mathbb{Z}/2$ (spinor doubling).",
+      "examples": [
+        {
+          "title": "Circle",
+          "body": "$\\pi_1(S^1) = \\mathbb{Z}$: loops on the circle are classified by their winding number — how many times they wrap around."
+        },
+        {
+          "title": "Torus",
+          "body": "$\\pi_1(T^2) = \\mathbb{Z}^2$: the torus has two independent non-contractible loops, one going around each handle."
+        },
+        {
+          "title": "SO(3) and spinors",
+          "body": "$\\pi_1(SO(3)) = \\mathbb{Z}/2$: a rotation by $2\\pi$ is not contractible, but a rotation by $4\\pi$ is. This is the topological origin of spinor doubling."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\pi_1(\\mathbb{R}^2 \\setminus \\{p_1, \\ldots, p_k\\}) = F_k",
+          "description": "Fundamental group of the plane with k punctures.",
+          "variables": {
+            "F_k": "free group of rank k"
+          }
+        },
+        {
+          "expression": "\\pi_1(S^1) = \\mathbb{Z}",
+          "description": "Fundamental group of the circle is the integers (winding number)."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }],
+        "related": [
+          { "id": "loops-homotopy" },
+          { "id": "simply-connected" },
+          { "id": "covering-space" },
+          { "id": "holonomy" },
+          { "id": "monodromy" }
+        ],
+        "enabledBy": [{ "id": "punctured-plane" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "loops-homotopy": {
+      "id": "loops-homotopy",
+      "term": "Loops and Their Homotopy Classes",
+      "aliases": ["homotopic loops", "loop homotopy", "homotopy class of a loop"],
+      "domain": "topology",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["homotopy", "loops", "continuous-deformation", "topological-defect", "winding"],
+      "summary": "Two loops are homotopic if one can be continuously deformed into the other; homotopy classes capture topological winding behavior.",
+      "definition": "Two loops are **homotopic** if one can be continuously deformed into the other. The homotopy class of a loop captures its topological \"winding behavior\" — useful for detecting topological defects (vortices).",
+      "examples": [
+        {
+          "title": "Contractible loop",
+          "body": "A loop in $\\mathbb{R}^2$ that does not encircle any puncture is homotopic to a constant loop (a point). Its homotopy class is trivial."
+        },
+        {
+          "title": "Non-contractible loop around a vortex",
+          "body": "A loop encircling a vortex in $\\mathbb{R}^2 \\setminus \\{p\\}$ cannot be contracted to a point. Its homotopy class is a nonzero element of $\\mathbb{Z}$, given by the winding number."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fundamental-group" }],
+        "related": [{ "id": "topological-defect" }, { "id": "holonomy" }, { "id": "monodromy" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "topological-defect": {
+      "id": "topological-defect",
+      "term": "Topological Defect",
+      "aliases": ["vortex", "topological singularity"],
+      "domain": "topology",
+      "crossDomains": ["physics"],
+      "difficulty": "intermediate",
+      "tags": ["topological-defect", "vortex", "singularity", "winding", "non-removable"],
+      "summary": "A singularity that cannot be removed by local deformation; vortices are 2D topological defects.",
+      "definition": "A **singularity that cannot be removed by local deformation**. Vortices are 2D topological defects: shrinking a loop around a vortex never makes it contractible while keeping it inside the punctured plane.",
+      "examples": [
+        {
+          "title": "Vortex in 2D",
+          "body": "A vortex at the origin of $\\mathbb{R}^2$ is a topological defect: any loop encircling the origin has nonzero winding number and cannot be contracted to a point in $\\mathbb{R}^2 \\setminus \\{0\\}$."
+        },
+        {
+          "title": "Pentagon vertex as defect",
+          "body": "In the multi-sheeted pentagon cover, each vertex of the tiling is a topological defect. Encircling a vertex once shifts the sheet by the $36°$ deficit angle, corresponding to a nontrivial element of $\\mathbb{Z}/10$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "loops-homotopy" }, { "id": "punctured-plane" }],
+        "related": [{ "id": "monodromy" }, { "id": "holonomy" }, { "id": "branched-cover" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "branch-point" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "covering-space": {
+      "id": "covering-space",
+      "term": "Covering Space",
+      "aliases": ["cover", "topological cover"],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["covering-space", "local-homeomorphism", "sheets", "fiber", "fundamental-group"],
+      "summary": "A continuous map π: ℳ → X that is a local homeomorphism, with X covered by open sets whose preimages are disjoint unions of homeomorphic copies (sheets).",
+      "definition": "A continuous map $\\pi: \\mathcal{M} \\to X$ that is a **local homeomorphism**, with $X$ covered by open sets $U$ where $\\pi^{-1}(U)$ is a disjoint union of copies of $U$ each mapped homeomorphically to $U$. Each copy is a **sheet**.\n\nProperties:\n- Number of sheets is constant on connected components of $X$ (assuming $X$ is locally connected).\n- Covering spaces correspond bijectively to subgroups of $\\pi_1(X)$.\n- The **universal cover** is the unique simply connected covering space.",
+      "examples": [
+        {
+          "title": "Real line over the circle",
+          "body": "The map $\\mathbb{R} \\to S^1$ given by $t \\mapsto e^{2\\pi i t}$ is a covering map. The fiber over any point is a copy of $\\mathbb{Z}$, and each small arc in $S^1$ lifts to infinitely many disjoint arcs in $\\mathbb{R}$."
+        },
+        {
+          "title": "Subgroup correspondence",
+          "body": "For $X = \\mathbb{R}^2 \\setminus \\Sigma$, covering spaces correspond to subgroups of $\\pi_1(X) = F_{|\\Sigma|}$. The $n$-sheeted cover corresponds to a subgroup of index $n$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }, { "id": "fundamental-group" }],
+        "related": [
+          { "id": "multi-sheeted-cover" },
+          { "id": "universal-cover" },
+          { "id": "double-cover" },
+          { "id": "branched-cover" },
+          { "id": "simply-connected" }
+        ],
+        "enabledBy": [{ "id": "holonomy" }, { "id": "monodromy" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "multi-sheeted-cover": {
+      "id": "multi-sheeted-cover",
+      "term": "Multi-Sheeted Cover",
+      "aliases": ["multi-sheet cover", "n-sheeted cover", "multiple-sheeted covering"],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["multi-sheeted", "covering-space", "sheets", "overlap", "tiling"],
+      "summary": "A covering space with multiple sheets, allowing tile-projection overlaps where distinct tiles project to overlapping regions.",
+      "definition": "A covering space with **multiple sheets** — i.e., $|\\pi^{-1}(x)| > 1$ for some (hence all) regular $x \\in X$. Allows tile-projection overlaps: two distinct tiles in $\\mathcal{M}$ can project to overlapping regions of $X$.",
+      "examples": [
+        {
+          "title": "Pentagon multi-sheeted cover",
+          "body": "The multi-sheeted pentagon cover is a discrete combinatorial analogue of a Riemann surface with branch points of order 10. Sheets correspond to elements of $\\mathbb{Z}/10$, and crossing an edge shifts the sheet by the associated deficit angle."
+        },
+        {
+          "title": "Tile overlap via sheets",
+          "body": "Two tiles on different sheets of the cover can project to overlapping regions of the base plane. This is the mechanism by which the multi-sheeted structure encodes the quasicrystal's local matching rules."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "covering-space" }],
+        "related": [
+          { "id": "double-cover" },
+          { "id": "branched-cover" },
+          { "id": "riemann-surface" },
+          { "id": "discrete-principal-bundle" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "universal-cover": {
+      "id": "universal-cover",
+      "term": "Universal Cover",
+      "aliases": ["universal covering space"],
+      "domain": "topology",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["universal-cover", "simply-connected", "covering-space"],
+      "summary": "The unique simply connected covering space of a given space.",
+      "definition": "The **unique simply connected covering space** of a given base space $X$. It corresponds to the trivial subgroup of $\\pi_1(X)$ under the subgroup correspondence for covering spaces. Every other covering space of $X$ is a quotient of the universal cover.",
+      "examples": [
+        {
+          "title": "Universal cover of the circle",
+          "body": "The universal cover of $S^1$ is $\\mathbb{R}$, via the map $t \\mapsto e^{2\\pi i t}$. The deck transformations are integer translations."
+        },
+        {
+          "title": "Universal cover of the torus",
+          "body": "The universal cover of $T^2 = \\mathbb{R}^2/\\mathbb{Z}^2$ is $\\mathbb{R}^2$, with deck transformations given by integer lattice translations."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "covering-space" }, { "id": "simply-connected" }],
+        "related": [{ "id": "multi-sheeted-cover" }, { "id": "fundamental-group" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "double-cover": {
+      "id": "double-cover",
+      "term": "Double Cover",
+      "aliases": ["2-fold cover", "double covering"],
+      "domain": "topology",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "intermediate",
+      "tags": ["double-cover", "2-fold", "spinor", "SU2", "SO3"],
+      "summary": "A 2-fold covering space; canonical examples include SU(2) → SO(3) encoding spinor doubling.",
+      "definition": "A **2-fold covering space**. The canonical examples:\n- $S^n \\to \\mathbb{RP}^n$.\n- $SU(2) \\to SO(3)$, encoding spinor doubling.\n- $\\text{Spin}(n) \\to SO(n)$.",
+      "examples": [
+        {
+          "title": "SU(2) → SO(3)",
+          "body": "$SU(2)$ is the double cover of $SO(3)$: two elements $\\pm A \\in SU(2)$ map to the same rotation in $SO(3)$. This is the topological origin of spinors in quantum mechanics."
+        },
+        {
+          "title": "Sphere over projective space",
+          "body": "$S^n \\to \\mathbb{RP}^n$ is the double cover identifying antipodal points. The fiber over each point of $\\mathbb{RP}^n$ consists of two antipodal points of $S^n$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "covering-space" }],
+        "related": [{ "id": "multi-sheeted-cover" }, { "id": "fundamental-group" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "branched-cover": {
+      "id": "branched-cover",
+      "term": "Branched Cover",
+      "aliases": ["ramified cover", "branched covering"],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["branched-cover", "ramification", "branch-point", "deficit-angle", "vertex"],
+      "summary": "A covering with ramification points where the local homeomorphism property fails; sheets collapse above branch points.",
+      "definition": "A covering with **ramification points** where the local homeomorphism property fails. Above a branch point, sheets \"collapse\" — typically $\\pi$ is locally $z \\mapsto z^k$ for some $k > 1$.\n\nIn our setting: the multi-sheeted pentagon cover is branched at **vertex points** of the tiling. Encircling a vertex once shifts the sheet by the deficit angle.",
+      "examples": [
+        {
+          "title": "Complex power map",
+          "body": "The map $w = z^n$ defines an $n$-sheeted branched cover of $\\mathbb{C}$ over $\\mathbb{C}$, branched at $z = 0$. Near the origin, $n$ sheets collapse to one."
+        },
+        {
+          "title": "Pentagon vertex branching",
+          "body": "In the multi-sheeted pentagon cover, each vertex is a branch point of order 10. Encircling a vertex once shifts the sheet by $36°$ (one step in $\\mathbb{Z}/10$), and going around 10 times returns to the original sheet."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\pi(z) = z^k",
+          "description": "Local model of a branched cover near a branch point of order k.",
+          "variables": {
+            "k": "ramification order"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "covering-space" }, { "id": "branch-point" }],
+        "related": [
+          { "id": "riemann-surface" },
+          { "id": "multi-sheeted-cover" },
+          { "id": "topological-defect" },
+          { "id": "monodromy" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "branch-point": {
+      "id": "branch-point",
+      "term": "Branch Point",
+      "aliases": ["ramification point"],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["branch-point", "ramification", "branched-cover", "fiber", "singularity"],
+      "summary": "A point of the base space above which the covering fails to be a local homeomorphism; the fiber has fewer elements than over generic points.",
+      "definition": "A point of the base space above which the covering fails to be a local homeomorphism. The fiber above a branch point has fewer elements than over generic points.",
+      "examples": [
+        {
+          "title": "Origin under z²",
+          "body": "For the map $z \\mapsto z^2$, the origin is a branch point: the fiber over $0$ is just $\\{0\\}$, while the fiber over any nonzero point has two elements."
+        },
+        {
+          "title": "Tiling vertex",
+          "body": "In the pentagon multi-sheeted cover, each tiling vertex is a branch point. The angular deficit of $36°$ per vertex means sheets merge at these points."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "covering-space" }],
+        "related": [
+          { "id": "branched-cover" },
+          { "id": "topological-defect" },
+          { "id": "riemann-surface" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "topological-defect" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "riemann-surface": {
+      "id": "riemann-surface",
+      "term": "Riemann Surface",
+      "aliases": ["complex 1-manifold"],
+      "domain": "topology",
+      "crossDomains": ["geometry", "algebra"],
+      "difficulty": "advanced",
+      "tags": ["riemann-surface", "complex-manifold", "branched-cover", "analytic-structure"],
+      "summary": "A complex 1-manifold (2-manifold with complex analytic structure); the classical setting for branched covers.",
+      "definition": "A **complex 1-manifold**, i.e., a 2-manifold equipped with complex analytic structure. Classical setting for branched covers: $w = z^{1/n}$ defines an $n$-sheeted Riemann surface over $\\mathbb{C} \\setminus \\{0\\}$.\n\nThe pentagon multi-sheeted cover is the **discrete combinatorial analogue** of a Riemann surface with branch points of order 10.",
+      "examples": [
+        {
+          "title": "Riemann surface of z^(1/n)",
+          "body": "The function $w = z^{1/n}$ is multi-valued on $\\mathbb{C} \\setminus \\{0\\}$. Its Riemann surface is an $n$-sheeted cover of $\\mathbb{C}$, branched at $0$ and $\\infty$."
+        },
+        {
+          "title": "Pentagon cover as discrete Riemann surface",
+          "body": "The multi-sheeted pentagon cover is the discrete combinatorial analogue of a Riemann surface with branch points of order 10, one at each tiling vertex."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }, { "id": "branched-cover" }],
+        "related": [{ "id": "multi-sheeted-cover" }, { "id": "branch-point" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "physical-space": {
+      "id": "physical-space",
+      "term": "Physical Space",
+      "aliases": ["E-parallel", "E∥", "parallel space"],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["cut-and-project", "physical-space", "quasicrystal", "penrose", "subspace"],
+      "summary": "The subspace of the cut-and-project ambient lattice containing the actual quasicrystal; for Penrose tiling, 2-dimensional inside ℝ⁵.",
+      "definition": "The **subspace of cut-and-project ambient lattice** containing the actual quasicrystal. For Penrose tiling, $\\dim E_\\parallel = 2$ inside $\\mathbb{R}^5$.",
+      "examples": [
+        {
+          "title": "Penrose tiling",
+          "body": "For the Penrose tiling, $E_\\parallel$ is a 2-dimensional subspace of $\\mathbb{R}^5$ with an irrational slope with respect to the integer lattice $\\mathbb{Z}^5$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "perpendicular-space" }, { "id": "acceptance-window" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "perpendicular-space": {
+      "id": "perpendicular-space",
+      "term": "Perpendicular Space",
+      "aliases": ["E-perp", "E⊥", "internal space"],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["cut-and-project", "perpendicular-space", "acceptance-window", "quasicrystal"],
+      "summary": "The orthogonal complement of the physical space in the ambient lattice; hosts the acceptance window.",
+      "definition": "The **orthogonal complement** of $E_\\parallel$ in the ambient lattice. Hosts the acceptance window. For Penrose, $\\dim E_\\perp = 3$.",
+      "examples": [
+        {
+          "title": "Penrose tiling",
+          "body": "For the Penrose tiling, $E_\\perp$ is 3-dimensional inside $\\mathbb{R}^5$. The acceptance window is a pentagonal region in $E_\\perp$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "physical-space" }, { "id": "acceptance-window" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "acceptance-window": {
+      "id": "acceptance-window",
+      "term": "Acceptance Window",
+      "aliases": ["window", "atomic surface", "projection window"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["acceptance-window", "cut-and-project", "quasicrystal", "penrose", "filter"],
+      "summary": "The bounded region in perpendicular space filtering which lattice points project to the physical tiling.",
+      "definition": "The **bounded region in $E_\\perp$** filtering which lattice points project to the physical tiling.\n\nWindow shape determines the resulting tiling combinatorics:\n- Pentagonal window: Penrose tiling.\n- Triacontahedral window: AKN tiling.\n- Octagonal window: Ammann–Beenker tiling.",
+      "examples": [
+        {
+          "title": "Pentagonal window → Penrose tiling",
+          "body": "Using a regular pentagonal acceptance window in $E_\\perp$ selects exactly those lattice points whose projections form a Penrose tiling in $E_\\parallel$."
+        },
+        {
+          "title": "Octagonal window → Ammann–Beenker tiling",
+          "body": "An octagonal acceptance window yields the Ammann–Beenker tiling, an 8-fold symmetric quasicrystal."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "perpendicular-space" }, { "id": "physical-space" }],
+        "related": [],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "connection": {
+      "id": "connection",
+      "term": "Connection",
+      "aliases": ["gauge connection", "connection 1-form"],
+      "domain": "topology",
+      "crossDomains": ["physics", "geometry"],
+      "difficulty": "advanced",
+      "tags": ["connection", "parallel-transport", "fiber-bundle", "gauge", "lie-algebra"],
+      "summary": "A rule for parallel transport in a fiber bundle; in smooth geometry, a connection 1-form valued in the Lie algebra of the structure group.",
+      "definition": "A rule for **parallel transport** in a fiber bundle. In smooth differential geometry: a connection 1-form valued in the Lie algebra of the structure group. In discrete settings, see **Discrete Connection**.",
+      "examples": [
+        {
+          "title": "Levi-Civita connection",
+          "body": "On a Riemannian manifold, the Levi-Civita connection provides parallel transport of tangent vectors along curves, preserving the metric."
+        },
+        {
+          "title": "Gauge field in physics",
+          "body": "In Yang–Mills theory, the gauge field $A_\\mu$ is a connection 1-form on a principal $G$-bundle over spacetime. The field strength $F_{\\mu\\nu}$ is its curvature."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "F = d\\omega + \\omega \\wedge \\omega",
+          "description": "Curvature 2-form of a connection 1-form ω.",
+          "variables": {
+            "F": "curvature 2-form",
+            "\\omega": "connection 1-form"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "principal-bundle" }],
+        "related": [
+          { "id": "discrete-connection" },
+          { "id": "parallel-transport" },
+          { "id": "holonomy" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "discrete-connection" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "discrete-connection": {
+      "id": "discrete-connection",
+      "term": "Discrete Connection",
+      "aliases": ["gauge connection", "lattice gauge field", "edge labels"],
+      "domain": "topology",
+      "crossDomains": ["physics", "combinatorics"],
+      "difficulty": "advanced",
+      "tags": [
+        "discrete-connection",
+        "lattice-gauge",
+        "edge-labels",
+        "group-elements",
+        "sheet-transition"
+      ],
+      "summary": "An assignment of group elements to edges of a CW complex; the discrete analogue of a smooth connection.",
+      "definition": "An **assignment of group elements to edges** of a CW complex. In a lattice gauge theory, each edge $e$ carries a group element $g_e \\in G$. Composition along a path gives parallel transport. The framework's **sheet transitions** $\\tau(e)$ are exactly this kind of discrete connection.",
+      "examples": [
+        {
+          "title": "Sheet transitions as discrete connection",
+          "body": "In the multi-sheeted pentagon cover, each edge $e$ of the tiling carries a group element $\\tau(e) \\in \\mathbb{Z}/10$ specifying the sheet change when crossing that edge. This is a discrete connection on the tiling's CW complex."
+        },
+        {
+          "title": "Lattice gauge theory",
+          "body": "In Wilson's lattice gauge theory, each link of the spacetime lattice carries a group element $U_{\\mu}(x) \\in G$. The plaquette product $U_{\\mu}(x)U_{\\nu}(x+\\hat{\\mu})U_{\\mu}^{-1}(x+\\hat{\\nu})U_{\\nu}^{-1}(x)$ is the discrete curvature."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cw-complex" }, { "id": "principal-bundle" }],
+        "related": [
+          { "id": "connection" },
+          { "id": "parallel-transport" },
+          { "id": "holonomy" },
+          { "id": "transition-function" }
+        ],
+        "enabledBy": [{ "id": "discrete-principal-bundle" }],
+        "synonyms": [{ "id": "connection" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "parallel-transport": {
+      "id": "parallel-transport",
+      "term": "Parallel Transport",
+      "aliases": ["transport along a path"],
+      "domain": "topology",
+      "crossDomains": ["geometry", "physics"],
+      "difficulty": "intermediate",
+      "tags": ["parallel-transport", "connection", "path", "fiber-bundle", "holonomy"],
+      "summary": "Transport of fiber elements along paths via a connection; in discrete settings, walking along a path multiplies the group elements on the edges.",
+      "definition": "**Transport of fiber elements along paths via a connection**. In a discrete setting: walking along a path multiplies the group elements on the edges.",
+      "examples": [
+        {
+          "title": "Parallel transport on a sphere",
+          "body": "Transporting a tangent vector around a closed loop on $S^2$ rotates it by an angle equal to the solid angle enclosed by the loop — a nontrivial holonomy."
+        },
+        {
+          "title": "Discrete path product",
+          "body": "In the multi-sheeted tiling, parallel transport along a path $e_1, e_2, \\ldots, e_n$ gives the product $\\tau(e_1) \\cdot \\tau(e_2) \\cdots \\tau(e_n) \\in \\mathbb{Z}/10$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "connection" }],
+        "related": [{ "id": "holonomy" }, { "id": "discrete-connection" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "holonomy": {
+      "id": "holonomy",
+      "term": "Holonomy",
+      "aliases": ["holonomy group", "path-ordered exponential"],
+      "domain": "topology",
+      "crossDomains": ["geometry", "physics"],
+      "difficulty": "advanced",
+      "tags": ["holonomy", "parallel-transport", "closed-loop", "curvature", "monodromy"],
+      "summary": "The group element accumulated by parallel transport around a closed loop; nontrivial holonomy detects curvature or monodromy.",
+      "definition": "The **group element accumulated by parallel transport around a closed loop**. For a trivial connection, holonomy is identity for all loops. Nontrivial holonomy detects **curvature** (smooth case) or **monodromy** (discrete case).",
+      "examples": [
+        {
+          "title": "Holonomy on a sphere",
+          "body": "Parallel transporting a tangent vector around a spherical triangle returns it rotated by the triangle's spherical excess. This is the holonomy of the Levi-Civita connection."
+        },
+        {
+          "title": "Holonomy around a vortex",
+          "body": "In the multi-sheeted pentagon cover, the holonomy of a small loop around a vortex equals $1 \\in \\mathbb{Z}/10$ (one step, corresponding to $36°$). This is the concentrated curvature at each vertex."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "parallel-transport" }, { "id": "connection" }],
+        "related": [
+          { "id": "monodromy" },
+          { "id": "fundamental-group" },
+          { "id": "topological-defect" },
+          { "id": "discrete-connection" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "monodromy": {
+      "id": "monodromy",
+      "term": "Monodromy",
+      "aliases": ["monodromy representation", "holonomy of a cover"],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["monodromy", "holonomy", "covering-space", "vortex", "deficit-angle"],
+      "summary": "The holonomy of a closed loop in a covering or bundle; for the pentagon cover, the monodromy around a vortex equals the 36° deficit angle in ℤ/10.",
+      "definition": "The **holonomy of a closed loop** in a covering or bundle. For the pentagon cover, the monodromy of a small loop around a vortex equals the deficit angle ($36°$) in the fiber group $\\mathbb{Z}/10$.",
+      "examples": [
+        {
+          "title": "Monodromy of z^(1/n)",
+          "body": "For the function $w = z^{1/n}$, transporting a branch around the origin once multiplies $w$ by $e^{2\\pi i/n}$. This is the monodromy of the $n$-sheeted cover."
+        },
+        {
+          "title": "Pentagon vertex monodromy",
+          "body": "In the multi-sheeted pentagon cover, the monodromy of a loop encircling one vertex is $1 \\in \\mathbb{Z}/10$, corresponding to a $36°$ sheet shift. Going around 10 times gives trivial monodromy."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho: \\pi_1(\\mathbb{R}^2 \\setminus \\Sigma) \\to G",
+          "description": "Holonomy representation: maps loops in the punctured plane to group elements, classifying the cover up to isomorphism.",
+          "variables": {
+            "\\Sigma": "vortex set",
+            "G": "structure group (e.g. ℤ/10)"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "holonomy" }, { "id": "covering-space" }],
+        "related": [
+          { "id": "fundamental-group" },
+          { "id": "topological-defect" },
+          { "id": "branched-cover" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "transition-function": {
+      "id": "transition-function",
+      "term": "Transition Function",
+      "aliases": ["gluing function", "cocycle"],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "transition-function",
+        "fiber-bundle",
+        "structure-group",
+        "trivialization",
+        "sheet-change"
+      ],
+      "summary": "The map between trivializations of a fiber bundle, valued in the structure group; in the discrete pinwheel setting, these are sheet-change maps assigned to each edge.",
+      "definition": "The **map between trivializations** of a fiber bundle, valued in the structure group. In the discrete pinwheel setting, transition functions are **sheet-change maps assigned to each edge** — the same thing as the discrete connection's edge labels $\\tau(e)$.",
+      "examples": [
+        {
+          "title": "Möbius band",
+          "body": "The Möbius band is a line bundle over $S^1$ with a single nontrivial transition function: the map $x \\mapsto -x$ on the fiber $\\mathbb{R}$, applied where the two trivializing patches overlap."
+        },
+        {
+          "title": "Sheet-change maps",
+          "body": "In the multi-sheeted pentagon cover, the transition function on edge $e$ is $\\tau(e) \\in \\mathbb{Z}/10$, specifying how the sheet label changes when crossing $e$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "principal-bundle" }],
+        "related": [{ "id": "discrete-connection" }, { "id": "holonomy" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "discrete-connection" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "principal-bundle": {
+      "id": "principal-bundle",
+      "term": "Principal G-Bundle",
+      "aliases": ["principal bundle", "frame bundle"],
+      "domain": "topology",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "advanced",
+      "tags": ["principal-bundle", "fiber-bundle", "structure-group", "G-action", "gauge-theory"],
+      "summary": "A fiber bundle with G-action where fibers are copies of G and transitions preserve the G-structure.",
+      "definition": "A **fiber bundle with $G$-action** — fibers are copies of $G$, transitions and bundle operations preserve $G$-structure.\n\nSmooth example: the orthonormal frame bundle of a Riemannian manifold ($G = O(n)$).",
+      "examples": [
+        {
+          "title": "Frame bundle",
+          "body": "The orthonormal frame bundle of a Riemannian $n$-manifold is a principal $O(n)$-bundle. A point in the fiber over $x$ is an orthonormal basis for the tangent space $T_x M$."
+        },
+        {
+          "title": "Gauge theory",
+          "body": "In Yang–Mills theory, the gauge field lives on a principal $G$-bundle over spacetime. Gauge transformations are automorphisms of this bundle."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "manifold" }],
+        "related": [
+          { "id": "discrete-principal-bundle" },
+          { "id": "connection" },
+          { "id": "transition-function" },
+          { "id": "holonomy" }
+        ],
+        "enabledBy": [{ "id": "discrete-connection" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "discrete-principal-bundle": {
+      "id": "discrete-principal-bundle",
+      "term": "Discrete Principal G-Bundle",
+      "aliases": ["combinatorial principal bundle", "lattice gauge configuration"],
+      "domain": "topology",
+      "crossDomains": ["combinatorics", "physics"],
+      "difficulty": "advanced",
+      "tags": [
+        "discrete-principal-bundle",
+        "cw-complex",
+        "sheet-labels",
+        "discrete-connection",
+        "pinwheel"
+      ],
+      "summary": "The combinatorial analogue of a principal G-bundle: a CW complex with sheet labels in G and edges assigned G-elements determining sheet transformations.",
+      "definition": "The **combinatorial analogue**: a CW complex whose 0-cells carry sheet labels in $G$, with edges assigned $G$-elements (the discrete connection) that determine how sheet labels transform when crossing.\n\nThis is the precise structure of the **multi-sheeted pinwheel cover**.",
+      "examples": [
+        {
+          "title": "Multi-sheeted pinwheel cover",
+          "body": "The multi-sheeted pinwheel cover is a discrete principal $\\mathbb{Z}/10$-bundle over the tiling's CW complex. Each vertex carries a sheet label in $\\mathbb{Z}/10$, and each edge carries a group element specifying the sheet change."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "principal-bundle" },
+          { "id": "cw-complex" },
+          { "id": "discrete-connection" }
+        ],
+        "related": [{ "id": "multi-sheeted-cover" }, { "id": "transition-function" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "local-finiteness": {
+      "id": "local-finiteness",
+      "term": "Local Finiteness",
+      "aliases": ["locally finite tiling"],
+      "domain": "topology",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["local-finiteness", "tiling", "compact", "finiteness", "cyclotomic"],
+      "summary": "The condition that every compact region contains finitely many tiles; fundamental for any reasonable tiling.",
+      "definition": "The **finiteness condition**: every compact region contains finitely many tiles. A fundamental requirement for any reasonable tiling.\n\nFailed when irrational rotation orbits densify the plane (cyclotomic density trap). Restored by either:\n- Restricting to rational rotations (orientation group finite).\n- Using cut-and-project (acceptance window bounded).",
+      "examples": [
+        {
+          "title": "Penrose tiling",
+          "body": "The Penrose tiling is locally finite: any bounded region of the plane contains only finitely many tiles, even though the tiling is aperiodic."
+        },
+        {
+          "title": "Cyclotomic density trap",
+          "body": "If irrational rotations are allowed without restriction, the orbit of a single tile under the rotation group can densify the plane, violating local finiteness."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "acceptance-window" }, { "id": "cw-complex" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "euler-characteristic": {
+      "id": "euler-characteristic",
+      "term": "Euler Characteristic",
+      "aliases": ["χ", "Euler number"],
+      "domain": "topology",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["euler-characteristic", "gauss-bonnet", "cell-count", "surface", "curvature"],
+      "summary": "The alternating sum of cell counts in a CW complex; related to total Gaussian curvature via the Gauss–Bonnet theorem.",
+      "definition": "The **alternating sum of cell counts** in a CW complex:\n\n$$\\chi = c_0 - c_1 + c_2 - c_3 + \\cdots$$\n\nFor a closed surface: $\\chi = v - e + f$.\n\nKey values:\n- Sphere $S^2$: $\\chi = 2$.\n- Torus $T^2$: $\\chi = 0$.\n- Genus-$g$ surface: $\\chi = 2 - 2g$.\n\n**Gauss–Bonnet theorem** relates $\\chi$ to total Gaussian curvature, linking topology to geometry. Pentagonal frustration's $36°$ deficit per vertex shows up via Gauss–Bonnet when interpreting the multi-sheeted cover as a polyhedral surface.",
+      "examples": [
+        {
+          "title": "Sphere",
+          "body": "For a tetrahedron (homeomorphic to $S^2$): $v = 4$, $e = 6$, $f = 4$, so $\\chi = 4 - 6 + 4 = 2$."
+        },
+        {
+          "title": "Torus",
+          "body": "The torus has $\\chi = 0$. A CW structure with 1 vertex, 2 edges, and 1 face gives $\\chi = 1 - 2 + 1 = 0$."
+        },
+        {
+          "title": "Gauss–Bonnet and pentagonal deficit",
+          "body": "The $36°$ angular deficit per vertex of the pentagon tiling contributes to the total curvature. By Gauss–Bonnet, the sum of all deficits equals $2\\pi \\chi$, providing a topological accounting of angular shortfalls."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\chi = c_0 - c_1 + c_2 - c_3 + \\cdots",
+          "description": "Euler characteristic as alternating sum of cell counts.",
+          "variables": {
+            "c_k": "number of k-cells"
+          }
+        },
+        {
+          "expression": "\\chi = v - e + f",
+          "description": "Euler characteristic for a closed surface in terms of vertices, edges, and faces.",
+          "variables": {
+            "v": "number of vertices",
+            "e": "number of edges",
+            "f": "number of faces"
+          }
+        },
+        {
+          "expression": "\\chi = 2 - 2g",
+          "description": "Euler characteristic of a closed orientable surface of genus g.",
+          "variables": {
+            "g": "genus of the surface"
+          }
+        },
+        {
+          "expression": "\\int_M K \\, dA = 2\\pi \\chi(M)",
+          "description": "Gauss–Bonnet theorem: total Gaussian curvature equals 2π times the Euler characteristic.",
+          "variables": {
+            "K": "Gaussian curvature",
+            "M": "closed surface"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cw-complex" }],
+        "related": [{ "id": "manifold" }, { "id": "holonomy" }, { "id": "branched-cover" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

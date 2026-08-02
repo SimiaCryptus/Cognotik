@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TensorFlow.js -->
+    <script src="js/tf.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #0d1117;
+        --panel: #161b22;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --danger: #f85149;
+        --ok: #3fb950;
+        --warn: #d29922;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+        height: 95vh;
+      }
+
+      .home-link {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 14px;
+        z-index: 100;
+      }
+
+      header {
+        text-align: center;
+        padding: 16px 0 4px;
+      }
+
+      header h1 {
+        font-size: 24px;
+        margin: 0;
+        font-weight: 800;
+      }
+
+      .badge {
+        font-size: 11px;
+        background: var(--accent);
+        color: #0d1117;
+        padding: 2px 8px;
+        border-radius: 10px;
+        vertical-align: middle;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        margin: 4px 0 16px;
+      }
+
+      .layout {
+        height: -webkit-fill-available;
+        display: flex;
+        gap: 16px;
+        padding: 0 16px 32px;
+        max-width: 1600px;
+        margin: 0 auto;
+        align-items: stretch;
+      }
+
+      .canvas-wrap {
+        flex: 1;
+        min-width: 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      canvas {
+        background: #010409;
+        border-radius: 6px;
+        aspect-ratio: 1 / 1;
+        max-width: 90vw;
+        max-height: 90vh;
+        height: -webkit-fill-available;
+      }
+
+      .controls {
+        width: 320px;
+        flex-shrink: 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        transition:
+          width 0.25s ease,
+          padding 0.25s ease,
+          opacity 0.2s ease;
+        overflow: hidden;
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+      }
+
+      /* Collapsed sidebar state */
+      .controls.collapsed {
+        width: 0;
+        padding-left: 0;
+        padding-right: 0;
+        opacity: 0;
+        border-width: 0;
+        margin: 0;
+      }
+
+      .controls.collapsed > * {
+        display: none;
+      }
+
+      /* Sidebar toggle button */
+      .sidebar-toggle {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 100;
+        width: auto;
+        flex: none;
+        background: var(--panel);
+        color: var(--accent);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 14px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+      }
+
+      @media (max-width: 760px) {
+        .layout {
+          flex-direction: column;
+        }
+
+        .controls {
+          width: 100%;
+        }
+
+        .controls.collapsed {
+          width: 100%;
+          height: 0;
+          padding-top: 0;
+          padding-bottom: 0;
+        }
+
+        canvas {
+          max-width: 100%;
+        }
+      }
+
+      .ctrl-group {
+        margin-bottom: 14px;
+      }
+
+      .ctrl-group label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .ctrl-group input[type='range'] {
+        width: 100%;
+      }
+
+      .ctrl-group select,
+      .ctrl-group input[type='number'] {
+        width: 100%;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .val {
+        color: var(--accent);
+        float: right;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      button {
+        flex: 1;
+        background: var(--accent);
+        color: #0d1117;
+        border: none;
+        border-radius: 6px;
+        padding: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+      }
+
+      button.secondary {
+        background: var(--border);
+        color: var(--text);
+      }
+
+      button:hover {
+        opacity: 0.9;
+      }
+
+      .metrics {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+      }
+
+      .metric-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .metric-row .m-val {
+        color: var(--accent);
+      }
+
+      .metric-row .m-val.ok {
+        color: var(--ok);
+      }
+
+      .metric-row .m-val.bad {
+        color: var(--danger);
+      }
+
+      #loading {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        gap: 16px;
+      }
+
+      #loading.hidden {
+        display: none;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .legend {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 10px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .legend span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle controls">
+      ⚙ Hide Controls
+    </button>
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>Initializing TensorFlow.js...</div>
+    </div>
+
+    <header>
+      <h1>
+        No-Three-in-Line Lab
+        <span class="badge">v3.0</span>
+      </h1>
+    </header>
+
+    <div class="layout">
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="600" height="600"></canvas>
+        <div class="legend">
+          <span><span class="dot" style="background: #58a6ff"></span> under-pop (attract)</span>
+          <span><span class="dot" style="background: #3fb950"></span> neutral (p≈2)</span>
+          <span><span class="dot" style="background: #f85149"></span> over-pop (repel)</span>
+        </div>
+      </div>
+
+      <div class="controls" id="controls">
+        <div class="btn-row">
+          <button id="btnPlay">▶ Play</button>
+          <button id="btnStep" class="secondary">Step</button>
+          <button id="btnRestart" class="secondary">Restart</button>
+        </div>
+        <div class="ctrl-group">
+          <label>
+            <input type="checkbox" id="cMode3d" />
+            3D mode (cubic lattice)
+          </label>
+        </div>
+
+        <div class="ctrl-group">
+          <label>Grid size n <span class="val" id="vN">10</span></label>
+          <input type="range" id="rN" min="4" max="24" step="1" value="10" />
+        </div>
+        <div class="ctrl-group">
+          <label>Points to place <span class="val" id="vK">20</span></label>
+          <input type="range" id="rK" min="4" max="48" step="1" value="20" />
+        </div>
+        <div class="ctrl-group">
+          <label>Optimizer</label>
+          <select id="selOpt">
+            <option value="adam">Adam</option>
+            <option value="sgd">SGD + Momentum</option>
+            <option value="lbfgs">L-BFGS</option>
+            <option value="qqn">QQN (Quasi-Newton + Quadratic)</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Learning rate <span class="val" id="vLr">0.02</span></label>
+          <input type="range" id="rLr" min="0.001" max="0.1" step="0.001" value="0.02" />
+        </div>
+        <div class="ctrl-group">
+          <label>Angle fitness</label>
+          <select id="selAngle">
+            <optgroup label="Interior (per-triangle sin θ)">
+              <option value="invsin">Interior 1/sin θ (classic)</option>
+              <option value="invsin2">Interior 1/sin² θ (sharper)</option>
+              <option value="logsin">Interior -log(sin θ) (gentle)</option>
+              <option value="cotsq">Interior cot² θ (cotangent²)</option>
+              <option value="exp">Interior exp barrier (steepest)</option>
+              <option value="cossq">Interior cos² θ (bounded)</option>
+            </optgroup>
+            <optgroup label="Angle family (summed over each angle)">
+              <option value="ang_sin">sin(θ)</option>
+              <option value="ang_cos">cos(θ)</option>
+              <option value="ang_tanhalf">tan(θ/2)</option>
+              <option value="ang_sq">θ²</option>
+              <option value="ang_inv">1/θ</option>
+              <option value="ang_xlnx">(θ/π)·ln(θ/π)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Angle sharpness <span class="val" id="vSharp">1.00</span></label>
+          <input type="range" id="rSharp" min="0.1" max="5" step="0.05" value="1.0" />
+        </div>
+        <div class="ctrl-group">
+          <label>
+            <input type="checkbox" id="cInvert" />
+            Invert (−) angle fitness
+          </label>
+        </div>
+        <div class="ctrl-group">
+          <label>Angle ε (softening) <span class="val" id="vEps">0.0010</span></label>
+          <input type="range" id="rEps" min="0.0001" max="0.05" step="0.0001" value="0.001" />
+        </div>
+        <div class="ctrl-group">
+          <label>λ grid (snap) <span class="val" id="vGrid">0.30</span></label>
+          <input type="range" id="rGrid" min="0" max="3" step="0.05" value="0.3" />
+        </div>
+        <div class="ctrl-group">
+          <label>λ line (collinear) <span class="val" id="vLine">1.00</span></label>
+          <input type="range" id="rLine" min="0" max="5" step="0.05" value="1.0" />
+        </div>
+        <div class="ctrl-group">
+          <label>λ repel (point spacing) <span class="val" id="vRepel">0.00</span></label>
+          <input type="range" id="rRepel" min="0" max="5" step="0.05" value="0.0" />
+        </div>
+        <div class="ctrl-group">
+          <label>repel radius r <span class="val" id="vRepelR">1.00</span></label>
+          <input type="range" id="rRepelR" min="0.1" max="5" step="0.05" value="1.0" />
+        </div>
+        <div class="ctrl-group">
+          <label>Entropic noise <span class="val" id="vNoise">0.00</span></label>
+          <input type="range" id="rNoise" min="0" max="0.1" step="0.001" value="0.0" />
+        </div>
+        <div class="ctrl-group">
+          <label>
+            <input type="checkbox" id="cAnneal" checked />
+            Auto-anneal σ & λ grid
+          </label>
+        </div>
+
+        <div class="metrics">
+          <div class="metric-row"><span>step</span><span class="m-val" id="mStep">0</span></div>
+          <div class="metric-row"><span>energy</span><span class="m-val" id="mEnergy">—</span></div>
+          <div class="metric-row">
+            <span>tracked lines</span><span class="m-val" id="mLines">0</span>
+          </div>
+          <div class="metric-row">
+            <span>violating lines</span><span class="m-val" id="mViol">0</span>
+          </div>
+          <div class="metric-row">
+            <span>valid points (rounded)</span><span class="m-val" id="mValid">0</span>
+          </div>
+          <div class="metric-row">
+            <span>best valid</span><span class="m-val ok" id="mBest">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { NoThreeInLine } from './js/no-three-in-line.js';
+
+      const els = {
+        loading: document.getElementById('loading'),
+        canvas: document.getElementById('canvas'),
+        controls: document.getElementById('controls'),
+        sidebarToggle: document.getElementById('sidebarToggle'),
+        btnPlay: document.getElementById('btnPlay'),
+        btnStep: document.getElementById('btnStep'),
+        btnRestart: document.getElementById('btnRestart'),
+        rN: document.getElementById('rN'),
+        rK: document.getElementById('rK'),
+        selOpt: document.getElementById('selOpt'),
+        rLr: document.getElementById('rLr'),
+        selAngle: document.getElementById('selAngle'),
+        rSharp: document.getElementById('rSharp'),
+        cInvert: document.getElementById('cInvert'),
+        rEps: document.getElementById('rEps'),
+        rGrid: document.getElementById('rGrid'),
+        rLine: document.getElementById('rLine'),
+        rRepel: document.getElementById('rRepel'),
+        rRepelR: document.getElementById('rRepelR'),
+        rNoise: document.getElementById('rNoise'),
+        cAnneal: document.getElementById('cAnneal'),
+        cMode3d: document.getElementById('cMode3d'),
+        vN: document.getElementById('vN'),
+        vK: document.getElementById('vK'),
+        vLr: document.getElementById('vLr'),
+        vSharp: document.getElementById('vSharp'),
+        vEps: document.getElementById('vEps'),
+        vGrid: document.getElementById('vGrid'),
+        vLine: document.getElementById('vLine'),
+        vRepel: document.getElementById('vRepel'),
+        vRepelR: document.getElementById('vRepelR'),
+        vNoise: document.getElementById('vNoise'),
+        mStep: document.getElementById('mStep'),
+        mEnergy: document.getElementById('mEnergy'),
+        mLines: document.getElementById('mLines'),
+        mViol: document.getElementById('mViol'),
+        mValid: document.getElementById('mValid'),
+        mBest: document.getElementById('mBest'),
+      };
+
+      const ctx = els.canvas.getContext('2d');
+      let solver = null;
+      let isTraining = false;
+      let bestValid = 0;
+      // Match the canvas backing-store resolution to its on-screen (CSS) size,
+      // scaled by devicePixelRatio, so the lattice is crisp instead of being
+      // stretched from a fixed 600×600 buffer.
+      function resizeCanvas() {
+        const rect = els.canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const dpr = window.devicePixelRatio || 1;
+        // The canvas is square (aspect-ratio 1/1); use the smaller side.
+        const size = Math.round(Math.min(rect.width, rect.height) * dpr);
+        if (els.canvas.width !== size || els.canvas.height !== size) {
+          els.canvas.width = size;
+          els.canvas.height = size;
+        }
+      }
+      // Orbit camera state for 3D rendering.
+      const cam = {
+        yaw: -0.6,
+        pitch: -0.5,
+        distance: 3.2,
+      };
+      // Drag state for manual point editing.
+      const drag = {
+        active: false,
+        index: -1,
+        wasTraining: false,
+        orbit: false,
+        lastX: 0,
+        lastY: 0,
+      };
+
+      function readParams() {
+        return {
+          n: parseInt(els.rN.value),
+          k: parseInt(els.rK.value),
+          dim: els.cMode3d.checked ? 3 : 2,
+          optimizerType: els.selOpt.value,
+          lr: parseFloat(els.rLr.value),
+          angleFn: els.selAngle.value,
+          angleSharp: parseFloat(els.rSharp.value),
+          angleInvert: els.cInvert.checked,
+          angleEps: parseFloat(els.rEps.value),
+          lambdaGrid: parseFloat(els.rGrid.value),
+          lambdaLine: parseFloat(els.rLine.value),
+          lambdaRepel: parseFloat(els.rRepel.value),
+          repelRadius: parseFloat(els.rRepelR.value),
+          noise: parseFloat(els.rNoise.value),
+          anneal: els.cAnneal.checked,
+          autoRescale: true,
+        };
+      }
+
+      function restart() {
+        if (solver) solver.dispose();
+        bestValid = 0;
+        els.mBest.textContent = '0';
+        solver = new NoThreeInLine(readParams());
+      }
+
+      function syncLabels() {
+        els.vN.textContent = els.rN.value;
+        els.vK.textContent = els.rK.value;
+        els.vLr.textContent = parseFloat(els.rLr.value).toFixed(3);
+        els.vSharp.textContent = parseFloat(els.rSharp.value).toFixed(2);
+        els.vEps.textContent = parseFloat(els.rEps.value).toFixed(4);
+        els.vGrid.textContent = parseFloat(els.rGrid.value).toFixed(2);
+        els.vLine.textContent = parseFloat(els.rLine.value).toFixed(2);
+        els.vRepel.textContent = parseFloat(els.rRepel.value).toFixed(2);
+        els.vRepelR.textContent = parseFloat(els.rRepelR.value).toFixed(2);
+        els.vNoise.textContent = parseFloat(els.rNoise.value).toFixed(3);
+      }
+
+      function colorForPop(p) {
+        // p < 2 cool blue, p == 2 green, p > 2 hot red
+        if (p <= 2) {
+          const t = Math.max(0, Math.min(1, p / 2)); // 0..1
+          // blue -> green
+          const r = Math.round(88 + (63 - 88) * t);
+          const g = Math.round(166 + (185 - 166) * t);
+          const b = Math.round(255 + (80 - 255) * t);
+          return `rgb(${r},${g},${b})`;
+        } else {
+          const t = Math.max(0, Math.min(1, (p - 2) / 2));
+          const r = Math.round(63 + (248 - 63) * t);
+          const g = Math.round(185 + (81 - 185) * t);
+          const b = Math.round(80 + (73 - 80) * t);
+          return `rgb(${r},${g},${b})`;
+        }
+      }
+
+      function draw() {
+        if (!solver) return;
+        if (solver.params.dim === 3) {
+          draw3d();
+          return;
+        }
+        const n = solver.params.n;
+        const W = els.canvas.width;
+        const pad = 30;
+        const cell = (W - 2 * pad) / (n - 1 || 1);
+        const toPx = (c) => pad + c * cell;
+
+        ctx.clearRect(0, 0, W, W);
+
+        // grid
+        ctx.strokeStyle = '#21262d';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < n; i++) {
+          ctx.beginPath();
+          ctx.moveTo(toPx(i), toPx(0));
+          ctx.lineTo(toPx(i), toPx(n - 1));
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(toPx(0), toPx(i));
+          ctx.lineTo(toPx(n - 1), toPx(i));
+          ctx.stroke();
+        }
+        // lattice dots
+        ctx.fillStyle = '#30363d';
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++) {
+            ctx.beginPath();
+            ctx.arc(toPx(i), toPx(j), 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        const viz = solver.getViz();
+
+        // tracked lines, colored by population
+        ctx.lineWidth = 2;
+        for (const line of viz.lines) {
+          ctx.strokeStyle = colorForPop(line.pop);
+          ctx.globalAlpha = Math.min(0.7, 0.2 + Math.abs(line.pop - 2) * 0.3);
+          // draw line segment clipped to grid via two far endpoints
+          const { a, b, c } = line; // a*x + b*y = c (normalized)
+          const pts = clipLine(a, b, c, 0, n - 1, 0, n - 1);
+          if (pts) {
+            ctx.beginPath();
+            ctx.moveTo(toPx(pts[0].x), toPx(pts[0].y));
+            ctx.lineTo(toPx(pts[1].x), toPx(pts[1].y));
+            ctx.stroke();
+          }
+        }
+        ctx.globalAlpha = 1;
+
+        // points
+        for (const p of viz.points) {
+          ctx.fillStyle = '#f0f6fc';
+          ctx.strokeStyle = '#58a6ff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(toPx(p.x), toPx(p.y), 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+
+      function clipLine(a, b, c, xmin, xmax, ymin, ymax) {
+        // line: a*x + b*y = c
+        const pts = [];
+        const eps = 1e-9;
+        if (Math.abs(b) > eps) {
+          const y0 = (c - a * xmin) / b;
+          if (y0 >= ymin - eps && y0 <= ymax + eps) pts.push({ x: xmin, y: y0 });
+          const y1 = (c - a * xmax) / b;
+          if (y1 >= ymin - eps && y1 <= ymax + eps) pts.push({ x: xmax, y: y1 });
+        }
+        if (Math.abs(a) > eps) {
+          const x0 = (c - b * ymin) / a;
+          if (x0 >= xmin - eps && x0 <= xmax + eps) pts.push({ x: x0, y: ymin });
+          const x1 = (c - b * ymax) / a;
+          if (x1 >= xmin - eps && x1 <= xmax + eps) pts.push({ x: x1, y: ymax });
+        }
+        if (pts.length >= 2) return [pts[0], pts[1]];
+        return null;
+      }
+
+      // --- 3D rendering -----------------------------------------------------
+      // Project a lattice coordinate (0..n-1)^3 into canvas pixels using a
+      // simple orbit camera + perspective projection. Returns {sx, sy, depth}.
+      function project3d(gx, gy, gz) {
+        const n = solver.params.n;
+        const W = els.canvas.width;
+        const half = (n - 1) / 2;
+        // Center the cube at the origin, normalize to roughly unit scale.
+        const s = 1 / Math.max(1, n - 1);
+        let x = (gx - half) * s;
+        let y = (gy - half) * s;
+        let z = (gz - half) * s;
+        // Rotate around Y (yaw) then X (pitch).
+        const cy = Math.cos(cam.yaw),
+          sy = Math.sin(cam.yaw);
+        let x1 = cy * x + sy * z;
+        let z1 = -sy * x + cy * z;
+        const cp = Math.cos(cam.pitch),
+          sp = Math.sin(cam.pitch);
+        let y2 = cp * y - sp * z1;
+        let z2 = sp * y + cp * z1;
+        // Perspective: move camera back along z.
+        const dist = cam.distance;
+        const f = 1.8; // focal length
+        const denom = dist - z2;
+        const scale = (W * 0.42 * f) / (denom <= 0.1 ? 0.1 : denom);
+        return {
+          sx: W / 2 + x1 * scale,
+          sy: W / 2 + y2 * scale,
+          depth: z2,
+          scale,
+        };
+      }
+
+      function draw3d() {
+        const n = solver.params.n;
+        const W = els.canvas.width;
+        ctx.clearRect(0, 0, W, W);
+        // Cube corner coordinates (8 corners) and the 12 edges between them.
+        const m = n - 1;
+        const corners = [
+          [0, 0, 0],
+          [m, 0, 0],
+          [m, m, 0],
+          [0, m, 0],
+          [0, 0, m],
+          [m, 0, m],
+          [m, m, m],
+          [0, m, m],
+        ];
+        const edges = [
+          [0, 1],
+          [1, 2],
+          [2, 3],
+          [3, 0],
+          [4, 5],
+          [5, 6],
+          [6, 7],
+          [7, 4],
+          [0, 4],
+          [1, 5],
+          [2, 6],
+          [3, 7],
+        ];
+        const pc = corners.map(([x, y, z]) => project3d(x, y, z));
+        // Draw bounding cube edges.
+        ctx.strokeStyle = '#30363d';
+        ctx.lineWidth = 1;
+        for (const [a, b] of edges) {
+          ctx.beginPath();
+          ctx.moveTo(pc[a].sx, pc[a].sy);
+          ctx.lineTo(pc[b].sx, pc[b].sy);
+          ctx.stroke();
+        }
+        // Light grid lines on the three back faces (sparse for clarity).
+        ctx.strokeStyle = '#21262d';
+        for (let i = 0; i <= m; i++) {
+          // floor grid (y = 0 plane)
+          const a = project3d(i, 0, 0);
+          const b = project3d(i, 0, m);
+          const c = project3d(0, 0, i);
+          const d = project3d(m, 0, i);
+          ctx.beginPath();
+          ctx.moveTo(a.sx, a.sy);
+          ctx.lineTo(b.sx, b.sy);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(c.sx, c.sy);
+          ctx.lineTo(d.sx, d.sy);
+          ctx.stroke();
+        }
+        const viz = solver.getViz();
+        // Sort points back-to-front so nearer points draw on top.
+        const projected = viz.points.map((p, i) => {
+          const pr = project3d(p.x, p.y, p.z);
+          return { ...pr, i };
+        });
+        projected.sort((a, b) => a.depth - b.depth);
+        for (const p of projected) {
+          // Radius scales gently with depth for a sense of 3D.
+          const r = Math.max(3, 6 * (p.scale / ((W * 0.42 * 1.8) / cam.distance)));
+          ctx.fillStyle = '#f0f6fc';
+          ctx.strokeStyle = '#58a6ff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+
+      // Geometry helpers shared by drawing and mouse interaction.
+      function gridGeometry() {
+        const n = solver ? solver.params.n : 1;
+        const W = els.canvas.width;
+        const pad = 30;
+        const cell = (W - 2 * pad) / (n - 1 || 1);
+        return { n, W, pad, cell };
+      }
+
+      // Convert a canvas mouse event to grid coordinates.
+      function eventToGrid(evt) {
+        const rect = els.canvas.getBoundingClientRect();
+        const scaleX = els.canvas.width / rect.width;
+        const scaleY = els.canvas.height / rect.height;
+        const source = evt.touches && evt.touches.length ? evt.touches[0] : evt;
+        const px = (source.clientX - rect.left) * scaleX;
+        const py = (source.clientY - rect.top) * scaleY;
+        const { pad, cell } = gridGeometry();
+        return {
+          gx: (px - pad) / cell,
+          gy: (py - pad) / cell,
+          px,
+          py,
+        };
+      }
+
+      // Find the nearest point within a pixel hit radius; -1 if none.
+      function pickPoint(px, py) {
+        if (!solver) return -1;
+        const { pad, cell } = gridGeometry();
+        const pts = solver.getPoints();
+        let best = -1;
+        let bestDist = 12; // hit radius in pixels
+        for (let i = 0; i < pts.length; i++) {
+          const cx = pad + pts[i][0] * cell;
+          const cy = pad + pts[i][1] * cell;
+          const d = Math.hypot(px - cx, py - cy);
+          if (d < bestDist) {
+            bestDist = d;
+            best = i;
+          }
+        }
+        return best;
+      }
+
+      function updateMetrics() {
+        if (!solver) return;
+        const m = solver.metrics;
+        els.mStep.textContent = m.step;
+        els.mEnergy.textContent = m.energy.toFixed(4);
+        els.mLines.textContent = m.numLines;
+        els.mViol.textContent = m.violating;
+        els.mViol.parentElement.querySelector('.m-val').className =
+          'm-val ' + (m.violating > 0 ? 'bad' : 'ok');
+        els.mValid.textContent = m.validPoints;
+        if (m.validPoints > bestValid) {
+          bestValid = m.validPoints;
+          els.mBest.textContent = bestValid;
+        }
+      }
+
+      function animate() {
+        resizeCanvas();
+        if (isTraining && solver) {
+          for (let i = 0; i < 3; i++) solver.step();
+          updateMetrics();
+        }
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      function setupEvents() {
+        // Collapsible sidebar toggle.
+        els.sidebarToggle.onclick = () => {
+          const collapsed = els.controls.classList.toggle('collapsed');
+          els.sidebarToggle.textContent = collapsed ? '⚙ Show Controls' : '⚙ Hide Controls';
+        };
+        els.btnPlay.onclick = () => {
+          isTraining = !isTraining;
+          els.btnPlay.textContent = isTraining ? '⏸ Pause' : '▶ Play';
+        };
+        els.btnStep.onclick = () => {
+          if (solver) {
+            solver.step();
+            updateMetrics();
+          }
+        };
+        els.btnRestart.onclick = () => {
+          restart();
+          updateMetrics();
+        };
+
+        const liveParams = [
+          'rLr',
+          'selAngle',
+          'rSharp',
+          'cInvert',
+          'rEps',
+          'rGrid',
+          'rLine',
+          'rRepel',
+          'rRepelR',
+          'rNoise',
+          'selOpt',
+          'cAnneal',
+        ];
+        liveParams.forEach((id) => {
+          els[id].addEventListener('input', () => {
+            syncLabels();
+            if (solver) solver.updateParams(readParams());
+          });
+        });
+        // n and k require restart
+        ['rN', 'rK', 'cMode3d'].forEach((id) => {
+          els[id].addEventListener('input', () => {
+            syncLabels();
+            restart();
+            updateMetrics();
+          });
+        });
+        els.cMode3d.addEventListener('change', () => {
+          restart();
+          updateMetrics();
+        });
+        // Manual drag-to-edit point positions.
+        const onDragStart = (evt) => {
+          if (!solver) return;
+          // In 3D mode, dragging orbits the camera instead of moving points.
+          if (solver.params.dim === 3) {
+            const { px, py } = eventToGrid(evt);
+            evt.preventDefault();
+            drag.active = true;
+            drag.orbit = true;
+            drag.lastX = px;
+            drag.lastY = py;
+            els.canvas.style.cursor = 'grabbing';
+            return;
+          }
+          const { px, py } = eventToGrid(evt);
+          const idx = pickPoint(px, py);
+          if (idx < 0) return;
+          evt.preventDefault();
+          drag.active = true;
+          drag.orbit = false;
+          drag.index = idx;
+          drag.wasTraining = isTraining;
+          // Auto-pause while dragging.
+          if (isTraining) {
+            isTraining = false;
+            els.btnPlay.textContent = '▶ Play';
+          }
+          els.canvas.style.cursor = 'grabbing';
+        };
+        const onDragMove = (evt) => {
+          if (!solver) return;
+          if (drag.active && drag.orbit) {
+            // Orbit camera by mouse delta.
+            evt.preventDefault();
+            const { px, py } = eventToGrid(evt);
+            cam.yaw += (px - drag.lastX) * 0.01;
+            cam.pitch += (py - drag.lastY) * 0.01;
+            cam.pitch = Math.max(-1.5, Math.min(1.5, cam.pitch));
+            drag.lastX = px;
+            drag.lastY = py;
+            draw();
+            return;
+          }
+          if (!drag.active) {
+            if (solver.params.dim === 3) {
+              els.canvas.style.cursor = 'grab';
+              return;
+            }
+            // Hover feedback: show grab cursor over a point.
+            const { px, py } = eventToGrid(evt);
+            els.canvas.style.cursor = pickPoint(px, py) >= 0 ? 'grab' : 'default';
+            return;
+          }
+          evt.preventDefault();
+          const { gx, gy } = eventToGrid(evt);
+          solver.setPoint(drag.index, gx, gy);
+          updateMetrics();
+          draw();
+        };
+        const onDragEnd = () => {
+          if (!drag.active) return;
+          drag.active = false;
+          if (drag.orbit) {
+            drag.orbit = false;
+            els.canvas.style.cursor = 'grab';
+            return;
+          }
+          drag.index = -1;
+          els.canvas.style.cursor = 'default';
+          // Auto-resume if optimization was running before drag.
+          if (drag.wasTraining) {
+            isTraining = true;
+            els.btnPlay.textContent = '⏸ Pause';
+          }
+          drag.wasTraining = false;
+        };
+        els.canvas.addEventListener('mousedown', onDragStart);
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('mouseup', onDragEnd);
+        els.canvas.addEventListener('touchstart', onDragStart, { passive: false });
+        window.addEventListener('touchmove', onDragMove, { passive: false });
+        window.addEventListener('touchend', onDragEnd);
+        // Wheel zoom for the 3D orbit camera.
+        els.canvas.addEventListener(
+          'wheel',
+          (evt) => {
+            if (!solver || solver.params.dim !== 3) return;
+            evt.preventDefault();
+            cam.distance *= evt.deltaY > 0 ? 1.08 : 0.92;
+            cam.distance = Math.max(1.5, Math.min(8, cam.distance));
+            draw();
+          },
+          { passive: false }
+        );
+        // Keep the backing store in sync with layout changes.
+        window.addEventListener('resize', () => {
+          resizeCanvas();
+          draw();
+        });
+      }
+
+      async function init() {
+        try {
+          await tf.ready();
+          els.loading.classList.add('hidden');
+          syncLabels();
+          resizeCanvas();
+          setupEvents();
+          restart();
+          updateMetrics();
+          animate();
+        } catch (err) {
+          console.error(err);
+          els.loading.innerHTML = `<div style="color:var(--danger)">Error: ${err.message}</div>`;
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

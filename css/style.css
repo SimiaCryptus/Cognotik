@@ -1,0 +1,310 @@
+/* ============================================================
+   Fun With Math – Global Stylesheet
+   ============================================================ */
+
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --accent: #58a6ff;
+  --accent2: #bc8cff;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Nav ─────────────────────────────────────────────────── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13, 17, 23, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: 56px;
+}
+
+nav .brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+nav a:hover {
+  color: var(--text);
+}
+
+nav .spacer {
+  flex: 1;
+}
+
+/* ── Page Header ─────────────────────────────────────────── */
+.page-header {
+  text-align: center;
+  padding: 4rem 1.5rem 2.5rem;
+}
+.page-header h1 {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.75rem;
+}
+.page-header p {
+  color: var(--text-muted);
+  max-width: 620px;
+  margin: 0 auto;
+  font-size: 1.05rem;
+}
+
+/* ── Experiment Card Grid ────────────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition:
+    border-color 0.25s,
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+.card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+}
+
+.card-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+.card h2 {
+  font-size: 1.15rem;
+  color: var(--accent);
+}
+.card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  flex: 1;
+}
+.card .tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+}
+
+/* ── Experiment Page Layout ──────────────────────────────── */
+.experiment-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .experiment-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.canvas-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.canvas-wrapper canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Controls Panel ──────────────────────────────────────── */
+.controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.controls h3 {
+  font-size: 1rem;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.controls label span {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.controls input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.controls select,
+.controls input[type='number'],
+.controls input[type='text'] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.875rem;
+  width: 100%;
+}
+.controls select:focus,
+.controls input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    opacity 0.2s,
+    transform 0.1s;
+  text-decoration: none;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background: var(--accent);
+  color: #0d1117;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Info Box ────────────────────────────────────────────── */
+.info-box {
+  background: rgba(88, 166, 255, 0.07);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.info-box h4 {
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+}
+.info-box code {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-family: 'Fira Code', Consolas, monospace;
+  font-size: 0.85em;
+  color: var(--accent2);
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+}
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+footer a:hover {
+  text-decoration: underline;
+}

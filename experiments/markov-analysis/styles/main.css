@@ -1,0 +1,370 @@
+:root {
+  --bg: #1e1e2e;
+  --panel: #2a2a3c;
+  --text: #e0e0e0;
+  --accent: #7aa2f7;
+  --border: #3a3a4c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+header h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.status-bar {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  align-items: flex-start;
+}
+
+.col-left,
+.col-right {
+  flex: 1;
+  min-width: 0;
+  min-width: 320px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+textarea,
+input,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+textarea {
+  width: 100%;
+  background: #1a1a28;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 0.5rem;
+  resize: vertical;
+}
+
+button {
+  background: var(--accent);
+  color: #1a1a28;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actions {
+  margin-top: 0.5rem;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+}
+
+.config-grid label {
+  font-size: 0.85rem;
+}
+
+.config-grid select,
+.config-grid input {
+  background: #1a1a28;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+  width: 100%;
+}
+
+.corpus-stats {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-top: 0.5rem;
+}
+.warn {
+  color: #f7a072;
+}
+/* Stats / metric rows */
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.85rem;
+  padding: 2px 0;
+  border-bottom: 1px dotted var(--border);
+}
+.stats-label {
+  color: #aaa;
+}
+.stats-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.stats-empty {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
+.analysis-view {
+  line-height: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, monospace;
+  min-height: 3rem;
+}
+
+.tok {
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.tok:hover {
+  outline: 1px solid var(--accent);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.legend-bar {
+  height: 12px;
+  width: 160px;
+  border-radius: 3px;
+}
+
+.progress {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+/* Popup */
+.popup {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  min-width: 200px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+.popup h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+}
+.popup-head-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9aa;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.popup-col-tok {
+  flex: 0 0 60px;
+}
+.popup-col-bar {
+  flex: 1;
+}
+.popup-col-num {
+  flex: 0 0 60px;
+  text-align: right;
+}
+.popup-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  padding: 1px 0;
+}
+.popup-row.original {
+  font-weight: 700;
+  color: var(--accent);
+}
+.popup-row.clickable {
+  cursor: pointer;
+  border-radius: 3px;
+}
+.popup-row.clickable:hover,
+.popup-row.clickable:focus {
+  background: #1a1a28;
+  outline: 1px solid var(--accent);
+}
+.popup-tok {
+  flex: 0 0 60px;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.popup-bar-wrap {
+  flex: 1;
+  background: #1a1a28;
+  border-radius: 2px;
+}
+.popup-bar {
+  height: 8px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.popup-p {
+  flex: 0 0 60px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.popup-close {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  background: none;
+  color: var(--text);
+  padding: 0;
+  font-size: 1rem;
+}
+
+.no-support {
+  padding: 1rem;
+  background: #712;
+  color: #fff;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    flex-direction: column;
+  }
+}
+
+/* --- Cellular Automaton --- */
+#caPanel {
+  flex: 1 1 100%;
+  width: 100%;
+}
+#caPanel textarea {
+  margin-bottom: 0.5rem;
+}
+#caPanel .config-grid {
+  margin-bottom: 0.75rem;
+}
+#caPanel .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+#caPanel .actions button {
+  margin: 0;
+}
+.ca-status {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin: 0.4rem 0;
+}
+.ca-metrics {
+  margin: 0.5rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.25rem 1rem;
+}
+.ca-view-controls {
+  margin: 0.4rem 0;
+}
+.ca-view {
+  margin-top: 0.75rem;
+}
+.ca-view-controls select {
+  background: #1a1a28;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+}
+.ca-view h2 {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+.ca-spacetime {
+  max-height: 90vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: #14141f;
+  border-radius: 4px;
+  padding: 2px;
+  font-family: ui-monospace, monospace;
+  line-height: 1;
+  white-space: nowrap;
+}
+.ca-row {
+  display: block;
+  white-space: pre;
+}
+.ca-cell {
+  display: inline-block;
+  min-width: 0.7ch;
+  text-align: center;
+  cursor: pointer;
+  padding: 0 1px;
+  color: var(--text);
+  white-space: pre;
+}
+.ca-cell:hover {
+  outline: 1px solid var(--accent);
+}
+/* Zoomed-in view: let the spacetime grid expand to its full content size. */
+.ca-spacetime.zoomed {
+  max-height: none;
+}

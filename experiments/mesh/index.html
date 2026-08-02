@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Constrained Mesh Enclosure Lab</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        font:
+          13px/1.4 system-ui,
+          sans-serif;
+        background: #111;
+        color: #ddd;
+        display: flex;
+      }
+      #view {
+        flex: 1;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100vh;
+        background: #0b0d12;
+        cursor: grab;
+      }
+      #panel {
+        width: 280px;
+        padding: 12px;
+        background: #171a20;
+        overflow-y: auto;
+        height: 100vh;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #7fb;
+        margin: 16px 0 6px;
+      }
+      label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 4px 0;
+        gap: 6px;
+      }
+      input[type='range'] {
+        flex: 1;
+      }
+      .val {
+        width: 42px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        color: #9cf;
+      }
+      button {
+        background: #24303f;
+        color: #cfe;
+        border: 1px solid #395;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 2px 0;
+      }
+      button:hover {
+        background: #2d3d50;
+      }
+      select,
+      input[type='number'] {
+        background: #0b0d12;
+        color: #cfe;
+        border: 1px solid #345;
+        border-radius: 4px;
+        padding: 3px;
+      }
+      #metrics {
+        font-variant-numeric: tabular-nums;
+      }
+      #metrics div {
+        display: flex;
+        justify-content: space-between;
+        padding: 1px 0;
+      }
+      #metrics b {
+        color: #9cf;
+        font-weight: 500;
+      }
+      .row {
+        display: flex;
+        gap: 6px;
+      }
+      .row button {
+        flex: 1;
+      }
+      small {
+        color: #789;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="view"><canvas id="c"></canvas></div>
+    <div id="panel">
+      <h1>Mesh Enclosure Lab</h1>
+      <small>Exact-CCD constrained descent around a keep-out volume.</small>
+
+      <h2>Run</h2>
+      <div class="row">
+        <button id="run">▶ Run</button>
+        <button id="stepBtn">Step</button>
+        <button id="reset">Reset</button>
+      </div>
+      <label
+        >Optimizer
+        <select id="opt">
+          <option value="adam">Adam</option>
+          <option value="lbfgs">L-BFGS</option>
+          <option value="qqn">QQN</option>
+        </select>
+      </label>
+      <label
+        >Learn rate <input id="lr" type="number" step="0.001" value="0.02" style="width: 70px"
+      /></label>
+      <label
+        >Steps/frame <input id="spf" type="number" value="1" min="1" style="width: 70px"
+      /></label>
+
+      <h2>Energy weights</h2>
+      <div id="weights"></div>
+      <label
+        >Target Vol <input id="vstar" type="number" step="0.5" value="0" style="width: 70px"
+      /></label>
+
+      <h2>Constraints</h2>
+      <label
+        >δ_safe <input id="dsafe" type="range" min="0" max="0.2" step="0.005" value="0.05" /><span
+          class="val"
+          id="dsafeV"
+        ></span
+      ></label>
+      <label><span>Self-collision (approx)</span><input id="selfcc" type="checkbox" /></label>
+      <label
+        ><span>Reset optimizer on truncation</span><input id="resetOpt" type="checkbox" checked
+      /></label>
+      <button id="retri">Retriangulate (edge flips)</button>
+
+      <h2>Metrics</h2>
+      <div id="metrics"></div>
+    </div>
+
+    <script src="./js/tf.min.js"></script>
+    <script type="module">
+      import {
+        icosphere,
+        buildEdges,
+        buildLaplacian,
+        buildCorners,
+        faceGeom,
+        signedClearance,
+        enforceClearance,
+      } from './js/geometry.js';
+      import { MeshEnergy } from './js/mesh-energy.js';
+      import { OptimizerAdam } from './js/optimizer-adam.js';
+      import { OptimizerLbfgs } from './js/optimizer-lbfgs.js';
+      import { OptimizerQQN } from './js/optimizer-qqn.js';
+      import { TrustRadii } from './js/trust.js';
+      import { pointTriangleStaticTOI, sweptAABB, aabbOverlap } from './js/ccd.js';
+      import { projectPointToPlane } from './js/resolve.js';
+      import { retriangulate } from './js/retriangulate.js';
+      import { add, sub, scale, norm, triNormal } from './js/vec.js';
+
+      // ---- weight sliders -----------------------------------------------------
+      const W_SPEC = [
+        ['area', 'λ area', 0, 2, 0.6],
+        ['vol', 'λ vol', 0, 2, 0.0],
+        ['fit', 'λ fit', 0, 2, 0.0],
+        ['len', 'λ len (−H)', 0, 2, 0.0],
+        ['ang', 'λ ang', 0, 1, 0.05],
+        ['smooth', 'λ smooth', 0, 2, 0.15],
+      ];
+      const weightsDiv = document.getElementById('weights');
+      const wInputs = {};
+      for (const [k, lab, lo, hi, def] of W_SPEC) {
+        const l = document.createElement('label');
+        l.innerHTML = `${lab}<input type="range" min="${lo}" max="${hi}" step="0.01" value="${def}"><span class="val"></span>`;
+        const inp = l.querySelector('input'),
+          span = l.querySelector('.val');
+        const upd = () => {
+          span.textContent = (+inp.value).toFixed(2);
+          if (energy) energy.setWeights(currentWeights());
+        };
+        inp.addEventListener('input', upd);
+        weightsDiv.appendChild(l);
+        wInputs[k] = { inp, upd };
+      }
+      function currentWeights() {
+        const w = {};
+        for (const k in wInputs) w[k] = +wInputs[k].inp.value;
+        return w;
+      }
+
+      const dsafeInp = document.getElementById('dsafe');
+      const dsafeV = document.getElementById('dsafeV');
+      dsafeInp.addEventListener('input', () => (dsafeV.textContent = (+dsafeInp.value).toFixed(3)));
+
+      // ---- lab state ----------------------------------------------------------
+      let M, K, Kfaces, energy, P, opt, trust, topo;
+      let stepCount = 0,
+        rejects = 0,
+        contacts = 0;
+      let running = false;
+
+      function makeOptimizer() {
+        const lr = +document.getElementById('lr').value;
+        const kind = document.getElementById('opt').value;
+        if (kind === 'lbfgs') return new OptimizerLbfgs(lr);
+        if (kind === 'qqn') return new OptimizerQQN(lr);
+        return new OptimizerAdam(lr);
+      }
+
+      function initLab() {
+        if (energy) energy.dispose();
+        if (P) P.dispose();
+
+        M = icosphere(2, 2.2); // moving outer mesh
+        K = icosphere(1, 0.95); // static keep-out volume
+        Kfaces = faceGeom(K.P, K.F);
+
+        const V = M.P.length;
+        const edges = buildEdges(M.F);
+        const corners = buildCorners(M.F);
+        const Lmatrix = buildLaplacian(M.F, V);
+        topo = { faces: M.F, edges, corners, Lmatrix, V };
+
+        // entropy KDE constants from initial edge-length sample
+        const lens = edges.map(([i, j]) => norm(sub(M.P[i], M.P[j])));
+        const lo = Math.min(...lens),
+          hi = Math.max(...lens);
+        const B = 24;
+        const centers = Array.from(
+          { length: B },
+          (_, k) => lo * 0.8 + (k / (B - 1)) * (hi * 1.2 - lo * 0.8)
+        );
+        const h = Math.max((hi - lo) / B, 1e-3) * 1.5;
+
+        // signed volume for the target default
+        let vol0 = 0;
+        for (const [a, b, c] of M.F) {
+          const A = M.P[a],
+            Bp = M.P[b],
+            C = M.P[c];
+          vol0 +=
+            (A[0] * (Bp[1] * C[2] - Bp[2] * C[1]) +
+              A[1] * (Bp[2] * C[0] - Bp[0] * C[2]) +
+              A[2] * (Bp[0] * C[1] - Bp[1] * C[0])) /
+            6;
+        }
+        document.getElementById('vstar').value = vol0.toFixed(2);
+
+        energy = new MeshEnergy(topo, {
+          weights: currentWeights(),
+          entropy: { centers, h },
+          Vstar: vol0,
+          targets: M.P.map((p) => p.slice()),
+          fidWeights: M.P.map(() => 1),
+        });
+
+        P = tf.variable(tf.tensor2d(M.P), true, 'P');
+        opt = makeOptimizer();
+        trust = new TrustRadii(V, { r0: 0.08, rMin: 1e-3, rMax: 0.4 });
+        stepCount = 0;
+        rejects = 0;
+        contacts = 0;
+        updateMetrics();
+      }
+
+      // ---- one optimization step (idea.md §5) ---------------------------------
+      function step() {
+        const deltaSafe = +dsafeInp.value;
+        energy.setVstar(+document.getElementById('vstar').value);
+
+        const lossFn = () => energy.energy(P);
+        const { value, grads } = opt.computeGradients(lossFn);
+
+        const P0 = P.arraySync();
+        opt.applyGradients(grads, lossFn); // mutates P (extra arg ignored by Adam/L-BFGS)
+        const P1 = P.arraySync();
+        if (value) value.dispose();
+        tf.dispose(grads);
+
+        const V = P0.length;
+        const Pf = new Array(V);
+        const truncated = new Set();
+
+        // build swept AABB list for K broad phase (K is small; brute per vertex)
+        for (let i = 0; i < V; i++) {
+          const p0 = P0[i];
+          const dp = trust.clampStep(i, sub(P1[i], p0)); // trust clamp (§5)
+          const sw = sweptAABB([p0], [dp], deltaSafe + 0.02);
+
+          // C1 keep-out vs static K
+          let bestT = null,
+            bestFace = null;
+          for (const f of Kfaces) {
+            const fb = {
+              lo: [
+                Math.min(f.a[0], f.b[0], f.c[0]),
+                Math.min(f.a[1], f.b[1], f.c[1]),
+                Math.min(f.a[2], f.b[2], f.c[2]),
+              ],
+              hi: [
+                Math.max(f.a[0], f.b[0], f.c[0]),
+                Math.max(f.a[1], f.b[1], f.c[1]),
+                Math.max(f.a[2], f.b[2], f.c[2]),
+              ],
+            };
+            if (!aabbOverlap(sw, fb)) continue;
+            const t = pointTriangleStaticTOI(p0, dp, f.a, f.b, f.c, deltaSafe);
+            if (t !== null && (bestT === null || t < bestT)) {
+              bestT = t;
+              bestFace = f;
+            }
+          }
+
+          if (bestT !== null) {
+            truncated.add(i);
+            let pc = add(p0, scale(dp, bestT));
+            pc = projectPointToPlane(pc, bestFace.n, bestFace.a, deltaSafe); // §4.1 slide
+            Pf[i] = pc;
+          } else {
+            Pf[i] = add(p0, dp);
+          }
+          // Hard keep-out guarantee: never allow intrusion into K (notes.md).
+          const safe = enforceClearance(Pf[i], Kfaces, deltaSafe);
+          if (safe !== Pf[i]) {
+            truncated.add(i);
+            Pf[i] = safe;
+          }
+        }
+
+        // C2 (approx): point vs. current-target self faces, treated static at P1.
+        if (document.getElementById('selfcc').checked) {
+          const sf = faceGeom(Pf, M.F);
+          for (let i = 0; i < V; i++) {
+            if (truncated.has(i)) continue;
+            const p0 = P0[i];
+            const dp = sub(Pf[i], p0);
+            for (const f of sf) {
+              if (f.ia === i || f.ib === i || f.ic === i) continue;
+              const t = pointTriangleStaticTOI(p0, dp, f.a, f.b, f.c, deltaSafe * 0.5);
+              if (t !== null) {
+                truncated.add(i);
+                Pf[i] = add(p0, scale(dp, 0.9 * t));
+                break;
+              }
+            }
+          }
+        }
+
+        // commit
+        tf.tidy(() => {
+          const t = tf.tensor2d(Pf);
+          P.assign(t);
+        });
+
+        // trust radius bookkeeping (§5 ratio test proxy)
+        for (let i = 0; i < V; i++) {
+          if (truncated.has(i)) trust.onTruncated(i);
+          else trust.onCleanStep(i, 1.0);
+        }
+
+        // stateful-optimizer reset across the projection discontinuity (§6)
+        if (truncated.size > 0 && document.getElementById('resetOpt').checked) {
+          opt.setLearningRate(+document.getElementById('lr').value);
+        }
+
+        contacts = truncated.size;
+        stepCount++;
+        updateMetrics();
+      }
+
+      // ---- metrics ------------------------------------------------------------
+      function updateMetrics() {
+        const rep = energy.report(P);
+        const Parr = P.arraySync();
+        let minClear = Infinity;
+        for (const p of Parr) minClear = Math.min(minClear, signedClearance(p, Kfaces));
+        const rows = [
+          ['Surface area', rep.area.toFixed(4)],
+          ['Volume', rep.volume.toFixed(4)],
+          ['Entropy H', `${rep.entropy.toFixed(4)} / ${rep.entropyMax.toFixed(3)}`],
+          ['Angular', rep.angular.toFixed(4)],
+          ['Laplacian', rep.laplacian.toFixed(4)],
+          ['Min clearance', minClear.toFixed(4)],
+          ['Contacts', contacts],
+          ['Step / rejects', `${stepCount} / ${rejects}`],
+          ['Max trust r', trust.maxRadius().toFixed(4)],
+        ];
+        document.getElementById('metrics').innerHTML = rows
+          .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
+          .join('');
+      }
+
+      // ---- rendering (hand-rolled wireframe projection) -----------------------
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+      let rotY = 0.6,
+        rotX = -0.3,
+        dragging = false,
+        lx = 0,
+        ly = 0;
+      let zoom = 1;
+      canvas.addEventListener('mousedown', (e) => {
+        dragging = true;
+        lx = e.clientX;
+        ly = e.clientY;
+      });
+      window.addEventListener('mouseup', () => (dragging = false));
+      window.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        rotY += (e.clientX - lx) * 0.01;
+        rotX += (e.clientY - ly) * 0.01;
+        lx = e.clientX;
+        ly = e.clientY;
+      });
+      canvas.addEventListener(
+        'wheel',
+        (e) => {
+          e.preventDefault();
+          zoom *= Math.exp(-e.deltaY * 0.001);
+          zoom = Math.max(0.2, Math.min(6, zoom));
+        },
+        { passive: false }
+      );
+
+      function resize() {
+        const r = canvas.getBoundingClientRect();
+        canvas.width = r.width * devicePixelRatio;
+        canvas.height = r.height * devicePixelRatio;
+      }
+      window.addEventListener('resize', resize);
+
+      function project(p) {
+        const cy = Math.cos(rotY),
+          sy = Math.sin(rotY);
+        const cx = Math.cos(rotX),
+          sx = Math.sin(rotX);
+        let x = p[0] * cy - p[2] * sy;
+        let z = p[0] * sy + p[2] * cy;
+        let y = p[1] * cx - z * sx;
+        z = p[1] * sx + z * cx;
+        const d = 8,
+          f = (canvas.height * 0.35 * zoom) / (z + d);
+        return [canvas.width / 2 + x * f, canvas.height / 2 - y * f];
+      }
+
+      function drawMesh(P3, F, color, width) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width * devicePixelRatio;
+        ctx.beginPath();
+        const drawn = new Set();
+        for (const [a, b, c] of F) {
+          for (const [i, j] of [
+            [a, b],
+            [b, c],
+            [c, a],
+          ]) {
+            const k = i < j ? i + '_' + j : j + '_' + i;
+            if (drawn.has(k)) continue;
+            drawn.add(k);
+            const p = project(P3[i]),
+              q = project(P3[j]);
+            ctx.moveTo(p[0], p[1]);
+            ctx.lineTo(q[0], q[1]);
+          }
+        }
+        ctx.stroke();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawMesh(K.P, K.F, '#e0653b', 1); // constraint K
+        drawMesh(P.arraySync(), M.F, '#6cd0ff', 1); // moving mesh M
+        requestAnimationFrame(render);
+      }
+
+      function loop() {
+        if (running) {
+          const n = Math.max(1, +document.getElementById('spf').value);
+          for (let k = 0; k < n; k++) step();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      // ---- controls -----------------------------------------------------------
+      document.getElementById('run').addEventListener('click', (e) => {
+        running = !running;
+        e.target.textContent = running ? '⏸ Pause' : '▶ Run';
+      });
+      document.getElementById('stepBtn').addEventListener('click', () => step());
+      document.getElementById('reset').addEventListener('click', () => {
+        running = false;
+        document.getElementById('run').textContent = '▶ Run';
+        initLab();
+      });
+      document.getElementById('opt').addEventListener('change', () => (opt = makeOptimizer()));
+      document
+        .getElementById('lr')
+        .addEventListener('change', () =>
+          opt.setLearningRate(+document.getElementById('lr').value)
+        );
+      document.getElementById('retri').addEventListener('click', () => {
+        const P3 = P.arraySync();
+        const deltaSafe = +dsafeInp.value;
+        const keepOut = (i) => signedClearance(P3[i], Kfaces) < deltaSafe + 0.05; // §8 locality
+        const res = retriangulate(P3, M.F, { keepOut, maxFlips: 20 });
+        if (res.flips > 0) {
+          M.F = res.F;
+          // rebuild topology-dependent energy + reset touched optimizer state
+          const V = P3.length;
+          topo = {
+            faces: M.F,
+            edges: buildEdges(M.F),
+            corners: buildCorners(M.F),
+            Lmatrix: buildLaplacian(M.F, V),
+            V,
+          };
+          const oldW = energy.w,
+            oldV = energy.Vstar;
+          const centers = energy.centers.arraySync(),
+            h = energy.h;
+          energy.dispose();
+          energy = new MeshEnergy(topo, {
+            weights: oldW,
+            Vstar: oldV,
+            entropy: { centers, h },
+            targets: P3.map((p) => p.slice()),
+            fidWeights: P3.map(() => 1),
+          });
+          opt.setLearningRate(+document.getElementById('lr').value); // reset (touched)
+          updateMetrics();
+        }
+      });
+
+      // sync weight labels + start
+      for (const k in wInputs) wInputs[k].upd();
+      dsafeV.textContent = (+dsafeInp.value).toFixed(3);
+      resize();
+      initLab();
+      render();
+      loop();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pentagon Lattice Lab</title>
+    <link href="style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Pentagon Lattice Lab — Z₂ Orientation Cover</h1>
+        <p class="subtitle" id="subtitle-text">
+          Click a tile to inspect. Press edge keys to walk. Press <kbd>space</kbd> to play/pause CA,
+          <kbd>n</kbd> to step.
+        </p>
+      </header>
+      <main>
+        <section id="canvas-wrap">
+          <canvas height="700" id="lattice" width="900"></canvas>
+          <div id="hint">Drag to pan · Scroll to zoom · Click a pentagon to select</div>
+        </section>
+        <aside id="panel">
+          <details class="section-group" open>
+            <summary>Lattice</summary>
+            <div class="section-body">
+              <label>
+                Polygon type:
+                <select id="polyType">
+                  <option selected value="pentagon">Regular Pentagon (n=5)</option>
+                  <option value="triangle">Equilateral Triangle (n=3)</option>
+                  <option value="square">Square (n=4)</option>
+                  <option value="hexagon">Regular Hexagon (n=6)</option>
+                  <option value="heptagon">Regular Heptagon (n=7)</option>
+                  <option value="octagon">Regular Octagon (n=8)</option>
+                  <option value="decagon">Regular Decagon (n=10)</option>
+                  <option value="dodecagon">Regular Dodecagon (n=12)</option>
+                  <option value="custom">Custom n-gon…</option>
+                  <option value="sierpinski">Sierpiński Triangle</option>
+                </select>
+              </label>
+              <label id="customNLabel" style="display: none">
+                Custom n:
+                <input id="customN" max="24" min="3" type="number" value="7" />
+              </label>
+              <label id="sierpinskiDepthLabel" style="display: none">
+                Sierpiński depth:
+                <input id="sierpinskiDepth" max="7" min="1" type="number" value="4" />
+              </label>
+              <label>
+                Radius (BFS depth):
+                <input id="radius" max="12" min="0" type="number" value="3" />
+              </label>
+              <div class="alg-block" id="fieldInfo" style="margin-top: 6px; font-size: 11px"></div>
+              <label>
+                Sheet group:
+                <select id="group">
+                  <option selected value="Z2">Z₂ (orientation cover)</option>
+                </select>
+              </label>
+              <button id="rebuild">Rebuild Lattice</button>
+              <button id="reset-view">Reset View</button>
+            </div>
+          </details>
+
+          <details class="section-group" open>
+            <summary>Display</summary>
+            <div class="section-body">
+              <label>
+                Color mode:
+                <select id="colorMode">
+                  <option selected value="sheet">By sheet</option>
+                  <option value="orient">By orientation σ (↑/↓ bipartition)</option>
+                  <option value="depth">By depth</option>
+                  <option value="flat">Flat</option>
+                </select>
+              </label>
+              <label>
+                Palette:
+                <select id="palette">
+                  <option selected value="hsl">HSL rainbow</option>
+                  <option value="warm">Warm</option>
+                  <option value="cool">Cool</option>
+                  <option value="mono">Monochrome</option>
+                </select>
+              </label>
+              <label>
+                Selected sheet opacity:
+                <input id="alphaSel" max="100" min="0" type="range" value="92" />
+                <span class="rangeval" id="alphaSelVal">0.92</span>
+              </label>
+              <label>
+                Other sheets opacity:
+                <input id="alphaOther" max="100" min="0" type="range" value="28" />
+                <span class="rangeval" id="alphaOtherVal">0.28</span>
+              </label>
+              <label>
+                Saturation:
+                <input id="sat" max="100" min="0" type="range" value="60" />
+                <span class="rangeval" id="satVal">60</span>
+              </label>
+              <label>
+                Lightness:
+                <input id="light" max="100" min="0" type="range" value="56" />
+                <span class="rangeval" id="lightVal">56</span>
+              </label>
+              <label>
+                Border width:
+                <input id="border" max="40" min="0" type="range" value="13" />
+                <span class="rangeval" id="borderVal">1.3</span>
+              </label>
+              <label>
+                <input checked id="fillTiles" type="checkbox" />
+                Fill tiles
+              </label>
+              <label>
+                <input checked id="strokeTiles" type="checkbox" />
+                Stroke borders
+              </label>
+              <label>
+                <input id="onlySelSheet" type="checkbox" />
+                Show only selected sheet
+              </label>
+              <label>
+                <input checked id="originGuide" type="checkbox" />
+                Show origin crosshair
+              </label>
+              <label>
+                <input checked id="bgGradient" type="checkbox" />
+                Background gradient
+              </label>
+            </div>
+          </details>
+
+          <details class="section-group" open>
+            <summary>Labels</summary>
+            <div class="section-body">
+              <label>
+                <input checked id="tileLabels" type="checkbox" />
+                Tile center labels (sheet·orient)
+              </label>
+              <label>
+                <input checked id="edgelabels" type="checkbox" />
+                Edge labels (1–5)
+              </label>
+              <label>
+                <input id="depthLabels" type="checkbox" />
+                Show depth on tile
+              </label>
+              <label>
+                <input id="indexLabels" type="checkbox" />
+                Show tile index
+              </label>
+              <label>
+                <input id="labelsAllSheets" type="checkbox" />
+                Labels on all sheets (not just selected)
+              </label>
+              <label>
+                Label size:
+                <input id="labelSize" max="20" min="6" type="range" value="10" />
+                <span class="rangeval" id="labelSizeVal">10</span>
+              </label>
+            </div>
+          </details>
+
+          <details class="section-group" open>
+            <summary>Selection</summary>
+            <div class="section-body">
+              <label>
+                <input checked id="showSelGlow" type="checkbox" />
+                Selection glow
+              </label>
+              <label>
+                <input checked id="showNeighborLinks" type="checkbox" />
+                Neighbor link dashes
+              </label>
+              <label>
+                Glow strength:
+                <input id="glow" max="40" min="0" type="range" value="14" />
+                <span class="rangeval" id="glowVal">14</span>
+              </label>
+            </div>
+          </details>
+          <details class="section-group" open>
+            <summary>Cellular Automaton</summary>
+            <div class="section-body">
+              <label>
+                <input checked id="caOverlay" type="checkbox" />
+                Show CA overlay
+              </label>
+              <label>
+                Rule family:
+                <select id="caFamily">
+                  <option selected value="life">Life (B/S)</option>
+                  <option value="parity">Parity (mod n)</option>
+                  <option value="cyclic">Cyclic (GH)</option>
+                  <option value="majority">Majority vote</option>
+                  <option value="threshold">Threshold (≥k live → on)</option>
+                  <option value="diffusion">Diffusion average</option>
+                  <option value="sheetflow">Sheet-flow (anyonic)</option>
+                  <option value="xor">XOR neighbors</option>
+                </select>
+              </label>
+              <label id="caLifeRuleLabel">
+                B/S rule:
+                <input id="caLifeRule" style="width: 90px" type="text" value="B2/S23" />
+              </label>
+              <label id="caLifePresetLabel">
+                Preset:
+                <select id="caLifePreset">
+                  <option value="">— custom —</option>
+                  <option value="B2/S12">B2/S12 (original Pentagonal Life)</option>
+                  <option selected value="B2/S23">B2/S23 (Life-like)</option>
+                  <option value="B3/S23">B3/S23 (Conway's Life)</option>
+                  <option value="B2/S123">B2/S123</option>
+                  <option value="B3/S123">B3/S123</option>
+                  <option value="B23/S23">B23/S23</option>
+                  <option value="B1/S12">B1/S12 (replicator-style)</option>
+                  <option value="B1/S1">B1/S1 (pure replicator)</option>
+                  <option value="B2/S3">B2/S3 (minority)</option>
+                  <option value="B3/S3">B3/S3</option>
+                  <option value="B24/S123">B24/S123</option>
+                  <option value="B4/S34">B4/S34 (high-density)</option>
+                  <option value="B12/S12">B12/S12</option>
+                  <option value="B3/S234">B3/S234</option>
+                  <option value="B2/S1234">B2/S1234 (generous survival)</option>
+                  <option value="B12/S012345">B12/S012345 (seeds)</option>
+                  <option value="B/S012345">B/S012345 (frozen)</option>
+                  <option value="B012345/S">B012345/S (anti-life)</option>
+                </select>
+              </label>
+              <label>
+                States:
+                <input id="caNumStates" max="16" min="2" type="number" value="2" />
+              </label>
+              <label id="caThresholdLabel" style="display: none">
+                Cyclic threshold:
+                <input id="caThreshold" max="5" min="1" type="range" value="1" />
+                <span class="rangeval" id="caThresholdVal">1</span>
+              </label>
+              <div style="margin-top: 8px">
+                <button id="caPlay">▶ Play</button>
+                <button id="caStep">Step</button>
+                <button id="caReset">Reset</button>
+              </div>
+              <div style="margin-top: 6px">
+                <button id="caSeedPoint">Seed origin</button>
+                <button id="caSeedRand">Random fill</button>
+                <button id="caClear">Clear</button>
+              </div>
+              <label>
+                Seed pattern:
+                <select id="caSeedShape">
+                  <option selected value="single">Single (origin)</option>
+                  <option value="pair">Pair (origin + 1 nbr)</option>
+                  <option value="triple">Triple (origin + 2 nbrs)</option>
+                  <option value="petal">Petal (5 nbrs only)</option>
+                  <option value="all5">All-5 (origin + 5 nbrs)</option>
+                  <option value="ring">Ring (depth-2 shell)</option>
+                  <option value="line">Line (5 along axis)</option>
+                </select>
+                <button id="caSeedShapeApply">Apply</button>
+              </label>
+              <label>
+                Random density:
+                <input id="caDensity" max="100" min="0" type="range" value="30" />
+                <span class="rangeval" id="caDensityVal">0.30</span>
+              </label>
+              <label>
+                Speed (steps/sec):
+                <input id="caSpeed" max="60" min="1" type="range" value="8" />
+                <span class="rangeval" id="caSpeedVal">8</span>
+              </label>
+              <label>
+                <input id="caPaintMode" type="checkbox" />
+                Click to paint cells (instead of selecting)
+              </label>
+              <div class="alg-block" id="caStats" style="margin-top: 8px">
+                <div>gen: <span id="caGen">0</span></div>
+                <div>population: <span id="caPop">0</span></div>
+                <div>by sheet: <span id="caBySheet">—</span></div>
+              </div>
+            </div>
+          </details>
+
+          <details class="section-group" open>
+            <summary>Selected Tile</summary>
+            <div class="section-body">
+              <div id="tile-info">
+                <em>No tile selected.</em>
+              </div>
+            </div>
+          </details>
+
+          <details class="section-group" open>
+            <summary>Walk History</summary>
+            <div class="section-body">
+              <ol id="walk-history"></ol>
+              <button id="clear-history">Clear</button>
+            </div>
+          </details>
+
+          <details class="section-group">
+            <summary>About</summary>
+            <div class="section-body">
+              <p>
+                Centroids and vertices live in Q(√5)². Rotations by 72° are exact via cos(72°) =
+                (√5−1)/4, sin(72°) = √(10+2√5)/4 (the radical is stored symbolically as
+                <code>S72</code> with S72² = (10+2√5)/16).
+              </p>
+              <p>
+                For general n-gons, floating-point arithmetic is used with double precision. The
+                Sierpiński triangle uses an IFS (iterated function system) with contraction ratio ½.
+              </p>
+            </div>
+          </details>
+          <details class="section-group" id="docs-section">
+            <summary>Docs</summary>
+            <div class="section-body">
+              <div class="doc-tabs">
+                <button class="doc-tab active" data-doc="README.md">Overview</button>
+                <button class="doc-tab" data-doc="idea.md">Concept</button>
+                <button class="doc-tab" data-doc="erdos.md">Erdos</button>
+                <button class="doc-tab" data-doc="affine.md">Irregular</button>
+                <button class="doc-tab" data-doc="pinwheels.md">Pinwheel</button>
+                <button class="doc-tab" data-doc="polyhedra.md">Polyhedra</button>
+                <button class="doc-tab" data-doc="multipolygon.md">Multipolygon</button>
+                <button class="doc-tab" data-doc="einstein.md">Einstein</button>
+                <button class="doc-tab" data-doc="insights.md">Insights</button>
+                <button class="doc-tab" data-doc="glossary/README.md">Glossary</button>
+                <button
+                  class="doc-tab doc-maximize"
+                  id="docMaximize"
+                  title="Maximize document view"
+                >
+                  ⛶
+                </button>
+              </div>
+              <div class="doc-content" id="doc-content">
+                <em>Loading…</em>
+              </div>
+            </div>
+          </details>
+        </aside>
+      </main>
+    </div>
+    <script src="main.js" type="module"></script>
+    <script src="marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+      // Initialize Mermaid in manual mode; we'll call mermaid.run() ourselves
+      // after each markdown render so dynamically-injected diagrams get drawn.
+      if (window.mermaid) {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: 'dark',
+          securityLevel: 'loose',
+        });
+      }
+    </script>
+    <!-- MathJax configuration: must appear before the MathJax script -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ['$', '$'],
+            ['\\(', '\\)'],
+          ],
+          displayMath: [
+            ['$$', '$$'],
+            ['\\[', '\\]'],
+          ],
+          processEscapes: true,
+          processEnvironments: true,
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        },
+        startup: {
+          // Don't typeset the whole page on load; we'll call it manually.
+          typeset: false,
+        },
+      };
+    </script>
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+    <!-- Doc maximized modal -->
+    <div aria-modal="true" class="doc-modal" id="doc-modal" role="dialog" style="display: none">
+      <div class="doc-modal-inner">
+        <div class="doc-modal-header">
+          <div class="doc-modal-tabs" id="docModalTabs"></div>
+          <button class="doc-modal-close" id="docModalClose" title="Close (Esc)">✕</button>
+        </div>
+        <div class="doc-modal-body" id="doc-modal-content"></div>
+      </div>
+    </div>
+  </body>
+</html>

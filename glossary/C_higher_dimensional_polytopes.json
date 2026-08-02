@@ -1,0 +1,606 @@
+{
+  "version": "1.0.0",
+  "title": "Higher-Dimensional Polytopes Glossary",
+  "description": "Concepts covering 4D and higher polytopes, spherical and hyperbolic tilings, high-dimensional lattices, and the binary icosahedral group, serving as comparison spaces for flat-space constructions.",
+  "concepts": {
+    "5-cell": {
+      "id": "5-cell",
+      "term": "5-cell",
+      "aliases": ["4D simplex", "pentachoron"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["4-polytope", "regular", "simplex", "self-dual", "4D"],
+      "summary": "The simplest regular 4-polytope, with 5 tetrahedral cells; the 4D analogue of the tetrahedron.",
+      "definition": "The **4D simplex**: the simplest 4-polytope, with 5 tetrahedral cells, 10 triangular faces, 10 edges, and 5 vertices. Self-dual. Analogue of the tetrahedron. Its Schläfli symbol is $\\{3, 3, 3\\}$ and its symmetry group has order 120.",
+      "examples": [
+        {
+          "title": "Euler characteristic",
+          "body": "The 5-cell has 5 vertices, 10 edges, 10 triangular faces, and 5 tetrahedral cells. Euler characteristic: 5 - 10 + 10 - 5 = 0, consistent with a 4D polytope."
+        },
+        {
+          "title": "Self-duality",
+          "body": "The dual of the 5-cell is another 5-cell. Swapping vertices and cells, and edges and faces, yields an isomorphic polytope."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\{3, 3, 3\\}",
+          "description": "Schläfli symbol of the 5-cell: tetrahedral cells with 3 meeting at each edge."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }],
+        "related": [
+          { "id": "8-cell" },
+          { "id": "16-cell" },
+          { "id": "24-cell" },
+          { "id": "120-cell" },
+          { "id": "600-cell" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "8-cell": {
+      "id": "8-cell",
+      "term": "8-cell",
+      "aliases": ["tesseract", "hypercube", "4D hypercube"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "computation"],
+      "difficulty": "advanced",
+      "tags": ["4-polytope", "regular", "hypercube", "4D", "lattice"],
+      "summary": "The 4D analogue of the cube, with 8 cubic cells; also known as the tesseract.",
+      "definition": "The **4D analogue of the cube**: 8 cubic cells, 24 square faces, 32 edges, 16 vertices. Often referred to as the **tesseract** in popular literature. Its Schläfli symbol is $\\{4, 3, 3\\}$, its symmetry group has order 384, and it forms the unit cell of $\\mathbb{Z}^4$.",
+      "examples": [
+        {
+          "title": "Unit cell of Z^4",
+          "body": "The 8-cell tiles 4-dimensional Euclidean space $\\mathbb{R}^4$ by translation, forming the hypercubic lattice $\\mathbb{Z}^4$. Each vertex has integer coordinates."
+        },
+        {
+          "title": "Unfolding",
+          "body": "Just as a cube unfolds into a cross of 6 squares, the tesseract unfolds into a cross of 8 cubes in 3D space."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\{4, 3, 3\\}",
+          "description": "Schläfli symbol of the 8-cell: cubic cells with 3 meeting at each edge."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }, { "id": "hypercubic-lattice" }],
+        "related": [
+          { "id": "16-cell" },
+          { "id": "5-cell" },
+          { "id": "24-cell" },
+          { "id": "120-cell" },
+          { "id": "600-cell" },
+          { "id": "hypercubic-lattice" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "8-cell", "label": "tesseract" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "16-cell": {
+      "id": "16-cell",
+      "term": "16-cell",
+      "aliases": ["4D cross-polytope", "4D orthoplex"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["4-polytope", "regular", "cross-polytope", "4D", "dual"],
+      "summary": "The 4D analogue of the octahedron, with 16 tetrahedral cells; dual to the 8-cell.",
+      "definition": "The **4D analogue of the octahedron**: 16 tetrahedral cells, 32 triangular faces, 24 edges, 8 vertices. Its Schläfli symbol is $\\{3, 3, 4\\}$, its symmetry group has order 384, and it is dual to the 8-cell.",
+      "examples": [
+        {
+          "title": "Duality with the 8-cell",
+          "body": "The 16-cell is the dual of the 8-cell: its 8 vertices correspond to the 8 cells of the tesseract, and its 16 cells correspond to the 16 vertices of the tesseract."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\{3, 3, 4\\}",
+          "description": "Schläfli symbol of the 16-cell: tetrahedral cells with 4 meeting at each edge."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }],
+        "related": [
+          { "id": "8-cell" },
+          { "id": "5-cell" },
+          { "id": "24-cell" },
+          { "id": "120-cell" },
+          { "id": "600-cell" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "24-cell": {
+      "id": "24-cell",
+      "term": "24-cell",
+      "aliases": ["icositetrachoron"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "advanced",
+      "tags": ["4-polytope", "regular", "self-dual", "4D", "tiling", "unique"],
+      "summary": "A uniquely 4D regular polytope with no 3D Platonic analogue, with 24 octahedral cells; self-dual and tiles R^4.",
+      "definition": "A **uniquely 4D polytope** with no Platonic analogue in 3D. It has 24 octahedral cells, 96 triangular faces, 96 edges, and 24 vertices. Its Schläfli symbol is $\\{3, 4, 3\\}$, its symmetry group has order 1152, it is **self-dual**, and it tiles $\\mathbb{R}^4$.",
+      "examples": [
+        {
+          "title": "Self-duality",
+          "body": "The dual of the 24-cell is another 24-cell. This is one of only three regular polytopes (across all dimensions) that are self-dual: the simplex family, the 24-cell, and the square."
+        },
+        {
+          "title": "Tiling R^4",
+          "body": "The 24-cell tiles 4-dimensional Euclidean space by translation and rotation, forming the unique regular honeycomb $\\{3,4,3,3\\}$ in 4D."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\{3, 4, 3\\}",
+          "description": "Schläfli symbol of the 24-cell: octahedral cells with 3 meeting at each edge."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }],
+        "related": [
+          { "id": "5-cell" },
+          { "id": "8-cell" },
+          { "id": "16-cell" },
+          { "id": "120-cell" },
+          { "id": "600-cell" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "120-cell": {
+      "id": "120-cell",
+      "term": "120-cell",
+      "aliases": ["hecatonicosachoron", "dodecaplex"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "4-polytope",
+        "regular",
+        "4D",
+        "dodecahedron",
+        "icosahedral",
+        "S3",
+        "binary-icosahedral-group"
+      ],
+      "summary": "The 4D analogue of the dodecahedron, with 120 dodecahedral cells; tiles the 3-sphere S^3.",
+      "definition": "The **4D analogue of the dodecahedron**: 120 dodecahedral cells, 720 pentagonal faces, 1200 edges, and 600 vertices. Its Schläfli symbol is $\\{5, 3, 3\\}$. It **tiles the 3-sphere $S^3$**. Its symmetry group has order $14400$ and is related to the **binary icosahedral group $2I$**. Dual to the 600-cell.",
+      "examples": [
+        {
+          "title": "Tiling S^3",
+          "body": "The 120-cell provides a regular cell decomposition of the 3-sphere $S^3$, with exactly 120 dodecahedral cells fitting together without gap or overlap. This is the 4D analogue of the dodecahedron tiling $S^2$."
+        },
+        {
+          "title": "Duality with the 600-cell",
+          "body": "The dual of the 120-cell is the 600-cell: the 600 vertices of the 120-cell correspond to the 600 cells of the 600-cell, and vice versa."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\{5, 3, 3\\}",
+          "description": "Schläfli symbol of the 120-cell: dodecahedral cells with 3 meeting at each edge."
+        },
+        {
+          "expression": "|\\text{Sym}(120\\text{-cell})| = 14400",
+          "description": "Order of the symmetry group of the 120-cell, related to the binary icosahedral group."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }, { "id": "spherical-tiling" }],
+        "related": [
+          { "id": "600-cell" },
+          { "id": "binary-icosahedral-group" },
+          { "id": "5-cell" },
+          { "id": "8-cell" },
+          { "id": "16-cell" },
+          { "id": "24-cell" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "600-cell": {
+      "id": "600-cell",
+      "term": "600-cell",
+      "aliases": ["hexacosichoron", "tetraplex"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "4-polytope",
+        "regular",
+        "4D",
+        "icosahedron",
+        "icosian",
+        "binary-icosahedral-group",
+        "quaternion"
+      ],
+      "summary": "The 4D analogue of the icosahedron, with 600 tetrahedral cells; dual to the 120-cell, its vertices are the 120 icosian quaternions.",
+      "definition": "The **4D analogue of the icosahedron**: 600 tetrahedral cells, 1200 triangular faces, 720 edges, and 120 vertices. Its Schläfli symbol is $\\{3, 3, 5\\}$. **Dual to the 120-cell**. Its 120 vertices form the **icosian quaternions** of the binary icosahedral group $2I$.",
+      "examples": [
+        {
+          "title": "Vertices as icosians",
+          "body": "The 120 vertices of the 600-cell, when viewed as unit quaternions, are precisely the 120 elements of the binary icosahedral group $2I$. These are the icosian quaternions with coefficients in $\\mathbb{Q}(\\sqrt{5})$."
+        },
+        {
+          "title": "Duality with the 120-cell",
+          "body": "The dual of the 600-cell is the 120-cell. The 120 vertices of the 600-cell correspond to the 120 cells of the 120-cell."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\{3, 3, 5\\}",
+          "description": "Schläfli symbol of the 600-cell: tetrahedral cells with 5 meeting at each edge."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }, { "id": "binary-icosahedral-group" }],
+        "related": [
+          { "id": "120-cell" },
+          { "id": "binary-icosahedral-group" },
+          { "id": "5-cell" },
+          { "id": "8-cell" },
+          { "id": "16-cell" },
+          { "id": "24-cell" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "spherical-tiling": {
+      "id": "spherical-tiling",
+      "term": "Spherical Tiling",
+      "aliases": ["spherical tessellation"],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["tiling", "sphere", "positive-curvature", "Gauss-Bonnet", "Platonic"],
+      "summary": "A tiling of a sphere S^n by regular polygons or polyhedra, characterized by positive curvature and angular surplus.",
+      "definition": "A **tiling of a sphere $S^n$**. Examples include the dodecahedron tiling $S^2$ (its 12 pentagonal faces are spherical pentagons after central projection) and the 120-cell tiling $S^3$. Each Platonic solid tiles $S^2$ when projected.\n\nSpherical tilings have **positive curvature**: angles sum to **more** than the flat value. This angular surplus is precisely the curvature integral over each face (Gauss–Bonnet). For the dodecahedron viewed as a tiling of $S^2$, exactly **3 pentagons** meet at each vertex.",
+      "examples": [
+        {
+          "title": "Dodecahedron on S^2",
+          "body": "The dodecahedron tiles $S^2$ with 12 spherical pentagonal faces. Exactly 3 pentagons meet at each vertex, and the angular surplus at each vertex is $360° - 3 \\times 108° = -\\,(-36°) = 36°$ (positive surplus relative to flat space)."
+        },
+        {
+          "title": "120-cell on S^3",
+          "body": "The 120-cell tiles $S^3$ with 120 dodecahedral cells. The positive curvature of $S^3$ absorbs the angular deficit that would prevent a flat tiling by dodecahedra."
+        },
+        {
+          "title": "Platonic solids as spherical tilings",
+          "body": "All five Platonic solids tile $S^2$ via central projection: tetrahedron $\\{3,3\\}$, cube $\\{4,3\\}$, octahedron $\\{3,4\\}$, dodecahedron $\\{5,3\\}$, icosahedron $\\{3,5\\}$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "(p-2)(q-2) < 4",
+          "description": "Condition for a Schläfli symbol {p,q} to correspond to a spherical tiling (positive curvature). Satisfied by the five Platonic solids.",
+          "variables": {
+            "p": "Number of sides of each polygonal face",
+            "q": "Number of faces meeting at each vertex"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }],
+        "related": [
+          { "id": "hyperbolic-tiling" },
+          { "id": "120-cell" },
+          { "id": "600-cell" },
+          { "id": "schlafli-symbol" }
+        ],
+        "enabledBy": [{ "id": "120-cell" }, { "id": "600-cell" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "hyperbolic-tiling": {
+      "id": "hyperbolic-tiling",
+      "term": "Hyperbolic Tiling",
+      "aliases": ["hyperbolic tessellation"],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["tiling", "hyperbolic", "negative-curvature", "pentagon", "Schlafli"],
+      "summary": "A tiling of the hyperbolic plane H^2 or higher hyperbolic space, supporting configurations impossible in flat or spherical space.",
+      "definition": "A **tiling of the hyperbolic plane** $\\mathbb{H}^2$ (or higher-dimensional hyperbolic space). Supports **otherwise-forbidden configurations** such as 4 or more pentagons at each vertex. Hyperbolic tilings have **negative curvature**: the angular deficit becomes an angular surplus (more than $2\\pi$ would fit around a vertex), which the curvature absorbs.\n\nExamples:\n- **{5, 4}** tiling: 4 pentagons at each vertex (impossible in flat space).\n- **{5, 5}**, **{5, 6}**, etc.: arbitrarily many pentagons at each vertex.\n- **{7, 3}**, **{8, 3}**, etc.: regular tilings by polygons that cannot tile $\\mathbb{R}^2$.",
+      "examples": [
+        {
+          "title": "{5, 4} tiling",
+          "body": "In the hyperbolic plane, 4 regular pentagons can meet at each vertex. The interior angle of a hyperbolic regular pentagon can be made equal to $90°$, so $4 \\times 90° = 360°$ fits exactly. This is impossible in Euclidean space where a regular pentagon has interior angles of $108°$."
+        },
+        {
+          "title": "{7, 3} tiling",
+          "body": "Three regular heptagons meet at each vertex in the hyperbolic plane. The Fano plane and certain Riemann surfaces are related to this tiling."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "(p-2)(q-2) > 4",
+          "description": "Condition for a Schläfli symbol {p,q} to correspond to a hyperbolic tiling (negative curvature). Satisfied by infinitely many pairs (p,q).",
+          "variables": {
+            "p": "Number of sides of each polygonal face",
+            "q": "Number of faces meeting at each vertex"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "schlafli-symbol" }],
+        "related": [{ "id": "spherical-tiling" }, { "id": "schlafli-symbol" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "schlafli-symbol": {
+      "id": "schlafli-symbol",
+      "term": "Schläfli Symbol",
+      "aliases": ["Schlafli symbol"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["notation", "tiling", "polytope", "regular", "classification"],
+      "summary": "A compact notation {p, q} or {p, q, r} classifying regular tilings and polytopes by their face type and vertex configuration.",
+      "definition": "A compact notation indicating the structure of a regular tiling or polytope:\n- $\\{p, q\\}$: a tiling by regular $p$-gons with $q$ of them meeting at each vertex (2D tiling or 3D polytope boundary).\n- $\\{p, q, r\\}$: a regular 4-polytope with cells $\\{p, q\\}$ and $r$ cells meeting at each edge.\n\nThe geometry is determined by the curvature condition:\n- **Flat (Euclidean)**: $(p-2)(q-2) = 4$. Solutions: $\\{3,6\\}, \\{4,4\\}, \\{6,3\\}$.\n- **Spherical**: $(p-2)(q-2) < 4$. (The five Platonic solids.)\n- **Hyperbolic**: $(p-2)(q-2) > 4$. (Infinitely many examples.)",
+      "examples": [
+        {
+          "title": "Pentagon tilings",
+          "body": "For pentagons ($p=5$): $\\{5,3\\}$ is the dodecahedron (spherical, angular sum $324° < 360°$); $\\{5,4\\}$ is hyperbolic (angular sum $432° > 360°$); no flat $\\{5,q\\}$ exists."
+        },
+        {
+          "title": "Flat tilings",
+          "body": "The three flat tilings are $\\{3,6\\}$ (triangular), $\\{4,4\\}$ (square), and $\\{6,3\\}$ (hexagonal), all satisfying $(p-2)(q-2)=4$."
+        },
+        {
+          "title": "4-polytope examples",
+          "body": "Dodecahedron: $\\{5,3\\}$. 120-cell: $\\{5,3,3\\}$. 600-cell: $\\{3,3,5\\}$. Cubic honeycomb: $\\{4,3,4\\}$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "(p-2)(q-2) = 4 \\iff \\{p,q\\} \\text{ is Euclidean}",
+          "description": "Flatness condition for a regular tiling {p,q}.",
+          "variables": {
+            "p": "Number of sides of each face",
+            "q": "Number of faces at each vertex"
+          }
+        },
+        {
+          "expression": "(p-2)(q-2) < 4 \\iff \\{p,q\\} \\text{ is spherical}",
+          "description": "Spherical (positive curvature) condition for a regular tiling {p,q}."
+        },
+        {
+          "expression": "(p-2)(q-2) > 4 \\iff \\{p,q\\} \\text{ is hyperbolic}",
+          "description": "Hyperbolic (negative curvature) condition for a regular tiling {p,q}."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "spherical-tiling" },
+          { "id": "hyperbolic-tiling" },
+          { "id": "5-cell" },
+          { "id": "8-cell" },
+          { "id": "16-cell" },
+          { "id": "24-cell" },
+          { "id": "120-cell" },
+          { "id": "600-cell" }
+        ],
+        "enabledBy": [
+          { "id": "spherical-tiling" },
+          { "id": "hyperbolic-tiling" },
+          { "id": "5-cell" },
+          { "id": "8-cell" },
+          { "id": "16-cell" },
+          { "id": "24-cell" },
+          { "id": "120-cell" },
+          { "id": "600-cell" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "hypercubic-lattice": {
+      "id": "hypercubic-lattice",
+      "term": "Hypercubic Lattice",
+      "aliases": ["integer lattice", "Z^n lattice"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "computation"],
+      "difficulty": "intermediate",
+      "tags": ["lattice", "high-dimensional", "quasicrystal", "cut-and-project", "Voronoi"],
+      "summary": "The integer lattice Z^n in R^n, whose Voronoi cell is the unit hypercube; serves as the source space for cut-and-project quasicrystal constructions.",
+      "definition": "The **integer lattice in $\\mathbb{R}^n$**: the set of all points with integer coordinates. The Voronoi cell of $\\mathbb{Z}^n$ is the unit hypercube $[0,1]^n$. Its symmetry group includes the **hyperoctahedral group** of order $2^n n!$.\n\nKey instances in the project:\n- $\\mathbb{Z}^4$: target of 4D quasicrystal projections.\n- $\\mathbb{Z}^5$: cut-and-project source of the Penrose tiling.\n- $\\mathbb{Z}^6$: cut-and-project source of the AKN tiling (icosahedral quasicrystal).",
+      "examples": [
+        {
+          "title": "Z^5 and the Penrose tiling",
+          "body": "The Penrose tiling is obtained by projecting a 2D slice of $\\mathbb{Z}^5$ onto a plane oriented at an irrational angle with respect to the lattice axes. The five basis vectors of $\\mathbb{Z}^5$ project to the five directions of pentagonal symmetry."
+        },
+        {
+          "title": "Z^6 and the icosahedral quasicrystal",
+          "body": "The 3D icosahedral quasicrystal (AKN tiling) is obtained by projecting a 3D slice of $\\mathbb{Z}^6$ onto a 3D subspace with icosahedral symmetry."
+        },
+        {
+          "title": "Hyperoctahedral symmetry",
+          "body": "The symmetry group of $\\mathbb{Z}^n$ is the hyperoctahedral group $B_n$ of order $2^n n!$, generated by permutations and sign changes of coordinates."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\mathbb{Z}^n = \\{(x_1, \\ldots, x_n) \\in \\mathbb{R}^n : x_i \\in \\mathbb{Z}\\}",
+          "description": "Definition of the integer lattice in n dimensions."
+        },
+        {
+          "expression": "|\\text{Hyperoctahedral group}| = 2^n \\cdot n!",
+          "description": "Order of the symmetry group of the hypercubic lattice Z^n.",
+          "variables": {
+            "n": "Dimension of the lattice"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "8-cell" }, { "id": "binary-icosahedral-group" }],
+        "enabledBy": [{ "id": "8-cell" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "binary-icosahedral-group": {
+      "id": "binary-icosahedral-group",
+      "term": "Binary Icosahedral Group",
+      "aliases": ["2I", "icosahedral double cover"],
+      "domain": "algebra",
+      "crossDomains": ["geometry", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "group-theory",
+        "quaternion",
+        "icosahedral",
+        "spinor",
+        "SU2",
+        "SO3",
+        "icosian",
+        "600-cell"
+      ],
+      "summary": "The double cover of the icosahedral group I in SU(2), of order 120; realized as the 120 icosian unit quaternions forming the vertices of the 600-cell.",
+      "definition": "The **double cover of the icosahedral group $I$** in $SU(2)$:\n$$2I = \\text{Spin}(3)\\text{-lift of } I \\subset SO(3)$$\nOrder $|2I| = 2 \\times 60 = 120$.\n\nThe 120 elements of $2I$ can be written as **unit quaternions with coefficients in $\\mathbb{Q}(\\sqrt{5})$** — the so-called **icosians**. They include:\n- 8 elements $\\{\\pm 1, \\pm i, \\pm j, \\pm k\\}$.\n- 16 elements $\\frac{1}{2}(\\pm 1 \\pm i \\pm j \\pm k)$.\n- 96 elements obtained from $\\frac{1}{2}(0, \\pm 1, \\pm \\phi^{-1}, \\pm \\phi)$ by even cyclic permutations and sign changes.\n\nRoles in the project:\n- **Vertices of the 600-cell** are the 120 icosians.\n- $2I$ acts on the 120-cell and 600-cell.\n- Provides the algebraic structure for 3D pentagonal/icosahedral tilings.\n- Encodes **spinor doubling**: the holonomy of certain loops in pentagon-related multi-sheeted covers lifts to $2I$ via $SU(2) \\to SO(3)$.",
+      "examples": [
+        {
+          "title": "Icosians as unit quaternions",
+          "body": "The 120 icosians are unit quaternions $q = a + bi + cj + dk$ where $a, b, c, d \\in \\mathbb{Q}(\\sqrt{5})$ and $|q|=1$. They form a group under quaternion multiplication isomorphic to $2I$."
+        },
+        {
+          "title": "Spinor doubling",
+          "body": "The covering map $SU(2) \\to SO(3)$ sends $2I$ onto the icosahedral group $I \\cong A_5$ of order 60. A loop in $SO(3)$ that returns to the identity may lift to a path in $SU(2)$ ending at $-1$, encoding the spinor (half-turn) nature of the double cover."
+        },
+        {
+          "title": "600-cell vertices",
+          "body": "The 120 vertices of the 600-cell, embedded in $\\mathbb{R}^4 \\cong \\mathbb{H}$, are precisely the 120 icosian quaternions. Left and right multiplication by elements of $2I$ generate the full symmetry group of the 600-cell."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "|2I| = 2 \\times 60 = 120",
+          "description": "Order of the binary icosahedral group, twice the order of the icosahedral group I ≅ A_5."
+        },
+        {
+          "expression": "1 \\to \\mathbb{Z}/2 \\to 2I \\to I \\to 1",
+          "description": "Short exact sequence expressing 2I as a central extension of the icosahedral group I by Z/2."
+        },
+        {
+          "expression": "\\phi = \\frac{1+\\sqrt{5}}{2}",
+          "description": "The golden ratio, appearing in the quaternion coordinates of the icosians.",
+          "variables": {
+            "\\phi": "Golden ratio"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "600-cell" }, { "id": "120-cell" }, { "id": "hypercubic-lattice" }],
+        "enabledBy": [{ "id": "600-cell" }, { "id": "120-cell" }],
+        "synonyms": [{ "id": "binary-icosahedral-group", "label": "2I" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "dimensional-hierarchy": {
+      "id": "dimensional-hierarchy",
+      "term": "Dimensional Hierarchy of Pentagonal Frustration",
+      "aliases": ["pentagon dimensional propagation"],
+      "domain": "geometry",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "pentagon",
+        "multi-sheeted",
+        "covering-space",
+        "monodromy",
+        "curvature",
+        "4D",
+        "3D",
+        "2D"
+      ],
+      "summary": "The propagation of the pentagon's angular obstruction across dimensions, resolved by spherical geometry, hyperbolic geometry, or multi-sheeted flat covers.",
+      "definition": "The pentagon's angular obstruction (36° deficit per vertex) propagates upward through dimensions:\n\n- **2D**: Pentagon → multi-sheeted plane (fiber: $\\mathbb{Z}/10$).\n- **3D**: Dodecahedron → multi-sheeted $\\mathbb{R}^3$ (fiber: subgroup of $I$, possibly $2I$).\n- **4D**: 120-cell tiles $S^3$ exactly (no deficit because $S^3$ supplies curvature).\n\nThree resolutions of pentagonal frustration exist:\n1. **Spherical**: dodecahedron on $S^2$, 120-cell on $S^3$ — positive curvature absorbs deficit.\n2. **Hyperbolic**: $\\{5, q\\}$ for $q \\geq 4$ — negative curvature absorbs surplus.\n3. **Multi-sheeted flat**: pentagon expansion family on multi-sheeted $\\mathbb{R}^2$ — covering space absorbs deficit as **monodromy**.\n\nThe project focuses on the third route, but the other two provide essential context and comparison.",
+      "examples": [
+        {
+          "title": "2D: multi-sheeted plane",
+          "body": "A regular pentagon has an interior angle of 108°. Three pentagons at a vertex give 324°, leaving a 36° deficit. In the multi-sheeted construction, this deficit is absorbed by the monodromy of the covering map, with fiber group Z/10."
+        },
+        {
+          "title": "4D: exact tiling of S^3",
+          "body": "The 120-cell tiles $S^3$ exactly because the positive curvature of $S^3$ provides precisely the angular surplus needed to compensate the 36° deficit per vertex of the dodecahedral cells."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\text{Angular deficit} = 360° - 3 \\times 108° = 36°",
+          "description": "The angular deficit at each vertex when three regular pentagons meet in flat space."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "spherical-tiling" },
+          { "id": "hyperbolic-tiling" },
+          { "id": "120-cell" },
+          { "id": "schlafli-symbol" }
+        ],
+        "related": [{ "id": "binary-icosahedral-group" }, { "id": "600-cell" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

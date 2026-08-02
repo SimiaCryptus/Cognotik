@@ -1,0 +1,146 @@
+:root {
+  --bg: #0e1116;
+  --panel: #171b22;
+  --accent: #4fd1c5;
+  --text: #e2e8f0;
+  --muted: #7d8896;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+}
+
+header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #232a33;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+main {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+#canvas-wrap {
+  position: relative;
+}
+
+canvas {
+  background: #0a0d12;
+  border: 1px solid #232a33;
+  border-radius: 8px;
+  display: block;
+}
+
+#hud {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(10, 13, 18, 0.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  line-height: 1.5;
+  pointer-events: none;
+  white-space: pre;
+}
+
+#controls {
+  background: var(--panel);
+  padding: 16px;
+  border-radius: 8px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ctrl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ctrl label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+select {
+  background: #0e1116;
+  color: var(--text);
+  border: 1px solid #2a323d;
+  border-radius: 6px;
+  padding: 6px;
+}
+
+.buttons {
+  flex-direction: row;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  background: #222a34;
+  color: var(--text);
+  border: 1px solid #2f3945;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+button:hover {
+  background: #2c3542;
+}
+
+button#run {
+  background: var(--accent);
+  color: #05201d;
+  border: none;
+}
+
+.checkboxes {
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+}

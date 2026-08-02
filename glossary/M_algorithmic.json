@@ -1,0 +1,997 @@
+{
+  "version": "1.0.0",
+  "title": "Algorithmic and Computational Glossary",
+  "description": "Computational machinery for evaluating reconnection, building adjacency graphs, and estimating dimensional and spectral exponents in pentagonal lattice systems. Covers exact arithmetic, symbolic computation, sparse linear algebra, and dimensional analysis pipelines.",
+  "concepts": {
+    "exact-arithmetic-zphi": {
+      "id": "exact-arithmetic-zphi",
+      "term": "Exact Arithmetic in ℤ[φ]",
+      "aliases": [
+        "Z-phi arithmetic",
+        "golden ratio integer arithmetic",
+        "algebraic integer arithmetic"
+      ],
+      "domain": "computation",
+      "crossDomains": ["algebra", "geometry"],
+      "difficulty": "intermediate",
+      "tags": ["exact arithmetic", "golden ratio", "phi", "integer pairs", "topology preservation"],
+      "summary": "Representation of pentagonal lattice elements as integer pairs (a, b) encoding a + bφ, enabling exact equality testing and arithmetic without floating-point error.",
+      "definition": "Each lattice element is represented as a pair of integers $(a, b)$ with the understanding that the value is $a + b\\phi$, where $\\phi = (1+\\sqrt{5})/2$ is the golden ratio. Arithmetic operations are defined exactly:\n\n- **Addition**: $(a_1, b_1) + (a_2, b_2) = (a_1 + a_2, b_1 + b_2)$\n- **Multiplication**: $(a_1, b_1)(a_2, b_2) = (a_1 a_2 + b_1 b_2,\\ a_1 b_2 + a_2 b_1 + b_1 b_2)$, using the identity $\\phi^2 = \\phi + 1$\n- **Equality**: integer equality of both components\n\nThis representation is essential because floating-point storage of $\\phi \\approx 1.6180339887\\ldots$ introduces truncation errors that cascade in repeated multiplication, causing spurious non-equalities between mathematically identical lattice points. Such errors produce topological tearing, wrong dimensional estimates, and lost vortex holonomy.",
+      "examples": [
+        {
+          "title": "Equality Testing",
+          "body": "Two pentagonal lattice points p = a₁ + b₁φ and q = a₂ + b₂φ are equal if and only if a₁ = a₂ and b₁ = b₂ as integers. In floating point, φ is truncated and repeated multiplication can make p − q appear non-zero even when it is mathematically zero. With ℤ[φ] pairs, equality is exact integer comparison."
+        },
+        {
+          "title": "Multiplication Using φ² = φ + 1",
+          "body": "To multiply (2, 1) · (1, 3): the rational part is 2·1 + 1·3 = 5, and the φ-part is 2·3 + 1·1 + 1·3 = 10. Result: (5, 10), representing 5 + 10φ. The identity φ² = φ + 1 ensures the product stays in ℤ[φ] without irrational remainders."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "(a_1, b_1) + (a_2, b_2) = (a_1 + a_2, b_1 + b_2)",
+          "description": "Addition of two ℤ[φ] elements",
+          "variables": {
+            "a_i": "rational integer component of element i",
+            "b_i": "φ-coefficient integer component of element i"
+          }
+        },
+        {
+          "expression": "(a_1, b_1)(a_2, b_2) = (a_1 a_2 + b_1 b_2,\\ a_1 b_2 + a_2 b_1 + b_1 b_2)",
+          "description": "Multiplication of two ℤ[φ] elements, derived from φ² = φ + 1",
+          "variables": {
+            "a_i": "rational integer component of element i",
+            "b_i": "φ-coefficient integer component of element i"
+          }
+        },
+        {
+          "expression": "\\phi^2 = \\phi + 1",
+          "description": "Defining relation of the golden ratio, used to close multiplication within ℤ[φ]",
+          "variables": {
+            "φ": "golden ratio (1 + √5) / 2"
+          }
+        }
+      ],
+      "references": [
+        "M_algorithmic.md — Why Exact Arithmetic?",
+        "M_algorithmic.md — The Solution: ℤ[φ] Arithmetic"
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "floating-point-failure" },
+          { "id": "spatial-hashing-memoization" },
+          { "id": "adjacency-oracle" }
+        ],
+        "enabledBy": [
+          { "id": "adjacency-oracle" },
+          { "id": "spatial-hashing-memoization" },
+          { "id": "random-walk-simulation" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "floating-point-failure": {
+      "id": "floating-point-failure",
+      "term": "Floating-Point Failure in Pentagonal Lattices",
+      "aliases": [
+        "numerical tearing",
+        "spurious topological tearing",
+        "floating-point catastrophe"
+      ],
+      "domain": "computation",
+      "crossDomains": ["topology", "geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "floating point",
+        "numerical error",
+        "topology",
+        "catastrophic failure",
+        "pentagonal lattice"
+      ],
+      "summary": "The catastrophic failure mode where floating-point arithmetic introduces spurious non-equalities in pentagonal lattice computations, causing topological tearing and wrong dimensional estimates.",
+      "definition": "In pentagonal lattice computations, floating-point representation of $\\phi$ as a truncated decimal introduces small errors that cascade through repeated multiplication. When two lattice points that are mathematically equal are compared, the accumulated error can make them appear distinct.\n\nConsequences of this failure:\n- **Spurious tree-like growth** in the adjacency graph (missed adjacencies)\n- **Wrong dimensional estimates** (effective and spectral dimensions)\n- **Lost vortex holonomy** (sheet identifications break)\n- **Topological tearing**: the multi-sheeted cover unravels into an infinite tree\n\nThis failure mode is invisible to non-careful code — the computation completes without error, but produces silently wrong results. The solution is exact arithmetic in $\\mathbb{Z}[\\phi]$.",
+      "examples": [
+        {
+          "title": "Missed Adjacency",
+          "body": "Two tiles whose centroids are mathematically identical (differing by zero) may hash to different buckets due to floating-point error in φ. The adjacency oracle then fails to identify them as the same tile, creating a spurious new vertex in the adjacency graph and breaking the topological structure."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "M_algorithmic.md — The Problem with Floating Point",
+        "M_algorithmic.md — Consequences for Topology"
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "exact-arithmetic-zphi" },
+          { "id": "adjacency-oracle" },
+          { "id": "vortex-detection-rule-application" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "symbolic-computation-cas": {
+      "id": "symbolic-computation-cas",
+      "term": "Symbolic Computation and CAS",
+      "aliases": ["computer algebra system", "CAS", "symbolic algebra", "Maxima", "SageMath"],
+      "domain": "computation",
+      "crossDomains": ["algebra"],
+      "difficulty": "foundational",
+      "tags": [
+        "symbolic computation",
+        "CAS",
+        "Maxima",
+        "SageMath",
+        "exact arithmetic",
+        "reproducibility"
+      ],
+      "summary": "Use of computer algebra systems (CAS) for exact arithmetic over algebraic number fields, ensuring reproducible and numerically exact computations in pentagonal lattice analysis.",
+      "definition": "The project's reference implementation uses **Maxima** (files of the form `experiment.mac`), a free open-source CAS descended from Macsyma. Any CAS supporting exact algebraic arithmetic is suitable.\n\n**Maxima strengths**:\n- Exact arithmetic over arbitrary algebraic number fields\n- Symbolic simplification of expressions in $\\mathbb{Z}[\\phi]$\n- Pattern matching for sheet-transition rule application\n- Reproducibility (no hidden numerical thresholds)\n\n**Other suitable systems**:\n- **SageMath** — recommended for production-scale computations\n- **Mathematica** — commercial, widely available\n- **SymPy** — Python-based; slower but accessible\n- **PARI/GP** — algebraic number theory specialist\n\nThe key requirement for any system is representation of $\\mathbb{Z}[\\phi]$ (or the relevant ring) with exact equality testing.",
+      "examples": [
+        {
+          "title": "Maxima for Sheet-Transition Rules",
+          "body": "A Maxima script (experiment.mac) can define φ symbolically, represent tile vertices as ℤ[φ] pairs, and apply sheet-transition rules via pattern matching — all without any floating-point approximation. Results are reproducible across machines and CAS versions."
+        }
+      ],
+      "formulas": [],
+      "references": ["M_algorithmic.md — Symbolic Computation", "M_algorithmic.md — Maxima"],
+      "relations": {
+        "requires": [{ "id": "exact-arithmetic-zphi" }],
+        "related": [{ "id": "adjacency-oracle" }, { "id": "vortex-detection-rule-application" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "adjacency-oracle": {
+      "id": "adjacency-oracle",
+      "term": "Adjacency Oracle",
+      "aliases": ["neighbor oracle", "on-demand adjacency", "lazy neighbor computation"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics", "topology"],
+      "difficulty": "intermediate",
+      "tags": [
+        "adjacency",
+        "oracle",
+        "lazy evaluation",
+        "BFS",
+        "DFS",
+        "memoization",
+        "infinite graph"
+      ],
+      "summary": "An on-demand function that computes the neighbors of a given tile using exact arithmetic, enabling lazy exploration of infinite pentagonal expansion families.",
+      "definition": "An **adjacency oracle** is a function\n\n$$\\text{neighbors}(\\text{tile}) \\to \\text{list of (neighbor, edge)}$$\n\nthat returns the adjacent tiles of a given tile, computed **on demand** using exact arithmetic.\n\n**Why an oracle?** The expansion family is infinite. Materializing the entire family upfront is impossible. The oracle enables:\n- Lazy exploration via BFS or DFS from a seed\n- Stopping at any time once enough tiles are generated\n- Memoization to avoid recomputation\n\n**Implementation steps** for each tile:\n1. Apply each generator to obtain neighbor candidates\n2. Canonicalize each neighbor (e.g., by reducing the affine representation)\n3. Hash the canonical form to find or create a unique tile ID\n4. Return the list of (neighbor ID, edge label) pairs\n\nThe canonicalization step is where exact arithmetic is critical — any floating-point error here causes missed adjacencies and topological tearing.",
+      "examples": [
+        {
+          "title": "BFS Expansion from Seed",
+          "body": "Starting from a single pentagon P₀, the BFS calls neighbors(P₀) to get its 5 adjacent pentagons, then calls neighbors() on each of those, and so on. The oracle computes each neighbor's canonical centroid in ℤ[φ] and looks it up in the hash table. If not found, a new tile ID is created. The BFS terminates when the desired number of tiles is reached."
+        }
+      ],
+      "formulas": [],
+      "references": ["M_algorithmic.md — The Adjacency Oracle Pattern"],
+      "relations": {
+        "requires": [{ "id": "exact-arithmetic-zphi" }, { "id": "spatial-hashing-memoization" }],
+        "related": [
+          { "id": "lazy-graph-generation" },
+          { "id": "vortex-detection-rule-application" }
+        ],
+        "enabledBy": [
+          { "id": "sparse-adjacency-laplacian" },
+          { "id": "random-walk-simulation" },
+          { "id": "bfs-volume-scaling" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spatial-hashing-memoization": {
+      "id": "spatial-hashing-memoization",
+      "term": "Spatial Hashing and Memoization",
+      "aliases": ["centroid hashing", "tile memoization", "spatial hash table"],
+      "domain": "computation",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "hashing",
+        "memoization",
+        "spatial indexing",
+        "multi-sheet",
+        "performance",
+        "O(1) lookup"
+      ],
+      "summary": "O(1) amortized tile lookup via canonical centroid hashing in ℤ[φ] coordinates, extended with sheet index for multi-sheeted tilings, combined with function-level memoization of expensive operations.",
+      "definition": "**Spatial Hashing**: Tiles are hashed by their **canonical centroid** in $\\mathbb{Z}[\\phi]$ coordinates. The hash table maps centroid → tile ID with $O(1)$ amortized lookup.\n\nFor multi-sheeted tilings, the hash key includes the **sheet index**:\n$$\\text{key} = (\\text{centroid}_a,\\ \\text{centroid}_b,\\ \\text{sheet})$$\nso tiles on different sheets are distinct even if their projections coincide.\n\n**Memoization**: Function-level caching of expensive operations:\n- Tile centroid computation\n- Generator application\n- Sheet-transition lookup\n- Distance computation (for distance-web analyses)\n\nMemoization is essential for performance: typical expansion families have many near-duplicate computations, and a small cache catches most of them. The adjacency oracle is usually the rate-limiting step, making aggressive memoization critical.",
+      "examples": [
+        {
+          "title": "Multi-Sheet Key",
+          "body": "Two tiles with the same projected centroid (centroid_a, centroid_b) but on different sheets (sheet=0 vs sheet=1) must be treated as distinct vertices in the adjacency graph. The hash key (centroid_a, centroid_b, sheet) ensures they receive different tile IDs."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\text{key} = (\\text{centroid}_a,\\ \\text{centroid}_b,\\ \\text{sheet})",
+          "description": "Hash key for a tile in a multi-sheeted tiling, combining the two ℤ[φ] centroid components with the sheet index",
+          "variables": {
+            "centroid_a": "rational integer component of the canonical centroid in ℤ[φ]",
+            "centroid_b": "φ-coefficient component of the canonical centroid in ℤ[φ]",
+            "sheet": "integer sheet index in the multi-sheeted cover"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — Spatial Hashing and Memoization"],
+      "relations": {
+        "requires": [{ "id": "exact-arithmetic-zphi" }],
+        "related": [{ "id": "adjacency-oracle" }, { "id": "lazy-graph-generation" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "lazy-graph-generation": {
+      "id": "lazy-graph-generation",
+      "term": "Lazy Graph Generation",
+      "aliases": ["on-demand graph construction", "lazy BFS", "incremental graph building"],
+      "domain": "computation",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["lazy evaluation", "BFS", "infinite graph", "bounded memory", "adjacency graph"],
+      "summary": "Building the adjacency graph incrementally as BFS encounters new vertices and edges, enabling bounded-memory exploration of effectively infinite tiling graphs.",
+      "definition": "The adjacency graph is built **lazily**: vertices and edges are created only as the BFS encounters them. This pattern (originating in cellular automata research) allows handling of effectively infinite graphs with bounded memory.\n\nAt any point during BFS, the graph contains only the tiles that have been visited. The frontier of the BFS represents tiles whose neighbors have not yet been queried. Exploration can be halted at any desired size, yielding a finite subgraph of the infinite tiling.\n\nThis approach is essential for pentagonal expansion families, which are infinite by construction. Combined with the adjacency oracle and spatial hashing, it forms the core of the tile exploration pipeline.",
+      "examples": [
+        {
+          "title": "Bounded BFS Exploration",
+          "body": "To study a tiling up to radius R from the seed, run BFS and stop when all tiles within graph distance R have been visited. The resulting subgraph has O(R^d_eff) vertices and is sufficient for dimensional analysis, without ever materializing the infinite full graph."
+        }
+      ],
+      "formulas": [],
+      "references": ["M_algorithmic.md — Lazy Graph Generation"],
+      "relations": {
+        "requires": [{ "id": "adjacency-oracle" }, { "id": "spatial-hashing-memoization" }],
+        "related": [{ "id": "bfs-volume-scaling" }],
+        "enabledBy": [{ "id": "sparse-adjacency-laplacian" }, { "id": "bfs-volume-scaling" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "sparse-adjacency-laplacian": {
+      "id": "sparse-adjacency-laplacian",
+      "term": "Sparse Adjacency Matrix and Laplacian",
+      "aliases": ["sparse adjacency", "graph Laplacian", "CSR matrix", "COO matrix"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "sparse matrix",
+        "adjacency matrix",
+        "Laplacian",
+        "CSR",
+        "COO",
+        "linear algebra",
+        "spectral analysis"
+      ],
+      "summary": "Sparse matrix representations of the adjacency graph and its Laplacian, stored in CSR or COO format, enabling efficient spectral analysis of large tiling graphs.",
+      "definition": "For an adjacency graph with $n$ vertices and average degree $d$, the adjacency matrix $A$ has $O(nd)$ non-zero entries — sparse for typical $d \\ll n$. Stored in **CSR** (compressed sparse row) or **COO** (coordinate) format.\n\nThe **graph Laplacian** is defined as:\n$$\\Delta = D - A$$\nwhere $D$ is the diagonal degree matrix. The diagonal of $\\Delta$ is the degree sequence; off-diagonals match $-A$. Sparsity is preserved.\n\nThese sparse representations enable:\n- Efficient matrix-vector products (used by Lanczos and KPM)\n- Sparse LU factorization (used by shift-invert)\n- Memory-efficient storage for graphs with $n \\sim 10^6$ or more\n\nIn practice, `scipy.sparse` or equivalent libraries handle these formats.",
+      "examples": [
+        {
+          "title": "Laplacian Eigenvalue Zero",
+          "body": "The Laplacian Δ always has eigenvalue 0 (corresponding to the constant eigenvector). The smallest non-zero eigenvalue λ₁ is the spectral gap, which characterizes connectivity and diffusion properties of the tiling graph."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\Delta = D - A",
+          "description": "Graph Laplacian as degree matrix minus adjacency matrix",
+          "variables": {
+            "Δ": "graph Laplacian matrix",
+            "D": "diagonal degree matrix, D_{ii} = degree of vertex i",
+            "A": "adjacency matrix, A_{ij} = 1 if i and j are adjacent"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — Sparse Linear Algebra"],
+      "relations": {
+        "requires": [{ "id": "lazy-graph-generation" }],
+        "related": [
+          { "id": "lanczos-algorithm" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "shift-invert" }
+        ],
+        "enabledBy": [
+          { "id": "lanczos-algorithm" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "shift-invert" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "lanczos-algorithm": {
+      "id": "lanczos-algorithm",
+      "term": "Lanczos Algorithm",
+      "aliases": ["Lanczos iteration", "Lanczos eigensolver"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "advanced",
+      "tags": [
+        "Lanczos",
+        "eigenvalues",
+        "sparse",
+        "iterative",
+        "spectral gap",
+        "matrix-vector product"
+      ],
+      "summary": "Iterative method for computing extreme eigenvalues of large sparse symmetric matrices using only matrix-vector products, used to extract spectral gaps and band edges of tiling Laplacians.",
+      "definition": "The Lanczos algorithm is an iterative method for computing **extreme eigenvalues** of large sparse symmetric matrices. It uses only matrix-vector products, so it works with implicit or on-demand matrices.\n\n**Used to extract**:\n- The spectral gap $\\lambda_1$ (smallest non-zero eigenvalue)\n- The largest eigenvalues (top of the band)\n- A few interior eigenvalues via shift-invert\n\nThe algorithm builds a Krylov subspace and reduces the matrix to a tridiagonal form, whose eigenvalues approximate the extreme eigenvalues of the original matrix. Convergence is rapid for well-separated eigenvalues.\n\nFor the tiling Laplacian, the spectral gap $\\lambda_1$ characterizes the diffusion rate and is related to the spectral dimension.",
+      "examples": [
+        {
+          "title": "Spectral Gap Extraction",
+          "body": "Apply Lanczos to the tiling Laplacian Δ with a random starting vector. After k iterations (typically k ~ 100–500), the smallest non-zero Ritz value converges to λ₁. This spectral gap determines the long-time diffusion behavior and is used to validate KPM density-of-states estimates."
+        }
+      ],
+      "formulas": [],
+      "references": ["M_algorithmic.md — Lanczos Algorithm"],
+      "relations": {
+        "requires": [{ "id": "sparse-adjacency-laplacian" }],
+        "related": [{ "id": "shift-invert" }, { "id": "kernel-polynomial-method" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "shift-invert": {
+      "id": "shift-invert",
+      "term": "Shift-Invert Spectral Transform",
+      "aliases": ["shift-invert Lanczos", "spectral transformation", "interior eigenvalue method"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "advanced",
+      "tags": [
+        "shift-invert",
+        "eigenvalues",
+        "interior spectrum",
+        "sparse LU",
+        "CG",
+        "MINRES",
+        "density of states"
+      ],
+      "summary": "Spectral transformation M → (M − σI)⁻¹ that converts eigenvalues near a target σ into extreme eigenvalues, enabling efficient computation of interior eigenvalues of the tiling Laplacian.",
+      "definition": "The shift-invert transform replaces the matrix $M$ with $(M - \\sigma I)^{-1}$, converting eigenvalues near the shift $\\sigma$ into extreme (large) eigenvalues of the transformed matrix. This makes Lanczos converge rapidly to eigenvalues near $\\sigma$.\n\n**Implementation**: Each Lanczos step requires solving a sparse linear system $(M - \\sigma I)x = b$, using:\n- Sparse LU factorization (direct, for moderate $n$)\n- Iterative solvers: CG, MINRES (for large $n$)\n\n**Application**: Studying the **density of states near $\\lambda = 0$** is relevant for spectral dimension estimation. By setting $\\sigma$ near 0, shift-invert efficiently resolves the low-energy spectrum of the Laplacian.",
+      "examples": [
+        {
+          "title": "Low-Energy Spectrum",
+          "body": "To study spectral dimension, we need eigenvalues near λ = 0. Setting σ = 0.01 and applying shift-invert Lanczos yields the 50 smallest non-zero eigenvalues efficiently, without computing the full spectrum."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "M \\mapsto (M - \\sigma I)^{-1}",
+          "description": "Shift-invert transformation mapping eigenvalues near σ to large eigenvalues",
+          "variables": {
+            "M": "original sparse matrix (e.g., Laplacian Δ)",
+            "σ": "shift parameter (target eigenvalue region)",
+            "I": "identity matrix"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — Shift-Invert"],
+      "relations": {
+        "requires": [{ "id": "sparse-adjacency-laplacian" }, { "id": "lanczos-algorithm" }],
+        "related": [{ "id": "kernel-polynomial-method" }, { "id": "spectral-dimension" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "kernel-polynomial-method": {
+      "id": "kernel-polynomial-method",
+      "term": "Kernel Polynomial Method (KPM)",
+      "aliases": ["KPM", "Chebyshev spectral method", "stochastic trace estimation"],
+      "domain": "computation",
+      "crossDomains": ["physics", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "KPM",
+        "density of states",
+        "Chebyshev",
+        "stochastic trace",
+        "Jackson kernel",
+        "spectral dimension",
+        "scalable"
+      ],
+      "summary": "Scalable method for approximating the spectral density of states via Chebyshev expansion and stochastic trace estimation, enabling spectral analysis of graphs with up to 10⁷ vertices.",
+      "definition": "The Kernel Polynomial Method (KPM) approximates the **density of states** $\\rho(\\lambda)$ by its Chebyshev expansion:\n\n$$\\rho(\\lambda) \\approx \\sum_{k=0}^{N} \\mu_k T_k(\\lambda)$$\n\nwhere $T_k$ are Chebyshev polynomials and the moments are estimated stochastically:\n\n$$\\mu_k \\approx \\frac{1}{R} \\sum_{r=1}^{R} v_r^T T_k(\\hat{H}) v_r$$\n\nwith random vectors $v_r$.\n\n**Why it works**: Each Chebyshev moment requires only matrix-vector products with $\\hat{H}$. Total cost: $O(N \\cdot R \\cdot \\text{nnz}(H))$, linear in matrix size. Scales to $n \\sim 10^7$ or more.\n\n**Jackson kernel**: To suppress Gibbs oscillations at spectrum edges, KPM applies a Jackson kernel smoothing of the Chebyshev expansion, producing a smooth, positive-definite approximation to $\\rho(\\lambda)$.\n\n**Output**: A smooth estimate of $\\rho(\\lambda)$ on a fine grid, from which:\n- Spectral gap from the lowest eigenvalue support\n- Spectral dimension $d_{\\text{spec}}$ from $\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1}$ as $\\lambda \\to 0$",
+      "examples": [
+        {
+          "title": "Spectral Dimension from Density of States",
+          "body": "Run KPM with N=1000 Chebyshev moments and R=50 random vectors on the tiling Laplacian. The resulting ρ(λ) near λ=0 follows a power law ρ(λ) ~ λ^(d_spec/2 − 1). Log-log regression of ρ vs λ in the scaling window gives d_spec."
+        },
+        {
+          "title": "Parallelization",
+          "body": "KPM moments are trivially parallelizable: each random vector v_r is independent. With R=100 vectors distributed across 10 cores, wall time is reduced 10×."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho(\\lambda) \\approx \\sum_{k=0}^{N} \\mu_k T_k(\\lambda)",
+          "description": "Chebyshev expansion of the spectral density of states",
+          "variables": {
+            "ρ(λ)": "density of states at eigenvalue λ",
+            "μ_k": "k-th Chebyshev moment",
+            "T_k": "k-th Chebyshev polynomial",
+            "N": "number of expansion terms"
+          }
+        },
+        {
+          "expression": "\\mu_k \\approx \\frac{1}{R} \\sum_{r=1}^{R} v_r^T T_k(\\hat{H}) v_r",
+          "description": "Stochastic trace estimation of Chebyshev moments",
+          "variables": {
+            "μ_k": "k-th Chebyshev moment",
+            "R": "number of random vectors",
+            "v_r": "r-th random vector",
+            "Ĥ": "rescaled Hamiltonian/Laplacian (spectrum in [-1,1])"
+          }
+        },
+        {
+          "expression": "\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1} \\quad \\text{as } \\lambda \\to 0",
+          "description": "Power-law scaling of density of states near zero, defining the spectral dimension",
+          "variables": {
+            "ρ(λ)": "density of states",
+            "d_spec": "spectral dimension",
+            "λ": "eigenvalue of the Laplacian"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — The Kernel Polynomial Method (KPM)"],
+      "relations": {
+        "requires": [{ "id": "sparse-adjacency-laplacian" }],
+        "related": [
+          { "id": "lanczos-algorithm" },
+          { "id": "spectral-dimension" },
+          { "id": "power-law-fitting" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "random-walk-simulation": {
+      "id": "random-walk-simulation",
+      "term": "Random Walk Simulation",
+      "aliases": ["random walk on graph", "MSD simulation", "return probability simulation"],
+      "domain": "computation",
+      "crossDomains": ["physics", "geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "random walk",
+        "MSD",
+        "mean squared displacement",
+        "walk dimension",
+        "return probability",
+        "spectral dimension"
+      ],
+      "summary": "Monte Carlo simulation of random walks on the tiling adjacency graph to estimate the walk dimension d_w via mean-squared displacement and the spectral dimension via return probability.",
+      "definition": "Simulate many random walks on the adjacency graph starting from a seed. Two key observables:\n\n**Walk Dimension** via mean-squared displacement (MSD):\n$$\\langle \\Delta x^2 \\rangle(t) = \\mathbb{E}[\\|X_t - X_0\\|^2]$$\nFit $\\langle \\Delta x^2 \\rangle \\sim t^{2/d_w}$ to extract $d_w$.\n\n**Spectral Dimension** via return probability:\n$$P_0(t) = \\Pr[X_t = X_0]$$\nFit $P_0(t) \\sim t^{-d_{\\text{spec}}/2}$. Simpler in theory but requires long walks for good statistics on return events.\n\n**Implementation notes**:\n- Use the adjacency oracle to step lazily through the graph\n- Position $X_t$ uses embedded coordinates in $\\mathbb{Z}[\\phi]^2$ for exact distance computation\n- Average over many walks (typically $10^3$–$10^5$)\n- Restrict to the **dimensional flow window**: discard short-time (mesh-dependent) and long-time (boundary-dominated) regimes",
+      "examples": [
+        {
+          "title": "MSD Scaling Window",
+          "body": "For a tiling with 10⁵ tiles, run 10⁴ random walks of length 10⁴ steps. Plot log⟨Δx²⟩ vs log t. The scaling window (typically t ∈ [10², 10³]) shows a clean power law with slope 2/d_w. Discard t < 10 (mesh effects) and t > 5×10³ (boundary effects)."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\langle \\Delta x^2 \\rangle(t) = \\mathbb{E}[\\|X_t - X_0\\|^2] \\sim t^{2/d_w}",
+          "description": "Mean-squared displacement scaling with walk dimension",
+          "variables": {
+            "⟨Δx²⟩(t)": "mean-squared displacement at time t",
+            "X_t": "walker position at time t",
+            "d_w": "walk dimension"
+          }
+        },
+        {
+          "expression": "P_0(t) = \\Pr[X_t = X_0] \\sim t^{-d_{\\text{spec}}/2}",
+          "description": "Return probability scaling with spectral dimension",
+          "variables": {
+            "P_0(t)": "probability of returning to origin at time t",
+            "d_spec": "spectral dimension"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — Random Walk Simulation"],
+      "relations": {
+        "requires": [{ "id": "adjacency-oracle" }, { "id": "exact-arithmetic-zphi" }],
+        "related": [
+          { "id": "spectral-dimension" },
+          { "id": "walk-dimension" },
+          { "id": "power-law-fitting" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "bfs-volume-scaling": {
+      "id": "bfs-volume-scaling",
+      "term": "BFS Volume Scaling",
+      "aliases": ["ball volume scaling", "effective dimension from BFS", "graph ball growth"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "BFS",
+        "volume",
+        "effective dimension",
+        "ball growth",
+        "power law",
+        "dimensional analysis"
+      ],
+      "summary": "Estimation of the effective dimension d_eff by measuring how the number of tiles within graph distance r from the seed grows as r^d_eff.",
+      "definition": "The **effective dimension** $d_{\\text{eff}}$ is estimated by BFS volume scaling: count the number of tiles $V(r)$ within graph distance $r$ from the seed tile, then fit:\n\n$$V(r) \\sim r^{d_{\\text{eff}}}$$\n\nThis is the discrete analogue of the Euclidean ball volume formula $V(r) \\sim r^d$.\n\n**Implementation**: Run BFS from the seed, recording the graph distance of each tile. Bin tiles by distance and compute cumulative counts $V(r)$. Apply log-log regression in the scaling window.\n\n**Pitfalls**: Finite-size effects dominate at large $r$ (when the BFS approaches the boundary of the generated subgraph). The scaling window must be chosen carefully.",
+      "examples": [
+        {
+          "title": "Pentagon Tiling Effective Dimension",
+          "body": "BFS from the seed pentagon, counting tiles at each graph distance r. For r ∈ [5, 50], log V(r) vs log r shows a slope of approximately 2 for a flat tiling, or a non-integer value for a fractal or multi-sheeted tiling."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "V(r) \\sim r^{d_{\\text{eff}}}",
+          "description": "Ball volume growth law defining the effective dimension",
+          "variables": {
+            "V(r)": "number of tiles within graph distance r from the seed",
+            "d_eff": "effective (Hausdorff) dimension"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — Geometric analysis: BFS volume for d_eff"],
+      "relations": {
+        "requires": [{ "id": "lazy-graph-generation" }],
+        "related": [
+          { "id": "effective-dimension" },
+          { "id": "power-law-fitting" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "power-law-fitting": {
+      "id": "power-law-fitting",
+      "term": "Power-Law Fitting",
+      "aliases": ["log-log regression", "scaling exponent estimation", "power law regression"],
+      "domain": "computation",
+      "crossDomains": ["physics"],
+      "difficulty": "foundational",
+      "tags": [
+        "power law",
+        "log-log regression",
+        "scaling window",
+        "finite-size effects",
+        "logarithmic corrections"
+      ],
+      "summary": "Procedure for extracting scaling exponents from data believed to follow a power law, via log-transformation and linear regression, with careful attention to scaling windows and finite-size effects.",
+      "definition": "Given data $\\{(r_i, V_i)\\}$ believed to follow $V \\sim r^d$:\n\n1. **Log-transform**: $\\log V_i = d \\log r_i + c$\n2. **Linear regression** on log-transformed data\n3. **Extract slope** $d$ and intercept $c$\n\n**Pitfalls**:\n- **Crossover regimes**: $V(r)$ may have UV (small-$r$) and IR (large-$r$) regimes with different slopes. Fit only the **scaling window**.\n- **Logarithmic corrections**: $V \\sim r^d (\\log r)^c$ is hard to distinguish from $V \\sim r^{d'}$ over a limited range.\n- **Finite-size effects**: small graphs deviate from asymptotic scaling.\n\n**Best practice**: Report slopes from **multiple windows** and verify stability. If slopes vary significantly across windows, the scaling is not clean and results should be reported with appropriate uncertainty.",
+      "examples": [
+        {
+          "title": "Multiple Window Validation",
+          "body": "Fit V(r) ~ r^d in three windows: r ∈ [3,10], [10,30], [30,100]. If the extracted d values agree to within 2%, the scaling is robust. If they differ by more than 5%, report the range and investigate crossover effects."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\log V_i = d \\log r_i + c",
+          "description": "Log-linearized power law for regression",
+          "variables": {
+            "V_i": "measured quantity at scale r_i",
+            "d": "scaling exponent (slope in log-log space)",
+            "c": "log of the prefactor"
+          }
+        }
+      ],
+      "references": ["M_algorithmic.md — Power-Law Fitting"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "bfs-volume-scaling" },
+          { "id": "random-walk-simulation" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "effective-dimension" },
+          { "id": "spectral-dimension" },
+          { "id": "walk-dimension" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "vortex-detection-rule-application": {
+      "id": "vortex-detection-rule-application",
+      "term": "Vortex Detection and Rule Application",
+      "aliases": ["vortex rule", "signed3 rule", "sheet-transition rule", "holonomy assignment"],
+      "domain": "computation",
+      "crossDomains": ["topology", "geometry"],
+      "difficulty": "advanced",
+      "tags": [
+        "vortex",
+        "holonomy",
+        "sheet transition",
+        "signed3",
+        "angular deficit",
+        "pentagon",
+        "consistency"
+      ],
+      "summary": "Detection of vortex vertices in the pentagonal tiling (where angular deficit occurs) and application of the signed3 rule to assign sheet-transition labels, followed by global consistency checking.",
+      "definition": "**Vortex Detection**: For each vertex of the tiling, sum the angular contributions of incident tiles. If the sum differs from $2\\pi$ (after accounting for sheet topology), the vertex is a **vortex** requiring a sheet transition rule.\n\nIn the pentagonal case, vortices are precisely the vertices where **3 pentagons meet** (angular deficit $36°$) — typically the bulk vertices of the tiling.\n\n**The signed3 Rule**: For each vortex with $k$ incident edges, label the edges cyclically with shifts drawn from $\\{-1, 0, +1\\}$ such that:\n1. The sum around the vortex equals the deficit (in fiber group units)\n2. The labels distribute as evenly as possible (giving the $2/3$ edge fraction)\n\nImplementation: a small state machine that walks around each vortex and assigns labels.\n\n**Consistency Checking**: After all vortex rules are applied, the sheet structure must be **globally consistent**: holonomy around every non-vortex loop must be trivial. Checked by verifying that sheet labels on shared edges agree (modulo the fiber group). Cost: $O(\\text{vortex count})$ per pass; usually fast.",
+      "examples": [
+        {
+          "title": "Pentagon Vortex at 3-Valent Vertex",
+          "body": "At a vertex where 3 pentagons meet, the total angle is 3 × 108° = 324° < 360°. The deficit is 36°. The signed3 rule assigns edge labels {-1, 0, +1} cyclically around this vertex, encoding the sheet transition that compensates for the angular deficit."
+        }
+      ],
+      "formulas": [],
+      "references": ["M_algorithmic.md — Vortex Detection and Rule Application"],
+      "relations": {
+        "requires": [{ "id": "exact-arithmetic-zphi" }, { "id": "adjacency-oracle" }],
+        "related": [{ "id": "spatial-hashing-memoization" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "effective-dimension": {
+      "id": "effective-dimension",
+      "term": "Effective Dimension",
+      "aliases": ["Hausdorff dimension", "d_eff", "ball-counting dimension", "geometric dimension"],
+      "domain": "geometry",
+      "crossDomains": ["computation", "physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "effective dimension",
+        "Hausdorff dimension",
+        "ball growth",
+        "scaling",
+        "dimensional flow"
+      ],
+      "summary": "The dimension d_eff characterizing the growth rate of the number of tiles within graph distance r, analogous to the Hausdorff dimension of the tiling.",
+      "definition": "The **effective dimension** $d_{\\text{eff}}$ is defined by the ball volume growth law:\n$$V(r) \\sim r^{d_{\\text{eff}}}$$\nwhere $V(r)$ is the number of tiles within graph distance $r$ from a seed.\n\nFor a flat 2D tiling, $d_{\\text{eff}} = 2$. For fractal or multi-sheeted tilings, $d_{\\text{eff}}$ may be non-integer or differ from the embedding dimension.\n\n**Dimensional flow**: The effective dimension may differ between UV (small $r$) and IR (large $r$) regimes, reflecting a crossover in the tiling's geometry. This is a key observable in the pentagonal multi-sheeted tiling analysis.\n\n**Cross-validation**: $d_{\\text{eff}}$ should be consistent with the Alexander–Orbach relation $d_{\\text{spec}} = 2 d_{\\text{eff}} / d_w$.",
+      "examples": [
+        {
+          "title": "Sierpiński Gasket",
+          "body": "The Sierpiński gasket has d_eff = log 3 / log 2 ≈ 1.585, d_spec = 2 log 3 / log 5 ≈ 1.365, and d_w = log 5 / log 2 ≈ 2.322. These satisfy the Alexander–Orbach relation and serve as a validation benchmark for the dimensional measurement pipeline."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "V(r) \\sim r^{d_{\\text{eff}}}",
+          "description": "Ball volume growth law defining effective dimension",
+          "variables": {
+            "V(r)": "number of tiles within graph distance r",
+            "d_eff": "effective dimension"
+          }
+        }
+      ],
+      "references": [
+        "M_algorithmic.md — Geometric analysis: BFS volume for d_eff",
+        "M_algorithmic.md — Cross-Validation"
+      ],
+      "relations": {
+        "requires": [{ "id": "bfs-volume-scaling" }],
+        "related": [
+          { "id": "spectral-dimension" },
+          { "id": "walk-dimension" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [{ "id": "alexander-orbach-relation" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spectral-dimension": {
+      "id": "spectral-dimension",
+      "term": "Spectral Dimension",
+      "aliases": ["d_spec", "diffusion dimension", "spectral exponent"],
+      "domain": "physics",
+      "crossDomains": ["computation", "geometry"],
+      "difficulty": "advanced",
+      "tags": [
+        "spectral dimension",
+        "density of states",
+        "return probability",
+        "diffusion",
+        "KPM",
+        "random walk"
+      ],
+      "summary": "The dimension d_spec characterizing the low-energy density of states scaling ρ(λ) ~ λ^(d_spec/2 − 1) and the return probability decay P_0(t) ~ t^(−d_spec/2).",
+      "definition": "The **spectral dimension** $d_{\\text{spec}}$ is defined by two equivalent characterizations:\n\n1. **Density of states**: $\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1}$ as $\\lambda \\to 0$\n2. **Return probability**: $P_0(t) \\sim t^{-d_{\\text{spec}}/2}$ as $t \\to \\infty$\n\nFor a flat $d$-dimensional lattice, $d_{\\text{spec}} = d$. For fractal or multi-sheeted structures, $d_{\\text{spec}}$ may differ from $d_{\\text{eff}}$.\n\n**Measurement methods**:\n- KPM density of states (preferred for large systems)\n- Random walk return probability (simpler but requires long walks)\n- Lanczos/shift-invert for small systems\n\n**Relation to other dimensions**: $d_{\\text{spec}} = 2 d_{\\text{eff}} / d_w$ (Alexander–Orbach relation).",
+      "examples": [
+        {
+          "title": "Sierpiński Gasket Benchmark",
+          "body": "The Sierpiński gasket has d_spec = 2 log 3 / log 5 ≈ 1.365. This is less than d_eff ≈ 1.585, reflecting the fractal's anomalous diffusion. Verifying this value with KPM and random walk return probability validates the measurement pipeline before applying it to the pentagonal tiling."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1}",
+          "description": "Low-energy density of states scaling defining spectral dimension",
+          "variables": {
+            "ρ(λ)": "density of states",
+            "d_spec": "spectral dimension",
+            "λ": "Laplacian eigenvalue"
+          }
+        },
+        {
+          "expression": "P_0(t) \\sim t^{-d_{\\text{spec}}/2}",
+          "description": "Return probability decay defining spectral dimension",
+          "variables": {
+            "P_0(t)": "return probability at time t",
+            "d_spec": "spectral dimension"
+          }
+        }
+      ],
+      "references": [
+        "M_algorithmic.md — KPM Output",
+        "M_algorithmic.md — Return Probability",
+        "M_algorithmic.md — Cross-Validation"
+      ],
+      "relations": {
+        "requires": [{ "id": "kernel-polynomial-method" }],
+        "related": [
+          { "id": "effective-dimension" },
+          { "id": "walk-dimension" },
+          { "id": "alexander-orbach-relation" },
+          { "id": "random-walk-simulation" }
+        ],
+        "enabledBy": [{ "id": "alexander-orbach-relation" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "walk-dimension": {
+      "id": "walk-dimension",
+      "term": "Walk Dimension",
+      "aliases": ["d_w", "anomalous diffusion exponent", "diffusion exponent"],
+      "domain": "physics",
+      "crossDomains": ["computation", "geometry"],
+      "difficulty": "intermediate",
+      "tags": ["walk dimension", "anomalous diffusion", "MSD", "random walk", "scaling"],
+      "summary": "The exponent d_w characterizing anomalous diffusion via mean-squared displacement scaling ⟨Δx²⟩ ~ t^(2/d_w), with d_w = 2 for normal diffusion.",
+      "definition": "The **walk dimension** $d_w$ characterizes the diffusion rate on the graph:\n$$\\langle \\Delta x^2 \\rangle(t) \\sim t^{2/d_w}$$\n\nFor normal diffusion on a flat lattice, $d_w = 2$. For anomalous (subdiffusive) transport on fractal or multi-sheeted structures, $d_w > 2$.\n\n**Measurement**: Simulate random walks and fit the MSD in the scaling window (discarding short-time mesh effects and long-time boundary effects).\n\n**Relation to other dimensions**: $d_w = 2 d_{\\text{eff}} / d_{\\text{spec}}$ (Alexander–Orbach relation).",
+      "examples": [
+        {
+          "title": "Sierpiński Gasket",
+          "body": "The Sierpiński gasket has d_w = log 5 / log 2 ≈ 2.322 > 2, indicating subdiffusion. Random walkers explore the fractal more slowly than on a flat lattice due to the bottleneck structure."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\langle \\Delta x^2 \\rangle(t) \\sim t^{2/d_w}",
+          "description": "Mean-squared displacement scaling defining walk dimension",
+          "variables": {
+            "⟨Δx²⟩(t)": "mean-squared displacement at time t",
+            "d_w": "walk dimension"
+          }
+        }
+      ],
+      "references": [
+        "M_algorithmic.md — Walk Dimension Estimation",
+        "M_algorithmic.md — Cross-Validation"
+      ],
+      "relations": {
+        "requires": [{ "id": "random-walk-simulation" }],
+        "related": [
+          { "id": "effective-dimension" },
+          { "id": "spectral-dimension" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [{ "id": "alexander-orbach-relation" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "alexander-orbach-relation": {
+      "id": "alexander-orbach-relation",
+      "term": "Alexander–Orbach Relation",
+      "aliases": [
+        "Alexander-Orbach conjecture",
+        "spectral dimension relation",
+        "d_spec = 2 d_eff / d_w"
+      ],
+      "domain": "physics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "advanced",
+      "tags": [
+        "Alexander-Orbach",
+        "spectral dimension",
+        "walk dimension",
+        "effective dimension",
+        "cross-validation",
+        "fractal"
+      ],
+      "summary": "The relation d_spec = 2 d_eff / d_w connecting spectral, effective, and walk dimensions, used as a cross-validation check for dimensional measurements.",
+      "definition": "The **Alexander–Orbach relation** states:\n$$d_{\\text{spec}} = \\frac{2 d_{\\text{eff}}}{d_w}$$\n\nThis relation connects the three fundamental dimensions of a graph:\n- $d_{\\text{eff}}$: effective (Hausdorff) dimension from ball volume growth\n- $d_{\\text{spec}}$: spectral dimension from density of states or return probability\n- $d_w$: walk dimension from mean-squared displacement\n\n**Cross-validation use**: Multiple independent estimates of each dimension should satisfy this relation. If they disagree by more than a few percent, something is wrong (bug, finite-size effects, or mis-chosen fitting window).\n\n**Historical note**: Originally conjectured by Alexander and Orbach (1982) for percolation clusters; now understood as a general relation for diffusion on fractal structures.",
+      "examples": [
+        {
+          "title": "Sierpiński Gasket Verification",
+          "body": "d_eff = log 3 / log 2 ≈ 1.585, d_w = log 5 / log 2 ≈ 2.322. Alexander–Orbach predicts d_spec = 2 × 1.585 / 2.322 ≈ 1.365, which matches the known value 2 log 3 / log 5 exactly. This serves as a pipeline validation test."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{spec}} = \\frac{2 d_{\\text{eff}}}{d_w}",
+          "description": "Alexander–Orbach relation connecting spectral, effective, and walk dimensions",
+          "variables": {
+            "d_spec": "spectral dimension",
+            "d_eff": "effective (Hausdorff) dimension",
+            "d_w": "walk dimension"
+          }
+        }
+      ],
+      "references": [
+        "M_algorithmic.md — Cross-Validation",
+        "Alexander, S. and Orbach, R. (1982). Density of states on fractals: fractons. J. Physique Lett. 43, L625."
+      ],
+      "relations": {
+        "requires": [
+          { "id": "effective-dimension" },
+          { "id": "spectral-dimension" },
+          { "id": "walk-dimension" }
+        ],
+        "related": [],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "computational-pipeline": {
+      "id": "computational-pipeline",
+      "term": "Computational Pipeline",
+      "aliases": ["analysis pipeline", "dimensional analysis pipeline", "tiling analysis workflow"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "physics", "topology"],
+      "difficulty": "intermediate",
+      "tags": [
+        "pipeline",
+        "workflow",
+        "end-to-end",
+        "dimensional analysis",
+        "cross-validation",
+        "reproducibility"
+      ],
+      "summary": "The complete 10-step computational workflow from seed tile definition through dimensional cross-validation, built on exact symbolic arithmetic throughout.",
+      "definition": "The complete computational pipeline for pentagonal tiling dimensional analysis:\n\n1. **Define the seed tile** $P_0$ with vertices in $\\mathbb{Z}[\\phi]$\n2. **Define generators** (edge reflections, half-turns, or face reflections)\n3. **Define vortex rule** (e.g., signed3)\n4. **Build adjacency oracle** with exact arithmetic and spatial hashing\n5. **BFS expansion** from seed; record tiles, edges, sheet labels\n6. **Build sparse adjacency** $A$ and Laplacian $\\Delta = D - A$\n7. **Spectral analysis**: KPM for density of states, Lanczos for spectral gap\n8. **Geometric analysis**: BFS volume for $d_{\\text{eff}}$, random walks for $d_w$\n9. **Cross-validate** via Alexander–Orbach\n10. **Report** dimensional flow (UV vs. IR exponents) and vortex holonomy statistics\n\nThe entire pipeline is built on **exact symbolic arithmetic**. Without this foundation, the pentagonal lattice's distinctive topology dissolves into numerical noise.",
+      "examples": [
+        {
+          "title": "Validation on Known Systems",
+          "body": "Before applying the pipeline to the pentagon multi-sheeted tiling, validate on: (1) Square tiling — should give d_eff = d_spec = 2, d_w = 2. (2) Hexagonal tiling — another Level 0 sanity check. (3) Sierpiński gasket — known exact dimensions verify the full pipeline."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "M_algorithmic.md — Summary: The Computational Pipeline",
+        "M_algorithmic.md — Reproducibility and Verification"
+      ],
+      "relations": {
+        "requires": [
+          { "id": "exact-arithmetic-zphi" },
+          { "id": "adjacency-oracle" },
+          { "id": "spatial-hashing-memoization" },
+          { "id": "lazy-graph-generation" },
+          { "id": "sparse-adjacency-laplacian" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "lanczos-algorithm" },
+          { "id": "bfs-volume-scaling" },
+          { "id": "random-walk-simulation" },
+          { "id": "vortex-detection-rule-application" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "related": [{ "id": "power-law-fitting" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "performance-scaling": {
+      "id": "performance-scaling",
+      "term": "Performance Scaling and Bottlenecks",
+      "aliases": ["computational performance", "scaling limits", "pipeline bottlenecks"],
+      "domain": "computation",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": [
+        "performance",
+        "scaling",
+        "bottleneck",
+        "memoization",
+        "parallelization",
+        "tile count"
+      ],
+      "summary": "Typical computational scales and bottlenecks for each stage of the tiling analysis pipeline, from symbolic exploration (10³–10⁴ tiles) to KPM spectral analysis (10⁵–10⁷ tiles).",
+      "definition": "**Typical scales by pipeline stage**:\n\n| Stage | Tile Count | Arithmetic |\n|---|---|---|\n| Symbolic exploration | $10^3$–$10^4$ | Full algebraic |\n| Sparse adjacency analysis | $10^4$–$10^6$ | Integer with careful hashing |\n| KPM spectral analysis | $10^5$–$10^7$ | Matrix-vector products |\n| Random walk estimation | $10^4$–$10^6$ tiles, $10^3$–$10^5$ walks | Embedded coordinates |\n\n**Bottlenecks**:\n- **Adjacency oracle**: usually the rate-limiting step; aggressive memoization is critical\n- **Sheet-rule consistency checking**: $O(\\text{vortex count})$ per pass; usually fast\n- **KPM moments**: trivially parallelizable (multiple random vectors)\n- **Sparse linear algebra**: well-handled by `scipy.sparse` or equivalent",
+      "examples": [
+        {
+          "title": "Memoization Impact",
+          "body": "Without memoization, the adjacency oracle recomputes centroid coordinates for every neighbor query. With memoization, a cache hit rate of >90% is typical for BFS expansion, reducing oracle cost by 10× or more."
+        }
+      ],
+      "formulas": [],
+      "references": ["M_algorithmic.md — Performance Notes"],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "adjacency-oracle" },
+          { "id": "spatial-hashing-memoization" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "sparse-adjacency-laplacian" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

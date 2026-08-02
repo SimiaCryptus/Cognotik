@@ -1,0 +1,48 @@
+{
+  "type": "module",
+  "name": "mathematical-explorations",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node test/run-all.js",
+    "serve": "npx http-server -p 8080 -c-1",
+    "sitemap": "node scripts/generate-sitemap.js",
+    "og-image": "node scripts/generate-og-image.js",
+    "assets": "npm run sitemap && npm run og-image",
+    "lint": "eslint '**/*.js'",
+    "lint:fix": "eslint --fix '**/*.js'",
+    "lint:css": "stylelint '**/*.css'",
+    "lint:css:fix": "stylelint --fix '**/*.css'",
+    "lint:html": "htmlhint '**/*.html'",
+    "lint:md": "markdownlint-cli2 '**/*.md'",
+    "lint:md:fix": "markdownlint-cli2 --fix '**/*.md'",
+    "lint:all": "npm run lint && npm run lint:css && npm run lint:html && npm run lint:md",
+    "lint:all:fix": "npm run lint:fix && npm run lint:css:fix && npm run lint:md:fix",
+    "format": "prettier --write '**/*.js' '**/*.html' '**/*.css' '**/*.json' '**/*.md'",
+    "format:check": "prettier --check '**/*.js' '**/*.html' '**/*.css' '**/*.json' '**/*.md'",
+    "validate": "npm run lint:all && npm run format:check && npm run test",
+    "prebuild": "npm run format",
+    "build": "npm run assets",
+    "build:seo": "node scripts/generate-seo-pages.cjs",
+    "build:seo:prod": "node scripts/generate-seo-pages.cjs --out companion --base https://math.cognotik.com"
+  },
+  "author": "SimiaCryptus",
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@bubblewrap/cli": "^1.24.1",
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "htmlhint": "^1.1.4",
+    "markdownlint-cli2": "^0.13.0",
+    "prettier": "^3.0.0",
+    "stylelint": "^16.6.1",
+    "stylelint-config-standard": "^36.0.1",
+    "stylelint-prettier": "^5.0.0",
+    "marked": "^12.0.0"
+  }
+}

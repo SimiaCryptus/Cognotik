@@ -1,0 +1,33 @@
+{
+    "name": "magnet-lattice-toy",
+    "version": "1.0.0",
+    "description": "Browser-based design & simulation of a 3D-printed rotating-magnet toy.",
+    "type": "module",
+    "scripts": {
+        "test": "node test/run.js",
+        "serve": "python3 -m http.server 8000",
+        "start": "python3 -m http.server 8000",
+        "lint": "eslint 'src/**/*.js' 'test/**/*.js'",
+        "format": "prettier --write 'src/**/*.js' 'test/**/*.js' '*.md'",
+        "format:check": "prettier --check 'src/**/*.js' 'test/**/*.js'"
+    },
+    "keywords": [
+        "physics",
+        "simulation",
+        "magnets",
+        "dipole",
+        "symplectic",
+        "lagrangian"
+    ],
+    "license": "MIT",
+    "devDependencies": {
+        "eslint": "^9.0.0",
+        "prettier": "^3.0.0"
+    },
+    "prettier": {
+        "singleQuote": true,
+        "tabWidth": 4,
+        "bracketSpacing": false,
+        "printWidth": 100
+    }
+}

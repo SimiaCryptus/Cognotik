@@ -1,0 +1,15 @@
+.
+./NAM
+./NAM/README.md
+./NAM/socratic.md
+./NAM/perspectives.details.md
+./NAM/perspectives.md
+./NAM/index.html
+./RCC
+./RCC/README.md
+./RCC/socratic.md
+./RCC/brainstorm.details.md
+./RCC/perspectives.details.md
+./RCC/perspectives.md
+./RCC/index.html
+./RCC/brainstorm.md

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chromatic — OKLab vs Naive HSL Demo</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --fg: #e8eaf0;
+        --muted: #9aa0ad;
+        --panel: #171a21;
+        --border: #262a33;
+        --accent: #7cc4ff;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        line-height: 1.5;
+        padding: 2rem 1.5rem 4rem;
+      }
+
+      header {
+        max-width: 900px;
+        margin: 0 auto 2rem;
+      }
+
+      h1 {
+        margin: 0 0 0.25rem;
+        font-size: 1.6rem;
+        letter-spacing: -0.01em;
+      }
+
+      h1 .mark {
+        color: var(--accent);
+      }
+
+      p.lede {
+        color: var(--muted);
+        margin: 0;
+        max-width: 60ch;
+      }
+
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-items: flex-end;
+        padding: 1rem 1.25rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .control {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .control label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .control input[type='range'] {
+        width: 180px;
+      }
+
+      .control output {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.85rem;
+      }
+
+      .panel {
+        padding: 1.25rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .panel h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1rem;
+      }
+
+      .panel h2 .tag {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--muted);
+        margin-left: 0.5rem;
+      }
+
+      .swatches {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .swatch {
+        flex: 1 1 60px;
+        min-width: 60px;
+        height: 88px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 6px;
+        font-size: 0.7rem;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        color: #fff;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .metric {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+      }
+
+      .metric .k {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .metric .v {
+        font-size: 1.15rem;
+        font-variant-numeric: tabular-nums;
+        margin-top: 0.15rem;
+      }
+
+      .metric.bad .v {
+        color: #ff8b8b;
+      }
+
+      .metric.good .v {
+        color: #8bffb0;
+      }
+
+      pre.err {
+        color: #ff8b8b;
+        white-space: pre-wrap;
+      }
+
+      footer {
+        max-width: 900px;
+        margin: 2rem auto 0;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      code {
+        background: var(--bg);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><span class="mark">Chromatic</span> — OKLab vs Naive HSL</h1>
+      <p class="lede">
+        The same conceptual palette — <em>N accent colors evenly spaced in hue</em> — built two
+        ways. On the left, a cyclic orbit constructed in perceptually-uniform OKLch and projected to
+        HSL. On the right, a naive HSL hue-rotation. The distortion metrics quantify what your eyes
+        are already telling you.
+      </p>
+    </header>
+
+    <main>
+      <div class="controls">
+        <div class="control">
+          <label for="count">Colors</label>
+          <input id="count" type="range" min="3" max="12" step="1" value="6" />
+          <output id="count-out">6</output>
+        </div>
+        <div class="control">
+          <label for="light">Lightness (OKLch L)</label>
+          <input id="light" type="range" min="0.4" max="0.85" step="0.01" value="0.65" />
+          <output id="light-out">0.65</output>
+        </div>
+        <div class="control">
+          <label for="chroma">Chroma (OKLch C)</label>
+          <input id="chroma" type="range" min="0.05" max="0.25" step="0.01" value="0.15" />
+          <output id="chroma-out">0.15</output>
+        </div>
+        <div class="control">
+          <label for="hue0">Start hue (°)</label>
+          <input id="hue0" type="range" min="0" max="360" step="5" value="30" />
+          <output id="hue0-out">30</output>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>OKLch orbit → HSL <span class="tag">perceptually uniform construction</span></h2>
+        <div id="oklab-swatches" class="swatches"></div>
+        <div id="oklab-metrics" class="metrics"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Naive HSL hue-rotation <span class="tag">even steps in HSL hue</span></h2>
+        <div id="hsl-swatches" class="swatches"></div>
+        <div id="hsl-metrics" class="metrics"></div>
+      </div>
+
+      <pre id="error" class="err" hidden></pre>
+    </main>
+
+    <footer>
+      Built on the Chromatic ES module API (<code>Palette</code>,
+      <code>group</code>, <code>project</code>, <code>distortionReport</code>). Serve this directory
+      over HTTP (e.g. <code>npx serve</code>) so the browser can load the native ES modules.
+    </footer>
+
+    <script type="module" src="./demo.js"></script>
+  </body>
+</html>

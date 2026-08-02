@@ -1,0 +1,134 @@
+{
+  "featured": [
+    {
+      "icon": "PL",
+      "title": "Pentagonal Lattice Geometry",
+      "href": "experiments/Pentagon_Lattice_Geometry/index.html",
+      "readme": "experiments/Pentagon_Lattice_Geometry/README.md",
+      "video": "videos/Pentagon_Lattice_Geometry.mp4",
+      "launchLabel": "Open the Pentagonal Lattice Geometry lab",
+      "pitch": "A multi-sheeted covering construction in which the regular pentagon develops fractional dimension (d ≈ 2.37) and spinor-like holonomy — a discrete model where a single loop requires two passes to return to identity."
+    },
+    {
+      "icon": "GE",
+      "title": "Geometric Entropy",
+      "href": "experiments/geometric-entropy/index.html",
+      "readme": "experiments/geometric-entropy/README.md",
+      "video": "videos/Geometric_Entropy.mp4",
+      "pitch": "A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize the Shannon entropy of their pairwise-distance distribution."
+    },
+    {
+      "icon": "CA",
+      "title": "Layered Cellular Automata",
+      "href": "experiments/layered_ca/index.html",
+      "readme": "experiments/layered_ca/README.md",
+      "video": "videos/Binary_Coded_Layered_Autonoma.mp4",
+      "pitch": "Langton's ants write a colored substrate that gates where Conway's Life is allowed to live. Three feedback layers — ants → substrate → life → substrate → ants — produce highways, colonies, and fractal boundaries. For a playable take on Conway's Life and 50+ other rulesets, see the sister site <a href=\"https://aol.cognotik.com/\" target=\"_blank\" rel=\"noopener\">The Arcade of Life ↗</a>."
+    },
+    {
+      "icon": "SK",
+      "title": "Spacelike Knots",
+      "href": "experiments/spacelike-knots/index.html",
+      "readme": "experiments/spacelike-knots/README.md",
+      "video": "videos/Spacelike_Knots.mp4",
+      "pitch": "A knot equipped with a Minkowski metric, turning crossings into causal inversions. The distance matrix becomes a causal diagram: timelike, spacelike, and null separations color-coded across the whole knot."
+    },
+    {
+      "icon": "SY",
+      "title": "Space-Color Symmetry",
+      "href": "experiments/symmetry_simple/index.html",
+      "readme": "experiments/symmetry_simple/README.md",
+      "video": "videos/Symmetry_Diffusion.mp4",
+      "pitch": "A pixel canvas where symmetry doesn't just mirror your strokes — it rewires the diffusion graph. Heat flows along symmetry orbits, producing kaleidoscope dynamics on a quotient-like manifold."
+    },
+    {
+      "icon": "IL",
+      "title": "Irrational Lattice",
+      "href": "experiments/irrational_lattice/index.html",
+      "readme": "experiments/irrational_lattice/README.md",
+      "video": "videos/Irrational_Lattice.mp4",
+      "pitch": "A new primitive: deterministic, algebraic “colored noise” for lattices. Coordinates in ℚ(√D) deform ℤᵈ and snap back via a nearest-lattice map — provably aperiodic, spectrally tunable, integer-arithmetic clean."
+    },
+    {
+      "icon": "GR",
+      "title": "Relativistic 2-Body Gravity",
+      "href": "experiments/gravity/index.html",
+      "readme": "experiments/gravity/README.md",
+      "video": "videos/Relativistic_Gravity.mp4",
+      "launchLabel": "Open the Relativistic 2-Body Gravity lab",
+      "pitch": "A 2-body gravitational system with relativistic adjustments and time-delayed (retarded) interactions. Gravity propagates at finite speed c, breaking Newton's third law and producing orbital precession, frame-dragging analogues, and chaotic orbits."
+    },
+    {
+      "icon": "3L",
+      "title": "No-Three-in-Line Explorer",
+      "href": "experiments/3inline/index.html",
+      "readme": "experiments/3inline/README.md",
+      "launchLabel": "Open the No-Three-in-Line Explorer lab",
+      "pitch": "An interactive laboratory for the classic no-three-in-line problem: place ~2n points on an n×n grid so no three are collinear along any rational slope. Solve it by hand with instant collinearity feedback, or watch an entropic simulated-annealing solver with parabola warm starts, sublattice mutations, and a tabu list search for dense configurations — all powered by an incremental line index for fast O(k) move checks."
+    },
+    {
+      "icon": "NM",
+      "title": "nam — Numbers as Machines",
+      "href": "experiments/nam-calculator/index.html",
+      "readme": "experiments/nam-calculator/README.md",
+      "launchLabel": "Open the nam interactive calculator",
+      "pitch": "A calculator where every number is a deterministic, forkable virtual machine emitting an infinite digit stream on demand. Comparison is honestly tri-state, fork cost is annotated by tier, and unprovable digits render as 'pending (null)' rather than a comfortable lie."
+    },
+    {
+      "icon": "MA",
+      "title": "Bidirectional Markov Text Analyzer",
+      "href": "experiments/markov-analysis/index.html",
+      "readme": "experiments/markov-analysis/README.md",
+      "launchLabel": "Open the Bidirectional Markov Text Analyzer lab",
+      "pitch": "Build a language model from your own corpus, then watch another text light up token-by-token by how <em>surprising</em> it is. Forward and backward order-n Markov models are merged into a single surprise heatmap, with click-to-replace predictions, add-k smoothing, backoff, and live perplexity."
+    },
+    {
+      "icon": "ME",
+      "title": "Constrained Mesh Enclosure Lab",
+      "href": "experiments/mesh/index.html",
+      "readme": "experiments/mesh/README.md",
+      "launchLabel": "Open the Constrained Mesh Enclosure Lab",
+      "pitch": "A deformable surface mesh flows downhill on geometric fitness functionals (area, volume, edge-length entropy, angular regularity, Laplacian smoothness) while an exact continuous collision-detection pipeline guarantees it never intrudes into an inner keep-out volume — a differentiable shrink-wrap where every gradient step is clipped at the moment of contact."
+    },
+    {
+      "icon": "FL",
+      "title": "Fractal Learning",
+      "href": "experiments/fractal_learning/index.html",
+      "readme": "experiments/fractal_learning/idea.md",
+      "pitch": "Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so the depth-N orbit of the origin matches a target point cloud under a Chamfer metric."
+    },
+    {
+      "icon": "🔒",
+      "title": "Static Secrets",
+      "href": "experiments/static-secrets/index.html?url=https%3A%2F%2Fmath.cognotik.com%2Fexperiments%2Fstatic-secrets%2Fdemo-site%2Findex.ssec",
+      "readme": "experiments/static-secrets/README.md",
+      "pitch": "Publish encrypted content anywhere and decrypt it entirely in your browser. The host serves opaque bytes; only you hold the key."
+    },
+    {
+      "icon": "OM",
+      "title": "Optimization Mechanics Visualizer",
+      "href": "experiments/optimization-mechanics/index.html",
+      "readme": "experiments/optimization-mechanics/README.md",
+      "launchLabel": "Open the Optimization Mechanics Visualizer lab",
+      "pitch": "Drop GD, Adam, L-BFGS, and QQN onto the same rugged 2D loss landscape and watch, step by step, how each finds its way downhill. Configurable terrain (slopes, bowls, high-frequency noise, confounding lattices), a fading path with live gradient arrows, and projected statistics bars that expose the running gradient and squared-gradient accumulations adaptive optimizers quietly maintain. Step through QQN's oracle point, quadratic path, and line-search probes to see the mechanics papers describe in equations."
+    },
+    {
+      "icon": "CH",
+      "title": "Chromatic — OKLab vs Naive HSL",
+      "href": "experiments/chromatic/index.html",
+      "readme": "experiments/chromatic/README.md",
+      "launchLabel": "Open the Chromatic OKLab vs Naive HSL demo",
+      "pitch": "A color engine that thinks in perception, not hue wheels. The same palette — N accent colors evenly spaced in hue — built two ways: a perceptually-uniform OKLch orbit projected to HSL, versus a naive HSL hue-rotation that bunches near the yellows and stretches thin through the blues. Live distortion metrics (ordering violations, hue drift, gamut clipping) quantify which relational invariants survive projection, turning an aesthetic complaint into a measurable geometry problem."
+    },
+    {
+      "icon": "PC",
+      "title": "PID-Regulated Cellular Automaton",
+      "href": "experiments/pid-ca/index.html",
+      "readme": "experiments/pid-ca/README.md",
+      "launchLabel": "Open the PID-Regulated Cellular Automaton lab",
+      "pitch": "A cellular automaton whose update rule is a per-cell PID controller: each cell measures its active-neighbor count against a target and computes proportional, integral, and derivative terms to decide its next state. The result is a rule family with local memory (integral windup), local anticipation (derivative), and tunable dynamical regimes — under-damped ripples, critically-damped blobs, over-damped glassy creep — all from the same control-theoretic mechanism."
+    }
+  ],
+  "essays": [],
+  "demos": []
+}

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Optimization Mechanics Visualizer</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="toolbar">
+      <div class="tb-group">
+        <button id="btn-step">Step</button>
+        <button id="btn-play">Play</button>
+        <button id="btn-reset">Reset</button>
+        <label>Speed <input type="range" id="speed" min="1" max="60" value="10" /></label>
+      </div>
+      <div class="tb-group">
+        <label
+          >View
+          <select id="viz-mode">
+            <option value="heatmap" selected>Heatmap</option>
+            <option value="contour">Contour</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </label>
+        <label
+          >Scheme
+          <select id="color-scheme">
+            <option value="viridis" selected>Viridis</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="diverging">Diverging</option>
+          </select>
+        </label>
+        <label
+          >Scaling
+          <select id="value-scaling">
+            <option value="linear" selected>Linear</option>
+            <option value="log">Log</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="autofollow" checked /> Follow</label>
+        <label><input type="checkbox" id="show-grad" checked /> Gradients</label>
+      </div>
+      <div class="tb-group">
+        <button id="btn-copy-config" title="Copy full configuration as JSON">Copy Config</button>
+        <button id="btn-paste-config" title="Paste configuration from JSON">Paste Config</button>
+      </div>
+      <div class="tb-group">
+        <span id="readout" class="readout"></span>
+      </div>
+    </div>
+    <div id="main">
+      <div id="stage">
+        <canvas id="loss-layer"></canvas>
+        <canvas id="overlay-layer"></canvas>
+        <canvas id="path-layer"></canvas>
+        <canvas id="stats-layer"></canvas>
+        <canvas id="ui-layer"></canvas>
+      </div>
+      <div id="side-panel">
+        <div id="panel-tabs">
+          <button class="panel-tab active" data-tab="base">Base</button>
+          <button class="panel-tab" data-tab="noise">Noise</button>
+          <button class="panel-tab" data-tab="lattice">Lattice</button>
+          <button class="panel-tab" data-tab="optimizer">Optimizer</button>
+        </div>
+        <div id="panel-body"></div>
+      </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

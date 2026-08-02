@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <title>Algebraic Colored Lattice Field</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .home-link {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9999;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: #e6edf3;
+        background: rgba(22, 27, 34, 0.92);
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.15s ease;
+      }
+      .home-link:hover {
+        background: rgba(48, 54, 61, 0.95);
+        border-color: #58a6ff;
+        color: #58a6ff;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+    <header>
+      <h1>Algebraic Colored Lattice Field</h1>
+    </header>
+
+    <main>
+      <button id="sidebarToggle" class="sidebar-toggle" title="Collapse / expand controls">
+        ☰
+      </button>
+      <div class="canvas-wrap">
+        <canvas id="field" width="700" height="700"></canvas>
+        <div class="legend">
+          <span>min</span>
+          <div class="gradient"></div>
+          <span>max</span>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="control">
+          <label for="D">Square-free integer D</label>
+          <select id="D">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="13">13</option>
+            <option value="17">17</option>
+            <option value="19">19</option>
+            <option value="23">23</option>
+            <option value="29">29</option>
+            <option value="31">31</option>
+            <option value="37">37</option>
+            <option value="41">41</option>
+            <option value="43">43</option>
+            <option value="47">47</option>
+            <option value="53">53</option>
+            <option value="59">59</option>
+            <option value="61">61</option>
+            <option value="67">67</option>
+            <option value="71">71</option>
+            <option value="73">73</option>
+            <option value="79">79</option>
+            <option value="83">83</option>
+            <option value="89">89</option>
+            <option value="97">97</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="mode">Field mode</label>
+          <select id="mode">
+            <option value="magnitude">|&eta;(x)|</option>
+            <option value="rational">Rational part |a(x)|</option>
+            <option value="irrational">Irrational part |b(x)|&radic;D</option>
+            <option value="snapped">Snap displacement</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label>K frequencies: <output id="kOut">3</output></label>
+          <input type="range" id="K" min="1" max="42" value="3" step="1" />
+          <button class="sweep-btn" data-target="K" title="Sweep K">⟲ sweep</button>
+        </div>
+
+        <div class="control">
+          <label>Frequency scale &alpha;: <output id="alphaOut">0.080</output></label>
+          <input type="range" id="alpha" min="0.001" max="2.0" value="0.08" step="0.001" />
+          <button class="sweep-btn" data-target="alpha" title="Sweep alpha">⟲ sweep</button>
+        </div>
+
+        <div class="control">
+          <label>Amplitude &epsilon;: <output id="epsOut">0.30</output></label>
+          <input type="range" id="eps" min="0.0" max="5.0" value="0.30" step="0.01" />
+          <button class="sweep-btn" data-target="eps" title="Sweep epsilon">⟲ sweep</button>
+        </div>
+
+        <div class="control">
+          <label>Grid size: <output id="sizeOut">256</output></label>
+          <input type="hidden" id="size" value="256" />
+          <div class="int-stepper">
+            <button id="sizeMinus" title="Decrease grid size">−</button>
+            <input type="range" id="sizeInput" min="1" max="1024" value="256" step="1" />
+            <button id="sizePlus" title="Increase grid size">+</button>
+          </div>
+        </div>
+        <div class="control">
+          <label>Upsample (grid sampling): <output id="upsampleOut">1</output>×</label>
+          <input type="range" id="upsample" min="1" max="8" value="1" step="1" />
+        </div>
+        <div class="control">
+          <label>Zoom granularity: <output id="zoomStepOut">1.100</output></label>
+          <input type="range" id="zoomStep" min="1.001" max="4.0" value="1.1" step="0.001" />
+          <div class="rational-stepper">
+            <div class="rs-frac">
+              <div class="int-stepper">
+                <button id="zoomNumMinus" title="Decrease numerator">−</button>
+                <input type="number" id="zoomNum" min="1" max="100000" value="11" step="1" />
+                <button id="zoomNumPlus" title="Increase numerator">+</button>
+              </div>
+              <span class="rs-bar">/</span>
+              <div class="int-stepper">
+                <button id="zoomDenMinus" title="Decrease denominator">−</button>
+                <input type="number" id="zoomDen" min="1" max="100000" value="10" step="1" />
+                <button id="zoomDenPlus" title="Increase denominator">+</button>
+              </div>
+            </div>
+          </div>
+          <button class="sweep-btn" data-target="zoom" data-dir="in" title="Sweep zoom in">
+            ⟲ in
+          </button>
+          <button class="sweep-btn" data-target="zoom" data-dir="out" title="Sweep zoom out">
+            ⟲ out
+          </button>
+        </div>
+
+        <div class="control">
+          <label>Color map</label>
+          <select id="cmap">
+            <option value="viridis" selected>viridis</option>
+            <option value="magma">magma</option>
+            <option value="grayscale">grayscale</option>
+            <option value="twilight">twilight</option>
+            <option value="rainbow">rainbow</option>
+            <option value="disco">disco</option>
+            <option value="neon">neon</option>
+            <option value="fire">fire</option>
+            <option value="ice">ice</option>
+            <option value="plasma">plasma</option>
+          </select>
+        </div>
+        <div class="control">
+          <label>2D color map (hue ⊗ value)</label>
+          <select id="cmap2d">
+            <option value="none">none (use 1D map)</option>
+            <option value="snap" selected>snap distance ⊗ field</option>
+            <option value="rational_irrational">rational ⊗ irrational</option>
+            <option value="xy_phase">xy phase ⊗ field</option>
+          </select>
+        </div>
+        <div class="control">
+          <label>Color cycling speed: <output id="cycleOut">0.00</output></label>
+          <input type="range" id="cycle" min="0.0" max="2.0" value="0.0" step="0.01" />
+        </div>
+
+        <div class="control">
+          <label>Seed (phase offset): <output id="seedOut">0</output></label>
+          <input type="range" id="seed" min="0" max="1000" value="0" step="1" />
+          <button class="sweep-btn" data-target="seed" title="Sweep seed">⟲ sweep</button>
+        </div>
+        <div class="control">
+          <label>Integer offset: <output id="offsetOut">0, 0</output></label>
+          <div class="offset-buttons">
+            <button id="offsetXMinus">x-</button>
+            <button id="offsetXPlus">x+</button>
+            <button id="offsetYMinus">y-</button>
+            <button id="offsetYPlus">y+</button>
+          </div>
+        </div>
+        <div class="control">
+          <label>Autocorrelation walk</label>
+          <div class="offset-buttons">
+            <button id="acCompute" title="Compute top-2 autocorrelation vectors">analyze</button>
+            <button id="acStep" title="Random walk one step">step</button>
+            <button id="acPlay" title="Play / pause random walk">▶ play</button>
+            <button id="acShow" title="Show / hide autocorrelation vectors on lattice">
+              show vectors
+            </button>
+          </div>
+          <output id="acOut">no vectors</output>
+        </div>
+        <div class="control">
+          <label>Walk speed: <output id="acSpeedOut">2.0</output> steps/s</label>
+          <input type="range" id="acSpeed" min="0.1" max="20" value="2" step="0.1" />
+        </div>
+        <div class="control">
+          <label>Audio sonification</label>
+          <div class="offset-buttons">
+            <button id="audioPlay" title="Play / pause field audio">▶ play audio</button>
+          </div>
+          <label for="audioMode">Mode</label>
+          <select id="audioMode">
+            <option value="scan" selected>scan (additive drone)</option>
+            <option value="sample">sample (waveform loop)</option>
+          </select>
+        </div>
+        <div class="control">
+          <label>Audio volume: <output id="audioVolOut">0.40</output></label>
+          <input type="range" id="audioVol" min="0" max="1" value="0.4" step="0.01" />
+        </div>
+        <div class="control">
+          <label>Scan rate: <output id="audioRateOut">30</output> col/s</label>
+          <input type="range" id="audioRate" min="1" max="200" value="30" step="1" />
+        </div>
+
+        <button id="regen">Regenerate</button>
+        <button id="resetView">Reset view</button>
+        <button id="exportPng">Export PNG</button>
+
+        <div class="info">
+          <h3>About</h3>
+          <p>
+            Each lattice site
+            <span class="math">x &isin; &#x2124;&sup2;</span> is assigned an algebraic displacement
+            <span class="math">&eta;(x) = a(x) + b(x)&radic;D</span>
+            built from a sum of K incommensurate algebraic gratings. The visualization shows the
+            magnitude of this deterministic, aperiodic field.
+          </p>
+          <p>
+            Lower D values and small &alpha; yield long-range moir&eacute;-like interference
+            reminiscent of Penrose patterns, constrained to the square lattice.
+          </p>
+          <p>
+            <strong>Drag</strong> to pan and <strong>scroll</strong> to zoom into the rational
+            lattice. Use <em>Reset view</em> to return to the origin.
+          </p>
+          <div class="stats" id="stats"></div>
+        </div>
+      </aside>
+    </main>
+    <!-- Floating draggable, collapsible 3D FFT subwindow -->
+    <div id="fftWindow" class="floating-window">
+      <div class="fw-titlebar" id="fftTitlebar">
+        <span class="fw-title">3D FFT spectrum</span>
+        <div class="fw-buttons">
+          <button id="fftRefresh" class="fw-btn" title="Recompute FFT">⟳</button>
+          <button id="fftCollapse" class="fw-btn" title="Collapse / expand">▾</button>
+        </div>
+      </div>
+      <div class="fw-body" id="fftBody">
+        <canvas id="fftCanvas" width="320" height="260"></canvas>
+        <div class="fw-controls">
+          <label
+            >Rotate
+            <input type="range" id="fftRot" min="0" max="360" value="35" step="1" />
+          </label>
+          <label
+            >Tilt
+            <input type="range" id="fftTilt" min="5" max="85" value="55" step="1" />
+          </label>
+          <label
+            >Height
+            <input type="range" id="fftScale" min="0.1" max="3" value="1" step="0.05" />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

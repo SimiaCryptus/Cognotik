@@ -1,0 +1,736 @@
+{
+  "version": "1.0.0",
+  "title": "Dimensions and Scaling",
+  "description": "Dimension-theoretic vocabulary covering multiple non-equivalent notions of dimension in combinatorial, fractal, and disordered geometry, along with scaling regimes and diffusion exponents.",
+  "concepts": {
+    "hausdorff-dimension": {
+      "id": "hausdorff-dimension",
+      "term": "Hausdorff Dimension",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "advanced",
+      "tags": ["dimension", "measure-theory", "fractal", "scaling"],
+      "summary": "A measure-theoretic dimension defined by the asymptotic behavior of covers by sets of small diameter; can be non-integer for fractal sets.",
+      "definition": "A **measure-theoretic dimension** defined by examining the asymptotic behavior of covers by sets of small diameter:\n\n$$\\dim_H(S) = \\inf \\{s \\geq 0 : H^s(S) = 0\\}$$\n\nwhere $H^s$ is the $s$-dimensional Hausdorff measure. This is the most refined notion of dimension for general sets — agrees with the topological dimension on smooth manifolds but can be non-integer.",
+      "examples": [
+        {
+          "title": "Smooth manifold",
+          "body": "For a smooth $n$-dimensional manifold, the Hausdorff dimension equals the topological dimension $n$."
+        },
+        {
+          "title": "Cantor set",
+          "body": "The middle-thirds Cantor set has Hausdorff dimension $\\log 2 / \\log 3 \\approx 0.631$, which is non-integer."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\dim_H(S) = \\inf \\{s \\geq 0 : H^s(S) = 0\\}",
+          "description": "Hausdorff dimension defined as the critical exponent at which the Hausdorff measure transitions from infinity to zero.",
+          "variables": {
+            "S": "The set whose dimension is being measured",
+            "H^s": "The s-dimensional Hausdorff measure",
+            "s": "The dimensional exponent"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "fractal-dimension" },
+          { "id": "box-counting-dimension" },
+          { "id": "effective-dimension" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "fractal-dimension": {
+      "id": "fractal-dimension",
+      "term": "Fractal Dimension",
+      "aliases": ["similarity dimension"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["dimension", "fractal", "self-similarity", "scaling"],
+      "summary": "The non-integer dimension of a self-similar set, computed from the number and scale of self-similar copies.",
+      "definition": "The general term for **non-integer dimensions of self-similar sets**. For a set composed of $N$ scaled copies of itself, each at scale $1/s$:\n\n$$d_f = \\frac{\\log N}{\\log s}$$\n\nThis is the **similarity dimension**, agreeing with Hausdorff dimension under reasonable conditions (Moran's theorem).",
+      "examples": [
+        {
+          "title": "Sierpiński gasket",
+          "body": "The Sierpiński gasket is composed of $N=3$ copies at scale $1/s = 1/2$, giving $d_f = \\log 3 / \\log 2 \\approx 1.585$."
+        },
+        {
+          "title": "Koch snowflake",
+          "body": "The Koch curve is composed of $N=4$ copies at scale $1/s = 1/3$, giving $d_f = \\log 4 / \\log 3 \\approx 1.262$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_f = \\frac{\\log N}{\\log s}",
+          "description": "Similarity dimension for a self-similar set made of N copies each scaled by factor 1/s.",
+          "variables": {
+            "d_f": "Fractal (similarity) dimension",
+            "N": "Number of self-similar copies",
+            "s": "Scaling factor (each copy has linear size 1/s of the original)"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "hausdorff-dimension" }, { "id": "box-counting-dimension" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "box-counting-dimension" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "box-counting-dimension": {
+      "id": "box-counting-dimension",
+      "term": "Box-Counting Dimension",
+      "aliases": ["Minkowski dimension", "Minkowski–Bouligand dimension"],
+      "domain": "geometry",
+      "crossDomains": ["computation"],
+      "difficulty": "intermediate",
+      "tags": ["dimension", "fractal", "scaling", "covering"],
+      "summary": "Dimension defined by counting the minimum number of boxes of side ε needed to cover a set, as ε → 0.",
+      "definition": "Defined via counts of $\\epsilon$-boxes needed to cover a set:\n\n$$\\dim_{\\text{box}}(S) = \\lim_{\\epsilon \\to 0} \\frac{\\log N(\\epsilon)}{\\log(1/\\epsilon)}$$\n\nwhere $N(\\epsilon)$ is the minimum number of boxes of side $\\epsilon$. Easier to compute than Hausdorff but equal for 'nice' sets.",
+      "examples": [
+        {
+          "title": "Smooth curve",
+          "body": "A smooth curve in the plane requires $O(1/\\epsilon)$ boxes of side $\\epsilon$, giving $\\dim_{\\text{box}} = 1$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\dim_{\\text{box}}(S) = \\lim_{\\epsilon \\to 0} \\frac{\\log N(\\epsilon)}{\\log(1/\\epsilon)}",
+          "description": "Box-counting dimension as the limiting log-ratio of box count to inverse box size.",
+          "variables": {
+            "S": "The set being measured",
+            "N(\\epsilon)": "Minimum number of boxes of side ε needed to cover S",
+            "\\epsilon": "Box side length"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "hausdorff-dimension" },
+          { "id": "fractal-dimension" },
+          { "id": "power-law-growth" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "fractal-dimension" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "effective-dimension": {
+      "id": "effective-dimension",
+      "term": "Effective Dimension",
+      "aliases": ["connectivity dimension", "combinatorial dimension"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["dimension", "graph", "BFS", "growth", "scaling"],
+      "summary": "The exponent governing the polynomial growth of BFS balls on a graph; the primary geometric dimension used in the project.",
+      "definition": "Also called **connectivity dimension**, this is the exponent governing the **growth of breadth-first-search (BFS) balls**:\n\n$$V(r) = |\\{v : d(v, v_0) \\leq r\\}| \\sim r^{d_{\\text{eff}}}$$\n\nas $r \\to \\infty$ on an infinite graph. For $\\mathbb{Z}^n$: $d_{\\text{eff}} = n$. For random graphs near percolation: $d_{\\text{eff}}$ can be non-integer.\n\nThis is the project's primary geometric dimension — what the graph 'looks like' from far away.",
+      "examples": [
+        {
+          "title": "Integer lattice",
+          "body": "On $\\mathbb{Z}^n$, the BFS ball of radius $r$ contains $\\Theta(r^n)$ vertices, so $d_{\\text{eff}} = n$."
+        },
+        {
+          "title": "Percolation cluster",
+          "body": "Near the percolation threshold, the incipient infinite cluster has $d_{\\text{eff}}$ that can be non-integer, reflecting the fractal geometry of the cluster."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "V(r) = |\\{v : d(v, v_0) \\leq r\\}| \\sim r^{d_{\\text{eff}}}",
+          "description": "Volume growth of BFS balls defining the effective dimension.",
+          "variables": {
+            "V(r)": "Number of vertices within graph distance r of a base vertex v_0",
+            "r": "Graph distance (BFS radius)",
+            "d_{\\text{eff}}": "Effective (combinatorial) dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "power-law-growth" },
+          { "id": "walk-dimension" },
+          { "id": "spectral-dimension" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "connectivity-dimension" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "connectivity-dimension": {
+      "id": "connectivity-dimension",
+      "term": "Connectivity Dimension",
+      "aliases": ["effective dimension"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["dimension", "graph", "combinatorial", "growth"],
+      "summary": "Synonym for effective dimension, emphasizing that it depends only on the combinatorial structure of the graph.",
+      "definition": "Synonym for **effective dimension**. The term emphasizes that it depends only on the **combinatorial structure** of the graph, not on any Euclidean embedding.\n\nSee **Effective Dimension** for the full definition and formulas.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "power-law-growth" }, { "id": "effective-dimension" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "effective-dimension" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "power-law-growth": {
+      "id": "power-law-growth",
+      "term": "Power-Law Growth",
+      "aliases": ["polynomial volume growth"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "foundational",
+      "tags": ["growth", "scaling", "log-log", "dimension", "BFS"],
+      "summary": "The scaling V(r) ~ r^d that defines the effective dimension, extracted via log-log regression.",
+      "definition": "The scaling $V(r) \\sim r^d$ that **defines** the effective dimension. The exponent $d$ is extracted via a **log-log fit** of $V(r)$ vs $r$:\n\n$$\\log V(r) \\approx d \\log r + \\text{const}$$\n\nThis is the fundamental empirical method for estimating combinatorial dimensions from graph data.",
+      "examples": [
+        {
+          "title": "Log-log regression",
+          "body": "Given BFS ball sizes $V(1), V(2), \\ldots, V(R)$, plot $\\log V(r)$ vs $\\log r$ and fit a line. The slope estimates $d_{\\text{eff}}$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\log V(r) \\approx d \\log r + \\text{const}",
+          "description": "Log-log linearization of power-law volume growth used to extract the effective dimension by linear regression.",
+          "variables": {
+            "V(r)": "BFS ball volume at radius r",
+            "d": "Effective dimension (slope of log-log fit)",
+            "r": "BFS radius"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "effective-dimension" },
+          { "id": "box-counting-dimension" },
+          { "id": "dimensional-flow" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "walk-dimension": {
+      "id": "walk-dimension",
+      "term": "Walk Dimension",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["combinatorics", "geometry"],
+      "difficulty": "advanced",
+      "tags": ["random-walk", "diffusion", "dimension", "scaling", "MSD"],
+      "summary": "The exponent d_w in the mean-squared displacement ⟨Δx²⟩ ~ t^(2/d_w) of a random walker on a graph.",
+      "definition": "The exponent in **mean-squared displacement** of a random walker on the graph:\n\n$$\\langle \\Delta x^2 \\rangle \\sim t^{2/d_w}$$\n\nFor ordinary Brownian motion on $\\mathbb{R}^n$ or a regular lattice: $d_w = 2$. On fractals and disordered graphs, $d_w$ can deviate.\n\n- $d_w > 2$: **sub-diffusion** (walker trapped by geometric bottlenecks)\n- $d_w < 2$: **super-diffusion** (ballistic propagation)\n- $d_w = 2$: ordinary Brownian diffusion",
+      "examples": [
+        {
+          "title": "Regular lattice",
+          "body": "On $\\mathbb{Z}^n$, random walks satisfy $\\langle \\Delta x^2 \\rangle \\sim t$, so $d_w = 2$."
+        },
+        {
+          "title": "Sierpiński gasket",
+          "body": "On the Sierpiński gasket, $d_w \\approx 2.32 > 2$, reflecting sub-diffusion caused by the fractal geometry."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\langle \\Delta x^2 \\rangle \\sim t^{2/d_w}",
+          "description": "Mean-squared displacement scaling defining the walk dimension.",
+          "variables": {
+            "\\langle \\Delta x^2 \\rangle": "Mean-squared displacement of the random walker",
+            "t": "Number of walk steps (time)",
+            "d_w": "Walk dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "mean-squared-displacement" }],
+        "related": [
+          { "id": "effective-dimension" },
+          { "id": "spectral-dimension" },
+          { "id": "alexander-orbach-relation" },
+          { "id": "anomalous-diffusion" },
+          { "id": "sub-diffusion" },
+          { "id": "super-diffusion" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "sub-diffusion": {
+      "id": "sub-diffusion",
+      "term": "Sub-Diffusion",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["diffusion", "random-walk", "anomalous", "fractal", "trapping"],
+      "summary": "Diffusion slower than Brownian motion, characterized by d_w > 2, caused by geometric bottlenecks trapping the walker.",
+      "definition": "Diffusion **slower than Brownian**, i.e., $d_w > 2$. The walker is 'trapped' by geometric bottlenecks. Common on fractals (e.g., Sierpiński gasket has $d_w \\approx 2.32$).\n\nIn the project context, the sheet structure of pentagonal tilings may cause sub-diffusion if vortices trap walkers that wind around them multiple times.",
+      "examples": [
+        {
+          "title": "Sierpiński gasket",
+          "body": "The Sierpiński gasket has $d_w \\approx 2.32$, so $\\langle \\Delta x^2 \\rangle \\sim t^{2/2.32} \\approx t^{0.86}$, growing slower than linear."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "walk-dimension" }, { "id": "anomalous-diffusion" }],
+        "related": [
+          { "id": "super-diffusion" },
+          { "id": "spectral-dimension" },
+          { "id": "dimensional-reduction" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "super-diffusion": {
+      "id": "super-diffusion",
+      "term": "Super-Diffusion",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["diffusion", "random-walk", "anomalous", "ballistic"],
+      "summary": "Diffusion faster than Brownian motion, characterized by d_w < 2, due to long-range correlations enabling ballistic propagation.",
+      "definition": "Diffusion **faster than Brownian**, $d_w < 2$. The walker propagates ballistically due to long-range correlations. Rare on graphs with bounded degree but possible in special settings.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "walk-dimension" }, { "id": "anomalous-diffusion" }],
+        "related": [{ "id": "sub-diffusion" }, { "id": "spectral-dimension" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "mean-squared-displacement": {
+      "id": "mean-squared-displacement",
+      "term": "Mean Squared Displacement",
+      "aliases": ["MSD"],
+      "domain": "physics",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["random-walk", "diffusion", "MSD", "scaling"],
+      "summary": "The expected squared distance ⟨(X_t − X_0)²⟩ traveled by a random walker in t steps; its log-log slope gives 2/d_w.",
+      "definition": "The quantity\n\n$$\\langle \\Delta x^2 \\rangle_t = \\mathbb{E}[(X_t - X_0)^2]$$\n\nmeasured along a random walk. The slope of its log-log fit is $2/d_w$.",
+      "examples": [
+        {
+          "title": "Brownian motion",
+          "body": "For standard Brownian motion on $\\mathbb{R}^n$, $\\langle \\Delta x^2 \\rangle_t = nt$, giving a log-log slope of 1, consistent with $d_w = 2$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\langle \\Delta x^2 \\rangle_t = \\mathbb{E}[(X_t - X_0)^2]",
+          "description": "Mean squared displacement of a random walk at time t.",
+          "variables": {
+            "X_t": "Position of the random walker at time t",
+            "X_0": "Initial position of the random walker",
+            "t": "Number of walk steps"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "walk-dimension" }, { "id": "anomalous-diffusion" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "anomalous-diffusion": {
+      "id": "anomalous-diffusion",
+      "term": "Anomalous Diffusion",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["diffusion", "random-walk", "fractal", "scaling", "non-classical"],
+      "summary": "Diffusion with d_w ≠ 2; the general phenomenon of random walks on fractals and complex networks deviating from classical Brownian scaling.",
+      "definition": "**Diffusion with $d_w \\neq 2$**. The general phenomenon that random walks on fractals and complex networks deviate from the classical Brownian scaling.\n\nEncompasses both sub-diffusion ($d_w > 2$) and super-diffusion ($d_w < 2$).",
+      "examples": [
+        {
+          "title": "Fractal lattices",
+          "body": "Random walks on the Sierpiński gasket, percolation clusters, and other fractal structures all exhibit anomalous diffusion with $d_w \\neq 2$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "walk-dimension" }, { "id": "mean-squared-displacement" }],
+        "related": [
+          { "id": "sub-diffusion" },
+          { "id": "super-diffusion" },
+          { "id": "spectral-dimension" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spectral-dimension": {
+      "id": "spectral-dimension",
+      "term": "Spectral Dimension",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "dimension",
+        "random-walk",
+        "heat-kernel",
+        "return-probability",
+        "Laplacian",
+        "scaling"
+      ],
+      "summary": "The exponent d_spec in the return probability P_0(t) ~ t^(−d_spec/2) of a random walk; also governs the low-energy density of states of the graph Laplacian.",
+      "definition": "The exponent in the **return probability** of a random walk:\n\n$$P_0(t) = \\text{Prob}[X_t = X_0] \\sim t^{-d_{\\text{spec}}/2}$$\n\nFor Brownian motion on $\\mathbb{R}^n$: $d_{\\text{spec}} = n$. For fractals, $d_{\\text{spec}}$ can be non-integer and is often **smaller than $d_{\\text{eff}}$**.\n\nThe spectral dimension also governs the **low-energy density of states** of the graph Laplacian:\n\n$$\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1} \\quad \\text{as } \\lambda \\to 0$$",
+      "examples": [
+        {
+          "title": "Regular lattice",
+          "body": "On $\\mathbb{Z}^n$, the return probability decays as $P_0(t) \\sim t^{-n/2}$, so $d_{\\text{spec}} = n = d_{\\text{eff}}$."
+        },
+        {
+          "title": "Causal Dynamical Triangulation",
+          "body": "In CDT quantum gravity, $d_{\\text{spec}} \\to 2$ in the UV and $d_{\\text{spec}} \\to 4$ in the IR, demonstrating dimensional flow."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "P_0(t) = \\text{Prob}[X_t = X_0] \\sim t^{-d_{\\text{spec}}/2}",
+          "description": "Return probability of a random walk defining the spectral dimension.",
+          "variables": {
+            "P_0(t)": "Probability that the random walker returns to its starting point after t steps",
+            "t": "Number of walk steps",
+            "d_{\\text{spec}}": "Spectral dimension"
+          }
+        },
+        {
+          "expression": "\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1} \\quad \\text{as } \\lambda \\to 0",
+          "description": "Low-energy density of states of the graph Laplacian governed by the spectral dimension.",
+          "variables": {
+            "\\rho(\\lambda)": "Density of states of the graph Laplacian at eigenvalue λ",
+            "\\lambda": "Laplacian eigenvalue",
+            "d_{\\text{spec}}": "Spectral dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "walk-dimension" }, { "id": "effective-dimension" }],
+        "related": [
+          { "id": "alexander-orbach-relation" },
+          { "id": "anomalous-diffusion" },
+          { "id": "dimensional-flow" },
+          { "id": "dimensional-reduction" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "alexander-orbach-relation": {
+      "id": "alexander-orbach-relation",
+      "term": "Alexander–Orbach Relation",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "advanced",
+      "tags": ["dimension", "scaling", "fractal", "random-walk", "identity", "diagnostic"],
+      "summary": "The fundamental identity d_spec = 2·d_eff / d_w relating the three combinatorial dimensions; a key diagnostic consistency check.",
+      "definition": "A fundamental identity tying the three combinatorial dimensions together:\n\n$$d_{\\text{spec}} = \\frac{2 d_{\\text{eff}}}{d_w}$$\n\nThis relation holds for random walks on a wide class of homogeneous fractals and graphs. Consequences:\n\n- If $d_w = 2$ (ordinary diffusion): $d_{\\text{spec}} = d_{\\text{eff}}$.\n- If $d_w > 2$ (sub-diffusion): $d_{\\text{spec}} < d_{\\text{eff}}$.\n- $d_w < 2$ (super-diffusion): $d_{\\text{spec}} > d_{\\text{eff}}$.\n\nThe Alexander–Orbach relation is one of the project's key diagnostic tools: knowing any two dimensions determines the third, providing consistency checks for numerical estimates.",
+      "examples": [
+        {
+          "title": "Regular lattice consistency check",
+          "body": "On $\\mathbb{Z}^n$: $d_{\\text{eff}} = n$, $d_w = 2$, $d_{\\text{spec}} = n$. Check: $2n/2 = n$. ✓"
+        },
+        {
+          "title": "Sub-diffusive fractal",
+          "body": "If $d_{\\text{eff}} = 2$ and $d_w = 2.5$, then $d_{\\text{spec}} = 2 \\cdot 2 / 2.5 = 1.6 < 2$, indicating dimensional reduction relative to the effective dimension."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{spec}} = \\frac{2 d_{\\text{eff}}}{d_w}",
+          "description": "Alexander–Orbach relation connecting spectral, effective, and walk dimensions.",
+          "variables": {
+            "d_{\\text{spec}}": "Spectral dimension",
+            "d_{\\text{eff}}": "Effective (combinatorial) dimension",
+            "d_w": "Walk dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "effective-dimension" },
+          { "id": "walk-dimension" },
+          { "id": "spectral-dimension" }
+        ],
+        "related": [
+          { "id": "anomalous-diffusion" },
+          { "id": "sub-diffusion" },
+          { "id": "dimensional-reduction" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "uv-regime": {
+      "id": "uv-regime",
+      "term": "UV (Ultraviolet) Regime",
+      "aliases": ["ultraviolet regime", "short-distance regime", "short-time regime"],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["scaling", "UV", "microscopic", "short-distance", "high-frequency"],
+      "summary": "The short-distance / short-time scaling regime that probes the microscopic structure of the graph.",
+      "definition": "The **short-distance / short-time regime**:\n\n- Small spatial separation.\n- Short walk times.\n- Large momentum / high frequency in Fourier picture.\n- Probes the **microscopic structure** of the graph (individual tiles, local connectivity).\n\nThe UV and IR can have **different effective dimensions** — a phenomenon called **dimensional flow**.",
+      "examples": [
+        {
+          "title": "CDT quantum gravity",
+          "body": "In Causal Dynamical Triangulation, the UV regime has $d_{\\text{spec}} \\approx 2$, reflecting the microscopic 2D structure of the triangulation."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "ir-regime" },
+          { "id": "dimensional-flow" },
+          { "id": "spectral-dimension" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "ir-regime": {
+      "id": "ir-regime",
+      "term": "IR (Infrared) Regime",
+      "aliases": ["infrared regime", "long-distance regime", "long-time regime"],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["scaling", "IR", "macroscopic", "long-distance", "low-frequency", "emergent"],
+      "summary": "The long-distance / long-time scaling regime that probes the macroscopic and emergent structure of the graph.",
+      "definition": "The **long-distance / long-time regime**:\n\n- Large spatial separation.\n- Long walk times.\n- Small momentum / low frequency.\n- Probes **macroscopic** / **emergent** structure.\n\nThe UV and IR can have **different effective dimensions** — a phenomenon called **dimensional flow**.",
+      "examples": [
+        {
+          "title": "CDT quantum gravity",
+          "body": "In Causal Dynamical Triangulation, the IR regime has $d_{\\text{spec}} \\approx 4$, recovering the expected 4D macroscopic spacetime."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "uv-regime" },
+          { "id": "dimensional-flow" },
+          { "id": "spectral-dimension" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "dimensional-flow": {
+      "id": "dimensional-flow",
+      "term": "Dimensional Flow",
+      "aliases": ["scale-dependent dimension", "running dimension"],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["dimension", "scaling", "UV", "IR", "quantum-gravity", "renormalization"],
+      "summary": "Scale-dependent effective dimension: the dimension observed depends on the length or time scale of observation, with UV and IR values potentially differing.",
+      "definition": "**Scale-dependent dimension**: the effective dimension depends on the length/time scale of observation. The UV value differs from the IR value.\n\nExamples:\n\n- Causal Dynamical Triangulation: $d_{\\text{spec}} \\to 2$ in UV, $d_{\\text{spec}} \\to 4$ in IR.\n- Asymptotic safety: similar UV $\\to$ IR running.\n- Pentagonal tilings (in the project): possibly $d_{\\text{spec}}$ flow between $\\sim 1.5$ and $\\sim 2$.\n\nDimensional flow can be visualized as a plot of 'local slope' of log-log data, showing how the apparent exponent runs with scale.",
+      "examples": [
+        {
+          "title": "CDT quantum gravity",
+          "body": "In CDT, the spectral dimension flows from $d_{\\text{spec}} \\approx 2$ at short scales (UV) to $d_{\\text{spec}} \\approx 4$ at large scales (IR), matching the observed 4D macroscopic universe."
+        },
+        {
+          "title": "Pentagonal tilings",
+          "body": "The multi-sheeted pentagonal tilings in the project may exhibit $d_{\\text{spec}}$ flow between approximately 1.5 and 2, providing a discrete combinatorial echo of quantum gravity's dimensional flow."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "spectral-dimension" }, { "id": "uv-regime" }, { "id": "ir-regime" }],
+        "related": [
+          { "id": "dimensional-reduction" },
+          { "id": "power-law-growth" },
+          { "id": "universality-class" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "dimensional-reduction": {
+      "id": "dimensional-reduction",
+      "term": "Dimensional Reduction",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry", "topology"],
+      "difficulty": "advanced",
+      "tags": ["dimension", "scaling", "quantum-gravity", "UV", "holography", "emergent"],
+      "summary": "A specific form of dimensional flow where the effective dimension decreases at short scales (UV), observed in CDT, asymptotic safety, and holography.",
+      "definition": "A specific form of dimensional flow where the **effective dimension decreases at long scales** or in the UV. Observed in:\n\n- CDT quantum gravity: 4D macroscopic, ~2D microscopic.\n- Asymptotic safety: 2D UV fixed point.\n- Holographic renormalization: bulk dimension reduces to boundary dimension at IR.\n\nThe conjecture is that **graphs with non-trivial topology** (sheet structure) can naturally exhibit dimensional reduction, providing a discrete model of quantum-gravity behavior.",
+      "examples": [
+        {
+          "title": "CDT quantum gravity",
+          "body": "CDT simulations show the spectral dimension dropping from 4 (IR) to approximately 2 (UV), suggesting that spacetime becomes effectively 2-dimensional at the Planck scale."
+        },
+        {
+          "title": "Pentagonal multi-sheeted tilings",
+          "body": "If the sheet structure causes sub-diffusion ($d_w > 2$), then by Alexander–Orbach, $d_{\\text{spec}} < 2$, mimicking dimensional reduction in a purely combinatorial setting."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "dimensional-flow" }, { "id": "spectral-dimension" }],
+        "related": [
+          { "id": "sub-diffusion" },
+          { "id": "alexander-orbach-relation" },
+          { "id": "uv-regime" },
+          { "id": "universality-class" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "universality-class": {
+      "id": "universality-class",
+      "term": "Universality Class",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["combinatorics", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "universality",
+        "scaling",
+        "renormalization-group",
+        "fixed-point",
+        "critical-phenomena"
+      ],
+      "summary": "A set of systems sharing the same scaling exponents (d_eff, d_w, d_spec) and critical scaling laws, independent of microscopic details.",
+      "definition": "A **set of systems sharing scaling exponents** — i.e., having the same $d_{\\text{eff}}$, $d_w$, $d_{\\text{spec}}$ and the same critical scaling laws. Universality means microscopic details don't matter for large-scale behavior; only symmetry, dimension, and range of interaction matter.\n\nThe **renormalization group** formalizes this: a universality class is a fixed point of the RG flow.",
+      "examples": [
+        {
+          "title": "Ising universality class",
+          "body": "The 2D Ising model and many other systems with $\\mathbb{Z}_2$ symmetry in 2D share the same critical exponents, forming a universality class."
+        },
+        {
+          "title": "Percolation universality class",
+          "body": "Random bond percolation and site percolation on different 2D lattices share the same fractal dimension and scaling exponents at the critical threshold."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "effective-dimension" },
+          { "id": "walk-dimension" },
+          { "id": "spectral-dimension" }
+        ],
+        "related": [
+          { "id": "dimensional-flow" },
+          { "id": "dimensional-reduction" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

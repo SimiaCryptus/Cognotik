@@ -1,0 +1,12 @@
+# robots.txt for Mathematical Explorations
+User-agent: *
+Allow: /
+
+# Disallow build/config noise (in case they are ever served)
+Disallow: /node_modules/
+Disallow: /test/
+Disallow: /package.json
+Disallow: /package-lock.json
+
+# Sitemap location
+Sitemap: https://math.cognotik.com/sitemap.xml

@@ -1,0 +1,11 @@
+
+# Common terraform secrets:
+*.tfstate
+*.tfstate.backup
+# Local .terraform directories
+.terraform/
+# Crash log files
+crash.log
+# Exclude override files as they are likely to contain secrets
+override.tf
+override.tf.json

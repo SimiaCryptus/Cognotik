@@ -1,0 +1,51 @@
+{
+  "essays": [
+    {
+      "icon": "QQN",
+      "title": "Quadratic Quasi-Newton",
+      "href": "essays/QQN/index.html",
+      "readme": "essays/QQN/README.md",
+      "subtitle": "Standalone · optimization",
+      "pitch": "A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS."
+    },
+    {
+      "icon": "QQN",
+      "title": "Which Direction? → Where on the Curve?",
+      "href": "essays/QQN-Visuals/index.html",
+      "readme": "essays/QQN-Visuals/README.md",
+      "subtitle": "Interactive · optimization",
+      "pitch": "An interactive, scroll-driven tutorial on the Quadratic Quasi-Newton (QQN) optimizer. Reframes optimization from \"which direction should I move?\" into \"where on this curve should I stop?\" — with live contour maps, deformable search curves, and a four-axis factoring that collapses a zoo of classical methods (gradient descent, momentum, L-BFGS, trust regions, OWL-QN) into points in one configuration space. <em>Built to make the geometry something you can feel, not just read.</em>"
+    },
+    {
+      "icon": "RCC",
+      "title": "RCC — Rational Certificate Complexity",
+      "href": "essays/RCC/index.html",
+      "readme": "essays/RCC/README.md",
+      "subtitle": "Trilogy I · the foundational vocabulary",
+      "pitch": "The foundation of the trilogy. Treats every convergence sequence as a rational certificate engine, measures its bit-length versus demanded tolerance ε, and stratifies constants into cost classes (RC₁/RC₂/RC₃). Establishes the regularity condition, a Θ(log 1/ε) lower bound, and the central separation algebraic irrationals vs. π and e. <em>It fixes the vocabulary the other two essays invoke.</em>"
+    },
+    {
+      "icon": "PI_RCC",
+      "title": "PI_RCC — The Simplest Increment: x + sin(x)",
+      "href": "essays/PI_RCC/index.html",
+      "readme": "essays/PI_RCC/README.md",
+      "subtitle": "Trilogy II · stress-testing the boundary",
+      "pitch": "A cubic-convergent iteration for π whose outer recurrence is <em>not</em> hypergeometric — it falls outside RCC's classified class, yet still attains optimal RC₁ cost. Develops derivative engineering and the tower of continua (ℚ → algebraic → analytic → elliptic/modular → periods). <em>Where RCC defines the cost classes, PI_RCC shows their boundary is permeable.</em>"
+    },
+    {
+      "icon": "NAM",
+      "title": "NAM — Numbers as Machines",
+      "href": "essays/NAM/index.html",
+      "readme": "essays/NAM/README.md",
+      "subtitle": "Trilogy III · the executable substrate",
+      "pitch": "A generator-based numerics library where every number is a forkable, deterministic nano-VM emitting an infinite digit stream. RCC's cost classes resurface here as generator state-dimension tiers, with a two-tier ABI, base-as-codec, BBP-as-resonance, and an honest interval account of equality. <em>Where RCC measures and PI_RCC engineers, NAM builds the machine that runs them all.</em>"
+    },
+    {
+      "icon": "TEL",
+      "title": "The Extension Ladder: One Way to Watch Number Systems Grow",
+      "href": "essays/TEL/index.html",
+      "readme": "essays/TEL/README.md",
+      "pitch": ""
+    }
+  ]
+}

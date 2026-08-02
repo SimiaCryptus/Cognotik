@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NUMBER CRUSH — Arcade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg0: #05070f;
+        --bg1: #0b1226;
+        --panel: rgba(22, 30, 55, 0.72);
+        --accent: #59c2ff;
+        --accent2: #c084fc;
+        --accent3: #34f5c5;
+        --text: #eaf0ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        background:
+          radial-gradient(1200px 800px at 20% -10%, #1a2450 0%, transparent 55%),
+          radial-gradient(1000px 700px at 90% 10%, #3a1a55 0%, transparent 55%),
+          linear-gradient(160deg, var(--bg1), var(--bg0));
+        color: var(--text);
+        font-family: 'Rajdhani', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        user-select: none;
+        -webkit-user-select: none;
+        overflow-x: hidden;
+      }
+
+      /* Animated scanline / grid overlay for arcade vibe */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(89, 194, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(89, 194, 255, 0.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+        animation: drift 30s linear infinite;
+        z-index: 0;
+      }
+      @keyframes drift {
+        to {
+          background-position: 400px 400px;
+        }
+      }
+
+      header {
+        text-align: center;
+        padding: 28px 16px 8px;
+        z-index: 1;
+      }
+
+      header h1 {
+        margin: 0;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 900;
+        font-size: clamp(2rem, 6vw, 3.4rem);
+        letter-spacing: 0.14em;
+        background: linear-gradient(
+          90deg,
+          var(--accent),
+          var(--accent2),
+          var(--accent3),
+          var(--accent)
+        );
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 18px rgba(89, 194, 255, 0.35));
+        animation: hue 6s linear infinite;
+      }
+      @keyframes hue {
+        to {
+          background-position: 300% 0;
+        }
+      }
+
+      #rule-desc {
+        color: var(--accent);
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        margin-top: 6px;
+      }
+
+      #hud {
+        display: flex;
+        gap: 18px;
+        margin: 10px 0 18px;
+        z-index: 1;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .hud-card {
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(120, 160, 255, 0.18);
+        border-radius: 14px;
+        padding: 10px 22px;
+        min-width: 130px;
+        text-align: center;
+        box-shadow:
+          0 8px 30px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      }
+      .hud-card .label {
+        display: block;
+        font-size: 0.72rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        opacity: 0.55;
+      }
+      .hud-card .value {
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        font-size: 1.7rem;
+        line-height: 1.2;
+        color: #fff;
+      }
+      #score {
+        transition: transform 0.12s ease;
+      }
+      .bump {
+        transform: scale(1.28);
+      }
+
+      #board-wrap {
+        position: relative;
+        background: linear-gradient(180deg, rgba(30, 42, 78, 0.5), rgba(10, 16, 32, 0.6));
+        border-radius: 22px;
+        padding: 14px;
+        border: 1px solid rgba(120, 160, 255, 0.22);
+        box-shadow:
+          0 20px 60px rgba(0, 0, 0, 0.6),
+          0 0 60px rgba(89, 194, 255, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        z-index: 1;
+      }
+      /* Neon border sweep */
+      #board-wrap::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 24px;
+        padding: 2px;
+        background: linear-gradient(
+          120deg,
+          var(--accent),
+          transparent 30%,
+          transparent 70%,
+          var(--accent2)
+        );
+        -webkit-mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0.6;
+        animation: hue 6s linear infinite;
+        pointer-events: none;
+      }
+
+      canvas {
+        display: block;
+        touch-action: none;
+        border-radius: 12px;
+      }
+
+      #indicator {
+        margin-top: 16px;
+        min-height: 1.6rem;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.25rem;
+        letter-spacing: 0.06em;
+        text-align: center;
+        z-index: 1;
+        transition: transform 0.15s ease;
+      }
+      #indicator.valid {
+        color: #7dffb0;
+        text-shadow: 0 0 18px rgba(80, 255, 150, 0.7);
+        animation: pop 0.35s ease;
+      }
+      #indicator.invalid {
+        color: #ff6b8a;
+        text-shadow: 0 0 16px rgba(255, 80, 110, 0.6);
+        animation: shakeText 0.35s ease;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+        60% {
+          transform: scale(1.15);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes shakeText {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-8px);
+        }
+        75% {
+          transform: translateX(8px);
+        }
+      }
+
+      /* ---- Config menu ---- */
+      #config-menu {
+        position: relative;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        border-radius: 20px;
+        padding: 30px 28px;
+        border: 1px solid rgba(120, 160, 255, 0.22);
+        box-shadow:
+          0 24px 70px rgba(0, 0, 0, 0.6),
+          0 0 50px rgba(120, 100, 255, 0.15);
+        width: 380px;
+        max-width: 92vw;
+        z-index: 1;
+        margin-top: 10px;
+      }
+      #config-menu h2 {
+        margin: 0 0 20px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.3rem;
+        letter-spacing: 0.12em;
+        text-align: center;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .cfg-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+        gap: 12px;
+      }
+      .cfg-row label {
+        opacity: 0.85;
+        font-size: 0.98rem;
+        letter-spacing: 0.03em;
+      }
+      .cfg-row input,
+      .cfg-row select {
+        background: rgba(10, 16, 32, 0.7);
+        color: var(--text);
+        border: 1px solid rgba(120, 160, 255, 0.28);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.98rem;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .cfg-row input:focus,
+      .cfg-row select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(89, 194, 255, 0.2);
+      }
+      .cfg-row input[type='number'] {
+        width: 80px;
+      }
+      .cfg-row select {
+        max-width: 200px;
+      }
+      button.primary,
+      button.secondary {
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 0.1em;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 22px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 12px;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.2s ease,
+          filter 0.2s;
+      }
+      button.primary {
+        color: #05070f;
+        background: linear-gradient(120deg, var(--accent), var(--accent3));
+        box-shadow: 0 10px 30px rgba(52, 245, 197, 0.35);
+      }
+      button.primary:hover {
+        transform: translateY(-2px) scale(1.02);
+        filter: brightness(1.08);
+        box-shadow: 0 14px 40px rgba(52, 245, 197, 0.5);
+      }
+      button.primary:active {
+        transform: translateY(0) scale(0.99);
+      }
+      button.secondary {
+        color: var(--text);
+        background: rgba(30, 42, 78, 0.8);
+        border: 1px solid rgba(120, 160, 255, 0.3);
+        width: auto;
+      }
+      button.secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>NUMBER&nbsp;CRUSH</h1>
+      <div id="rule-desc">&nbsp;</div>
+    </header>
+
+    <div id="config-menu">
+      <h2>◆ GAME SETUP ◆</h2>
+      <form id="config-form">
+        <div class="cfg-row">
+          <label for="cfg-rule">Constraint rule</label>
+          <select id="cfg-rule"></select>
+        </div>
+        <div class="cfg-row" id="cfg-target-field">
+          <label for="cfg-target">Target value</label>
+          <input type="number" id="cfg-target" value="10" min="2" max="20" step="1" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-cols">Board columns</label>
+          <input type="number" id="cfg-cols" value="8" min="2" max="16" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-rows">Board rows</label>
+          <input type="number" id="cfg-rows" value="9" min="2" max="16" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-size">Tile size (px)</label>
+          <input type="number" id="cfg-size" value="30" min="12" max="48" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-val-min">Min tile value</label>
+          <input type="number" id="cfg-val-min" value="1" min="-9" max="1" step="1" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-val-max">Max tile value</label>
+          <input type="number" id="cfg-val-max" value="9" min="1" max="9" step="1" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-min-sel">Min selection length</label>
+          <input type="number" id="cfg-min-sel" value="2" min="1" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-max-sel">Max selection length</label>
+          <input type="number" id="cfg-max-sel" value="4" min="1" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-straight-line">Enforce straight-line selections</label>
+          <input type="checkbox" id="cfg-straight-line" />
+        </div>
+        <div class="cfg-row">
+          <label for="cfg-suppress-zero">Suppress 0-valued tiles</label>
+          <input type="checkbox" id="cfg-suppress-zero" />
+        </div>
+        <button type="submit" class="primary">▶ START GAME</button>
+      </form>
+    </div>
+
+    <div id="game-area" style="display: none">
+      <div id="hud">
+        <div class="hud-card">
+          <span class="label">Score</span>
+          <span class="value" id="score">0</span>
+        </div>
+        <div class="hud-card">
+          <span class="label">Combo</span>
+          <span class="value" id="combo">×1</span>
+        </div>
+      </div>
+      <div id="board-wrap">
+        <canvas id="board" width="560" height="560"></canvas>
+      </div>
+      <div id="indicator">&nbsp;</div>
+      <div style="text-align: center; margin-top: 18px; z-index: 1">
+        <button id="restart-btn" class="secondary">⟲ CHANGE SETTINGS</button>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

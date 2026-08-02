@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+    <meta
+      name="keywords"
+      content="mathematical visualization, interactive math, computational mathematics, pentagon lattice, irrational lattice, cellular automata, knot theory, geometric entropy, fractal learning, quasi-Newton optimization, number theory, in-browser math research"
+    />
+    <meta
+      name="description"
+      content="Mathematical Explorations — original mathematical experiments and visualizations. Multi-sheeted polygon covers, algebraic noise lattices, causal knot metrics, and other browser-native math research."
+    />
+    <title>Mathematical Explorations</title>
+    <link rel="canonical" href="https://math.cognotik.com/" />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png" />
+    <link rel="shortcut icon" href="icon.png" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta
+      property="og:title"
+      content="Mathematical Explorations — Interactive Math Research in the Browser"
+    />
+    <meta
+      property="og:description"
+      content="Original interactive experiments in geometry, number theory, and dynamical systems. Multi-sheeted polygon covers, algebraic noise lattices, causal knot metrics, and more — runs entirely in your browser."
+    />
+    <meta property="og:url" content="https://math.cognotik.com/" />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta
+      property="og:image:alt"
+      content="Mathematical Explorations — interactive mathematical visualizations"
+    />
+    <meta property="og:locale" content="en_US" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mathematical Explorations — Interactive Math Research" />
+    <meta
+      name="twitter:description"
+      content="Original interactive experiments in geometry, number theory, and dynamical systems — each lab is a small piece of in-browser mathematical research."
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/videos.css" />
+    <link rel="stylesheet" href="css/home-nav.css" />
+    <script src="js/marked.min.js"></script>
+    <!-- MathJax configuration must be set before the library loads -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ['$', '$'],
+            ['\\(', '\\)'],
+          ],
+          displayMath: [
+            ['$$', '$$'],
+            ['\\[', '\\]'],
+          ],
+          processEscapes: true,
+          processEnvironments: true,
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+          ignoreHtmlClass: 'tex2jax_ignore',
+          processHtmlClass: 'tex2jax_process',
+        },
+        svg: { fontCache: 'global' },
+        startup: {
+          typeset: false,
+        },
+      };
+    </script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- Structured data: WebSite + Organization + ItemList of labs/essays -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://math.cognotik.com/#website",
+            "url": "https://math.cognotik.com/",
+            "name": "Mathematical Explorations",
+            "description": "Original interactive experiments in geometry, number theory, and dynamical systems — in-browser mathematical research.",
+            "inLanguage": "en",
+            "publisher": {
+              "@id": "https://math.cognotik.com/#org"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://math.cognotik.com/#org",
+            "name": "Mathematical Explorations",
+            "url": "https://math.cognotik.com/",
+            "sameAs": ["https://github.com/SimiaCryptus/Fun_With_Math", "https://aol.cognotik.com/"]
+          },
+          {
+            "@type": "CollectionPage",
+            "@id": "https://math.cognotik.com/#webpage",
+            "url": "https://math.cognotik.com/",
+            "name": "Mathematical Explorations",
+            "isPartOf": {
+              "@id": "https://math.cognotik.com/#website"
+            },
+            "about": "Interactive mathematical experiments and visualizations"
+          },
+          {
+            "@type": "ItemList",
+            "name": "Featured Laboratories",
+            "itemListOrder": "https://schema.org/ItemListUnordered",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Pentagonal Lattice Geometry",
+                "url": "https://math.cognotik.com/experiments/Pentagon_Lattice_Geometry/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Space-Color Symmetry",
+                "url": "https://math.cognotik.com/experiments/symmetry_simple/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Geometric Entropy",
+                "url": "https://math.cognotik.com/experiments/geometric-entropy/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "name": "Spacelike Knots",
+                "url": "https://math.cognotik.com/experiments/spacelike-knots/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 5,
+                "name": "Layered Cellular Automata",
+                "url": "https://math.cognotik.com/experiments/layered_ca/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 6,
+                "name": "Fractal Learning",
+                "url": "https://math.cognotik.com/experiments/fractal_learning/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 7,
+                "name": "Irrational Lattice",
+                "url": "https://math.cognotik.com/experiments/irrational_lattice/index.html"
+              },
+              {
+                "@type": "ListItem",
+                "position": 8,
+                "name": "Relativistic 2-Body Gravity",
+                "url": "https://math.cognotik.com/experiments/gravity/index.html"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="bgCanvas" aria-hidden="true"></canvas>
+    <div class="aurora" aria-hidden="true">
+      <div class="aurora-blob aurora-blob-1"></div>
+      <div class="aurora-blob aurora-blob-2"></div>
+      <div class="aurora-blob aurora-blob-3"></div>
+    </div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <nav>
+      <!-- primary navigation -->
+      <a class="brand" href="index.html">
+        <span class="brand-glyph">∑</span>
+        <span class="brand-text">Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link nav-section-link" href="#featured">Labs</a>
+      <a class="nav-link nav-section-link" href="#games">Games</a>
+      <a class="nav-link nav-section-link" href="#essays">Essays</a>
+      <a class="nav-link nav-section-link" href="#demos">Demos</a>
+      <a
+        class="nav-link"
+        href="glossary/"
+        target="_blank"
+        rel="noopener"
+        aria-label="Visit the Mathematical Explorations Glossary — companion reference for concepts and notation used in the labs"
+        >Glossary <span class="arrow">↗</span></a
+      >
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        aria-label="View Mathematical Explorations source on GitHub"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Interactive experiments · runs entirely in the browser
+      </div>
+      <h1 class="hero-title">
+        <span class="hero-title-line">Mathematical</span>
+        <span class="hero-title-line hero-title-accent">Explorations</span>
+      </h1>
+      <p class="hero-lede">
+        A collection of original interactive experiments in geometry, number theory, and dynamical
+        systems; each lab is a small piece of in-browser mathematical research, not a textbook
+        visualization. Most began as questions I'd carried for years — sometimes decades — that
+        simply never had the tooling to be finished and shared. AI-assisted tooling supplied the
+        leverage to close the loops and publish; the questions, the intuitions, and the results are
+        human.
+      </p>
+      <p class="hero-tagline">
+        <span class="quote-mark">“</span>What happens when you poke a rigid structure with a single
+        irrational?<span class="quote-mark">”</span>
+      </p>
+      <div class="hero-scroll" aria-hidden="true">
+        <span class="hero-scroll-line"></span>
+        <span class="hero-scroll-text">scroll</span>
+      </div>
+    </section>
+
+    <div class="intro-panel">
+      <div class="intro-panel-glow" aria-hidden="true"></div>
+      <h2>Start Here</h2>
+      <p>
+        Most of the labs below share a single recurring question:
+        <strong
+          >what happens to a clean algebraic or geometric structure when you introduce one carefully
+          chosen twist?</strong
+        >
+        A single irrational coordinate; a single symmetry edge wired into a diffusion graph; a
+        single causal direction imposed on a knot. It turns out that these small, deliberate
+        perturbations produce surprisingly rich behavior — and that watching the behavior emerge is
+        often more instructive than the answer itself.
+      </p>
+      <p>Three loose themes run through the featured labs:</p>
+      <ul class="theme-list">
+        <li>
+          <strong>Algebraic structure → emergent geometry.</strong>
+          <em>Pentagon Lattice</em> and <em>Irrational Lattice</em> both start with a number field
+          and watch geometry crystallize out of it; the field you put in — not the picture — turns
+          out to be the real invariant, yielding fractional dimension, aperiodic moiré, and
+          spinor-like holonomy.
+        </li>
+        <li>
+          <strong>Dynamics on symmetric or causal substrates.</strong>
+          <em>Space-Color Symmetry</em> and <em>Layered CA</em> wire symmetry orbits or substrate
+          colors directly into the dynamics; the result is diffusion that flows along a quotient
+          manifold, or a three-layer feedback loop between crawling agents and a Conway-Life host.
+        </li>
+        <li>
+          <strong>New metrics on familiar objects.</strong>
+          <em>Geometric Entropy</em> recasts the classical Erdős distinct-distance problem as a
+          continuous entropy optimization; <em>Spacelike Knots</em> equips a knot with a Minkowski
+          metric, so that every crossing becomes a causal inversion.
+        </li>
+      </ul>
+      <p class="intro-panel-footnote">
+        If you only have a few minutes, open
+        <strong>Pentagon Lattice Geometry</strong> or <strong>Spacelike Knots</strong>; they're the
+        most self-contained, the most novel, and the easiest to play with cold.
+      </p>
+      <p class="intro-panel-footnote">
+        <strong>A note on provenance:</strong> none of this is generated insight. Each lab grew from
+        a question I'd carried for years — sometimes decades — that simply never had the tooling to
+        be finished and shared at a level of effort that made sense. AI-assisted exploration
+        provided that leverage; it helped close the loops, build the visualizations, and handle the
+        publishing. The mathematics, the intuitions, and the judgment about what was worth chasing
+        are mine.
+      </p>
+    </div>
+
+    <p class="section-title" id="featured">
+      <span class="section-title-num">01</span>
+      Featured Laboratories
+      <span class="section-title-sub">— in-depth experiments</span>
+    </p>
+    <p class="section-subtitle">
+      Extended interactive studies, each accompanied by documentation describing the underlying
+      mathematics, the motivation, and the methods. Click a card to read its full notes; use the
+      Open button to launch the lab and play with it yourself.
+    </p>
+
+    <div class="featured-grid" id="featuredGrid">
+      <!-- Populated from labs.json by js/home-data.js -->
+    </div>
+
+    <p class="section-title" id="games">
+      <span class="section-title-num">03</span>
+      Games <span class="section-title-sub">— interactive, playable</span>
+    </p>
+    <p class="section-subtitle">
+      Playable sister projects and game-like labs, built on the same browser-native tooling as the
+      experiments above. Click a card to read its notes; use the Open button to launch the game.
+    </p>
+    <div class="featured-grid" id="gamesGrid">
+      <!-- Populated from games.json by js/home-data.js -->
+    </div>
+
+    <p class="section-title" id="essays">
+      <span class="section-title-num">04</span>
+      Essays <span class="section-title-sub">— long-form explorations</span>
+    </p>
+    <p class="section-subtitle">
+      Extended written investigations into the foundations of computational mathematics. The
+      <strong>RCC&nbsp;·&nbsp;PI_RCC&nbsp;·&nbsp;NAM</strong> trilogy forms a single arc — three
+      angles on one question: <em>what is a mathematical constant, computationally?</em> Each treats
+      a number not as a static value but as an <em>engine</em> whose structure, cost, and
+      reachability can be measured. Click a card to read inline; use Open for the dedicated view.
+    </p>
+    <div class="featured-grid" id="essaysGrid">
+      <!-- Populated from labs.json by js/home-data.js -->
+    </div>
+
+    <p class="section-title" id="demos">
+      <span class="section-title-num">05</span>
+      Short Demonstrations
+      <span class="section-title-sub">— classical concepts, concisely</span>
+    </p>
+    <p class="section-subtitle">
+      Compact, self-contained demonstrations of classical mathematical concepts. These are warm-ups
+      rather than research; start here if you'd rather see a familiar face before the deeper labs.
+    </p>
+
+    <div class="card-grid" id="demoGrid">
+      <!-- Populated from labs.json by js/home-data.js -->
+    </div>
+
+    <footer>
+      <div class="footer-divider" aria-hidden="true"></div>
+      <p>
+        Implemented in plain HTML, CSS, and JavaScript &mdash;
+        <a href="https://github.com/SimiaCryptus/Fun_With_Math" target="_blank" rel="noopener"
+          >view source on GitHub</a
+        >
+        &middot; no build step, no dependencies beyond a couple of CDN-loaded libraries
+      </p>
+      <p style="opacity: 0.75; font-size: 0.9em; max-width: 60ch; margin: 1em auto">
+        Human insight, finished with AI-assisted tooling. A lifetime of mathematical curiosity that
+        finally had the means to be explored to its conclusion and published — not machine-generated
+        content, but human results made reachable.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+    <!-- Back-to-top shortcut -->
+    <button
+      type="button"
+      class="back-to-top"
+      id="backToTop"
+      aria-label="Back to top"
+      title="Back to top"
+    >
+      ↑
+    </button>
+
+    <!-- Modal for expanded README view -->
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-card" id="modalCard">
+        <div class="modal-header">
+          <div class="modal-icon" id="modalIcon" aria-hidden="true"></div>
+          <h2 class="modal-title" id="modalTitle"></h2>
+          <a class="modal-launch" id="modalLaunch" href="#">Open <span class="arrow">→</span></a>
+          <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-media" id="modalMedia"></div>
+        <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+
+    <script src="js/home-data.js"></script>
+  </body>
+</html>

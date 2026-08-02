@@ -1,0 +1,25 @@
+Add these inputs inside your `#config-form`: ```html
+<!-- Tile value range: negatives now allowed -->
+<label>
+  Min tile value
+  <input id="cfg-val-min" type="number" min="-9" max="1" step="1" value="1" />
+</label>
+<label>
+  Max tile value
+  <input id="cfg-val-max" type="number" min="1" max="9" step="1" value="9" />
+</label>
+
+<!-- Target number for target-based rules -->
+<div id="cfg-target-field">
+  <label>
+    Target
+    <input id="cfg-target" type="number" min="2" max="20" step="1" value="10" />
+  </label>
+</div>
+
+<!-- Enforce straight-line selections -->
+<label>
+  <input id="cfg-straight-line" type="checkbox" />
+  Enforce straight-line selections
+</label>
+```

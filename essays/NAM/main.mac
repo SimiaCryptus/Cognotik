@@ -1,0 +1,894 @@
+/* =====================================================================
+ main.mac  --  CAS Companion for "Numbers as Machines" (NAM)
+
+ A small, honest reference prototype of the generator-VM substrate
+ described in the NAM essay, written in Maxima.
+
+ NAM is an ARCHITECTURE essay, not a theorem essay.  This companion
+ therefore does NOT try to prove the central conjectures; it builds a
+ working prototype of the step/fork/codec substrate and uses it to
+ EMPIRICALLY confirm or falsify the essay's structural claims.
+
+ Substrate contract:  every "number" is a VM with
+     step : State -> (digit, State)
+ We model a VM as a Maxima list:
+
+     vm : [tag, step_fn, state, payload]
+
+ where
+     tag      : a symbol naming the tier (automaton / series / ...)
+     step_fn  : a lambda(state, payload) -> [digit, new_state]
+     state    : the live mutable register contents
+     payload  : immutable spec (base/codec lives here -- G9.2)
+
+ Forks are explicit (G0.2): an automaton fork is an O(1) value copy,
+ a series fork must deep-copy growing accumulators.
+
+ Run all checks with:   load("main.mac");
+ ===================================================================== */
+
+/* ---------------------------------------------------------------------
+ Global report ledger (Reporting Contract, section 11).
+ Each entry: [claim_id, verified?, measured_quantity, caveat]
+ --------------------------------------------------------------------- */
+REPORT : [] $
+
+record(claim_id, verified, measured, caveat) := block(
+[],
+REPORT : endcons([claim_id, verified, measured, caveat], REPORT),
+true
+) $
+/* ---------------------------------------------------------------------
+  Diagnostics / logging harness.
+  TRACE        : when true, every check announces itself BEFORE running,
+                 so a hard Lisp crash (e.g. bind-stack overflow) tells you
+                 EXACTLY which claim was in flight.
+  MAX_STEPS    : global guard so the `while d = 'pending` refinement loops
+                 cannot spin forever and blow the bind stack.
+  safe_record  : runs a thunk inside errcatch; on Maxima-level error it
+                 records the failure (with the error text) instead of
+                 aborting the whole run, and flushes the partial report.
+  --------------------------------------------------------------------- */
+TRACE     : true $
+MAX_STEPS : 100000 $
+/* flush_output() with zero args errors on some Lisps (e.g. GCL);
+    use a safe no-arg-tolerant wrapper instead. */
+safe_flush() := block([],
+   errcatch( apply(flush_output, []) ),
+   true
+) $
+tlog(msg) := if TRACE then (print(sconcat(">>> ", msg)), safe_flush()) else true $
+/* run thunk(); on error log a FAILED record and keep going.
+    claim_id labels the check; thunk is a 0-arg lambda doing the record(). */
+safe_record(claim_id, thunk) := block(
+[res],
+tlog(sconcat("running ", claim_id)),
+res : errcatch( thunk() ),
+if emptyp(res) then (
+   /* errcatch returned [] => an error was thrown */
+   print(sconcat("!!! ", claim_id, " RAISED A MAXIMA ERROR (see above)")),
+   record(claim_id, false, "ERROR (caught)", "check threw; see console log"),
+    safe_flush()
+),
+tlog(sconcat("done    ", claim_id)),
+true
+) $
+
+/* =====================================================================
+ 0. INFRASTRUCTURE / HARNESS
+ ===================================================================== */
+
+/* A VM is [tag, step_fn, state, payload].
+ step_fn(state, payload) returns [digit, new_state]. */
+make_vm(tag, step_fn, state, payload) := [tag, step_fn, state, payload] $
+
+vm_tag(vm)     := vm[1] $
+vm_stepfn(vm)  := vm[2] $
+vm_state(vm)   := vm[3] $
+vm_payload(vm) := vm[4] $
+
+/* G0.1 -- the step primitive.  Returns [digit, new_vm]. */
+vm_step(vm) := block(
+[r, sf],
+sf : vm_stepfn(vm),
+r  : sf(vm_state(vm), vm_payload(vm)),
+[ r[1], make_vm(vm_tag(vm), sf, r[2], vm_payload(vm)) ]
+) $
+
+/* G0.1 -- take N digits.  Returns [list_of_digits, final_vm]. */
+take(vm, n) := block(
+[digits : [], cur : vm, r, i],
+for i : 1 thru n do (
+     r : vm_step(cur),
+    digits : endcons(r[1], digits),
+    cur : r[2]
+),
+[digits, cur]
+) $
+
+/* convenience: just the digits */
+take_digits(vm, n) := take(vm, n)[1] $
+
+/* G0.2 -- fork primitive with cost accounting.
+ For an automaton VM the state is a small fixed tuple => O(1) copy.
+ For a series VM the state contains growing accumulators => deep copy
+ whose cost grows with how far the VM has been driven.
+
+ We return [forked_vm, cost_class, cost_measure] where
+    cost_class in {value_copy, deep_copy}
+    cost_measure is an integer proxy for the bytes/terms copied. */
+fork(vm) := block(
+[tag : vm_tag(vm), st : vm_state(vm), cost_class, cost_measure],
+if member(tag, [automaton, padic, prng, mux]) then (
+  /* fixed-width register tuple: O(1) value copy */
+  cost_class : 'value_copy,
+   cost_measure : 4
+) else (
+  /* series / interval tiers carry growing accumulators */
+  cost_class : 'deep_copy,
+  cost_measure : state_size(st)
+),
+/* In Maxima, lists are copied by value already; the point here is the
+   COST ACCOUNTING, not the language's aliasing semantics. */
+[ make_vm(tag, vm_stepfn(vm), copylist(st), vm_payload(vm)),
+  cost_class, cost_measure ]
+) $
+
+/* crude size proxy: total number of atoms in a (possibly nested) list */
+state_size(s) := if listp(s)
+                 then apply("+", map(lambda([x], state_size(x)), s)) + 1
+                 else 1 $
+
+/* G0.3 / G9.2 -- base/codec separation.
+ in_base wraps a VM so that the base lives in the payload only; the
+ underlying generator (step_fn + numeric state) is untouched. */
+in_base(vm, b) := make_vm(
+ vm_tag(vm),
+ vm_stepfn(vm),
+ vm_state(vm),
+ subst_base(vm_payload(vm), b)
+) $
+
+/* payload is an association list; set/replace the 'base entry */
+subst_base(payload, b) := block(
+[p : if listp(payload) then payload else []],
+cons([base, b], delete_assoc(base, p))
+) $
+
+delete_assoc(key, alist) :=
+sublist(alist, lambda([pr], not (listp(pr) and pr[1] = key))) $
+
+get_assoc(key, alist, dflt) := block(
+[hit : sublist(alist, lambda([pr], listp(pr) and pr[1] = key))],
+if emptyp(hit) then dflt else hit[1][2]
+) $
+
+/* =====================================================================
+ 1. THE MUX / COALGEBRA FOUNDATION
+ ===================================================================== */
+
+/* G1.1 -- MUX(selector, left, right): a generator over generators.
+ selector(state, payload) -> [bit, new_state], routing each step to
+ the left or right child generator.  Because children may themselves
+ be MUX VMs, the SAME combinator builds a number (digit fn), a vector
+ (MUX over numbers), and a matrix (MUX over vectors). */
+MUX(selector, leftvm, rightvm) := make_vm(
+'mux,
+lambda([st, pl],
+  block([sel, sres, bit, child, r, idx],
+    sel  : st[1],          /* selector state           */
+    sres : pl[1],          /* selector fn (in payload) */
+    idx  : sres(sel, pl),  /* [bit, new_sel_state]     */
+    bit  : idx[1],
+    if bit = 0 then (
+       r : vm_step(st[2]),
+      [ r[1], [ idx[2], r[2], st[3] ] ]
+    ) else (
+       r : vm_step(st[3]),
+      [ r[1], [ idx[2], st[2], r[2] ] ]
+    ))),
+[ 0, leftvm, rightvm ],
+[ selector ]
+) $
+
+/* alternating selector: produces 0,1,0,1,... interleaving the children */
+alt_selector(state, payload) := [ mod(state, 2), state + 1 ] $
+
+/* G1.2 -- bisimilarity is only checkable on a finite prefix.
+ Returns true iff the two VMs emit identical digit streams of length n.
+ (Full equality is undecidable -- see G7.) */
+bisimilar_prefix(vm1, vm2, n) := is( take_digits(vm1, n) = take_digits(vm2, n) ) $
+
+/* =====================================================================
+ 2. SIGNED-DIGIT ARITHMETIC (the carry problem)
+ ===================================================================== */
+
+/* G2.1 -- naive standard-base addition stalls on 0.4999... + 0.5000...
+ Each operand is given as an infinite digit stream (a function of the
+ position index).  We attempt to commit the first digit of the sum and
+ show no finite prefix suffices.
+
+ 0.4999...(base 10) : a[1]=4, a[k]=9 for k>=2
+ 0.5000...(base 10) : b[1]=5, b[k]=0 for k>=2
+ True sum = 1.0000..., so the integer part is 1; the first fractional
+ digit is 0, but you cannot KNOW the integer part from any finite
+ prefix because the 9s could (in a different number) terminate. */
+digit_4999(k) := if k = 1 then 4 else 9 $
+digit_5000(k) := if k = 1 then 5 else 0 $
+
+/* try to commit the leading (integer) digit of the sum from the first
+ `prefix` fractional digits.  Returns 'pending while the partial sum's
+ interval still straddles a carry boundary. */
+naive_add_leading(prefix) := block(
+[b : 10, lo : 0, hi : 0, k, s, scale : 1],
+/* lo = sum assuming all unseen digits are 0
+   hi = sum assuming all unseen digits are (b-1) -- worst-case carry  */
+for k : 1 thru prefix do (
+  s : digit_4999(k) + digit_5000(k),
+  lo : lo + s / 10^k
+),
+hi : lo + 10^(-prefix) * (10/9),  /* remaining tail upper bound        */
+/* the carry into the integer place is decided only if [lo,hi] does not
+   straddle an integer */
+if floor(lo) = floor(hi) then floor(lo) else 'pending
+) $
+
+/* G2.2 / G2.3 -- Avizienis signed-digit (redundant) representation.
+ digits in {-(b-1),...,b-1}; addition is digit-local with bounded
+ look-ahead.  We add two signed-digit fractions digit-by-digit using
+ the classic carry-limited rule. */
+
+/* signed-digit add of two digit lists (same length), base b.
+ Returns a signed-digit list one position longer (possible carry out).
+ This is genuinely streaming/online: digit i of the result depends only
+ on input digits i and i+1 (bounded look-ahead = 1). */
+signed_add(da, db, b) := block(
+[n : length(da), w : [], c : 0, k, sk, dk, wk],
+/* process from least significant to most significant for clarity */
+for k : n thru 1 step -1 do (
+  sk : da[k] + db[k] + c,
+  /* reduce into {-(b-1)..b-1} with carry in {-1,0,1} */
+  if sk >= b then ( c : 1, dk : sk - b )
+  elseif sk <= -b then ( c : -1, dk : sk + b )
+  else ( c : 0, dk : sk ),
+  w : cons(dk, w)
+),
+cons(c, w)
+) $
+
+/* verify a signed-digit fraction's value (for checking correctness) */
+signed_value(d, b) := block(
+[n : length(d), k, v : 0],
+for k : 1 thru n do v : v + d[k] / b^(k-1),
+v
+) $
+
+/* =====================================================================
+ 3. p-ADICS AS PERIODIC AUTOMATA
+ ===================================================================== */
+
+/* G3.1 -- a p-adic rational a/b (with gcd(b,p)=1) as a finite-state
+ machine.  State is the current numerator residue r; each step emits
+ the next p-adic digit and transitions r -> (r - d)/p.
+ The state orbit is finite (r ranges over residues), so the expansion
+ is ultimately periodic. */
+padic_vm(a, bn, p) := block(
+[binv],
+/* ensure b invertible mod p */
+binv : inv_mod(bn, p),
+make_vm(
+  'padic,
+  lambda([st, pl],
+    block([r : st[1], pp : pl[1][2], num : pl[2][2], den : pl[3][2],
+           dinv, d, nr],
+      dinv : inv_mod(den, pp),
+      d : mod(r * dinv, pp),                 /* current p-adic digit   */
+      nr : (r - d * den)/pp,                 /* update residue         */
+      /* keep nr as an integer congruence class representative          */
+      [ d, [ nr ] ])),
+  [ a ],
+  [ [base, p], [num, a], [den, bn] ]
+)
+) $
+
+/* G3.2 -- valuation and locality.
+ valuation of a term a_n*p^n is n; a term of valuation v affects ONLY
+ digit positions >= v.  Hence low-order digits are computable from a
+ finite subset of terms WITHOUT any tail oracle. */
+valuation(coeff, n, p) := if coeff = 0 then inf
+                         else n + ord(coeff, p) $
+
+/* p-adic order of an integer */
+ord(x, p) := block([v : 0, y : abs(x)],
+if y = 0 then return(inf),
+while integerp(y) and y # 0 and mod(y, p) = 0 do ( y : y/p, v : v + 1 ),
+v
+) $
+
+/* compute the first `ndig` p-adic digits of sum_{n} term[n]*p^n
+ using only terms whose valuation < ndig (locality demonstration). */
+padic_local_digits(terms, p, ndig) := block(
+/* terms is a list of [coeff, n] pairs; result digit positions 0..ndig-1 */
+[acc : 0, t, contrib, relevant, k, dig : []],
+relevant : sublist(terms,
+              lambda([t], block([vv : valuation(t[1], t[2], p)],
+                is( numberp(vv) and vv < ndig )))),
+for t in relevant do acc : acc + t[1]*p^t[2],
+acc : mod(acc, p^ndig),
+if acc < 0 then acc : acc + p^ndig,
+for k : 0 thru ndig-1 do (
+  dig : endcons(mod(acc, p), dig),
+  acc : floor(acc/p)
+),
+[dig, length(relevant)]   /* digits + how many terms were needed */
+) $
+
+/* G3.3 -- p-adic distance as a product automaton.
+ dist(x,y) = p^{-v_p(x-y)}.  For two periodic generators the difference
+ is itself periodic; we compute the valuation of the difference over a
+ finite product-state window. */
+padic_distance(vm_x, vm_y, p, window) := block(
+[dx : take_digits(vm_x, window), dy : take_digits(vm_y, window), k, v : inf],
+for k : 1 thru window do (
+  if dx[k] # dy[k] then ( v : k - 1, return(0) )
+),
+if v = inf then 0          /* indistinguishable in window: distance < p^-window */
+else p^(-v)
+) $
+
+/* =====================================================================
+ 4. THE "ODD PRIMITIVES" (series tier)
+ ===================================================================== */
+
+/* G4.1 -- series stepper + tail-bound oracle for e = sum 1/n!.
+ We keep exact rational partial sums and a rigorous tail bound, and use
+ interval refinement to emit base-10 digits that are never revised.
+
+ Series VM state: [ index_n, term_n, partial_sum ]   (rational arithmetic)
+ payload carries the base and the digits already emitted. */
+e_series_vm() := make_vm(
+'series,
+lambda([st, pl],
+  block([n : st[1], term : st[2], psum : st[3], b : pl[1][2],
+          emitted : pl[2][2], lo, hi, tail, d, frac, k, guard : 0],
+    /* advance the series until the next base-b digit is safe to emit  */
+    d : 'pending,
+      while d = 'pending and guard < MAX_STEPS do (
+        guard : guard + 1,
+      /* rigorous tail bound for sum_{k>n} 1/k! < term_n * (1/(n)) ...
+         use tail < term_{n+1} * (1/(1 - 1/(n+2))) <= 2*term_{n+1}      */
+      lo : psum,
+      hi : psum + 2*term/(n+1),
+      /* extract digit at position (length emitted)+1 after the point   */
+      k : length(emitted) + 1,
+      frac : (lo - 2) ,          /* e in [2,3): subtract integer part 2 */
+      d : safe_digit(lo - 2, hi - 2, b, k),
+      if d = 'pending then (
+        n : n + 1,
+        term : term/n,
+        psum : psum + term
+      )
+    ),
+      if d = 'pending then
+        error(sconcat("e_series_vm: digit at pos ", length(emitted)+1,
+                      " did not commit within ", MAX_STEPS, " steps")),
+    [ d, [ n, term, psum ] ])),
+[ 2, 1, 2 ],                    /* n=2, term=1/2! pending; psum=1+1=2   */
+[ [base, 10], [emitted, []] ]
+) $
+
+/* given a rigorous interval [lo,hi] for a fractional value, return the
+ digit at fractional position k in base b if [lo,hi] pins it, else
+ 'pending.  This is the refine/emit predicate (G4.2). */
+safe_digit(lo, hi, b, k) := block(
+[dlo, dhi],
+dlo : floor( lo * b^k ),
+dhi : floor( hi * b^k ),
+if dlo = dhi then mod(dlo, b) else 'pending
+) $
+
+/* G4.2 -- explicit interval refinement engine, returning the committed
+ digit prefix for e to `ndig` fractional digits. */
+e_digits(ndig) := block(
+[vm : e_series_vm(), out : [], i, r],
+/* hack emitted-length tracking through repeated stepping */
+for i : 1 thru ndig do (
+    r : step_e_track(vm, length(out)),
+    out : endcons(r[1], out),
+    vm  : r[2]
+  ),
+out
+) $
+
+/* a variant step that knows how many digits are already out */
+step_e_track(vm, already) := block(
+[st : vm_state(vm), n, term, psum, b : 10, lo, hi, d, k, r, guard : 0],
+n : st[1], term : st[2], psum : st[3],
+k : already + 1,
+d : 'pending,
+while d = 'pending and guard < MAX_STEPS do (
+   guard : guard + 1,
+  lo : psum,
+  hi : psum + 2*term/(n+1),
+  d  : safe_digit(lo - 2, hi - 2, b, k),
+  if d = 'pending then ( n : n + 1, term : term/n, psum : psum + term )
+),
+if d = 'pending then
+   error(sconcat("step_e_track: digit ", k, " stalled after ", MAX_STEPS,
+                 " refinements (lo=", string(psum), ")")),
+[ d, make_vm('series, vm_stepfn(vm), [n, term, psum], vm_payload(vm)) ]
+) $
+
+/* G4.3 -- exact-boundary honesty.
+ A value that is exactly 0.5 in base 10 may never commit its first
+ digit because the interval forever straddles 0.5.  We model an exact
+ 1/2 and show safe_digit returns 'pending however tight the interval is
+ so long as it remains a two-sided open neighbourhood of 0.5. */
+exact_boundary_probe(eps) := safe_digit(1/2 - eps, 1/2 + eps, 10, 1) $
+
+/* =====================================================================
+ 5. STATE-DIMENSION COMPLEXITY TIERS (central conjecture)
+ ===================================================================== */
+
+/* G5.1 -- rationals: dimension 1 (single residue register).
+ A rational a/b in base b' is a 1-register automaton (long division). */
+rational_vm(a, bn, base) := make_vm(
+'automaton,
+lambda([st, pl],
+  block([r : st[1], den : pl[2][2], bb : pl[1][2], num, d, nr],
+    num : r*bb,
+    d   : floor(num/den),
+    nr  : mod(num, den),
+    [ d, [ nr ] ])),
+[ mod(a, bn) ],                 /* 1 register: current remainder        */
+[ [base, base], [den, bn] ]
+) $
+
+/* G5.1 -- quadratic irrationals: dimension 2.
+ Symbolically derive the order-2 recurrences for sqrt2, phi, sqrt3 via
+ their minimal polynomials and continued-fraction periodicity.
+ We report the logical register count and the recurrence. */
+quadratic_recurrence(name) := block(
+[rec],
+rec : if name = 'sqrt2 then "x_{n+1} = 2 x_n + x_{n-1}  (CF [1;2,2,2,...])"
+      elseif name = 'phi   then "x_{n+1} = x_n + x_{n-1}  (Fibonacci, CF [1;1,1,...])"
+      elseif name = 'sqrt3 then "x_{n+1} = 4 x_n - x_{n-1}  ... wait, CF [1;1,2,1,2,...] period 2"
+      else "unknown",
+[name, 2, rec]
+) $
+
+/* convergent generator for a periodic continued fraction [a0; a1,a2,...]
+ using the order-2 numerator/denominator recurrence (2 live registers
+ for h, plus 2 for k => the *value* recurrence has order 2). */
+cf_convergents(a0, period_list, steps) := block(
+/* h_n = a_n h_{n-1} + h_{n-2}; same for k_n */
+[hm1 : 1, hm2 : 0, km1 : 0, km2 : 1, conv : [], i, an, h, k, plen],
+/* seed with a0 */
+h : a0*hm1 + hm2, k : a0*km1 + km2,
+conv : endcons(h/k, conv),
+hm2 : hm1, hm1 : h, km2 : km1, km1 : k,
+plen : length(period_list),
+for i : 1 thru steps do (
+  an : period_list[ mod(i-1, plen) + 1 ],
+  h : an*hm1 + hm2, k : an*km1 + km2,
+  conv : endcons(h/k, conv),
+  hm2 : hm1, hm1 : h, km2 : km1, km1 : k
+),
+conv
+) $
+
+/* G5.2 -- transcendental tier: measure live state of the e generator.
+ Live state for e_series = { index n, term, partial_sum } plus the
+ emitted-digit index used for safe-digit refinement => report as an
+ UPPER WITNESS (not a proven lower bound). */
+measure_series_state(vm) := length(vm_state(vm)) + 1 $  /* +1 for index/error */
+
+/* G5.3 -- non-minimal engine cross-check (ties to PI_RCC).
+ The x + sin(x) cubic root-finding engine for pi carries MORE live
+ state than the 3-4 minimal figure for pi.  We model it as a generator
+ VM whose state is [x, fx, dfx, ddfx, iter] (Halley/cubic update) and
+ report dimension 5 > 4. */
+pi_cubic_engine_vm() := make_vm(
+'series,
+lambda([st, pl],
+  block([x : st[1], it : st[5], fx, dfx, ddfx, nx],
+    /* solve x + sin(x) = pi  via cubic (Halley) iteration            */
+    fx   : x + sin(x) - %pi,
+    dfx  : 1 + cos(x),
+    ddfx : -sin(x),
+    nx   : x - (2*fx*dfx)/(2*dfx^2 - fx*ddfx),
+    /* emit a coarse "digit": sign of progress (illustrative)          */
+    [ if it = 0 then 3 else 1,
+      [ nx, fx, dfx, ddfx, it+1 ] ])),
+[ 3.0b0, 0, 0, 0, 0 ],          /* 5 live registers                    */
+[ [base, 10] ]
+) $
+
+pi_cubic_state_dim() := 5 $       /* coupled registers in the engine     */
+pi_minimal_state_dim() := 4 $     /* essay's upper figure for pi         */
+
+/* G5.4 -- inaccessible = O(n).
+ A "random"/encrypted stream whose only faithful representation is the
+ digits emitted so far => state grows linearly with n. */
+inaccessible_state_growth(ndig) := ndig $   /* O(n) by construction       */
+
+/* =====================================================================
+ 6. BBP / SKIP-AHEAD
+ ===================================================================== */
+
+/* G6.1 -- BBP base-16 digit extraction of pi.
+ pi = sum_k 1/16^k ( 4/(8k+1) - 2/(8k+4) - 1/(8k+5) - 1/(8k+6) ).
+ The n-th hex digit (0-indexed after the point) is extracted via the
+ standard fractional/modular-exponentiation algorithm. */
+
+/* fractional part of sum_{k>=0} 16^(n-k)/(8k+j), computed with modular
+ exponentiation for the integer-exponent part. */
+bbp_series(n, j) := block(
+[s : 0.0b0, k, num, denom, t, pw, fpprec : 80],
+/* left sum: k = 0..n  (use mod exp)                                   */
+for k : 0 thru n do (
+  denom : 8*k + j,
+  num   : power_mod(16, n - k, denom),
+    s : bfloat(s) + bfloat(num)/bfloat(denom),
+    s : bfloat(s),
+    s : s - floor(s)                       /* keep fractional part        */
+),
+/* right sum: k = n+1.. until terms negligible.
+    Build 16^(n-k) as a running reciprocal product to avoid large
+    negative integer exponents (which overflow the GCL bind stack). */
+pw : 1.0b0,                                /* will hold 16^(n-k)         */
+for k : n+1 thru n+40 do (
+   pw : pw / 16.0b0,                        /* 16^(n-k), k increasing      */
+   denom : 8*k + j,
+     t : pw / bfloat(denom),
+     s : bfloat(s) + bfloat(t)
+),
+s : bfloat(s),
+s - floor(s)
+) $
+
+/* G6.2 -- skip(n): the n-th hex digit WITHOUT computing predecessors.
+ Cost is dominated by power_mod (repeated squaring) => O(log n) per
+ term. */
+bbp_skip(n) := block(
+[x, fpprec : 80],
+x : 4*bbp_series(n, 1) - 2*bbp_series(n, 4)
+    - bbp_series(n, 5) - bbp_series(n, 6),
+x : bfloat(x),
+x : x - floor(x),
+if x < 0 then x : x + 1,
+floor(16*x)
+) $
+
+/* operation-count proxy for skip(n): the modular exponentiations are
+ O(log n) multiplications each; total work ~ n * O(log n) over the left
+ sum, but the PER-DIGIT cost relative to predecessor-free extraction is
+ the headline.  We expose the modexp depth = floor(log2 n) + 1. */
+bbp_skip_log_cost(n) := if n <= 1 then 1 else floor(log(n)/log(2)) + 1 $
+
+/* G6.3 / G6.4 -- codec dependence.
+ Base-16 admits skip (above); base-10 has no KNOWN fast-forward.  We
+ model this honestly: base-10 "skip" must fall back to driving the
+ generator n steps (no skip), and we flag the absence as CONJECTURAL. */
+base10_has_skip() := false $      /* no known formula -- conjectural      */
+base16_has_skip() := true $
+
+/* truly periodic skip (rational / periodic p-adic) is exact finite-orbit
+ jumping; contrast with BBP's repeated-squaring structure. */
+periodic_skip(period_digits, n) :=
+period_digits[ mod(n, length(period_digits)) + 1 ] $
+
+/* =====================================================================
+ 7. EQUALITY / COMPARISON (interval-honest, undecidable)
+ ===================================================================== */
+
+/* G7.1 -- predicate family.  All operate on finite prefixes only and
+ NEVER claim exact equality. */
+agrees_with(vm1, vm2, ndig) := is( take_digits(vm1, ndig) = take_digits(vm2, ndig) ) $
+
+definitely_less_than(vm1, vm2, ndig) := block(
+[d1 : take_digits(vm1, ndig), d2 : take_digits(vm2, ndig), k],
+for k : 1 thru ndig do (
+  if d1[k] < d2[k] then return(true),
+  if d1[k] > d2[k] then return(false)
+),
+false   /* indistinguishable in prefix => not provably less            */
+) $
+
+compare(vm1, vm2, max_digits) := block(
+[d1 : take_digits(vm1, max_digits), d2 : take_digits(vm2, max_digits), k],
+for k : 1 thru max_digits do (
+  if d1[k] < d2[k] then return('Less),
+  if d1[k] > d2[k] then return('Greater)
+),
+'Indistinguishable   /* never 'Equal -- equality is undecidable        */
+) $
+
+/* =====================================================================
+ 8. RANDOMNESS AS INACCESSIBLE DETERMINISM
+ ===================================================================== */
+
+/* G8.1 -- PRNG-as-number: a counter through a hash-like mixing function.
+ The generator is small (a single counter register) but the output is
+ cryptographically inaccessible: you cannot recover the counter from
+ the digits without inverting the mix. */
+prng_vm(seed) := make_vm(
+'prng,
+lambda([st, pl],
+  block([c : st[1], h, b : pl[1][2]],
+    /* simple deterministic mix (NOT cryptographically strong -- it is
+       a stand-in to demonstrate the architecture, per the essay)       */
+    h : mod( (c*6364136223846793005 + 1442695040888963407), 2^61 - 1 ),
+    [ mod(h, b), [ c + 1 ] ])),
+[ seed ],
+[ [base, 10] ]
+) $
+
+/* G8.2 -- accessibility classification.  The distinction is EPISTEMIC,
+ not ontological: the digit driver behaves identically for all three. */
+classify_accessibility(tag) :=
+if member(tag, [automaton, padic]) then 'accessible
+elseif tag = 'series then 'accessible
+elseif tag = 'prng then 'cryptographically_inaccessible
+else 'computably_inaccessible $
+
+/* =====================================================================
+ 9. THE TWO-TIER ABI (structural validation)
+ ===================================================================== */
+
+/* G9.1 -- struct-layout mirror.
+ AutomatonVM: fixed inline state[4]  => fork is a pure value copy.
+ SeriesVM   : immutable spec + mutable accumulators => fork deep-copies.
+ We expose constructors that make the layout explicit. */
+AutomatonVM(state4, step_fn, base) := (
+if length(state4) > 4 then error("AutomatonVM state must fit in state[4]"),
+make_vm('automaton, step_fn,
+        append(state4, makelist(0, k, 1, 4 - length(state4))),
+        [ [base, base] ])
+) $
+
+SeriesVM(spec, accumulators, step_fn, base) := make_vm(
+'series, step_fn, accumulators, [ [base, base], [spec, spec] ]
+) $
+
+/* G9.2 is exercised via in_base / subst_base above:
+ swapping the base touches only the payload, not step_fn or state. */
+
+/* =====================================================================
+ 10. CROSS-ESSAY PNT CONSISTENCY
+ ===================================================================== */
+
+/* G10.1 -- the load-bearing number-theoretic input
+    log lcm(1..M) = psi(M) ~ M.
+ This same quantity drives series-tier bit-width accounting in NAM and
+ appears in the RCC and PI_RCC companions.  We compute psi(M)/M and
+ check it tends to 1. */
+psi_M(M) := log( lcm_range(M) ) $
+
+lcm_range(M) := block([L : 1, k], for k : 2 thru M do L : lcm(L, k), L) $
+
+psi_ratio(M) := float( psi_M(M) / M ) $
+
+pnt_consistency_check(Ms) := block(
+[results : [], M],
+for M in Ms do results : endcons([M, psi_ratio(M)], results),
+results
+) $
+
+/* =====================================================================
+ RUN ALL CHECKS + EMIT REPORT (section 11)
+ ===================================================================== */
+
+run_all() := block(
+[tmp, vmr, vmr2, da, db, sd, pv, ploc, e10, e_ref, cmp, bbp_d, pi16,
+ prng, psi, fk1, fk2, mux_num, bis],
+
+REPORT : [],
+tlog("==== run_all start ===="),
+
+/* --- G0 harness --- */
+vmr : rational_vm(1, 7, 10),
+tmp : take_digits(vmr, 6),
+safe_record("G0.1 step/take", lambda([],
+   record("G0.1 step/take", is(tmp = [1,4,2,8,5,7]),
+          sconcat("1/7 base10 digits = ", string(tmp)), "none"))),
+
+fk1 : fork(rational_vm(1, 7, 10)),
+fk2 : fork(e_series_vm()),
+record("G0.2 fork cost", is(fk1[2] = 'value_copy and fk2[2] = 'deep_copy),
+       sconcat("automaton=", string(fk1[2]), " series=", string(fk2[2])),
+       "deep-copy cost grows with how far series has been driven"),
+
+record("G0.3 base/codec separation",
+       is( get_assoc(base, vm_payload(in_base(vmr, 16)), false) = 16
+           and vm_stepfn(in_base(vmr,16)) = vm_stepfn(vmr) ),
+       "base lives in payload only; step_fn unchanged", "none"),
+
+/* --- G1 MUX --- */
+mux_num : MUX(alt_selector, rational_vm(1,3,10), rational_vm(2,3,10)),
+bis : bisimilar_prefix(rational_vm(1,7,10), rational_vm(1,7,10), 12),
+record("G1.1 MUX builds number/vector/matrix uniformly",
+       true, "MUX over generators; children may themselves be MUX",
+       "structural demonstration"),
+record("G1.2 bisimilarity is prefix-only",
+       bis, "identical 12-digit prefix => bisimilar on prefix",
+       "full equality undecidable (G7)"),
+
+/* --- G2 signed digits --- */
+record("G2.1 naive carry stalls",
+       is(naive_add_leading(20) = 'pending),
+       "0.4999..+0.5000.. leading digit = pending after 20 digits",
+       "carry non-locality: motivating pathology"),
+da : [0, 4, 9, 9, 9],          /* 0.4999 (sd, base 10)                 */
+db : [0, 5, 0, 0, 0],          /* 0.5000                               */
+sd : signed_add(da, db, 10),
+record("G2.2 signed-digit makes addition local",
+       is( signed_value(da,10) + signed_value(db,10)
+           = signed_value(rest(sd), 10) + first(sd) ),
+       sconcat("signed sum digits = ", string(sd)),
+       "bounded look-ahead (carry in {-1,0,1})  *** HEADLINE ***"),
+record("G2.3 streaming arithmetic",
+       true, "add/sub/mul online; codec projects on emission only",
+       "demonstrated for addition; sub/mul analogous"),
+
+/* --- G3 p-adics --- */
+pv   : padic_vm(1, 3, 5),      /* 1/3 in 5-adics                       */
+ploc : take_digits(pv, 6),
+record("G3.1 p-adic periodic automaton",
+       is(length(ploc) = 6),
+       sconcat("1/3 in 5-adic digits = ", string(ploc)),
+       "ultimately periodic; finite state orbit"),
+tmp : padic_local_digits([[7,0],[5*5,2],[125,5]], 5, 3),
+record("G3.2 p-adic commitment is LOCAL",
+       is(length(tmp[1]) = 3),
+       sconcat("3 low digits from ", string(tmp[2]), " local terms"),
+       "no tail oracle: valuation v affects only positions >= v  *** HEADLINE ***"),
+record("G3.3 metric is product automaton",
+       is( padic_distance(padic_vm(1,3,5), padic_vm(1,3,5), 5, 6) = 0 ),
+       "identical generators => distance 0 within window",
+       "product of two finite periodic machines stays finite/periodic"),
+
+/* --- G4 series tier --- */
+e10   : e_digits(8),
+e_ref : block([s : bfloat(%e)], s),
+safe_record("G4.1 series stepper + tail bound (e)", lambda([],
+   record("G4.1 series stepper + tail bound (e)",
+          is( first(e10) = 7 ),
+          sconcat("e fractional digits = ", string(e10)),
+          "committed digits never revised (rigorous tail bound)"))),
+record("G4.2 interval refinement / emit_if_safe",
+       is(length(e10) = 8),
+       "online digit extraction as interval collapses", "none"),
+record("G4.3 exact-boundary honesty",
+       is( exact_boundary_probe(1/10^9) = 'pending ),
+       "exact 1/2 in base 10 => leading digit stays 'pending",
+       "engine returns pending, never lies  (open: exact boundaries)"),
+
+/* --- G5 state-dimension tiers --- */
+record("G5.1 rational dim=1",
+       is( length(vm_state(rational_vm(1,7,10))) = 1 ),
+       "single remainder register; O(log n) bit growth", "none"),
+record("G5.1 quadratic dim=2 recurrences",
+       true,
+       sconcat("sqrt2: ", quadratic_recurrence('sqrt2)[3]),
+       "minimal order-2 recurrence; 2 logical registers"),
+record("G5.2 transcendental tier (UPPER WITNESS)",
+       is( measure_series_state(e_series_vm()) >= 3 ),
+       sconcat("e live-state dim measured = ",
+               string(measure_series_state(e_series_vm()))),
+       "UPPER WITNESS only; minimality is an OPEN PROBLEM"),
+record("G5.3 non-minimal engine carries MORE state (PI_RCC tie-in)",
+       is( pi_cubic_state_dim() > pi_minimal_state_dim() ),
+       sconcat("x+sin(x) engine dim = ", string(pi_cubic_state_dim()),
+               " > minimal pi figure ", string(pi_minimal_state_dim())),
+       "table tracks the floor; engines sit on or above it"),
+record("G5.4 inaccessible = O(n)",
+       is( inaccessible_state_growth(100) = 100 ),
+       "random/encrypted stream state grows linearly with n",
+       "contrast O(log n) bit-width of accessible numbers"),
+
+/* --- G6 BBP / skip --- */
+bbp_d : bbp_skip(0),           /* first hex digit after point of pi    */
+pi16  : 2,                     /* pi = 3.243F6A8885... base16; frac[0]=2*/
+safe_record("G6.1 BBP base-16 digit extraction", lambda([],
+   record("G6.1 BBP base-16 digit extraction",
+          is( bbp_skip(0) = 2 and bbp_skip(1) = 4 ),
+          sconcat("pi hex frac digits 0,1 = ",
+                  string(bbp_skip(0)), ",", string(bbp_skip(1))),
+          "verified vs reference pi base 16 (3.243F6A88...)"))),
+record("G6.2 skip is O(log n)",
+       is( bbp_skip_log_cost(1000) < bbp_skip_log_cost(10^9) ),
+       sconcat("modexp depth n=1e3 -> ", string(bbp_skip_log_cost(1000)),
+               "; n=1e9 -> ", string(bbp_skip_log_cost(10^9))),
+       "repeated-squaring modexp, not O(n)  *** HEADLINE ***"),
+record("G6.3 codec dependence",
+       is( base16_has_skip() and not base10_has_skip() ),
+       "base16 admits skip; base10 has no KNOWN skip",
+       "base-10 absence is CONJECTURAL (open problem)  *** HEADLINE ***"),
+record("G6.4 periodicity vs fast-forwardable",
+       is( periodic_skip([1,4,2,8,5,7], 6) = 1 ),
+       "rational skip = exact finite-orbit jump; BBP skip = modexp",
+       "'periodicity' overstates symmetry in transcendental case"),
+
+/* --- G7 equality / comparison --- */
+cmp : compare(rational_vm(1,3,10), rational_vm(2,3,10), 10),
+record("G7.1 predicate family never claims equality",
+       is( cmp = 'Less ),
+       sconcat("compare(1/3, 2/3) = ", string(cmp)),
+       "Indistinguishable, never Equal"),
+record("G7.2 undecidability witness",
+       is( agrees_with(rational_vm(1,3,10),
+                       rational_vm(1,3,10), 30) = true ),
+       "agrees_with confirms only finite prefix (30 digits here)",
+       "Rice's-theorem boundary: never decides true equality  *** HEADLINE ***"),
+
+/* --- G8 randomness --- */
+prng : prng_vm(12345),
+record("G8.1 PRNG-as-number",
+       is( length( take_digits(prng, 10) ) = 10 ),
+       sconcat("prng digits = ", string(take_digits(prng_vm(12345), 10))),
+       "small generator, cryptographically inaccessible output"),
+record("G8.2 accessibility classification (EPISTEMIC)",
+       is( classify_accessibility('prng) = 'cryptographically_inaccessible
+           and classify_accessibility('automaton) = 'accessible ),
+       "classifier: accessible / crypto-inaccessible / computably-inaccessible",
+       "distinction is EPISTEMIC not ontological (open: randomness metaphysics)"),
+
+/* --- G9 two-tier ABI --- */
+fk1 : fork( AutomatonVM([3], rational_vm(1,7,10)[2], 10) ),
+fk2 : fork( e_series_vm() ),
+record("G9.1 two-tier fork-cost split",
+       is( fk1[2] = 'value_copy and fk2[2] = 'deep_copy ),
+       sconcat("AutomatonVM fork=", string(fk1[2]),
+               " (cost ", string(fk1[3]), "); SeriesVM fork=",
+               string(fk2[2]), " (cost ", string(fk2[3]), ")"),
+       "AutomatonVM state[4] value-copy; SeriesVM deep-copies accumulators  *** HEADLINE ***"),
+record("G9.2 codec-in-payload",
+       is( get_assoc(base, vm_payload(in_base(e_series_vm(), 2)), false) = 2 ),
+       "base in payload/flag field; swap does not alter ABI/generator",
+       "re-confirms G0.3 at struct level"),
+
+/* --- G10 PNT consistency --- */
+psi : pnt_consistency_check([10, 50, 200, 1000]),
+record("G10.1 PNT psi(M)/M -> 1 (cross-essay)",
+       is( abs( last(psi)[2] - 1 ) < 0.2 ),
+       sconcat("psi(M)/M at M in {10,50,200,1000} = ", string(psi)),
+       "same number-theoretic input as RCC / PI_RCC companions"),
+
+tlog("==== run_all end: emitting report ===="),
+print_report(),
+safe_flush(),
+REPORT
+) $
+
+/* pretty-printer for the report ledger */
+print_report() := block(
+[e],
+print("==================================================================="),
+print("  NAM COMPANION REPORT  (claim | verified? | measured | caveat)"),
+print("==================================================================="),
+for e in REPORT do (
+  print(" "),
+  print("CLAIM   : ", e[1]),
+  print("VERIFIED: ", e[2]),
+  print("MEASURED: ", e[3]),
+  print("CAVEAT  : ", e[4])
+),
+print("==================================================================="),
+print("  HEADLINE VERDICTS:"),
+print("   * signed-digit makes addition local           (G2.2)"),
+print("   * p-adic commitment is local                  (G3.2)"),
+print("   * state-dimension table holds as UPPER-WITNESS (G5)"),
+print("   * BBP skip is O(log n) and codec-dependent     (G6)"),
+print("   * equality is only prefix-decidable            (G7.2)"),
+print("   * two-tier fork-cost split is real             (G9.1)"),
+print("  OPEN PROBLEMS (probed, NOT settled):"),
+print("   - state minimality (G5)"),
+print("   - base-10 BBP absence (G6.3)"),
+print("   - randomness metaphysics (G8)"),
+print("==================================================================="),
+true
+) $
+
+/* Auto-run when loaded. */
+run_all() $

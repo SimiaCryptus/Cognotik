@@ -1,0 +1,1566 @@
+{
+  "version": "1.0.0",
+  "title": "B. Geometric Constructions — Detailed Reference",
+  "description": "Geometric vocabulary for the multi-sheeted n-gon tiling project, covering polygons, polyhedra, tilings, adjacency structures, and specific constructions such as pinwheels, Penrose, and Kelvin structures.",
+  "concepts": {
+    "polygon": {
+      "id": "polygon",
+      "term": "Polygon",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["polytope", "2d", "tile", "planar"],
+      "summary": "A two-dimensional polytope: a closed planar figure bounded by straight line segments.",
+      "definition": "A **two-dimensional polytope**: a closed planar figure bounded by straight line segments. Polygons are the basic tiles of 2D tilings.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "polyhedron" },
+          { "id": "polytope" },
+          { "id": "tiling" },
+          { "id": "vertex" }
+        ],
+        "enabledBy": [
+          { "id": "pentagon" },
+          { "id": "interior-angle" },
+          { "id": "angular-deficit" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "polyhedron": {
+      "id": "polyhedron",
+      "term": "Polyhedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["polytope", "3d", "tile", "solid"],
+      "summary": "A three-dimensional polytope: a solid bounded by flat polygonal faces meeting at straight edges.",
+      "definition": "A **three-dimensional polytope**: a solid bounded by flat polygonal faces meeting at straight edges. Polyhedra are the basic 3D tiles.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polygon" }],
+        "related": [
+          { "id": "polytope" },
+          { "id": "honeycomb" },
+          { "id": "vertex" },
+          { "id": "dihedral-angle" }
+        ],
+        "enabledBy": [
+          { "id": "tetrahedron" },
+          { "id": "octahedron" },
+          { "id": "dodecahedron" },
+          { "id": "icosahedron" },
+          { "id": "rhombic-dodecahedron" },
+          { "id": "truncated-octahedron" },
+          { "id": "triacontahedron" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "polytope": {
+      "id": "polytope",
+      "term": "Polytope",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "foundational",
+      "tags": ["generalization", "nd", "facet"],
+      "summary": "The n-dimensional generalization of polygons and polyhedra: a region of ℝⁿ bounded by flat (n−1)-dimensional facets.",
+      "definition": "The **$n$-dimensional generalization** of polygons and polyhedra: a region of $\\mathbb{R}^n$ bounded by flat $(n{-}1)$-dimensional facets.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "polygon" }, { "id": "polyhedron" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "vertex": {
+      "id": "vertex",
+      "term": "Vertex",
+      "aliases": ["corner point"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["0-face", "corner", "polygon", "polyhedron"],
+      "summary": "A corner point of a polygon or polyhedron — a 0-dimensional face.",
+      "definition": "A **corner point** of a polygon or polyhedron — a 0-dimensional face.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "polygon" },
+          { "id": "polyhedron" },
+          { "id": "interior-angle" },
+          { "id": "angular-deficit" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "pentagon": {
+      "id": "pentagon",
+      "term": "Pentagon",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "foundational",
+      "tags": ["5-gon", "regular", "tiling-obstruction", "multi-sheeted", "golden-ratio"],
+      "summary": "A five-sided polygon whose angular deficit forces a multi-sheeted cover in the reconnection framework.",
+      "definition": "A **five-sided polygon**. The regular pentagon has an interior angle of $108°$, an angular deficit of $360° - 3 \\times 108° = 36°$ when three pentagons meet at a vertex, symmetry group dihedral $D_5$ of order 10, and lies in the field $\\mathbb{Q}(\\sqrt{5})$.\n\nThe pentagon's failure to tile the plane (deficit $\\neq 0$) is precisely what forces a **multi-sheeted cover** in the reconnection framework.",
+      "examples": [
+        {
+          "title": "Angular deficit at a vertex",
+          "body": "When three regular pentagons meet at a vertex, the angles sum to $3 \\times 108° = 324°$, leaving a deficit of $360° - 324° = 36°$. This nonzero deficit prevents flat periodic tiling."
+        },
+        {
+          "title": "Multi-sheeted cover",
+          "body": "The $36°$ deficit forces a 10-sheeted cover (rotations by multiples of $36°$) to absorb the angular shortfall across sheets."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\theta = 108°",
+          "description": "Interior angle of a regular pentagon."
+        },
+        {
+          "expression": "\\delta = 360° - 3 \\times 108° = 36°",
+          "description": "Angular deficit when three pentagons meet at a vertex."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polygon" }, { "id": "interior-angle" }, { "id": "angular-deficit" }],
+        "related": [
+          { "id": "dodecahedron" },
+          { "id": "penrose-tiling" },
+          { "id": "branched-cover" },
+          { "id": "sheet" },
+          { "id": "vortex" },
+          { "id": "edge-restricted-reconnective" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "interior-angle": {
+      "id": "interior-angle",
+      "term": "Interior Angle",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["angle", "polygon", "vertex"],
+      "summary": "The angle inside a polygon at one of its vertices.",
+      "definition": "The angle inside a polygon at one of its vertices. For a regular $n$-gon:\n\n$$\\theta_n = \\frac{(n-2)\\pi}{n}$$",
+      "examples": [
+        {
+          "title": "Regular pentagon",
+          "body": "For $n = 5$: $\\theta_5 = \\frac{3\\pi}{5} = 108°$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\theta_n = \\frac{(n-2)\\pi}{n}",
+          "description": "Interior angle of a regular n-gon.",
+          "variables": {
+            "n": "number of sides of the regular polygon",
+            "\\theta_n": "interior angle in radians"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polygon" }, { "id": "vertex" }],
+        "related": [{ "id": "angular-deficit" }, { "id": "pentagon" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "angular-deficit": {
+      "id": "angular-deficit",
+      "term": "Angular Deficit",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["deficit", "tiling-obstruction", "curvature", "multi-sheeted"],
+      "summary": "The shortfall between a full rotation and the sum of interior angles meeting at a vertex; a nonzero value prevents flat periodic tiling.",
+      "definition": "The shortfall\n\n$$\\delta = 2\\pi - \\sum_k \\theta_k$$\n\nbetween a full rotation and the sum of interior angles meeting at a vertex of a candidate tiling. Pentagon: $\\delta = 36°$ when 3 pentagons meet. A nonzero deficit prevents flat periodic tiling; it can be absorbed by curving the surface, adding extra pentagons (5+), or **transitioning between sheets** in a multi-sheeted cover.",
+      "examples": [
+        {
+          "title": "Pentagon vertex",
+          "body": "Three pentagons meeting at a vertex: $\\delta = 360° - 3 \\times 108° = 36°$. This forces a multi-sheeted cover."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\delta = 2\\pi - \\sum_k \\theta_k",
+          "description": "Angular deficit at a vertex of a candidate tiling.",
+          "variables": {
+            "\\delta": "angular deficit",
+            "\\theta_k": "interior angle of the k-th polygon meeting at the vertex"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "interior-angle" }, { "id": "vertex" }],
+        "related": [
+          { "id": "pentagon" },
+          { "id": "branched-cover" },
+          { "id": "sheet-transition" },
+          { "id": "vortex" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "platonic-solids": {
+      "id": "platonic-solids",
+      "term": "Platonic Solids",
+      "aliases": ["convex regular polyhedra"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "foundational",
+      "tags": ["regular", "convex", "polyhedron", "classification"],
+      "summary": "The five convex regular polyhedra: tetrahedron, cube, octahedron, dodecahedron, and icosahedron.",
+      "definition": "The five **convex regular polyhedra**:\n\n| Solid        | Faces        | Field                  |\n| ------------ | ------------ | ---------------------- |\n| Tetrahedron  | 4 triangles  | $\\mathbb{Q}(\\sqrt{2})$ |\n| Cube         | 6 squares    | $\\mathbb{Q}$           |\n| Octahedron   | 8 triangles  | $\\mathbb{Q}$           |\n| Dodecahedron | 12 pentagons | $\\mathbb{Q}(\\sqrt{5})$ |\n| Icosahedron  | 20 triangles | $\\mathbb{Q}(\\sqrt{5})$ |",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polyhedron" }],
+        "related": [{ "id": "duality" }, { "id": "dihedral-angle" }],
+        "enabledBy": [
+          { "id": "tetrahedron" },
+          { "id": "octahedron" },
+          { "id": "dodecahedron" },
+          { "id": "icosahedron" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "tetrahedron": {
+      "id": "tetrahedron",
+      "term": "Tetrahedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["platonic", "triangular-faces", "self-dual", "3d"],
+      "summary": "A Platonic solid with 4 triangular faces, 4 vertices, and 6 edges; self-dual.",
+      "definition": "4 triangular faces, 4 vertices, 6 edges. Self-dual. Smallest Platonic solid. Field: $\\mathbb{Q}(\\sqrt{2})$.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "platonic-solids" }],
+        "related": [{ "id": "duality" }, { "id": "tetrahedral-octahedral-honeycomb" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "octahedron": {
+      "id": "octahedron",
+      "term": "Octahedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["platonic", "triangular-faces", "dual-cube", "3d"],
+      "summary": "A Platonic solid with 8 triangular faces, 6 vertices, and 12 edges; dual to the cube.",
+      "definition": "8 triangular faces, 6 vertices, 12 edges. Dual to the cube. Field: $\\mathbb{Q}$.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "platonic-solids" }],
+        "related": [
+          { "id": "duality" },
+          { "id": "truncated-octahedron" },
+          { "id": "tetrahedral-octahedral-honeycomb" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "dodecahedron": {
+      "id": "dodecahedron",
+      "term": "Dodecahedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "platonic",
+        "pentagonal-faces",
+        "dual-icosahedron",
+        "3d",
+        "golden-ratio",
+        "multi-sheeted"
+      ],
+      "summary": "A Platonic solid with 12 pentagonal faces; the 3D analogue of the pentagon, inheriting all pentagonal-tiling obstructions.",
+      "definition": "**12 pentagonal faces**, 20 vertices, 30 edges. Field: $\\mathbb{Q}(\\sqrt{5})$. Dual to the icosahedron. The dodecahedron is the **3D analogue** of the pentagon, inheriting all of its pentagonal-tiling obstructions.",
+      "examples": [
+        {
+          "title": "Dihedral angle",
+          "body": "The dihedral angle of a regular dodecahedron is approximately $116.57°$, which determines how copies wrap around shared edges."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "platonic-solids" }, { "id": "pentagon" }],
+        "related": [
+          { "id": "icosahedron" },
+          { "id": "duality" },
+          { "id": "dihedral-angle" },
+          { "id": "branched-cover" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "icosahedron": {
+      "id": "icosahedron",
+      "term": "Icosahedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "platonic",
+        "triangular-faces",
+        "dual-dodecahedron",
+        "3d",
+        "quasicrystal",
+        "golden-ratio"
+      ],
+      "summary": "A Platonic solid with 20 triangular faces; source of 3D quasicrystals and icosahedral symmetry.",
+      "definition": "**20 triangular faces**, 12 vertices, 30 edges. Field: $\\mathbb{Q}(\\sqrt{5})$. Dual to the dodecahedron. Source of 3D quasicrystals (Shechtman's AlMn alloy, AKN tilings).",
+      "examples": [
+        {
+          "title": "Dihedral angle",
+          "body": "The dihedral angle of a regular icosahedron is approximately $138.19°$."
+        },
+        {
+          "title": "Quasicrystal connection",
+          "body": "The icosahedral symmetry group underlies the AKN tiling and Shechtman's 1984 discovery of quasicrystals in AlMn alloys."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "platonic-solids" }],
+        "related": [
+          { "id": "dodecahedron" },
+          { "id": "duality" },
+          { "id": "dihedral-angle" },
+          { "id": "akn-tiling" },
+          { "id": "quasicrystal" },
+          { "id": "triacontahedron" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "rhombic-dodecahedron": {
+      "id": "rhombic-dodecahedron",
+      "term": "Rhombic Dodecahedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["rhombic-faces", "voronoi", "fcc", "space-filling", "3d"],
+      "summary": "A polyhedron with 12 rhombic faces; the Voronoi cell of the FCC lattice that tiles space periodically.",
+      "definition": "A polyhedron with **12 rhombic faces**. Voronoi cell of the FCC lattice. Tiles space periodically.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polyhedron" }, { "id": "voronoi-cell" }],
+        "related": [{ "id": "honeycomb" }, { "id": "lattice" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "truncated-octahedron": {
+      "id": "truncated-octahedron",
+      "term": "Truncated Octahedron",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["archimedean", "space-filling", "kelvin", "3d", "honeycomb"],
+      "summary": "The only Archimedean solid that tiles space periodically by itself; forms the Kelvin honeycomb.",
+      "definition": "The **only Archimedean solid that tiles space periodically by itself**. Result of truncating each vertex of an octahedron. Its honeycomb is the **Kelvin structure**.",
+      "examples": [
+        {
+          "title": "Face composition",
+          "body": "Each truncated octahedron has 14 faces: 6 squares and 8 hexagons."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "octahedron" }],
+        "related": [{ "id": "kelvin-structure" }, { "id": "honeycomb" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "triacontahedron": {
+      "id": "triacontahedron",
+      "term": "Triacontahedron",
+      "aliases": ["rhombic triacontahedron"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "advanced",
+      "tags": [
+        "30-faced",
+        "golden-rhombus",
+        "acceptance-window",
+        "quasicrystal",
+        "cut-and-project"
+      ],
+      "summary": "A 30-faced polyhedron with golden rhombic faces; serves as the acceptance window for 3D icosahedral quasicrystals.",
+      "definition": "A **30-faced polyhedron** dual to the icosidodecahedron. Its rhombic faces are golden rhombi. Serves as the **acceptance window** for 3D icosahedral quasicrystals in the cut-and-project method.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polyhedron" }, { "id": "acceptance-window" }],
+        "related": [{ "id": "icosahedron" }, { "id": "akn-tiling" }, { "id": "cut-and-project" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "dihedral-angle": {
+      "id": "dihedral-angle",
+      "term": "Dihedral Angle",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["angle", "polyhedron", "face", "edge"],
+      "summary": "The angle between two faces of a polyhedron meeting at a shared edge.",
+      "definition": "The **angle between two faces** of a polyhedron meeting at a shared edge. For a regular dodecahedron: $\\approx 116.57°$; for an icosahedron: $\\approx 138.19°$. Dihedral angles determine whether copies of a polyhedron can wrap consistently around an edge.",
+      "examples": [
+        {
+          "title": "Dodecahedron",
+          "body": "Dihedral angle $\\approx 116.57°$."
+        },
+        {
+          "title": "Icosahedron",
+          "body": "Dihedral angle $\\approx 138.19°$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polyhedron" }],
+        "related": [{ "id": "dodecahedron" }, { "id": "icosahedron" }, { "id": "angular-deficit" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "duality": {
+      "id": "duality",
+      "term": "Duality",
+      "aliases": ["polyhedron duality"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["dual", "vertices", "faces", "correspondence"],
+      "summary": "A correspondence between polyhedra exchanging vertices and faces while preserving combinatorial structure.",
+      "definition": "A correspondence between polyhedra **exchanging vertices and faces**:\n\n- Cube ↔ octahedron\n- Dodecahedron ↔ icosahedron\n- Tetrahedron ↔ tetrahedron (self-dual)\n\nDuality preserves combinatorial structure while swapping dimensions.",
+      "examples": [
+        {
+          "title": "Dodecahedron–Icosahedron duality",
+          "body": "The dodecahedron has 12 faces and 20 vertices; the icosahedron has 20 faces and 12 vertices. They are dual to each other."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polyhedron" }],
+        "related": [
+          { "id": "tetrahedron" },
+          { "id": "octahedron" },
+          { "id": "dodecahedron" },
+          { "id": "icosahedron" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "tiling": {
+      "id": "tiling",
+      "term": "Tiling",
+      "aliases": ["tessellation"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["covering", "space-filling", "no-gaps", "no-overlaps"],
+      "summary": "A covering of a space by tiles with no gaps and no overlaps (except on lower-dimensional boundaries).",
+      "definition": "A **covering of a space by tiles** with no gaps and no overlaps (except on lower-dimensional boundaries). In $\\mathbb{R}^2$, tiles are typically polygons; in $\\mathbb{R}^3$, polyhedra.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "polygon" },
+          { "id": "polyhedron" },
+          { "id": "honeycomb" },
+          { "id": "monohedral-tiling" },
+          { "id": "penrose-tiling" },
+          { "id": "pinwheel-tiling" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "honeycomb": {
+      "id": "honeycomb",
+      "term": "Honeycomb",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["space-filling", "3d", "tiling", "periodic"],
+      "summary": "A space-filling tiling of ℝ³ by polyhedra.",
+      "definition": "A **space-filling tiling of $\\mathbb{R}^3$**. Examples:\n\n- Cubic honeycomb (cubes).\n- Kelvin honeycomb (truncated octahedra).\n- Tetrahedral-octahedral honeycomb (mix of tetrahedra and octahedra).",
+      "examples": [
+        {
+          "title": "Cubic honeycomb",
+          "body": "The simplest honeycomb: all of ℝ³ filled by unit cubes aligned to the integer lattice."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }, { "id": "polyhedron" }],
+        "related": [
+          { "id": "kelvin-structure" },
+          { "id": "tetrahedral-octahedral-honeycomb" },
+          { "id": "truncated-octahedron" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "monohedral-tiling": {
+      "id": "monohedral-tiling",
+      "term": "Monohedral Tiling",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["single-tile", "prototile", "congruence"],
+      "summary": "A tiling using only one tile shape (up to congruence).",
+      "definition": "A tiling using **only one tile shape** (up to congruence). The pinwheel tiling is monohedral (one right-triangle shape with leg ratio 1:2).",
+      "examples": [
+        {
+          "title": "Pinwheel tiling",
+          "body": "The Conway–Radin pinwheel tiling is monohedral: every tile is a right triangle with legs in ratio 1:2, though tiles appear in infinitely many orientations."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }],
+        "related": [{ "id": "pinwheel-tiling" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "kelvin-structure": {
+      "id": "kelvin-structure",
+      "term": "Bitruncated Cubic Honeycomb / Kelvin Structure",
+      "aliases": ["Kelvin honeycomb", "bitruncated cubic honeycomb"],
+      "domain": "geometry",
+      "crossDomains": ["physics"],
+      "difficulty": "intermediate",
+      "tags": ["truncated-octahedra", "space-filling", "surface-area", "kelvin", "periodic"],
+      "summary": "The space-filling tiling by truncated octahedra, conjectured by Kelvin to minimize surface area among equal-volume partitions.",
+      "definition": "The space-filling tiling by **truncated octahedra**. Each tile has 14 faces (6 squares, 8 hexagons). Conjectured by Lord Kelvin (1887) to minimize surface area among equal-volume partitions — later disproved by the Weaire–Phelan structure.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "truncated-octahedron" }, { "id": "honeycomb" }],
+        "related": [],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "tetrahedral-octahedral-honeycomb": {
+      "id": "tetrahedral-octahedral-honeycomb",
+      "term": "Tetrahedral–Octahedral Honeycomb",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["space-filling", "fcc", "tetrahedra", "octahedra", "honeycomb"],
+      "summary": "Space-filling tiling combining tetrahedra and octahedra in ratio 2:1, built on the FCC lattice.",
+      "definition": "Space-filling tiling combining **tetrahedra and octahedra in ratio 2:1**. Built on the FCC lattice. Both tile types appear.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tetrahedron" }, { "id": "octahedron" }, { "id": "honeycomb" }],
+        "related": [{ "id": "lattice" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "penrose-tiling": {
+      "id": "penrose-tiling",
+      "term": "Penrose Tiling",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["physics", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "aperiodic",
+        "5-fold-symmetry",
+        "quasicrystal",
+        "cut-and-project",
+        "kite-dart",
+        "rhombus"
+      ],
+      "summary": "The famous aperiodic tiling of the plane with 5-fold symmetry, using two prototiles; a cut-and-project image of ℤ⁵.",
+      "definition": "The famous **aperiodic tiling of the plane** with **5-fold symmetry**, using two prototiles (kites and darts, or thick and thin rhombi). Cut-and-project image of $\\mathbb{Z}^5$. Both a tiling and a quasicrystal.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }, { "id": "cut-and-project" }],
+        "related": [
+          { "id": "pentagon" },
+          { "id": "quasicrystal" },
+          { "id": "akn-tiling" },
+          { "id": "acceptance-window" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "pinwheel-tiling": {
+      "id": "pinwheel-tiling",
+      "term": "Conway–Radin Pinwheel Tiling",
+      "aliases": ["pinwheel tiling"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["aperiodic", "right-triangle", "infinitely-many-orientations", "monohedral"],
+      "summary": "An aperiodic tiling of ℝ² by right triangles with leg ratio 1:2, exhibiting infinitely many tile orientations.",
+      "definition": "An aperiodic tiling of $\\mathbb{R}^2$ by **right triangles with leg ratio 1:2**. Famous for exhibiting **infinitely many tile orientations** — the triangle copies rotate by all multiples of $\\arctan(1/2)$, which is irrational.",
+      "examples": [
+        {
+          "title": "Irrational rotation",
+          "body": "Because $\\arctan(1/2)$ is an irrational multiple of $\\pi$, the set of orientations $\\{k \\cdot \\arctan(1/2) \\mid k \\in \\mathbb{Z}\\}$ is dense in $[0, 2\\pi)$."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }, { "id": "monohedral-tiling" }],
+        "related": [{ "id": "orientation" }, { "id": "orientation-group" }, { "id": "generator" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "quasicrystal": {
+      "id": "quasicrystal",
+      "term": "Quasicrystal",
+      "aliases": [],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["aperiodic", "long-range-order", "forbidden-symmetry", "5-fold", "shechtman"],
+      "summary": "An aperiodic structure with long-range order and crystallographically forbidden symmetries, most famously 5-fold.",
+      "definition": "An **aperiodic structure** with long-range order and forbidden (crystallographically impossible) symmetries — most famously 5-fold. Discovered by Shechtman (1984) in metallic alloys.",
+      "examples": [
+        {
+          "title": "Shechtman's AlMn alloy",
+          "body": "In 1984, Dan Shechtman observed icosahedral diffraction patterns in an AlMn alloy, demonstrating 5-fold symmetry incompatible with classical crystallography."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "penrose-tiling" },
+          { "id": "akn-tiling" },
+          { "id": "icosahedron" },
+          { "id": "cut-and-project" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "akn-tiling": {
+      "id": "akn-tiling",
+      "term": "Ammann-Kramer-Neri (AKN) Tiling",
+      "aliases": ["AKN tiling"],
+      "domain": "geometry",
+      "crossDomains": ["physics"],
+      "difficulty": "advanced",
+      "tags": ["3d", "aperiodic", "icosahedral-symmetry", "rhombohedra", "quasicrystal"],
+      "summary": "The 3D analogue of Penrose tiling: an aperiodic tiling of ℝ³ with icosahedral symmetry built from two golden rhombohedra.",
+      "definition": "The **3D analogue of Penrose tiling**: an aperiodic tiling of $\\mathbb{R}^3$ with **icosahedral symmetry**, built from two prototiles (acute and obtuse golden rhombohedra).",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }, { "id": "cut-and-project" }, { "id": "icosahedron" }],
+        "related": [
+          { "id": "penrose-tiling" },
+          { "id": "quasicrystal" },
+          { "id": "triacontahedron" },
+          { "id": "acceptance-window" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "cut-and-project": {
+      "id": "cut-and-project",
+      "term": "Cut-and-Project Method",
+      "aliases": ["cut-and-project construction"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "advanced",
+      "tags": ["quasicrystal", "lattice", "projection", "delone-set", "higher-dimensional"],
+      "summary": "A general construction of quasicrystals by projecting selected points of a higher-dimensional lattice onto a physical subspace.",
+      "definition": "A general construction of quasicrystals:\n\n1. Take a higher-dimensional lattice $L \\subset \\mathbb{R}^N$.\n2. Decompose $\\mathbb{R}^N = E_\\parallel \\oplus E_\\perp$ (physical + perpendicular).\n3. Select lattice points whose projection to $E_\\perp$ lies in a bounded window $W$.\n4. Project these selected points to $E_\\parallel$.\n\nThe result is a Delone set with quasiperiodic order.",
+      "examples": [
+        {
+          "title": "Penrose tiling",
+          "body": "Penrose tiling is the cut-and-project image of $\\mathbb{Z}^5$ with a pentagonal acceptance window in the perpendicular 2D subspace."
+        },
+        {
+          "title": "AKN tiling",
+          "body": "The AKN tiling uses a 6D ambient lattice with a triacontahedral acceptance window."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "lattice" }, { "id": "acceptance-window" }],
+        "related": [{ "id": "penrose-tiling" }, { "id": "akn-tiling" }, { "id": "quasicrystal" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "acceptance-window": {
+      "id": "acceptance-window",
+      "term": "Acceptance Window",
+      "aliases": ["window", "projection window"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["cut-and-project", "quasicrystal", "bounded-region", "perpendicular-space"],
+      "summary": "The bounded region W ⊂ E⊥ filtering ambient lattice points in the cut-and-project construction.",
+      "definition": "The **bounded region $W \\subset E_\\perp$** filtering ambient lattice points. Window shape determines tiling combinatorics. For Penrose: pentagonal window in 5D ambient lattice. For AKN: triacontahedral window in 6D.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "cut-and-project" }],
+        "related": [
+          { "id": "penrose-tiling" },
+          { "id": "akn-tiling" },
+          { "id": "triacontahedron" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "adjacency-graph": {
+      "id": "adjacency-graph",
+      "term": "Adjacency Graph",
+      "aliases": [],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "intermediate",
+      "tags": ["graph", "tiles", "edges", "adjacency", "spectral"],
+      "summary": "A graph encoding tile adjacency, with vertices as tiles and edges between tiles sharing an active edge/face generator.",
+      "definition": "A graph encoding tile adjacency:\n\n- **Vertices**: tiles of the tiling.\n- **Edges**: between tiles sharing an **active edge/face** generator.\n\nThis graph carries the combinatorial geometry used in spectral, diffusion, and dimension analyses.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }, { "id": "active-edge" }],
+        "related": [{ "id": "centroid" }, { "id": "reconnection" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "centroid": {
+      "id": "centroid",
+      "term": "Centroid",
+      "aliases": ["geometric center"],
+      "domain": "geometry",
+      "crossDomains": ["computation"],
+      "difficulty": "foundational",
+      "tags": ["center", "polygon", "polyhedron", "labeling"],
+      "summary": "The geometric center of a polygon or polyhedron; often used to label tiles in algorithms.",
+      "definition": "The **geometric center** of a polygon or polyhedron. Often used to label tiles in algorithms.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "polygon" }],
+        "related": [{ "id": "adjacency-graph" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "edge-midpoint": {
+      "id": "edge-midpoint",
+      "term": "Edge Midpoint",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["midpoint", "edge", "half-turn", "3d-pinwheel"],
+      "summary": "The midpoint of an edge; center of edge half-turns in 3D pinwheel constructions.",
+      "definition": "The **midpoint of an edge**. Center of **edge half-turns** in 3D pinwheel constructions.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "edge-half-turn" }, { "id": "half-turn" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "generator": {
+      "id": "generator",
+      "term": "Generator",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["group-element", "reflection", "half-turn", "rotation", "expansion-family"],
+      "summary": "A group element (reflection, half-turn, or rotation) used to build up the expansion family by repeated application to a seed tile.",
+      "definition": "A group element (typically a reflection, half-turn, or rotation) used to **build up the expansion family** by repeated application to a seed tile.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "active-edge" },
+          { "id": "reflection" },
+          { "id": "half-turn" },
+          { "id": "edge-half-turn" },
+          { "id": "orientation-group" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "active-edge": {
+      "id": "active-edge",
+      "term": "Active Edge / Active Face",
+      "aliases": ["active face"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["generator", "edge", "face", "tile-neighbor"],
+      "summary": "An edge (2D) or face (3D) carrying a generator operation; crossing it maps one tile to its neighbor.",
+      "definition": "An edge (2D) or face (3D) **carrying a generator operation**. Crossing an active edge maps one tile to its neighbor.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "generator" }],
+        "related": [{ "id": "inactive-edge" }, { "id": "adjacency-graph" }, { "id": "active-set" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "inactive-edge": {
+      "id": "inactive-edge",
+      "term": "Inactive Edge / Inactive Face",
+      "aliases": ["inactive face"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["no-generator", "decoration", "gauge", "sheet-transition"],
+      "summary": "An edge or face carrying no generator (mere decoration) or a weak gauge generator (sheet transition without spatial translation).",
+      "definition": "An edge or face **carrying no generator** (mere decoration) or a weak gauge generator (sheet transition without spatial translation).",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "active-edge" }],
+        "related": [{ "id": "sheet-transition" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "active-set": {
+      "id": "active-set",
+      "term": "Active Set",
+      "aliases": ["active set E_A"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["edges", "faces", "generators", "pinwheel"],
+      "summary": "The subset of edges/faces used as generators in a pinwheel construction.",
+      "definition": "The **subset of edges/faces used as generators** in a pinwheel construction.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "active-edge" }, { "id": "generator" }],
+        "related": [{ "id": "edge-restricted-reconnective" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "edge-restricted-reconnective": {
+      "id": "edge-restricted-reconnective",
+      "term": "Edge-Restricted Reconnective",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "advanced",
+      "tags": ["reconnection", "pentagon", "generator-subset", "tree-growth"],
+      "summary": "A polygon that fails full reconnection but reconnects when its generator set is restricted to a subset of edges.",
+      "definition": "A polygon that **fails full reconnection** but reconnects when its generator set is **restricted to a subset of edges**. The pentagon is an example: not all five edges can act as generators simultaneously without forcing tree growth.",
+      "examples": [
+        {
+          "title": "Pentagon",
+          "body": "The pentagon cannot use all five edges as generators simultaneously without forcing tree growth, but reconnects with a restricted active set."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "active-set" }, { "id": "reconnection" }],
+        "related": [{ "id": "pentagon" }, { "id": "active-edge" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "reflection": {
+      "id": "reflection",
+      "term": "Reflection",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "foundational",
+      "tags": ["isometry", "hyperplane", "orientation-reversing", "determinant-minus-one"],
+      "summary": "An isometry fixing a hyperplane and reversing orientation, with determinant −1.",
+      "definition": "An **isometry fixing a hyperplane** (a line in 2D, plane in 3D) and reversing orientation. Determinant $-1$.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "generator" },
+          { "id": "face-reflection" },
+          { "id": "half-turn" },
+          { "id": "orientation-group" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "face-reflection": {
+      "id": "face-reflection",
+      "term": "Face Reflection",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["reflection", "face-plane", "improper-isometry", "3d-generator"],
+      "summary": "A reflection across a face plane of a polyhedron; an improper isometry used as a 3D generator.",
+      "definition": "A **reflection across a face plane** of a polyhedron. Improper isometry. Used as a 3D generator.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "reflection" }, { "id": "polyhedron" }],
+        "related": [{ "id": "generator" }, { "id": "edge-half-turn" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "half-turn": {
+      "id": "half-turn",
+      "term": "Half-Turn",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "foundational",
+      "tags": ["rotation", "pi", "180-degrees", "isometry"],
+      "summary": "A rotation by π (180°): about a point in 2D or about an axis in 3D.",
+      "definition": "A **rotation by $\\pi$** (180°). In 2D about a point; in 3D about an axis.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "edge-half-turn" },
+          { "id": "generator" },
+          { "id": "reflection" },
+          { "id": "edge-midpoint" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "edge-half-turn": {
+      "id": "edge-half-turn",
+      "term": "Edge Half-Turn",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["rotation", "pi", "edge-axis", "proper-isometry", "3d-pinwheel"],
+      "summary": "A rotation by π about an edge axis of a polyhedron; the 3D analogue of a 2D half-turn used in pinwheel constructions.",
+      "definition": "A **rotation by $\\pi$ about an edge axis** of a polyhedron. Proper isometry of determinant $+1$. The 3D analogue of a 2D half-turn used in pinwheel constructions.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "half-turn" }, { "id": "polyhedron" }],
+        "related": [{ "id": "generator" }, { "id": "edge-midpoint" }, { "id": "face-reflection" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "orientation": {
+      "id": "orientation",
+      "term": "Orientation",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["rotation-group", "angular-state", "tile"],
+      "summary": "An element of the rotation group attached to a tile, recording its current angular state.",
+      "definition": "An element of the **rotation group** attached to a tile, recording its current angular state. Two congruent tiles can occupy different orientations in the tiling.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "orientation-group" }, { "id": "sheet" }, { "id": "sheet-index" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "orientation-group": {
+      "id": "orientation-group",
+      "term": "Orientation Group",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["subgroup", "O(n)", "generators", "reconnection-criterion", "finite"],
+      "summary": "The subgroup of O(n) generated by rotational parts of all generators; finiteness is a key reconnection criterion.",
+      "definition": "The **subgroup of $O(n)$** generated by rotational parts of all generators. **Finite orientation group** is one of the reconnection criteria (Criterion 1): infinite orientation group forces the expansion family to be a tree.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "generator" }, { "id": "orientation" }],
+        "related": [{ "id": "reconnection" }, { "id": "pinwheel-tiling" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "affine-map": {
+      "id": "affine-map",
+      "term": "Affine Map",
+      "aliases": ["affine transformation"],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "foundational",
+      "tags": ["linear", "translation", "tile-transformation"],
+      "summary": "A map x ↦ Ax + b combining a linear transformation A and a translation b; the basic building block for tile-to-tile transformations.",
+      "definition": "A map $x \\mapsto Ax + b$ combining a **linear transformation** $A$ and a **translation** $b$. The basic building block for tile-to-tile transformations.",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "x \\mapsto Ax + b",
+          "description": "General form of an affine map.",
+          "variables": {
+            "A": "linear transformation matrix",
+            "b": "translation vector",
+            "x": "input point"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "affine-group" }, { "id": "generator" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "affine-group": {
+      "id": "affine-group",
+      "term": "Affine Group",
+      "aliases": [],
+      "domain": "algebra",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["group", "affine-maps", "semidirect-product", "GL(n)"],
+      "summary": "The group of all affine maps of ℝⁿ, decomposing as a semidirect product ℝⁿ ⋊ GL(n).",
+      "definition": "The **group of all affine maps** of $\\mathbb{R}^n$, with composition. Decomposes as a semidirect product $\\mathbb{R}^n \\rtimes GL(n)$.",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "\\text{Aff}(\\mathbb{R}^n) \\cong \\mathbb{R}^n \\rtimes GL(n)",
+          "description": "Semidirect product decomposition of the affine group."
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "affine-map" }],
+        "related": [],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "lattice": {
+      "id": "lattice",
+      "term": "Lattice (Bravais)",
+      "aliases": ["Bravais lattice"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "foundational",
+      "tags": ["discrete", "subgroup", "translations", "periodic"],
+      "summary": "A discrete subgroup of ℝⁿ generated by n linearly independent translations; equivalently, the ℤ-span of a basis.",
+      "definition": "A **discrete subgroup of $\\mathbb{R}^n$** generated by $n$ linearly independent translations. Equivalently, $\\mathbb{Z}$-spans of a basis.",
+      "examples": [
+        {
+          "title": "FCC lattice",
+          "body": "The face-centered cubic (FCC) lattice underlies the tetrahedral-octahedral honeycomb and has the rhombic dodecahedron as its Voronoi cell."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "voronoi-cell" },
+          { "id": "cut-and-project" },
+          { "id": "rhombic-dodecahedron" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "voronoi-cell": {
+      "id": "voronoi-cell",
+      "term": "Voronoi Cell",
+      "aliases": ["Wigner-Seitz cell"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["closest-point", "lattice", "tiling", "fcc"],
+      "summary": "The region of space closest to a given lattice point; Voronoi cells of a lattice tile ℝⁿ monohedrally.",
+      "definition": "The **region of space closest to a given lattice point**. Voronoi cells of a lattice tile $\\mathbb{R}^n$ monohedrally. The Voronoi cell of FCC is the rhombic dodecahedron.",
+      "examples": [
+        {
+          "title": "FCC Voronoi cell",
+          "body": "The Voronoi cell of the FCC lattice is the rhombic dodecahedron, which tiles space periodically."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "lattice" }],
+        "related": [{ "id": "rhombic-dodecahedron" }, { "id": "monohedral-tiling" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "branched-cover": {
+      "id": "branched-cover",
+      "term": "Branched Cover",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["ramification", "branch-point", "multi-sheeted", "angular-deficit"],
+      "summary": "A covering with ramification points where multiple sheets meet; the pentagon's multi-sheeted cover branches at vertices.",
+      "definition": "A covering with **ramification points** where multiple sheets meet. The pentagon's **multi-sheeted cover** branches at vertices: each vertex is a branch point where the angular deficit accumulates.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet" }, { "id": "angular-deficit" }],
+        "related": [
+          { "id": "pentagon" },
+          { "id": "vortex" },
+          { "id": "fiber" },
+          { "id": "foliation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "sheet": {
+      "id": "sheet",
+      "term": "Sheet",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": ["covering-space", "copy", "fiber-group", "multi-sheeted"],
+      "summary": "A copy of ℝⁿ in a multi-sheeted covering space, indexed by an element of the fiber group.",
+      "definition": "A **copy of $\\mathbb{R}^n$** in a multi-sheeted covering space, **indexed by an element of the fiber group**. Tiles live on specific sheets.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "sheet-index" },
+          { "id": "sheet-transition" },
+          { "id": "fiber" },
+          { "id": "branched-cover" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "sheet-index": {
+      "id": "sheet-index",
+      "term": "Sheet Index",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["label", "fiber-group", "rotational-state", "multi-sheeted"],
+      "summary": "The label s ∈ G identifying which sheet a tile lives on; different sheets carry the same tile shape with different rotational states.",
+      "definition": "The **label $s \\in G$** identifying which sheet a tile lives on. Different sheets carry the same tile shape but with different rotational states.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet" }],
+        "related": [{ "id": "orientation" }, { "id": "sheet-transition" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "sheet-transition": {
+      "id": "sheet-transition",
+      "term": "Sheet Transition",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["fiber-group", "edge-crossing", "angular-deficit", "holonomy"],
+      "summary": "A map between sheets associated with crossing an edge/face; an element of the fiber group encoding how angular deficit is absorbed.",
+      "definition": "A map between sheets associated with **crossing an edge/face**. Element of the **fiber group**. Encodes how the angular deficit is absorbed.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet" }, { "id": "angular-deficit" }],
+        "related": [{ "id": "inactive-edge" }, { "id": "vortex" }, { "id": "sheet-index" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "fiber": {
+      "id": "fiber",
+      "term": "Fiber",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": [],
+      "difficulty": "advanced",
+      "tags": ["preimage", "covering-space", "projection", "k-sheeted"],
+      "summary": "The preimage of a point under the projection π: ℳ → ℝⁿ in a covering space; for a k-sheeted cover, each fiber has k elements.",
+      "definition": "The **preimage of a point** under the projection $\\pi: \\mathcal{M} \\to \\mathbb{R}^n$ in a covering space. For a $k$-sheeted cover, the fiber over each non-branch point has $k$ elements.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet" }],
+        "related": [{ "id": "branched-cover" }, { "id": "foliation" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "foliation": {
+      "id": "foliation",
+      "term": "Foliation",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["leaves", "manifold", "decomposition", "multi-sheeted"],
+      "summary": "A decomposition of a manifold into parallel leaves; sheets in a multi-sheeted cover foliate the total space as a stack of ℝ² copies.",
+      "definition": "A decomposition of a manifold into parallel leaves. Sheets in a multi-sheeted cover **foliate the total space** when interpreted as a stack of $\\mathbb{R}^2$ copies.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet" }],
+        "related": [{ "id": "branched-cover" }, { "id": "fiber" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "vortex": {
+      "id": "vortex",
+      "term": "Vortex",
+      "aliases": [],
+      "domain": "topology",
+      "crossDomains": ["geometry", "physics"],
+      "difficulty": "advanced",
+      "tags": ["topological-defect", "vertex", "holonomy", "sheet-transition", "angular-deficit"],
+      "summary": "A topological defect at a vertex around which sheet transitions accumulate; encircling it yields nontrivial holonomy.",
+      "definition": "A **topological defect at a vertex** around which **sheet transitions accumulate**. Encircling a vortex once yields a nontrivial holonomy (sheet shift); encircling it the right number of times returns to the original sheet.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sheet-transition" }, { "id": "angular-deficit" }],
+        "related": [{ "id": "branched-cover" }, { "id": "pentagon" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "reconnection": {
+      "id": "reconnection",
+      "term": "Reconnection",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology", "combinatorics"],
+      "difficulty": "advanced",
+      "tags": ["expansion-family", "adjacency-graph", "global-consistency", "non-tree"],
+      "summary": "The property that an expansion family closes into a globally consistent adjacency graph rather than diverging as an infinite tree.",
+      "definition": "The property that an expansion family **closes into a globally consistent adjacency graph** rather than diverging as an infinite tree. The central goal of the framework.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "adjacency-graph" }],
+        "related": [
+          { "id": "orientation-group" },
+          { "id": "edge-restricted-reconnective" },
+          { "id": "local-finiteness" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "local-finiteness": {
+      "id": "local-finiteness",
+      "term": "Local Finiteness",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["compact-region", "finitely-many-tiles", "tiling-validity"],
+      "summary": "The property that every compact region contains finitely many tiles; a bare-minimum requirement for a valid tiling.",
+      "definition": "Every **compact region contains finitely many tiles**. A bare-minimum requirement for a valid tiling. Failed when the cyclotomic density trap occurs.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "tiling" }],
+        "related": [{ "id": "reconnection" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

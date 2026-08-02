@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize the Shannon entropy of their pairwise-distance distribution."
+    />
+    <title>Geometric Entropy — Mathematical Explorations</title>
+    <link rel="canonical" href="https://math.cognotik.com/companion/geometric-entropy/index.html" />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta property="og:title" content="Geometric Entropy — Mathematical Explorations" />
+    <meta
+      property="og:description"
+      content="A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize the Shannon entropy of their pairwise-distance distribution."
+    />
+    <meta
+      property="og:url"
+      content="https://math.cognotik.com/companion/geometric-entropy/index.html"
+    />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Geometric Entropy — Mathematical Explorations" />
+    <meta
+      name="twitter:description"
+      content="A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize the Shannon entropy of their pairwise-distance distribution."
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "Geometric Entropy",
+            "description": "A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize the Shannon entropy of their pairwise-distance distribution.",
+            "url": "https://math.cognotik.com/companion/geometric-entropy/index.html",
+            "inLanguage": "en",
+            "author": { "@type": "Person", "name": "SimiaCryptus" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Mathematical Explorations",
+              "url": "https://math.cognotik.com/"
+            },
+            "mainEntityOfPage": "https://math.cognotik.com/companion/geometric-entropy/index.html"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Mathematical Explorations",
+                "item": "https://math.cognotik.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Geometric Entropy",
+                "item": "https://math.cognotik.com/companion/geometric-entropy/index.html"
+              }
+            ]
+          },
+          {
+            "@type": "VideoObject",
+            "name": "Geometric Entropy — demonstration",
+            "description": "A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize the Shannon entropy of their pairwise-distance distribution.",
+            "thumbnailUrl": "https://math.cognotik.com/og-image.png",
+            "contentUrl": "https://math.cognotik.com/videos/Geometric_Entropy.mp4",
+            "uploadDate": "2026-06-17"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <div class="crumbs">
+        <a href="../../index.html">Home</a> › <a href="../index.html">Companion pages</a> ›
+        <span>Geometric Entropy</span>
+      </div>
+      <div class="page-head">
+        <div class="page-icon" aria-hidden="true">GE</div>
+        <div>
+          <h1>Geometric Entropy</h1>
+        </div>
+      </div>
+      <p class="subtitle">
+        A continuous analogue of the Erdős distinct-distance problem. Points on a manifold are
+        arranged to extremize the Shannon entropy of their pairwise-distance distribution.
+      </p>
+      <p>
+        <a class="cta" href="../../experiments/geometric-entropy/index.html"
+          >Open the interactive lab <span class="arrow">→</span></a
+        >
+        <a class="cta ghost" href="./video.html">Watch the video <span class="arrow">→</span></a>
+      </p>
+      <div class="media">
+        <video
+          controls
+          preload="metadata"
+          playsinline
+          aria-label="Geometric Entropy demonstration video"
+        >
+          <source src="../../videos/Geometric_Entropy.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <article>
+        <h1>Geometric Entropy Lab</h1>
+        <blockquote>
+          <p>
+            <strong>A continuous analogue of the Erdős distinct-distance problem.</strong> Points on
+            a manifold are arranged to extremize the Shannon entropy of their pairwise-distance
+            distribution, producing highly symmetric, extremal configurations on spheres, tori,
+            cubes, and arbitrary STL meshes.
+          </p>
+        </blockquote>
+        <p>
+          An interactive browser-based demo for optimizing point distributions on various 3D
+          geometries using <strong>Spherical Gram Matrix Entropy</strong> and
+          <strong>TensorFlow.js</strong>.
+        </p>
+        <h2>Live Demo</h2>
+        <p>Open <code>index.html</code> in a modern browser — no build step required.</p>
+        <h2>What It Does</h2>
+        <p>
+          Points are placed on a chosen geometry (sphere, torus, cube, etc.) and optimized by
+          maximizing or minimizing a Shannon entropy derived from a Gaussian kernel density estimate
+          over pairwise distances.
+        </p>
+        <h3>The Erdős Connection</h3>
+        <p>
+          The classical Erdős distinct-distance problem asks: how many <em>distinct</em> pairwise
+          distances must $n$ points in the plane determine? It&#39;s a combinatorial counting
+          problem with a discrete answer.
+        </p>
+        <p>
+          This lab plays the <em>continuous</em> version of the same game. Instead of counting
+          distinct distances, we treat the multiset of pairwise distances as a probability
+          distribution (via a Gaussian kernel) and maximize its Shannon entropy. The result is the
+          most &quot;distance-diverse&quot; configuration the manifold admits — a continuous
+          extremizer in place of a discrete counting bound.
+        </p>
+        <p>
+          Maximizing entropy spreads points apart; minimizing concentrates them; matching a target
+          value lets you dial in a specific level of distance diversity.
+        </p>
+        <h3>Core Math</h3>
+        <pre><code>G  = X · Xᵀ          (Gram / dot-product matrix)
+ρᵢ = Σⱼ exp(−‖xᵢ−xⱼ‖² / τ)   (kernel density per point)
+p  = ρ / Σρ           (probability distribution)
+H  = −Σ p · log(p)   (Shannon entropy)
+</code></pre>
+        <p>The optimizer minimizes a loss that is one of:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Mode</th>
+              <th>Loss</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Maximize Entropy</td>
+              <td><code>−H</code></td>
+            </tr>
+            <tr>
+              <td>Minimize Entropy</td>
+              <td><code>H</code></td>
+            </tr>
+            <tr>
+              <td>Match Target</td>
+              <td><code>(H − H*)²</code></td>
+            </tr>
+            <tr>
+              <td>Neutral</td>
+              <td><code>0</code> (geometry constraint only)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          An optional pairwise <strong>interaction force</strong> (repulsion <code>1/r²</code> or
+          attraction <code>r²</code>) and a fully
+          <strong>custom JS/TensorFlow.js potential</strong> can be added on top.
+        </p>
+        <hr />
+        <h2>Geometries</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Value</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>sphere</code></td>
+              <td>Unit sphere surface</td>
+            </tr>
+            <tr>
+              <td><code>shell</code></td>
+              <td>Spherical shell (inner–outer radii)</td>
+            </tr>
+            <tr>
+              <td><code>cube</code></td>
+              <td>Cube surface</td>
+            </tr>
+            <tr>
+              <td><code>cube-shell</code></td>
+              <td>Cube shell</td>
+            </tr>
+            <tr>
+              <td><code>plane</code></td>
+              <td>Flat square (z = 0)</td>
+            </tr>
+            <tr>
+              <td><code>cylinder</code></td>
+              <td>Cylinder along Y axis</td>
+            </tr>
+            <tr>
+              <td><code>torus</code></td>
+              <td>Torus surface (configurable R, r)</td>
+            </tr>
+            <tr>
+              <td><code>torus-shell</code></td>
+              <td>Torus shell</td>
+            </tr>
+            <tr>
+              <td><code>cone</code></td>
+              <td>Cone surface</td>
+            </tr>
+            <tr>
+              <td><code>cone-shell</code></td>
+              <td>Cone shell</td>
+            </tr>
+            <tr>
+              <td><code>saddle</code></td>
+              <td>Hyperbolic paraboloid z = x²−y²</td>
+            </tr>
+            <tr>
+              <td><code>custom-stl</code></td>
+              <td>Upload any binary or ASCII STL file</td>
+            </tr>
+          </tbody>
+        </table>
+        <hr />
+        <h2>Controls</h2>
+        <h3>Configuration</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Control</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Geometry</strong></td>
+              <td>Select the target manifold</td>
+            </tr>
+            <tr>
+              <td><strong>Shell Inner Radius</strong></td>
+              <td>Inner boundary for shell geometries (0–0.99)</td>
+            </tr>
+            <tr>
+              <td><strong>Torus R / r</strong></td>
+              <td>Major and minor radii for torus geometries</td>
+            </tr>
+            <tr>
+              <td><strong>Optimization Target</strong></td>
+              <td>Maximize / Minimize / Match / Neutral</td>
+            </tr>
+            <tr>
+              <td><strong>Target Entropy</strong></td>
+              <td>Desired entropy value when using <em>Match</em> mode</td>
+            </tr>
+            <tr>
+              <td><strong>Point Count (N)</strong></td>
+              <td>Number of points (2–5000)</td>
+            </tr>
+            <tr>
+              <td><strong>Calc Neighbors (k)</strong></td>
+              <td>Restrict entropy kernel to k nearest neighbours; 0 = global</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Custom Potential</h3>
+        <p>
+          Write any JavaScript expression returning a <code>tf.Tensor</code> or scalar.<br />Available
+          variables: <code>rho</code> (Nx1), <code>p</code> (Nx1x3), <code>q</code> (1xNx3),
+          <code>D</code> (NxN dist²), <code>tf</code>.
+        </p>
+        <h3>Hyperparameters</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Control</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Optimizer</strong></td>
+              <td>Adam · QQN · L-BFGS</td>
+            </tr>
+            <tr>
+              <td><strong>Temperature (τ)</strong></td>
+              <td>Kernel bandwidth — higher = smoother density</td>
+            </tr>
+            <tr>
+              <td><strong>Learning Rate</strong></td>
+              <td>Gradient step size</td>
+            </tr>
+            <tr>
+              <td><strong>Show Neighbors (k)</strong></td>
+              <td>Draw k nearest-neighbour edges in the viewport</td>
+            </tr>
+            <tr>
+              <td><strong>Neighbor Radius</strong></td>
+              <td>Draw edges within a Euclidean radius</td>
+            </tr>
+            <tr>
+              <td><strong>Auto-Rotate View</strong></td>
+              <td>Continuously spin the camera</td>
+            </tr>
+            <tr>
+              <td><strong>Show Triangulation</strong></td>
+              <td>Overlay Delaunay triangulation edges</td>
+            </tr>
+            <tr>
+              <td><strong>Solid Fill</strong></td>
+              <td>Fill triangulation faces with density colour</td>
+            </tr>
+            <tr>
+              <td><strong>Interaction Force</strong></td>
+              <td>Negative = repel (1/r²), Positive = attract (r²)</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Actions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Button</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Start / Stop Training</strong></td>
+              <td>Toggle the optimisation loop</td>
+            </tr>
+            <tr>
+              <td><strong>Reset</strong></td>
+              <td>Re-initialise random points and clear history</td>
+            </tr>
+            <tr>
+              <td><strong>Copy Coordinates</strong></td>
+              <td>Copy current point array as JSON to clipboard</td>
+            </tr>
+            <tr>
+              <td><strong>Export STL</strong></td>
+              <td>Download the current triangulated mesh as an STL file</td>
+            </tr>
+          </tbody>
+        </table>
+        <hr />
+        <h2>Metrics</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Spherical Entropy</strong></td>
+              <td>Current Shannon entropy H of the point distribution</td>
+            </tr>
+            <tr>
+              <td><strong>Interaction</strong></td>
+              <td>Weighted interaction potential value</td>
+            </tr>
+            <tr>
+              <td><strong>Total Fitness</strong></td>
+              <td>Raw loss value being minimised</td>
+            </tr>
+            <tr>
+              <td><strong>Step</strong></td>
+              <td>Number of optimisation steps taken</td>
+            </tr>
+          </tbody>
+        </table>
+        <hr />
+        <h2>Optimizers</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Adam</strong></td>
+              <td>Adaptive moment estimation — robust default</td>
+            </tr>
+            <tr>
+              <td><strong>QQN</strong></td>
+              <td>Quasi-Quasi-Newton — faster convergence on smooth losses</td>
+            </tr>
+            <tr>
+              <td><strong>L-BFGS</strong></td>
+              <td>Limited-memory BFGS — best for small N, high precision</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>The ln(N) Bound and Optimizer Fingerprinting</h3>
+        <p>
+          For a kernel-density entropy of the form $H = -\sum p_i \log p_i$ over $N$ points, the
+          maximum possible value is $\log N$, attained when the induced distribution $p$ is uniform
+          ($p_i = 1/N$ for all $i$). Equivalently, when every point has identical local kernel
+          density $\rho_i$, the entropy saturates its information-theoretic ceiling:
+        </p>
+        <pre><code>H_max = ln(N)
+</code></pre>
+        <p>
+          This is just the standard Shannon bound applied to the per-point density distribution, and
+          it grows <strong>proportionally to $\ln N$</strong> as the point count increases.
+          Empirically, runs of the maximizer asymptote at this value for every geometry we have
+          tried — sphere, torus, cube, saddle, or arbitrary STL.
+        </p>
+        <h4>A Sparse Fitness Landscape</h4>
+        <p>
+          What makes this problem interesting (and a little strange) is that the condition for
+          achieving $H = \ln N$ is <strong>highly underdetermined</strong>. The objective only
+          requires that all $\rho_i$ be equal; it says nothing about <em>where</em> the points sit,
+          only that each one must see the same total kernel mass from its neighbours. On a curved or
+          non-trivial manifold there are typically a continuous family — sometimes a
+          high-dimensional manifold — of configurations satisfying this constraint.
+        </p>
+        <p>
+          In optimization terms, the fitness function is <strong>sparse</strong>: a vast set of
+          distinct geometric arrangements all sit at the same global optimum. The loss surface has a
+          large, flat, connected (or near-connected) optimal set rather than a single isolated
+          minimum.
+        </p>
+        <h4>Optimizer Fingerprinting</h4>
+        <p>
+          Because the optimum is degenerate, the <em>path</em> an optimizer takes through
+          configuration space determines <em>which</em> extremal configuration it lands on. Running
+          the same problem with <strong>Adam</strong>, <strong>QQN</strong>, and
+          <strong>L-BFGS</strong> — or even the same optimizer at different learning rates or
+          temperatures $\tau$ — reliably produces visibly different point arrangements, each of
+          which achieves the same $H \approx \ln N$ value.
+        </p>
+        <ul>
+          <li>
+            <strong>Adam</strong> tends to produce slightly noisy, isotropic, lattice-like packings.
+          </li>
+          <li>
+            <strong>QQN</strong> carves out smoother, more symmetric arrangements with visible
+            curvature-aligned structure.
+          </li>
+          <li>
+            <strong>L-BFGS</strong> snaps quickly into crystalline, near-perfectly-regular
+            configurations, often with sharp symmetry groups.
+          </li>
+        </ul>
+        <p>
+          The resulting geometry is, in effect, a <strong>fingerprint</strong> of the
+          optimizer&#39;s internal dynamics — its preconditioner, momentum, and step-selection rules
+          projected onto the manifold of entropy-maximal configurations. This is a previously
+          unremarked-upon (and admittedly <strong>useless</strong>) property: the entropy value
+          tells you nothing about which optimizer produced it, but the <em>shape</em> of the
+          resulting point cloud does. You can identify the optimizer by looking at the picture.
+        </p>
+        <p>
+          This is a small, charming consequence of optimizing a sparse objective on a continuous
+          manifold, and the lab is a convenient place to play with it.
+        </p>
+        <hr />
+        <h2>Visualisation</h2>
+        <ul>
+          <li>
+            <strong>3D viewport</strong> — orthographic projection with mouse drag to rotate and
+            scroll to zoom.<br />Points are coloured <strong>cyan → magenta</strong> by local
+            density (cyan = isolated, magenta = clustered).
+          </li>
+          <li>
+            <strong>Density histogram</strong> — real-time distribution of per-point kernel
+            densities.
+          </li>
+          <li>
+            <strong>STL wireframe</strong> — when a custom STL is loaded its mesh is drawn as a
+            faint overlay.
+          </li>
+        </ul>
+        <hr />
+        <h2>File Structure</h2>
+        <pre><code>geometric-entropy/
+├── index.html            # Single-file app entry point
+├── js/
+│   ├── optimizer-adam.js
+│   ├── optimizer-qqn.js
+│   └── optimizer-lbfgs.js
+└── README.md
+</code></pre>
+        <hr />
+        <h2>Dependencies (CDN)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>@tensorflow/tfjs</code> 4.15</td>
+              <td>Automatic differentiation &amp; GPU tensors</td>
+            </tr>
+            <tr>
+              <td><code>d3-geo-voronoi</code> 2</td>
+              <td>Spherical Delaunay triangulation</td>
+            </tr>
+            <tr>
+              <td><code>d3-delaunay</code> 6</td>
+              <td>Planar Delaunay (used internally by geo-voronoi)</td>
+            </tr>
+            <tr>
+              <td><code>d3-geo</code> 3 / <code>d3-array</code> 3</td>
+              <td>Geographic projections &amp; utilities</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>No npm install needed — all loaded from jsDelivr.</p>
+        <hr />
+        <h2>License</h2>
+        <p>MIT</p>
+      </article>
+      <section class="related">
+        <h2>More from Mathematical Explorations</h2>
+        <ul>
+          <li>
+            <a href="../pentagonal-lattice-geometry/index.html">Pentagonal Lattice Geometry</a> — A
+            multi-sheeted covering construction in which the regular pentagon develops fractional
+            dimension (d ≈ 2.37)…
+          </li>
+          <li>
+            <a href="../space-color-symmetry/index.html">Space-Color Symmetry</a> — A pixel canvas
+            where symmetry doesn&#39;t just mirror your strokes — it rewires the diffusion graph.
+            Heat flows…
+          </li>
+          <li>
+            <a href="../spacelike-knots/index.html">Spacelike Knots</a> — A knot equipped with a
+            Minkowski metric, turning crossings into causal inversions. The distance matrix…
+          </li>
+          <li>
+            <a href="../layered-cellular-automata/index.html">Layered Cellular Automata</a> —
+            Langton&#39;s ants write a colored substrate that gates where Conway&#39;s Life is
+            allowed to live. Three feedback…
+          </li>
+          <li>
+            <a href="../fractal-learning/index.html">Fractal Learning</a> — Inverse
+            iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so
+            the depth-N…
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

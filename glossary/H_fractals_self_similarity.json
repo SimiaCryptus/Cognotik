@@ -1,0 +1,540 @@
+{
+  "version": "1.0.0",
+  "title": "Fractals and Self-Similarity",
+  "description": "A glossary of fractal-geometric vocabulary including self-similarity, iterated function systems, classical fractal examples, and their relevance to multi-sheeted tilings and emergent geometry.",
+  "concepts": {
+    "fractal": {
+      "id": "fractal",
+      "term": "Fractal",
+      "aliases": ["self-similar set"],
+      "domain": "geometry",
+      "crossDomains": ["topology", "computation"],
+      "difficulty": "intermediate",
+      "tags": ["fractal", "self-similarity", "hausdorff-dimension", "dynamical-systems"],
+      "summary": "A set whose Hausdorff dimension exceeds its topological dimension, typically exhibiting self-similarity at multiple scales.",
+      "definition": "Informally: a **self-similar set with non-integer dimension** (Mandelbrot's heuristic definition).\n\nFormally: a set whose Hausdorff dimension exceeds its topological dimension. Many examples are constructed via **iterated function systems** or as attractors of dynamical systems.\n\nKey features:\n- **Self-similarity** at multiple scales.\n- **Non-integer dimension** (typically).\n- **Fine structure** at arbitrarily small scales.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "self-similarity" },
+          { "id": "iterated-function-system" },
+          { "id": "box-counting-dimension" }
+        ],
+        "enabledBy": [
+          { "id": "cantor-set" },
+          { "id": "sierpinski-gasket" },
+          { "id": "sierpinski-carpet" },
+          { "id": "sierpinski-tetrahedron" },
+          { "id": "menger-sponge" },
+          { "id": "koch-curve" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "self-similarity": {
+      "id": "self-similarity",
+      "term": "Self-Similarity",
+      "aliases": [
+        "exact self-similarity",
+        "statistical self-similarity",
+        "approximate self-similarity"
+      ],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "physics"],
+      "difficulty": "foundational",
+      "tags": ["self-similarity", "scaling", "fractal", "IFS", "contraction"],
+      "summary": "The property that a set contains scaled copies of itself, either exactly (via contractions) or statistically (for random or quasiperiodic patterns).",
+      "definition": "The property that a set $S$ contains scaled copies of itself:\n\n$$S = \\bigcup_i f_i(S)$$\n\nfor a family of contractions $f_i$. **Exact** self-similarity can be weakened to **statistical** or **approximate** self-similarity for random fractals or quasiperiodic patterns.",
+      "examples": [
+        {
+          "title": "Exact self-similarity: Cantor set",
+          "body": "The Cantor set satisfies $K = f_1(K) \\cup f_2(K)$ where $f_1(x) = x/3$ and $f_2(x) = x/3 + 2/3$. It is an exact copy of itself at scale 1/3."
+        },
+        {
+          "title": "Statistical self-similarity: Penrose tilings",
+          "body": "Penrose and AKN tilings are not strictly self-similar in the IFS sense, but exhibit inflation/deflation symmetries (multiplication by $\\phi$) that are statistically self-similar — analogous to fractal scaling but with discrete scaling factors."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "S = \\bigcup_i f_i(S)",
+          "description": "Self-similarity equation: the set S is the union of contracted copies of itself under the maps $f_i$.",
+          "variables": {
+            "S": "The self-similar set",
+            "f_i": "Contraction maps forming the IFS"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "contraction-map" }],
+        "related": [{ "id": "fractal" }, { "id": "iterated-function-system" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "iterated-function-system": {
+      "id": "iterated-function-system",
+      "term": "Iterated Function System (IFS)",
+      "aliases": ["IFS"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "computation"],
+      "difficulty": "intermediate",
+      "tags": ["IFS", "fractal", "contraction", "attractor", "hutchinson"],
+      "summary": "A finite collection of contraction maps on a complete metric space whose unique compact attractor is the associated fractal set.",
+      "definition": "A **finite collection** $\\{f_1, \\ldots, f_k\\}$ of **contractions** on a complete metric space.\n\n**Hutchinson's theorem** guarantees there exists a **unique non-empty compact set** $K$ (the **attractor**) satisfying:\n\n$$K = \\bigcup_i f_i(K)$$\n\nWhen the contractions are similarities (uniform scaling) with ratios $r_i$ satisfying the **open set condition**, the Hausdorff dimension $d$ of the attractor is determined by:\n\n$$\\sum_i r_i^d = 1$$\n\nFor $k$ equal contractions of ratio $r$: $d = \\log k / \\log(1/r)$.",
+      "examples": [
+        {
+          "title": "Cantor set IFS",
+          "body": "The Cantor set is the attractor of the IFS $\\{f_1, f_2\\}$ where $f_1(x) = x/3$ and $f_2(x) = x/3 + 2/3$. Both are contractions with ratio $r = 1/3$, giving dimension $d = \\log 2 / \\log 3$."
+        },
+        {
+          "title": "Sierpiński gasket IFS",
+          "body": "The Sierpiński gasket is the attractor of three contractions of ratio $1/2$ applied to the vertices of a triangle, giving dimension $d = \\log 3 / \\log 2$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "K = \\bigcup_i f_i(K)",
+          "description": "Hutchinson's fixed-point equation: the attractor K is invariant under the IFS.",
+          "variables": {
+            "K": "The unique compact attractor",
+            "f_i": "Contraction maps of the IFS"
+          }
+        },
+        {
+          "expression": "\\sum_i r_i^d = 1",
+          "description": "Moran's equation determining the Hausdorff dimension d of the IFS attractor when the open set condition holds.",
+          "variables": {
+            "r_i": "Contraction ratio of the i-th map",
+            "d": "Hausdorff dimension of the attractor"
+          }
+        },
+        {
+          "expression": "d = \\frac{\\log k}{\\log(1/r)}",
+          "description": "Simplified dimension formula for k equal contractions each with ratio r.",
+          "variables": {
+            "k": "Number of equal contractions",
+            "r": "Common contraction ratio",
+            "d": "Hausdorff dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "contraction-map" }, { "id": "self-similarity" }],
+        "related": [{ "id": "fractal" }, { "id": "box-counting-dimension" }],
+        "enabledBy": [
+          { "id": "cantor-set" },
+          { "id": "sierpinski-gasket" },
+          { "id": "sierpinski-carpet" },
+          { "id": "sierpinski-tetrahedron" },
+          { "id": "menger-sponge" },
+          { "id": "koch-curve" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "contraction-map": {
+      "id": "contraction-map",
+      "term": "Contraction Map",
+      "aliases": ["contraction mapping", "contractive map"],
+      "domain": "geometry",
+      "crossDomains": ["algebra"],
+      "difficulty": "foundational",
+      "tags": ["contraction", "Lipschitz", "fixed-point", "Banach", "metric-space"],
+      "summary": "A map with Lipschitz constant less than 1 that shrinks distances; guaranteed by Banach's theorem to have a unique fixed point.",
+      "definition": "A map $f$ with **Lipschitz constant $< 1$**:\n\n$$d(f(x), f(y)) \\leq c \\cdot d(x, y), \\quad c < 1$$\n\nContractions shrink distances.\n\n**Banach's fixed-point theorem** guarantees each contraction has a unique fixed point. **Hutchinson's theorem** extends this to IFS: there exists a **unique non-empty compact set** $K$ (the **attractor**) satisfying $K = \\bigcup_i f_i(K)$.",
+      "examples": [
+        {
+          "title": "Scaling map",
+          "body": "The map $f(x) = x/3$ on $\\mathbb{R}$ is a contraction with Lipschitz constant $c = 1/3 < 1$. Its unique fixed point is $x = 0$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d(f(x), f(y)) \\leq c \\cdot d(x, y), \\quad c < 1",
+          "description": "Lipschitz condition defining a contraction map, where c is the contraction ratio.",
+          "variables": {
+            "f": "The contraction map",
+            "c": "Lipschitz constant (contraction ratio), satisfying 0 ≤ c < 1",
+            "d": "Metric on the space"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "iterated-function-system" }, { "id": "self-similarity" }],
+        "enabledBy": [{ "id": "iterated-function-system" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "cantor-set": {
+      "id": "cantor-set",
+      "term": "Cantor Set",
+      "aliases": ["Cantor dust", "Cantor middle-thirds set"],
+      "domain": "geometry",
+      "crossDomains": ["topology"],
+      "difficulty": "foundational",
+      "tags": ["fractal", "cantor", "measure-zero", "totally-disconnected", "IFS"],
+      "summary": "The prototypical fractal: an uncountable, measure-zero, totally disconnected subset of [0,1] with Hausdorff dimension log 2 / log 3 ≈ 0.631.",
+      "definition": "The **prototypical fractal**. Construction:\n\n1. Start with $[0, 1]$.\n2. Remove the open middle third $(1/3, 2/3)$.\n3. Repeat on each remaining interval.\n\nThe limit is the Cantor set. IFS: $f_1(x) = x/3$, $f_2(x) = x/3 + 2/3$.\n\nDimension: $d = \\log 2 / \\log 3 \\approx 0.631$.\n\nProperties:\n- Uncountable, but measure zero.\n- Totally disconnected.\n- Self-similar with two copies at scale $1/3$.",
+      "examples": [
+        {
+          "title": "IFS construction",
+          "body": "Apply $f_1(x) = x/3$ and $f_2(x) = x/3 + 2/3$ repeatedly to $[0,1]$. After $n$ steps, $2^n$ intervals of length $3^{-n}$ remain. In the limit, the Cantor set has Lebesgue measure $\\lim_{n\\to\\infty}(2/3)^n = 0$ but is uncountable."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d = \\frac{\\log 2}{\\log 3} \\approx 0.631",
+          "description": "Hausdorff dimension of the Cantor set, derived from 2 contractions of ratio 1/3.",
+          "variables": {
+            "d": "Hausdorff dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "iterated-function-system" }, { "id": "fractal" }],
+        "related": [{ "id": "box-counting-dimension" }, { "id": "self-similarity" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "sierpinski-gasket": {
+      "id": "sierpinski-gasket",
+      "term": "Sierpiński Gasket",
+      "aliases": ["Sierpiński triangle", "Sierpinski triangle", "Sierpinski gasket"],
+      "domain": "geometry",
+      "crossDomains": ["physics", "computation"],
+      "difficulty": "intermediate",
+      "tags": [
+        "fractal",
+        "sierpinski",
+        "anomalous-diffusion",
+        "spectral-dimension",
+        "walk-dimension",
+        "alexander-orbach"
+      ],
+      "summary": "A 2D fractal triangle with dimension log 3 / log 2 ≈ 1.585, canonical example of anomalous diffusion where effective, walk, and spectral dimensions all differ.",
+      "definition": "A 2D fractal. Construction: start with a triangle, remove the middle triangle, repeat on each of the remaining 3 sub-triangles.\n\nDimension: $d = \\log 3 / \\log 2 \\approx 1.585$.\n\nFamous properties:\n- Walk dimension: $d_w = \\log 5 / \\log 2 \\approx 2.322$.\n- Spectral dimension: $d_{\\text{spec}} = 2 \\log 3 / \\log 5 \\approx 1.365$.\n- Anomalous diffusion: sub-diffusive, satisfies Alexander–Orbach exactly.\n\nThe Sierpiński gasket is the standard test case for non-integer dimension on graphs and the canonical example where the three dimensions $(d_{\\text{eff}}, d_w, d_{\\text{spec}})$ all differ.",
+      "examples": [
+        {
+          "title": "Alexander–Orbach relation verification",
+          "body": "The Sierpiński gasket satisfies $d_{\\text{spec}} = 2 d_{\\text{eff}} / d_w$ exactly: $2 \\times (\\log 3 / \\log 2) / (\\log 5 / \\log 2) = 2 \\log 3 / \\log 5 \\approx 1.365$. This makes it the canonical benchmark for anomalous diffusion."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{eff}} = \\frac{\\log 3}{\\log 2} \\approx 1.585",
+          "description": "Effective (Hausdorff) dimension of the Sierpiński gasket.",
+          "variables": { "d_eff": "Effective dimension" }
+        },
+        {
+          "expression": "d_w = \\frac{\\log 5}{\\log 2} \\approx 2.322",
+          "description": "Walk dimension of the Sierpiński gasket, governing anomalous diffusion.",
+          "variables": { "d_w": "Walk dimension" }
+        },
+        {
+          "expression": "d_{\\text{spec}} = \\frac{2 \\log 3}{\\log 5} \\approx 1.365",
+          "description": "Spectral dimension of the Sierpiński gasket.",
+          "variables": { "d_spec": "Spectral dimension" }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }, { "id": "iterated-function-system" }],
+        "related": [
+          { "id": "box-counting-dimension" },
+          { "id": "sierpinski-carpet" },
+          { "id": "sierpinski-tetrahedron" },
+          { "id": "alexander-orbach-relation" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "sierpinski-carpet": {
+      "id": "sierpinski-carpet",
+      "term": "Sierpiński Carpet",
+      "aliases": ["Sierpinski carpet"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["fractal", "sierpinski", "2D", "IFS"],
+      "summary": "The 2D square analogue of the Sierpiński gasket, with Hausdorff dimension log 8 / log 3 ≈ 1.893.",
+      "definition": "The 2D **square analogue** of the gasket. Construction: start with a square, divide into $3 \\times 3$ subsquares, remove the center, repeat.\n\nDimension: $d = \\log 8 / \\log 3 \\approx 1.893$.",
+      "examples": [
+        {
+          "title": "Construction step",
+          "body": "At each iteration, 8 of the 9 subsquares are retained (the center is removed). After $n$ steps, $8^n$ squares of side $3^{-n}$ remain, giving dimension $\\log 8 / \\log 3$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d = \\frac{\\log 8}{\\log 3} \\approx 1.893",
+          "description": "Hausdorff dimension of the Sierpiński carpet.",
+          "variables": { "d": "Hausdorff dimension" }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }, { "id": "iterated-function-system" }],
+        "related": [{ "id": "sierpinski-gasket" }, { "id": "menger-sponge" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "sierpinski-tetrahedron": {
+      "id": "sierpinski-tetrahedron",
+      "term": "Sierpiński Tetrahedron",
+      "aliases": ["Sierpinski tetrahedron", "tetrix"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["fractal", "sierpinski", "3D", "dimension-2", "fractal-surface"],
+      "summary": "The 3D analogue of the Sierpiński gasket with Hausdorff dimension exactly 2, making it a 'fractal surface' embedded in 3-space.",
+      "definition": "The 3D analogue of the gasket: 4 corner tetrahedra at half-scale, with the central octahedron removed.\n\nDimension: **exactly 2** ($d = \\log 4 / \\log 2$).\n\nDespite living in 3D and having uncountably many points, the tetrix has dimension 2 — the same as a smooth surface. It is a \"fractal surface\" in 3-space.",
+      "examples": [
+        {
+          "title": "Dimension paradox",
+          "body": "The Sierpiński tetrahedron lives in 3D space but has Hausdorff dimension exactly 2, the same as a smooth surface. This illustrates that fractal dimension captures intrinsic geometric complexity independent of the ambient space."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d = \\frac{\\log 4}{\\log 2} = 2",
+          "description": "Hausdorff dimension of the Sierpiński tetrahedron, exactly 2 despite being embedded in 3D.",
+          "variables": { "d": "Hausdorff dimension" }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }, { "id": "iterated-function-system" }],
+        "related": [{ "id": "sierpinski-gasket" }, { "id": "menger-sponge" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "sierpinski-tetrahedron", "label": "Tetrix" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "menger-sponge": {
+      "id": "menger-sponge",
+      "term": "Menger Sponge",
+      "aliases": [],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": ["fractal", "3D", "IFS", "menger"],
+      "summary": "The 3D analogue of the Sierpiński carpet, constructed by removing the central cube and 6 face-centers from each 3×3×3 subdivision, with dimension log 20 / log 3 ≈ 2.727.",
+      "definition": "The 3D analogue of the Sierpiński carpet. Divide a cube into $27$ subcubes, remove the **central cube and the 6 face-centers**, retaining 20 subcubes. Repeat.\n\nDimension: $d = \\log 20 / \\log 3 \\approx 2.727$.\n\nA \"fractal volume\" between 2 and 3 dimensions.",
+      "examples": [
+        {
+          "title": "Construction",
+          "body": "At each step, 20 of 27 subcubes are retained. After $n$ steps, $20^n$ cubes of side $3^{-n}$ remain, giving dimension $\\log 20 / \\log 3 \\approx 2.727$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d = \\frac{\\log 20}{\\log 3} \\approx 2.727",
+          "description": "Hausdorff dimension of the Menger sponge.",
+          "variables": { "d": "Hausdorff dimension" }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }, { "id": "iterated-function-system" }],
+        "related": [{ "id": "sierpinski-carpet" }, { "id": "sierpinski-tetrahedron" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "koch-curve": {
+      "id": "koch-curve",
+      "term": "Koch Curve",
+      "aliases": ["Koch snowflake", "Koch snowflake curve"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["fractal", "koch", "curve", "infinite-length", "IFS"],
+      "summary": "A classic fractal curve of dimension log 4 / log 3 ≈ 1.262, constructed by replacing the middle third of each segment with two sides of an equilateral triangle.",
+      "definition": "The classic fractal curve. Construction:\n\n1. Start with a line segment.\n2. Replace the middle third with two sides of an equilateral triangle.\n3. Repeat on each new segment.\n\nDimension: $d = \\log 4 / \\log 3 \\approx 1.262$.\n\nA 1D curve (topologically) embedded in 2D with non-integer dimension. Infinite length but bounds finite area in the snowflake variant.",
+      "examples": [
+        {
+          "title": "Koch snowflake",
+          "body": "Applying the Koch construction to all three sides of an equilateral triangle produces the Koch snowflake: a closed curve of infinite length enclosing a finite area of $\\frac{8}{5}$ times the original triangle's area."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d = \\frac{\\log 4}{\\log 3} \\approx 1.262",
+          "description": "Hausdorff dimension of the Koch curve, from 4 contractions of ratio 1/3.",
+          "variables": { "d": "Hausdorff dimension" }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }, { "id": "iterated-function-system" }],
+        "related": [{ "id": "koch-tetrahedron" }, { "id": "box-counting-dimension" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "koch-tetrahedron": {
+      "id": "koch-tetrahedron",
+      "term": "Koch Tetrahedron",
+      "aliases": ["Koch snowflake surface"],
+      "domain": "geometry",
+      "crossDomains": [],
+      "difficulty": "advanced",
+      "tags": ["fractal", "koch", "3D", "surface"],
+      "summary": "A 3D analogue of the Koch curve where each triangular face has a smaller tetrahedron attached at its center recursively, with dimension approximately log 6 / log 3 ≈ 1.631.",
+      "definition": "3D analogue of the Koch curve: a tetrahedral surface where each triangular face has a smaller tetrahedron attached at its center, recursively.\n\nDimension: $d = \\log 6 / \\log 3 \\approx 1.631$. (Different sources give different variants.)",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "d = \\frac{\\log 6}{\\log 3} \\approx 1.631",
+          "description": "Hausdorff dimension of the Koch tetrahedron (one common variant).",
+          "variables": { "d": "Hausdorff dimension" }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }, { "id": "koch-curve" }],
+        "related": [{ "id": "sierpinski-tetrahedron" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "box-counting-dimension": {
+      "id": "box-counting-dimension",
+      "term": "Box-Counting Dimension",
+      "aliases": ["Minkowski dimension", "Minkowski–Bouligand dimension", "box dimension"],
+      "domain": "geometry",
+      "crossDomains": ["computation"],
+      "difficulty": "intermediate",
+      "tags": ["dimension", "box-counting", "fractal", "hausdorff", "numerical"],
+      "summary": "A dimension defined by the power-law growth of the minimum number of boxes needed to cover a set as box size shrinks; agrees with Hausdorff dimension for well-behaved sets.",
+      "definition": "For a set $S \\subset \\mathbb{R}^n$, let $N(\\epsilon)$ be the minimum number of boxes of side $\\epsilon$ needed to cover $S$. Then:\n\n$$d_{\\text{box}} = \\lim_{\\epsilon \\to 0^+} \\frac{\\log N(\\epsilon)}{\\log(1/\\epsilon)}$$\n\nProperties:\n- Easy to compute numerically.\n- Agrees with Hausdorff dimension for \"nice\" sets.\n- Can disagree for highly irregular sets.\n\nFor self-similar IFS attractors satisfying the open set condition, all three dimensions — box, Hausdorff, similarity — coincide.",
+      "examples": [
+        {
+          "title": "Numerical estimation",
+          "body": "To estimate $d_{\\text{box}}$ for a point cloud: cover with grids of decreasing cell size $\\epsilon$, count occupied cells $N(\\epsilon)$, and fit a line to $\\log N(\\epsilon)$ vs. $\\log(1/\\epsilon)$. The slope is the box-counting dimension."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{box}} = \\lim_{\\epsilon \\to 0^+} \\frac{\\log N(\\epsilon)}{\\log(1/\\epsilon)}",
+          "description": "Box-counting dimension: the exponent governing how the cover count N(ε) scales as box size ε shrinks to zero.",
+          "variables": {
+            "N(ε)": "Minimum number of boxes of side ε needed to cover the set",
+            "ε": "Box side length",
+            "d_box": "Box-counting dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "fractal" }],
+        "related": [{ "id": "iterated-function-system" }, { "id": "alexander-orbach-relation" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "alexander-orbach-relation": {
+      "id": "alexander-orbach-relation",
+      "term": "Alexander–Orbach Relation",
+      "aliases": ["Alexander-Orbach conjecture", "spectral dimension relation"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "advanced",
+      "tags": [
+        "spectral-dimension",
+        "walk-dimension",
+        "effective-dimension",
+        "anomalous-diffusion",
+        "alexander-orbach"
+      ],
+      "summary": "The relation d_spec = 2 d_eff / d_w linking spectral, effective, and walk dimensions; exact on the Sierpiński gasket and used as a cross-check for multi-sheeted tilings.",
+      "definition": "The Alexander–Orbach relation links the three key dimensions of a fractal or irregular space:\n\n$$d_{\\text{spec}} = \\frac{2 d_{\\text{eff}}}{d_w}$$\n\nThis relation is **exact** on the Sierpiński gasket and holds approximately for many disordered systems. It provides a consistency check: independent estimates of any two dimensions can be used to predict the third.\n\nFor the multi-sheeted tilings studied in this project, all four computational approaches (box-counting, BFS-ball growth, MSD simulation, KPM/Lanczos) are cross-checked via this relation.",
+      "examples": [
+        {
+          "title": "Sierpiński gasket verification",
+          "body": "On the Sierpiński gasket: $d_{\\text{eff}} = \\log 3 / \\log 2$, $d_w = \\log 5 / \\log 2$, so $d_{\\text{spec}} = 2(\\log 3 / \\log 2)/(\\log 5 / \\log 2) = 2\\log 3 / \\log 5 \\approx 1.365$. This matches the independently computed spectral dimension exactly."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{spec}} = \\frac{2 d_{\\text{eff}}}{d_w}",
+          "description": "Alexander–Orbach relation connecting spectral dimension, effective dimension, and walk dimension.",
+          "variables": {
+            "d_spec": "Spectral dimension",
+            "d_eff": "Effective (Hausdorff) dimension",
+            "d_w": "Walk dimension"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sierpinski-gasket" }],
+        "related": [{ "id": "box-counting-dimension" }, { "id": "fractal" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

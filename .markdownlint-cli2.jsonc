@@ -1,0 +1,19 @@
+{
+    "config": {
+      "default": true,
+      // Line length - disabled, let Prettier handle wrapping
+      "MD013": false,
+      // Allow inline HTML (common in technical docs)
+      "MD033": false,
+      // Allow duplicate headings in different sections
+      "MD024": { "siblings_only": true },
+      // First line in file should be a top-level heading - relaxed
+      "MD041": false,
+      // Allow bare URLs
+      "MD034": false,
+      // Ordered list item prefix - allow "1." style for all
+      "MD029": { "style": "one" }
+    },
+    "ignores": ["node_modules", "dist", "CHANGELOG.md"],
+    "globs": ["**/*.md"]
+  }

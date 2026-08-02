@@ -1,0 +1,2114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Rational Certificate Complexity: A computational taxonomy of mathematical constants based on bit-length cost of convergence engines."
+    />
+    <meta name="author" content="" />
+    <title>
+      Rational Certificate Complexity: A Computational Taxonomy of Mathematical Constants
+    </title>
+    <!-- CSS will be added here -->
+
+    <style>
+      /* ============================================ */
+      /* CSS RESET & BASE STYLES                      */
+      /* ============================================ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        /* Color palette - academic, mathematical */
+        --color-bg: #fafaf7;
+        --color-bg-elevated: #ffffff;
+        --color-bg-dark: #1a1d2e;
+        --color-ink: #1c1f2e;
+        --color-ink-muted: #4a4f66;
+        --color-ink-faint: #7a809a;
+        --color-border: #e4e2dc;
+        --color-border-strong: #c8c5b8;
+
+        /* Accent colors */
+        --color-accent: #6b4ea8; /* deep violet - mathematical */
+        --color-accent-hover: #553d8a;
+        --color-accent-light: #ede8f7;
+        --color-gold: #b8893a; /* algebraic/optimal highlight */
+        --color-gold-light: #f7efd9;
+        --color-rust: #b85c3a; /* transcendental/expensive */
+        --color-teal: #2d7a7a; /* framework accent */
+
+        /* Typography */
+        --font-serif:
+          'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', Georgia, serif;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
+
+        /* Spacing */
+        --space-xs: 0.5rem;
+        --space-sm: 1rem;
+        --space-md: 1.5rem;
+        --space-lg: 2.5rem;
+        --space-xl: 4rem;
+        --space-2xl: 6rem;
+
+        /* Layout */
+        --content-width: 720px;
+        --content-width-wide: 980px;
+
+        /* Effects */
+        --shadow-sm: 0 1px 2px rgba(28, 31, 46, 0.05);
+        --shadow-md: 0 4px 16px rgba(28, 31, 46, 0.08);
+        --shadow-lg: 0 12px 40px rgba(28, 31, 46, 0.12);
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --transition: 200ms ease;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        font-size: 17px;
+      }
+
+      body.article-page {
+        font-family: var(--font-serif);
+        line-height: 1.7;
+        color: var(--color-ink);
+        background: var(--color-bg);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* ============================================ */
+      /* HEADER / NAVIGATION                          */
+      /* ============================================ */
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(250, 250, 247, 0.92);
+        backdrop-filter: saturate(180%) blur(12px);
+        -webkit-backdrop-filter: saturate(180%) blur(12px);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .site-nav {
+        max-width: var(--content-width-wide);
+        margin: 0 auto;
+        padding: 0.875rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        font-family: var(--font-sans);
+      }
+
+      .nav-brand .brand-link {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--color-ink);
+        text-decoration: none;
+        letter-spacing: -0.01em;
+        border-bottom: 2px solid var(--color-accent);
+        padding-bottom: 1px;
+      }
+
+      .nav-menu {
+        display: flex;
+        list-style: none;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+      }
+
+      .nav-link {
+        display: inline-block;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+        color: var(--color-ink-muted);
+        text-decoration: none;
+        border-radius: var(--radius-sm);
+        transition:
+          background var(--transition),
+          color var(--transition);
+      }
+
+      .nav-link:hover {
+        background: var(--color-accent-light);
+        color: var(--color-accent);
+      }
+
+      /* ============================================ */
+      /* HERO SECTION                                 */
+      /* ============================================ */
+      .hero-section {
+        background: linear-gradient(180deg, #fafaf7 0%, #f3f1ea 100%);
+        padding: var(--space-2xl) 1.5rem var(--space-xl);
+        border-bottom: 1px solid var(--color-border);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-section::before {
+        content: 'Σ';
+        position: absolute;
+        top: -3rem;
+        right: -2rem;
+        font-size: 28rem;
+        font-family: var(--font-serif);
+        color: rgba(107, 78, 168, 0.04);
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .hero-content {
+        max-width: var(--content-width);
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      .article-eyebrow {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--color-accent);
+        margin-bottom: var(--space-md);
+      }
+
+      .article-title {
+        font-size: clamp(2.25rem, 5vw, 3.75rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: var(--color-ink);
+        margin-bottom: var(--space-sm);
+      }
+
+      .article-subtitle {
+        font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+        font-style: italic;
+        color: var(--color-ink-muted);
+        font-weight: 400;
+        margin-bottom: var(--space-lg);
+        line-height: 1.4;
+      }
+
+      .article-meta {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--color-ink-faint);
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .meta-separator {
+        color: var(--color-border-strong);
+      }
+
+      /* ============================================ */
+      /* MAIN ARTICLE                                 */
+      /* ============================================ */
+      .article-main {
+        max-width: var(--content-width);
+        margin: 0 auto;
+        padding: var(--space-xl) 1.5rem;
+      }
+
+      .article-section {
+        margin-bottom: var(--space-2xl);
+        scroll-margin-top: 5rem;
+      }
+
+      .section-heading {
+        font-size: clamp(1.6rem, 3.2vw, 2.1rem);
+        font-weight: 700;
+        line-height: 1.25;
+        letter-spacing: -0.015em;
+        color: var(--color-ink);
+        margin-bottom: var(--space-lg);
+        padding-bottom: var(--space-sm);
+        border-bottom: 2px solid var(--color-border);
+        position: relative;
+      }
+
+      .section-heading::before {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 3.5rem;
+        height: 2px;
+        background: var(--color-accent);
+      }
+
+      .subsection {
+        margin-top: var(--space-lg);
+        margin-bottom: var(--space-lg);
+      }
+
+      .subsection-heading {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--color-ink);
+        margin-bottom: var(--space-md);
+        letter-spacing: -0.01em;
+      }
+
+      .section-paragraph {
+        margin-bottom: var(--space-md);
+        color: var(--color-ink);
+        font-size: 1.05rem;
+      }
+
+      .lead-paragraph {
+        font-size: 1.18rem;
+        line-height: 1.65;
+        color: var(--color-ink);
+      }
+
+      .section-paragraph em {
+        font-style: italic;
+        color: var(--color-accent);
+      }
+
+      .section-paragraph strong {
+        font-weight: 700;
+      }
+
+      /* ============================================ */
+      /* MATH BLOCKS                                  */
+      /* ============================================ */
+      .math-block {
+        background: var(--color-bg-dark);
+        color: #f3f1ea;
+        padding: 1.1rem 1.4rem;
+        border-radius: var(--radius-md);
+        overflow-x: auto;
+        margin: var(--space-md) 0;
+        border-left: 3px solid var(--color-accent);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .math-code {
+        font-family: var(--font-mono);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #f3f1ea;
+        white-space: pre;
+      }
+
+      .highlight-math {
+        border-left-color: var(--color-gold);
+        background: linear-gradient(135deg, #1a1d2e 0%, #2b2238 100%);
+      }
+
+      /* ============================================ */
+      /* LISTS                                        */
+      /* ============================================ */
+      .example-list,
+      .feature-list,
+      .conclusion-list,
+      .finding-list {
+        list-style: none;
+        margin: var(--space-md) 0;
+        padding-left: 0;
+      }
+
+      .example-item,
+      .feature-item,
+      .conclusion-item,
+      .finding-item {
+        padding: 0.5rem 0 0.5rem 1.5rem;
+        position: relative;
+        font-size: 1.02rem;
+        line-height: 1.6;
+      }
+
+      .example-item::before,
+      .feature-item::before,
+      .conclusion-item::before,
+      .finding-item::before {
+        content: '▸';
+        position: absolute;
+        left: 0;
+        color: var(--color-accent);
+        font-weight: bold;
+      }
+
+      .example-item {
+        font-family: var(--font-mono);
+        font-size: 0.95rem;
+      }
+
+      .numbered-list,
+      .component-list {
+        list-style: none;
+        counter-reset: item;
+        margin: var(--space-md) 0;
+        padding-left: 0;
+      }
+
+      .numbered-item,
+      .component-item {
+        counter-increment: item;
+        padding: 0.6rem 0 0.6rem 2.5rem;
+        position: relative;
+        font-size: 1.02rem;
+        line-height: 1.6;
+      }
+
+      .numbered-item::before,
+      .component-item::before {
+        content: counter(item);
+        position: absolute;
+        left: 0;
+        top: 0.6rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        background: var(--color-accent);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .component-name {
+        color: var(--color-accent);
+      }
+
+      /* Check list */
+      .check-list {
+        list-style: none;
+        margin: var(--space-md) 0;
+        padding-left: 0;
+      }
+
+      .check-item {
+        padding: 0.6rem 0 0.6rem 2rem;
+        position: relative;
+        font-size: 1.02rem;
+        line-height: 1.6;
+      }
+
+      .check-item.check-yes::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: var(--color-teal);
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+
+      .check-item.check-no::before {
+        content: '✗';
+        position: absolute;
+        left: 0;
+        color: var(--color-rust);
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+
+      /* ============================================ */
+      /* CALLOUTS                                     */
+      /* ============================================ */
+      .callout {
+        background: var(--color-bg-elevated);
+        border-left: 4px solid var(--color-accent);
+        padding: var(--space-md) var(--space-md);
+        margin: var(--space-lg) 0;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .callout-title {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-accent);
+        margin-bottom: var(--space-sm);
+      }
+
+      .callout-text {
+        margin-bottom: var(--space-sm);
+        font-size: 1rem;
+        color: var(--color-ink);
+      }
+
+      .callout-text:last-child {
+        margin-bottom: 0;
+      }
+
+      .callout-caveats {
+        background: linear-gradient(135deg, var(--color-accent-light) 0%, #f5f0ff 100%);
+        border-left-color: var(--color-accent);
+      }
+
+      .dual-callout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+        margin: var(--space-lg) 0;
+      }
+
+      @media (min-width: 720px) {
+        .dual-callout {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .callout-shown {
+        border-left-color: var(--color-teal);
+        background: #effaf7;
+      }
+
+      .callout-shown .callout-title {
+        color: var(--color-teal);
+      }
+
+      .callout-not-shown {
+        border-left-color: var(--color-rust);
+        background: #fbf2ee;
+      }
+
+      .callout-not-shown .callout-title {
+        color: var(--color-rust);
+      }
+
+      /* ============================================ */
+      /* BLOCKQUOTES                                  */
+      /* ============================================ */
+      .central-claim,
+      .definition-blockquote {
+        font-family: var(--font-serif);
+        font-size: 1.2rem;
+        line-height: 1.5;
+        font-style: italic;
+        color: var(--color-ink);
+        padding: var(--space-md) var(--space-lg);
+        margin: var(--space-lg) 0;
+        border-left: 4px solid var(--color-gold);
+        background: var(--color-gold-light);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        position: relative;
+      }
+
+      .central-claim::before,
+      .definition-blockquote::before {
+        content: '\201C';
+        position: absolute;
+        top: -0.5rem;
+        left: 0.5rem;
+        font-size: 3.5rem;
+        color: var(--color-gold);
+        font-family: Georgia, serif;
+        opacity: 0.3;
+        line-height: 1;
+      }
+
+      /* ============================================ */
+      /* SERIES CARDS                                 */
+      /* ============================================ */
+      .series-card {
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-md);
+        margin: var(--space-md) 0;
+        transition:
+          transform var(--transition),
+          box-shadow var(--transition);
+        border-top: 3px solid var(--color-accent);
+      }
+
+      .series-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .series-card-leibniz {
+        border-top-color: var(--color-rust);
+      }
+      .series-card-nilakantha {
+        border-top-color: var(--color-accent);
+      }
+      .series-card-wallis {
+        border-top-color: var(--color-teal);
+      }
+
+      .series-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--color-ink);
+        margin-bottom: 0.25rem;
+      }
+
+      .series-description {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--color-ink-faint);
+        font-style: italic;
+        margin-bottom: var(--space-sm);
+      }
+
+      .series-card .math-block {
+        margin: 0;
+      }
+
+      /* ============================================ */
+      /* RESULT STATEMENTS                            */
+      /* ============================================ */
+      .result-statement {
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        background: var(--color-accent-light);
+        padding: var(--space-sm) var(--space-md);
+        border-radius: var(--radius-sm);
+        border-left: 3px solid var(--color-accent);
+        margin: var(--space-md) 0;
+        color: var(--color-ink);
+      }
+
+      .result-optimal {
+        background: var(--color-gold-light);
+        border-left-color: var(--color-gold);
+        font-weight: 600;
+      }
+
+      /* ============================================ */
+      /* CLASSIFICATION TABLE                         */
+      /* ============================================ */
+      .table-wrapper {
+        overflow-x: auto;
+        margin: var(--space-md) 0;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
+      }
+
+      .complexity-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-bg-elevated);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+      }
+
+      .table-head {
+        background: var(--color-bg-dark);
+        color: #f3f1ea;
+      }
+
+      .table-header {
+        padding: 0.9rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .table-row {
+        border-top: 1px solid var(--color-border);
+        transition: background var(--transition);
+      }
+
+      .table-row:hover {
+        background: #faf6ee;
+      }
+
+      .table-cell {
+        padding: 0.9rem 1rem;
+        vertical-align: top;
+      }
+
+      .cell-iteration,
+      .cell-bitlength {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        color: var(--color-ink-muted);
+      }
+
+      .table-row-highlight {
+        background: var(--color-gold-light);
+      }
+
+      .table-row-highlight:hover {
+        background: #f3eacd;
+      }
+
+      .table-row-highlight .cell-bitlength {
+        color: var(--color-gold);
+        font-weight: 600;
+      }
+
+      /* ============================================ */
+      /* FRAMEWORK GRID                               */
+      /* ============================================ */
+      .framework-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+        margin: var(--space-lg) 0;
+      }
+
+      @media (min-width: 720px) {
+        .framework-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .framework-card {
+        background: var(--color-bg-elevated);
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
+        transition:
+          transform var(--transition),
+          box-shadow var(--transition);
+      }
+
+      .framework-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .framework-card-classical {
+        border-top: 3px solid var(--color-rust);
+      }
+      .framework-card-diophantine {
+        border-top: 3px solid var(--color-teal);
+      }
+      .framework-card-ko-friedman {
+        border-top: 3px solid var(--color-accent);
+      }
+
+      .framework-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--color-ink);
+        margin-bottom: var(--space-sm);
+        line-height: 1.3;
+      }
+
+      .framework-description {
+        font-size: 0.95rem;
+        color: var(--color-ink-muted);
+        line-height: 1.6;
+      }
+
+      /* ============================================ */
+      /* COMPLEXITY CLASS HIERARCHY                   */
+      /* ============================================ */
+      .class-hierarchy {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+        margin: var(--space-lg) 0;
+      }
+
+      .complexity-class {
+        background: var(--color-bg-elevated);
+        padding: var(--space-md) var(--space-md) var(--space-md) 5rem;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        border: 1px solid var(--color-border);
+        overflow: hidden;
+      }
+
+      .class-label {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-sans);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+      }
+
+      .class-rc1 {
+        border-left: 4px solid var(--color-gold);
+      }
+      .class-rc1 .class-label {
+        background: var(--color-gold);
+      }
+
+      .class-rc2 {
+        border-left: 4px solid var(--color-accent);
+      }
+      .class-rc2 .class-label {
+        background: var(--color-accent);
+      }
+
+      .class-rc3 {
+        border-left: 4px solid var(--color-rust);
+      }
+      .class-rc3 .class-label {
+        background: var(--color-rust);
+      }
+
+      .class-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--color-ink);
+      }
+
+      .class-formula {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        color: var(--color-ink-muted);
+        background: var(--color-bg);
+        padding: 0.4rem 0.7rem;
+        border-radius: var(--radius-sm);
+        display: inline-block;
+        margin-bottom: var(--space-sm);
+      }
+
+      .class-examples {
+        font-size: 0.95rem;
+        color: var(--color-ink-muted);
+        line-height: 1.5;
+      }
+
+      /* ============================================ */
+      /* SPECIAL PARAGRAPHS                           */
+      /* ============================================ */
+      .closing-paragraph {
+        font-size: 1.15rem;
+        font-style: italic;
+        color: var(--color-ink-muted);
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--space-md);
+        margin-top: var(--space-lg);
+      }
+
+      .subsection-optimal .result-statement {
+        background: linear-gradient(135deg, var(--color-gold-light), #fff8e2);
+        border-left-width: 4px;
+      }
+
+      /* ============================================ */
+      /* FOOTER                                       */
+      /* ============================================ */
+      .site-footer {
+        background: var(--color-bg-dark);
+        color: #c8c5b8;
+        padding: var(--space-xl) 1.5rem var(--space-md);
+        margin-top: var(--space-2xl);
+      }
+
+      .footer-content {
+        max-width: var(--content-width-wide);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+        padding-bottom: var(--space-lg);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      @media (min-width: 720px) {
+        .footer-content {
+          grid-template-columns: 2fr 1fr 1fr;
+        }
+      }
+
+      .footer-heading {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #f3f1ea;
+        margin-bottom: var(--space-sm);
+      }
+
+      .footer-text {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #a8a59a;
+      }
+
+      .footer-tag-list {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .footer-tag {
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        padding: 0.3rem 0.7rem;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        color: #c8c5b8;
+      }
+
+      .footer-bottom {
+        max-width: var(--content-width-wide);
+        margin: 0 auto;
+        padding-top: var(--space-md);
+        text-align: center;
+      }
+
+      .footer-copyright {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: #6a6e7c;
+      }
+
+      /* ============================================ */
+      /* RESPONSIVE ADJUSTMENTS                       */
+      /* ============================================ */
+      @media (max-width: 640px) {
+        html {
+          font-size: 16px;
+        }
+
+        .nav-menu {
+          gap: 0;
+        }
+
+        .nav-link {
+          padding: 0.4rem 0.5rem;
+          font-size: 0.78rem;
+        }
+
+        .hero-section {
+          padding: var(--space-xl) 1.25rem var(--space-lg);
+        }
+
+        .article-main {
+          padding: var(--space-lg) 1.25rem;
+        }
+
+        .article-section {
+          margin-bottom: var(--space-xl);
+        }
+
+        .math-block {
+          padding: 0.9rem 1rem;
+        }
+
+        .math-code {
+          font-size: 0.85rem;
+        }
+
+        .complexity-class {
+          padding-left: 4rem;
+        }
+
+        .class-label {
+          width: 3rem;
+          font-size: 1.1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .nav-brand .brand-link {
+          font-size: 0.9rem;
+        }
+
+        .article-title {
+          font-size: 2rem;
+        }
+      }
+
+      /* ============================================ */
+      /* SELECTION & FOCUS                            */
+      /* ============================================ */
+      ::selection {
+        background: var(--color-accent);
+        color: white;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body class="article-page">
+    <!-- ============================================ -->
+    <!-- HEADER / NAVIGATION                          -->
+    <!-- ============================================ -->
+    <header class="site-header">
+      <nav class="site-nav">
+        <div class="nav-brand">
+          <a href="../../index.html" class="brand-link">RC Complexity</a>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="../../index.html" class="nav-link">← Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="#core-idea" class="nav-link">Core Idea</a>
+          </li>
+          <li class="nav-item">
+            <a href="#background" class="nav-link">Background</a>
+          </li>
+          <li class="nav-item">
+            <a href="#framework" class="nav-link">Framework</a>
+          </li>
+          <li class="nav-item">
+            <a href="#classification" class="nav-link">Classification</a>
+          </li>
+          <li class="nav-item">
+            <a href="#conclusion" class="nav-link">Conclusion</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- HERO / ARTICLE TITLE                         -->
+    <!-- ============================================ -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <p class="article-eyebrow">Mathematics · Computational Complexity</p>
+        <h1 class="article-title">Rational Certificate Complexity</h1>
+        <p class="article-subtitle">A Computational Taxonomy of Mathematical Constants</p>
+        <div class="article-meta">
+          <span class="meta-reading-time">~20 min read</span>
+          <span class="meta-separator">·</span>
+          <span class="meta-topic">Numerical Analysis</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- MAIN ARTICLE CONTENT                         -->
+    <!-- ============================================ -->
+    <main class="article-main">
+      <!-- Core Idea Section -->
+      <section id="core-idea" class="article-section section-core-idea">
+        <h2 class="section-heading">The Core Idea</h2>
+        <p class="section-paragraph lead-paragraph">
+          There is a clean, rigorous, and surprisingly simple way to classify mathematical constants
+          by computational hardness — one that sidesteps much of the metaphysical baggage of the
+          real number system. The method is this: treat every convergence sequence as a
+          <em>rational certificate engine</em>, measure the bit-length of the rational it produces
+          as a function of demanded tolerance, and classify constants by the cheapest engine within
+          a precisely specified class.
+        </p>
+        <p class="section-paragraph">
+          This is not a new mathematical result. The pieces exist across numerical analysis,
+          Diophantine approximation, and real-number complexity theory. But the synthesis — fixing a
+          specific convergence engine, truncating it, and measuring the bit-length of the resulting
+          rational as a function of ε — is unusually sharp, and it makes computationally precise a
+          separation that is often argued abstractly: that the <em>natural</em> convergence engines
+          for π and e live in a fundamentally harder cost regime than the natural engines for
+          algebraic irrationals like √k.
+        </p>
+        <div class="callout callout-caveats">
+          <h3 class="callout-title">Two Sharpening Caveats</h3>
+          <p class="callout-text">
+            First, the framework classifies <em>engines</em>, not constants in any absolute sense;
+            the "hardness" of π depends on which engine you use, and sophisticated algorithms (AGM,
+            Ramanujan series) can place π in the same low-cost class as √2. Second, the elimination
+            of real-number metaphysics is partial rather than total: the framework replaces explicit
+            appeals to Dedekind cuts with operational appeals to asymptotic structure, which is
+            itself a substantive mathematical commitment.
+          </p>
+          <p class="callout-text">
+            What the framework genuinely delivers is not metaphysical purity but operational
+            precision — a measurable, falsifiable taxonomy of approximation strategies.
+          </p>
+        </div>
+      </section>
+
+      <!-- Background Section -->
+      <section id="background" class="article-section section-background">
+        <h2 class="section-heading">Background: Convergence Engines for Irrational Constants</h2>
+
+        <article class="subsection subsection-algebraic">
+          <h3 class="subsection-heading">Algebraic Irrationals via Binomial Series</h3>
+          <p class="section-paragraph">
+            The simplest infinite series constructions for integer radicals come from the binomial
+            series for negative half-powers:
+          </p>
+          <pre
+            class="math-block"
+          ><code class="math-code">(1 − x)^(−1/2) = Σ C(2n,n)/4^n · x^n,   |x| &lt; 1</code></pre>
+          <p class="section-paragraph">For any integer k &gt; 1, set x = 1 − 1/k, which gives:</p>
+          <pre
+            class="math-block"
+          ><code class="math-code">√k = Σ C(2n,n)/4^n · (1 − 1/k)^n</code></pre>
+          <p class="section-paragraph">Concrete instances:</p>
+          <ul class="example-list">
+            <li class="example-item">√2 = Σ C(2n,n)/8^n</li>
+            <li class="example-item">√3 = Σ C(2n,n)/4^n · (2/3)^n</li>
+          </ul>
+          <p class="section-paragraph">
+            This is structurally minimal: a single binomial series with a rational parameter,
+            converging to an irrational algebraic number. Crucially, this is a
+            <em>hypergeometric</em> series — the ratio of consecutive terms is a rational function
+            of n — and this property will turn out to be the decisive feature.
+          </p>
+        </article>
+
+        <article class="subsection subsection-pi-series">
+          <h3 class="subsection-heading">Classical Series and Products for π</h3>
+          <p class="section-paragraph">
+            Three canonical constructions for π, ordered by convergence rate:
+          </p>
+
+          <div class="series-card series-card-leibniz">
+            <h4 class="series-name">Gregory–Leibniz series</h4>
+            <p class="series-description">simplest pattern, slowest convergence</p>
+            <pre class="math-block"><code class="math-code">π = 4 · Σ (−1)^k / (2k+1)</code></pre>
+          </div>
+
+          <div class="series-card series-card-nilakantha">
+            <h4 class="series-name">Nilakantha series</h4>
+            <p class="series-description">same alternating structure, cubic denominators</p>
+            <pre
+              class="math-block"
+            ><code class="math-code">π = 3 + Σ (−1)^(k+1) · 4 / [(2k)(2k+1)(2k+2)]</code></pre>
+          </div>
+
+          <div class="series-card series-card-wallis">
+            <h4 class="series-name">Wallis product</h4>
+            <p class="series-description">multiplicative, purely even/odd integers</p>
+            <pre
+              class="math-block"
+            ><code class="math-code">π = 2 · Π (2k)² / [(2k−1)(2k+1)]</code></pre>
+          </div>
+        </article>
+      </section>
+
+      <!-- Framework Section -->
+      <section id="framework" class="article-section section-framework">
+        <h2 class="section-heading">The Rational Certificate Framework</h2>
+
+        <article class="subsection subsection-setup">
+          <h3 class="subsection-heading">Setup</h3>
+          <p class="section-paragraph">
+            Given a sequence (s_N) of rationals with limit α, fix a tolerance ε &gt; 0 and pick the
+            smallest N such that |s_N − α| &lt; ε. The truncation s_N = p_N/q_N is the
+            <em>rational certificate</em> for α at tolerance ε.
+          </p>
+          <p class="section-paragraph">The cost model has two components:</p>
+          <ol class="numbered-list">
+            <li class="numbered-item"><strong>Iteration cost</strong>: how N(ε) scales with ε</li>
+            <li class="numbered-item">
+              <strong>Representation cost</strong>: the bit-length of p_N and q_N as functions of N,
+              hence of ε
+            </li>
+          </ol>
+          <p class="section-paragraph">Bit-length is defined as:</p>
+          <pre class="math-block"><code class="math-code">bits(p/q) = log₂|p| + log₂|q|</code></pre>
+          <p class="section-paragraph">
+            This choice is not arbitrary. Bit-length corresponds to actual memory usage, determines
+            the cost of arithmetic operations on the certificate, and connects directly to the
+            classical notion of
+            <em>height</em> in Diophantine approximation. It is the right metric because it tracks
+            what a computer must actually do to store, transmit, and manipulate the certificate.
+          </p>
+          <p class="section-paragraph">
+            The composed quantity — bit-length as a function of ε — is the
+            <em>rational certificate complexity</em> of the sequence.
+          </p>
+        </article>
+
+        <article class="subsection subsection-lower-bound">
+          <h3 class="subsection-heading">An Information-Theoretic Lower Bound</h3>
+          <p class="section-paragraph">
+            Before computing specific complexities, one observation establishes the floor:
+            specifying any real number to within tolerance ε requires at least log₂(1/ε) bits of
+            information. Any rational certificate p/q with |p/q − α| &lt; ε must therefore encode at
+            least this much information, giving:
+          </p>
+          <pre
+            class="math-block highlight-math"
+          ><code class="math-code">bits(p_N/q_N) ≥ Ω(log(1/ε))</code></pre>
+          <p class="section-paragraph">
+            This is the information-theoretic minimum. Any engine achieving Θ(log(1/ε)) bit-length
+            is
+            <em>information-theoretically optimal</em> — it spends no more bits than the problem
+            fundamentally requires. This makes the logarithmic class not merely "cheap" but provably
+            tight.
+          </p>
+        </article>
+
+        <article class="subsection subsection-analysis">
+          <h3 class="subsection-heading">Analysis: Gregory–Leibniz for π</h3>
+          <p class="section-paragraph">The alternating series bound gives:</p>
+          <pre class="math-block"><code class="math-code">|π − S_N| ≤ 4/(2N+3)</code></pre>
+          <p class="section-paragraph">So N(ε) = Θ(1/ε).</p>
+          <p class="section-paragraph">
+            The natural denominator after N terms is lcm(1, 3, 5, ..., 2N+1). By the Prime Number
+            Theorem for arithmetic progressions, log lcm(1, 3, ..., 2N+1) = Θ(N), so the bit-length
+            of the denominator is Θ(N). (This step is not elementary: it depends on PNT-level
+            results, a dependency we acknowledge rather than hide.) Combined:
+          </p>
+          <p class="result-statement">
+            <strong>Bit-length vs tolerance: Θ(1/ε)</strong>
+          </p>
+        </article>
+
+        <article class="subsection subsection-analysis">
+          <h3 class="subsection-heading">Analysis: Nilakantha Series for π</h3>
+          <p class="section-paragraph">
+            Term magnitude ~ C/k³, so the tail behaves like ∫_N^∞ dx/x³ = 1/(2N²), giving:
+          </p>
+          <pre
+            class="math-block"
+          ><code class="math-code">|π − T_N| = O(1/N²),   N(ε) = Θ(ε^(−1/2))</code></pre>
+          <p class="section-paragraph">
+            The denominators are products of three consecutive integers (2k)(2k+1)(2k+2).
+            Establishing that log lcm of these triple products is Θ(N) requires showing that the
+            triples collectively cover a dense enough set of integers up to 2N+2 — this follows from
+            PNT-level results but is not the same trivial claim as the lcm of all integers up to
+            2N+2, and deserves explicit proof in a full treatment. Granting this, combined with the
+            iteration count:
+          </p>
+          <p class="result-statement">
+            <strong>Bit-length vs tolerance: Θ(ε^(−1/2))</strong>
+          </p>
+        </article>
+
+        <article class="subsection subsection-analysis">
+          <h3 class="subsection-heading">Analysis: Wallis Product for π</h3>
+          <p class="section-paragraph">
+            Each factor is (2k)²/[(2k−1)(2k+1)] = 1 + O(1/k²), so the log-error has a tail of
+            O(1/N):
+          </p>
+          <pre
+            class="math-block"
+          ><code class="math-code">|P_N − π| = O(1/N),   N(ε) = Θ(1/ε)</code></pre>
+          <p class="section-paragraph">The product denominator is Π(2k−1)(2k+1), so:</p>
+          <pre
+            class="math-block"
+          ><code class="math-code">log D_N = Σ O(log k) = O(N log N)</code></pre>
+          <p class="result-statement">
+            <strong>Bit-length vs tolerance: Θ((1/ε) · log(1/ε))</strong>
+          </p>
+          <p class="section-paragraph">
+            Wallis is actually <em>worse</em> than Gregory–Leibniz in representation cost, despite
+            similar iteration counts. This is the kind of distinction the framework is built to
+            surface: a result invisible to pure convergence analysis, which tracks only N(ε), but
+            visible the moment one accounts for the bit-cost of the rational being produced.
+          </p>
+        </article>
+
+        <article class="subsection subsection-analysis subsection-optimal">
+          <h3 class="subsection-heading">Analysis: Binomial Series for √k</h3>
+          <p class="section-paragraph">
+            The n-th term is C(2n,n)/4^n · (1 − 1/k)^n. Since C(2n,n) ~ 4^n/√(πn), the term
+            magnitude is:
+          </p>
+          <pre class="math-block"><code class="math-code">~ (1 − 1/k)^n / √(πn)</code></pre>
+          <p class="section-paragraph">This is a geometric tail with ratio ρ = 1 − 1/k ∈ (0,1):</p>
+          <pre
+            class="math-block"
+          ><code class="math-code">|√k − R_N| = O(ρ^N),   N(ε) = Θ(log(1/ε))</code></pre>
+          <p class="section-paragraph">
+            Each term has denominator 4^n · k^n, so a common denominator up to N is at most 4^N ·
+            k^N:
+          </p>
+          <pre class="math-block"><code class="math-code">log D_N = Θ(N)</code></pre>
+          <p class="section-paragraph">Combined with N(ε) = Θ(log(1/ε)):</p>
+          <p class="result-statement result-optimal">
+            <strong>Bit-length vs tolerance: Θ(log(1/ε))</strong>
+          </p>
+          <p class="section-paragraph">
+            This matches the information-theoretic lower bound. The binomial series for √k is
+            <em>optimal</em>: no rational certificate engine, however clever, can do better than
+            logarithmic bit-cost, and this naïve construction already achieves it.
+          </p>
+        </article>
+      </section>
+
+      <!-- Classification Table -->
+      <section id="classification" class="article-section section-classification">
+        <h2 class="section-heading">The Classification Table</h2>
+        <div class="table-wrapper">
+          <table class="complexity-table">
+            <thead class="table-head">
+              <tr class="table-row-header">
+                <th class="table-header">Sequence</th>
+                <th class="table-header">N(ε)</th>
+                <th class="table-header">Bit-length vs ε</th>
+              </tr>
+            </thead>
+            <tbody class="table-body">
+              <tr class="table-row">
+                <td class="table-cell cell-sequence">Gregory–Leibniz for π</td>
+                <td class="table-cell cell-iteration">Θ(1/ε)</td>
+                <td class="table-cell cell-bitlength">Θ(1/ε)</td>
+              </tr>
+              <tr class="table-row">
+                <td class="table-cell cell-sequence">Nilakantha for π</td>
+                <td class="table-cell cell-iteration">Θ(ε^(−1/2))</td>
+                <td class="table-cell cell-bitlength">Θ(ε^(−1/2))</td>
+              </tr>
+              <tr class="table-row">
+                <td class="table-cell cell-sequence">Wallis product for π</td>
+                <td class="table-cell cell-iteration">Θ(1/ε)</td>
+                <td class="table-cell cell-bitlength">Θ((1/ε)·log(1/ε))</td>
+              </tr>
+              <tr class="table-row table-row-highlight">
+                <td class="table-cell cell-sequence">Binomial series for √k</td>
+                <td class="table-cell cell-iteration">Θ(log(1/ε))</td>
+                <td class="table-cell cell-bitlength"><strong>Θ(log(1/ε))</strong> — optimal</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="section-paragraph">
+          The separation is stark. The binomial series for √k saturates the information-theoretic
+          lower bound. Every
+          <em>classical</em> construction for π sits in a polynomial-cost regime — or worse.
+        </p>
+      </section>
+
+      <!-- What Framework Settles -->
+      <section id="settled" class="article-section section-settled">
+        <h2 class="section-heading">What the Framework Does and Does Not Settle</h2>
+        <p class="section-paragraph">
+          It is tempting to say this "settles" the argument that π is harder than √2. That
+          overstates what the framework delivers, and it is important to be precise about what is
+          actually shown.
+        </p>
+
+        <div class="dual-callout">
+          <div class="callout callout-shown">
+            <h3 class="callout-title">What is shown</h3>
+            <p class="callout-text">
+              For the natural hypergeometric engines associated with each constant, algebraic
+              irrationals like √k achieve the information-theoretically optimal logarithmic cost
+              class, while the classical hypergeometric engines for π achieve only polynomial cost.
+              The separation between these engine families is genuine, measurable, and elementary in
+              its derivation (modulo the PNT dependence noted above).
+            </p>
+          </div>
+          <div class="callout callout-not-shown">
+            <h3 class="callout-title">What is not shown</h3>
+            <p class="callout-text">
+              That π is <em>intrinsically</em> harder than √2 as a constant. The AGM iteration
+              computes π in logarithmic bit-cost, placing it in the same optimal class as √2. So if
+              we classify a constant by the cheapest engine over <em>all</em> regular engines, π and
+              √2 land in the same class, and the separation collapses.
+            </p>
+          </div>
+        </div>
+
+        <p class="section-paragraph">
+          This raises an obvious question: why isn't the AGM the "natural" engine for π in the same
+          sense that the binomial series is natural for √k? The honest answer is that "natural" is
+          doing real work here, and we should formalize it rather than rely on intuition.
+        </p>
+
+        <article class="subsection subsection-formalizing">
+          <h3 class="subsection-heading">Formalizing "Natural": Hypergeometric Engines</h3>
+          <p class="section-paragraph">
+            Define the class of <strong>hypergeometric sequences</strong> as those whose consecutive
+            term ratio a_{n+1}/a_n is a rational function of n. This is a decidable, syntactically
+            checkable property, and it captures all the classical series and products considered
+            here:
+          </p>
+          <ul class="check-list">
+            <li class="check-item check-yes">The binomial series for √k is hypergeometric.</li>
+            <li class="check-item check-yes">
+              Gregory–Leibniz, Nilakantha, and Wallis are all hypergeometric.
+            </li>
+            <li class="check-item check-yes">The Taylor series for e is hypergeometric.</li>
+            <li class="check-item check-no">
+              The AGM iteration is <strong>not</strong> hypergeometric — its terms are defined by a
+              nonlinear recursion involving square roots, not a rational ratio.
+            </li>
+          </ul>
+          <p class="section-paragraph">
+            Restricting attention to hypergeometric engines, the framework's central claim becomes
+            precise and defensible:
+          </p>
+          <blockquote class="central-claim">
+            Among hypergeometric convergence engines, the natural engines for algebraic irrationals
+            achieve the information-theoretically optimal logarithmic cost class, while the
+            classical hypergeometric engines for π and e achieve only polynomial cost.
+          </blockquote>
+          <p class="section-paragraph">
+            This is the statement the framework actually establishes. It is weaker than "π is harder
+            than √2 absolutely," but it is stronger than "some series for π is slow" — it identifies
+            a structural property of an entire natural class of engines that correlates with the
+            algebraic/transcendental distinction.
+          </p>
+        </article>
+
+        <article class="subsection subsection-extending">
+          <h3 class="subsection-heading">Extending the Algebraic Result</h3>
+          <p class="section-paragraph">
+            The binomial series result is not isolated to √k. By Gauss's theorem on hypergeometric
+            functions, every algebraic number arises as the value of a hypergeometric series at an
+            algebraic argument. The same tail analysis that gives Θ(log(1/ε)) for √k extends to all
+            algebraic irrationals via their natural hypergeometric representations. The optimal
+            logarithmic class is the home of the algebraic numbers, with respect to natural
+            hypergeometric engines.
+          </p>
+        </article>
+      </section>
+
+      <!-- Regularity Condition -->
+      <section id="regularity" class="article-section section-regularity">
+        <h2 class="section-heading">The Regularity Condition, Made Precise</h2>
+        <p class="section-paragraph">
+          Not every program counts as a convergence engine for the purposes of this classification.
+          The framework requires
+          <em>regular</em> sequences, and we can now state this condition precisely rather than
+          informally.
+        </p>
+        <p class="section-paragraph">
+          A convergence sequence is <strong>regular</strong> if it is hypergeometric — equivalently,
+          if the ratio of consecutive terms is a rational function of n. This single condition
+          simultaneously:
+        </p>
+        <ul class="feature-list">
+          <li class="feature-item">Makes the class decidable and machine-checkable</li>
+          <li class="feature-item">
+            Filters out pathological constructions whose cost profile is arbitrary or unanalyzable
+          </li>
+          <li class="feature-item">Includes all classical analytic sequences of interest</li>
+          <li class="feature-item">
+            Excludes algorithms like AGM that compute using genuinely non-series machinery, which
+            deserve their own classification rather than competing with series
+          </li>
+        </ul>
+        <p class="section-paragraph">
+          This is the right regularity condition because it is both syntactically clean and aligned
+          with the natural mathematical category of "elementary closed-form series."
+        </p>
+        <p class="section-paragraph">
+          More general regularity conditions (such as the class of D-finite sequences, which satisfy
+          linear recursions with polynomial coefficients) admit broader analysis at the cost of
+          slightly more complex machinery. For the present framework, hypergeometric is the right
+          level.
+        </p>
+      </section>
+
+      <!-- Deeper Point -->
+      <section id="deeper-point" class="article-section section-deeper">
+        <h2 class="section-heading">
+          The Deeper Point: Operational Precision Over Metaphysical Ambition
+        </h2>
+        <p class="section-paragraph">
+          The real number system, as formalized in the 19th century through Dedekind cuts and Cauchy
+          completions, is a powerful and internally consistent construction. But it also posits an
+          uncountable continuum, most of whose members are not computable, not nameable, and not
+          reachable by any finite process.
+        </p>
+        <p class="section-paragraph">
+          The rational certificate framework does not need the full apparatus of this construction
+          for its central classifications. A "number," within the framework, is treated as:
+        </p>
+        <blockquote class="definition-blockquote">
+          A regular convergence engine together with its cost profile.
+        </blockquote>
+        <p class="section-paragraph">
+          Two engines that produce the same limit are computing the same constant
+          <em>for the purposes of this taxonomy</em>. There is no appeal to a Platonic continuum, no
+          Dedekind cut, no equivalence class of Cauchy sequences. There is computation, data, and
+          asymptotic analysis.
+        </p>
+        <p class="section-paragraph">
+          Honesty requires acknowledging that this does not eliminate mathematical metaphysics
+          entirely. The asymptotic notation Θ(·), the notion of "the same limit," and the regularity
+          condition itself all carry mathematical commitments. What the framework eliminates is not
+          metaphysics in general but the <em>specific</em> commitment to a completed uncountable
+          continuum as the foundation of computational claims. The framework is operationally
+          precise, not ontologically empty.
+        </p>
+        <p class="section-paragraph">
+          This is not a rejection of classical mathematics. It is a reinterpretation that stays
+          closer to what computational mathematics actually does: symbol manipulation, finite data,
+          and structured cost analysis. The real number system remains a useful organizing fiction
+          for the surrounding mathematical machinery, but it is not load-bearing for the
+          classification itself.
+        </p>
+        <p class="section-paragraph">
+          Under this reinterpretation, the hardness separation between algebraic and transcendental
+          constants — as expressed by their natural hypergeometric engines — is not a deep theorem
+          requiring centuries of number theory. It is a direct, elementary consequence of the tail
+          structure of those engines, combined with an information-theoretic lower bound. The math
+          makes it clear. The computation makes it precise.
+        </p>
+      </section>
+
+      <!-- Related Frameworks -->
+      <section id="related" class="article-section section-related">
+        <h2 class="section-heading">Relationship to Known Frameworks</h2>
+        <p class="section-paragraph">
+          This method is not entirely new, but the synthesis is sharper than existing presentations.
+        </p>
+
+        <div class="framework-grid">
+          <div class="framework-card framework-card-classical">
+            <h3 class="framework-name">Classical Convergence Analysis</h3>
+            <p class="framework-description">
+              Studies how many terms are needed for a given error tolerance. It derives N(ε) but
+              does not track the bit-length of the resulting rational. It treats numbers as reals,
+              not as rationals with explicit representation cost. The Wallis-vs-Gregory–Leibniz
+              comparison — where Wallis is worse in bit-cost despite comparable iteration counts —
+              is invisible to classical convergence analysis but immediate in the present framework.
+            </p>
+          </div>
+          <div class="framework-card framework-card-diophantine">
+            <h3 class="framework-name">Diophantine Approximation</h3>
+            <p class="framework-description">
+              Studies the size of numerators and denominators of rational approximations, the height
+              of algebraic numbers, and the irrationality measure of constants like π and e. But it
+              studies the <em>best possible</em> rational approximations, not the approximations
+              produced by a specific convergence engine.
+            </p>
+          </div>
+          <div class="framework-card framework-card-ko-friedman">
+            <h3 class="framework-name">Real-Number Complexity Theory</h3>
+            <p class="framework-description">
+              (The Ko–Friedman model and related frameworks) defines a real number as "easy" if
+              there exists an algorithm that outputs a rational within ε in time polynomial in
+              log(1/ε). Algebraic numbers are in this class. Transcendentals like π and e are also
+              in this class via fast algorithms (AGM, Ramanujan series), but not via the naive
+              classical series.
+            </p>
+          </div>
+        </div>
+
+        <p class="section-paragraph">
+          The rational certificate framework is closest to the Ko–Friedman model, but applied to
+          <em>specific</em> classes of convergence sequences rather than arbitrary algorithms. The
+          question is not "does some algorithm exist that computes this constant cheaply?" but "what
+          does <em>this particular family</em> of convergence engines cost?" This is a more
+          operational and more discriminating question, and it is what makes the framework useful as
+          a benchmark for evaluating real algorithms (PSLQ, LLL, continued-fraction methods) against
+          predicted difficulty.
+        </p>
+      </section>
+
+      <!-- Complexity Classes -->
+      <section id="complexity-classes" class="article-section section-complexity-classes">
+        <h2 class="section-heading">The Computational Complexity Classes</h2>
+        <p class="section-paragraph">
+          The analysis suggests a natural hierarchy of complexity classes for convergence engines:
+        </p>
+
+        <div class="class-hierarchy">
+          <div class="complexity-class class-rc1">
+            <div class="class-label">RC₁</div>
+            <h3 class="class-name">Log-cost, information-theoretically optimal</h3>
+            <p class="class-formula">bit-length = Θ(log(1/ε))</p>
+            <p class="class-examples">
+              <strong>Examples:</strong> binomial series for √k (and all algebraic irrationals via
+              hypergeometric representations), Newton's method for algebraic equations, AGM-based
+              algorithms for π
+            </p>
+          </div>
+          <div class="complexity-class class-rc2">
+            <div class="class-label">RC₂</div>
+            <h3 class="class-name">Poly-cost</h3>
+            <p class="class-formula">bit-length = Θ(ε^(−c)) for some c &gt; 0</p>
+            <p class="class-examples">
+              <strong>Examples:</strong> Gregory–Leibniz, Nilakantha, basic e-series
+            </p>
+          </div>
+          <div class="complexity-class class-rc3">
+            <div class="class-label">RC₃</div>
+            <h3 class="class-name">Super-poly-cost</h3>
+            <p class="class-formula">bit-length grows faster than any polynomial in 1/ε</p>
+            <p class="class-examples">
+              <strong>Examples:</strong> Wallis product (Θ((1/ε)·log(1/ε))), factorial-denominator
+              series with slow convergence
+            </p>
+          </div>
+        </div>
+
+        <p class="section-paragraph">
+          A constant is classified by the lowest RC class achievable by any regular (hypergeometric)
+          engine for it, with the optional refinement of classifying it relative to broader engine
+          classes when discussing algorithms like AGM.
+        </p>
+        <p class="section-paragraph">Under the hypergeometric-engine classification:</p>
+        <ul class="finding-list">
+          <li class="finding-item">
+            <strong>Algebraic irrationals are in RC₁</strong> via their natural hypergeometric
+            representations.
+          </li>
+          <li class="finding-item">
+            <strong>The classical hypergeometric engines for π and e are in RC₂ or RC₃.</strong>
+          </li>
+          <li class="finding-item">
+            <strong
+              >Whether π and e admit <em>any</em> hypergeometric engine in RC₁ is an open
+              question</strong
+            >
+            — and a genuinely interesting one. A positive answer would refine the framework; a
+            negative answer would constitute a real lower bound separating algebraic and
+            transcendental constants relative to hypergeometric engines.
+          </li>
+        </ul>
+        <p class="section-paragraph">
+          This is the computational signature of the algebraic/transcendental distinction as the
+          framework expresses it: algebraic constants have simple, cheap natural engines that
+          saturate the information-theoretic optimum; transcendental constants require either
+          non-hypergeometric machinery (like AGM) or pay a polynomial cost.
+        </p>
+      </section>
+
+      <!-- Benchmark Suite -->
+      <section id="benchmark" class="article-section section-benchmark">
+        <h2 class="section-heading">A Benchmark Suite for Numerical Algorithms</h2>
+        <p class="section-paragraph">
+          The framework's most immediate practical application is as a benchmark generator.
+          Constants stratified by RC class form a curated test suite for empirically evaluating
+          numerical algorithms such as PSLQ, LLL lattice reduction, and continued-fraction methods.
+          The RC score predicts the cost of certifying a constant; discrepancies between predicted
+          and observed algorithm performance identify either unexpected algebraic structure (the
+          constant is easier than its RC class suggests) or algorithmic weakness (the algorithm
+          fails to exploit structure that the framework predicts is available).
+        </p>
+        <p class="section-paragraph">
+          This converts the abstract taxonomy into a falsifiable empirical instrument. The benchmark
+          is a durable artifact — useful regardless of whether every theoretical prediction holds,
+          because discrepancies are informative rather than invalidating.
+        </p>
+      </section>
+
+      <!-- Tools / Cataloguing -->
+      <section id="tools" class="article-section section-tools">
+        <h2 class="section-heading">The Right Tool for Cataloguing</h2>
+        <p class="section-paragraph">
+          To catalog known sequences under this framework, the appropriate tool treats exact
+          rationals as first-class objects, supports symbolic manipulation of sequence terms, and
+          allows meta-level asymptotic analysis — without imposing a real-number ontology on the
+          representation layer.
+        </p>
+        <p class="section-paragraph">
+          <strong>GiNaC</strong> (GiNaC is Not a CAS) is a natural choice for a production
+          implementation. Built in C++ with CLN for exact rational arithmetic, GiNaC was originally
+          developed for Feynman diagram algebra — a domain that similarly demands exact symbolic
+          manipulation. Its design philosophy matches the requirements: deterministic, inspectable,
+          full control over the symbolic machinery.
+        </p>
+        <p class="section-paragraph">
+          Pragmatically, however, a Python/SymPy prototype is the right first step. It validates the
+          architecture, exercises the pattern-matching rules on the small set of canonical examples
+          (Gregory–Leibniz, Nilakantha, Wallis, binomial, Taylor for e), and exposes implementation
+          complexity before committing to C++. The denominator growth analyzer in particular
+          requires care: it must either encode PNT-level results as known asymptotic facts or invoke
+          a verified library for them.
+        </p>
+        <p class="section-paragraph">
+          The catalog is structured as a typed symbolic system with four components:
+        </p>
+        <ol class="component-list">
+          <li class="component-item">
+            <strong class="component-name">Sequence definition</strong>: symbolic term a_n or b_k,
+            partial sum or product S_N, with verification that the consecutive-term ratio is a
+            rational function of n (hypergeometricity check)
+          </li>
+          <li class="component-item">
+            <strong class="component-name">Tail asymptotic analyzer</strong>: pattern-match for
+            alternating series, geometric tails, hypergeometric terms, polynomial tails; derive f(N)
+            such that |α − S_N| ~ f(N)
+          </li>
+          <li class="component-item">
+            <strong class="component-name">Denominator growth analyzer</strong>: extract
+            denominators of terms, model lcm or product growth, derive g(N) = log bit-length of S_N
+            (with explicit dependence flagged when PNT-level results are invoked)
+          </li>
+          <li class="component-item">
+            <strong class="component-name">Complexity profile</strong>: compose f and g to produce
+            C(ε) = g(f⁻¹(ε)), classify into RC₁/RC₂/RC₃
+          </li>
+        </ol>
+        <p class="section-paragraph">
+          The first deliverable is a heuristic classifier with explicit confidence annotations and
+          numerical validation against measured bit-lengths at chosen tolerances. A formally
+          verified catalog — implemented in Lean 4 with Mathlib, for instance — is a longer-term
+          research goal that would force resolution of any remaining ambiguities in the regularity
+          condition and the asymptotic claims.
+        </p>
+      </section>
+
+      <!-- Conclusion -->
+      <section id="conclusion" class="article-section section-conclusion">
+        <h2 class="section-heading">Conclusion</h2>
+        <p class="section-paragraph">
+          The rational certificate complexity framework is valid, meaningful, and operationally
+          precise. It requires no transcendence theory and no commitment to the full real-number
+          continuum. It requires:
+        </p>
+        <ul class="conclusion-list">
+          <li class="conclusion-item">
+            A hypergeometric convergence sequence (the precise regularity condition)
+          </li>
+          <li class="conclusion-item">A tail bound derivable by standard analysis</li>
+          <li class="conclusion-item">
+            A denominator growth model derivable by standard number theory (with PNT-level results
+            acknowledged as inputs)
+          </li>
+          <li class="conclusion-item">
+            A composition of the two into a bit-length-vs-tolerance profile
+          </li>
+          <li class="conclusion-item">
+            An information-theoretic lower bound that pins down what "optimal" means
+          </li>
+        </ul>
+        <p class="section-paragraph">
+          Under this framework, the computational hardness separation between the natural
+          hypergeometric engines for algebraic and transcendental constants is a direct, visible
+          consequence of the tail structure of those engines. Algebraic irrationals saturate the
+          information-theoretic optimum at logarithmic bit-cost. Classical hypergeometric engines
+          for π and e pay polynomial cost. Whether transcendentals admit any hypergeometric engine
+          reaching the optimum is open, and that openness is itself a sharp, well-posed research
+          question.
+        </p>
+        <p class="section-paragraph">
+          The framework's deepest contribution is not a metaphysical reform but an operational one:
+          it gives a precise, measurable, falsifiable instrument for comparing approximation
+          strategies, evaluating numerical algorithms, and stratifying constants by the cost of
+          certifying them. The structure of the series is the structure of the cost, made
+          computationally explicit.
+        </p>
+        <p class="section-paragraph closing-paragraph">
+          Mathematics, on the constructive side of the ledger, is computation and data. The rational
+          certificate framework keeps it that way — without pretending that the surrounding
+          mathematical machinery is metaphysically free.
+        </p>
+      </section>
+    </main>
+
+    <!-- ============================================ -->
+    <!-- FOOTER                                       -->
+    <!-- ============================================ -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-section footer-about">
+          <h3 class="footer-heading">About This Article</h3>
+          <p class="footer-text">
+            A synthesis across numerical analysis, Diophantine approximation, and real-number
+            complexity theory, proposing a measurable taxonomy of approximation strategies for
+            mathematical constants.
+          </p>
+        </div>
+        <div class="footer-section footer-topics">
+          <h3 class="footer-heading">Topics</h3>
+          <ul class="footer-tag-list">
+            <li class="footer-tag">Computational Complexity</li>
+            <li class="footer-tag">Numerical Analysis</li>
+            <li class="footer-tag">Mathematical Constants</li>
+            <li class="footer-tag">Hypergeometric Series</li>
+          </ul>
+        </div>
+        <div class="footer-section footer-meta">
+          <h3 class="footer-heading">Reference</h3>
+          <p class="footer-text">Rational Certificate Complexity Framework</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">
+          © Rational Certificate Complexity — A taxonomy of approximation strategies.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      /**
+       * Rational Certificate Complexity - Interactive Article
+       *
+       * This script provides:
+       * - Smooth scrolling navigation
+       * - Active section highlighting in nav menu
+       * - Scroll-triggered reveal animations
+       * - Reading progress indicator
+       * - Mobile menu toggle (if applicable)
+       * - Copy-to-clipboard for math blocks
+       * - Table row interactivity
+       * - Complexity class card interaction
+       */
+
+      (() => {
+        'use strict';
+
+        // ============================================
+        // 1. INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+          initSmoothScroll();
+          initScrollSpy();
+          initRevealOnScroll();
+          initReadingProgress();
+          initMathBlockCopy();
+          initTableHover();
+          initComplexityCardToggle();
+          initMobileNav();
+          initBackToTop();
+          console.log('[RC Complexity] Article interactivity initialized.');
+        });
+
+        // ============================================
+        // 2. SMOOTH SCROLL FOR NAV LINKS
+        // ============================================
+        function initSmoothScroll() {
+          const navLinks = document.querySelectorAll('.nav-link, .brand-link');
+
+          navLinks.forEach((link) => {
+            link.addEventListener('click', (e) => {
+              const href = link.getAttribute('href');
+              if (!href || !href.startsWith('#')) return;
+
+              const target = href === '#' ? document.body : document.querySelector(href);
+              if (!target) return;
+
+              e.preventDefault();
+              const headerOffset = document.querySelector('.site-header')?.offsetHeight || 0;
+              const targetPos =
+                target.getBoundingClientRect().top + window.pageYOffset - headerOffset - 20;
+
+              window.scrollTo({
+                top: targetPos,
+                behavior: 'smooth',
+              });
+
+              // Close mobile menu if open
+              document.querySelector('.nav-menu')?.classList.remove('nav-menu-open');
+            });
+          });
+        }
+
+        // ============================================
+        // 3. SCROLLSPY - HIGHLIGHT ACTIVE SECTION
+        // ============================================
+        function initScrollSpy() {
+          const sections = document.querySelectorAll('.article-section[id]');
+          const navLinks = document.querySelectorAll('.nav-link');
+          if (!sections.length || !navLinks.length) return;
+
+          const linkMap = new Map();
+          navLinks.forEach((link) => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('#')) {
+              linkMap.set(href.slice(1), link);
+            }
+          });
+
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                const id = entry.target.id;
+                const link = linkMap.get(id);
+                if (!link) return;
+
+                if (entry.isIntersecting) {
+                  navLinks.forEach((l) => l.classList.remove('nav-link-active'));
+                  link.classList.add('nav-link-active');
+                }
+              });
+            },
+            {
+              rootMargin: '-30% 0px -60% 0px',
+              threshold: 0,
+            }
+          );
+
+          sections.forEach((section) => observer.observe(section));
+        }
+
+        // ============================================
+        // 4. REVEAL ON SCROLL
+        // ============================================
+        function initRevealOnScroll() {
+          const revealTargets = document.querySelectorAll(
+            '.article-section, .callout, .series-card, .framework-card, .complexity-class, .math-block, .central-claim, .definition-blockquote'
+          );
+
+          if (!revealTargets.length) return;
+
+          // Set initial state via class
+          revealTargets.forEach((el) => el.classList.add('reveal-init'));
+
+          const revealObserver = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('reveal-visible');
+                  revealObserver.unobserve(entry.target);
+                }
+              });
+            },
+            {
+              threshold: 0.1,
+              rootMargin: '0px 0px -50px 0px',
+            }
+          );
+
+          revealTargets.forEach((el) => revealObserver.observe(el));
+        }
+
+        // ============================================
+        // 5. READING PROGRESS INDICATOR
+        // ============================================
+        function initReadingProgress() {
+          // Create progress bar
+          const progressBar = document.createElement('div');
+          progressBar.className = 'reading-progress';
+          progressBar.setAttribute('aria-hidden', 'true');
+          const progressFill = document.createElement('div');
+          progressFill.className = 'reading-progress-fill';
+          progressBar.appendChild(progressFill);
+          document.body.appendChild(progressBar);
+
+          const article = document.querySelector('.article-main');
+          if (!article) return;
+
+          const updateProgress = () => {
+            const articleTop = article.offsetTop;
+            const articleHeight = article.offsetHeight;
+            const scrollTop = window.pageYOffset;
+            const windowHeight = window.innerHeight;
+
+            const start = articleTop - windowHeight * 0.2;
+            const end = articleTop + articleHeight - windowHeight;
+            const progress = Math.min(Math.max((scrollTop - start) / (end - start), 0), 1);
+
+            progressFill.style.width = `${progress * 100}%`;
+          };
+
+          let ticking = false;
+          window.addEventListener(
+            'scroll',
+            () => {
+              if (!ticking) {
+                window.requestAnimationFrame(() => {
+                  updateProgress();
+                  ticking = false;
+                });
+                ticking = true;
+              }
+            },
+            { passive: true }
+          );
+
+          updateProgress();
+        }
+
+        // ============================================
+        // 6. COPY MATH BLOCKS TO CLIPBOARD
+        // ============================================
+        function initMathBlockCopy() {
+          const mathBlocks = document.querySelectorAll('.math-block');
+
+          mathBlocks.forEach((block) => {
+            // Wrap in container for positioning the button
+            block.classList.add('math-block-interactive');
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'math-copy-btn';
+            copyBtn.type = 'button';
+            copyBtn.textContent = 'Copy';
+            copyBtn.setAttribute('aria-label', 'Copy formula to clipboard');
+
+            copyBtn.addEventListener('click', async () => {
+              const code = block.querySelector('.math-code');
+              if (!code) return;
+
+              const text = code.textContent.trim();
+
+              try {
+                if (navigator.clipboard && window.isSecureContext) {
+                  await navigator.clipboard.writeText(text);
+                } else {
+                  // Fallback
+                  const ta = document.createElement('textarea');
+                  ta.value = text;
+                  ta.style.position = 'fixed';
+                  ta.style.left = '-9999px';
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(ta);
+                }
+
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('math-copy-btn-success');
+
+                setTimeout(() => {
+                  copyBtn.textContent = 'Copy';
+                  copyBtn.classList.remove('math-copy-btn-success');
+                }, 1800);
+              } catch (err) {
+                console.warn('[RC Complexity] Copy failed:', err);
+                copyBtn.textContent = 'Failed';
+                setTimeout(() => {
+                  copyBtn.textContent = 'Copy';
+                }, 1800);
+              }
+            });
+
+            block.appendChild(copyBtn);
+          });
+        }
+
+        // ============================================
+        // 7. TABLE ROW HOVER INTERACTION
+        // ============================================
+        function initTableHover() {
+          const rows = document.querySelectorAll('.complexity-table .table-row');
+
+          rows.forEach((row) => {
+            row.addEventListener('mouseenter', () => {
+              row.classList.add('table-row-hover');
+            });
+            row.addEventListener('mouseleave', () => {
+              row.classList.remove('table-row-hover');
+            });
+
+            // Click to "pin" row highlight
+            row.addEventListener('click', () => {
+              const wasActive = row.classList.contains('table-row-active');
+              rows.forEach((r) => r.classList.remove('table-row-active'));
+              if (!wasActive) row.classList.add('table-row-active');
+            });
+          });
+        }
+
+        // ============================================
+        // 8. COMPLEXITY CLASS CARD EXPANSION
+        // ============================================
+        function initComplexityCardToggle() {
+          const classes = document.querySelectorAll('.complexity-class');
+
+          classes.forEach((card) => {
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+
+            const toggle = () => {
+              const isExpanded = card.classList.toggle('complexity-class-expanded');
+              card.setAttribute('aria-expanded', String(isExpanded));
+            };
+
+            card.addEventListener('click', toggle);
+            card.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggle();
+              }
+            });
+          });
+        }
+
+        // ============================================
+        // 9. MOBILE NAVIGATION TOGGLE
+        // ============================================
+        function initMobileNav() {
+          const nav = document.querySelector('.site-nav');
+          const menu = document.querySelector('.nav-menu');
+          if (!nav || !menu) return;
+
+          // Create toggle button
+          const toggle = document.createElement('button');
+          toggle.className = 'nav-toggle';
+          toggle.type = 'button';
+          toggle.setAttribute('aria-label', 'Toggle navigation menu');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.innerHTML =
+            '<span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span>';
+
+          nav.appendChild(toggle);
+
+          toggle.addEventListener('click', () => {
+            const isOpen = menu.classList.toggle('nav-menu-open');
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.classList.toggle('nav-toggle-active', isOpen);
+          });
+
+          // Close menu on outside click
+          document.addEventListener('click', (e) => {
+            if (!nav.contains(e.target) && menu.classList.contains('nav-menu-open')) {
+              menu.classList.remove('nav-menu-open');
+              toggle.setAttribute('aria-expanded', 'false');
+              toggle.classList.remove('nav-toggle-active');
+            }
+          });
+        }
+
+        // ============================================
+        // 10. BACK TO TOP BUTTON
+        // ============================================
+        function initBackToTop() {
+          const btn = document.createElement('button');
+          btn.className = 'back-to-top';
+          btn.type = 'button';
+          btn.setAttribute('aria-label', 'Back to top');
+          btn.innerHTML = '↑';
+          document.body.appendChild(btn);
+
+          const toggleVisibility = () => {
+            if (window.pageYOffset > 600) {
+              btn.classList.add('back-to-top-visible');
+            } else {
+              btn.classList.remove('back-to-top-visible');
+            }
+          };
+
+          let ticking = false;
+          window.addEventListener(
+            'scroll',
+            () => {
+              if (!ticking) {
+                window.requestAnimationFrame(() => {
+                  toggleVisibility();
+                  ticking = false;
+                });
+                ticking = true;
+              }
+            },
+            { passive: true }
+          );
+
+          btn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+
+          toggleVisibility();
+        }
+      })();
+    </script>
+  </body>
+  <!-- JavaScript will be added here -->
+</html>

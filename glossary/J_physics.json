@@ -1,0 +1,1175 @@
+{
+  "version": "1.0.0",
+  "title": "Physics Connections Glossary",
+  "description": "Physics terminology referenced throughout the multi-sheeted tilings project, covering discrete gauge theories, anyonic systems, topological matter, and toy models for quantum gravity.",
+  "concepts": {
+    "gauge-theory": {
+      "id": "gauge-theory",
+      "term": "Gauge Theory",
+      "aliases": ["local gauge invariance", "gauge field theory"],
+      "domain": "physics",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "intermediate",
+      "tags": ["gauge", "symmetry", "field theory", "holonomy", "Wilson loop"],
+      "summary": "A field theory invariant under local symmetry transformations, where gauge fields are introduced to preserve the symmetry.",
+      "definition": "A field theory invariant under **local symmetry transformations**:\n\n$$\\psi(x) \\to g(x) \\psi(x), \\quad g(x) \\in G$$\n\nTo preserve this symmetry, one introduces a **gauge field** $A_\\mu$ transforming inhomogeneously. Examples include electromagnetism ($G = U(1)$), Yang–Mills theories ($G$ = compact Lie group), and lattice gauge theories (discrete analogue).\n\nIn the multi-sheeted tiling project: **sheet transitions are discrete gauge fields**. The fiber group $G$ plays the role of the gauge group, and edge labels $\\tau(e) \\in G$ are the discrete gauge field. Holonomy around vortex loops corresponds to the gauge field's curvature (Wilson loop).",
+      "examples": [
+        {
+          "title": "Electromagnetism as U(1) Gauge Theory",
+          "body": "The electromagnetic field arises from requiring invariance under local U(1) phase rotations of the electron wavefunction. The gauge field A_μ is the electromagnetic four-potential."
+        },
+        {
+          "title": "Sheet Transitions as Discrete Gauge Fields",
+          "body": "In multi-sheeted pentagonal tilings, each directed edge carries a label τ(e) ∈ G encoding which sheet transition occurs. This is precisely a discrete gauge field on the tiling graph, with holonomy around vortex loops playing the role of curvature (Wilson loop)."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\psi(x) \\to g(x) \\psi(x), \\quad g(x) \\in G",
+          "description": "Local gauge transformation of a field ψ by a group element g(x) that varies from point to point.",
+          "variables": {
+            "ψ(x)": "field at spacetime point x",
+            "g(x)": "group element of gauge group G at point x",
+            "G": "gauge group (e.g. U(1), SU(2), SU(3))"
+          }
+        }
+      ],
+      "references": [
+        "Yang, C. N. & Mills, R. L. (1954). Conservation of Isotopic Spin and Isotopic Gauge Invariance. Physical Review, 96(1), 191.",
+        "Wilson, K. G. (1974). Confinement of quarks. Physical Review D, 10(8), 2445."
+      ],
+      "relations": {
+        "requires": [{ "id": "vortex-physics" }, { "id": "spin-network" }],
+        "related": [
+          { "id": "bf-theory" },
+          { "id": "aharonov-bohm-effect" },
+          { "id": "loop-quantum-gravity" },
+          { "id": "wilson-loop", "label": "Wilson Loop / Holonomy" }
+        ],
+        "enabledBy": [{ "id": "bf-theory" }, { "id": "topological-quantum-computation" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "bf-theory": {
+      "id": "bf-theory",
+      "term": "BF Theory",
+      "aliases": ["BF topological gauge theory", "B∧F theory"],
+      "domain": "physics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "topological field theory",
+        "flat connection",
+        "quantum gravity",
+        "spin foam",
+        "gauge theory"
+      ],
+      "summary": "A topological gauge theory with action S = ∫ B ∧ F that forces flat connections, underlying discrete quantum gravity models.",
+      "definition": "A **topological gauge theory** with action $S = \\int B \\wedge F$. The Lagrangian multiplier $B$ forces $F = 0$ (flat connection), reducing the theory to a topological theory of flat $G$-connections — exactly the structure of multi-sheeted covers with discrete connection.\n\nBF theory underlies **discrete quantum gravity models** (BF + constraints = gravity), including spin foams and certain loop quantum gravity formulations.",
+      "examples": [
+        {
+          "title": "Flat Connection Structure in Multi-Sheeted Covers",
+          "body": "The multi-sheeted pentagonal tiling carries a discrete flat G-connection: sheet-transition labels on edges satisfy a flatness condition (holonomy around contractible loops is trivial). This is precisely the structure BF theory selects via its equations of motion F = 0."
+        },
+        {
+          "title": "BF Theory as Precursor to Gravity",
+          "body": "General relativity in 3+1 dimensions can be written as BF theory plus simplicity constraints on the B field. Spin foam models of quantum gravity are discretizations of this BF+constraints formulation."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "S = \\int B \\wedge F",
+          "description": "The BF theory action, where B is a Lagrange multiplier (n-2)-form and F is the curvature 2-form of a gauge connection.",
+          "variables": {
+            "B": "Lagrange multiplier (n−2)-form valued in the Lie algebra",
+            "F": "curvature 2-form of the gauge connection A",
+            "∧": "exterior (wedge) product"
+          }
+        },
+        {
+          "expression": "F = 0",
+          "description": "Equation of motion from varying B: forces the connection to be flat.",
+          "variables": {
+            "F": "curvature 2-form; F=0 means flat connection"
+          }
+        }
+      ],
+      "references": [
+        "Baez, J. C. (1996). Four-Dimensional BF Theory as a Topological Quantum Field Theory. Letters in Mathematical Physics, 38(2), 129–143.",
+        "Freidel, L. & Krasnov, K. (1999). Spin foam models and the classical action principle. Advances in Theoretical and Mathematical Physics, 2(6), 1183–1247."
+      ],
+      "relations": {
+        "requires": [{ "id": "gauge-theory" }],
+        "related": [
+          { "id": "loop-quantum-gravity" },
+          { "id": "spin-network" },
+          { "id": "aharonov-bohm-effect" }
+        ],
+        "enabledBy": [{ "id": "gauge-theory" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "aharonov-bohm-effect": {
+      "id": "aharonov-bohm-effect",
+      "term": "Aharonov–Bohm Effect",
+      "aliases": ["AB effect", "Aharonov-Bohm phase"],
+      "domain": "physics",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": ["holonomy", "phase", "flux", "topology", "quantum mechanics", "vortex"],
+      "summary": "A quantum particle acquires a geometric phase when traversing a loop around confined magnetic flux, even when the local field is zero along the path.",
+      "definition": "The phenomenon in which a charged quantum particle acquires a phase $\\exp(i \\oint A \\cdot d\\ell)$ when traversing a loop around a region of confined magnetic flux — **even when the local field is zero along the loop**.\n\nClassical analogue in the multi-sheeted tiling setting: gliders or CA patterns acquire a sheet shift when encircling a vortex, even though the \"sheet field\" is locally trivial outside the vortex. The vortex carries **concentrated holonomy**, analogous to flux confined in a solenoid.",
+      "examples": [
+        {
+          "title": "Solenoid Experiment",
+          "body": "An electron beam is split around a solenoid carrying magnetic flux Φ. Even though B=0 outside the solenoid, the two paths acquire a relative phase exp(ieΦ/ℏc), producing an interference shift proportional to the enclosed flux."
+        },
+        {
+          "title": "Sheet Shift Around a Vortex",
+          "body": "A glider in a multi-sheeted CA tiling that travels a closed loop encircling a vortex returns to its starting position on a different sheet — a discrete combinatorial analogue of the Aharonov–Bohm phase shift."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\phi_{AB} = \\exp\\!\\left(i \\oint_C A \\cdot d\\ell\\right)",
+          "description": "The Aharonov–Bohm phase acquired by a charged particle traversing a closed loop C around a region of confined flux.",
+          "variables": {
+            "A": "electromagnetic vector potential",
+            "C": "closed loop in space",
+            "φ_AB": "acquired geometric phase factor"
+          }
+        }
+      ],
+      "references": [
+        "Aharonov, Y. & Bohm, D. (1959). Significance of Electromagnetic Potentials in the Quantum Theory. Physical Review, 115(3), 485–491."
+      ],
+      "relations": {
+        "requires": [{ "id": "gauge-theory" }, { "id": "vortex-physics" }],
+        "related": [{ "id": "bf-theory" }, { "id": "anyon" }, { "id": "spinor" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "anyon": {
+      "id": "anyon",
+      "term": "Anyon",
+      "aliases": ["anyonic quasiparticle", "fractional statistics particle"],
+      "domain": "physics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "fractional statistics",
+        "2D",
+        "braid group",
+        "topological order",
+        "quasiparticle",
+        "quantum Hall"
+      ],
+      "summary": "A 2D quasiparticle with fractional exchange statistics interpolating between bosons and fermions, possible only in two spatial dimensions.",
+      "definition": "A **2D quasiparticle with fractional statistics** interpolating between bosons (full exchange phase $1$) and fermions (full exchange phase $-1$). Exchange phase is $e^{i\\theta}$ for arbitrary $\\theta$ — possible only in 2D, where braids are richer than permutations.\n\nAnyons arise in:\n- Fractional quantum Hall systems.\n- Topological insulators (some).\n- Lattice models with topological order.\n\nThe connection to multi-sheeted tilings: the **sheet-transition holonomy** has a fundamentally similar structure to anyonic braiding. Gliders moving around vortices in a CA realize a discrete classical analogue of anyonic statistics.",
+      "examples": [
+        {
+          "title": "Laughlin Quasiparticles in the Fractional Quantum Hall Effect",
+          "body": "At filling fraction ν = 1/3, quasiparticle excitations carry charge e/3 and acquire a phase of exp(iπ/3) under exchange — neither bosonic nor fermionic."
+        },
+        {
+          "title": "Glider Braiding in Multi-Sheeted CA",
+          "body": "Two gliders in a multi-sheeted pentagonal CA that exchange positions (one going around the other) may acquire a sheet-label shift analogous to an anyonic exchange phase."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\psi \\to e^{i\\theta} \\psi \\quad \\text{under particle exchange}",
+          "description": "The anyonic exchange phase, where θ=0 gives bosons, θ=π gives fermions, and intermediate values give anyons.",
+          "variables": {
+            "θ": "statistical angle; θ∈(0,π) for abelian anyons",
+            "ψ": "many-body wavefunction"
+          }
+        }
+      ],
+      "references": [
+        "Wilczek, F. (1982). Quantum Mechanics of Fractional-Spin Particles. Physical Review Letters, 49(14), 957–959.",
+        "Leinaas, J. M. & Myrheim, J. (1977). On the theory of identical particles. Il Nuovo Cimento B, 37(1), 1–23."
+      ],
+      "relations": {
+        "requires": [{ "id": "braid-statistics" }],
+        "related": [
+          { "id": "topological-quantum-computation" },
+          { "id": "aharonov-bohm-effect" },
+          { "id": "topological-insulator" },
+          { "id": "vortex-physics" }
+        ],
+        "enabledBy": [{ "id": "braid-statistics" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "braid-statistics": {
+      "id": "braid-statistics",
+      "term": "Braid Statistics",
+      "aliases": ["anyonic statistics", "braid group statistics", "plektonic statistics"],
+      "domain": "physics",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "braid group",
+        "statistics",
+        "2D",
+        "non-abelian",
+        "anyon",
+        "topological computation"
+      ],
+      "summary": "Exchange statistics of 2D particles governed by representations of the braid group, generalizing bosonic and fermionic statistics.",
+      "definition": "**Exchange statistics of 2D particles given by representations of the braid group** $B_n$. For abelian anyons, the representation is 1-dimensional ($e^{i\\theta}$). For **non-abelian anyons** (e.g., Majorana, Fibonacci anyons), the representation is higher-dimensional, enabling topological quantum computation.\n\nIn 3D, particle exchange is described by the symmetric group $S_n$ (only bosons and fermions). In 2D, the fundamental group of the configuration space is the braid group $B_n$, which is richer and allows fractional and non-abelian statistics.",
+      "examples": [
+        {
+          "title": "Abelian Anyon Braiding",
+          "body": "For ν=1/3 Laughlin quasiparticles, braiding one particle around another multiplies the wavefunction by exp(2πi/3). This is a 1-dimensional (abelian) representation of the braid group."
+        },
+        {
+          "title": "Non-Abelian Fibonacci Anyons",
+          "body": "Fibonacci anyons have a 2-dimensional fusion space for three particles. Braiding operations act as non-commuting unitary matrices on this space, enabling universal quantum computation."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\sigma_i \\sigma_j = \\sigma_j \\sigma_i \\quad |i-j| \\geq 2",
+          "description": "Braid group relation: generators σ_i (swapping particles i and i+1) commute when far apart.",
+          "variables": {
+            "σ_i": "braid generator swapping the i-th and (i+1)-th strands"
+          }
+        },
+        {
+          "expression": "\\sigma_i \\sigma_{i+1} \\sigma_i = \\sigma_{i+1} \\sigma_i \\sigma_{i+1}",
+          "description": "Yang–Baxter (braid) relation: the defining relation of the braid group B_n.",
+          "variables": {
+            "σ_i": "braid generator"
+          }
+        }
+      ],
+      "references": [
+        "Birman, J. S. (1974). Braids, Links, and Mapping Class Groups. Princeton University Press.",
+        "Nayak, C. et al. (2008). Non-Abelian anyons and topological quantum computation. Reviews of Modern Physics, 80(3), 1083."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "anyon" },
+          { "id": "topological-quantum-computation" },
+          { "id": "vortex-physics" }
+        ],
+        "enabledBy": [{ "id": "anyon" }, { "id": "topological-quantum-computation" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "topological-quantum-computation": {
+      "id": "topological-quantum-computation",
+      "term": "Topological Quantum Computation",
+      "aliases": ["TQC", "anyonic quantum computation", "fault-tolerant topological computing"],
+      "domain": "physics",
+      "crossDomains": ["computation", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "quantum computing",
+        "non-abelian anyons",
+        "braiding",
+        "fault tolerance",
+        "topological order",
+        "degenerate states"
+      ],
+      "summary": "A fault-tolerant quantum computing scheme using non-abelian anyon braiding as quantum gates, with information encoded in topologically protected degenerate states.",
+      "definition": "A scheme for **fault-tolerant quantum computing** using non-abelian anyon braiding as quantum gates. Information is encoded in topologically degenerate states, immune to local perturbations.\n\nThe connection to multi-sheeted tilings: the **sheet-transition holonomy** has a fundamentally similar structure to anyonic braiding. Gliders moving around vortices in a CA realize a discrete classical analogue of anyonic statistics.\n\nThe encoding of quantum information in **topologically protected degenerate states**, manipulated by **braiding** non-abelian anyons. Vortices and their holonomies in multi-sheeted tilings are direct combinatorial analogues of the topological structures exploited in this scheme.",
+      "examples": [
+        {
+          "title": "Fibonacci Anyon Quantum Gates",
+          "body": "Three Fibonacci anyons span a 2-dimensional Hilbert space. Braiding two of them implements a unitary gate on this space. A sequence of braidings can approximate any single-qubit gate to arbitrary precision."
+        },
+        {
+          "title": "Vortex Holonomy as Topological Gate",
+          "body": "In a multi-sheeted pentagonal tiling, moving a glider around a vortex implements a sheet permutation. This is a discrete classical analogue of a topological quantum gate."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Kitaev, A. (2003). Fault-tolerant quantum computation by anyons. Annals of Physics, 303(1), 2–30.",
+        "Nayak, C. et al. (2008). Non-Abelian anyons and topological quantum computation. Reviews of Modern Physics, 80(3), 1083."
+      ],
+      "relations": {
+        "requires": [{ "id": "braid-statistics" }, { "id": "anyon" }],
+        "related": [
+          { "id": "topological-insulator" },
+          { "id": "vortex-physics" },
+          { "id": "spin-network" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "topological-insulator": {
+      "id": "topological-insulator",
+      "term": "Topological Insulator",
+      "aliases": ["TI", "topological band insulator"],
+      "domain": "physics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "band theory",
+        "Chern number",
+        "edge states",
+        "bulk-boundary correspondence",
+        "topological order",
+        "Z2 invariant"
+      ],
+      "summary": "A material with a bulk insulating gap but topologically protected gapless edge states, characterized by non-trivial topological invariants of the band structure.",
+      "definition": "A material with a **bulk insulating gap** but **topologically protected gapless edge states**. Edge states are immune to backscattering and impurities.\n\nThe mathematical structure: vector bundles over the Brillouin zone with non-trivial topological invariants (Chern numbers, $\\mathbb{Z}_2$ indices). Closely connected to discrete sheet topology in the multi-sheeted tiling framework.",
+      "examples": [
+        {
+          "title": "2D Quantum Spin Hall Insulator",
+          "body": "HgTe/CdTe quantum wells realize a 2D topological insulator with a Z2 topological invariant. The bulk is gapped, but helical edge states (spin-up moving right, spin-down moving left) are topologically protected."
+        },
+        {
+          "title": "3D Topological Insulator Bi2Se3",
+          "body": "Bismuth selenide has a bulk band gap but a single Dirac cone surface state protected by time-reversal symmetry. The surface state cannot be gapped without breaking time-reversal or closing the bulk gap."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "C = \\frac{1}{2\\pi} \\int_{BZ} F \\, d^2k",
+          "description": "The Chern number C, a topological invariant of a 2D band, computed as the integral of the Berry curvature F over the Brillouin zone.",
+          "variables": {
+            "C": "Chern number (integer topological invariant)",
+            "F": "Berry curvature of the occupied band",
+            "BZ": "Brillouin zone"
+          }
+        }
+      ],
+      "references": [
+        "Kane, C. L. & Mele, E. J. (2005). Z2 Topological Order and the Quantum Spin Hall Effect. Physical Review Letters, 95(14), 146802.",
+        "Hasan, M. Z. & Kane, C. L. (2010). Colloquium: Topological insulators. Reviews of Modern Physics, 82(4), 3045."
+      ],
+      "relations": {
+        "requires": [{ "id": "bloch-theorem" }],
+        "related": [
+          { "id": "anyon" },
+          { "id": "topological-quantum-computation" },
+          { "id": "spin-network" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spin-network": {
+      "id": "spin-network",
+      "term": "Spin Network",
+      "aliases": ["spin network state", "LQG spin network"],
+      "domain": "physics",
+      "crossDomains": ["algebra", "topology", "combinatorics"],
+      "difficulty": "advanced",
+      "tags": [
+        "loop quantum gravity",
+        "quantum geometry",
+        "graph",
+        "representation theory",
+        "SU(2)",
+        "intertwiner"
+      ],
+      "summary": "A graph with edge labels in representations of a Lie group (typically SU(2)), serving as the quantum state-vectors of loop quantum gravity.",
+      "definition": "A graph with **edge labels** in representations of a Lie group (typically $SU(2)$), serving as the **state-vectors of loop quantum gravity (LQG)**. Vertices carry intertwiners; the labeled graph encodes a quantum geometry.\n\nThe pentagon's multi-sheeted adjacency graph with $\\mathbb{Z}_{10}$-valued sheet transitions is a **discrete combinatorial cousin** of spin networks: a graph with group-element edge labels carrying geometric information.",
+      "examples": [
+        {
+          "title": "Simple Spin Network",
+          "body": "A graph with three edges meeting at a vertex, each edge labeled by a spin-j representation of SU(2). The vertex carries an intertwiner — an SU(2)-invariant tensor in the tensor product of the three representations."
+        },
+        {
+          "title": "Multi-Sheeted Tiling as Combinatorial Spin Network",
+          "body": "The adjacency graph of a multi-sheeted pentagonal tiling, with Z10-valued sheet-transition labels on edges, is a discrete combinatorial cousin of a spin network. Both are graphs with group-element edge labels encoding geometric information."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Penrose, R. (1971). Angular momentum: an approach to combinatorial space-time. In T. Bastin (Ed.), Quantum Theory and Beyond. Cambridge University Press.",
+        "Rovelli, C. & Smolin, L. (1995). Spin networks and quantum gravity. Physical Review D, 52(10), 5743."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "loop-quantum-gravity" },
+          { "id": "bf-theory" },
+          { "id": "gauge-theory" },
+          { "id": "topological-insulator" }
+        ],
+        "enabledBy": [{ "id": "loop-quantum-gravity" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "loop-quantum-gravity": {
+      "id": "loop-quantum-gravity",
+      "term": "Loop Quantum Gravity",
+      "aliases": ["LQG", "loop gravity"],
+      "domain": "physics",
+      "crossDomains": ["topology", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "quantum gravity",
+        "spin network",
+        "spin foam",
+        "discrete geometry",
+        "holonomy",
+        "area spectrum"
+      ],
+      "summary": "A quantum gravity approach where states are spin network states, dynamics involves spin foam amplitudes, and geometric quantities have discrete spectra.",
+      "definition": "A quantum gravity approach where states are **spin network states** and dynamics involves spin foam amplitudes. Geometric quantities (areas, volumes) have discrete spectra.\n\nLQG provides much of the conceptual framework for understanding **discrete connections** and **holonomy** in the multi-sheeted tiling project.",
+      "examples": [
+        {
+          "title": "Discrete Area Spectrum",
+          "body": "In LQG, the area operator has a discrete spectrum: A = 8πγℓ_P² Σ √(j_i(j_i+1)), where the sum is over edges of a spin network puncturing the surface and j_i are the spin labels."
+        },
+        {
+          "title": "Spin Foam Amplitude",
+          "body": "The dynamics of LQG is encoded in spin foam amplitudes — sums over 2-complexes with face and edge labels, generalizing the path integral to discrete quantum geometry."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "A = 8\\pi\\gamma\\ell_P^2 \\sum_i \\sqrt{j_i(j_i+1)}",
+          "description": "Discrete area spectrum in LQG: area of a surface punctured by spin network edges with spin labels j_i.",
+          "variables": {
+            "γ": "Barbero–Immirzi parameter",
+            "ℓ_P": "Planck length",
+            "j_i": "spin label on the i-th puncturing edge"
+          }
+        }
+      ],
+      "references": [
+        "Rovelli, C. (2004). Quantum Gravity. Cambridge University Press.",
+        "Thiemann, T. (2007). Modern Canonical Quantum General Relativity. Cambridge University Press."
+      ],
+      "relations": {
+        "requires": [{ "id": "spin-network" }, { "id": "bf-theory" }],
+        "related": [
+          { "id": "gauge-theory" },
+          { "id": "renormalization-group" },
+          { "id": "asymptotic-safety" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "vortex-physics": {
+      "id": "vortex-physics",
+      "term": "Vortex",
+      "aliases": ["topological vortex", "vortex defect", "vortex line"],
+      "domain": "physics",
+      "crossDomains": ["topology"],
+      "difficulty": "intermediate",
+      "tags": [
+        "topological defect",
+        "winding number",
+        "monodromy",
+        "superfluid",
+        "superconductor",
+        "holonomy"
+      ],
+      "summary": "A topological defect characterized by a winding number, around which a field acquires non-trivial monodromy.",
+      "definition": "A **topological defect with winding number**. Classical examples:\n\n- Vortices in superfluids: phase winds $2\\pi$ around a vortex line.\n- Magnetic vortices in superconductors.\n- Cosmic strings in some cosmological models.\n\nIn the combinatorial framework: a vortex is a vertex around which the sheet-transition field has non-trivial monodromy. Same mathematical structure, transposed to discrete geometry.",
+      "examples": [
+        {
+          "title": "Superfluid Vortex",
+          "body": "In a superfluid, the order parameter phase θ winds by 2π around a vortex line. The circulation is quantized: ∮ v·dl = nh/m, where n is the winding number."
+        },
+        {
+          "title": "Combinatorial Vortex in Multi-Sheeted Tiling",
+          "body": "A vertex in a multi-sheeted pentagonal tiling around which the product of sheet-transition labels is non-trivial (not the identity in G) is a combinatorial vortex. The non-trivial holonomy is the discrete analogue of the superfluid phase winding."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\oint_C \\nabla\\theta \\cdot d\\ell = 2\\pi n",
+          "description": "Quantization of phase winding around a vortex: the phase θ winds by 2πn for winding number n.",
+          "variables": {
+            "θ": "order parameter phase",
+            "n": "winding number (integer)",
+            "C": "closed loop encircling the vortex"
+          }
+        }
+      ],
+      "references": [
+        "Kosterlitz, J. M. & Thouless, D. J. (1973). Ordering, metastability and phase transitions in two-dimensional systems. Journal of Physics C, 6(7), 1181.",
+        "Abrikosov, A. A. (1957). On the Magnetic Properties of Superconductors of the Second Group. Soviet Physics JETP, 5, 1174."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "aharonov-bohm-effect" },
+          { "id": "spinor" },
+          { "id": "anyon" },
+          { "id": "geometric-frustration" },
+          { "id": "mermin-wagner-theorem" }
+        ],
+        "enabledBy": [
+          { "id": "aharonov-bohm-effect" },
+          { "id": "anyon" },
+          { "id": "topological-quantum-computation" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spinor": {
+      "id": "spinor",
+      "term": "Spinor",
+      "aliases": ["spinor field", "spin-1/2 representation", "Weyl spinor", "Dirac spinor"],
+      "domain": "physics",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "intermediate",
+      "tags": [
+        "spin",
+        "fermion",
+        "double cover",
+        "SO(n)",
+        "Spin(n)",
+        "SU(2)",
+        "holonomy",
+        "4π rotation"
+      ],
+      "summary": "An object requiring a 4π rotation to return to identity, realizing a representation of Spin(n) that does not descend to SO(n).",
+      "definition": "An object requiring a **$4\\pi$ rotation to return to identity** under continuous rotations — i.e., a representation of the universal cover $\\text{Spin}(n)$ of $SO(n)$, not of $SO(n)$ itself.\n\nPhysical realization: electrons, quarks, neutrinos — all fermions.\n\nMathematical realization: vectors in a $\\text{Spin}(n)$-representation that is not a $SO(n)$-representation (e.g., the fundamental representation of $SU(2)$).\n\nIn the multi-sheeted tiling setting: the **spinor-like holonomy** in pentagonal multi-sheeted covers is a discrete combinatorial analogue. A single loop around a vortex returns $-1$ in the right sense; two loops restore identity.",
+      "examples": [
+        {
+          "title": "Electron Spin",
+          "body": "An electron's spin state is a spinor: rotating the physical apparatus by 2π multiplies the wavefunction by -1. Only a 4π rotation returns the wavefunction to its original value. This is the defining property of a spin-1/2 particle."
+        },
+        {
+          "title": "Spinor-Like Holonomy in Pentagonal Covers",
+          "body": "In a 10-sheeted pentagonal cover, a single loop around a vortex may shift the sheet by 5 (half of 10), analogous to the -1 phase of a spinor under 2π rotation. Two loops restore the original sheet, mirroring the 4π periodicity of spinors."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "R(2\\pi) \\psi = -\\psi, \\quad R(4\\pi) \\psi = +\\psi",
+          "description": "The defining property of a spinor: a 2π rotation gives a sign change, while a 4π rotation restores the original state.",
+          "variables": {
+            "R(θ)": "rotation by angle θ",
+            "ψ": "spinor wavefunction"
+          }
+        }
+      ],
+      "references": [
+        "Cartan, É. (1938). Leçons sur la théorie des spineurs. Hermann, Paris.",
+        "Penrose, R. & Rindler, W. (1984). Spinors and Space-Time, Vol. 1. Cambridge University Press."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "vortex-physics" },
+          { "id": "aharonov-bohm-effect" },
+          { "id": "braid-statistics" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "quasicrystal": {
+      "id": "quasicrystal",
+      "term": "Quasicrystal",
+      "aliases": ["quasiperiodic crystal", "aperiodic crystal"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "aperiodic order",
+        "diffraction",
+        "5-fold symmetry",
+        "cut-and-project",
+        "Penrose",
+        "Shechtman"
+      ],
+      "summary": "An aperiodic structure with long-range order and forbidden crystallographic symmetries, such as 5-, 8-, 10-, or 12-fold rotational symmetry.",
+      "definition": "An **aperiodic structure** with long-range order and forbidden symmetries — typically 5-, 8-, 10-, or 12-fold rotational symmetry. Discovered by **Dan Shechtman (1984)** in rapidly cooled AlMn alloys — initially controversial, eventually winning the 2011 Nobel Prize in Chemistry.\n\nQuasicrystals show **dense sets of sharp diffraction peaks** indexed by 5- or 6-vector labels (one per dimension of the cut-and-project ambient lattice). The pentagonal multi-sheeted tilings would show diffraction patterns combining Penrose-like quasiperiodic order with sheet-structure modulations.",
+      "examples": [
+        {
+          "title": "Shechtman's Al86Mn14 Quasicrystal",
+          "body": "The original quasicrystal: rapidly cooled aluminum-manganese alloy showing sharp electron diffraction peaks with icosahedral symmetry — a symmetry impossible for any periodic crystal."
+        },
+        {
+          "title": "Penrose Tiling as 2D Quasicrystal",
+          "body": "The Penrose tiling is a 2D quasicrystal: aperiodic, with 5-fold rotational symmetry, and a diffraction pattern with sharp peaks indexed by 5 basis vectors."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Shechtman, D. et al. (1984). Metallic Phase with Long-Range Orientational Order and No Translational Symmetry. Physical Review Letters, 53(20), 1951.",
+        "Levine, D. & Steinhardt, P. J. (1984). Quasicrystals: A New Class of Ordered Structures. Physical Review Letters, 53(26), 2477."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "diffraction-pattern" },
+          { "id": "penrose-tiling" },
+          { "id": "bloch-theorem" }
+        ],
+        "enabledBy": [{ "id": "diffraction-pattern" }],
+        "synonyms": [
+          { "id": "shechtman-quasicrystal", "label": "Shechtman Quasicrystal (original AlMn)" }
+        ]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "shechtman-quasicrystal": {
+      "id": "shechtman-quasicrystal",
+      "term": "Shechtman Quasicrystal",
+      "aliases": ["Al86Mn14 quasicrystal", "icosahedral quasicrystal", "AlMn quasicrystal"],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "quasicrystal",
+        "icosahedral symmetry",
+        "diffraction",
+        "Nobel Prize",
+        "aperiodic order"
+      ],
+      "summary": "The original Al₈₆Mn₁₄ icosahedral quasicrystal discovered by Shechtman in 1984, showing sharp Bragg-like diffraction peaks with icosahedral symmetry.",
+      "definition": "The original Al$_{86}$Mn$_{14}$ icosahedral quasicrystal discovered by Dan Shechtman in 1984. Showed sharp Bragg-like diffraction peaks with **icosahedral symmetry** — impossible for any periodic crystal. This discovery was initially controversial but eventually won the 2011 Nobel Prize in Chemistry.",
+      "examples": [
+        {
+          "title": "Icosahedral Diffraction Pattern",
+          "body": "Electron diffraction of Al86Mn14 shows a pattern with 5-fold, 3-fold, and 2-fold axes consistent with icosahedral symmetry (point group m3̄5̄). No periodic crystal can have icosahedral symmetry."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Shechtman, D. et al. (1984). Metallic Phase with Long-Range Orientational Order and No Translational Symmetry. Physical Review Letters, 53(20), 1951."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "quasicrystal" },
+          { "id": "diffraction-pattern" },
+          { "id": "penrose-tiling" }
+        ],
+        "enabledBy": [],
+        "synonyms": [{ "id": "quasicrystal" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "diffraction-pattern": {
+      "id": "diffraction-pattern",
+      "term": "Diffraction Pattern",
+      "aliases": ["X-ray diffraction", "electron diffraction", "Bragg diffraction"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "foundational",
+      "tags": [
+        "Fourier transform",
+        "long-range order",
+        "Bragg peaks",
+        "quasicrystal",
+        "crystallography"
+      ],
+      "summary": "The Fourier transform of a material's density, used as the standard diagnostic for crystalline or quasicrystalline order.",
+      "definition": "The **Fourier transform of density** — the standard diagnostic for crystalline / quasicrystalline order. Sharp peaks indicate long-range order; their symmetry reveals underlying structure.\n\nQuasicrystals show **dense sets of sharp diffraction peaks** indexed by 5- or 6-vector labels (one per dimension of the cut-and-project ambient lattice). The pentagonal multi-sheeted tilings would show diffraction patterns combining Penrose-like quasiperiodic order with sheet-structure modulations.",
+      "examples": [
+        {
+          "title": "Bragg Peaks of a Crystal",
+          "body": "A periodic crystal produces sharp diffraction peaks at reciprocal lattice vectors G = ha* + kb* + lc*. The pattern has the same point-group symmetry as the crystal."
+        },
+        {
+          "title": "Quasicrystal Diffraction",
+          "body": "A Penrose tiling's diffraction pattern has sharp peaks indexed by 5 basis vectors e_k = (cos(2πk/5), sin(2πk/5)), k=0,...,4. The peaks are dense in reciprocal space but still sharp, indicating long-range quasiperiodic order."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\hat{\\rho}(\\mathbf{k}) = \\int \\rho(\\mathbf{x})\\, e^{-i\\mathbf{k}\\cdot\\mathbf{x}}\\, d^n x",
+          "description": "The diffraction pattern is the Fourier transform of the density ρ(x). Sharp peaks in |ρ̂(k)|² indicate long-range order.",
+          "variables": {
+            "ρ(x)": "atomic density at position x",
+            "ρ̂(k)": "Fourier transform (structure factor)",
+            "k": "scattering wavevector"
+          }
+        }
+      ],
+      "references": [
+        "Bragg, W. L. (1913). The Diffraction of Short Electromagnetic Waves by a Crystal. Proceedings of the Cambridge Philosophical Society, 17, 43–57."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "quasicrystal" },
+          { "id": "penrose-tiling" },
+          { "id": "bloch-theorem" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "bloch-theorem": {
+      "id": "bloch-theorem",
+      "term": "Bloch Theorem",
+      "aliases": ["Bloch's theorem", "Bloch wave", "Bloch state"],
+      "domain": "physics",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "band theory",
+        "periodic potential",
+        "crystal",
+        "eigenfunction",
+        "semiconductor",
+        "Brillouin zone"
+      ],
+      "summary": "In periodic potentials, single-particle eigenfunctions take the form of a plane wave times a periodic function, forming the basis of band theory.",
+      "definition": "In periodic potentials, eigenfunctions of the single-particle Hamiltonian have the form\n\n$$\\psi_k(x) = e^{i k \\cdot x} u_k(x)$$\n\nwith $u_k$ periodic. Basis of **band theory** and the standard semiconductor picture.\n\nQuasicrystals and multi-sheeted tilings, lacking periodicity, **do not satisfy Bloch's theorem** — their spectrum is \"exotic\" (Cantor-like in some examples). The KPM density of states is the appropriate diagnostic.",
+      "examples": [
+        {
+          "title": "Electron in a Crystal",
+          "body": "An electron in a periodic crystal potential V(x+a) = V(x) has eigenstates ψ_k(x) = e^{ikx} u_k(x) where u_k is periodic with the lattice period. The crystal momentum k is a good quantum number."
+        },
+        {
+          "title": "Failure for Quasicrystals",
+          "body": "A Penrose tiling has no translational symmetry, so Bloch's theorem does not apply. The electronic spectrum is neither a set of bands nor purely discrete — it has a Cantor-set-like structure with zero-measure gaps."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\psi_k(x) = e^{i k \\cdot x} u_k(x), \\quad u_k(x+a) = u_k(x)",
+          "description": "Bloch's theorem: eigenstates in a periodic potential are plane waves modulated by a lattice-periodic function.",
+          "variables": {
+            "k": "crystal momentum (Bloch wavevector)",
+            "u_k(x)": "lattice-periodic part of the Bloch state",
+            "a": "lattice translation vector"
+          }
+        }
+      ],
+      "references": [
+        "Bloch, F. (1929). Über die Quantenmechanik der Elektronen in Kristallgittern. Zeitschrift für Physik, 52(7–8), 555–600."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "quasicrystal" },
+          { "id": "topological-insulator" },
+          { "id": "diffraction-pattern" }
+        ],
+        "enabledBy": [{ "id": "topological-insulator" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "mermin-wagner-theorem": {
+      "id": "mermin-wagner-theorem",
+      "term": "Mermin–Wagner Theorem",
+      "aliases": ["Mermin-Wagner theorem", "Coleman theorem", "Hohenberg-Mermin-Wagner theorem"],
+      "domain": "physics",
+      "crossDomains": [],
+      "difficulty": "intermediate",
+      "tags": [
+        "2D",
+        "spontaneous symmetry breaking",
+        "continuous symmetry",
+        "thermal fluctuations",
+        "quasi-long-range order",
+        "BKT"
+      ],
+      "summary": "In 2D systems at finite temperature, continuous symmetries cannot be spontaneously broken, permitting only quasi-long-range order and topological order.",
+      "definition": "In 2D systems at temperature $T > 0$, **continuous symmetries cannot be spontaneously broken**. This forbids long-range crystalline order in 2D classical models with short-range interactions.\n\nBut it permits **quasi-long-range order** (algebraic decay of correlations) and **topological order** — exactly the regime where vortex defects, BKT transitions, and quasicrystals live.",
+      "examples": [
+        {
+          "title": "2D XY Model",
+          "body": "The 2D XY model has a continuous U(1) symmetry. By Mermin–Wagner, there is no long-range magnetic order at T>0. Instead, there is a BKT transition between a quasi-ordered phase (algebraic correlations, bound vortex pairs) and a disordered phase (free vortices)."
+        },
+        {
+          "title": "2D Crystal",
+          "body": "A 2D crystal cannot have true long-range translational order at T>0 (Mermin–Wagner). Instead, it has quasi-long-range order (KTHNY theory) with algebraically decaying positional correlations."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Mermin, N. D. & Wagner, H. (1966). Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models. Physical Review Letters, 17(22), 1133.",
+        "Coleman, S. (1973). There are no Goldstone bosons in two dimensions. Communications in Mathematical Physics, 31(4), 259–264."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "vortex-physics" },
+          { "id": "geometric-frustration" },
+          { "id": "quasicrystal" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "geometric-frustration": {
+      "id": "geometric-frustration",
+      "term": "Frustration (Geometric)",
+      "aliases": ["geometric frustration", "spin frustration", "lattice frustration"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "frustration",
+        "antiferromagnet",
+        "pentagon",
+        "pyrochlore",
+        "spin liquid",
+        "angular deficit"
+      ],
+      "summary": "The inability to satisfy all local constraints simultaneously, arising from geometric incompatibility of local ordering preferences.",
+      "definition": "The **inability to satisfy all local constraints simultaneously**. Classic examples:\n\n- Antiferromagnetic Ising spins on a triangle: no spin assignment satisfies all 3 antiferromagnetic bonds.\n- Pentagonal tilings of $\\mathbb{R}^2$: angular deficit makes flat tiling impossible — pentagons cannot meet edge-to-edge around a vertex without leaving a $36°$ gap.\n- **Pyrochlore lattice** spins: corner-sharing tetrahedra geometrically frustrate antiferromagnetic ordering.\n\nFrustration in the multi-sheeted framework is **resolved by sheet transitions**: the angular deficit that would frustrate a flat tiling is absorbed into holonomy around vortex defects. The multi-sheeted cover is the **frustration-free** extension of the frustrated planar tiling.",
+      "examples": [
+        {
+          "title": "Antiferromagnetic Triangle",
+          "body": "Three Ising spins on a triangle with antiferromagnetic interactions: any assignment of ±1 leaves at least one bond unsatisfied. The ground state is degenerate and the system is frustrated."
+        },
+        {
+          "title": "Pentagonal Angular Deficit",
+          "body": "Five regular pentagons meeting at a vertex leave a 36° gap (5 × 108° = 540° < 360°). This angular deficit is the geometric frustration of pentagonal tilings, resolved in multi-sheeted covers by distributing the deficit as holonomy."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Ramirez, A. P. (1994). Strongly Geometrically Frustrated Magnets. Annual Review of Materials Science, 24(1), 453–480."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "vortex-physics" },
+          { "id": "pyrochlore-lattice" },
+          { "id": "mermin-wagner-theorem" },
+          { "id": "penrose-tiling" }
+        ],
+        "enabledBy": [{ "id": "pyrochlore-lattice" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "pyrochlore-lattice": {
+      "id": "pyrochlore-lattice",
+      "term": "Pyrochlore Lattice",
+      "aliases": ["pyrochlore structure", "corner-sharing tetrahedra lattice"],
+      "domain": "physics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "frustration",
+        "spin liquid",
+        "spin ice",
+        "magnetic monopole",
+        "tetrahedra",
+        "emergent gauge theory"
+      ],
+      "summary": "A lattice of corner-sharing tetrahedra that geometrically frustrates antiferromagnetic interactions, hosting spin liquids, spin ice, and emergent magnetic monopoles.",
+      "definition": "A lattice of **corner-sharing tetrahedra**, realized in real materials of the form A$_2$B$_2$O$_7$ (pyrochlore oxides). The geometry forces **geometric frustration** of antiferromagnetic interactions: no global spin configuration satisfies all local tetrahedral constraints.\n\nPyrochlore systems host **spin liquids**, **spin ice**, and emergent **magnetic monopole** excitations — phenomena that parallel the project's themes of topological defects and emergent gauge structure on frustrated geometries.",
+      "examples": [
+        {
+          "title": "Spin Ice Ho2Ti2O7",
+          "body": "In holmium titanate, the crystal field forces spins to point along local <111> axes (into or out of each tetrahedron). The ice rules (2-in, 2-out per tetrahedron) are satisfied by a macroscopically degenerate ground state. Excitations are magnetic monopoles connected by Dirac strings."
+        },
+        {
+          "title": "Emergent Gauge Theory",
+          "body": "The spin ice constraint (2-in, 2-out) is equivalent to a divergence-free condition ∇·B = 0, giving rise to an emergent U(1) gauge theory with photon-like excitations in the spin liquid phase."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Castelnovo, C., Moessner, R. & Sondhi, S. L. (2008). Magnetic monopoles in spin ice. Nature, 451(7174), 42–45.",
+        "Bramwell, S. T. & Gingras, M. J. P. (2001). Spin Ice State in Frustrated Magnetic Pyrochlore Materials. Science, 294(5546), 1495–1501."
+      ],
+      "relations": {
+        "requires": [{ "id": "geometric-frustration" }],
+        "related": [
+          { "id": "geometric-frustration" },
+          { "id": "vortex-physics" },
+          { "id": "gauge-theory" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "renormalization-group": {
+      "id": "renormalization-group",
+      "term": "Renormalization Group",
+      "aliases": ["RG", "RG flow", "renormalization group flow", "Wilsonian RG"],
+      "domain": "physics",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "scale invariance",
+        "fixed point",
+        "coarse-graining",
+        "critical exponents",
+        "dimensional flow",
+        "universality"
+      ],
+      "summary": "The mathematical framework for scale-dependent physics, describing how effective theories change under coarse-graining with fixed points corresponding to scale-invariant theories.",
+      "definition": "The **mathematical framework for scale-dependent physics**: how effective theories change under coarse-graining. The RG flow on theory space has fixed points (scale-invariant theories), with critical exponents determined by the linearization at each fixed point.\n\nIn the multi-sheeted tiling project: **dimensional flow** is a discrete combinatorial analogue of RG flow. The effective dimension $d_{\\text{eff}}(r)$ varies with the scale $r$ — UV (small $r$) and IR (large $r$) regimes have different geometry, mirroring how couplings flow in continuum RG.",
+      "examples": [
+        {
+          "title": "Wilson–Fisher Fixed Point",
+          "body": "The 3D Ising model near its critical temperature is described by the Wilson–Fisher fixed point of the RG flow for a scalar field theory. The critical exponents (ν, η, β, ...) are universal properties of this fixed point."
+        },
+        {
+          "title": "Dimensional Flow in Multi-Sheeted Tilings",
+          "body": "Near a vortex in a multi-sheeted pentagonal tiling, the effective spectral dimension d_eff(r) varies with scale r: it approaches ~2 at short distances (UV) and ~2 at large distances (IR), with a crossover region. This mirrors the dimensional flow seen in CDT and asymptotic safety."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\mu \\frac{dg_i}{d\\mu} = \\beta_i(g)",
+          "description": "The RG beta function: describes how coupling constants g_i flow with the energy scale μ.",
+          "variables": {
+            "g_i": "coupling constants of the effective theory",
+            "μ": "renormalization scale (energy)",
+            "β_i(g)": "beta function for coupling g_i"
+          }
+        }
+      ],
+      "references": [
+        "Wilson, K. G. & Kogut, J. (1974). The renormalization group and the ε expansion. Physics Reports, 12(2), 75–199.",
+        "Peskin, M. E. & Schroeder, D. V. (1995). An Introduction to Quantum Field Theory. Addison-Wesley."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "asymptotic-safety" },
+          { "id": "conformal-field-theory" },
+          { "id": "loop-quantum-gravity" }
+        ],
+        "enabledBy": [{ "id": "asymptotic-safety" }, { "id": "conformal-field-theory" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "asymptotic-safety": {
+      "id": "asymptotic-safety",
+      "term": "Asymptotic Safety",
+      "aliases": ["asymptotic safety scenario", "non-perturbative renormalizability of gravity"],
+      "domain": "physics",
+      "crossDomains": [],
+      "difficulty": "advanced",
+      "tags": [
+        "quantum gravity",
+        "UV fixed point",
+        "spectral dimension",
+        "dimensional flow",
+        "non-Gaussian fixed point",
+        "CDT"
+      ],
+      "summary": "A quantum gravity scenario where UV behavior is controlled by a non-Gaussian RG fixed point, predicting spectral dimension flowing from 4 in the IR to 2 in the UV.",
+      "definition": "A quantum gravity scenario in which the **UV behavior of gravity is controlled by a non-Gaussian fixed point** of the RG flow. At this fixed point, the theory becomes scale-invariant and finitely many couplings suffice to specify it.\n\nA signature prediction: **spectral dimension $d_{\\text{spec}} \\to 2$ in the UV**, with a smooth flow to $d_{\\text{spec}} = 4$ in the IR. This is structurally identical to the dimensional flow seen in CDT — and, plausibly, in multi-sheeted tilings near vortices.\n\nThe convergence of multiple quantum-gravity approaches (CDT, asymptotic safety, LQG, multi-sheeted combinatorics) on a UV spectral dimension of $\\sim 2$ is one of the most intriguing recurring patterns in modern discrete-geometry physics.",
+      "examples": [
+        {
+          "title": "UV Spectral Dimension = 2",
+          "body": "Functional renormalization group calculations for gravity find a non-Gaussian UV fixed point (the Reuter fixed point) at which the spectral dimension of spacetime flows to d_spec ≈ 2, matching CDT simulations and LQG calculations."
+        },
+        {
+          "title": "Dimensional Flow in Multi-Sheeted Tilings",
+          "body": "Near vortices in multi-sheeted pentagonal tilings, the effective spectral dimension shows a UV-to-IR flow analogous to the asymptotic safety prediction, providing a combinatorial toy model for this quantum gravity phenomenon."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "d_{\\text{spec}}(T) = -2 \\frac{d \\ln P(T)}{d \\ln T}",
+          "description": "Spectral dimension computed from the return probability P(T) of a random walk after diffusion time T.",
+          "variables": {
+            "d_spec(T)": "spectral dimension at diffusion time T",
+            "P(T)": "return probability of a random walk after time T",
+            "T": "diffusion time (probes geometry at scale √T)"
+          }
+        }
+      ],
+      "references": [
+        "Reuter, M. (1998). Nonperturbative evolution equation for quantum gravity. Physical Review D, 57(2), 971.",
+        "Reuter, M. & Saueressig, F. (2012). Quantum Einstein Gravity. New Journal of Physics, 14(5), 055022."
+      ],
+      "relations": {
+        "requires": [{ "id": "renormalization-group" }],
+        "related": [
+          { "id": "loop-quantum-gravity" },
+          { "id": "renormalization-group" },
+          { "id": "conformal-field-theory" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "conformal-field-theory": {
+      "id": "conformal-field-theory",
+      "term": "Conformal Field Theory",
+      "aliases": ["CFT", "2D CFT", "conformal theory"],
+      "domain": "physics",
+      "crossDomains": ["algebra", "topology"],
+      "difficulty": "advanced",
+      "tags": [
+        "conformal symmetry",
+        "Virasoro algebra",
+        "critical point",
+        "string theory",
+        "twist operator",
+        "universality",
+        "bulk-boundary"
+      ],
+      "summary": "A quantum field theory invariant under conformal (angle-preserving) transformations, with an infinite-dimensional symmetry algebra in 2D and applications to critical phenomena, string theory, and topological phases.",
+      "definition": "A **quantum field theory invariant under conformal transformations** (angle-preserving maps). In 2D, the conformal group is infinite-dimensional, giving CFTs an exceptionally rich algebraic structure (Virasoro algebra, primary fields, modular invariance).\n\nCFTs describe:\n- **Critical points** of statistical-mechanical systems (universality classes).\n- **String worldsheets** (2D CFT on the string's parameter space).\n- **Boundary theories** of topological phases (bulk-boundary correspondence).\n\nConnection to the project: at vortices in multi-sheeted tilings, the local geometry is effectively **conical**, and conical singularities are a natural setting for 2D CFT descriptions. The holonomy around vortices acts on field modes like a conformal twist — paralleling **twist operators** in CFT.",
+      "examples": [
+        {
+          "title": "2D Ising CFT at Criticality",
+          "body": "The 2D Ising model at its critical temperature is described by a CFT with central charge c=1/2. Correlation functions decay algebraically with exponents determined by the conformal dimensions of primary fields."
+        },
+        {
+          "title": "Twist Operators and Vortex Holonomy",
+          "body": "In a 2D CFT on a surface with a conical singularity (deficit angle 2π(1-1/n)), the partition function involves twist operators of conformal dimension h = c/24(n - 1/n). The holonomy around a vortex in a multi-sheeted tiling acts analogously."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "[L_m, L_n] = (m-n)L_{m+n} + \\frac{c}{12}m(m^2-1)\\delta_{m+n,0}",
+          "description": "The Virasoro algebra: the infinite-dimensional symmetry algebra of 2D CFT, with central charge c.",
+          "variables": {
+            "L_m": "Virasoro generator (mode of the stress-energy tensor)",
+            "c": "central charge (characterizes the CFT)",
+            "m, n": "integer mode indices"
+          }
+        }
+      ],
+      "references": [
+        "Belavin, A. A., Polyakov, A. M. & Zamolodchikov, A. B. (1984). Infinite conformal symmetry in two-dimensional quantum field theory. Nuclear Physics B, 241(2), 333–380.",
+        "Di Francesco, P. et al. (1997). Conformal Field Theory. Springer."
+      ],
+      "relations": {
+        "requires": [{ "id": "renormalization-group" }],
+        "related": [
+          { "id": "asymptotic-safety" },
+          { "id": "vortex-physics" },
+          { "id": "renormalization-group" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "penrose-tiling": {
+      "id": "penrose-tiling",
+      "term": "Penrose Tiling",
+      "aliases": ["Penrose pattern", "kite-and-dart tiling", "thick-and-thin rhomb tiling"],
+      "domain": "physics",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "aperiodic tiling",
+        "5-fold symmetry",
+        "cut-and-project",
+        "substitution",
+        "matching rules",
+        "quasicrystal"
+      ],
+      "summary": "The canonical aperiodic tiling of the plane with 5-fold rotational symmetry, discovered by Roger Penrose in 1974, using two tile shapes with matching rules that forbid periodic configurations.",
+      "definition": "The **canonical aperiodic tiling of the plane** with 5-fold rotational symmetry, discovered by Roger Penrose (1974). Uses two tile shapes (kites and darts, or thick and thin rhombs) with matching rules that forbid periodic configurations.\n\nEquivalent constructions:\n- **Cut-and-project**: image of a slab of $\\mathbb{Z}^5$ through an acceptance window.\n- **Substitution**: recursive inflation rule.\n- **Matching rules**: local constraints forcing aperiodicity.\n\nThe Penrose tiling is a **flat** (single-sheet) realization of pentagonal order, achieved by using two tile shapes. The multi-sheeted pentagon framework offers an **alternative resolution** of the angular deficit: keep a single tile shape, but allow multiple sheets. Comparing the two approaches reveals complementary perspectives on pentagonal aperiodic order.",
+      "examples": [
+        {
+          "title": "Kite-and-Dart Tiling",
+          "body": "The Penrose tiling uses two quadrilateral tiles (kite: angles 72°, 72°, 72°, 144°; dart: angles 36°, 72°, 36°, 216°) with arrow matching rules. Any tiling satisfying the rules is aperiodic and has 5-fold statistical symmetry."
+        },
+        {
+          "title": "Cut-and-Project Construction",
+          "body": "Embed Z^5 in R^5 = R^2 ⊕ R^3. Project the lattice points in a slab (acceptance window in R^3) onto R^2 along the golden-ratio irrational direction. The result is a Penrose tiling."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Penrose, R. (1974). The role of aesthetics in pure and applied mathematical research. Bulletin of the Institute of Mathematics and its Applications, 10, 266–271.",
+        "de Bruijn, N. G. (1981). Algebraic theory of Penrose's non-periodic tilings of the plane. Indagationes Mathematicae, 84(1), 39–66."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "quasicrystal" },
+          { "id": "diffraction-pattern" },
+          { "id": "geometric-frustration" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1c1e26" />
+    <title>Static Secrets</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/icon-192.png" />
+    <style>
+      :root {
+        --bg: #1c1e26;
+        --fg: #e6e6e6;
+        --accent: #6c8cff;
+        --danger: #e05a5a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+      }
+
+      header {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #14151b;
+        border-bottom: 1px solid #2a2c37;
+        flex-wrap: wrap;
+      }
+
+      header h1 {
+        font-size: 1.1rem;
+        margin: 0 0.5rem 0 0;
+      }
+
+      #url-form {
+        display: flex;
+        flex: 1;
+        gap: 0.5rem;
+        min-width: 16rem;
+      }
+
+      .ss-input {
+        background: #22242e;
+        color: var(--fg);
+        border: 1px solid #333644;
+        border-radius: 6px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.95rem;
+        width: 100%;
+      }
+
+      .ss-btn {
+        background: #2a2c37;
+        color: var(--fg);
+        border: 1px solid #383b49;
+        border-radius: 6px;
+        padding: 0.5rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+
+      .ss-btn:hover {
+        background: #333644;
+      }
+
+      .ss-btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .ss-btn-danger {
+        color: var(--danger);
+      }
+
+      .ss-btn-small {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .ss-status {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+        background: #14151b;
+        border-bottom: 1px solid #2a2c37;
+        min-height: 1.6rem;
+      }
+
+      .ss-status-error {
+        color: var(--danger);
+      }
+
+      .ss-status-decrypting,
+      .ss-status-rendering {
+        color: var(--accent);
+      }
+
+      main {
+        padding: 0;
+      }
+
+      #welcome {
+        padding: 2rem 1rem;
+        max-width: 44rem;
+        margin: 0 auto;
+      }
+
+      #welcome code {
+        background: #22242e;
+        padding: 0.1em 0.4em;
+        border-radius: 4px;
+      }
+
+      #content {
+        display: none;
+      }
+
+      .ss-content-frame {
+        width: 100%;
+        height: calc(100vh - 8rem);
+        border: 0;
+        background: #fff;
+      }
+
+      .ss-binary {
+        padding: 2rem 1rem;
+        max-width: 40rem;
+        margin: 0 auto;
+      }
+
+      .ss-download-btn {
+        display: inline-block;
+        text-decoration: none;
+        background: var(--accent);
+        color: #fff;
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
+      }
+
+      #keychain-panel {
+        display: none;
+        padding: 1rem;
+        background: #14151b;
+        border-bottom: 1px solid #2a2c37;
+      }
+
+      #keychain-panel.open {
+        display: block;
+      }
+
+      .ss-keylist {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem;
+      }
+
+      .ss-key-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.6rem;
+        background: #22242e;
+        border-radius: 6px;
+        margin-bottom: 0.4rem;
+      }
+
+      .ss-key-empty {
+        color: #888;
+        padding: 0.4rem;
+      }
+
+      .ss-key-controls {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      .ss-key-add,
+      .ss-key-io {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .ss-key-io {
+        margin-top: 0.75rem;
+      }
+
+      .ss-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .ss-modal {
+        background: #22242e;
+        padding: 1.5rem;
+        border-radius: 10px;
+        width: min(90vw, 26rem);
+        border: 1px solid #383b49;
+      }
+
+      .ss-modal h2 {
+        margin-top: 0;
+      }
+
+      .ss-modal label {
+        display: block;
+        margin: 0.75rem 0 0.25rem;
+        font-size: 0.85rem;
+      }
+
+      .ss-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        margin-top: 1rem;
+      }
+
+      .ss-toast {
+        position: fixed;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #22242e;
+        border: 1px solid #383b49;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        z-index: 1100;
+        transition: opacity 0.4s;
+        max-width: 90vw;
+      }
+
+      .ss-toast-error {
+        border-color: var(--danger);
+      }
+
+      .ss-toast-warn {
+        border-color: #d0a24a;
+      }
+
+      .ss-toast-out {
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🔐 Static Secrets</h1>
+      <form id="url-form">
+        <input
+          type="url"
+          id="url-input"
+          class="ss-input"
+          placeholder="https://example.com/secret.ssec"
+          autocomplete="off"
+        />
+        <button type="submit" class="ss-btn ss-btn-primary">Load</button>
+      </form>
+      <button id="keychain-toggle" class="ss-btn">Keychain</button>
+      <button id="install-btn" class="ss-btn" style="display: none">Install</button>
+    </header>
+
+    <div id="status" class="ss-status">Ready.</div>
+    <div id="keychain-panel"></div>
+
+    <main>
+      <section id="welcome">
+        <h2>Welcome</h2>
+        <p>
+          Static Secrets is an encrypted browser proxy. Paste a URL to an encrypted
+          <code>.ssec</code> blob above and press <strong>Load</strong>. The app fetches it, tries
+          your stored keychain passwords, and renders the decrypted HTML, Markdown, or binary
+          download — all client-side.
+        </p>
+        <p>
+          Encrypt files with the CLI:
+          <br /><code>node tools/encrypt.js input.md --out secret.ssec</code>
+        </p>
+        <p>Manage stored passwords via the <strong>Keychain</strong> button.</p>
+      </section>
+      <div id="content"></div>
+    </main>
+
+    <div id="modal-root"></div>
+
+    <script src="./vendor/marked.min.js"></script>
+    <script type="module" src="./js/sw-register.js"></script>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

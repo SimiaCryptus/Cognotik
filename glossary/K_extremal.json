@@ -1,0 +1,902 @@
+{
+  "version": "1.0.0",
+  "title": "K. Extremal Geometry Glossary",
+  "description": "Combinatorial and extremal geometry terms referenced throughout the pentagonal multi-sheeted framework, connecting distance-geometric phenomena to classical problems of Erdős, Falconer, Guth–Katz, and Spencer–Szemerédi–Trotter.",
+  "concepts": {
+    "distance-set": {
+      "id": "distance-set",
+      "term": "Distance Set",
+      "aliases": ["distinct distances set", "Δ(P)"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["distance", "point-set", "Erdős", "combinatorial-geometry"],
+      "summary": "The set of all distinct pairwise distances among points in a finite point set P.",
+      "definition": "Given a finite point set $P \\subset \\mathbb{R}^n$, the **distance set** is\n\n$$\\Delta(P) = \\{ \\|p - q\\| : p, q \\in P, \\; p \\neq q \\}.$$\n\nIts size $|\\Delta(P)|$ is the **number of distinct distances**. Erdős (1946) asked: what is the minimum of $|\\Delta(P)|$ over $n$-point sets in $\\mathbb{R}^2$?\n\nFor the pentagonal lattice $\\mathcal{L} \\subset \\mathbb{Z}[\\phi]^2$, the norm-multiplicativity of $\\mathbb{Z}[\\phi]$ ensures that **many pairs share the same distance**, giving a distance set much smaller than the trivial $\\binom{n}{2}$ upper bound.",
+      "examples": [
+        {
+          "title": "Integer Grid Distance Set",
+          "body": "For the $\\sqrt{n} \\times \\sqrt{n}$ integer grid, the distance set is determined by integers expressible as sums of two squares. The rich multiplicative structure of $\\mathbb{Z}$ causes many pairs to share the same distance, minimizing $|\\Delta(P)|$."
+        },
+        {
+          "title": "Pentagonal Lattice Distance Set",
+          "body": "In $\\mathbb{Z}[\\phi]^2$, the norm form $N(a + b\\phi) = a^2 + ab\\phi - b^2\\phi$ has factorization properties related to $a^2 + b^2$ but with a richer prime structure. Primes split or remain inert in $\\mathbb{Z}[\\phi]$ according to quadratic reciprocity mod 5, producing a distance set potentially smaller than the integer grid in some regimes."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\Delta(P) = \\{ \\|p - q\\| : p, q \\in P, \\; p \\neq q \\}",
+          "description": "The distance set of a finite point set P, collecting all distinct pairwise Euclidean distances.",
+          "variables": {
+            "P": "A finite point set in $\\mathbb{R}^n$",
+            "\\|p - q\\|": "Euclidean distance between points p and q"
+          }
+        }
+      ],
+      "references": [
+        "Erdős, P. (1946). On sets of distances of n points. American Mathematical Monthly, 53(5), 248–250."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "distance-ring" },
+          { "id": "distance-web" },
+          { "id": "erdos-distinct-distances" },
+          { "id": "falconer-distance-problem" },
+          { "id": "degeneracy-engine" }
+        ],
+        "enabledBy": [{ "id": "erdos-distinct-distances" }, { "id": "guth-katz-theorem" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "distance-ring": {
+      "id": "distance-ring",
+      "term": "Distance Ring",
+      "aliases": ["R_r(p_0)", "distance sphere", "equidistant shell"],
+      "domain": "geometry",
+      "crossDomains": ["algebra", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["distance", "pentagonal-lattice", "norm-multiplicativity", "degeneracy"],
+      "summary": "The set of all lattice points at a fixed distance r from a reference point, whose multiplicity is the engine of distance-coincidence counts.",
+      "definition": "The set of points at a fixed distance $r$ from a reference point $p_0$:\n\n$$R_r(p_0) = \\{ q \\in \\mathcal{L} : \\|q - p_0\\| = r \\}.$$\n\nIn the pentagonal lattice, $|R_r|$ can be very large — a consequence of the many ways a $\\mathbb{Z}[\\phi]$ element can factor while preserving norm. Distance rings of high multiplicity are the **engine of high distance-coincidence counts**.",
+      "examples": [
+        {
+          "title": "High-Multiplicity Distance Ring",
+          "body": "In $\\mathbb{Z}[\\phi]$, a norm value $r^2$ may be achieved by many distinct elements $a + b\\phi$ with different $(a, b)$ pairs, each corresponding to a distinct lattice point on the distance ring $R_r(p_0)$. This multiplicity grows with the number of factorizations of $r^2$ in $\\mathbb{Z}[\\phi]$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "R_r(p_0) = \\{ q \\in \\mathcal{L} : \\|q - p_0\\| = r \\}",
+          "description": "The distance ring of radius r centered at reference point p_0 within lattice L.",
+          "variables": {
+            "r": "Fixed distance (radius)",
+            "p_0": "Reference point in the lattice",
+            "\\mathcal{L}": "The pentagonal lattice $\\mathbb{Z}[\\phi]^2$"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "distance-set" }],
+        "related": [
+          { "id": "distance-web" },
+          { "id": "degeneracy-engine" },
+          { "id": "pinwheel-phenomenon" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "distance-web": {
+      "id": "distance-web",
+      "term": "Distance Web",
+      "aliases": ["W_r", "unit-distance graph", "distance graph"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["distance", "graph", "pentagonal-lattice", "norm-multiplicativity"],
+      "summary": "The graph with vertex set equal to a lattice and edges between every pair of points at exactly distance r, exhibiting unusually dense local structure in pentagonal lattices.",
+      "definition": "The graph $W_r$ with vertex set $\\mathcal{L}$ and an edge between every pair at distance exactly $r$. The pentagonal distance webs have unusually dense local structure due to the **norm-multiplicativity degeneracy**.",
+      "examples": [
+        {
+          "title": "Pentagonal Distance Web Density",
+          "body": "For a common distance $r$ in $\\mathbb{Z}[\\phi]^2$, the graph $W_r$ has high average degree because many lattice points lie on each distance ring. The local neighborhoods in $W_r$ reflect the 5- or 10-fold rotational symmetry of the pentagonal lattice."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "distance-ring" }],
+        "related": [
+          { "id": "unit-distance-problem" },
+          { "id": "degeneracy-engine" },
+          { "id": "pinwheel-phenomenon" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "equidistant-family": {
+      "id": "equidistant-family",
+      "term": "Equidistant Family",
+      "aliases": ["equidistant set", "regular simplex configuration"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["equidistant", "simplex", "unit-distance", "extremal"],
+      "summary": "A set of points with all pairwise distances equal, forming a regular simplex; extremal configurations for the unit-distance problem.",
+      "definition": "A set of points with all pairwise distances equal — i.e., a regular simplex. In 2D, the maximum size is 3 (equilateral triangle); in 3D, 4 (regular tetrahedron).\n\nEquidistant families are extremal configurations for the unit-distance problem.",
+      "examples": [
+        {
+          "title": "Equilateral Triangle in 2D",
+          "body": "Three points forming an equilateral triangle constitute the largest equidistant family in $\\mathbb{R}^2$. All three pairwise distances are equal, making this a degenerate case of the unit-distance problem."
+        },
+        {
+          "title": "Regular Tetrahedron in 3D",
+          "body": "Four points forming a regular tetrahedron constitute the largest equidistant family in $\\mathbb{R}^3$. All six pairwise distances are equal."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "distance-set" }],
+        "related": [{ "id": "unit-distance-problem" }, { "id": "extremal-configuration" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "erdos-distinct-distances": {
+      "id": "erdos-distinct-distances",
+      "term": "Erdős Distinct Distances Problem",
+      "aliases": ["distinct distances problem", "Erdős distance problem", "g(n) problem"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["Erdős", "distinct-distances", "lower-bound", "integer-grid", "open-problem"],
+      "summary": "The problem of determining the minimum number of distinct distances among n points in the plane, conjectured by Erdős to be Ω(n/√log n).",
+      "definition": "Let $g(n) = \\min_{|P| = n} |\\Delta(P)|$. Erdős (1946) conjectured\n\n$$g(n) = \\Omega\\!\\left( \\frac{n}{\\sqrt{\\log n}} \\right),$$\n\nachieved (he showed) by the $\\sqrt{n} \\times \\sqrt{n}$ integer grid.\n\nThe integer grid $\\{1, \\dots, \\sqrt{n}\\}^2$ minimizes $|\\Delta(P)|$ via the rich multiplicative structure of $\\mathbb{Z}$ (sums of two squares, divisor functions). The pentagonal lattice $\\mathbb{Z}[\\phi]^2$ has **even richer multiplicative structure**, raising the question of whether it matches or beats the integer grid in some regimes.",
+      "examples": [
+        {
+          "title": "Integer Grid Achieves the Bound",
+          "body": "The $\\sqrt{n} \\times \\sqrt{n}$ integer grid has $|\\Delta(P)| = O(n / \\sqrt{\\log n})$ because many pairs of integers $(a, b)$ satisfy $a^2 + b^2 = k$ for the same small integer $k$, collapsing many distances into one."
+        },
+        {
+          "title": "Pentagonal Lattice Question",
+          "body": "The norm form $N(a + b\\phi) = a^2 + ab\\phi - b^2\\phi$ has factorization properties related to $a^2 + b^2$ but with a richer prime structure — primes split or remain inert in $\\mathbb{Z}[\\phi]$ according to quadratic reciprocity mod 5. This raises the open question: does $\\mathbb{Z}[\\phi]^2$ match or beat the Erdős bound?"
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "g(n) = \\Omega\\!\\left( \\frac{n}{\\sqrt{\\log n}} \\right)",
+          "description": "Erdős's conjectured lower bound on the minimum number of distinct distances among n points in the plane.",
+          "variables": {
+            "g(n)": "Minimum number of distinct distances over all n-point sets in $\\mathbb{R}^2$",
+            "n": "Number of points"
+          }
+        }
+      ],
+      "references": [
+        "Erdős, P. (1946). On sets of distances of n points. American Mathematical Monthly, 53(5), 248–250.",
+        "Guth, L., & Katz, N. H. (2015). On the Erdős distinct distances problem in the plane. Annals of Mathematics, 181(1), 155–190."
+      ],
+      "relations": {
+        "requires": [{ "id": "distance-set" }],
+        "related": [
+          { "id": "guth-katz-theorem" },
+          { "id": "unit-distance-problem" },
+          { "id": "falconer-distance-problem" },
+          { "id": "degeneracy-engine" }
+        ],
+        "enabledBy": [{ "id": "guth-katz-theorem" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "guth-katz-theorem": {
+      "id": "guth-katz-theorem",
+      "term": "Guth–Katz Theorem",
+      "aliases": ["Guth-Katz distinct distances theorem", "Guth–Katz 2010"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry", "algebra"],
+      "difficulty": "advanced",
+      "tags": [
+        "Guth",
+        "Katz",
+        "distinct-distances",
+        "polynomial-partitioning",
+        "incidence-geometry",
+        "algebraic-methods"
+      ],
+      "summary": "The landmark 2010 result proving g(n) = Ω(n/log n), nearly resolving the Erdős distinct distances conjecture using polynomial partitioning and incidence geometry.",
+      "definition": "Larry Guth and Nets Katz proved\n\n$$g(n) = \\Omega\\!\\left( \\frac{n}{\\log n} \\right),$$\n\nnearly matching the conjectured bound. Their proof combined:\n\n- **Polynomial partitioning** (a new technique).\n- **Incidence geometry** of lines in $\\mathbb{R}^3$.\n- **Algebraic methods** (the Cayley–Salmon theorem on ruled surfaces).\n\nThe Guth–Katz theorem is one of the great triumphs of modern combinatorial geometry.",
+      "examples": [
+        {
+          "title": "Polynomial Partitioning",
+          "body": "Guth and Katz introduced the technique of partitioning the plane using a low-degree polynomial whose zero set divides the point set into roughly equal parts. This allowed them to apply divide-and-conquer arguments with algebraic control over the geometry."
+        },
+        {
+          "title": "Reduction to Line Incidences in R³",
+          "body": "The proof lifts the 2D distinct distances problem to a 3D line incidence problem via the Elekes–Sharir framework, then applies the Cayley–Salmon theorem on ruled quadric surfaces to bound the incidences."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "g(n) = \\Omega\\!\\left( \\frac{n}{\\log n} \\right)",
+          "description": "The Guth–Katz lower bound on the minimum number of distinct distances among n points in the plane.",
+          "variables": {
+            "g(n)": "Minimum number of distinct distances over all n-point sets in $\\mathbb{R}^2$",
+            "n": "Number of points"
+          }
+        }
+      ],
+      "references": [
+        "Guth, L., & Katz, N. H. (2015). On the Erdős distinct distances problem in the plane. Annals of Mathematics, 181(1), 155–190.",
+        "Cayley–Salmon theorem on ruled surfaces."
+      ],
+      "relations": {
+        "requires": [
+          { "id": "erdos-distinct-distances" },
+          { "id": "szemeredi-trotter-theorem" },
+          { "id": "polynomial-method" }
+        ],
+        "related": [{ "id": "unit-distance-problem" }, { "id": "incidence-geometry" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "unit-distance-problem": {
+      "id": "unit-distance-problem",
+      "term": "Unit Distance Problem",
+      "aliases": ["u(n) problem", "Erdős unit distance problem"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["Erdős", "unit-distance", "Spencer", "Szemerédi", "Trotter", "open-problem"],
+      "summary": "The problem of determining the maximum number of unit-distance pairs among n points in the plane, bounded above by O(n^{4/3}) and below by Ω(n^{1+c/log log n}).",
+      "definition": "Let $u(n)$ be the maximum number of unit-distance pairs among $n$ points in $\\mathbb{R}^2$. Erdős (1946) asked: what is $u(n)$?\n\nThe **Spencer–Szemerédi–Trotter bound** gives $u(n) = O(n^{4/3})$, proven via the Szemerédi–Trotter theorem on point–line incidences. The bound is conjectured to be far from tight; the true growth is suspected to be $n^{1 + c/\\log\\log n}$ or similar.\n\nIn the pentagonal lattice, unit-distance multiplicity is governed by **units of $\\mathbb{Z}[\\phi]$** (powers of $\\phi$). Unit distances in the lattice correspond to Pell-like solutions, and the resulting unit-distance graphs have a distinctive \"pinwheel\" structure.",
+      "examples": [
+        {
+          "title": "Integer Grid Lower Bound",
+          "body": "Erdős showed $u(n) = \\Omega(n^{1 + c / \\log\\log n})$ via the integer grid — many integer pairs $(a, b)$ have $a^2 + b^2$ equal to small integers, producing many unit distances after appropriate scaling."
+        },
+        {
+          "title": "Pentagonal Pinwheel Unit Distances",
+          "body": "In $\\mathbb{Z}[\\phi]^2$, unit distances correspond to elements of norm 1 in $\\mathbb{Z}[\\phi]$, i.e., solutions to the Pell-like equation $a^2 + ab\\phi - b^2\\phi = 1$. The units of $\\mathbb{Z}[\\phi]$ are powers of $\\phi$, generating a pinwheel pattern of unit-distance directions."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "u(n) = O(n^{4/3})",
+          "description": "Spencer–Szemerédi–Trotter upper bound on the maximum number of unit-distance pairs among n points in the plane.",
+          "variables": {
+            "u(n)": "Maximum number of unit-distance pairs among n points in $\\mathbb{R}^2$"
+          }
+        },
+        {
+          "expression": "u(n) = \\Omega(n^{1 + c / \\log\\log n})",
+          "description": "Erdős lower bound on the maximum number of unit-distance pairs, achieved by the integer grid.",
+          "variables": {
+            "c": "A positive absolute constant"
+          }
+        }
+      ],
+      "references": [
+        "Erdős, P. (1946). On sets of distances of n points. American Mathematical Monthly, 53(5), 248–250.",
+        "Spencer, J., Szemerédi, E., & Trotter, W. T. (1984). Unit distances in the Euclidean plane. Graph Theory and Combinatorics, 294–304."
+      ],
+      "relations": {
+        "requires": [{ "id": "distance-set" }, { "id": "szemeredi-trotter-theorem" }],
+        "related": [
+          { "id": "erdos-distinct-distances" },
+          { "id": "spencer-szemeredi-trotter-bound" },
+          { "id": "pinwheel-phenomenon" },
+          { "id": "equidistant-family" }
+        ],
+        "enabledBy": [{ "id": "spencer-szemeredi-trotter-bound" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "spencer-szemeredi-trotter-bound": {
+      "id": "spencer-szemeredi-trotter-bound",
+      "term": "Spencer–Szemerédi–Trotter Bound",
+      "aliases": ["SST bound", "unit distance upper bound"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["Spencer", "Szemerédi", "Trotter", "unit-distance", "incidence", "upper-bound"],
+      "summary": "The O(n^{4/3}) upper bound on the number of unit-distance pairs among n points in the plane, derived from the Szemerédi–Trotter incidence theorem.",
+      "definition": "The bound $u(n) = O(n^{4/3})$ on the maximum number of unit-distance pairs among $n$ points in $\\mathbb{R}^2$.\n\nProven via the **Szemerédi–Trotter theorem** on point–line incidences (and its generalizations to circles). The bound is conjectured to be far from tight; the true growth is suspected to be $n^{1 + c/\\log\\log n}$ or similar.",
+      "examples": [
+        {
+          "title": "Circle Incidence Reduction",
+          "body": "Unit distances between n points correspond to incidences between n points and n unit circles (one centered at each point). The Szemerédi–Trotter theorem, generalized to circles, bounds these incidences by $O(n^{4/3})$."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "u(n) = O(n^{4/3})",
+          "description": "Upper bound on the maximum number of unit-distance pairs among n points in the plane.",
+          "variables": {
+            "u(n)": "Maximum number of unit-distance pairs among n points in $\\mathbb{R}^2$",
+            "n": "Number of points"
+          }
+        }
+      ],
+      "references": [
+        "Spencer, J., Szemerédi, E., & Trotter, W. T. (1984). Unit distances in the Euclidean plane. Graph Theory and Combinatorics, 294–304.",
+        "Szemerédi, E., & Trotter, W. T. (1983). Extremal problems in discrete geometry. Combinatorica, 3(3–4), 381–392."
+      ],
+      "relations": {
+        "requires": [{ "id": "szemeredi-trotter-theorem" }],
+        "related": [{ "id": "unit-distance-problem" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "pinwheel-polygon": {
+      "id": "pinwheel-polygon",
+      "term": "Pinwheel Polygon",
+      "aliases": ["Conway–Radin pinwheel triangle", "pinwheel tile"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["pinwheel", "tiling", "aperiodic", "Conway", "Radin", "polygon"],
+      "summary": "A polygon engineered so that a chosen subset of edges reconnects into a target lattice, with the canonical example being the Conway–Radin pinwheel triangle that tiles the plane aperiodically with infinitely many distinct orientations.",
+      "definition": "A polygon engineered such that a **chosen subset of edges** (the active set $E_A$) reconnects into a target lattice — typically $\\mathbb{Z}^2$ — while the other edges are decorative.\n\nThe canonical example is the **Conway–Radin pinwheel triangle**: a right triangle with legs in ratio $1:2$, which tiles $\\mathbb{R}^2$ aperiodically with infinitely many distinct tile orientations (a \"statistically rotationally invariant\" tiling).",
+      "examples": [
+        {
+          "title": "Conway–Radin Pinwheel Triangle",
+          "body": "A right triangle with legs of length 1 and 2 (hypotenuse $\\sqrt{5}$). Five copies tile a scaled version of the same triangle, and iterating this substitution produces an aperiodic tiling of the plane in which tiles appear in infinitely many distinct orientations, densifying $S^1$."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Radin, C. (1994). The pinwheel tilings of the plane. Annals of Mathematics, 139(3), 661–702.",
+        "Conway, J. H., & Radin, C. (1998). Quaquaversal tilings and rotations. Inventiones Mathematicae, 132(1), 179–188."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "pinwheel-phenomenon" }, { "id": "delone-set" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "pinwheel-phenomenon": {
+      "id": "pinwheel-phenomenon",
+      "term": "Pinwheel Phenomenon",
+      "aliases": ["pinwheel statistics", "direction multiplicity", "distance-direction density"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics", "physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "pinwheel",
+        "pentagonal-lattice",
+        "direction",
+        "equidistribution",
+        "quasicrystal",
+        "diffraction"
+      ],
+      "summary": "The density of (distance, direction) pairs in pentagonal lattices, where many point pairs share the same distance but have different directions that densify the unit circle.",
+      "definition": "The **density of (distance, direction) pairs** in pentagonal lattices: many pairs of points are at the same distance but in different directions, with the directions densifying $S^1$.\n\nThis is closely connected to:\n\n- **Distance-direction problem** (Erdős–Purdy).\n- **Equidistribution** of pentagonal lattice points on circles.\n- **Quasicrystal diffraction**, where pinwheel-like density appears in Fourier space.\n\n### Why Pentagonal Lattices Pinwheel\n\nThe orientation group $\\Gamma = \\mathbb{Z}_{10}$ (or its rotational subgroup $\\mathbb{Z}_5$) generates 10 (or 5) distinct directions per distance ring. Combined with the rich norm-multiplicativity, the lattice exhibits **explosive direction multiplicity** at common distances.",
+      "examples": [
+        {
+          "title": "10-fold Direction Multiplicity",
+          "body": "For a common distance $r$ in the pentagonal lattice, the orientation group $\\mathbb{Z}_{10}$ generates 10 distinct directions in which point pairs at distance $r$ can be oriented. As $r$ ranges over all distances, these directions densify $S^1$."
+        },
+        {
+          "title": "Quasicrystal Diffraction Analogy",
+          "body": "In quasicrystal diffraction patterns, the Fourier transform of the point set exhibits 5- or 10-fold symmetry with sharp peaks. The pinwheel phenomenon in the pentagonal lattice is the real-space counterpart of this Fourier-space structure."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Radin, C. (1994). The pinwheel tilings of the plane. Annals of Mathematics, 139(3), 661–702.",
+        "Erdős, P., & Purdy, G. (1971). Some extremal problems in combinatorial geometry."
+      ],
+      "relations": {
+        "requires": [{ "id": "distance-ring" }],
+        "related": [
+          { "id": "pinwheel-polygon" },
+          { "id": "degeneracy-engine" },
+          { "id": "distance-web" },
+          { "id": "delone-set" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "degeneracy-engine": {
+      "id": "degeneracy-engine",
+      "term": "Degeneracy Engine",
+      "aliases": ["norm-multiplicativity degeneracy", "distance-coincidence mechanism"],
+      "domain": "algebra",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "norm-multiplicativity",
+        "Z[phi]",
+        "UFD",
+        "factorization",
+        "distance-coincidence",
+        "pentagonal-lattice"
+      ],
+      "summary": "The algebraic mechanism by which norm-multiplicativity of Z[φ] produces many distance coincidences: unique factorization in Z[φ] means many distinct factorizations yield the same norm value.",
+      "definition": "The mechanism producing many distance coincidences: $\\mathbb{Z}[\\phi]$ is a UFD, so norms factor uniquely, and many distinct factorizations give the same norm value. Each factorization is a distinct (point, point) pair at the corresponding distance.\n\nThe **degeneracy engine** is the algebraic source of all distance-geometric phenomena in the pentagonal framework. The **pinwheel phenomenon** is its geometric manifestation: a dense, multi-directional, distance-coincident point pattern with no Euclidean analogue.",
+      "examples": [
+        {
+          "title": "Multiple Factorizations, Same Norm",
+          "body": "In $\\mathbb{Z}[\\phi]$, a norm value $N = r^2$ may factor as $N = \\pi_1 \\bar{\\pi}_1 = \\pi_2 \\bar{\\pi}_2 = \\cdots$ in multiple ways (where $\\pi_i$ are Gaussian-like primes in $\\mathbb{Z}[\\phi]$). Each factorization corresponds to a distinct element $a + b\\phi$ with $N(a + b\\phi) = N$, hence a distinct lattice point at distance $r$ from the origin."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "N(a + b\\phi) = a^2 + ab\\phi - b^2\\phi",
+          "description": "The norm form of Z[φ], whose multiplicativity is the algebraic source of distance coincidences in the pentagonal lattice.",
+          "variables": {
+            "a, b": "Integer coefficients",
+            "\\phi": "The golden ratio $(1 + \\sqrt{5})/2$",
+            "N": "The norm map $\\mathbb{Z}[\\phi] \\to \\mathbb{Z}$"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "distance-ring" },
+          { "id": "distance-set" },
+          { "id": "pinwheel-phenomenon" },
+          { "id": "erdos-distinct-distances" },
+          { "id": "unit-distance-problem" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "falconer-distance-problem": {
+      "id": "falconer-distance-problem",
+      "term": "Falconer Distance Problem",
+      "aliases": ["Falconer conjecture", "continuous distance problem"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "advanced",
+      "tags": [
+        "Falconer",
+        "Hausdorff-dimension",
+        "fractal",
+        "distance-set",
+        "measure-theory",
+        "harmonic-analysis",
+        "open-problem"
+      ],
+      "summary": "The conjecture that a compact set E ⊂ ℝⁿ with Hausdorff dimension greater than n/2 has a distance set of positive Lebesgue measure; the continuous analogue of the Erdős distinct distances problem.",
+      "definition": "For a compact set $E \\subset \\mathbb{R}^n$, the Falconer distance problem asks:\n\n> If $\\dim_H(E) > s_n$ for some threshold $s_n$, does $\\Delta(E)$ have positive Lebesgue measure?\n\nFalconer (1985) conjectured $s_n = n/2$. The conjecture remains open in all dimensions $n \\geq 2$.\n\n**Continuous Analogue of Erdős**: Erdős asks for finite point sets; Falconer asks for fractal sets. The interplay is deep:\n\n- **Erdős**: discrete combinatorial bounds.\n- **Falconer**: measure-theoretic / harmonic analysis bounds.\n\nBoth ultimately concern how rich the distance structure of a set can be.\n\n**Pentagonal Connection**: The pentagonal multi-sheeted tilings have fractal-like dimensional behavior under BFS volume growth (effective dimension $d_{\\text{eff}}$ can be non-integer near vortices). Falconer-type questions about their distance sets are natural — and largely unexplored.",
+      "examples": [
+        {
+          "title": "Threshold Dimension n/2",
+          "body": "Falconer showed that for almost all rigid motions of a compact set $E$ with $\\dim_H(E) > n/2$, the distance set $\\Delta(E)$ has positive Lebesgue measure. The conjecture is that the 'almost all' qualifier can be removed."
+        },
+        {
+          "title": "Pentagonal Fractal Dimension",
+          "body": "Near vortex defects in the pentagonal multi-sheeted tiling, the BFS volume growth $V(r) \\sim r^{d_{\\text{eff}}}$ yields a non-integer effective dimension $d_{\\text{eff}}$. This fractal-like behavior makes Falconer-type distance questions natural for these structures."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\dim_H(E) > n/2 \\implies |\\Delta(E)| > 0",
+          "description": "Falconer's conjecture: Hausdorff dimension exceeding n/2 implies the distance set has positive Lebesgue measure.",
+          "variables": {
+            "\\dim_H(E)": "Hausdorff dimension of the compact set E",
+            "n": "Ambient dimension",
+            "|\\Delta(E)|": "Lebesgue measure of the distance set"
+          }
+        }
+      ],
+      "references": [
+        "Falconer, K. J. (1985). On the Hausdorff dimensions of distance sets. Mathematika, 32(2), 206–212."
+      ],
+      "relations": {
+        "requires": [{ "id": "distance-set" }],
+        "related": [
+          { "id": "erdos-distinct-distances" },
+          { "id": "bfs-breadth-first-search" },
+          { "id": "delone-set" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "incidence-geometry": {
+      "id": "incidence-geometry",
+      "term": "Incidence Geometry",
+      "aliases": ["point-line incidences", "combinatorial incidence theory"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "incidence",
+        "Szemerédi-Trotter",
+        "polynomial-method",
+        "lines",
+        "curves",
+        "higher-dimensions"
+      ],
+      "summary": "The study of incidences between geometric objects such as points and lines, foundational to unit-distance bounds and Erdős-type results.",
+      "definition": "The study of incidences between geometric objects — primarily points and lines (or curves) — and the combinatorial bounds on how many incidences can occur.\n\nGeneralizations include:\n- **Points and circles**: incidence bounds with extra logarithmic factors.\n- **Points and curves**: depending on the curve family's \"degree of freedom\".\n- **Higher dimensions**: Guth, Solymosi, and others.\n\nThese bounds underlie unit-distance bounds and Erdős-type results.",
+      "examples": [
+        {
+          "title": "Point-Line Incidences",
+          "body": "Given $n$ points and $m$ lines in $\\mathbb{R}^2$, the Szemerédi–Trotter theorem bounds the number of incidences (point-line pairs where the point lies on the line) by $O((nm)^{2/3} + n + m)$."
+        },
+        {
+          "title": "Application to Unit Distances",
+          "body": "Unit distances between $n$ points correspond to incidences between $n$ points and $n$ unit circles. Generalizing Szemerédi–Trotter to circles yields the Spencer–Szemerédi–Trotter bound $u(n) = O(n^{4/3})$."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Szemerédi, E., & Trotter, W. T. (1983). Extremal problems in discrete geometry. Combinatorica, 3(3–4), 381–392."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "szemeredi-trotter-theorem" },
+          { "id": "polynomial-method" },
+          { "id": "unit-distance-problem" },
+          { "id": "guth-katz-theorem" }
+        ],
+        "enabledBy": [{ "id": "szemeredi-trotter-theorem" }, { "id": "polynomial-method" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "szemeredi-trotter-theorem": {
+      "id": "szemeredi-trotter-theorem",
+      "term": "Szemerédi–Trotter Theorem",
+      "aliases": ["Szemerédi-Trotter incidence theorem", "ST theorem"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "advanced",
+      "tags": ["Szemerédi", "Trotter", "incidence", "point-line", "tight-bound", "foundational"],
+      "summary": "The foundational theorem of incidence geometry bounding the number of point-line incidences by O((nm)^{2/3} + n + m), tight up to constants.",
+      "definition": "For $n$ points and $m$ lines in $\\mathbb{R}^2$, the number of incidences is\n\n$$I(P, L) = O\\!\\left( (nm)^{2/3} + n + m \\right).$$\n\nThis is the foundational theorem of incidence geometry. Tight up to constants.",
+      "examples": [
+        {
+          "title": "Tightness of the Bound",
+          "body": "The Szemerédi–Trotter bound is achieved (up to constants) by a construction using a $\\sqrt{n} \\times \\sqrt{n}$ grid of points and lines through many grid points. This shows the exponent $2/3$ cannot be improved."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "I(P, L) = O\\!\\left( (nm)^{2/3} + n + m \\right)",
+          "description": "Upper bound on the number of point-line incidences for n points and m lines in the plane.",
+          "variables": {
+            "I(P, L)": "Number of incidences (point-line pairs where the point lies on the line)",
+            "n": "Number of points",
+            "m": "Number of lines"
+          }
+        }
+      ],
+      "references": [
+        "Szemerédi, E., & Trotter, W. T. (1983). Extremal problems in discrete geometry. Combinatorica, 3(3–4), 381–392."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "incidence-geometry" },
+          { "id": "polynomial-method" },
+          { "id": "spencer-szemeredi-trotter-bound" },
+          { "id": "guth-katz-theorem" }
+        ],
+        "enabledBy": [{ "id": "spencer-szemeredi-trotter-bound" }, { "id": "guth-katz-theorem" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "polynomial-method": {
+      "id": "polynomial-method",
+      "term": "Polynomial Method",
+      "aliases": ["polynomial partitioning", "algebraic method in combinatorics"],
+      "domain": "algebra",
+      "crossDomains": ["combinatorics", "geometry"],
+      "difficulty": "advanced",
+      "tags": ["polynomial", "Dvir", "Guth", "Kakeya", "joints", "incidence", "algebraic-geometry"],
+      "summary": "A technique using low-degree polynomials vanishing on point sets to extract incidence bounds, pioneered by Dvir and Guth and central to the Guth–Katz theorem.",
+      "definition": "Pioneered by Dvir (finite field Kakeya) and Guth (joints theorem), the polynomial method uses **low-degree polynomials vanishing on point sets** to extract incidence bounds. It revolutionized combinatorial geometry in the 2000s–2010s.\n\nKey applications:\n- **Dvir's finite field Kakeya theorem**: a polynomial of degree $< n$ vanishing on $n$ points in each direction must vanish everywhere.\n- **Guth's joints theorem**: bounding the number of joints (points where 3 non-coplanar lines meet) using polynomial vanishing.\n- **Guth–Katz theorem**: polynomial partitioning as a divide-and-conquer tool for distinct distances.",
+      "examples": [
+        {
+          "title": "Dvir's Finite Field Kakeya",
+          "body": "Dvir (2009) proved that a Kakeya set in $\\mathbb{F}_q^n$ (containing a line in every direction) has size $\\Omega(q^n)$. The proof: a polynomial of degree $< q$ vanishing on the set would vanish on all of $\\mathbb{F}_q^n$ by the Schwartz–Zippel lemma, contradiction."
+        },
+        {
+          "title": "Polynomial Partitioning in Guth–Katz",
+          "body": "Guth and Katz partition $\\mathbb{R}^3$ using a polynomial $p$ of degree $D$ whose zero set $Z(p)$ divides space into $O(D^3)$ cells, each containing $O(n/D^3)$ points. This allows a divide-and-conquer argument with algebraic control."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Dvir, Z. (2009). On the size of Kakeya sets in finite fields. Journal of the American Mathematical Society, 22(4), 1093–1097.",
+        "Guth, L. (2010). The endpoint case of the Bennett–Carbery–Tao multilinear Kakeya conjecture. Acta Mathematica, 205(2), 263–286.",
+        "Guth, L., & Katz, N. H. (2015). On the Erdős distinct distances problem in the plane. Annals of Mathematics, 181(1), 155–190."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "guth-katz-theorem" },
+          { "id": "szemeredi-trotter-theorem" },
+          { "id": "incidence-geometry" }
+        ],
+        "enabledBy": [{ "id": "guth-katz-theorem" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "delone-set": {
+      "id": "delone-set",
+      "term": "Delone Set",
+      "aliases": ["Delaunay set", "uniformly discrete relatively dense set"],
+      "domain": "geometry",
+      "crossDomains": ["physics", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "Delone",
+        "aperiodic",
+        "quasicrystal",
+        "point-pattern",
+        "long-range-order",
+        "Penrose"
+      ],
+      "summary": "A point set that is both uniformly discrete and relatively dense, serving as the standard model for aperiodic point patterns including lattices, quasicrystals, and Penrose tiling vertices.",
+      "definition": "A set $P \\subset \\mathbb{R}^n$ that is:\n\n- **Uniformly discrete**: $\\exists r > 0$ such that no two points are within $r$.\n- **Relatively dense**: $\\exists R > 0$ such that every $R$-ball contains a point.\n\nDelone sets are the standard model for aperiodic point patterns — they include lattices, quasicrystal point sets, and Penrose tiling vertices.\n\n**Pentagonal Multi-Sheeted Vertex Set**: The projection of the multi-sheeted vertex set to $\\mathbb{R}^2$ is a Delone set with characteristic pentagonal long-range order and characteristic vortex defects. It would in principle yield a **diffraction pattern** with 5- or 10-fold symmetry, modulated by the sheet structure.",
+      "examples": [
+        {
+          "title": "Integer Lattice as Delone Set",
+          "body": "The integer lattice $\\mathbb{Z}^2$ is a Delone set with $r = 1$ (minimum distance) and $R = \\sqrt{2}$ (maximum gap). It is periodic, hence the simplest case."
+        },
+        {
+          "title": "Penrose Tiling Vertices",
+          "body": "The vertex set of a Penrose tiling is a Delone set that is aperiodic (no translational symmetry) but has long-range 5-fold rotational order, visible in its diffraction pattern."
+        },
+        {
+          "title": "Pentagonal Multi-Sheeted Projection",
+          "body": "The projection of the pentagonal multi-sheeted vertex set to $\\mathbb{R}^2$ forms a Delone set with 5- or 10-fold symmetry and vortex defects, expected to produce a diffraction pattern with corresponding symmetry."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Moody, R. V. (1997). Meyer sets and their duals. The Mathematics of Long-Range Aperiodic Order, 403–441.",
+        "Lagarias, J. C. (1999). Geometric models for quasicrystals I. Delone sets of finite type. Discrete & Computational Geometry, 21(2), 161–191."
+      ],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "patch-equivalence" },
+          { "id": "pinwheel-phenomenon" },
+          { "id": "falconer-distance-problem" }
+        ],
+        "enabledBy": [{ "id": "patch-equivalence" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "patch-equivalence": {
+      "id": "patch-equivalence",
+      "term": "Patch Equivalence",
+      "aliases": ["local indistinguishability", "local isomorphism"],
+      "domain": "geometry",
+      "crossDomains": ["combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["patch", "Delone", "aperiodic", "quasicrystal", "equivalence", "local-structure"],
+      "summary": "The equivalence relation on Delone sets where two sets are locally indistinguishable if every finite patch of one appears in the other with the same frequency.",
+      "definition": "Two Delone sets are **locally indistinguishable** if every finite patch of one appears in the other with the same frequency. This is the right equivalence relation for quasicrystals and aperiodic tilings.",
+      "examples": [
+        {
+          "title": "Penrose Tiling Local Indistinguishability",
+          "body": "Any two Penrose tilings (with the same inflation rules) are locally indistinguishable: every finite patch appearing in one appears in every other Penrose tiling with the same frequency. This is a hallmark of aperiodic order."
+        }
+      ],
+      "formulas": [],
+      "references": [
+        "Moody, R. V. (1997). Meyer sets and their duals. The Mathematics of Long-Range Aperiodic Order, 403–441."
+      ],
+      "relations": {
+        "requires": [{ "id": "delone-set" }],
+        "related": [{ "id": "delone-set" }],
+        "enabledBy": [],
+        "synonyms": [{ "id": "delone-set", "label": "local isomorphism class of a Delone set" }]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "adjacency-oracle": {
+      "id": "adjacency-oracle",
+      "term": "Adjacency Oracle",
+      "aliases": ["neighbor oracle", "exact arithmetic adjacency subroutine"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "algebra"],
+      "difficulty": "intermediate",
+      "tags": [
+        "adjacency",
+        "oracle",
+        "exact-arithmetic",
+        "Z[phi]",
+        "BFS",
+        "computational-geometry"
+      ],
+      "summary": "A subroutine that returns the neighbors of a tile or vertex in the expansion family using exact arithmetic over Z[φ] to avoid floating-point ambiguity in distance comparisons.",
+      "definition": "A subroutine that, given a tile (or vertex), returns its neighbors in the expansion family — using **exact arithmetic over $\\mathbb{Z}[\\phi]$** to avoid floating-point ambiguity in distance comparisons.",
+      "examples": [
+        {
+          "title": "Exact Arithmetic in Z[φ]",
+          "body": "Elements of $\\mathbb{Z}[\\phi]$ are represented as pairs $(a, b) \\in \\mathbb{Z}^2$ with value $a + b\\phi$. Arithmetic operations (addition, multiplication, norm computation) are performed exactly using integer arithmetic, avoiding the rounding errors that would corrupt distance comparisons in floating-point."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "bfs-breadth-first-search" }, { "id": "degeneracy-engine" }],
+        "enabledBy": [{ "id": "bfs-breadth-first-search" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "bfs-breadth-first-search": {
+      "id": "bfs-breadth-first-search",
+      "term": "BFS (Breadth-First Search)",
+      "aliases": ["breadth-first search", "BFS traversal"],
+      "domain": "computation",
+      "crossDomains": ["geometry", "combinatorics"],
+      "difficulty": "foundational",
+      "tags": [
+        "BFS",
+        "graph-traversal",
+        "effective-dimension",
+        "volume-growth",
+        "spectral-analysis"
+      ],
+      "summary": "Standard graph traversal by increasing distance from a seed vertex, used to estimate effective dimension from volume scaling, detect closure of expansion families, and build adjacency matrices.",
+      "definition": "Standard graph traversal by increasing distance from a seed vertex. Used to:\n\n- Estimate **effective dimension** $d_{\\text{eff}}$ from volume scaling $V(r) \\sim r^{d_{\\text{eff}}}$.\n- Detect closure of expansion families.\n- Build sparse adjacency matrices for spectral analysis.",
+      "examples": [
+        {
+          "title": "Effective Dimension Estimation",
+          "body": "Running BFS from a seed vertex in the pentagonal lattice and counting $V(r)$ = number of vertices within graph distance $r$ allows estimation of the effective dimension $d_{\\text{eff}}$ via the scaling $V(r) \\sim r^{d_{\\text{eff}}}$. Near vortex defects, $d_{\\text{eff}}$ may be non-integer."
+        },
+        {
+          "title": "Expansion Family Closure Detection",
+          "body": "BFS can detect when an expansion family closes (returns to a previously visited configuration), signaling a periodic or quasi-periodic structure in the tiling."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "V(r) \\sim r^{d_{\\text{eff}}}",
+          "description": "Volume growth law used to estimate the effective dimension of the pentagonal lattice via BFS.",
+          "variables": {
+            "V(r)": "Number of vertices within graph distance r from the seed",
+            "d_{\\text{eff}}": "Effective dimension of the lattice"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "adjacency-oracle" }],
+        "related": [{ "id": "falconer-distance-problem" }, { "id": "extremal-configuration" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+
+    "extremal-configuration": {
+      "id": "extremal-configuration",
+      "term": "Extremal Configuration",
+      "aliases": ["extremal point set", "optimal configuration"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "intermediate",
+      "tags": [
+        "extremal",
+        "point-set",
+        "distinct-distances",
+        "unit-distance",
+        "pentagonal-lattice",
+        "conjectural"
+      ],
+      "summary": "A point set achieving an extreme value of a combinatorial quantity, such as minimum distinct distances or maximum unit distances; pentagonal lattices are conjectured to be near-extremal for several classical problems.",
+      "definition": "A point set achieving extreme value of a combinatorial quantity — e.g., minimum $|\\Delta(P)|$, maximum unit distances. Pentagonal lattices are conjectured (but not proven) to be near-extremal for several classical problems.",
+      "examples": [
+        {
+          "title": "Integer Grid as Extremal Configuration",
+          "body": "The $\\sqrt{n} \\times \\sqrt{n}$ integer grid is the known extremal configuration for the Erdős distinct distances problem, achieving $|\\Delta(P)| = O(n/\\sqrt{\\log n})$."
+        },
+        {
+          "title": "Pentagonal Lattice as Conjectural Near-Extremal",
+          "body": "The pentagonal lattice $\\mathbb{Z}[\\phi]^2$ is conjectured to be near-extremal for the distinct distances problem due to its richer norm-multiplicativity structure, but this has not been proven."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "distance-set" }],
+        "related": [
+          { "id": "erdos-distinct-distances" },
+          { "id": "unit-distance-problem" },
+          { "id": "equidistant-family" },
+          { "id": "bfs-breadth-first-search" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

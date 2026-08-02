@@ -1,0 +1,2345 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spherical Gram Entropy | Neural Layer Demo</title>
+    <meta
+      name="description"
+      content="Interactive demonstration of Spherical Entropy optimization using Gram Matrices and TensorFlow.js"
+    />
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+
+    <!-- D3 & Geo Voronoi for Triangulation -->
+    <script src="https://cdn.jsdelivr.net/npm/d3-array@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-geo@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-geo-voronoi@2"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* =========================================
+           1. Variables & Reset
+           ========================================= */
+      :root {
+        --bg-color: #0f1115;
+        --card-bg: #1a1d24;
+        --card-hover: #22262f;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --text-muted: #6b7280;
+        --accent-primary: #00d2ff; /* Cyan */
+        --accent-secondary: #ff00ff; /* Magenta */
+        --accent-tertiary: #00ff9d; /* Green */
+        --danger: #ff4a4a;
+        --border-color: #2a2e36;
+        --border-focus: #4a4f5a;
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --font-mono: 'JetBrains Mono', monospace;
+        --font-sans: 'Inter', sans-serif;
+        --transition-fast: 0.15s ease;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      /* =========================================
+           2. Layout & Header
+           ========================================= */
+      header {
+        background-color: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .badge {
+        background: rgba(0, 210, 255, 0.1);
+        color: var(--accent-primary);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-mono);
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      main {
+        flex: 1;
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 1.5rem;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        max-width: 1920px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      @media (max-width: 1024px) {
+        main {
+          grid-template-columns: 1fr;
+          overflow-y: auto;
+        }
+      }
+
+      /* =========================================
+           3. Controls Panel
+           ========================================= */
+      .panel {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        height: auto;
+      }
+
+      .panel-header {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+      }
+
+      .value-display {
+        font-family: var(--font-mono);
+        color: var(--accent-primary);
+        font-size: 0.75rem;
+        background: rgba(0, 210, 255, 0.1);
+        padding: 0.1rem 0.4rem;
+        border-radius: var(--radius-sm);
+      }
+
+      .value-input {
+        font-family: var(--font-mono);
+        color: var(--accent-primary);
+        font-size: 0.75rem;
+        background: rgba(0, 210, 255, 0.1);
+        padding: 0.1rem 0.4rem;
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        border-radius: var(--radius-sm);
+        width: 70px;
+        text-align: right;
+      }
+
+      select,
+      input[type='range'] {
+        width: 100%;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      select {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+      }
+
+      input[type='range'] {
+        -webkit-appearance: none;
+      }
+
+      input[type='range']::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 2px;
+      }
+
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 14px;
+        width: 14px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        margin-top: -5px;
+        transition: transform 0.1s;
+      }
+
+      input[type='range']::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      button {
+        padding: 0.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+      }
+
+      .btn-primary {
+        background-color: var(--accent-primary);
+        color: #000;
+      }
+
+      .btn-primary:hover {
+        background-color: #33dbff;
+      }
+
+      .btn-secondary {
+        background-color: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+      }
+
+      .btn-secondary:hover {
+        border-color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .btn-danger {
+        background-color: rgba(255, 74, 74, 0.1);
+        color: var(--danger);
+        border: 1px solid rgba(255, 74, 74, 0.3);
+      }
+
+      .btn-danger:hover {
+        background-color: rgba(255, 74, 74, 0.2);
+      }
+
+      .math-block {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        background: #13151a;
+        padding: 0.75rem;
+        border-radius: var(--radius-sm);
+        margin-top: auto;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        line-height: 1.6;
+      }
+
+      /* =========================================
+           4. Visualization Area
+           ========================================= */
+      .viz-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        height: auto;
+        min-height: 80vh;
+      }
+
+      .metrics-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+      }
+
+      .metric-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .metric-label {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .metric-value {
+        font-family: var(--font-mono);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .canvas-wrapper {
+        flex: 1;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        position: relative;
+        overflow: hidden;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* Loading Overlay */
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        flex-direction: column;
+        gap: 1rem;
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+      .home-link {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9999;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: rgba(26, 29, 36, 0.92);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.15s ease;
+      }
+      .home-link:hover {
+        background: var(--card-hover);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>Initializing TensorFlow.js...</div>
+    </div>
+
+    <header>
+      <h1>
+        Geometric Entropy Lab
+        <span class="badge">v3.0</span>
+      </h1>
+    </header>
+
+    <main>
+      <!-- Controls Sidebar -->
+      <aside class="panel">
+        <div class="panel-header">Configuration</div>
+
+        <div class="control-group">
+          <label>Geometry</label>
+          <select id="geo-select">
+            <option value="sphere">Sphere (Surface)</option>
+            <option value="shell">Spherical Shell</option>
+            <option value="cube">Cube (Surface)</option>
+            <option value="cube-shell">Cube Shell</option>
+            <option value="plane">Plane (Square)</option>
+            <option value="cylinder">Cylinder</option>
+            <option value="torus">Torus (Surface)</option>
+            <option value="torus-shell">Torus Shell</option>
+            <option value="cone">Cone (Surface)</option>
+            <option value="cone-shell">Cone Shell</option>
+            <option value="saddle">Hyperbolic (Saddle)</option>
+            <option value="custom-stl">Custom STL (Upload)</option>
+          </select>
+          <div
+            id="stl-controls"
+            class="hidden"
+            style="
+              margin-top: 0.5rem;
+              border-top: 1px solid var(--border-color);
+              padding-top: 0.5rem;
+            "
+          >
+            <input
+              type="file"
+              id="stl-file"
+              accept=".stl"
+              style="font-size: 0.7rem; color: var(--text-primary); width: 100%"
+            />
+            <div style="font-size: 0.6rem; color: var(--text-muted); margin-top: 4px">
+              STL (Binary/ASCII). Auto-centered.
+            </div>
+          </div>
+        </div>
+        <div class="control-group">
+          <label
+            >Shell Inner Radius
+            <input type="number" class="value-input" id="val-inner" value="0.7" step="0.1"
+          /></label>
+          <input type="range" id="param-inner" min="0" max="0.99" step="0.01" value="0.7" />
+        </div>
+        <div id="torus-controls" style="display: none">
+          <div class="control-group">
+            <label
+              >Torus Major (R)
+              <input type="number" class="value-input" id="val-torus-R" value="0.8" step="0.1"
+            /></label>
+            <input type="range" id="param-torus-R" min="0.1" max="2.0" step="0.1" value="0.8" />
+          </div>
+          <div class="control-group">
+            <label
+              >Torus Minor (r)
+              <input type="number" class="value-input" id="val-torus-r" value="0.3" step="0.1"
+            /></label>
+            <input type="range" id="param-torus-r" min="0.05" max="1.0" step="0.05" value="0.3" />
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Optimization Target</label>
+          <select id="opt-target">
+            <option value="maximize">Maximize Entropy (Spread)</option>
+            <option value="minimize">Minimize Entropy (Cluster)</option>
+            <option value="target">Match Target Entropy</option>
+            <option value="neutral">Neutral (No Entropy Force)</option>
+          </select>
+        </div>
+
+        <div class="control-group" id="target-entropy-group" style="display: none">
+          <label
+            >Target Entropy
+            <input type="number" class="value-input" id="val-target" value="3.0" step="0.1"
+          /></label>
+          <input type="range" id="param-target" min="0" max="10" step="0.01" value="3.0" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Point Count (N)
+            <input type="number" class="value-input" id="val-n" value="50" step="1"
+          /></label>
+          <input type="range" id="param-n" min="2" max="5000" step="1" value="50" />
+        </div>
+        <div class="control-group">
+          <label
+            >Calc Neighbors (k)
+            <input type="number" class="value-input" id="val-calc-neighbors" value="0" step="1"
+          /></label>
+          <input type="range" id="param-calc-neighbors" min="0" max="49" step="1" value="0" />
+          <div style="font-size: 0.6rem; color: var(--text-muted); margin-top: -4px">
+            0 = All (Global)
+          </div>
+        </div>
+        <div class="panel-header">Custom Potential</div>
+        <div class="control-group">
+          <label> Add to Loss (JS/TFJS) </label>
+          <textarea
+            id="param-custom"
+            rows="2"
+            spellcheck="false"
+            style="
+              width: 100%;
+              background: var(--bg-color);
+              color: var(--text-primary);
+              border: 1px solid var(--border-color);
+              border-radius: 4px;
+              padding: 0.5rem;
+              font-family: var(--font-mono);
+              font-size: 0.75rem;
+              resize: vertical;
+            "
+          ></textarea>
+          <div style="font-size: 0.6rem; color: var(--text-secondary)">
+            Vars: <code>rho</code>, <code>p</code> (Nx1x3), <code>q</code> (1xNx3),
+            <code>D</code> (dist^2), <code>tf</code>.
+          </div>
+        </div>
+
+        <div class="panel-header">Hyperparameters</div>
+
+        <div class="control-group">
+          <label>Optimizer</label>
+          <select id="opt-optimizer">
+            <option value="adam">Adam</option>
+            <option value="qqn">QQN</option>
+            <option value="lbfgs">L-BFGS</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label
+            >Temperature (τ)
+            <input type="number" class="value-input" id="val-tau" value="0.5" step="0.05"
+          /></label>
+          <input type="range" id="param-tau" min="0.1" max="2.0" step="0.05" value="0.5" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Learning Rate
+            <input type="number" class="value-input" id="val-lr" value="0.05" step="0.001"
+          /></label>
+          <input type="range" id="param-lr" min="0.001" max="0.2" step="0.001" value="0.05" />
+        </div>
+        <div class="control-group">
+          <label
+            >Show Neighbors (k)
+            <input type="number" class="value-input" id="val-neighbors" value="0" step="1"
+          /></label>
+          <input type="range" id="param-neighbors" min="0" max="49" step="1" value="0" />
+        </div>
+        <div class="control-group">
+          <label
+            >Neighbor Radius
+            <input type="number" class="value-input" id="val-radius" value="0.0" step="0.1"
+          /></label>
+          <input type="range" id="param-radius" min="0" max="2.0" step="0.05" value="0.0" />
+        </div>
+        <div class="control-group">
+          <label>
+            Auto-Rotate View
+            <input type="checkbox" id="chk-autorotate" checked style="width: auto" />
+          </label>
+          <label>
+            Show Triangulation
+            <input type="checkbox" id="chk-triangulation" style="width: auto" />
+          </label>
+          <label>
+            Solid Fill
+            <input type="checkbox" id="chk-solid-fill" style="width: auto" />
+          </label>
+        </div>
+        <div class="control-group">
+          <label>Stats Panel</label>
+          <select id="stats-select">
+            <option value="histogram">Density Histogram</option>
+            <option value="matrix">Point-Pair Distance Matrix</option>
+          </select>
+        </div>
+        <div class="control-group" id="matrix-perm-group" style="display: none">
+          <label>Matrix Ordering</label>
+          <select id="matrix-perm-select">
+            <option value="none">None (Original)</option>
+            <option value="greedy-nn">Greedy Nearest-Neighbor</option>
+            <option value="spectral">Spectral (Fiedler)</option>
+            <option value="density">Density Sort</option>
+            <option value="pca">PCA Axis Sort</option>
+          </select>
+          <div style="font-size: 0.6rem; color: var(--text-muted); margin-top: -4px">
+            Reorders rows/cols to cluster short distances near the diagonal.
+          </div>
+        </div>
+        <div class="control-group">
+          <label
+            >Interaction Force
+            <input type="number" id="input-force" class="value-input" value="0.0" step="0.1" />
+          </label>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              font-size: 0.6rem;
+              color: var(--text-muted);
+              margin-top: -4px;
+            "
+          >
+            <span>Repel (1/r²)</span><span>Attract</span>
+          </div>
+          <input type="range" id="param-force" min="-4" max="4" step="0.1" value="0.0" />
+        </div>
+
+        <div class="button-group">
+          <button id="btn-toggle" class="btn-primary">Start Training</button>
+          <button id="btn-reset" class="btn-secondary">Reset Sphere</button>
+          <button id="btn-copy" class="btn-secondary" style="grid-column: span 2">
+            Copy Coordinates
+          </button>
+          <button id="btn-stl" class="btn-secondary" style="grid-column: span 2">Export STL</button>
+        </div>
+        <div class="panel-header">Immersive (WebXR)</div>
+        <div class="button-group">
+          <button id="btn-vr" class="btn-secondary" disabled>Enter VR</button>
+          <button id="btn-ar" class="btn-secondary" disabled>Enter AR</button>
+          <div
+            id="xr-status"
+            style="
+              grid-column: span 2;
+              font-size: 0.6rem;
+              color: var(--text-muted);
+              font-family: var(--font-mono);
+            "
+          >
+            Checking WebXR support...
+          </div>
+        </div>
+
+        <div class="math-block">
+          <strong>Gram Matrix Input:</strong><br />
+          G = X · Xᵀ (Dot Products)<br />
+          ρ = Σ exp(G / τ) (Density)<br />
+          p = ρ / Σρ<br />
+          H = -Σ p log(p)
+        </div>
+      </aside>
+
+      <!-- Visualization Area -->
+      <div class="viz-container">
+        <div class="metrics-bar">
+          <div class="metric-card">
+            <span class="metric-label">Spherical Entropy</span>
+            <span class="metric-value" id="metric-entropy" style="color: var(--accent-primary)"
+              >--</span
+            >
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Interaction</span>
+            <span class="metric-value" id="metric-interaction" style="color: var(--accent-tertiary)"
+              >0.00</span
+            >
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Total Fitness</span>
+            <span class="metric-value" id="metric-loss" style="color: var(--danger)">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Step</span>
+            <span class="metric-value" id="metric-step">0</span>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper" id="canvas-container">
+          <canvas id="viz-canvas"></canvas>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { OptimizerLbfgs } from './js/optimizer-lbfgs.js';
+      import { OptimizerAdam } from './js/optimizer-adam.js';
+      import { OptimizerQQN } from './js/optimizer-qqn.js';
+      import { WebXRViewer } from './js/webxr.js';
+
+      /**
+       * Spherical Gram Entropy - Interactive Demo
+       *
+       * Optimizes points on a unit sphere (3D) using a density estimation derived
+       * from the Gram Matrix (dot products) of the points.
+       */
+
+      // --- Configuration & State ---
+      const state = {
+        isTraining: false,
+        points: null, // TensorFlow variable [N, 3]
+        optimizer: null,
+        step: 0,
+        animationId: null,
+        customFunc: null,
+        rotation: { x: 0, y: 0 },
+        zoom: 1.0,
+        neighbors: 0,
+        neighborRadius: 0.0,
+        autoRotate: true,
+        showWireframe: true,
+        showTriangulation: false,
+        showSolidFill: false,
+        statsMode: 'histogram',
+        matrixPerm: 'none',
+        isDragging: false,
+        params: {
+          n: 50,
+          calcNeighbors: 0,
+          tau: 0.5,
+          lr: 0.05,
+          optimizerType: 'adam',
+          interaction: 0.0,
+          targetMode: 'maximize',
+          targetVal: 3.0,
+          customFormula: '',
+          geometry: 'sphere',
+          innerRadius: 0.7,
+          torusR: 0.8,
+          torusr: 0.3,
+        },
+        metrics: { entropy: 0, loss: 0, interaction: 0, densities: [] },
+      };
+
+      // --- DOM Elements ---
+      const els = {
+        canvas: document.getElementById('viz-canvas'),
+        loading: document.getElementById('loading'),
+        geoSelect: document.getElementById('geo-select'),
+        optimizerSelect: document.getElementById('opt-optimizer'),
+        mode: document.getElementById('opt-target'),
+        targetGroup: document.getElementById('target-entropy-group'),
+        innerInput: document.getElementById('param-inner'),
+        valInner: document.getElementById('val-inner'),
+        torusRInput: document.getElementById('param-torus-R'),
+        valTorusR: document.getElementById('val-torus-R'),
+        torusRadiusInput: document.getElementById('param-torus-r'),
+        valTorusRadius: document.getElementById('val-torus-r'),
+        targetInput: document.getElementById('param-target'),
+        nInput: document.getElementById('param-n'),
+        calcNeighborsInput: document.getElementById('param-calc-neighbors'),
+        valCalcNeighbors: document.getElementById('val-calc-neighbors'),
+        customInput: document.getElementById('param-custom'),
+        tauInput: document.getElementById('param-tau'),
+        lrInput: document.getElementById('param-lr'),
+        neighborsInput: document.getElementById('param-neighbors'),
+        valNeighbors: document.getElementById('val-neighbors'),
+        radiusInput: document.getElementById('param-radius'),
+        valRadius: document.getElementById('val-radius'),
+        chkAutoRotate: document.getElementById('chk-autorotate'),
+        chkTriangulation: document.getElementById('chk-triangulation'),
+        chkSolidFill: document.getElementById('chk-solid-fill'),
+        statsSelect: document.getElementById('stats-select'),
+        matrixPermSelect: document.getElementById('matrix-perm-select'),
+        matrixPermGroup: document.getElementById('matrix-perm-group'),
+        forceInput: document.getElementById('param-force'),
+        forceTextInput: document.getElementById('input-force'),
+        btnToggle: document.getElementById('btn-toggle'),
+        btnReset: document.getElementById('btn-reset'),
+        btnCopy: document.getElementById('btn-copy'),
+        btnStl: document.getElementById('btn-stl'),
+        valTarget: document.getElementById('val-target'),
+        valN: document.getElementById('val-n'),
+        valTau: document.getElementById('val-tau'),
+        valLr: document.getElementById('val-lr'),
+        metricEntropy: document.getElementById('metric-entropy'),
+        metricInteraction: document.getElementById('metric-interaction'),
+        metricLoss: document.getElementById('metric-loss'),
+        metricStep: document.getElementById('metric-step'),
+        stlControls: document.getElementById('stl-controls'),
+        torusControls: document.getElementById('torus-controls'),
+        stlFile: document.getElementById('stl-file'),
+        btnVr: document.getElementById('btn-vr'),
+        btnAr: document.getElementById('btn-ar'),
+        xrStatus: document.getElementById('xr-status'),
+      };
+
+      const ctx = els.canvas.getContext('2d');
+
+      // --- TensorFlow.js Logic ---
+      // STL State
+      const stlData = {
+        vertices: null,
+        triangles: null,
+        loaded: false,
+      };
+
+      function parseStl(buffer) {
+        const view = new DataView(buffer);
+        let isBinary = true;
+        let numTriangles = 0;
+
+        if (view.byteLength < 84) {
+          isBinary = false;
+        } else {
+          numTriangles = view.getUint32(80, true);
+          if (view.byteLength !== 84 + numTriangles * 50) {
+            isBinary = false;
+          }
+        }
+
+        const vertices = [];
+
+        if (isBinary) {
+          let offset = 84;
+          for (let i = 0; i < numTriangles; i++) {
+            offset += 12; // Skip normal
+            for (let j = 0; j < 3; j++) {
+              const x = view.getFloat32(offset, true);
+              const y = view.getFloat32(offset + 4, true);
+              const z = view.getFloat32(offset + 8, true);
+              vertices.push(x, y, z);
+              offset += 12;
+            }
+            offset += 2; // Attribute byte count
+          }
+        } else {
+          const decoder = new TextDecoder('utf-8');
+          const text = decoder.decode(buffer);
+          const lines = text.split('\n');
+          for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith('vertex')) {
+              const parts = line.split(/\s+/);
+              if (parts.length >= 4) {
+                vertices.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
+              }
+            }
+          }
+        }
+        if (vertices.length === 0) throw new Error('No vertices found in STL');
+        let min = [Infinity, Infinity, Infinity];
+        let max = [-Infinity, -Infinity, -Infinity];
+        for (let i = 0; i < vertices.length; i += 3) {
+          const x = vertices[i],
+            y = vertices[i + 1],
+            z = vertices[i + 2];
+          min[0] = Math.min(min[0], x);
+          min[1] = Math.min(min[1], y);
+          min[2] = Math.min(min[2], z);
+          max[0] = Math.max(max[0], x);
+          max[1] = Math.max(max[1], y);
+          max[2] = Math.max(max[2], z);
+        }
+
+        const center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+        const size = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+        const scale = 2.0 / (size || 1);
+        const finalVerts = new Float32Array(vertices.length);
+        for (let i = 0; i < vertices.length; i += 3) {
+          finalVerts[i] = (vertices[i] - center[0]) * scale;
+          finalVerts[i + 1] = (vertices[i + 1] - center[1]) * scale;
+          finalVerts[i + 2] = (vertices[i + 2] - center[2]) * scale;
+        }
+        const triangles = [];
+        for (let i = 0; i < finalVerts.length; i += 9) {
+          const a = [finalVerts[i], finalVerts[i + 1], finalVerts[i + 2]];
+          const b = [finalVerts[i + 3], finalVerts[i + 4], finalVerts[i + 5]];
+          const c = [finalVerts[i + 6], finalVerts[i + 7], finalVerts[i + 8]];
+          triangles.push({ a, b, c });
+        }
+        stlData.vertices = finalVerts;
+        stlData.triangles = triangles;
+        stlData.loaded = true;
+      }
+
+      function closestPointTriangle(p, t) {
+        const sub = (v1, v2) => [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]];
+        const add = (v1, v2) => [v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]];
+        const mul = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
+        const dot = (v1, v2) => v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+        const ab = sub(t.b, t.a),
+          ac = sub(t.c, t.a),
+          ap = sub(p, t.a);
+        const d1 = dot(ab, ap),
+          d2 = dot(ac, ap);
+        if (d1 <= 0 && d2 <= 0) return t.a;
+        const bp = sub(p, t.b),
+          d3 = dot(ab, bp),
+          d4 = dot(ac, bp);
+        if (d3 >= 0 && d4 <= d3) return t.b;
+        const vc = d1 * d4 - d3 * d2;
+        if (vc <= 0 && d1 >= 0 && d3 <= 0) return add(t.a, mul(ab, d1 / (d1 - d3)));
+        const cp = sub(p, t.c),
+          d5 = dot(ab, cp),
+          d6 = dot(ac, cp);
+        if (d6 >= 0 && d5 <= d6) return t.c;
+        const vb = d5 * d2 - d1 * d6;
+        if (vb <= 0 && d2 >= 0 && d6 <= 0) return add(t.a, mul(ac, d2 / (d2 - d6)));
+        const va = d3 * d6 - d5 * d4;
+        if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0)
+          return add(t.b, mul(sub(t.c, t.b), (d4 - d3) / (d4 - d3 + (d5 - d6))));
+        const denom = 1 / (va + vb + vc);
+        return add(t.a, add(mul(ab, vb * denom), mul(ac, vc * denom)));
+      }
+
+      function projectPointsToStl(pointsArr, innerRadius) {
+        const res = new Float32Array(pointsArr.length);
+        const n = pointsArr.length / 3;
+        const tris = stlData.triangles;
+        const isShell = innerRadius < 0.98;
+        for (let i = 0; i < n; i++) {
+          const p = [pointsArr[i * 3], pointsArr[i * 3 + 1], pointsArr[i * 3 + 2]];
+          let minDist = Infinity;
+          let closest = p;
+          for (let j = 0; j < tris.length; j++) {
+            const cp = closestPointTriangle(p, tris[j]);
+            const d = (p[0] - cp[0]) ** 2 + (p[1] - cp[1]) ** 2 + (p[2] - cp[2]) ** 2;
+            if (d < minDist) {
+              minDist = d;
+              closest = cp;
+            }
+          }
+          let finalP = closest;
+          if (isShell) {
+            const distToOrigin = Math.sqrt(closest[0] ** 2 + closest[1] ** 2 + closest[2] ** 2);
+            if (distToOrigin > 1e-6) {
+              const pDist = Math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2);
+              let targetDist = Math.max(distToOrigin * innerRadius, Math.min(distToOrigin, pDist));
+              finalP = [
+                closest[0] * (targetDist / distToOrigin),
+                closest[1] * (targetDist / distToOrigin),
+                closest[2] * (targetDist / distToOrigin),
+              ];
+            }
+          }
+          res[i * 3] = finalP[0];
+          res[i * 3 + 1] = finalP[1];
+          res[i * 3 + 2] = finalP[2];
+        }
+        return res;
+      }
+
+      /**
+       *
+       * Projects points onto the selected geometry surface.
+       */
+      function projectToGeometry(points, type, params, applyStlConstraint = true) {
+        // return tf.tidy(() => {
+        if (type === 'custom-stl') {
+          if (!stlData.loaded) return points;
+          if (!applyStlConstraint) return points;
+          return tf.tidy(() => {
+            const data = points.dataSync();
+            const projected = projectPointsToStl(data, params.innerRadius);
+            return tf.tensor(projected, points.shape);
+          });
+        }
+
+        const x = points.slice([0, 0], [-1, 1]);
+        const y = points.slice([0, 1], [-1, 1]);
+        const z = points.slice([0, 2], [-1, 1]);
+
+        if (type === 'sphere') {
+          const norms = tf.norm(points, 'euclidean', 1, true);
+          return tf.div(points, norms);
+        } else if (type === 'shell') {
+          const norms = tf.norm(points, 'euclidean', 1, true);
+          const clipped = tf.clipByValue(norms, params.innerRadius, 1.0);
+          return tf.mul(points, tf.div(clipped, tf.add(norms, 1e-8)));
+        } else if (type === 'cube' || type === 'cube-shell') {
+          // Project to surface of cube [-1, 1]
+          // p = p / max(|x|, |y|, |z|)
+          const abs = tf.abs(points);
+          const maxVal = tf.max(abs, 1, true);
+          let scale = tf.div(1.0, tf.add(maxVal, 1e-8));
+          if (type === 'cube-shell') {
+            // For shell, we want maxVal to be between inner and 1
+            const targetMax = tf.clipByValue(maxVal, params.innerRadius, 1.0);
+            scale = tf.div(targetMax, tf.add(maxVal, 1e-8));
+          }
+          return tf.mul(points, scale);
+        } else if (type === 'plane') {
+          // Square plane on Z=0, x,y in [-1, 1]
+          const clampedX = tf.clipByValue(x, -1, 1);
+          const clampedY = tf.clipByValue(y, -1, 1);
+          const zeros = tf.zerosLike(z);
+          return tf.concat([clampedX, clampedY, zeros], 1);
+        } else if (type === 'cylinder') {
+          // Cylinder along Y axis, radius 1, height [-1, 1]
+          const xz = tf.concat([x, z], 1);
+          const norms = tf.norm(xz, 'euclidean', 1, true);
+          const xzProj = tf.div(xz, tf.add(norms, 1e-8));
+          const yClamped = tf.clipByValue(y, -1, 1);
+          return tf.concat(
+            [xzProj.slice([0, 0], [-1, 1]), yClamped, xzProj.slice([0, 1], [-1, 1])],
+            1
+          );
+        } else if (type === 'torus' || type === 'torus-shell') {
+          // Torus in XY plane. Major R=0.8, Minor r=0.3
+          const R = params.torusR;
+          const r = params.torusr;
+          // Project to center circle
+          const xy = tf.concat([x, y], 1);
+          const xyNorm = tf.norm(xy, 'euclidean', 1, true);
+          const xyDir = tf.div(xy, tf.add(xyNorm, 1e-8));
+          const center = tf.mul(xyDir, R); // [N, 2]
+
+          // Vector from center circle to point
+          const diffX = tf.sub(x, center.slice([0, 0], [-1, 1]));
+          const diffY = tf.sub(y, center.slice([0, 1], [-1, 1]));
+          const diff = tf.concat([diffX, diffY, z], 1);
+
+          // Normalize diff to r
+          const diffLen = tf.norm(diff, 'euclidean', 1, true);
+          let targetDist = tf.scalar(r);
+          if (type === 'torus-shell') {
+            targetDist = tf.clipByValue(diffLen, r * params.innerRadius, r);
+          }
+          const diffProj = tf.mul(tf.div(diff, tf.add(diffLen, 1e-8)), targetDist);
+
+          // Result = (center, 0) + diffProj
+          const centerX = center.slice([0, 0], [-1, 1]);
+          const centerY = center.slice([0, 1], [-1, 1]);
+          const centerZ = tf.zerosLike(z);
+          return tf.add(tf.concat([centerX, centerY, centerZ], 1), diffProj);
+        } else if (type === 'cone' || type === 'cone-shell') {
+          // Cone along Y. Tip at (0, 1, 0), Base at y=-1, r=1.
+          // Radius at y is r(y) = 0.5 * (1 - y)
+          const yClamped = tf.clipByValue(y, -1, 1);
+          const targetRadius = tf.mul(0.5, tf.sub(1.0, yClamped));
+
+          const xz = tf.concat([x, z], 1);
+          const currentRadius = tf.norm(xz, 'euclidean', 1, true);
+          let scale = tf.div(targetRadius, tf.add(currentRadius, 1e-8));
+
+          if (type === 'cone-shell') {
+            const minR = tf.mul(targetRadius, params.innerRadius);
+            const clampedR = tf.clipByValue(currentRadius, minR, targetRadius);
+            scale = tf.div(clampedR, tf.add(currentRadius, 1e-8));
+          }
+
+          const xProj = tf.mul(x, scale);
+          const zProj = tf.mul(z, scale);
+          return tf.concat([xProj, yClamped, zProj], 1);
+        } else if (type === 'saddle') {
+          // Hyperbolic Paraboloid: z = x^2 - y^2
+          // Clipped to x,y in [-0.8, 0.8] to fit view
+          const xc = tf.clipByValue(x, -0.8, 0.8);
+          const yc = tf.clipByValue(y, -0.8, 0.8);
+          const zc = tf.sub(tf.square(xc), tf.square(yc));
+          return tf.concat([xc, yc, zc], 1);
+        }
+        return points;
+        // });
+      }
+
+      /**
+       * Calculates Entropy based on Gaussian Kernel (Euclidean Distance).
+       * Generalized for any geometry.
+       */
+      function computeEntropy(points, temperature, kNearest = 0) {
+        // return tf.tidy(() => {
+
+        // Pairwise Squared Euclidean Distance
+        // |x-y|^2 = |x|^2 + |y|^2 - 2<x,y>
+        const r = tf.sum(tf.square(points), 1, true);
+        // distSq = r - 2xyT + rT
+        const distSq = tf.add(
+          tf.sub(r, tf.mul(2, tf.matMul(points, points, false, true))),
+          tf.transpose(r)
+        );
+        let effectiveDistSq = distSq;
+        let mask = null;
+        if (kNearest > 0 && kNearest < points.shape[0]) {
+          const negDist = tf.neg(distSq);
+          // Stop gradient for neighbor selection (TopK is not differentiable)
+          const { values } = tf.topk(tf.stopGradient(negDist), kNearest + 1);
+          const threshold = values.slice([0, kNearest], [-1, 1]);
+          mask = tf.greaterEqual(negDist, threshold);
+          effectiveDistSq = tf.where(mask, distSq, tf.scalar(1e9));
+        }
+
+        // Kernel: exp(-distSq / tau)
+        // Note: On sphere, distSq = 2 - 2<x,y>.
+        // This is monotonic with dot product, so optimization behavior is preserved.
+        const kernel = tf.exp(tf.div(tf.neg(effectiveDistSq), temperature));
+
+        // Sum across rows to get "density" of neighborhood for each point
+        const densities = tf.sum(kernel, 1);
+
+        // Probabilities
+        const sumDensities = tf.sum(densities);
+        const probs = tf.div(densities, sumDensities);
+
+        // Entropy
+        const logProbs = tf.log(tf.add(probs, 1e-12));
+        const entropy = tf.neg(tf.sum(tf.mul(probs, logProbs)));
+
+        return { entropy, densities, distSq, mask };
+        // });
+      }
+
+      function trainStep() {
+        if (!state.isTraining || !state.points) return;
+
+        tf.tidy(() => {
+          // 1. Project current points to manifold (Constraint)
+
+          const lossFunction = () => {
+            const projected = projectToGeometry(
+              state.points,
+              state.params.geometry,
+              state.params,
+              false
+            );
+            const { entropy, densities, distSq, mask } = computeEntropy(
+              projected,
+              state.params.tau,
+              state.params.calcNeighbors
+            );
+
+            let loss;
+            if (state.params.targetMode === 'maximize') {
+              loss = tf.neg(entropy); // Minimize negative entropy
+            } else if (state.params.targetMode === 'minimize') {
+              loss = entropy;
+            } else if (state.params.targetMode === 'neutral') {
+              loss = tf.scalar(0);
+            } else {
+              const target = tf.scalar(state.params.targetVal);
+              loss = tf.square(tf.sub(entropy, target));
+            }
+            // Interaction Force
+            const force = state.params.interaction;
+            if (Math.abs(force) > 1e-5) {
+              if (force < 0) {
+                // Repel: Minimize 1/distance
+                const potential = tf.div(1.0, tf.add(distSq, 0.001));
+                // Mask diagonal (self-interaction)
+                let interactionMask = tf.sub(tf.onesLike(distSq), tf.eye(distSq.shape[0]));
+                if (mask) {
+                  interactionMask = tf.mul(interactionMask, tf.cast(mask, 'float32'));
+                }
+                const repelLoss = tf.mean(tf.mul(potential, interactionMask));
+                loss = tf.add(loss, tf.mul(repelLoss, Math.abs(force)));
+              } else {
+                // Attract: Minimize distance
+                let interactionMask = tf.sub(tf.onesLike(distSq), tf.eye(distSq.shape[0]));
+                if (mask) {
+                  interactionMask = tf.mul(interactionMask, tf.cast(mask, 'float32'));
+                }
+                const meanDist = tf.mean(tf.mul(distSq, interactionMask));
+                loss = tf.add(loss, tf.mul(meanDist, force));
+              }
+            }
+            // Custom Potential
+            if (state.params.customFormula) {
+              try {
+                if (!state.customFunc) {
+                  state.customFunc = new Function(
+                    'rho',
+                    'p',
+                    'q',
+                    'D',
+                    'tf',
+                    'return ' + state.params.customFormula
+                  );
+                }
+                const pExp = projected.expandDims(1);
+                const qExp = projected.expandDims(0);
+                const res = state.customFunc(densities, pExp, qExp, distSq, tf);
+                if (res) {
+                  if (res instanceof tf.Tensor) {
+                    loss = tf.add(loss, tf.sum(res));
+                  } else if (typeof res === 'number') {
+                    loss = tf.add(loss, res);
+                  }
+                }
+              } catch (e) {
+                // Ignore runtime errors
+              }
+            }
+
+            return loss;
+          };
+
+          // Compute gradients
+          // We compute gradients w.r.t state.points, but the loss uses projected points.
+          // TFJS handles the chain rule through the projection op.
+          const { value: loss, grads } = state.optimizer.computeGradients(lossFunction);
+
+          // Apply gradients
+          state.optimizer.applyGradients(grads);
+
+          // Hard constraint: Project points back to manifold after update
+          const constrained = projectToGeometry(
+            state.points,
+            state.params.geometry,
+            state.params,
+            true
+          );
+          state.points.assign(constrained);
+
+          // Update metrics
+          const res = computeEntropy(state.points, state.params.tau, state.params.calcNeighbors);
+          state.metrics.loss = loss.dataSync()[0];
+          state.metrics.entropy = res.entropy.dataSync()[0];
+          state.metrics.densities = res.densities.dataSync(); // For visualization
+          // Calculate interaction for display
+          let interactionVal = 0;
+          const force = state.params.interaction;
+          if (Math.abs(force) > 1e-5) {
+            const distSq = res.distSq;
+            if (force < 0) {
+              const potential = tf.div(1.0, tf.add(distSq, 0.001));
+              let interactionMask = tf.sub(tf.onesLike(distSq), tf.eye(distSq.shape[0]));
+              if (res.mask) interactionMask = tf.mul(interactionMask, tf.cast(res.mask, 'float32'));
+              interactionVal =
+                tf.mean(tf.mul(potential, interactionMask)).dataSync()[0] * Math.abs(force);
+            } else {
+              let interactionMask = tf.sub(tf.onesLike(distSq), tf.eye(distSq.shape[0]));
+              if (res.mask) interactionMask = tf.mul(interactionMask, tf.cast(res.mask, 'float32'));
+              interactionVal = tf.mean(tf.mul(distSq, interactionMask)).dataSync()[0] * force;
+            }
+          }
+          state.metrics.interaction = interactionVal;
+          state.step++;
+        });
+      }
+
+      // --- Visualization (3D Sphere + Charts) ---
+
+      function resizeCanvas() {
+        const container = els.canvas.parentElement;
+        els.canvas.width = container.clientWidth;
+        els.canvas.height = container.clientHeight;
+      }
+
+      function project3D(x, y, z, width, height, scale) {
+        // Simple orthographic projection with rotation
+        const rotY = state.rotation.y;
+        const rotX = state.rotation.x; // Fixed tilt usually looks good
+
+        // Rotate Y
+        let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
+        let z1 = x * Math.sin(rotY) + z * Math.cos(rotY);
+
+        // Rotate X (Tilt)
+        let y2 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
+        let z2 = y * Math.sin(rotX) + z1 * Math.cos(rotX);
+
+        // Perspective
+        const fov = 4;
+        const dist = 4;
+        const p = fov / (dist - z2);
+
+        return {
+          x: width * 0.35 + x1 * scale * p, // Center on left side (35%)
+          y: height * 0.5 - y2 * scale * p,
+          z: z2,
+          scale: p,
+        };
+      }
+
+      function getTriangles(pointsArr) {
+        // Convert to [lon, lat] for d3-geo-voronoi
+        const pointsLonLat = [];
+        const numPoints = pointsArr.length / 3;
+        for (let i = 0; i < numPoints; i++) {
+          const x = pointsArr[i * 3];
+          const y = pointsArr[i * 3 + 1];
+          const z = pointsArr[i * 3 + 2];
+          const r = Math.sqrt(x * x + y * y + z * z);
+          // Clamp z/r to [-1, 1] to avoid NaN from asin
+          const lat = Math.asin(Math.max(-1, Math.min(1, z / r))) * (180 / Math.PI);
+          const lon = Math.atan2(y, x) * (180 / Math.PI);
+          pointsLonLat.push([lon, lat]);
+        }
+        try {
+          const delaunay = d3.geoDelaunay(pointsLonLat);
+          return delaunay.triangles; // Array of [i, j, k] indices
+        } catch (e) {
+          console.warn('Triangulation failed', e);
+          return [];
+        }
+      }
+
+      function draw() {
+        const w = els.canvas.width;
+        const h = els.canvas.height;
+
+        // Clear
+        ctx.fillStyle = '#1a1d24';
+        ctx.fillRect(0, 0, w, h);
+
+        if (!state.points) return;
+
+        const pointsArr = state.points.dataSync();
+        const numPoints = pointsArr.length / 3;
+
+        // --- Draw 3D Geometry (Left Side) ---
+        const sphereRadius = Math.min(w * 0.35, h * 0.4) * state.zoom;
+
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.stroke();
+
+        ctx.beginPath();
+        if (state.showWireframe) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          if (state.params.geometry === 'custom-stl' && stlData.loaded) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 0.5;
+            const step =
+              stlData.triangles.length > 2000 ? Math.ceil(stlData.triangles.length / 1000) : 1;
+            ctx.beginPath();
+            for (let i = 0; i < stlData.triangles.length; i += step) {
+              const t = stlData.triangles[i];
+              const p1 = project3D(t.a[0], t.a[1], t.a[2], w, h, sphereRadius);
+              const p2 = project3D(t.b[0], t.b[1], t.b[2], w, h, sphereRadius);
+              const p3 = project3D(t.c[0], t.c[1], t.c[2], w, h, sphereRadius);
+              ctx.moveTo(p1.x, p1.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.lineTo(p3.x, p3.y);
+              ctx.lineTo(p1.x, p1.y);
+            }
+            ctx.stroke();
+          }
+
+          const drawLine = (p1, p2) => {
+            const proj1 = project3D(p1.x, p1.y, p1.z, w, h, sphereRadius);
+            const proj2 = project3D(p2.x, p2.y, p2.z, w, h, sphereRadius);
+            ctx.beginPath();
+            ctx.moveTo(proj1.x, proj1.y);
+            ctx.lineTo(proj2.x, proj2.y);
+            ctx.stroke();
+          };
+        }
+
+        // Project Points
+        const projected = [];
+        const densities =
+          state.metrics.densities.length > 0
+            ? state.metrics.densities
+            : new Array(numPoints).fill(1);
+
+        let maxDensity = -Infinity,
+          minDensity = Infinity;
+        for (let i = 0; i < densities.length; i++) {
+          const d = densities[i];
+          if (d > maxDensity) maxDensity = d;
+          if (d < minDensity) minDensity = d;
+        }
+        if (!isFinite(maxDensity)) maxDensity = 1;
+        if (!isFinite(minDensity)) minDensity = 0;
+
+        for (let i = 0; i < numPoints; i++) {
+          const x = pointsArr[i * 3];
+          const y = pointsArr[i * 3 + 1];
+          const z = pointsArr[i * 3 + 2];
+
+          const proj = project3D(x, y, z, w, h, sphereRadius);
+
+          // Color based on density contribution
+          // High density (clustered) = Hot/Magenta
+          // Low density (isolated) = Cool/Cyan
+          const d = densities[i];
+          const normD = (d - minDensity) / (maxDensity - minDensity + 0.0001);
+
+          projected.push({ ...proj, normD });
+        }
+        // Draw Triangulation
+        if (state.showTriangulation || state.showSolidFill) {
+          const triangles = getTriangles(pointsArr);
+          // Sort triangles by depth for better visibility
+          const triObjs = triangles.map((t) => {
+            const p1 = projected[t[0]];
+            const p2 = projected[t[1]];
+            const p3 = projected[t[2]];
+            const z = (p1.z + p2.z + p3.z) / 3;
+            const d = (p1.normD + p2.normD + p3.normD) / 3;
+            return { p1, p2, p3, z, d };
+          });
+          triObjs.sort((a, b) => a.z - b.z);
+          ctx.lineWidth = 0.5;
+          triObjs.forEach((t) => {
+            const alpha = 0.1 + (t.z + 1) * 0.2;
+
+            ctx.beginPath();
+            ctx.moveTo(t.p1.x, t.p1.y);
+            ctx.lineTo(t.p2.x, t.p2.y);
+            ctx.lineTo(t.p3.x, t.p3.y);
+            ctx.closePath();
+
+            if (state.showSolidFill) {
+              const r = Math.floor(0 + t.d * 255);
+              const g = Math.floor(210 - t.d * 210);
+              const b = 255;
+              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(0.8, alpha * 0.5))})`;
+              ctx.fill();
+            }
+
+            if (state.showTriangulation) {
+              ctx.strokeStyle = `rgba(0, 210, 255, ${Math.max(0, Math.min(1, alpha))})`;
+              ctx.stroke();
+            }
+          });
+        }
+
+        // Draw Connections
+        if (state.neighbors > 0 || state.neighborRadius > 0) {
+          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+          ctx.beginPath();
+          const rSq = state.neighborRadius * state.neighborRadius;
+
+          for (let i = 0; i < numPoints; i++) {
+            const idxI = i * 3;
+            const xi = pointsArr[idxI],
+              yi = pointsArr[idxI + 1],
+              zi = pointsArr[idxI + 2];
+            const p1 = projected[i];
+
+            if (state.neighborRadius > 0) {
+              for (let j = i + 1; j < numPoints; j++) {
+                const idxJ = j * 3;
+                const xj = pointsArr[idxJ],
+                  yj = pointsArr[idxJ + 1],
+                  zj = pointsArr[idxJ + 2];
+                const distSq = (xi - xj) ** 2 + (yi - yj) ** 2 + (zi - zj) ** 2;
+                if (distSq < rSq) {
+                  const p2 = projected[j];
+                  ctx.moveTo(p1.x, p1.y);
+                  ctx.lineTo(p2.x, p2.y);
+                }
+              }
+            }
+
+            if (state.neighbors > 0) {
+              const dists = [];
+              for (let j = 0; j < numPoints; j++) {
+                if (i === j) continue;
+                const idxJ = j * 3;
+                const xj = pointsArr[idxJ],
+                  yj = pointsArr[idxJ + 1],
+                  zj = pointsArr[idxJ + 2];
+                dists.push({ idx: j, val: xi * xj + yi * yj + zi * zj });
+              }
+              dists.sort((a, b) => b.val - a.val);
+              const k = Math.min(state.neighbors, dists.length);
+              for (let n = 0; n < k; n++) {
+                const p2 = projected[dists[n].idx];
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+              }
+            }
+          }
+          ctx.stroke();
+        }
+
+        // Sort by Z for painter's algorithm
+        projected.sort((a, b) => a.z - b.z);
+
+        // Draw Points
+        projected.forEach((p) => {
+          const alpha = 0.3 + (p.z + 1) * 0.35; // Fade back points
+          const size = 3 * p.scale + p.normD * 2; // Clustered points slightly larger
+
+          // Interpolate color: Cyan (0) to Magenta (1)
+          const r = Math.floor(0 + p.normD * 255);
+          const g = Math.floor(210 - p.normD * 210);
+          const b = 255;
+
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Glow
+          if (p.z > 0) {
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 1)`;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+          }
+        });
+
+        // --- Draw Density Distribution (Right Side) ---
+        const chartX = w * 0.7;
+        const chartY = h * 0.5;
+        const chartW = w * 0.25;
+        const chartH = h * 0.6;
+
+        if (state.statsMode === 'matrix') {
+          drawDistanceMatrix(pointsArr, numPoints, chartX, chartY, chartW, chartH);
+        } else {
+          drawDensityHistogram(densities, chartX, chartY, chartW, chartH);
+        }
+      }
+
+      function drawDensityHistogram(densities, chartX, chartY, chartW, chartH) {
+        // Axis
+        ctx.strokeStyle = '#2a2e36';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(chartX, chartY + chartH / 2);
+        ctx.lineTo(chartX + chartW, chartY + chartH / 2); // X Axis
+        ctx.moveTo(chartX, chartY - chartH / 2);
+        ctx.lineTo(chartX, chartY + chartH / 2); // Y Axis
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '10px JetBrains Mono';
+        ctx.fillText('DENSITY DISTRIBUTION', chartX, chartY - chartH / 2 - 10);
+
+        // Histogram
+        const bins = 20;
+        const hist = new Array(bins).fill(0);
+        const minD = Math.min(...densities);
+        const maxD = Math.max(...densities) + 0.0001;
+        const range = maxD - minD;
+        densities.forEach((d) => {
+          const bin = Math.floor(((d - minD) / range) * bins);
+          hist[Math.max(0, Math.min(bins - 1, bin))]++;
+        });
+        const maxCount = Math.max(...hist, 1);
+        const binW = chartW / bins;
+        ctx.fillStyle = 'rgba(0, 210, 255, 0.5)';
+
+        ctx.beginPath();
+        ctx.moveTo(chartX, chartY + chartH / 2);
+
+        for (let i = 0; i < bins; i++) {
+          const hVal = hist[i];
+          const barH = (hVal / maxCount) * chartH;
+          const x = chartX + i * binW;
+          const y = chartY + chartH / 2 - barH;
+
+          ctx.rect(x, y, binW - 1, barH);
+        }
+
+        ctx.fill();
+
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      /**
+       * Computes a permutation (ordering) of point indices for the distance
+       * matrix display. The goal of most modes is to place short distances
+       * close to the diagonal so block-structure becomes visible.
+       *
+       * Returns an array `order` of length N (capped to display count) where
+       * order[displayIndex] = originalPointIndex.
+       */
+      function computeMatrixPermutation(pointsArr, numPoints, mode) {
+        const maxDisplay = 64;
+        const N = Math.min(numPoints, maxDisplay);
+        // Default identity order.
+        const identity = Array.from({ length: N }, (_, i) => i);
+        if (!mode || mode === 'none' || N <= 2) return identity;
+        // Helper: pairwise distance between original indices a, b.
+        const dist = (a, b) => {
+          const dx = pointsArr[a * 3] - pointsArr[b * 3];
+          const dy = pointsArr[a * 3 + 1] - pointsArr[b * 3 + 1];
+          const dz = pointsArr[a * 3 + 2] - pointsArr[b * 3 + 2];
+          return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        };
+        if (mode === 'greedy-nn') {
+          // Greedy nearest-neighbor path: start at point 0, repeatedly append
+          // the closest unvisited point. Produces a 1D ordering where adjacent
+          // rows are spatially close -> short distances hug the diagonal.
+          const visited = new Array(N).fill(false);
+          const order = [];
+          let current = 0;
+          visited[0] = true;
+          order.push(0);
+          for (let step = 1; step < N; step++) {
+            let best = -1;
+            let bestD = Infinity;
+            for (let j = 0; j < N; j++) {
+              if (visited[j]) continue;
+              const d = dist(current, j);
+              if (d < bestD) {
+                bestD = d;
+                best = j;
+              }
+            }
+            visited[best] = true;
+            order.push(best);
+            current = best;
+          }
+          return order;
+        }
+        if (mode === 'density') {
+          // Sort by the density metric (clustered points grouped together).
+          const densities = state.metrics.densities;
+          if (densities && densities.length >= N) {
+            const order = identity.slice();
+            order.sort((a, b) => densities[a] - densities[b]);
+            return order;
+          }
+          return identity;
+        }
+        if (mode === 'pca') {
+          // Project points onto their principal axis and sort along it.
+          // Compute mean.
+          let mx = 0,
+            my = 0,
+            mz = 0;
+          for (let i = 0; i < N; i++) {
+            mx += pointsArr[i * 3];
+            my += pointsArr[i * 3 + 1];
+            mz += pointsArr[i * 3 + 2];
+          }
+          mx /= N;
+          my /= N;
+          mz /= N;
+          // Covariance matrix (3x3).
+          let cxx = 0,
+            cxy = 0,
+            cxz = 0,
+            cyy = 0,
+            cyz = 0,
+            czz = 0;
+          for (let i = 0; i < N; i++) {
+            const dx = pointsArr[i * 3] - mx;
+            const dy = pointsArr[i * 3 + 1] - my;
+            const dz = pointsArr[i * 3 + 2] - mz;
+            cxx += dx * dx;
+            cxy += dx * dy;
+            cxz += dx * dz;
+            cyy += dy * dy;
+            cyz += dy * dz;
+            czz += dz * dz;
+          }
+          // Power-iteration to find the dominant eigenvector of covariance.
+          let v = [1, 1, 1];
+          for (let it = 0; it < 30; it++) {
+            const nx = cxx * v[0] + cxy * v[1] + cxz * v[2];
+            const ny = cxy * v[0] + cyy * v[1] + cyz * v[2];
+            const nz = cxz * v[0] + cyz * v[1] + czz * v[2];
+            const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+            v = [nx / len, ny / len, nz / len];
+          }
+          const proj = identity.map((i) => {
+            const dx = pointsArr[i * 3] - mx;
+            const dy = pointsArr[i * 3 + 1] - my;
+            const dz = pointsArr[i * 3 + 2] - mz;
+            return { i, p: dx * v[0] + dy * v[1] + dz * v[2] };
+          });
+          proj.sort((a, b) => a.p - b.p);
+          return proj.map((o) => o.i);
+        }
+        if (mode === 'spectral') {
+          // Spectral ordering via the Fiedler vector of the graph Laplacian.
+          // Build affinity W = exp(-d^2 / sigma^2), degree D, Laplacian L = D - W.
+          // The second-smallest eigenvector of L (Fiedler vector) gives a
+          // 1D embedding; sorting by it clusters connected nodes.
+          // Estimate sigma as the mean nearest-neighbor distance.
+          let sigmaAccum = 0;
+          for (let i = 0; i < N; i++) {
+            let best = Infinity;
+            for (let j = 0; j < N; j++) {
+              if (i === j) continue;
+              const d = dist(i, j);
+              if (d < best) best = d;
+            }
+            sigmaAccum += isFinite(best) ? best : 0;
+          }
+          const sigma = sigmaAccum / N || 1;
+          const inv2s2 = 1 / (2 * sigma * sigma);
+          // Affinity and degree.
+          const W = [];
+          const deg = new Array(N).fill(0);
+          for (let i = 0; i < N; i++) {
+            W[i] = new Array(N).fill(0);
+          }
+          for (let i = 0; i < N; i++) {
+            for (let j = i + 1; j < N; j++) {
+              const d = dist(i, j);
+              const w = Math.exp(-d * d * inv2s2);
+              W[i][j] = w;
+              W[j][i] = w;
+              deg[i] += w;
+              deg[j] += w;
+            }
+          }
+          // Find the Fiedler vector via inverse power iteration on L, working in
+          // the subspace orthogonal to the constant (smallest eigenvalue) vector.
+          // We instead iterate on the matrix and deflate the all-ones direction.
+          const applyL = (x) => {
+            // y = L x = D x - W x
+            const y = new Array(N).fill(0);
+            for (let i = 0; i < N; i++) {
+              let s = deg[i] * x[i];
+              const Wi = W[i];
+              for (let j = 0; j < N; j++) {
+                if (j !== i) s -= Wi[j] * x[j];
+              }
+              y[i] = s;
+            }
+            return y;
+          };
+          const deflate = (x) => {
+            // Remove component along the all-ones vector.
+            let mean = 0;
+            for (let i = 0; i < N; i++) mean += x[i];
+            mean /= N;
+            for (let i = 0; i < N; i++) x[i] -= mean;
+            // Normalize.
+            let norm = 0;
+            for (let i = 0; i < N; i++) norm += x[i] * x[i];
+            norm = Math.sqrt(norm) || 1;
+            for (let i = 0; i < N; i++) x[i] /= norm;
+          };
+          // Largest eigenvalue estimate for shift (Gershgorin bound ~ 2*maxDeg).
+          let maxDeg = 0;
+          for (let i = 0; i < N; i++) maxDeg = Math.max(maxDeg, deg[i]);
+          const shift = 2 * maxDeg + 1e-6;
+          // Iterate on (shift*I - L): its dominant eigenvector (after deflating
+          // the constant mode) corresponds to L's smallest non-trivial mode.
+          let x = identity.map((i) => Math.sin(i + 1));
+          deflate(x);
+          for (let it = 0; it < 100; it++) {
+            const Lx = applyL(x);
+            const next = new Array(N);
+            for (let i = 0; i < N; i++) next[i] = shift * x[i] - Lx[i];
+            deflate(next);
+            x = next;
+          }
+          const fiedler = identity.map((i) => ({ i, v: x[i] }));
+          fiedler.sort((a, b) => a.v - b.v);
+          return fiedler.map((o) => o.i);
+        }
+        return identity;
+      }
+
+      function drawDistanceMatrix(pointsArr, numPoints, chartX, chartY, chartW, chartH) {
+        // Build the permutation order according to the selected mode.
+        const order = computeMatrixPermutation(pointsArr, numPoints, state.matrixPerm);
+
+        // Label
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '10px JetBrains Mono';
+        ctx.fillText('POINT-PAIR DISTANCE MATRIX', chartX, chartY - chartH / 2 - 10);
+
+        // Cap the number of points displayed to keep cells visible
+        const maxDisplay = 64;
+        const N = Math.min(numPoints, maxDisplay);
+        const side = Math.min(chartW, chartH);
+        const cell = side / N;
+        const originX = chartX;
+        const originY = chartY - side / 2;
+        // Map display index -> original point index via the permutation.
+        const idxOf = (k) => order[k];
+
+        // First pass: compute min/max distance for color normalization
+        let minDist = Infinity;
+        let maxDist = -Infinity;
+        for (let i = 0; i < N; i++) {
+          const oi = idxOf(i);
+          const xi = pointsArr[oi * 3],
+            yi = pointsArr[oi * 3 + 1],
+            zi = pointsArr[oi * 3 + 2];
+          for (let j = 0; j < N; j++) {
+            if (i === j) continue;
+            const oj = idxOf(j);
+            const xj = pointsArr[oj * 3],
+              yj = pointsArr[oj * 3 + 1],
+              zj = pointsArr[oj * 3 + 2];
+            const d = Math.sqrt((xi - xj) ** 2 + (yi - yj) ** 2 + (zi - zj) ** 2);
+            if (d < minDist) minDist = d;
+            if (d > maxDist) maxDist = d;
+          }
+        }
+        if (!isFinite(minDist)) minDist = 0;
+        if (!isFinite(maxDist)) maxDist = 1;
+        const range = maxDist - minDist + 1e-6;
+
+        // Second pass: draw cells colored by distance (Cyan = near, Magenta = far)
+        for (let i = 0; i < N; i++) {
+          const oi = idxOf(i);
+          const xi = pointsArr[oi * 3],
+            yi = pointsArr[oi * 3 + 1],
+            zi = pointsArr[oi * 3 + 2];
+          for (let j = 0; j < N; j++) {
+            let t;
+            if (i === j) {
+              t = 0;
+            } else {
+              const oj = idxOf(j);
+              const xj = pointsArr[oj * 3],
+                yj = pointsArr[oj * 3 + 1],
+                zj = pointsArr[oj * 3 + 2];
+              const d = Math.sqrt((xi - xj) ** 2 + (yi - yj) ** 2 + (zi - zj) ** 2);
+              t = (d - minDist) / range;
+            }
+            // Interpolate Cyan (near, t=0) -> Magenta (far, t=1)
+            const r = Math.floor(0 + t * 255);
+            const g = Math.floor(210 - t * 210);
+            const b = 255;
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillRect(originX + j * cell, originY + i * cell, Math.ceil(cell), Math.ceil(cell));
+          }
+        }
+
+        // Border
+        ctx.strokeStyle = '#2a2e36';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(originX, originY, N * cell, N * cell);
+
+        // Note if truncated
+        if (numPoints > maxDisplay) {
+          ctx.fillStyle = '#6b7280';
+          ctx.font = '9px JetBrains Mono';
+          ctx.fillText(
+            `showing ${maxDisplay} of ${numPoints} points`,
+            originX,
+            originY + N * cell + 14
+          );
+        }
+
+        // Legend
+        ctx.fillStyle = '#a0a0a0';
+        ctx.font = '9px JetBrains Mono';
+        ctx.fillText('near', originX, originY + side + 30);
+        ctx.fillText('far', originX + side - 18, originY + side + 30);
+        const legendY = originY + side + 18;
+        const legendW = side;
+        for (let x = 0; x < legendW; x++) {
+          const t = x / legendW;
+          const r = Math.floor(0 + t * 255);
+          const g = Math.floor(210 - t * 210);
+          ctx.fillStyle = `rgb(${r}, ${g}, 255)`;
+          ctx.fillRect(originX + x, legendY, 1, 6);
+        }
+      }
+
+      function updateUI() {
+        els.metricEntropy.textContent = state.metrics.entropy.toFixed(4);
+        els.metricInteraction.textContent = state.metrics.interaction.toFixed(4);
+        els.metricLoss.textContent = state.metrics.loss.toFixed(5);
+        els.metricStep.textContent = state.step;
+      }
+
+      function animate() {
+        if (state.isTraining) {
+          // Perform multiple steps per frame for speed
+          for (let i = 0; i < 2; i++) trainStep();
+        }
+        if (state.autoRotate && !state.isDragging) {
+          state.rotation.y += 0.002;
+        }
+
+        draw();
+        updateUI();
+        state.animationId = requestAnimationFrame(animate);
+      }
+
+      // --- Initialization & Events ---
+      function createOptimizer() {
+        if (state.params.optimizerType === 'adam') {
+          return new OptimizerAdam(state.params.lr);
+        } else if (state.params.optimizerType === 'qqn') {
+          return new OptimizerQQN(state.params.lr);
+        }
+        return new OptimizerLbfgs(state.params.lr);
+      }
+      // --- WebXR Setup ---
+      let xrViewer = null;
+      async function setupWebXR() {
+        if (!WebXRViewer.isSupported()) {
+          els.xrStatus.textContent = 'WebXR not available in this browser.';
+          return;
+        }
+        // Provide the viewer with a live snapshot of the current scene.
+        xrViewer = new WebXRViewer(() => {
+          let triangles = null;
+          if (
+            (state.showTriangulation || state.showSolidFill) &&
+            state.points &&
+            state.params.geometry === 'sphere'
+          ) {
+            try {
+              triangles = getTriangles(state.points.dataSync());
+            } catch (e) {
+              triangles = null;
+            }
+          }
+          return {
+            points: state.points,
+            densities: state.metrics.densities,
+            geometry: state.params.geometry,
+            triangles,
+          };
+        });
+        xrViewer.onEnd(() => {
+          els.btnVr.textContent = 'Enter VR';
+          els.btnAr.textContent = 'Enter AR';
+        });
+        const { vr, ar } = await xrViewer.checkSessionSupport();
+        if (vr) {
+          els.btnVr.disabled = false;
+        }
+        if (ar) {
+          els.btnAr.disabled = false;
+        }
+        if (vr || ar) {
+          els.xrStatus.textContent =
+            'Ready: ' + [vr ? 'VR' : null, ar ? 'AR' : null].filter(Boolean).join(' & ');
+        } else {
+          els.xrStatus.textContent = 'No immersive VR/AR devices detected.';
+        }
+        const enter = async (mode, btn) => {
+          if (xrViewer.session) {
+            await xrViewer.end();
+            return;
+          }
+          try {
+            await xrViewer.start(mode);
+            btn.textContent = mode === 'immersive-ar' ? 'Exit AR' : 'Exit VR';
+          } catch (err) {
+            console.error(err);
+            els.xrStatus.textContent = 'Failed to start session: ' + err.message;
+          }
+        };
+        els.btnVr.addEventListener('click', () => enter('immersive-vr', els.btnVr));
+        els.btnAr.addEventListener('click', () => enter('immersive-ar', els.btnAr));
+      }
+
+      function resetPoints() {
+        if (state.points) state.points.dispose();
+
+        // Initialize random points
+
+        const p = tf.tidy(() => {
+          const initial = tf.randomNormal([state.params.n, 3]);
+          return projectToGeometry(initial, state.params.geometry, state.params);
+        });
+
+        state.points = tf.variable(p);
+        p.dispose();
+
+        // Reset Optimizer
+        state.optimizer = createOptimizer();
+
+        state.step = 0;
+        state.metrics = { entropy: 0, loss: 0, interaction: 0, densities: [] };
+
+        // Initial calc
+        //state.metrics.entropy = res.entropy.dataSync()[0];
+        tf.tidy(() => {
+          const res = computeEntropy(state.points, state.params.tau, state.params.calcNeighbors);
+          state.metrics.entropy = res.entropy.dataSync()[0];
+          state.metrics.densities = res.densities.dataSync();
+        });
+      }
+
+      function setupEventListeners() {
+        els.geoSelect.addEventListener('change', (e) => {
+          state.params.geometry = e.target.value;
+          els.stlControls.classList.toggle('hidden', state.params.geometry !== 'custom-stl');
+          const isTorus = state.params.geometry.includes('torus');
+          els.torusControls.style.display = isTorus ? 'block' : 'none';
+
+          resetPoints();
+          draw();
+        });
+        els.stlFile.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            try {
+              parseStl(evt.target.result);
+              resetPoints();
+              draw();
+            } catch (err) {
+              console.error(err);
+              alert('STL Parse Error');
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        });
+
+        els.btnToggle.addEventListener('click', () => {
+          state.isTraining = !state.isTraining;
+          els.btnToggle.textContent = state.isTraining ? 'Stop Training' : 'Start Training';
+          els.btnToggle.classList.toggle('btn-primary');
+          els.btnToggle.classList.toggle('btn-danger');
+        });
+
+        els.btnReset.addEventListener('click', () => {
+          state.isTraining = false;
+          els.btnToggle.textContent = 'Start Training';
+          els.btnToggle.classList.add('btn-primary');
+          els.btnToggle.classList.remove('btn-danger');
+          resetPoints();
+          draw();
+        });
+        els.btnCopy.addEventListener('click', () => {
+          if (!state.points) return;
+          const data = state.points.arraySync();
+          const text = JSON.stringify(data, null, 2);
+          navigator.clipboard.writeText(text).then(() => {
+            const originalText = els.btnCopy.textContent;
+            els.btnCopy.textContent = 'Copied!';
+            setTimeout(() => (els.btnCopy.textContent = originalText), 2000);
+          });
+        });
+        els.btnStl.addEventListener('click', () => {
+          if (!state.points) return;
+          const pointsArr = state.points.dataSync();
+          const triangles = getTriangles(pointsArr);
+          let stl = 'solid sphere_entropy\n';
+          for (const t of triangles) {
+            const i1 = t[0] * 3,
+              i2 = t[1] * 3,
+              i3 = t[2] * 3;
+            const v1 = {
+              x: pointsArr[i1],
+              y: pointsArr[i1 + 1],
+              z: pointsArr[i1 + 2],
+            };
+            const v2 = {
+              x: pointsArr[i2],
+              y: pointsArr[i2 + 1],
+              z: pointsArr[i2 + 2],
+            };
+            const v3 = {
+              x: pointsArr[i3],
+              y: pointsArr[i3 + 1],
+              z: pointsArr[i3 + 2],
+            };
+            // Compute normal
+            const u = { x: v2.x - v1.x, y: v2.y - v1.y, z: v2.z - v1.z };
+            const v = { x: v3.x - v1.x, y: v3.y - v1.y, z: v3.z - v1.z };
+            const nx = u.y * v.z - u.z * v.y;
+            const ny = u.z * v.x - u.x * v.z;
+            const nz = u.x * v.y - u.y * v.x;
+            const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+            stl += `facet normal ${nx / len} ${ny / len} ${nz / len}\n`;
+            stl += `  outer loop\n`;
+            stl += `    vertex ${v1.x} ${v1.y} ${v1.z}\n`;
+            stl += `    vertex ${v2.x} ${v2.y} ${v2.z}\n`;
+            stl += `    vertex ${v3.x} ${v3.y} ${v3.z}\n`;
+            stl += `  endloop\n`;
+            stl += `endfacet\n`;
+          }
+          stl += 'endsolid sphere_entropy';
+          const blob = new Blob([stl], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `spherical_entropy_n${state.params.n}.stl`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+
+        els.nInput.addEventListener('input', (e) => {
+          state.params.n = parseInt(e.target.value);
+          els.valN.value = state.params.n;
+          // Update neighbors slider max
+          const maxNeighbors = Math.max(0, state.params.n - 1);
+          els.calcNeighborsInput.max = maxNeighbors;
+          if (state.params.calcNeighbors > maxNeighbors) {
+            state.params.calcNeighbors = maxNeighbors;
+            els.calcNeighborsInput.value = state.params.calcNeighbors;
+            els.valCalcNeighbors.value = state.params.calcNeighbors;
+          }
+          els.neighborsInput.max = maxNeighbors;
+          if (state.neighbors > maxNeighbors) {
+            state.neighbors = maxNeighbors;
+            els.neighborsInput.value = state.neighbors;
+            els.valNeighbors.value = state.neighbors;
+          }
+
+          if (!state.isTraining) resetPoints();
+        });
+        els.valN.addEventListener('change', (e) => {
+          let val = parseInt(e.target.value);
+          if (isNaN(val) || val < 2) val = 2;
+          state.params.n = val;
+          els.nInput.value = val;
+          // Update neighbors slider max
+          const maxNeighbors = Math.max(0, state.params.n - 1);
+          els.calcNeighborsInput.max = maxNeighbors;
+          if (state.params.calcNeighbors > maxNeighbors) {
+            state.params.calcNeighbors = maxNeighbors;
+            els.calcNeighborsInput.value = state.params.calcNeighbors;
+            els.valCalcNeighbors.value = state.params.calcNeighbors;
+          }
+          els.neighborsInput.max = maxNeighbors;
+          if (state.neighbors > maxNeighbors) {
+            state.neighbors = maxNeighbors;
+            els.neighborsInput.value = state.neighbors;
+            els.valNeighbors.value = state.neighbors;
+          }
+          if (!state.isTraining) resetPoints();
+        });
+        els.calcNeighborsInput.addEventListener('input', (e) => {
+          state.params.calcNeighbors = parseInt(e.target.value);
+          els.valCalcNeighbors.value = state.params.calcNeighbors;
+        });
+        els.valCalcNeighbors.addEventListener('input', (e) => {
+          const val = parseInt(e.target.value);
+          if (!isNaN(val)) {
+            state.params.calcNeighbors = val;
+            els.calcNeighborsInput.value = val;
+          }
+        });
+
+        els.tauInput.addEventListener('input', (e) => {
+          state.params.tau = parseFloat(e.target.value);
+          els.valTau.value = state.params.tau.toFixed(2);
+        });
+        els.valTau.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val)) {
+            state.params.tau = val;
+            els.tauInput.value = val;
+          }
+        });
+
+        els.lrInput.addEventListener('input', (e) => {
+          state.params.lr = parseFloat(e.target.value);
+          els.valLr.value = state.params.lr;
+          if (state.optimizer && typeof state.optimizer.setLearningRate === 'function') {
+            state.optimizer.setLearningRate(state.params.lr);
+          } else {
+            state.optimizer = createOptimizer();
+          }
+        });
+        els.valLr.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val)) {
+            state.params.lr = val;
+            els.lrInput.value = val;
+            if (state.optimizer && typeof state.optimizer.setLearningRate === 'function') {
+              state.optimizer.setLearningRate(state.params.lr);
+            } else {
+              state.optimizer = createOptimizer();
+            }
+          }
+        });
+        // Geometry Params Listeners
+        const updateGeoParams = () => {
+          if (!state.isTraining) resetPoints();
+          draw();
+        };
+        els.innerInput.addEventListener('input', (e) => {
+          state.params.innerRadius = parseFloat(e.target.value);
+          els.valInner.value = state.params.innerRadius;
+          updateGeoParams();
+        });
+        els.valInner.addEventListener('input', (e) => {
+          state.params.innerRadius = parseFloat(e.target.value);
+          els.innerInput.value = state.params.innerRadius;
+          updateGeoParams();
+        });
+        els.torusRInput.addEventListener('input', (e) => {
+          state.params.torusR = parseFloat(e.target.value);
+          els.valTorusR.value = state.params.torusR;
+          updateGeoParams();
+        });
+        els.torusRadiusInput.addEventListener('input', (e) => {
+          state.params.torusr = parseFloat(e.target.value);
+          els.valTorusRadius.value = state.params.torusr;
+          updateGeoParams();
+        });
+
+        els.optimizerSelect.addEventListener('change', (e) => {
+          state.params.optimizerType = e.target.value;
+          state.optimizer = createOptimizer();
+        });
+        els.neighborsInput.addEventListener('input', (e) => {
+          state.neighbors = parseInt(e.target.value);
+          els.valNeighbors.value = state.neighbors;
+        });
+        els.valNeighbors.addEventListener('input', (e) => {
+          const val = parseInt(e.target.value);
+          if (!isNaN(val)) {
+            state.neighbors = val;
+            els.neighborsInput.value = val;
+          }
+        });
+        els.radiusInput.addEventListener('input', (e) => {
+          state.neighborRadius = parseFloat(e.target.value);
+          els.valRadius.value = state.neighborRadius.toFixed(2);
+          draw();
+        });
+        els.valRadius.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val)) {
+            state.neighborRadius = val;
+            els.radiusInput.value = val;
+            draw();
+          }
+        });
+        els.chkAutoRotate.addEventListener('change', (e) => {
+          state.autoRotate = e.target.checked;
+        });
+        els.chkTriangulation.addEventListener('change', (e) => {
+          state.showTriangulation = e.target.checked;
+          draw();
+        });
+        els.chkSolidFill.addEventListener('change', (e) => {
+          state.showSolidFill = e.target.checked;
+          draw();
+        });
+        els.statsSelect.addEventListener('change', (e) => {
+          state.statsMode = e.target.value;
+          els.matrixPermGroup.style.display = state.statsMode === 'matrix' ? 'flex' : 'none';
+          draw();
+        });
+        els.matrixPermSelect.addEventListener('change', (e) => {
+          state.matrixPerm = e.target.value;
+          draw();
+        });
+        els.forceInput.addEventListener('input', (e) => {
+          // Logarithmic scale: sign * (10^|val| - 1) * scale
+          const val = parseFloat(e.target.value);
+          const scale = 0.01;
+          const effective = Math.sign(val) * (Math.pow(10, Math.abs(val)) - 1) * scale;
+          state.params.interaction = effective;
+          els.forceTextInput.value = effective.toPrecision(3);
+        });
+
+        els.forceTextInput.addEventListener('change', (e) => {
+          const val = parseFloat(e.target.value);
+          if (isNaN(val)) return;
+          state.params.interaction = val;
+
+          // Inverse calculation for slider
+          // |v| = log10(|E|/scale + 1)
+          const scale = 0.01;
+          const absVal = Math.abs(val);
+          const sliderVal = Math.sign(val) * Math.log10(absVal / scale + 1);
+          els.forceInput.value = sliderVal;
+        });
+
+        els.mode.addEventListener('change', (e) => {
+          state.params.targetMode = e.target.value;
+          els.targetGroup.style.display = state.params.targetMode === 'target' ? 'flex' : 'none';
+        });
+
+        els.targetInput.addEventListener('input', (e) => {
+          state.params.targetVal = parseFloat(e.target.value);
+          els.valTarget.value = state.params.targetVal.toFixed(1);
+        });
+        els.valTarget.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val)) {
+            state.params.targetVal = val;
+            els.targetInput.value = val;
+          }
+        });
+        els.customInput.addEventListener('input', (e) => {
+          state.params.customFormula = e.target.value;
+          state.customFunc = null;
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Mouse interaction for rotation
+        let lastX = 0;
+        let lastY = 0;
+
+        els.canvas.addEventListener('mousedown', (e) => {
+          state.isDragging = true;
+          lastX = e.clientX;
+          lastY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (state.isDragging) {
+            const dx = e.clientX - lastX;
+            const dy = e.clientY - lastY;
+            state.rotation.y += dx * 0.01;
+            state.rotation.x += dy * 0.01;
+            lastX = e.clientX;
+            lastY = e.clientY;
+          }
+        });
+
+        window.addEventListener('mouseup', () => (state.isDragging = false));
+        els.canvas.addEventListener(
+          'wheel',
+          (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.001;
+            state.zoom = Math.max(0.1, Math.min(5.0, state.zoom + delta));
+          },
+          { passive: false }
+        );
+      }
+
+      async function init() {
+        try {
+          await tf.ready();
+          els.loading.classList.add('hidden');
+          setupEventListeners();
+          resetPoints();
+          resizeCanvas();
+          setupWebXR();
+          animate();
+        } catch (err) {
+          console.error(err);
+          els.loading.innerHTML = `<div style="color:var(--danger)">Error: ${err.message}</div>`;
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

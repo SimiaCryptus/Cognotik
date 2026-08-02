@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Explore the Collatz Conjecture: the 3n+1 problem visualized."
+    />
+    <title>Collatz Conjecture – Fun With Math</title>
+    <link rel="stylesheet" href="../../css/style.css" />
+    <style>
+      canvas {
+        display: block;
+        background: #0d1117;
+      }
+      #resultBox {
+        font-family: 'Fira Code', Consolas, monospace;
+        font-size: 0.8rem;
+        color: var(--accent);
+        word-break: break-all;
+        line-height: 1.9;
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      #statsRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        padding: 0.5rem 0;
+      }
+      #statsRow strong {
+        color: var(--text);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
+      th,
+      td {
+        text-align: right;
+        padding: 0.3rem 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+      td:first-child,
+      th:first-child {
+        text-align: left;
+      }
+      tr:hover td {
+        background: rgba(88, 166, 255, 0.05);
+      }
+      .peak-row td {
+        color: var(--accent2);
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">∑ Fun With Math</a>
+      <a href="../../index.html">← All Experiments</a>
+    </nav>
+
+    <div class="page-header">
+      <h1>Collatz Conjecture</h1>
+      <p>Pick any positive integer. Apply the rule. Will you always reach 1?</p>
+    </div>
+
+    <div class="experiment-layout">
+      <div>
+        <div id="statsRow">
+          <span>Steps: <strong id="stepsEl">—</strong></span>
+          <span>Peak value: <strong id="peakEl">—</strong></span>
+          <span>Starting at: <strong id="startEl">—</strong></span>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="canvas"></canvas>
+        </div>
+        <div class="info-box" style="margin-top: 1rem">
+          <h4>Sequence</h4>
+          <div id="resultBox">—</div>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <h3>Controls</h3>
+
+        <label>
+          Starting Number
+          <input type="number" id="startInput" value="27" min="1" max="100000" />
+        </label>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+          <button class="btn btn-primary" id="goBtn">▶ Compute</button>
+          <button class="btn btn-secondary" id="randomBtn">🎲 Random</button>
+        </div>
+
+        <label>
+          Compare Range: 2 – <span id="rangeLabel">50</span>
+          <input type="range" id="rangeSlider" min="10" max="500" step="10" value="50" />
+        </label>
+        <button class="btn btn-secondary" id="compareBtn">📊 Compare Range</button>
+
+        <div class="info-box">
+          <h4>The Rule</h4>
+          <p>
+            Given a positive integer <code>n</code>:<br />
+            • If <code>n</code> is even → <code>n / 2</code><br />
+            • If <code>n</code> is odd → <code>3n + 1</code><br />
+            Repeat until <code>n = 1</code>.
+          </p>
+        </div>
+
+        <div id="compareTable"></div>
+      </aside>
+    </div>
+
+    <footer>
+      <p><a href="../../index.html">← Back to all experiments</a></p>
+    </footer>
+
+    <script>
+      (function () {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const wrap = canvas.parentElement;
+        const startInput = document.getElementById('startInput');
+        const goBtn = document.getElementById('goBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const rangeSlider = document.getElementById('rangeSlider');
+        const rangeLabel = document.getElementById('rangeLabel');
+        const compareBtn = document.getElementById('compareBtn');
+        const resultBox = document.getElementById('resultBox');
+        const stepsEl = document.getElementById('stepsEl');
+        const peakEl = document.getElementById('peakEl');
+        const startEl = document.getElementById('startEl');
+        const compareTable = document.getElementById('compareTable');
+
+        // ── Collatz sequence ─────────────────────────────────────
+        function collatz(n) {
+          const seq = [n];
+          while (n !== 1) {
+            n = n % 2 === 0 ? n / 2 : 3 * n + 1;
+            seq.push(n);
+          }
+          return seq;
+        }
+
+        // ── Canvas sizing ────────────────────────────────────────
+        function resize() {
+          canvas.width = wrap.clientWidth;
+          canvas.height = Math.round(wrap.clientWidth * 0.55);
+        }
+
+        // ── Draw sequence ────────────────────────────────────────
+        function drawSequence(seq) {
+          const W = canvas.width,
+            H = canvas.height;
+          ctx.fillStyle = '#0d1117';
+          ctx.fillRect(0, 0, W, H);
+
+          if (!seq || seq.length < 2) return;
+
+          const maxVal = Math.max(...seq);
+          const pad = { top: 24, bottom: 24, left: 8, right: 8 };
+          const pw = W - pad.left - pad.right;
+          const ph = H - pad.top - pad.bottom;
+
+          const xStep = pw / (seq.length - 1);
+
+          // Grid lines
+          ctx.strokeStyle = 'rgba(255,255,255,.05)';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 4; i++) {
+            const gy = pad.top + (ph / 4) * i;
+            ctx.beginPath();
+            ctx.moveTo(pad.left, gy);
+            ctx.lineTo(W - pad.right, gy);
+            ctx.stroke();
+            const val = Math.round(maxVal * (1 - i / 4));
+            ctx.fillStyle = 'rgba(255,255,255,.2)';
+            ctx.font = '10px system-ui';
+            ctx.fillText(val.toLocaleString(), pad.left + 2, gy - 3);
+          }
+
+          // Gradient line
+          const grad = ctx.createLinearGradient(pad.left, 0, W - pad.right, 0);
+          grad.addColorStop(0, '#58a6ff');
+          grad.addColorStop(0.5, '#bc8cff');
+          grad.addColorStop(1, '#58a6ff');
+
+          ctx.beginPath();
+          seq.forEach((val, i) => {
+            const x = pad.left + i * xStep;
+            const y = pad.top + ph * (1 - val / maxVal);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          });
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Peak marker
+          const peakIdx = seq.indexOf(maxVal);
+          const px = pad.left + peakIdx * xStep;
+          const py = pad.top + ph * (1 - maxVal / maxVal);
+          ctx.beginPath();
+          ctx.arc(px, py, 5, 0, Math.PI * 2);
+          ctx.fillStyle = '#bc8cff';
+          ctx.fill();
+          ctx.fillStyle = '#bc8cff';
+          ctx.font = 'bold 11px system-ui';
+          ctx.fillText(maxVal.toLocaleString(), Math.min(px + 7, W - 80), py + 4);
+        }
+
+        // ── Show sequence ────────────────────────────────────────
+        function showSequence(n) {
+          const seq = collatz(n);
+          const peak = Math.max(...seq);
+          stepsEl.textContent = seq.length - 1;
+          peakEl.textContent = peak.toLocaleString();
+          startEl.textContent = n.toLocaleString();
+          resultBox.textContent = seq.join(' → ');
+          resize();
+          drawSequence(seq);
+        }
+
+        // ── Compare table ────────────────────────────────────────
+        function buildCompareTable(limit) {
+          const rows = [];
+          for (let i = 2; i <= limit; i++) {
+            const seq = collatz(i);
+            const peak = Math.max(...seq);
+            rows.push({ n: i, steps: seq.length - 1, peak });
+          }
+          rows.sort((a, b) => b.steps - a.steps);
+          const top10 = rows.slice(0, 10);
+
+          let html = '<table><thead><tr><th>n</th><th>Steps</th><th>Peak</th></tr></thead><tbody>';
+          top10.forEach((r, idx) => {
+            html += `<tr class="${idx === 0 ? 'peak-row' : ''}">
+        <td>${r.n}</td>
+        <td>${r.steps}</td>
+        <td>${r.peak.toLocaleString()}</td>
+      </tr>`;
+          });
+          html += '</tbody></table>';
+          compareTable.innerHTML = `<div class="info-box"><h4>Top 10 by step count (2–${limit})</h4>${html}</div>`;
+        }
+
+        // ── Events ───────────────────────────────────────────────
+        goBtn.addEventListener('click', () => {
+          const n = parseInt(startInput.value);
+          if (n > 0) showSequence(n);
+        });
+        startInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') goBtn.click();
+        });
+        randomBtn.addEventListener('click', () => {
+          const n = Math.floor(Math.random() * 9999) + 2;
+          startInput.value = n;
+          showSequence(n);
+        });
+        rangeSlider.addEventListener('input', () => {
+          rangeLabel.textContent = rangeSlider.value;
+        });
+        compareBtn.addEventListener('click', () => {
+          buildCompareTable(parseInt(rangeSlider.value));
+        });
+
+        // ── Init ─────────────────────────────────────────────────
+        new ResizeObserver(() => {
+          const n = parseInt(startInput.value);
+          if (n > 0) showSequence(n);
+        }).observe(wrap);
+        showSequence(27);
+      })();
+    </script>
+  </body>
+</html>

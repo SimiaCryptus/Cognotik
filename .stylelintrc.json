@@ -1,0 +1,15 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "plugins": ["stylelint-prettier"],
+  "rules": {
+    "prettier/prettier": true,
+    "no-descending-specificity": null,
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "keyframes-name-pattern": null,
+    "alpha-value-notation": "number",
+    "color-function-notation": "legacy",
+    "declaration-block-no-redundant-longhand-properties": null
+  },
+  "ignoreFiles": ["node_modules/**", "dist/**"]
+}

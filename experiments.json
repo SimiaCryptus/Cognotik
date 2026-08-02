@@ -1,0 +1,32 @@
+{
+  "demos": [
+    {
+      "glyph": "M",
+      "title": "Mandelbrot Set",
+      "href": "experiments/basic/mandelbrot.html",
+      "pitch": "Explore the fractal boundary defined by iteration of z ↦ z² + c in the complex plane. Pan and zoom to examine its self-similar structure.",
+      "tag": "Complex Numbers"
+    },
+    {
+      "glyph": "P",
+      "title": "Prime Number Sieve",
+      "href": "experiments/basic/primes.html",
+      "pitch": "A real-time visualization of the Sieve of Eratosthenes, illustrating the elimination of composite numbers to isolate the primes.",
+      "tag": "Number Theory"
+    },
+    {
+      "glyph": "ƒ",
+      "title": "Fourier Series",
+      "href": "experiments/basic/fourier.html",
+      "pitch": "Construct periodic waveforms as sums of rotating phasors, illustrating how harmonic components combine to approximate arbitrary signals.",
+      "tag": "Calculus · Signals"
+    },
+    {
+      "glyph": "3n",
+      "title": "Collatz Conjecture",
+      "href": "experiments/basic/collatz.html",
+      "pitch": "Trace the trajectory of any positive integer under the 3n + 1 iteration. Whether every sequence reaches 1 remains an open problem.",
+      "tag": "Open Problem"
+    }
+  ]
+}

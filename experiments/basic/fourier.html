@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Visualize Fourier series approximations with interactive spinning circles."
+    />
+    <title>Fourier Series – Fun With Math</title>
+    <link rel="stylesheet" href="../../css/style.css" />
+    <style>
+      canvas {
+        display: block;
+        background: #0d1117;
+      }
+      .canvas-wrapper {
+        position: relative;
+      }
+      #waveCanvas {
+        border-top: 1px solid var(--border);
+        background: #0a0e14;
+      }
+      .col2 {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">∑ Fun With Math</a>
+      <a href="../../index.html">← All Experiments</a>
+    </nav>
+
+    <div class="page-header">
+      <h1>Fourier Series Visualizer</h1>
+      <p>Sum of rotating circles that together draw any periodic waveform.</p>
+    </div>
+
+    <div class="experiment-layout">
+      <div class="col2">
+        <div class="canvas-wrapper">
+          <canvas id="circleCanvas"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="waveCanvas"></canvas>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <h3>Controls</h3>
+
+        <label>
+          Harmonics: <span id="termLabel">7</span>
+          <input type="range" id="termRange" min="1" max="41" step="2" value="7" />
+        </label>
+
+        <label>
+          Speed: <span id="speedLabel">1.0×</span>
+          <input type="range" id="speedRange" min="0.1" max="4" step="0.1" value="1" />
+        </label>
+
+        <label>
+          Waveform
+          <select id="waveform">
+            <option value="square">Square Wave</option>
+            <option value="sawtooth">Sawtooth Wave</option>
+            <option value="triangle">Triangle Wave</option>
+          </select>
+        </label>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+          <button class="btn btn-primary" id="toggleBtn">⏸ Pause</button>
+          <button class="btn btn-secondary" id="clearBtn">Clear Trail</button>
+        </div>
+
+        <div class="info-box">
+          <h4>Square Wave</h4>
+          <p>
+            <code>f(t) = (4/π) Σ sin((2k-1)t) / (2k-1)</code>
+            for k = 1, 2, 3, …<br />
+            Only odd harmonics contribute.
+          </p>
+        </div>
+
+        <div class="info-box">
+          <h4>What you're seeing</h4>
+          Each circle spins at a harmonic frequency. Their combined tip traces the target wave on
+          the right. Add more harmonics for a sharper approximation.
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <p><a href="../../index.html">← Back to all experiments</a></p>
+    </footer>
+
+    <script>
+      (function () {
+        const cCanvas = document.getElementById('circleCanvas');
+        const wCanvas = document.getElementById('waveCanvas');
+        const cCtx = cCanvas.getContext('2d');
+        const wCtx = wCanvas.getContext('2d');
+        const wrap = cCanvas.parentElement;
+
+        const termRange = document.getElementById('termRange');
+        const termLabel = document.getElementById('termLabel');
+        const speedRange = document.getElementById('speedRange');
+        const speedLabel = document.getElementById('speedLabel');
+        const waveSelect = document.getElementById('waveform');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let paused = false;
+        let t = 0;
+        let wavePoints = [];
+
+        // ── Fourier coefficients ─────────────────────────────────
+        function getTerms(type, N) {
+          // Returns array of { freq, amp, phase }
+          const terms = [];
+          for (let k = 1; k <= N; k++) {
+            switch (type) {
+              case 'square':
+                if (k % 2 !== 0) terms.push({ freq: k, amp: 4 / Math.PI / k, phase: 0 });
+                break;
+              case 'sawtooth':
+                terms.push({
+                  freq: k,
+                  amp: ((2 / Math.PI) * (k % 2 === 0 ? -1 : 1)) / k,
+                  phase: 0,
+                });
+                break;
+              case 'triangle':
+                if (k % 2 !== 0) {
+                  const sign = Math.floor((k - 1) / 2) % 2 === 0 ? 1 : -1;
+                  terms.push({
+                    freq: k,
+                    amp: (sign * (8 / (Math.PI * Math.PI))) / (k * k),
+                    phase: 0,
+                  });
+                }
+                break;
+            }
+          }
+          return terms;
+        }
+
+        // ── Canvas sizing ────────────────────────────────────────
+        function resize() {
+          const w = wrap.clientWidth;
+          cCanvas.width = w;
+          cCanvas.height = Math.round(w * 0.65);
+          wCanvas.width = w;
+          wCanvas.height = Math.round(w * 0.3);
+          wavePoints = [];
+        }
+
+        // ── Draw frame ───────────────────────────────────────────
+        function draw() {
+          const N = parseInt(termRange.value);
+          const type = waveSelect.value;
+          const terms = getTerms(type, 50).slice(0, N); // up to N terms
+          const W = cCanvas.width,
+            H = cCanvas.height;
+          const wW = wCanvas.width,
+            wH = wCanvas.height;
+
+          // Background
+          cCtx.fillStyle = '#0d1117';
+          cCtx.fillRect(0, 0, W, H);
+
+          // Center for circle diagram
+          let cx = W * 0.35;
+          let cy = H * 0.5;
+          const scale = Math.min(H, W * 0.6) * 0.38;
+
+          cCtx.save();
+          // Draw circles and arms
+          let x = cx,
+            y = cy;
+          for (const { freq, amp } of terms) {
+            const r = amp * scale;
+            const ang = freq * t;
+            const nx = x + r * Math.cos(ang);
+            const ny = y + r * Math.sin(ang);
+
+            // Circle
+            cCtx.beginPath();
+            cCtx.arc(x, y, Math.abs(r), 0, Math.PI * 2);
+            cCtx.strokeStyle = 'rgba(88,166,255,.15)';
+            cCtx.lineWidth = 1;
+            cCtx.stroke();
+
+            // Arm
+            cCtx.beginPath();
+            cCtx.moveTo(x, y);
+            cCtx.lineTo(nx, ny);
+            cCtx.strokeStyle = 'rgba(88,166,255,.6)';
+            cCtx.lineWidth = 1.5;
+            cCtx.stroke();
+
+            x = nx;
+            y = ny;
+          }
+
+          // Tip dot
+          cCtx.beginPath();
+          cCtx.arc(x, y, 4, 0, Math.PI * 2);
+          cCtx.fillStyle = '#bc8cff';
+          cCtx.fill();
+
+          cCtx.restore();
+
+          // ── Waveform canvas ──────────────────────────────────
+          const wMidY = wH / 2;
+          const relY = (y - cy) / scale; // tip position normalized to circle radius
+
+          wavePoints.unshift({ relY });
+          if (wavePoints.length > wW) wavePoints.length = wW;
+
+          wCtx.fillStyle = '#0a0e14';
+          wCtx.fillRect(0, 0, wW, wH);
+
+          wCtx.beginPath();
+          wCtx.strokeStyle = 'rgba(188,140,255,.9)';
+          wCtx.lineWidth = 2;
+          for (let i = 0; i < wavePoints.length; i++) {
+            const py = wMidY + wavePoints[i].relY * (wH * 0.45);
+            if (i === 0) wCtx.moveTo(0, py);
+            else wCtx.lineTo(i, py);
+          }
+          wCtx.stroke();
+
+          // Zero line
+          wCtx.beginPath();
+          wCtx.strokeStyle = 'rgba(255,255,255,.08)';
+          wCtx.lineWidth = 1;
+          wCtx.moveTo(0, wMidY);
+          wCtx.lineTo(wW, wMidY);
+          wCtx.stroke();
+
+          // Connector
+          cCtx.save();
+          cCtx.beginPath();
+          cCtx.setLineDash([4, 4]);
+          cCtx.moveTo(x, y);
+          cCtx.lineTo(W, y);
+          cCtx.strokeStyle = 'rgba(188,140,255,.3)';
+          cCtx.lineWidth = 1;
+          cCtx.stroke();
+          cCtx.restore();
+
+          // Advance time
+          if (!paused) t += 0.02 * parseFloat(speedRange.value);
+        }
+
+        function loop() {
+          draw();
+          requestAnimationFrame(loop);
+        }
+
+        // ── Controls ─────────────────────────────────────────────
+        termRange.addEventListener('input', () => {
+          termLabel.textContent = termRange.value;
+          wavePoints = [];
+        });
+        speedRange.addEventListener('input', () => {
+          speedLabel.textContent = parseFloat(speedRange.value).toFixed(1) + '×';
+        });
+        waveSelect.addEventListener('change', () => {
+          wavePoints = [];
+          t = 0;
+        });
+        toggleBtn.addEventListener('click', () => {
+          paused = !paused;
+          toggleBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+        });
+        clearBtn.addEventListener('click', () => {
+          wavePoints = [];
+        });
+
+        // ── Init ─────────────────────────────────────────────────
+        new ResizeObserver(resize).observe(wrap);
+        resize();
+        loop();
+      })();
+    </script>
+  </body>
+</html>

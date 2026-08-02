@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dihedral Attractors — Rung 4</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Dihedral Attractors</h1>
+      <p class="subtitle">
+        Optimizing functionals over triangulation dihedral angles (Rung&nbsp;4)
+      </p>
+    </header>
+
+    <main>
+      <section id="canvas-wrap">
+        <canvas id="view" width="640" height="640"></canvas>
+        <div id="hud"></div>
+      </section>
+
+      <aside id="controls">
+        <div class="ctrl">
+          <label for="numPoints">Points: <span id="numPointsVal">40</span></label>
+          <input type="range" id="numPoints" min="4" max="200" value="40" />
+        </div>
+
+        <div class="ctrl">
+          <label for="manifold">Manifold</label>
+          <select id="manifold">
+            <option value="plane">Plane (2D)</option>
+            <option value="sphere">Sphere (3D)</option>
+            <option value="torus">Torus (3D)</option>
+            <option value="saddle">Saddle (3D)</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <label for="functional">Dihedral Functional g(φ)</label>
+          <select id="functional">
+            <option value="flatness">flatness — (φ−π)²</option>
+            <option value="uniform">uniform-dihedral — (φ−φ̄)²</option>
+            <option value="maxfold">max-fold — −cos φ</option>
+            <option value="smoothness">smoothness — 1−cos φ</option>
+            <option value="entropy">entropy — H({φ})</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <label>Extremize</label>
+          <select id="direction">
+            <option value="min">Minimize</option>
+            <option value="max">Maximize</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <label for="lr">Learning rate: <span id="lrVal">0.010</span></label>
+          <input type="range" id="lr" min="1" max="200" value="10" />
+        </div>
+
+        <div class="ctrl">
+          <label for="lambdaDih">λ dihedral: <span id="lambdaDihVal">1.0</span></label>
+          <input type="range" id="lambdaDih" min="0" max="100" value="10" />
+        </div>
+
+        <div class="ctrl">
+          <label for="lambdaRep">λ repulsion: <span id="lambdaRepVal">0.10</span></label>
+          <input type="range" id="lambdaRep" min="0" max="100" value="10" />
+        </div>
+
+        <div class="ctrl">
+          <label for="retri">Re-triangulate every: <span id="retriVal">10</span> steps</label>
+          <input type="range" id="retri" min="1" max="60" value="10" />
+        </div>
+
+        <div class="ctrl">
+          <label for="clip">Grad clip norm: <span id="clipVal">1.0</span></label>
+          <input type="range" id="clip" min="1" max="100" value="10" />
+        </div>
+
+        <div class="ctrl buttons">
+          <button id="run">Run</button>
+          <button id="pause">Pause</button>
+          <button id="reset">Reset</button>
+        </div>
+
+        <div class="ctrl checkboxes">
+          <label><input type="checkbox" id="showMesh" checked /> Mesh</label>
+          <label><input type="checkbox" id="showPoints" checked /> Points</label>
+          <label><input type="checkbox" id="colorDih" checked /> Color by φ</label>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

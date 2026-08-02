@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <title>Affine IFS Point-Set Fitting — Lab (TF.js)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <link rel="stylesheet" href="./css/lab.css" />
+    <style>
+      .home-link {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9999;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: #e6edf3;
+        background: rgba(22, 27, 34, 0.92);
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.15s ease;
+      }
+      .home-link:hover {
+        background: rgba(48, 54, 61, 0.95);
+        border-color: #58a6ff;
+        color: #58a6ff;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+    <div class="app">
+      <!-- LEFT PANEL: controls -->
+      <div class="panel left">
+        <h2>Backend</h2>
+        <div class="small" id="backendInfo">tf.js loading…</div>
+
+        <h2>Model</h2>
+        <div class="row">
+          <div>
+            <label>K (transforms)</label>
+            <input id="K" max="6" min="1" step="1" type="number" value="2" />
+          </div>
+          <div>
+            <label>N (depth)</label>
+            <input id="N" max="12" min="1" step="1" type="number" value="7" />
+          </div>
+        </div>
+        <label>Enumeration</label>
+        <select id="enum">
+          <option value="ordered">Ordered (K^N words)</option>
+          <option selected value="commutative">Commutative (multisets)</option>
+        </select>
+        <div class="small" id="orbitSize">orbit size: ?</div>
+
+        <h2>Optimizer</h2>
+        <label>algorithm</label>
+        <select id="optim">
+          <option selected value="adam">Adam</option>
+          <option value="lbfgs">L-BFGS</option>
+          <option value="qqn">QQN</option>
+        </select>
+        <div class="row">
+          <div>
+            <label>learning rate</label>
+            <input id="lr" step="0.005" type="number" value="0.02" />
+          </div>
+          <div>
+            <label>steps / click</label>
+            <input id="steps" min="1" step="5" type="number" value="20" />
+          </div>
+        </div>
+        <label>fps cap</label>
+        <input id="fps" max="240" min="1" step="5" type="number" value="60" />
+
+        <h2>Loss</h2>
+        <div class="row">
+          <div>
+            <label>α (P→Q)</label>
+            <input id="alpha" step="0.1" type="number" value="1" />
+          </div>
+          <div>
+            <label>β (Q→P)</label>
+            <input id="beta" step="0.1" type="number" value="1" />
+          </div>
+        </div>
+
+        <h2>Regularizers</h2>
+        <label>λ_A (||A||²_F)</label>
+        <input id="lamA" step="0.001" type="number" value="0" />
+        <label>λ_b (||b||²)</label>
+        <input id="lamb" step="0.001" type="number" value="0" />
+        <label>contractivity penalty (||A||_F ≤ √2(1-ε))</label>
+        <div class="row">
+          <div>
+            <input id="lamC" step="0.05" type="number" value="0.1" />
+            <span class="small">weight</span>
+          </div>
+          <div>
+            <input id="eps" step="0.01" type="number" value="0.02" />
+            <span class="small">ε</span>
+          </div>
+        </div>
+
+        <h2>Initialization</h2>
+        <div class="row">
+          <button id="initSmall">small random</button>
+          <button id="initRot">rotations</button>
+        </div>
+        <div class="row">
+          <button id="initShrink">contractions</button>
+          <button id="initSierp">Sierpinski-3</button>
+        </div>
+        <div class="row">
+          <button id="initBarnsley">Barnsley (K=4)</button>
+        </div>
+        <label>random seed</label>
+        <input id="seed" type="number" value="1" />
+
+        <h2>Run</h2>
+        <div class="row">
+          <button class="primary" id="step">Step</button>
+          <button class="good" id="run">▶ Run</button>
+          <button class="danger" id="reset">Reset</button>
+        </div>
+
+        <h2>Loss curve</h2>
+        <canvas class="loss-canvas" id="lossCanvas"></canvas>
+      </div>
+
+      <!-- CENTER: canvas viewport -->
+      <div class="center">
+        <div class="toolbar">
+          <button id="targetClear">Clear target</button>
+          <select id="targetPreset">
+            <option value="">-- preset --</option>
+            <option value="circle">Circle</option>
+            <option value="square">Square outline</option>
+            <option value="heart">Heart</option>
+            <option value="spiral">Spiral</option>
+            <option value="sierpinski">Sierpinski triangle</option>
+            <option value="fern">Barnsley fern</option>
+            <option value="cantor">Cantor dust</option>
+            <option value="grid">Grid</option>
+          </select>
+          <button id="loadPreset">Load preset</button>
+          <span class="pill"><span id="targCount">0</span> target pts</span>
+          <span class="pill"><span id="orbitCount">0</span> orbit pts</span>
+          <span class="pill">loss: <span id="lossVal">—</span></span>
+          <span class="pill">iter: <span id="iterVal">0</span></span>
+          <span class="pill"
+            >active θ: <span id="activeCount">0</span>/<span id="totalCount">0</span></span
+          >
+          <span style="flex: 1"></span>
+          <span class="small">click/drag draw • <span class="kbd">Space</span> step</span>
+        </div>
+        <canvas id="view"></canvas>
+      </div>
+
+      <!-- RIGHT PANEL: transforms inspector -->
+      <div class="panel right">
+        <h2>Transforms θ</h2>
+        <div class="legend">
+          <div><span class="swatch" style="background: #3fb950"></span>target Q</div>
+          <div><span class="swatch" style="background: #58a6ff"></span>orbit P_N(θ)</div>
+          <div>
+            <span class="swatch" style="background: #ff7b72"></span>fixed points + A·ê basis (image
+            of unit square)
+          </div>
+        </div>
+        <div class="bulk-actions" style="margin-top: 8px">
+          <button id="freezeAll">Freeze all</button>
+          <button id="unfreezeAll">Unfreeze all</button>
+          <button id="invertFreeze">Invert</button>
+        </div>
+        <div class="transforms" id="transforms"></div>
+
+        <h2>Notes</h2>
+        <div class="small">
+          Each transform is T_k(x)=A_k x + b_k in ℝ². The orbit P_N(θ) is the set of points obtained
+          by applying length-N words (commutative ↔ multiset) starting from 0. Loss is symmetric
+          Chamfer (squared NN distance). Gradients flow through TensorFlow.js autodiff. Frozen
+          transforms are held constant — their gradients are masked to zero before the optimizer
+          step.
+        </div>
+      </div>
+    </div>
+
+    <script src="./js/main.js" type="module"></script>
+  </body>
+</html>

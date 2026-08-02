@@ -1,0 +1,54 @@
+{
+  "games": [
+    {
+      "icon": "AL",
+      "title": "The Arcade of Life",
+      "href": "https://aol.cognotik.com/",
+      "readme": "games/arcade-of-life/README.md",
+      "video": "videos/arcade-of-life.mp4",
+      "launchLabel": "Open The Arcade of Life",
+      "pitch": "A browser-based arcade built on Conway's Game of Life and 50+ cellular automaton rulesets. Play, tweak, and explore emergent behavior across a wide catalog of rules. <a href=\"https://aol.cognotik.com/\" target=\"_blank\" rel=\"noopener\">Visit the sister site ↗</a>."
+    },
+    {
+      "icon": "VP",
+      "title": "Vocal Parkour",
+      "href": "https://vp.cognotik.com/",
+      "readme": "games/vocal-parkour/README.md",
+      "launchLabel": "Open Vocal Parkour",
+      "pitch": "A vocal-gesture rhythm game: navigate levels using your voice. Real-time audio-DSP feature extraction and an in-browser classifier turn mic input into game controls — all analysis runs client-side."
+    },
+    {
+      "icon": "WS",
+      "title": "Predictive Markov Wordsearch",
+      "href": "games/wordsearch/index.html",
+      "readme": "games/wordsearch/README.md",
+      "video": "videos/wordsearch.mp4",
+      "launchLabel": "Open the Predictive Markov Wordsearch",
+      "pitch": "A wordsearch generator where the filler letters aren't random — a character-level Markov model trained on reference text predicts plausible language fragments in all eight reading directions, camouflaging hidden words by matching the statistical texture of natural language."
+    },
+    {
+      "icon": "ST",
+      "title": "Stereo-Tac-Toe",
+      "href": "games/stereo-tac-toe/index.html",
+      "readme": "games/stereo-tac-toe/README.md",
+      "launchLabel": "Open Stereo-Tac-Toe",
+      "pitch": "A fully playable game of tic-tac-toe hidden inside a Magic Eye autostereogram. The board, cursor, and marks live entirely in the depth of a shimmering field of noise — relax your eyes to fuse the image and play. Everything derives from a single depth buffer, with live controls for eye separation, pattern width, noise style, and depth contrast (press <kbd>D</kbd> to peek at the raw depth map)."
+    },
+    {
+      "icon": "AD",
+      "title": "Arithmetic Dynamics",
+      "href": "games/arithmatic-dynamics/index.html",
+      "readme": "games/arithmatic-dynamics/README.md",
+      "launchLabel": "Open Arithmetic Dynamics",
+      "pitch": "A touch-first puzzle game that teaches the mechanics of arithmetic — not by drilling facts, but by letting kids bend, break, and recombine numbers until a problem collapses into its simplest shape. Every move (split, swap, group, combine, cancel) is guaranteed to preserve value, so children can experiment freely as fluency emerges quietly through play."
+    },
+    {
+      "icon": "NC",
+      "title": "Number Crush",
+      "href": "games/number-crush/index.html",
+      "readme": "games/number-crush/README.md",
+      "launchLabel": "Open Number Crush",
+      "pitch": "A match-and-clear puzzle game that swaps color-matching for arithmetic. Draw connected lines across a hexagonal grid of numbered tiles to satisfy the level's rule — a target sum, a shared factor, a consecutive run, or matching values. Tiles clear and cascade into combos, the board reshuffles rather than deadlocking, and it's colorblind-friendly by design since the information lives in the digits."
+    }
+  ]
+}

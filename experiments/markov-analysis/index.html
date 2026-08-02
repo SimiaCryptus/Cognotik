@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markov Analysis</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Markov Analysis</h1>
+      <div id="statusBar" class="status-bar" role="status" aria-live="polite">
+        Model: <span id="modelState">not built</span> &middot; Tokens:
+        <span id="tokenCount">0</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="col-left">
+        <div id="corpusPanel" class="panel"></div>
+        <div id="configPanel" class="panel"></div>
+      </section>
+      <section class="col-right">
+        <div class="panel">
+          <h2>Test Text</h2>
+          <textarea id="testText" rows="6" placeholder="Paste text to analyze..."></textarea>
+          <div class="actions">
+            <button id="analyzeBtn" type="button">Analyze</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Heatmap</h2>
+          <div id="legend" class="legend"></div>
+          <div id="analysisView" class="analysis-view" tabindex="0"></div>
+        </div>
+        <div id="statsPanel" class="panel"></div>
+      </section>
+      <section id="caPanel" class="panel"></section>
+    </main>
+
+    <div id="noSupport" class="no-support" hidden>
+      Your browser does not support ES modules or Web Workers.
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+    <script nomodule>
+      document.getElementById('noSupport').hidden = false;
+    </script>
+  </body>
+</html>

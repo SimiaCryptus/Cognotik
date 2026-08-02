@@ -1,0 +1,1227 @@
+<!doctype html>
+<!--
+bindings/wasm/calculator.html
+
+Interactive GUI calculator for the nam Number library. This is the
+visual sibling of calculator.js (the Node REPL): it exposes the same
+ergonomic user layer — constructors, codecs, scoped precision, honest
+tri-state comparison, fork, skip, and rendering — over a browser GUI.
+
+Honesty commitments preserved across the GUI:
+  - Comparison is tri-state: -1 | 1 | pending(null).
+  - definitely_less_than is true | false | pending(null).
+  - fork annotates its cost tier (fork_cost()).
+  - skip on a non-periodic (series) tier reports pending(null).
+  - We NEVER fabricate a digit: pending is rendered honestly.
+
+Numbers live in named registers (variables), mirroring the REPL. The
+special register `_` always holds the last produced Number.
+
+Serve from the WASM build output dir, e.g.:
+    python3 -m http.server   (then open /calculator.html)
+nam_wasm.js + nam_wasm.wasm + nam.js must sit beside this file.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>nam interactive calculator — nam.wasm</title>
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --fg: #c9d1d9;
+        --accent: #58a6ff;
+        --warn: #f0883e;
+        --ok: #56d364;
+        --err: #f85149;
+        --muted: #5a6472;
+        --panel: #11151f;
+        --border: #1c2230;
+        --keypad: #161b27;
+        --keypad-hover: #1f2738;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+      }
+
+      header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        color: var(--accent);
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 16px 20px;
+        align-items: flex-start;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+      }
+
+      .panel h2 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      label {
+        display: block;
+        margin: 8px 0 2px;
+        color: var(--muted);
+      }
+
+      input[type='number'],
+      input[type='text'],
+      select {
+        background: #0b0e14;
+        color: var(--fg);
+        border: 1px solid #2a3140;
+        border-radius: 5px;
+        padding: 5px 7px;
+        font: inherit;
+        box-sizing: border-box;
+      }
+
+      input[type='number'] {
+        width: 90px;
+      }
+
+      input[type='text'] {
+        width: 120px;
+      }
+
+      button {
+        background: var(--accent);
+        color: #04121f;
+        border: 0;
+        border-radius: 5px;
+        padding: 6px 11px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+
+      button.ghost {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid #2a3140;
+        font-weight: 400;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* ---- calculator display ---- */
+      .display {
+        background: #060810;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+      }
+
+      .display .disp-label {
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .display .disp-value {
+        font-size: 22px;
+        color: var(--ok);
+        word-break: break-all;
+        min-height: 28px;
+        margin-top: 2px;
+      }
+
+      .display .disp-sub {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 4px;
+        min-height: 16px;
+      }
+
+      /* ---- keypad ---- */
+      .keypad {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .keypad button {
+        margin-top: 0;
+        background: var(--keypad);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        font-weight: 500;
+        padding: 12px 0;
+        font-size: 16px;
+      }
+
+      .keypad button:hover {
+        background: var(--keypad-hover);
+      }
+
+      .keypad button.op {
+        color: var(--accent);
+      }
+
+      .keypad button.wide {
+        grid-column: span 2;
+      }
+
+      .keypad button.act {
+        background: var(--accent);
+        color: #04121f;
+        font-weight: 600;
+      }
+
+      .keypad button.danger {
+        color: var(--err);
+      }
+
+      .row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+      }
+
+      .col {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .controls {
+        flex: 1 1 360px;
+        min-width: 320px;
+      }
+
+      .side {
+        flex: 1 1 320px;
+        min-width: 300px;
+      }
+
+      #vars {
+        white-space: pre-wrap;
+        max-height: 260px;
+        overflow: auto;
+        font-size: 13px;
+      }
+
+      .reg-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 4px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .reg-item:hover {
+        background: var(--keypad-hover);
+      }
+
+      .reg-item .reg-val {
+        color: var(--fg);
+        opacity: 0.8;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 60%;
+      }
+
+      .reg-item .reg-drop {
+        color: var(--err);
+        opacity: 0;
+        font-weight: 700;
+        padding: 0 4px;
+      }
+
+      .reg-item:hover .reg-drop {
+        opacity: 0.8;
+      }
+
+      #out {
+        white-space: pre-wrap;
+        max-height: 360px;
+        overflow: auto;
+        font-size: 13px;
+      }
+
+      .log-line {
+        border-bottom: 1px solid var(--border);
+        padding: 4px 0;
+      }
+
+      .log-cmd {
+        color: var(--accent);
+      }
+
+      .log-err {
+        color: var(--err);
+      }
+
+      .log-pending {
+        color: var(--warn);
+      }
+
+      .reg {
+        color: var(--ok);
+      }
+
+      .store {
+        width: 90px;
+      }
+
+      fieldset {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        margin: 0 0 10px;
+        padding: 8px 10px;
+      }
+
+      legend {
+        color: var(--muted);
+        padding: 0 4px;
+        font-size: 12px;
+      }
+
+      .console-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      #console {
+        flex: 1;
+      }
+
+      code {
+        color: var(--accent);
+      }
+
+      .pill {
+        display: inline-block;
+        background: #0b0e14;
+        border: 1px solid #2a3140;
+        border-radius: 12px;
+        padding: 1px 9px;
+        color: var(--accent);
+      }
+
+      /* clickable target hint */
+      .target-active {
+        outline: 2px solid var(--accent);
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 11px;
+        margin: 2px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>nam interactive calculator</h1>
+      <div class="sub">
+        Visual REPL over the ergonomic <code>Number</code> user layer. Honest tri-state comparison,
+        scoped precision, fork cost tiers, skip-ahead and codecs. Powered by <code>nam.wasm</code>.
+        Precision: <span class="pill" id="precPill">…</span>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <!-- ============ controls ============ -->
+      <div class="panel controls">
+        <!-- calculator display -->
+        <div class="display">
+          <div class="disp-label">last result &nbsp;·&nbsp; register <code>_</code></div>
+          <div class="disp-value" id="dispValue">—</div>
+          <div class="disp-sub" id="dispSub">build a number to begin</div>
+        </div>
+        <!-- one-tap keypad: digit-stream length + quick ops on the
+             current target register (defaults to "_") -->
+        <fieldset>
+          <legend>
+            keypad — operates on target register
+            <code id="targetLabel">_</code>
+          </legend>
+          <p class="hint">
+            Click a register on the right to retarget. Number keys set N (digit count); ops act
+            immediately.
+          </p>
+          <div class="keypad" id="keypad">
+            <button data-key="7">7</button>
+            <button data-key="8">8</button>
+            <button data-key="9">9</button>
+            <button class="op" data-keyop="digits">digits</button>
+            <button data-key="4">4</button>
+            <button data-key="5">5</button>
+            <button data-key="6">6</button>
+            <button class="op" data-keyop="string">string</button>
+            <button data-key="1">1</button>
+            <button data-key="2">2</button>
+            <button data-key="3">3</button>
+            <button class="op" data-keyop="skip">skip</button>
+            <button data-key="0">0</button>
+            <button data-keyclear="1">CE</button>
+            <button class="op" data-keyop="fork">fork</button>
+            <button class="op" data-keyop="in_base">base→</button>
+            <button class="op wide" data-keyop="cached">cached</button>
+            <button class="op" data-keyop="streaming">stream</button>
+            <button class="op" data-keyop="fork_cost">cost</button>
+          </div>
+          <div class="row" style="margin-top: 8px">
+            <div class="col">
+              <label for="keyN">N / K / base</label> <input id="keyN" type="number" value="12" />
+            </div>
+            <div class="col">
+              <label for="keyStore">store ›</label>
+              <input class="store" id="keyStore" placeholder="name" type="text" />
+            </div>
+          </div>
+        </fieldset>
+
+        <h2>Constructors</h2>
+
+        <fieldset>
+          <legend>rational P / Q (base)</legend>
+          <div class="row">
+            <div class="col">
+              <label for="rP">P</label> <input id="rP" type="number" value="1" />
+            </div>
+            <div class="col">
+              <label for="rQ">Q</label> <input id="rQ" type="number" value="7" />
+            </div>
+            <div class="col">
+              <label for="rBase">base</label> <input id="rBase" type="number" value="10" />
+            </div>
+            <div class="col">
+              <label for="rStore">store ›</label>
+              <input class="store" id="rStore" placeholder="name" type="text" />
+            </div>
+            <button data-make="rational">build</button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>sqrt D (base)</legend>
+          <div class="row">
+            <div class="col">
+              <label for="sD">D</label> <input id="sD" type="number" value="2" />
+            </div>
+            <div class="col">
+              <label for="sBase">base</label> <input id="sBase" type="number" value="10" />
+            </div>
+            <div class="col">
+              <label for="sStore">store ›</label>
+              <input class="store" id="sStore" placeholder="name" type="text" />
+            </div>
+            <button data-make="sqrt">build</button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>padic A / B in Z_p</legend>
+          <div class="row">
+            <div class="col">
+              <label for="pA">A</label> <input id="pA" type="number" value="1" />
+            </div>
+            <div class="col">
+              <label for="pB">B</label> <input id="pB" type="number" value="3" />
+            </div>
+            <div class="col">
+              <label for="pP">p</label> <input id="pP" type="number" value="7" />
+            </div>
+            <div class="col">
+              <label for="pStore">store ›</label>
+              <input class="store" id="pStore" placeholder="name" type="text" />
+            </div>
+            <button data-make="padic">build</button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>constants (base)</legend>
+          <div class="row">
+            <div class="col">
+              <label for="kConst">constant</label>
+              <select id="kConst">
+                <option value="e">e</option>
+                <option value="ln2">ln2</option>
+                <option value="one_over_e">one_over_e</option>
+                <option value="pi_quarter">pi_quarter</option>
+                <option value="catalan">catalan</option>
+              </select>
+            </div>
+            <div class="col">
+              <label for="kBase">base</label> <input id="kBase" type="number" value="10" />
+            </div>
+            <div class="col">
+              <label for="kStore">store ›</label>
+              <input class="store" id="kStore" placeholder="name" type="text" />
+            </div>
+            <button data-make="const">build</button>
+          </div>
+        </fieldset>
+
+        <h2>Inspect / transform</h2>
+        <fieldset>
+          <legend>operate on a register (advanced)</legend>
+          <div class="row">
+            <div class="col">
+              <label for="tReg">register</label> <input id="tReg" type="text" value="_" />
+            </div>
+            <div class="col">
+              <label for="tN">N / K / B</label> <input id="tN" type="number" value="12" />
+            </div>
+            <div class="col">
+              <label for="tStore">store ›</label>
+              <input class="store" id="tStore" placeholder="name" type="text" />
+            </div>
+          </div>
+          <div class="row">
+            <button data-op="digits">digits N</button>
+            <button data-op="string">string N</button>
+            <button data-op="base">base</button>
+            <button data-op="in_base">in_base B</button>
+            <button data-op="fork">fork</button>
+            <button data-op="fork_cost">fork_cost</button>
+            <button data-op="skip">skip K</button>
+            <button data-op="streaming">streaming</button>
+            <button data-op="cached">cached N</button>
+          </div>
+          <div class="row">
+            <button data-op="tier">tier</button>
+            <button data-op="gen">gen</button>
+            <button data-op="bitwidth">bitwidth</button>
+            <button data-op="histogram">histogram N</button>
+            <button data-op="tojson">to_json</button>
+          </div>
+        </fieldset>
+
+        <h2>Honest comparison</h2>
+        <fieldset>
+          <legend>tri-state over MAXD digits</legend>
+          <div class="row">
+            <div class="col"><label for="cA">A</label> <input id="cA" type="text" value="_" /></div>
+            <div class="col"><label for="cB">B</label> <input id="cB" type="text" value="_" /></div>
+            <div class="col">
+              <label for="cMaxd">MAXD</label> <input id="cMaxd" type="number" value="30" />
+            </div>
+          </div>
+          <div class="row">
+            <button data-cmp="compare">compare</button>
+            <button data-cmp="less">less</button>
+            <button data-cmp="agrees">agrees</button>
+          </div>
+        </fieldset>
+        <h2>Arithmetic (interval-honest)</h2>
+        <fieldset>
+          <legend>combine two registers (fractional operands in [0,1))</legend>
+          <div class="row">
+            <div class="col"><label for="aA">A</label> <input id="aA" type="text" value="_" /></div>
+            <div class="col"><label for="aB">B</label> <input id="aB" type="text" value="_" /></div>
+            <div class="col">
+              <label for="aStore">store ›</label>
+              <input class="store" id="aStore" placeholder="name" type="text" />
+            </div>
+          </div>
+          <div class="row">
+            <button data-arith="add">add</button>
+            <button data-arith="sub">sub</button>
+            <button data-arith="mul">mul</button>
+            <button data-arith="div">div</button>
+            <button data-arith="ipart">ipart</button>
+          </div>
+        </fieldset>
+
+        <h2>Precision context (scoped)</h2>
+        <fieldset>
+          <legend>run one console command at precision N</legend>
+          <div class="row">
+            <div class="col">
+              <label for="precN">N</label> <input id="precN" type="number" value="8" />
+            </div>
+            <div class="col">
+              <label for="precCmd">command</label>
+              <input id="precCmd" style="width: 200px" type="text" value="digits _ " />
+            </div>
+            <button id="precRun">run scoped</button>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ============ side: registers + console + log ============ -->
+      <div class="panel side">
+        <h2>Registers</h2>
+        <div id="vars">(no registers)</div>
+        <div class="row">
+          <button class="ghost" id="refreshVars">refresh</button>
+          <input id="dropName" placeholder="name" type="text" />
+          <button class="ghost" id="dropBtn">drop</button>
+        </div>
+
+        <h2 style="margin-top: 14px">Console</h2>
+        <div class="sub">
+          Same grammar as the Node REPL. Try <code>rational 1 7 10 &gt;x</code> then
+          <code>digits x 12</code>.
+        </div>
+        <div class="console-row">
+          <input id="console" placeholder="type a command, e.g.  e 10 >euler" type="text" />
+          <button id="consoleRun">run</button>
+        </div>
+
+        <h2 style="margin-top: 14px">Output log</h2>
+        <div id="out"></div>
+        <button class="ghost" id="clearLog">clear log</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import createNam from './nam_wasm.js';
+      import loadNam from './nam.js';
+
+      const $ = (id) => document.getElementById(id);
+      const out = $('out');
+      const varsBox = $('vars');
+      const precPill = $('precPill');
+      const dispValue = $('dispValue');
+      const dispSub = $('dispSub');
+      const targetLabel = $('targetLabel');
+
+      // ---- module + register state ------------------------------------
+      let nam = null;
+      const regs = Object.create(null); // name -> wrapped Number
+      let targetReg = '_'; // register the keypad acts on
+
+      function setLast(num) {
+        regs['_'] = num;
+        updateDisplay();
+        return num;
+      }
+
+      function setTarget(name) {
+        targetReg = name;
+        targetLabel.textContent = name;
+        $('tReg').value = name;
+        updateDisplay();
+        refreshVars();
+      }
+
+      function updateDisplay() {
+        const t = regs[targetReg] || regs['_'];
+        if (!t) {
+          dispValue.textContent = '—';
+          dispSub.textContent = 'build a number to begin';
+          return;
+        }
+        dispValue.textContent = t.toString();
+        try {
+          dispSub.textContent = `base ${t.base()} · fork cost ${t.fork_cost()}`;
+        } catch (_) {
+          dispSub.textContent = '';
+        }
+      }
+
+      function lookup(name) {
+        const n = regs[name];
+        if (!n) throw new Error(`unknown register "${name}" (see Registers)`);
+        return n;
+      }
+
+      function triStr(v) {
+        return v === null ? 'pending (null)' : String(v);
+      }
+
+      // ---- logging ----------------------------------------------------
+      function log(html, cls) {
+        const div = document.createElement('div');
+        div.className = 'log-line' + (cls ? ' ' + cls : '');
+        div.innerHTML = html;
+        out.appendChild(div);
+        out.scrollTop = out.scrollHeight;
+      }
+
+      function logCmd(text) {
+        log(`<span class="log-cmd">nam&gt; ${escapeHtml(text)}</span>`);
+      }
+
+      function logOk(text) {
+        log(escapeHtml(text));
+      }
+
+      function logErr(text) {
+        log(`error: ${escapeHtml(text)}`, 'log-err');
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function refreshPrecision() {
+        precPill.textContent = `${nam.current_precision()} digits`;
+      }
+
+      function refreshVars() {
+        const names = Object.keys(regs).sort();
+        if (names.length === 0) {
+          varsBox.textContent = '(no registers)';
+          return;
+        }
+        varsBox.innerHTML = '';
+        for (const k of names) {
+          const item = document.createElement('div');
+          item.className = 'reg-item';
+          if (k === targetReg) item.classList.add('target-active');
+          item.title = `click to target "${k}"`;
+          item.innerHTML =
+            `<span class="reg">${escapeHtml(k)}</span>` +
+            `<span class="reg-val">${escapeHtml(regs[k].toString())}</span>` +
+            `<span class="reg-drop" title="drop">✕</span>`;
+          item.addEventListener('click', (ev) => {
+            if (ev.target.classList.contains('reg-drop')) {
+              if (k !== '_') runCommand(`drop ${k}`);
+              return;
+            }
+            setTarget(k);
+          });
+          varsBox.appendChild(item);
+        }
+      }
+
+      // ---- constructor dispatch (shared by GUI + console) -------------
+      const CONSTRUCTORS = new Set([
+        'rational',
+        'sqrt',
+        'padic',
+        'e',
+        'ln2',
+        'one_over_e',
+        'pi_quarter',
+        'catalan',
+      ]);
+
+      function isInt(tok) {
+        return /^-?\d+$/.test(tok);
+      }
+
+      function asInt(tok, what) {
+        if (!isInt(tok)) throw new Error(`expected integer for ${what}, got "${tok}"`);
+        return parseInt(tok, 10);
+      }
+
+      function construct(cmd, args) {
+        switch (cmd) {
+          case 'rational': {
+            const p = asInt(args[0], 'P');
+            const q = asInt(args[1], 'Q');
+            const base = args[2] !== undefined ? asInt(args[2], 'BASE') : 10;
+            return nam.rational(p, q, base);
+          }
+          case 'sqrt': {
+            const d = asInt(args[0], 'D');
+            const base = args[1] !== undefined ? asInt(args[1], 'BASE') : 10;
+            return nam.sqrt(d, base);
+          }
+          case 'padic': {
+            const a = asInt(args[0], 'A');
+            const b = asInt(args[1], 'B');
+            const p = asInt(args[2], 'P');
+            return nam.padic(a, b, p);
+          }
+          case 'e':
+          case 'ln2':
+          case 'one_over_e':
+          case 'pi_quarter':
+          case 'catalan': {
+            const base = args[0] !== undefined ? asInt(args[0], 'BASE') : 10;
+            return nam[cmd](base);
+          }
+          default:
+            return null;
+        }
+      }
+
+      function extractStore(tokens) {
+        const rest = [];
+        let store = null;
+        for (const t of tokens) {
+          if (t.startsWith('>')) {
+            store = t.slice(1);
+            if (!store) throw new Error('empty store target after ">"');
+          } else {
+            rest.push(t);
+          }
+        }
+        return { store, rest };
+      }
+
+      // ---- shared console-grammar evaluator ---------------------------
+      // Returns a human-readable string (or '' for silence).
+      function evaluate(tokens) {
+        if (tokens.length === 0) return '';
+
+        if (tokens[0] === 'let') {
+          const eq = tokens.indexOf('=');
+          if (eq !== 2) throw new Error('usage: let NAME = CONSTRUCTOR...');
+          const name = tokens[1];
+          const cmd = tokens[3];
+          if (!CONSTRUCTORS.has(cmd)) throw new Error(`"${cmd}" is not a constructor`);
+          const { rest } = extractStore(tokens.slice(4));
+          const num = setLast(construct(cmd, rest));
+          regs[name] = num;
+          return `${name} := ${num.toString()}`;
+        }
+
+        if (tokens[0] === 'precision') {
+          if (tokens.length === 1) return `current precision: ${nam.current_precision()}`;
+          const n = asInt(tokens[1], 'N');
+          let inner = '';
+          nam.precision_context(n, () => {
+            inner = evaluate(tokens.slice(2));
+          });
+          refreshPrecision();
+          return (
+            `[at precision ${n}] ${inner}\n` + `precision restored: ${nam.current_precision()}`
+          );
+        }
+
+        const cmd = tokens[0];
+        const rawArgs = tokens.slice(1);
+
+        if (CONSTRUCTORS.has(cmd)) {
+          const { store, rest } = extractStore(rawArgs);
+          const num = setLast(construct(cmd, rest));
+          if (store) regs[store] = num;
+          return (store ? `${store} := ` : '') + num.toString();
+        }
+
+        switch (cmd) {
+          case 'vars': {
+            const names = Object.keys(regs).sort();
+            if (names.length === 0) return '(no registers)';
+            return names.map((k) => `  ${k} = ${regs[k].toString()}`).join('\n');
+          }
+          case 'drop': {
+            const name = rawArgs[0];
+            if (!(name in regs)) throw new Error(`no such register "${name}"`);
+            delete regs[name];
+            return `dropped ${name}`;
+          }
+          case 'digits': {
+            const num = lookup(rawArgs[0]);
+            const n = rawArgs[1] !== undefined ? asInt(rawArgs[1], 'N') : undefined;
+            const arr = n === undefined ? num.digits() : num.digits(n);
+            return `[${arr.join(', ')}]`;
+          }
+          case 'string': {
+            const num = lookup(rawArgs[0]);
+            const n = rawArgs[1] !== undefined ? asInt(rawArgs[1], 'N') : 6;
+            return num.to_string(n);
+          }
+          case 'base': {
+            const num = lookup(rawArgs[0]);
+            return `base ${num.base()}`;
+          }
+          case 'tier': {
+            const num = lookup(rawArgs[0]);
+            return `tier: ${num.tier()}`;
+          }
+          case 'gen': {
+            const num = lookup(rawArgs[0]);
+            return `generator: ${num.gen()}`;
+          }
+          case 'bitwidth': {
+            const num = lookup(rawArgs[0]);
+            return `accumulator bit-width: ${num.accumulator_bitwidth()}`;
+          }
+          case 'histogram': {
+            const num = lookup(rawArgs[0]);
+            const n = rawArgs[1] !== undefined ? asInt(rawArgs[1], 'N') : 30;
+            const hist = num.digit_histogram(n);
+            return hist.map((c, d) => `${d}:${c}`).join('  ');
+          }
+          case 'tojson': {
+            const num = lookup(rawArgs[0]);
+            return num.to_json();
+          }
+          case 'fromjson': {
+            const { store, rest } = extractStore(rawArgs);
+            // Re-join the remaining tokens: JSON has no spaces from
+            // dump(), but be defensive in case of manual paste.
+            const payload = rest.join(' ');
+            const o = setLast(nam.from_json(payload));
+            if (store) regs[store] = o;
+            return (store ? `${store} := ` : '') + o.toString();
+          }
+          case 'in_base': {
+            const { store, rest } = extractStore(rawArgs);
+            const num = lookup(rest[0]);
+            const b = asInt(rest[1], 'B');
+            const o = setLast(num.in_base(b));
+            if (store) regs[store] = o;
+            return (store ? `${store} := ` : '') + o.toString();
+          }
+          case 'fork': {
+            const num = lookup(rawArgs[0]);
+            const [a, b] = num.fork();
+            regs['a'] = a;
+            regs['b'] = b;
+            setLast(a);
+            return (
+              `forked (cost ${num.fork_cost()}) into a, b\n` +
+              `  a = ${a.toString()}\n  b = ${b.toString()}`
+            );
+          }
+          case 'fork_cost': {
+            const num = lookup(rawArgs[0]);
+            return `fork cost: ${num.fork_cost()}`;
+          }
+          case 'skip': {
+            const { store, rest } = extractStore(rawArgs);
+            const num = lookup(rest[0]);
+            const k = asInt(rest[1], 'K');
+            const o = num.skip(k);
+            if (o === null)
+              return 'skip pending (null) — no fast-forward path ' + '(non-periodic tier)';
+            setLast(o);
+            if (store) regs[store] = o;
+            return (store ? `${store} := ` : '') + o.toString();
+          }
+          case 'streaming': {
+            const { store, rest } = extractStore(rawArgs);
+            const num = lookup(rest[0]);
+            const o = setLast(num.streaming());
+            if (store) regs[store] = o;
+            return (store ? `${store} := ` : '') + o.toString();
+          }
+          case 'cached': {
+            const { store, rest } = extractStore(rawArgs);
+            const num = lookup(rest[0]);
+            const n = asInt(rest[1], 'N');
+            const o = setLast(num.cached(n));
+            if (store) regs[store] = o;
+            return (store ? `${store} := ` : '') + o.toString();
+          }
+          case 'compare': {
+            const a = lookup(rawArgs[0]);
+            const b = lookup(rawArgs[1]);
+            const maxd = rawArgs[2] !== undefined ? asInt(rawArgs[2], 'MAXD') : 30;
+            return `compare: ${triStr(a.compare(b, maxd))}`;
+          }
+          case 'less': {
+            const a = lookup(rawArgs[0]);
+            const b = lookup(rawArgs[1]);
+            const maxd = rawArgs[2] !== undefined ? asInt(rawArgs[2], 'MAXD') : 30;
+            return `less: ${triStr(a.definitely_less_than(b, maxd))}`;
+          }
+          case 'agrees': {
+            const a = lookup(rawArgs[0]);
+            const b = lookup(rawArgs[1]);
+            const maxd = rawArgs[2] !== undefined ? asInt(rawArgs[2], 'MAXD') : 30;
+            return `agrees: ${a.agrees_with(b, maxd)}`;
+          }
+          case 'add':
+          case 'sub':
+          case 'mul':
+          case 'div': {
+            const { store, rest } = extractStore(rawArgs);
+            const a = lookup(rest[0]);
+            const b = lookup(rest[1]);
+            // Honesty guard (mirrors the Node REPL): interval-honest
+            // arithmetic consumes only the FRACTIONAL digit stream of
+            // each operand (values in [0,1)). Integer / improper values
+            // (e.g. rational 4 1) stream as 0.000..., so a combination
+            // involving them is NOT meaningful. Surface this honestly.
+            log(
+              escapeHtml(
+                'note: arithmetic is fractional-only ' +
+                  '(operands in [0,1)); integer/improper operands stream ' +
+                  'as 0.000... and yield meaningless results.'
+              ),
+              'log-pending'
+            );
+            const o = setLast(a[cmd](b));
+            if (store) regs[store] = o;
+            return (store ? `${store} := ` : '') + o.toString();
+          }
+          case 'ipart': {
+            const num = lookup(rawArgs[0]);
+            return `integer part: ${triStr(num.integer_part())}`;
+          }
+          default:
+            throw new Error(`unknown command "${cmd}"`);
+        }
+      }
+
+      // Run a console-grammar command string, logging command + result.
+      function runCommand(text, { echo = true } = {}) {
+        const trimmed = text.trim();
+        if (trimmed === '') return;
+        if (echo) logCmd(trimmed);
+        try {
+          const tokens = trimmed.split(/\s+/);
+          const result = evaluate(tokens);
+          if (result) {
+            if (/pending \(null\)/.test(result)) log(escapeHtml(result), 'log-pending');
+            else logOk(result);
+          }
+        } catch (exc) {
+          logErr(exc.message);
+        }
+        refreshVars();
+        refreshPrecision();
+        updateDisplay();
+      }
+
+      // ---- GUI button wiring (translated to console grammar) ----------
+      function storeSuffix(id) {
+        const v = $(id).value.trim();
+        return v ? ` >${v}` : '';
+      }
+
+      function wireConstructors() {
+        for (const btn of document.querySelectorAll('[data-make]')) {
+          btn.addEventListener('click', () => {
+            const kind = btn.dataset.make;
+            let cmd;
+            if (kind === 'rational') {
+              cmd =
+                `rational ${$('rP').value} ${$('rQ').value} ` +
+                `${$('rBase').value}${storeSuffix('rStore')}`;
+            } else if (kind === 'sqrt') {
+              cmd = `sqrt ${$('sD').value} ${$('sBase').value}` + storeSuffix('sStore');
+            } else if (kind === 'padic') {
+              cmd =
+                `padic ${$('pA').value} ${$('pB').value} ` +
+                `${$('pP').value}${storeSuffix('pStore')}`;
+            } else if (kind === 'const') {
+              cmd = `${$('kConst').value} ${$('kBase').value}` + storeSuffix('kStore');
+            }
+            runCommand(cmd);
+          });
+        }
+      }
+
+      function wireOps() {
+        for (const btn of document.querySelectorAll('[data-op]')) {
+          btn.addEventListener('click', () => {
+            const op = btn.dataset.op;
+            const reg = $('tReg').value.trim() || '_';
+            const n = $('tN').value.trim();
+            const store = storeSuffix('tStore');
+            let cmd;
+            switch (op) {
+              case 'digits':
+                cmd = `digits ${reg} ${n}`;
+                break;
+              case 'string':
+                cmd = `string ${reg} ${n}`;
+                break;
+              case 'base':
+                cmd = `base ${reg}`;
+                break;
+              case 'in_base':
+                cmd = `in_base ${reg} ${n}${store}`;
+                break;
+              case 'fork':
+                cmd = `fork ${reg}`;
+                break;
+              case 'fork_cost':
+                cmd = `fork_cost ${reg}`;
+                break;
+              case 'skip':
+                cmd = `skip ${reg} ${n}${store}`;
+                break;
+              case 'streaming':
+                cmd = `streaming ${reg}${store}`;
+                break;
+              case 'cached':
+                cmd = `cached ${reg} ${n}${store}`;
+                break;
+              case 'tier':
+                cmd = `tier ${reg}`;
+                break;
+              case 'gen':
+                cmd = `gen ${reg}`;
+                break;
+              case 'bitwidth':
+                cmd = `bitwidth ${reg}`;
+                break;
+              case 'histogram':
+                cmd = `histogram ${reg} ${n}`;
+                break;
+              case 'tojson':
+                cmd = `tojson ${reg}`;
+                break;
+            }
+            runCommand(cmd);
+          });
+        }
+      }
+
+      function wireComparisons() {
+        for (const btn of document.querySelectorAll('[data-cmp]')) {
+          btn.addEventListener('click', () => {
+            const op = btn.dataset.cmp;
+            const a = $('cA').value.trim();
+            const b = $('cB').value.trim();
+            const maxd = $('cMaxd').value.trim();
+            runCommand(`${op} ${a} ${b} ${maxd}`);
+          });
+        }
+      }
+
+      // ---- keypad: standard-calculator-style mouse interactions -------
+      function wireKeypad() {
+        // digit keys append to the N field
+        for (const btn of document.querySelectorAll('[data-key]')) {
+          btn.addEventListener('click', () => {
+            const cur = $('keyN').value === '0' ? '' : $('keyN').value;
+            $('keyN').value = cur + btn.dataset.key;
+          });
+        }
+        // clear-entry
+        for (const btn of document.querySelectorAll('[data-keyclear]')) {
+          btn.addEventListener('click', () => {
+            $('keyN').value = '0';
+          });
+        }
+        // operation keys act on the current target register
+        for (const btn of document.querySelectorAll('[data-keyop]')) {
+          btn.addEventListener('click', () => {
+            const op = btn.dataset.keyop;
+            const reg = targetReg;
+            const n = $('keyN').value.trim();
+            const sv = $('keyStore').value.trim();
+            const store = sv ? ` >${sv}` : '';
+            let cmd;
+            switch (op) {
+              case 'digits':
+              case 'string':
+                cmd = `${op} ${reg} ${n}`;
+                break;
+              case 'skip':
+              case 'cached':
+                cmd = `${op} ${reg} ${n}${store}`;
+                break;
+              case 'in_base':
+                cmd = `in_base ${reg} ${n}${store}`;
+                break;
+              case 'fork':
+                cmd = `fork ${reg}`;
+                break;
+              case 'fork_cost':
+                cmd = `fork_cost ${reg}`;
+                break;
+              case 'streaming':
+                cmd = `streaming ${reg}${store}`;
+                break;
+            }
+            runCommand(cmd);
+          });
+        }
+        // keep keypad target in sync if user edits tReg directly
+        $('tReg').addEventListener('change', () => {
+          const v = $('tReg').value.trim() || '_';
+          setTarget(v);
+        });
+      }
+
+      function wireArithmetic() {
+        for (const btn of document.querySelectorAll('[data-arith]')) {
+          btn.addEventListener('click', () => {
+            const op = btn.dataset.arith;
+            const a = $('aA').value.trim() || '_';
+            const b = $('aB').value.trim() || '_';
+            const store = storeSuffix('aStore');
+            const cmd = op === 'ipart' ? `ipart ${a}` : `${op} ${a} ${b}${store}`;
+            runCommand(cmd);
+          });
+        }
+      }
+
+      // ---- static control wiring --------------------------------------
+      $('consoleRun').addEventListener('click', () => {
+        runCommand($('console').value);
+        $('console').value = '';
+      });
+      $('console').addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          runCommand($('console').value);
+          $('console').value = '';
+        }
+      });
+      $('precRun').addEventListener('click', () => {
+        const n = $('precN').value.trim();
+        const inner = $('precCmd').value.trim();
+        runCommand(`precision ${n} ${inner}`);
+      });
+      $('refreshVars').addEventListener('click', refreshVars);
+      $('dropBtn').addEventListener('click', () => {
+        const name = $('dropName').value.trim();
+        if (name) {
+          runCommand(`drop ${name}`);
+          $('dropName').value = '';
+        }
+      });
+      $('clearLog').addEventListener('click', () => {
+        out.innerHTML = '';
+      });
+
+      // ---- boot -------------------------------------------------------
+      nam = await loadNam(createNam);
+      refreshPrecision();
+      refreshVars();
+      updateDisplay();
+      logOk(
+        'module ready — build a number or type a command. ' +
+          'The last result is always in register "_".'
+      );
+
+      wireConstructors();
+      wireOps();
+      wireComparisons();
+      wireArithmetic();
+      wireKeypad();
+    </script>
+  </body>
+</html>

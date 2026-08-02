@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#7c5cff" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Predictive Markov Wordsearch</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/png" href="../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../icon.png" />
+    <link rel="shortcut icon" href="../icon.png" />
+  </head>
+  <body>
+    <aside>
+      <h1>Markov Wordsearch</h1>
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="design">Design</button>
+        <button class="mode-tab" data-mode="watch">Watch</button>
+        <button class="mode-tab" data-mode="play">Play</button>
+        <button class="mode-tab" data-mode="collapse">Collapse</button>
+      </div>
+
+      <div id="panel-design">
+        <div class="actions">
+          <button id="btn-regen">Generate</button>
+          <!--          <button id="btn-png" class="secondary">Export PNG</button>-->
+          <button id="btn-txt" class="secondary">Export TXT</button>
+        </div>
+        <div id="status"></div>
+      </div>
+
+      <div id="panel-watch" hidden>
+        <fieldset>
+          <legend>Watch buildout</legend>
+          <label for="watch-speed">Auto-play speed (ms/step)</label>
+          <input id="watch-speed" type="number" min="10" max="2000" value="120" />
+          <div class="actions">
+            <button id="btn-watch-step">Step</button>
+            <button id="btn-watch-play" class="secondary">Play</button>
+            <button id="btn-watch-pause" class="secondary">Pause</button>
+            <button id="btn-watch-finish" class="secondary">Finish</button>
+            <button id="btn-watch-reset" class="secondary">Reset</button>
+          </div>
+          <div id="watch-status"></div>
+        </fieldset>
+      </div>
+
+      <div id="panel-play" hidden>
+        <fieldset>
+          <legend>Play</legend>
+          <div>Time: <span id="play-timer">00:00</span></div>
+          <p>Click the first letter, then the last letter of a word.</p>
+          <ul id="play-words"></ul>
+          <div id="play-bonus-wrap" hidden>
+            <strong>Bonus words found:</strong>
+            <ul id="play-bonus"></ul>
+          </div>
+          <div class="actions">
+            <button id="btn-play-pause" class="secondary">Pause</button>
+            <button id="btn-play-new">New game</button>
+          </div>
+          <div id="play-status"></div>
+        </fieldset>
+      </div>
+      <div id="panel-collapse" hidden>
+        <fieldset>
+          <legend>Collapse</legend>
+          <div>Time: <span id="collapse-timer">00:00</span></div>
+          <div>Score: <span id="collapse-score">0</span></div>
+          <p>
+            Find ANY real word (3+ letters) hidden in the grid, or a run of 3+ identical letters
+            (e.g. AAA) or consecutive letters (e.g. XYZ). Matched tiles are removed, the tiles above
+            drop down, and new letters fill in from the top.
+          </p>
+          <p>Click the first letter, then the last letter of a word.</p>
+          <strong>Found:</strong>
+          <ul id="collapse-found"></ul>
+          <div class="actions">
+            <button id="btn-collapse-pause" class="secondary">Pause</button>
+            <button id="btn-collapse-new">New game</button>
+          </div>
+          <div id="collapse-status"></div>
+        </fieldset>
+      </div>
+
+      <div id="config-controls">
+        <fieldset>
+          <legend>Grid</legend>
+          <div class="row">
+            <div>
+              <label for="cfg-width">Width</label>
+              <input id="cfg-width" type="number" min="5" max="40" value="15" />
+            </div>
+            <div>
+              <label for="cfg-height">Height</label>
+              <input id="cfg-height" type="number" min="5" max="40" value="15" />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Model</legend>
+          <label for="cfg-order">Markov order (N)</label>
+          <input id="cfg-order" type="number" min="0" max="6" value="3" />
+          <label for="cfg-lattice">Lattice</label>
+          <select id="cfg-lattice">
+            <option value="square" selected>square (8-dir)</option>
+            <option value="hex">hexagonal (6-dir)</option>
+            <!--            <option value="triangular">triangular (8-dir)</option>-->
+          </select>
+          <label>
+            <input id="cfg-no-backwards" type="checkbox" checked="true" />
+            Disable backwards-oriented directions
+          </label>
+
+          <label for="cfg-combiner">Combiner</label>
+          <select id="cfg-combiner">
+            <option value="vote" selected>vote</option>
+            <option value="product">product (AND)</option>
+            <option value="sum">sum (OR)</option>
+            <option value="max">max</option>
+          </select>
+
+          <label for="cfg-sampling">Sampling</label>
+          <select id="cfg-sampling">
+            <option value="weighted" selected>weighted</option>
+            <option value="argmax">argmax</option>
+          </select>
+        </fieldset>
+
+        <fieldset>
+          <legend>Reference text</legend>
+          <label for="cfg-preset">Preset</label>
+          <select id="cfg-preset"></select>
+          <label for="cfg-reftext-url">Reference text URL (relative or absolute)</label>
+          <div class="row">
+            <input
+              id="cfg-reftext-url"
+              type="text"
+              placeholder="./src/ui/presets/fantasy/reference.txt"
+            />
+            <button id="btn-load-reftext-url" type="button" class="secondary">Load</button>
+          </div>
+          <label for="cfg-reffile">Upload text file</label>
+          <input id="cfg-reffile" type="file" accept=".txt,text/plain" />
+          <label for="cfg-reftext">Or paste text</label>
+          <textarea id="cfg-reftext"></textarea>
+        </fieldset>
+
+        <fieldset>
+          <legend>Target words</legend>
+          <label for="cfg-words-url">Target words URL (relative or absolute)</label>
+          <div class="row">
+            <input
+              id="cfg-words-url"
+              type="text"
+              placeholder="./src/ui/presets/fantasy/words.txt"
+            />
+            <button id="btn-load-words-url" type="button" class="secondary">Load</button>
+          </div>
+          <label for="cfg-words">One per line or comma-separated</label>
+          <textarea id="cfg-words"></textarea>
+          <label for="cfg-wordcount">
+            Words to use (0 or blank = all; randomly sampled for large lists)
+          </label>
+          <input id="cfg-wordcount" type="number" min="0" max="200" value="0" />
+          <label><input id="cfg-debug" type="checkbox" /> Highlight placed words</label>
+          <label for="cfg-max-adjacency">Max word adjacency</label>
+          <input type="number" id="cfg-max-adjacency" min="0" max="5" step="1" value="1" />
+        </fieldset>
+        <fieldset>
+          <legend>Global word list</legend>
+          <label for="cfg-wordlist-url">
+            Global wordlist URL (real words to avoid forming; defaults to root wordlist.txt)
+          </label>
+          <div class="row">
+            <input
+              id="cfg-wordlist-url"
+              type="text"
+              placeholder="wordlist.txt"
+              value="wordlist.txt"
+            />
+            <button id="btn-load-wordlist-url" type="button" class="secondary">Load</button>
+          </div>
+          <label>
+            <input id="cfg-no-avoid-words" type="checkbox" />
+            Disable real-word avoidance while filling (recommended for Collapse mode)
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Randomness</legend>
+          <label for="cfg-seed">
+            Seed (blank = random; set a value for a shareable, repeatable game)
+          </label>
+          <input id="cfg-seed" type="text" placeholder="e.g. dragon-42" />
+        </fieldset>
+
+        <fieldset>
+          <legend>Text</legend>
+
+          <label for="cfg-fontscale">Text size</label>
+          <input type="range" id="cfg-fontscale" min="0.5" max="5" step="0.05" value="1" />
+
+          <label for="cfg-fontfamily">Font</label>
+          <select id="cfg-fontfamily">
+            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+            <option value="'Space Grotesk', system-ui, sans-serif">Space Grotesk</option>
+            <option value="Georgia, 'Times New Roman', serif">Serif</option>
+            <option value="system-ui, sans-serif">System Sans</option>
+            <option value="'Courier New', monospace">Courier</option>
+          </select>
+        </fieldset>
+      </div>
+    </aside>
+
+    <main>
+      <div id="grid"></div>
+    </main>
+
+    <script type="module" src="./src/index.js"></script>
+
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+  </body>
+</html>

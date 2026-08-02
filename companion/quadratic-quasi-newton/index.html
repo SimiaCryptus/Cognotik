@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS."
+    />
+    <title>Quadratic Quasi-Newton — Mathematical Explorations</title>
+    <link
+      rel="canonical"
+      href="https://math.cognotik.com/companion/quadratic-quasi-newton/index.html"
+    />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta property="og:title" content="Quadratic Quasi-Newton — Mathematical Explorations" />
+    <meta
+      property="og:description"
+      content="A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS."
+    />
+    <meta
+      property="og:url"
+      content="https://math.cognotik.com/companion/quadratic-quasi-newton/index.html"
+    />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Quadratic Quasi-Newton — Mathematical Explorations" />
+    <meta
+      name="twitter:description"
+      content="A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS."
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Article",
+            "headline": "Quadratic Quasi-Newton",
+            "description": "A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS.",
+            "url": "https://math.cognotik.com/companion/quadratic-quasi-newton/index.html",
+            "inLanguage": "en",
+            "author": { "@type": "Person", "name": "SimiaCryptus" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Mathematical Explorations",
+              "url": "https://math.cognotik.com/"
+            },
+            "mainEntityOfPage": "https://math.cognotik.com/companion/quadratic-quasi-newton/index.html"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Mathematical Explorations",
+                "item": "https://math.cognotik.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Quadratic Quasi-Newton",
+                "item": "https://math.cognotik.com/companion/quadratic-quasi-newton/index.html"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <div class="crumbs">
+        <a href="../../index.html">Home</a> › <a href="../index.html">Companion pages</a> ›
+        <span>Quadratic Quasi-Newton</span>
+      </div>
+      <div class="page-head">
+        <div class="page-icon" aria-hidden="true">QQN</div>
+        <div>
+          <h1>Quadratic Quasi-Newton</h1>
+          <p class="subtitle">Standalone · optimization</p>
+        </div>
+      </div>
+      <p class="subtitle">
+        A new optimization algorithm for smooth functions that interpolates between gradient descent
+        and L-BFGS.
+      </p>
+      <p>
+        <a class="cta" href="../../essays/QQN/index.html"
+          >Open the interactive lab <span class="arrow">→</span></a
+        >
+      </p>
+
+      <article>
+        <h1>QQN Optimizer: Quadratic-Quasi-Newton Optimization Algorithm</h1>
+        <p>
+          A comprehensive optimization library implementing the Quadratic-Quasi-Newton (QQN)
+          algorithm alongside a rigorous benchmarking framework for optimization algorithm
+          evaluation. 📄
+          <strong><a href="../../essays/QQN/paper.pdf">Read the Academic Paper</a></strong> -
+          Complete mathematical foundation and theoretical analysis
+        </p>
+        <p>
+          <a href="http://dx.doi.org/10.13140/RG.2.2.15200.19206"
+            >http://dx.doi.org/10.13140/RG.2.2.15200.19206</a
+          >
+        </p>
+        <h2>Table of Contents</h2>
+        <ul>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#key-features">Key Features</a></li>
+          <li><a href="#installation">Installation</a></li>
+          <li><a href="#quick-start">Quick Start</a></li>
+          <li><a href="#the-qqn-algorithm">The QQN Algorithm</a></li>
+          <li><a href="#benchmarking-framework">Benchmarking Framework</a></li>
+          <li><a href="#usage-examples">Usage Examples</a></li>
+          <li><a href="#benchmark-results">Benchmark Results</a></li>
+          <li><a href="#api-documentation">API Documentation</a></li>
+          <li><a href="#contributing">Contributing</a></li>
+          <li>
+            <a href="#academic-paper">Academic Paper</a> 📄
+            <strong><a href="../../essays/QQN/paper.pdf">PDF</a></strong>
+          </li>
+          <li><a href="#license">License</a></li>
+        </ul>
+        <h2>Overview</h2>
+        <p>
+          The QQN Optimizer introduces a novel optimization algorithm that combines gradient descent
+          and L-BFGS directions through quadratic interpolation. Unlike traditional approaches that
+          choose between optimization directions or solve expensive subproblems, QQN constructs a
+          smooth parametric path that guarantees descent while adaptively balancing first-order and
+          second-order information.
+        </p>
+        <p>
+          <strong>Key Innovation</strong>: QQN constructs a quadratic path
+          <code>d(t) = t(1-t)(-∇f) + t²d_LBFGS</code> that starts tangent to the gradient direction
+          and curves toward the quasi-Newton direction, then performs univariate optimization along
+          this path.
+        </p>
+        <h2>Key Features</h2>
+        <h3>Algorithm Capabilities</h3>
+        <ul>
+          <li>
+            <strong>Robust Convergence</strong>: Guaranteed descent property regardless of L-BFGS
+            direction quality
+          </li>
+          <li>
+            <strong>No Additional Hyperparameters</strong>: Combines existing methods without
+            introducing new tuning parameters
+          </li>
+          <li>
+            <strong>Superlinear Local Convergence</strong>: Inherits L-BFGS convergence properties
+            near optima
+          </li>
+          <li>
+            <strong>Multiple Line Search Methods</strong>: Supports Backtracking, Strong Wolfe,
+            Golden Section, Bisection, and more
+          </li>
+        </ul>
+        <h3>Comprehensive Benchmarking</h3>
+        <ul>
+          <li>
+            <strong>62 Benchmark Problems</strong>: Covering convex, non-convex, multimodal, and ML
+            problems
+          </li>
+          <li>
+            <strong>25 Optimizer Variants</strong>: QQN, L-BFGS, Trust Region, Gradient Descent, and
+            Adam variants
+          </li>
+          <li>
+            <strong>Statistical Rigor</strong>: Automated statistical testing with Welch&#39;s
+            t-test and effect size analysis
+          </li>
+          <li>
+            <strong>Reproducible Results</strong>: Fixed seeds and deterministic algorithms ensure
+            reproducibility
+          </li>
+        </ul>
+        <h3>Reporting and Analysis</h3>
+        <ul>
+          <li>
+            <strong>Multi-Format Output</strong>: Generates Markdown, LaTeX, CSV, and HTML reports
+          </li>
+          <li>
+            <strong>Convergence Visualization</strong>: Automatic generation of convergence plots
+            and performance profiles
+          </li>
+          <li>
+            <strong>Statistical Comparison</strong>: Win/loss/tie matrices with significance testing
+          </li>
+          <li>
+            <strong>Performance Metrics</strong>: Success rates, function evaluations, and
+            convergence analysis
+          </li>
+        </ul>
+        <h2>Installation</h2>
+        <h3>Prerequisites</h3>
+        <ul>
+          <li>
+            For report generation: <code>pandoc</code> and LaTeX distribution with
+            <code>pdflatex</code> (optional)
+          </li>
+          <li>
+            For OneDNN support: Intel OneDNN library (optional, see
+            <a href="#onednn-installation">OneDNN Installation</a>)
+          </li>
+        </ul>
+        <h3>From Source</h3>
+        <pre><code class="language-bash">git clone https://github.com/SimiaCryptus/qqn-optimizer.git
+cd qqn-optimizer
+cargo build --release
+</code></pre>
+        <h3>OneDNN Installation</h3>
+        <p>For enhanced performance with neural network problems, you can install Intel OneDNN:</p>
+        <pre><code class="language-bash"># Ubuntu/Debian systems
+./install_onednn.py
+# Or install from source
+./install_onednn.py --source
+# Then build with OneDNN support
+cargo build --release --features onednn
+</code></pre>
+        <h3>Using Docker</h3>
+        <pre><code class="language-bash">docker build -t qqn-optimizer .
+docker run -v $(pwd)/results:/app/results qqn-optimizer benchmark
+</code></pre>
+        <h3>As a Library</h3>
+        <p>Add to your <code>Cargo.toml</code>:</p>
+        <pre><code class="language-toml">[dependencies]
+qqn-optimizer = { git = &quot;https://github.com/SimiaCryptus/qqn-optimizer.git&quot; }
+</code></pre>
+        <h2>Quick Start</h2>
+        <h3>Running Benchmarks</h3>
+        <pre><code class="language-bash"># Run full benchmark suite (may take hours)
+cargo run --release -- benchmark
+
+# Run calibration benchmarks (faster, for testing)
+cargo run --release -- calibration
+
+# Run specific problem sets
+cargo run --release -- benchmark --problems analytic
+cargo run --release -- benchmark --problems ml
+# Generate reports from existing results
+./process_results_md.sh  # Convert markdown to HTML
+./process_results_tex.sh # Convert LaTeX tables to PDF
+</code></pre>
+        <h3>Using QQN in Your Code</h3>
+        <pre><code class="language-rust">use qqn_optimizer::optimizers::qqn::QQNOptimizer;
+use qqn_optimizer::line_search::strong_wolfe::StrongWolfeLineSearch;
+
+// Define your objective function
+fn rosenbrock(x: &amp;[f64]) -&gt; f64 {
+    let mut sum = 0.0;
+    for i in 0..x.len()-1 {
+        let a = 1.0 - x[i];
+        let b = x[i+1] - x[i] * x[i];
+        sum += a * a + 100.0 * b * b;
+    }
+    sum
+}
+
+// Define gradient function
+fn rosenbrock_grad(x: &amp;[f64]) -&gt; Vec&lt;f64&gt; {
+    let mut grad = vec![0.0; x.len()];
+    for i in 0..x.len()-1 {
+        grad[i] += -2.0 * (1.0 - x[i]) - 400.0 * x[i] * (x[i+1] - x[i] * x[i]);
+        if i &gt; 0 {
+            grad[i] += 200.0 * (x[i] - x[i-1] * x[i-1]);
+        }
+    }
+    if x.len() &gt; 1 {
+        let last = x.len() - 1;
+        grad[last] = 200.0 * (x[last] - x[last-1] * x[last-1]);
+    }
+    grad
+}
+
+// Create and run optimizer
+let line_search = StrongWolfeLineSearch::new();
+let mut optimizer = QQNOptimizer::new(line_search);
+
+let initial_point = vec![-1.0, 1.0]; // Starting point
+let result = optimizer.optimize(
+    &amp;rosenbrock,
+    &amp;rosenbrock_grad,
+    initial_point,
+    1000, // max function evaluations
+    1e-8  // gradient tolerance
+);
+
+println!(&quot;Optimum found at: {:?}&quot;, result.x);
+println!(&quot;Function value: {}&quot;, result.fx);
+println!(&quot;Function evaluations: {}&quot;, result.num_f_evals);
+</code></pre>
+        <h2>The QQN Algorithm</h2>
+        <h3>Mathematical Foundation</h3>
+        <p>
+          QQN addresses the fundamental question: given gradient and quasi-Newton directions, how
+          should we combine them? The algorithm constructs a quadratic path satisfying three
+          constraints:
+        </p>
+        <ol>
+          <li>
+            <strong>Initial Position</strong>: <code>d(0) = 0</code> (starts at current point)
+          </li>
+          <li>
+            <strong>Initial Tangent</strong>: <code>d&#39;(0) = -∇f(x)</code> (begins with steepest
+            descent)
+          </li>
+          <li>
+            <strong>Terminal Position</strong>: <code>d(1) = d_LBFGS</code> (ends at L-BFGS
+            direction)
+          </li>
+        </ol>
+        <p>This yields the canonical form:</p>
+        <pre><code>d(t) = t(1-t)(-∇f) + t²d_LBFGS
+</code></pre>
+        <h3>Key Properties</h3>
+        <ul>
+          <li>
+            <strong>Guaranteed Descent</strong>: The initial tangent condition ensures descent
+            regardless of L-BFGS quality
+          </li>
+          <li>
+            <strong>Adaptive Interpolation</strong>: Automatically balances first-order and
+            second-order information
+          </li>
+          <li>
+            <strong>Robust to Failures</strong>: Gracefully degrades to gradient descent when L-BFGS
+            fails
+          </li>
+          <li>
+            <strong>No Additional Parameters</strong>: Uses existing L-BFGS and line search
+            parameters
+          </li>
+        </ul>
+        <h3>Convergence Guarantees</h3>
+        <ul>
+          <li>
+            <strong>Global Convergence</strong>: Under standard assumptions, converges to stationary
+            points
+          </li>
+          <li>
+            <strong>Superlinear Local Convergence</strong>: Near optima with positive definite
+            Hessian, achieves superlinear convergence matching L-BFGS
+          </li>
+        </ul>
+        <h2>Benchmarking Framework</h2>
+        <h3>Problem Suite</h3>
+        <p>The benchmark suite includes 62 carefully selected problems across five categories:</p>
+        <ul>
+          <li><strong>Convex Functions</strong> (6): Sphere, Matyas, Zakharov variants</li>
+          <li><strong>Non-Convex Unimodal</strong> (12): Rosenbrock, Beale, Levy variants</li>
+          <li>
+            <strong>Highly Multimodal</strong> (24): Rastrigin, Ackley, Michalewicz, StyblinskiTang
+          </li>
+          <li><strong>ML-Convex</strong> (8): Linear regression, logistic regression, SVM</li>
+          <li><strong>ML-Non-Convex</strong> (9): Neural networks with varying architectures</li>
+        </ul>
+        <h3>Statistical Analysis</h3>
+        <p>The framework employs rigorous statistical methods:</p>
+        <ul>
+          <li>
+            <strong>Multiple Runs</strong>: 50 runs per problem-optimizer pair for statistical
+            validity
+          </li>
+          <li><strong>Welch&#39;s t-test</strong>: For comparing means with unequal variances</li>
+          <li><strong>Cohen&#39;s d</strong>: For measuring effect sizes</li>
+          <li><strong>Bonferroni Correction</strong>: For multiple comparison adjustment</li>
+          <li><strong>Win/Loss/Tie Analysis</strong>: Comprehensive pairwise comparisons</li>
+        </ul>
+        <h3>Evaluation Methodology</h3>
+        <ol>
+          <li>
+            <strong>Calibration Phase</strong>: Determines problem-specific convergence thresholds
+          </li>
+          <li>
+            <strong>Benchmarking Phase</strong>: Evaluates all optimizers with consistent criteria
+          </li>
+          <li>
+            <strong>Statistical Analysis</strong>: Automated significance testing and effect size
+            calculation
+          </li>
+          <li><strong>Report Generation</strong>: Multi-format output with visualizations</li>
+        </ol>
+        <h2>Usage Examples</h2>
+        <h3>Custom Optimizer Implementation</h3>
+        <pre><code class="language-rust">use qqn_optimizer::optimizers::traits::Optimizer;
+use qqn_optimizer::line_search::backtracking::BacktrackingLineSearch;
+
+struct MyCustomOptimizer {
+    line_search: BacktrackingLineSearch,
+}
+
+impl Optimizer for MyCustomOptimizer {
+    fn optimize&lt;F, G&gt;(
+        &amp;mut self,
+        f: &amp;F,
+        grad: &amp;G,
+        x0: Vec&lt;f64&gt;,
+        max_f_evals: usize,
+        grad_tol: f64,
+    ) -&gt; OptimizationResult
+    where
+        F: Fn(&amp;[f64]) -&gt; f64,
+        G: Fn(&amp;[f64]) -&gt; Vec&lt;f64&gt;,
+    {
+        // Your optimization logic here
+        todo!()
+    }
+}
+</code></pre>
+        <h3>Running Specific Benchmarks</h3>
+        <pre><code class="language-rust">use qqn_optimizer::benchmarks::evaluation::run_benchmark;
+use qqn_optimizer::problem_sets::analytic_problems;
+use qqn_optimizer::optimizer_sets::qqn_variants;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let problems = analytic_problems();
+    let optimizers = qqn_variants();
+
+    run_benchmark(
+        &quot;my_benchmark_&quot;,
+        1000,  // max function evaluations
+        10,    // number of runs
+        Duration::from_secs(60), // timeout
+        problems,
+        optimizers,
+    ).await?;
+
+    Ok(())
+}
+</code></pre>
+        <h3>Custom Problem Definition</h3>
+        <pre><code class="language-rust">use qqn_optimizer::benchmarks::evaluation::ProblemSpec;
+
+fn my_custom_problem() -&gt; ProblemSpec {
+    ProblemSpec {
+        name: &quot;MyProblem&quot;.to_string(),
+        function: Box::new(|x: &amp;[f64]| {
+            // Your objective function
+            x.iter().map(|xi| xi * xi).sum()
+        }),
+        gradient: Box::new(|x: &amp;[f64]| {
+            // Your gradient function
+            x.iter().map(|xi| 2.0 * xi).collect()
+        }),
+        initial_point: vec![1.0, 1.0, 1.0],
+        bounds: None, // Optional bounds
+        global_minimum: Some(0.0), // Known global minimum
+    }
+}
+</code></pre>
+        <h2>Benchmark Results</h2>
+        <h3>Overall Performance</h3>
+        <p>
+          Based on comprehensive evaluation across 62 problems with over 31,000 optimization runs:
+        </p>
+        <ul>
+          <li><strong>QQN Dominance</strong>: QQN variants won 36 out of 62 problems (58%)</li>
+          <li>
+            <strong>Top Performers</strong>:
+            <ul>
+              <li>QQN-Bisection-1: 8 wins</li>
+              <li>QQN-StrongWolfe: 7 wins</li>
+              <li>L-BFGS: 6 wins</li>
+              <li>QQN-GoldenSection: 6 wins</li>
+            </ul>
+          </li>
+        </ul>
+        <h3>Performance by Problem Type</h3>
+        <p><strong>Convex Problems</strong>:</p>
+        <ul>
+          <li>QQN-Bisection: 100% success on Sphere problems with 12-16 evaluations</li>
+          <li>L-BFGS: 100% success on Sphere_10D with only 15 evaluations</li>
+        </ul>
+        <p><strong>Non-Convex Problems</strong>:</p>
+        <ul>
+          <li>QQN-StrongWolfe: 35% success on Rosenbrock_5D (best among all)</li>
+          <li>QQN-GoldenSection: 100% success on Beale_2D</li>
+        </ul>
+        <p><strong>Multimodal Problems</strong>:</p>
+        <ul>
+          <li>QQN-StrongWolfe: 90% success on StyblinskiTang_2D</li>
+          <li>Adam-Fast: Best on Michalewicz functions (45-60% success)</li>
+        </ul>
+        <p><strong>Machine Learning Problems</strong>:</p>
+        <ul>
+          <li>Adam-Fast: Best on neural networks (32.5-60% success)</li>
+          <li>L-BFGS variants: 100% success on SVM problems</li>
+        </ul>
+        <h3>Key Insights</h3>
+        <ol>
+          <li>
+            <strong>Robustness</strong>: QQN maintains consistent performance across problem types
+          </li>
+          <li>
+            <strong>Efficiency</strong>: Competitive function evaluation counts with high success
+            rates
+          </li>
+          <li><strong>Scalability</strong>: Performance degrades gracefully with dimensionality</li>
+          <li>
+            <strong>Specialization</strong>: Some algorithms excel on specific problem classes
+          </li>
+        </ol>
+        <h2>API Documentation</h2>
+        <h3>Core Traits</h3>
+        <pre><code class="language-rust">pub trait Optimizer {
+    fn optimize&lt;F, G&gt;(
+        &amp;mut self,
+        f: &amp;F,
+        grad: &amp;G,
+        x0: Vec&lt;f64&gt;,
+        max_f_evals: usize,
+        grad_tol: f64,
+    ) -&gt; OptimizationResult;
+}
+
+pub trait LineSearch {
+    fn search&lt;F, G&gt;(
+        &amp;mut self,
+        f: &amp;F,
+        grad: &amp;G,
+        x: &amp;[f64],
+        fx: f64,
+        gx: &amp;[f64],
+        direction: &amp;[f64],
+    ) -&gt; LineSearchResult;
+}
+</code></pre>
+        <h3>QQN Optimizer Variants</h3>
+        <ul>
+          <li>
+            <code>QQNOptimizer&lt;BacktrackingLineSearch&gt;</code>: Basic backtracking line search
+          </li>
+          <li><code>QQNOptimizer&lt;StrongWolfeLineSearch&gt;</code>: Strong Wolfe conditions</li>
+          <li><code>QQNOptimizer&lt;GoldenSectionLineSearch&gt;</code>: Golden section search</li>
+          <li><code>QQNOptimizer&lt;BisectionLineSearch&gt;</code>: Bisection on derivative</li>
+          <li><code>QQNOptimizer&lt;MoreThuenteLineSearch&gt;</code>: Moré-Thuente line search</li>
+        </ul>
+        <h3>Benchmarking API</h3>
+        <pre><code class="language-rust">// Run benchmark with custom configuration
+pub async fn run_benchmark(
+    prefix: &amp;str,
+    max_evals: usize,
+    num_runs: usize,
+    timeout: Duration,
+    problems: Vec&lt;ProblemSpec&gt;,
+    optimizers: Vec&lt;OptimizerSpec&gt;,
+) -&gt; Result&lt;(), Box&lt;dyn Error + Send + Sync&gt;&gt;;
+
+// Generate reports from benchmark results
+pub fn generate_reports(
+    results_dir: &amp;str,
+    output_formats: &amp;[ReportFormat],
+) -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt;;
+</code></pre>
+        <h2>Contributing</h2>
+        <p>
+          We welcome contributions! Please see our
+          <a href="../../essays/QQN/CONTRIBUTING.md">Contributing Guidelines</a> for details.
+        </p>
+        <h3>Development Setup</h3>
+        <pre><code class="language-bash">git clone https://github.com/SimiaCryptus/qqn-optimizer.git
+cd qqn-optimizer
+cargo build
+cargo test
+</code></pre>
+        <h3>Benchmark Report Processing</h3>
+        <p>The project includes scripts to process benchmark results into various formats:</p>
+        <pre><code class="language-bash"># Process markdown reports to HTML
+./process_results_md.sh
+# Process LaTeX table exports to PDF
+./process_results_tex.sh
+</code></pre>
+        <p>These scripts automatically:</p>
+        <ul>
+          <li>Convert <code>.md</code> files to <code>.html</code> with proper link updates</li>
+          <li>Compile <code>.tex</code> files to <code>.pdf</code> using pdflatex</li>
+          <li>Handle recursive directory processing</li>
+          <li>Provide detailed logging and error handling</li>
+        </ul>
+        <h3>Running Tests</h3>
+        <pre><code class="language-bash"># Unit tests
+cargo test
+
+# Integration tests
+cargo test --test benchmark_reports
+
+# Benchmark tests (slow)
+cargo test --release calibration
+# Test with OneDNN support (if installed)
+cargo test --release --features onednn
+</code></pre>
+        <h3>Code Style</h3>
+        <p>We use <code>rustfmt</code> and <code>clippy</code> for code formatting and linting:</p>
+        <pre><code class="language-bash">cargo fmt
+cargo clippy -- -D warnings
+</code></pre>
+        <h2>Academic Paper</h2>
+        <p>
+          📄 <strong><a href="../../essays/QQN/paper.pdf">Download Full Paper (PDF)</a></strong>
+        </p>
+        <p>This work is documented in our academic paper (in preparation):</p>
+        <p>
+          <strong
+            >&quot;Quadratic-Quasi-Newton Optimization: Combining Gradient and Quasi-Newton
+            Directions Through Quadratic Interpolation&quot;</strong
+          >
+        </p>
+        <p>The paper provides:</p>
+        <ul>
+          <li>Complete mathematical derivation of the QQN algorithm</li>
+          <li>Theoretical convergence analysis</li>
+          <li>Comprehensive experimental evaluation</li>
+          <li>Comparison with existing optimization methods</li>
+        </ul>
+        <p>
+          Paper draft and supplementary materials available in the
+          <a href="../../essays/QQN/papers/"><code>papers/</code></a> directory.
+          <strong><a href="../../essays/QQN/paper.pdf">Direct link to paper PDF</a></strong
+          >.
+        </p>
+        <h2>Citing This Work</h2>
+        <p>If you use QQN Optimizer in your research, please cite:</p>
+        <pre><code class="language-bibtex">@article{qqn2024,
+  title={Quadratic-Quasi-Newton Optimization: Combining Gradient and Quasi-Newton Directions Through Quadratic Interpolation},
+  author={[Author Name]},
+  journal={[Journal Name]},
+  year={2024},
+  url={https://github.com/SimiaCryptus/qqn-optimizer/}
+}
+</code></pre>
+        <h2>License</h2>
+        <p>
+          This project is licensed under the MIT License - see the
+          <a href="../../essays/QQN/LICENSE">LICENSE</a> file for details.
+        </p>
+        <h2>Acknowledgments</h2>
+        <ul>
+          <li>The QQN algorithm was originally developed in 2017</li>
+          <li>
+            AI language models assisted in documentation and benchmarking framework development
+          </li>
+          <li>Thanks to the Rust optimization community for inspiration and feedback</li>
+        </ul>
+        <h2>Support</h2>
+        <ul>
+          <li>
+            <strong>Documentation</strong>:
+            <a href="https://docs.rs/qqn-optimizer">API Docs</a> (when published)
+          </li>
+        </ul>
+        <h2>Project Structure</h2>
+        <pre><code>qqn-optimizer/
+├── src/                    # Core library source code
+│   ├── optimizers/        # Optimizer implementations
+│   ├── line_search/       # Line search algorithms
+│   ├── benchmarks/        # Benchmarking framework
+│   └── problem_sets/      # Test problem definitions
+├── papers/                # Academic paper drafts
+├── results/               # Benchmark results (generated)
+├── scripts/               # Utility scripts
+├── process_results_*.sh   # Report processing scripts
+├── install_onednn.py      # OneDNN installation script
+└── Dockerfile            # Container configuration
+</code></pre>
+        <hr />
+        <p>
+          <strong>Note</strong>: This is research software. While we strive for correctness and
+          performance, please validate results for your specific use case. The benchmarking
+          framework is designed to facilitate fair comparison and reproducible research in
+          optimization algorithms.
+        </p>
+      </article>
+      <section class="related">
+        <h2>More from Mathematical Explorations</h2>
+        <ul>
+          <li>
+            <a href="../rcc-rational-certificate-complexity/index.html"
+              >RCC — Rational Certificate Complexity</a
+            >
+            — The foundation of the trilogy. Treats every convergence sequence as a rational
+            certificate engine, measures…
+          </li>
+          <li>
+            <a href="../pi-rcc-the-simplest-increment-x-sin-x/index.html"
+              >PI_RCC — The Simplest Increment: x + sin(x)</a
+            >
+            — A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it
+            falls outside RCC&#39;s…
+          </li>
+          <li>
+            <a href="../nam-numbers-as-machines/index.html">NAM — Numbers as Machines</a> — A
+            generator-based numerics library where every number is a forkable, deterministic nano-VM
+            emitting an…
+          </li>
+          <li>
+            <a href="../the-extension-ladder-one-way-to-watch-number-systems-grow/index.html"
+              >The Extension Ladder: One Way to Watch Number Systems Grow</a
+            >
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

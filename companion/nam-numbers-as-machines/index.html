@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="A generator-based numerics library where every number is a forkable, deterministic nano-VM emitting an infinite digit stream. RCC&#39;s cost classes resurface here as generator state-dimension tiers, with a two-tier ABI, base-as-codec, BBP-as-resonance, and an honest interval account of equality.…"
+    />
+    <title>NAM — Numbers as Machines — Mathematical Explorations</title>
+    <link
+      rel="canonical"
+      href="https://math.cognotik.com/companion/nam-numbers-as-machines/index.html"
+    />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta property="og:title" content="NAM — Numbers as Machines — Mathematical Explorations" />
+    <meta
+      property="og:description"
+      content="A generator-based numerics library where every number is a forkable, deterministic nano-VM emitting an infinite digit stream. RCC&#39;s cost classes resurface here as generator state-dimension tiers, with a two-tier ABI, base-as-codec, BBP-as-resonance, and an honest interval account of equality.…"
+    />
+    <meta
+      property="og:url"
+      content="https://math.cognotik.com/companion/nam-numbers-as-machines/index.html"
+    />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NAM — Numbers as Machines — Mathematical Explorations" />
+    <meta
+      name="twitter:description"
+      content="A generator-based numerics library where every number is a forkable, deterministic nano-VM emitting an infinite digit stream. RCC&#39;s cost classes resurface here as generator state-dimension tiers, with a two-tier ABI, base-as-codec, BBP-as-resonance, and an honest interval account of equality.…"
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Article",
+            "headline": "NAM — Numbers as Machines",
+            "description": "A generator-based numerics library where every number is a forkable, deterministic nano-VM emitting an infinite digit stream. RCC's cost classes resurface here as generator state-dimension tiers, with a two-tier ABI, base-as-codec, BBP-as-resonance, and an honest interval account of equality.…",
+            "url": "https://math.cognotik.com/companion/nam-numbers-as-machines/index.html",
+            "inLanguage": "en",
+            "author": { "@type": "Person", "name": "SimiaCryptus" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Mathematical Explorations",
+              "url": "https://math.cognotik.com/"
+            },
+            "mainEntityOfPage": "https://math.cognotik.com/companion/nam-numbers-as-machines/index.html"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Mathematical Explorations",
+                "item": "https://math.cognotik.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "NAM — Numbers as Machines",
+                "item": "https://math.cognotik.com/companion/nam-numbers-as-machines/index.html"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <div class="crumbs">
+        <a href="../../index.html">Home</a> › <a href="../index.html">Companion pages</a> ›
+        <span>NAM — Numbers as Machines</span>
+      </div>
+      <div class="page-head">
+        <div class="page-icon" aria-hidden="true">NAM</div>
+        <div>
+          <h1>NAM — Numbers as Machines</h1>
+          <p class="subtitle">Trilogy III · the executable substrate</p>
+        </div>
+      </div>
+      <p class="subtitle">
+        A generator-based numerics library where every number is a forkable, deterministic nano-VM
+        emitting an infinite digit stream. RCC's cost classes resurface here as generator
+        state-dimension tiers, with a two-tier ABI, base-as-codec, BBP-as-resonance, and an honest
+        interval account of equality.
+        <em>Where RCC measures and PI_RCC engineers, NAM builds the machine that runs them all.</em>
+      </p>
+      <p>
+        <a class="cta" href="../../essays/NAM/index.html"
+          >Open the interactive lab <span class="arrow">→</span></a
+        >
+      </p>
+
+      <article>
+        <h1>Numbers as Machines: A Generator-Based Numerics Library</h1>
+        <h2>The Core Inversion</h2>
+        <p>
+          Classical numerics treats numbers as values — static objects stored in registers,
+          manipulated by arithmetic circuits, approximated by floating-point hardware. This essay
+          proposes a different substrate:
+          <strong>every number is a deterministic, forkable virtual machine</strong> that emits an
+          infinite digit stream on demand.
+        </p>
+        <p>
+          This is not a metaphor. It is a literal computational ontology with precise consequences
+          for implementation, memory complexity, and the structure of mathematics itself. The
+          framing has deep roots — Cauchy sequences, computable reals ( Turing 1936), coalgebraic
+          stream arithmetic, p-adic expansions, exact real arithmetic systems like iRRAM, and the
+          Type-2 Theory of Effectivity all instantiate parts of this idea. What is new here is not
+          the underlying mathematics but the * *unified protocol, the codec/base separation, and the
+          explicit ABI** that makes all of it composable at native speed.
+        </p>
+        <p>The primitive is simple:</p>
+        <pre><code>step : State → (digit, State)
+</code></pre>
+        <p>
+          A number is any deterministic program that implements this interface. Everything else —
+          vectors, matrices, tensors, p-adics, transcendentals, metrics, arithmetic — is a
+          combinator over this primitive. Categorically, this is the final coalgebra for the
+          digit-stream functor <code>F(X) = D × X</code>, which is the correct mathematical framing
+          and the same one used in coinductive treatments of streams.
+        </p>
+        <hr />
+        <h2>The Binary Multiplexer as Foundation</h2>
+        <p>
+          A vector is a nesting of binary multiplexer encoders. A matrix or tensor is a nesting of
+          vector construction operators. This is not an analogy to existing data structures — it is
+          the correct ontological description of what these objects are.
+        </p>
+        <p>The core combinator is:</p>
+        <pre><code>MUX(selector, left, right)
+</code></pre>
+        <p>
+          Where <code>selector</code> is itself a generator, and <code>left</code> and
+          <code>right</code> are generators recursively. This gives you:
+        </p>
+        <ul>
+          <li>
+            <strong>Unbounded precision</strong> — digits are computed on demand; you never run out
+            of bits
+          </li>
+          <li>
+            <strong>p-adic structure</strong> — digits are naturally hierarchical and
+            base-parametrized
+          </li>
+          <li>
+            <strong>Lazy evaluation</strong> — only expand the tree as far as the consumer requires
+          </li>
+          <li>
+            <strong>Structural sharing</strong> — subtrees are reused, giving canonicalization for
+            free
+          </li>
+          <li>
+            <strong>Vectors, matrices, tensors</strong> — as nested MUX trees over number generators
+          </li>
+        </ul>
+        <p>
+          A number in this model is a function <code>digit(k) → {0, 1, ..., b-1}</code>, implemented
+          as a MUX tree. A vector is a MUX over number generators. A matrix is a MUX over vector
+          generators. The nesting is uniform all the way down.
+        </p>
+        <p>
+          Arithmetic becomes generator composition. Addition is a carry-propagating combinator over
+          two digit generators. Multiplication is a convolution combinator. Division, negation, and
+          subtraction follow the same pattern — pure generator composition.
+        </p>
+        <p>
+          But carry propagation is where the abstraction meets its hardest test, and we should be
+          honest about it.
+        </p>
+        <hr />
+        <h2>The Carry Problem and Signed-Digit Representation</h2>
+        <p>
+          Standard positional arithmetic has a notorious flaw as a stream operation: addition is
+          <strong>not local</strong>. The first digit of <code>0.4999... + 0.5000...</code> cannot
+          be determined from any finite prefix — a carry from arbitrarily deep in the expansion
+          could propagate up and flip every digit above it. Any naive digit-by-digit addition
+          combinator will fail to terminate on inputs near a digit boundary. This is not an edge
+          case; it is a structural property of the standard representation.
+        </p>
+        <p>
+          The solution, well-established in exact real arithmetic, is to adopt a
+          <strong>signed-digit (redundant) representation</strong> internally, where digits range
+          over <code>{-(b-1), ..., -1, 0, 1, ..., b-1}</code> rather than
+          <code>{0, ..., b-1}</code>. In this representation:
+        </p>
+        <ul>
+          <li>Addition is digit-local — no unbounded carry propagation</li>
+          <li>Each number has multiple valid encodings (this is the redundancy)</li>
+          <li>
+            The MUX/codec layer projects to a standard non-redundant form only when emitting an
+            externally visible digit
+          </li>
+        </ul>
+        <p>
+          Avizienis signed-digit representation is the canonical choice. Without it, the arithmetic
+          combinators are mathematically ill-defined as local operations. With it, addition,
+          subtraction, and multiplication become genuinely streaming operations with bounded
+          look-ahead. The base parameter still plays its role as a codec, but the internal
+          arithmetic layer operates in a redundant alphabet.
+        </p>
+        <p>This is a non-negotiable design commitment for the real-number arithmetic layer.</p>
+        <hr />
+        <h2>Unbounded Precision as a Native Property</h2>
+        <p>
+          Because digits are computed on demand and the tree is lazily evaluated, unbounded
+          precision is not a feature to be added — it is the default behavior of the substrate.
+          Structural sharing keeps memory bounded to what is actually needed. You compute exactly as
+          many digits as the consumer requests, and no more.
+        </p>
+        <p>
+          This is the same mechanism used by lazy streams in functional languages and exact real
+          arithmetic libraries (iRRAM, Haskell&#39;s <code>Data.Number.CReal</code>, MPFR with
+          rigorous error tracking), but grounded in a more explicit state-machine semantics that
+          LLVM can compile directly to native code, and unified under a single ABI rather than
+          scattered across domain-specific libraries.
+        </p>
+        <hr />
+        <h2>p-Adics Come for Free</h2>
+        <p>
+          The p-adic numbers are particularly natural in this model, and notably
+          <strong>easier than the reals</strong> in a precise technical sense: digit commitment is
+          <em>local</em> in p-adics, where it is <em>non-local</em> in the reals.
+        </p>
+        <p>
+          A p-adic number is a digit stream indexed from the least significant digit upward, with
+          digits in <code>{0, 1, ..., p-1}</code>. In the generator model, this is simply a MUX tree
+          with a p-way multiplexer instead of a binary one.
+        </p>
+        <p>
+          More importantly:
+          <strong>p-adic numbers are periodic state machines in the generator computer</strong>. A
+          p-adic rational has an ultimately periodic digit expansion, which means its generator VM
+          has a finite state space with a periodic orbit. The VM cycles through a finite set of
+          states, emitting the repeating digit pattern.
+        </p>
+        <p>
+          This has an immediate consequence:
+          <strong>the p-adic metric is also a periodic state machine</strong>. The p-adic distance
+          between two numbers <code>x</code> and <code>y</code> is <code>p^{-v_p(x-y)}</code>, where
+          <code>v_p(x-y)</code> is the index of the first digit where they differ. If both
+          <code>x</code> and <code>y</code> are periodic generators, then the metric computation is
+          a product automaton over their state spaces — itself a finite, periodic machine.
+        </p>
+        <p>The general primitive this reveals is:</p>
+        <p>
+          <strong>AutomatonOverGenerators</strong>: a finite state machine whose transition function
+          reads one or more digit generators and produces either a new generator or a scalar
+          (valuation, distance, boolean).
+        </p>
+        <p>
+          p-adics and their metric are the cleanest, most symmetric instance of this pattern.
+          Because valuations are algebraic rather than analytic, a term with p-adic valuation
+          <code>v</code> can only affect digits at positions <code>≤ v</code> — giving exact,
+          finite-witness digit commitment that the real case can only approximate via interval
+          refinement.
+        </p>
+        <hr />
+        <h2>The Odd Primitives: Turning Math into Compute</h2>
+        <p>
+          Supporting most of mathematics requires some nonstandard primitives — operators that
+          compile mathematical definitions into digit streams with correctness guarantees.
+        </p>
+        <h3>Series Stepper</h3>
+        <pre><code>series_step(state) → (term, new_state)
+</code></pre>
+        <p>
+          A finite state machine that emits the next term of an infinite series. This is the
+          computational form of a mathematical definition — a convergent series becomes an
+          executable state machine.
+        </p>
+        <h3>Tail Bound Oracle</h3>
+        <pre><code>tail_bound(state) → E
+</code></pre>
+        <p>
+          Given the current series state at index <code>n</code>, returns an upper bound
+          <code>E</code> such that the remaining tail satisfies <code>|∑_{k&gt;n} a_k| ≤ E</code>.
+          This is the bridge from convergence proofs to executable digit safety. Without it, you
+          cannot safely commit to digits — you don&#39;t know whether the tail will perturb a digit
+          you&#39;ve already emitted.
+        </p>
+        <p>
+          This is a compiled convergence proof: you turn analytic or algebraic control into an
+          executable bound.
+          <strong>It is a mathematical barrier, not merely an engineering concern</strong> — every
+          supported transcendental constant or analytic function requires its own per-constant
+          convergence proof, embedded as a callable bound. The library must ship a standard
+          repertoire of these oracles (for π, e, log, sin, cos, ζ at integers, polylogarithms, etc.)
+          and expose a documented interface for users who wish to add their own.
+        </p>
+        <h3>Interval Refinement Engine (for reals)</h3>
+        <pre><code>refine_interval(L, U, term, E) → (L&#39;, U&#39;)
+emit_digit_if_safe(L, U, base) → maybe digit
+</code></pre>
+        <p>
+          Maintains a shrinking interval <code>[L, U]</code> containing the true value. A digit is
+          emitted when all numbers in the current interval share the same prefix of sufficient
+          length. This is the real-number version of digit extraction — an online, monotone
+          refinement process that commits digits as the interval collapses.
+        </p>
+        <p>
+          This is essentially interval arithmetic combined with online digit extraction, a technique
+          with substantial prior art dating to the 1980s. Combined with signed-digit representation,
+          it provides a complete streaming arithmetic layer for the reals — with the documented
+          caveat that exact-boundary inputs (e.g., a result that is provably exactly
+          <code>0.5</code> in base 10) may not commit a leading digit in finite time. This is not a
+          defect of the implementation but a structural property of real-number computation, and the
+          API must expose it honestly via interval-based predicates
+          (<code>definitely_less_than</code>, <code>agrees_with(digits=N)</code>) rather than
+          pretending exact equality is decidable.
+        </p>
+        <h3>Valuation Extractor (for p-adics)</h3>
+        <pre><code>valuation(a_n) → v_p(a_n)
+</code></pre>
+        <p>
+          For p-adics, locality is algebraic rather than analytic. A term with p-adic valuation
+          <code>v</code> can only affect digits at positions <code>≤ v</code>. This gives a locality
+          primitive: you know exactly which terms can affect which digits, and you can compute
+          low-order digits from a finite subset of terms — no tail bound oracle required, no
+          interval refinement, no boundary pathologies.
+        </p>
+        <h3>Carry Propagator</h3>
+        <pre><code>carry(k) → {0, 1, ...}
+</code></pre>
+        <p>
+          Addition, subtraction, multiplication, and division all reduce to digitwise combinators
+          plus a carry propagation rule. Under signed-digit representation, this combinator is
+          local. Under standard representation, it is not. The library commits to signed-digit
+          internally.
+        </p>
+        <h3>Composition Engine</h3>
+        <pre><code>compose(f, g) → h
+</code></pre>
+        <p>
+          All mathematical operations reduce to composing digit generators. This is the function
+          algebra of the numerics library — the mechanism by which complex mathematical objects are
+          built from simpler ones.
+        </p>
+        <h3>Memoization and Structural Sharing</h3>
+        <pre><code>memo(generator) → generator&#39;
+</code></pre>
+        <p>
+          Repeated digit queries must not recompute. Shared subtrees must remain shared. This is not
+          conceptually deep, but it is essential for performance — without it, the lazy unfolding of
+          infinite structures becomes intractable.
+        </p>
+        <p>
+          Memoization is exposed as an
+          <strong>explicit wrapper, never an implicit global cache</strong>, because implicit
+          caching breaks the value-semantics story for forking. The recommended implementation is a
+          bounded LRU cache sized to fit in L2/L3, with the user-facing API offering
+          <code>.streaming()</code> (no cache, O(1) space, sequential access only) and
+          <code>.cached(max_digits=N)</code> ( bounded LRU) modes. Hidden global state is forbidden
+          by ABI.
+        </p>
+        <p>
+          These primitives together support real analysis, p-adic analysis, linear algebra, algebra,
+          combinatorics, and number theory. All of it reduces to digit generators, MUX trees, series
+          steppers, tail bounds or valuations, interval refinement, carry propagation, and
+          composition.
+        </p>
+        <hr />
+        <h2>The Forkable Nano-VM: A Two-Tier ABI</h2>
+        <p>
+          The full picture of a number in this model is a
+          <strong>forkable, coinductive, deterministic nano-VM</strong>:
+        </p>
+        <ol>
+          <li>
+            <strong>Stateful</strong> — each number carries internal state that evolves as digits
+            are requested
+          </li>
+          <li>
+            <strong>Forkable</strong> — the state can be cloned exactly at any point, enabling
+            parallel digit computation, comparison, metric evaluation, and speculative arithmetic
+          </li>
+          <li>
+            <strong>Deterministic and pure</strong> — forking is exact; there is no hidden global
+            state
+          </li>
+          <li>
+            <strong>Periodic-friendly</strong> — the VM supports periodic state cycles, ultimately
+            periodic orbits, and product automata
+          </li>
+          <li>
+            <strong>Composable</strong> — two VMs combine into a new VM via arithmetic and analytic
+            combinators
+          </li>
+          <li><strong>Lazy</strong> — digits are produced on demand, not precomputed</li>
+        </ol>
+        <p>
+          Nothing like this exists in the numerical computing ecosystem as a unified protocol.
+          Classical numerics assumes numbers are values, precision is bounded, evaluation is eager,
+          and arithmetic is stateless. This model inverts all four assumptions. The closest
+          conceptual ancestors — coinductive streams in Haskell, coalgebraic automata theory, stream
+          transducers, exact real arithmetic libraries, symbolic algebra systems — each capture one
+          or two of these properties but not all of them together under one ABI.
+        </p>
+        <p>
+          But &quot;forkable&quot; hides a critical bifurcation that a single ABI cannot honestly
+          serve. There are two structurally distinct classes of generator:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Examples</th>
+              <th>State</th>
+              <th>Fork Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Automaton class</strong></td>
+              <td>Rationals, algebraic irrationals, periodic p-adics</td>
+              <td>Fixed-size, inline</td>
+              <td><strong>O(1)</strong> — true struct copy</td>
+            </tr>
+            <tr>
+              <td><strong>Series class</strong></td>
+              <td>Classical transcendentals (π, e, log 2, ζ(3))</td>
+              <td>Grows with computation depth</td>
+              <td><strong>O(log n)</strong> — must deep-copy accumulators</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          For the automaton tier, fork is a literal struct copy. For the series tier, fork must
+          deep-copy the arbitrary-precision accumulators that have grown as digits were emitted.
+          Pretending these have the same cost would mislead users and produce subtle aliasing bugs.
+          The ABI therefore separates them explicitly:
+        </p>
+        <pre><code class="language-c">// Automaton tier: pure value semantics, O(1) fork
+typedef struct {
+    uint32_t base;
+    uint32_t phase;
+    uint64_t state[4];     // sufficient for degree-4 algebraic
+} AutomatonVM;
+
+// Series tier: explicit deep-copy required for fork
+typedef struct {
+    uint32_t base;
+    uint32_t index;
+    const SeriesSpec *spec;     // immutable, safe to alias
+    ArbitraryInt *accum;        // mutable, deep-copy on fork
+    ArbitraryInt *error_bound;  // mutable, deep-copy on fork
+} SeriesVM;
+</code></pre>
+        <p>
+          The &quot;forking is a struct copy&quot; claim applies to the automaton tier, fully and
+          without qualification. For the series tier, fork is <code>O(log n)</code> in the
+          computation depth and is documented as such. This is not a defect — it is the actual cost
+          of the operation, and hiding it would break the value-semantics contract that makes the
+          abstraction safe.
+        </p>
+        <hr />
+        <h2>LLVM as the Execution Substrate</h2>
+        <p>
+          The nano-VM is not a bytecode interpreter. It does not encode or decode its own state.
+          That is precisely why LLVM is the right implementation target.
+        </p>
+        <p>The canonical ABI for the automaton tier is:</p>
+        <pre><code class="language-c">struct NumVMStep {
+    uint32_t digit;
+    AutomatonVM next;
+};
+
+typedef struct NumVMStep (*NumVMFn)(AutomatonVM);
+</code></pre>
+        <p>In LLVM IR:</p>
+        <pre><code class="language-llvm">%AutomatonVM = type { i32, i32, [4 x i64] }
+%NumVMStep   = type { i32, %AutomatonVM }
+
+define %NumVMStep @num_step(%AutomatonVM %s) { ... }
+</code></pre>
+        <p>
+          <strong>State is native machine data, not a serialized blob.</strong> LLVM handles state
+          layout, register allocation, calling conventions, inlining, constant folding, JIT
+          specialization, dead code elimination, loop unrolling, and tail recursion elimination. The
+          program does not encode or decode anything — it simply operates on struct fields.
+        </p>
+        <p>Forking the automaton tier is a struct copy:</p>
+        <pre><code class="language-c">static inline AutomatonVM num_vm_fork(AutomatonVM s) {
+    return s; // pure value copy — no hidden state
+}
+</code></pre>
+        <p>
+          Composition is function wrapping: an addition VM holds two sub-VM states plus a carry
+          field, calls both sub-VM step functions, combines the digits, and returns a new composite
+          state. LLVM inlines the entire generator graph, optimizes across VM boundaries, fuses
+          arithmetic, eliminates intermediate states, and specializes for constants.
+        </p>
+        <p>
+          <strong>A caveat about LLVM&#39;s reach.</strong> LLVM optimization applies fully to
+          <em>statically-known, compile-time-fixed</em> expression trees. For
+          <em>runtime-constructed</em> expression trees — parsing arithmetic expressions, dynamic
+          matrix construction, user-input formulas — function-pointer dispatch will not be
+          eliminated by static optimization alone. For these cases, the library provides a
+          <strong>JIT compilation path</strong>: an expression tree is compiled to a single
+          specialized LLVM function via <code>compile(expr_tree) → NumVMFn</code>, which then
+          receives the same inlining, constant folding, and specialization treatment as a
+          statically-built tree. This split is explicit in the API, not hidden behind a single
+          uniform interface that would silently degrade for dynamic cases.
+        </p>
+        <p>
+          The base parameter — the codec — lives in <code>payload</code> or <code>flags</code>. It
+          is not baked into the number. Changing base is changing the projection, not the number.
+          The ABI does not change when you swap codecs.
+        </p>
+        <hr />
+        <h2>Base as Codec: The Arithmetic Encoder Interface</h2>
+        <p>
+          The base parameter is not a mathematical constant. It is a projection operator — a codec.
+          This is the correct ontological description:
+        </p>
+        <ul>
+          <li>A number = a generator VM</li>
+          <li>A base = a decoder for that VM</li>
+          <li>A digit = a symbol in that decoder&#39;s alphabet</li>
+        </ul>
+        <p>
+          This is the same relationship as a probability distribution to an arithmetic coder, a
+          message to a bitstream, a model to a codebook. Base is a codec. The number is the
+          generator. The digits are the encoded tape.
+        </p>
+        <p>
+          Arithmetic coding always produces an infinite binary expansion representing a real number
+          in <code>[0, 1]</code> — the limit of nested intervals. This is not a bug. It is the
+          definition of arithmetic coding. Choosing a base implicitly introduces ℝ, because
+          arithmetic coding is a mapping from symbolic processes to real intervals.
+        </p>
+        <p>
+          But in this model, ℝ is not the ontology. ℝ is one possible projection of the generator.
+          The generator is the real object. The real number is the encoding. Changing base is
+          changing coordinate charts on generator space — the underlying object does not change,
+          only the representation does.
+        </p>
+        <p>
+          Any infinite binary stream can be interpreted as a real in <code>[0, 1]</code> and mapped
+          to any arbitrary interval <code>[a, b]</code> via an affine wrapper VM. So any random
+          program that implements a digit stream is a valid number anywhere on any interval — not
+          because of a special construction, but because the affine combinator is just another VM
+          transformer.
+        </p>
+        <hr />
+        <h2>BBP Formulas Explained: Automaton Periodicity as Fast-Forward</h2>
+        <p>
+          The Bailey-Borwein-Plouffe formula for π in base 16 allows computing the n-th hexadecimal
+          digit of π without computing the preceding digits. This has been known since 1995. The
+          mechanism — the algebraic structure of the underlying series and its alignment with the
+          base-16 representation — has been understood in the prior literature, and the framing here
+          is a <strong>reformulation rather than a discovery</strong>.
+        </p>
+        <p>
+          What the generator-VM model contributes is a <em>first-class library primitive</em> that
+          lifts this phenomenon out of one-off optimizations and into the ABI:
+        </p>
+        <p>
+          <strong
+            >A BBP-type formula corresponds to the generator automaton admitting an O(log n)
+            fast-forward under the chosen codec — in the cleanest cases, a periodic orbit; more
+            generally, a sub-automaton whose n-th state is reachable by repeated squaring (modular
+            exponentiation) rather than by stepping through all n predecessors.</strong
+          >
+        </p>
+        <p>
+          The honest form of the claim is a correspondence, not a strict equivalence: the existence
+          of a known BBP-type extraction formula is what licenses installing a
+          <code>skip</code> opcode, and that opcode is implemented by the modular-exponentiation
+          structure underlying the formula. Calling this &quot;a periodic orbit&quot; is exact only
+          in the genuinely periodic cases (rationals, periodic p-adics); for π in base 16 the
+          precise mechanism is the repeated-squaring fast-forward of a partial sum modulo a moving
+          denominator. We use &quot;periodicity&quot; below as a convenient shorthand for this
+          broader fast-forwardable structure, and flag here that the shorthand overstates the
+          symmetry in the transcendental case.
+        </p>
+        <p>
+          In base 16, the π-generator VM has a periodic sub-automaton. The codec (base 16) aligns
+          with that periodic structure, exposing a fast-forward opcode: you can jump ahead in the
+          automaton&#39;s state in O(log n) time — via repeated squaring of the relevant modular
+          quantities — rather than stepping through all n digits. (Strictly, this is the
+          fast-forwardable structure described above, of which a true finite periodic orbit is the
+          special case.)
+        </p>
+        <p>
+          In base 10, the same automaton has no such periodic orbit under that codec. No
+          fast-forward is possible. (More carefully: no such O(log n) fast-forward is
+          <em>known</em>; the absence of a base-10 BBP formula for π is an empirical and conjectural
+          state of affairs, not a proven impossibility.)
+        </p>
+        <p>
+          This is not a property of π. It is a property of the π-generator under a specific
+          projection. The base is a lens on the automaton&#39;s structure. Some lenses expose
+          periodicity; others do not.
+        </p>
+        <p>This explanation unifies all base-dependent digit-extraction formulas:</p>
+        <ul>
+          <li>BBP for π in base 16</li>
+          <li>BBP for log(2) in base 2</li>
+          <li>BBP for polylogarithms in various bases</li>
+          <li>Certain p-adic expansions</li>
+          <li>Certain Mahler-function expansions</li>
+        </ul>
+        <p>
+          They all arise from the same mechanism: a hidden periodicity in the generator&#39;s state
+          machine that becomes visible only under certain projections.
+        </p>
+        <p>The skip-ahead primitive this implies is a natural addition to the nano-VM ABI:</p>
+        <pre><code>skip(n, state) → state&#39;
+</code></pre>
+        <p>
+          Available only when the automaton has a periodic orbit under the current codec. This is
+          the computational form of a BBP formula. The skip function cannot be synthesized
+          automatically — it requires per-constant manual derivation — but once written, it becomes
+          a first-class operation that LLVM optimizes alongside the rest of the generator graph.
+          JIT-friendly, statically dispatchable, and uniformly callable across the entire library.
+        </p>
+        <hr />
+        <h2>Memory as the Right Complexity Metric</h2>
+        <p>
+          Runtime is elastic — you can trade time for algorithms, parallelize, precompute. Memory
+          (state size) is structural. It is tied to the Kolmogorov complexity of the number and to
+          the order and dimension of the recurrence or automaton.
+        </p>
+        <p>
+          In the nano-VM model, the memory cost of a number is the size of its VM state —
+          specifically, the number of independent fields and the bit-width required for each.
+        </p>
+        <p>
+          This gives a clean, implementation-level notion of numerical complexity. The hierarchy
+          below is presented as a
+          <strong>working conjecture grounded in observed minimal-recurrence orders</strong>, not as
+          proven lower bounds. Proving that π <em>requires</em> at least four coupled accumulators
+          (rather than admitting some unknown three-register representation) is an open problem; the
+          table reflects the structure of known optimal generators, not theorems about minimum
+          state.
+        </p>
+        <p>
+          <strong>Rationals</strong> require constant state. The VM cycles through a finite period.
+          One phase variable, one fixed payload. The struct size does not grow as you emit more
+          digits.
+        </p>
+        <p>
+          <strong>Quadratic irrationals</strong> (√2, φ, √3) require two coupled registers — a
+          second-order recurrence. The field count is fixed; the bit-width grows as O(log n) for the
+          n-th digit. These are algebraic of degree 2, and the generator reflects that exactly.
+          (Note that the <code>AutomatonVM</code> struct over-provisions with
+          <code>state[4]</code> so that a single fixed layout covers algebraic numbers up to degree
+          4; the <em>logical</em> register count for a degree-d algebraic number is d, even though
+          the <em>physical</em> struct reserves a uniform four-word slot. The complexity metric
+          below counts logical, minimal registers, not the padded struct width.)
+        </p>
+        <p>
+          <strong>Transcendentals</strong> (π, e, log(2), ζ(3)) require more coupled accumulators,
+          error-control state, and index tracking. Still O(log n) bit-width growth, but with a
+          strictly richer invariant structure — more fields, more intertwined dependencies. These
+          are one structural tier above quadratic irrationals.
+        </p>
+        <p>
+          <strong>Higher transcendentals</strong> (polylogarithms, special values of L-functions,
+          elliptic integrals, modular forms) require progressively more coupled registers and
+          higher-order recurrences. Each tier adds genuine structural complexity to the generator
+          state.
+        </p>
+        <p>
+          <strong>Algorithmically inaccessible numbers</strong> require state that grows with the
+          number of digits emitted — O(n) for n digits. No finite automaton suffices.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Minimal VM State Dimension</th>
+              <th>Memory Growth</th>
+              <th>Examples</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rationals</td>
+              <td>1</td>
+              <td>constant</td>
+              <td>1/7, 3/8</td>
+            </tr>
+            <tr>
+              <td>Quadratic irrationals</td>
+              <td>2</td>
+              <td>O(log n)</td>
+              <td>√2, φ</td>
+            </tr>
+            <tr>
+              <td>Classical transcendentals</td>
+              <td>3–4</td>
+              <td>O(log n)</td>
+              <td>π, e</td>
+            </tr>
+            <tr>
+              <td>Higher transcendentals</td>
+              <td>4–6+</td>
+              <td>O(log n)</td>
+              <td>ζ(3), polylogs</td>
+            </tr>
+            <tr>
+              <td>Inaccessible generators</td>
+              <td>unbounded</td>
+              <td>O(n)</td>
+              <td>encrypted/random streams</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          π and e are not just &quot;more complicated&quot; than √2 in some informal sense. They
+          appear to be the first two members of an ascending sequence of irreducible
+          generator-complexity classes, each requiring genuinely more state to maintain correctness
+          over an unbounded digit stream. Whether the sequence is strictly ascending in a provable
+          sense is a question for computable analysis complexity theory; the architecture is
+          committed to making the question well-posed and instrumentable, not to settling it. A
+          subtlety worth flagging, since it connects to the companion essays: the state-dimension
+          figures above are claims about the <em>minimal</em> generator for a constant, not about
+          any particular generator one might choose to run. The x + sin(x) cubic engine for π
+          analyzed in the companion PI_RCC essay, for instance, carries more live state than the 3–4
+          register figure — it maintains a growing rational seed plus Taylor-truncation accumulators
+          — yet it computes the same π. This is not a contradiction: a constant&#39;s complexity
+          class is the infimum of state dimension over all correct generators, and a deliberately
+          non-minimal engine (chosen for its cubic outer convergence rather than for state economy)
+          sits above that infimum. The table tracks the floor; specific engines sit on or above it.
+        </p>
+        <hr />
+        <h2>Randomness as Encrypted Determinism</h2>
+        <p>
+          In this ontology, randomness does not exist as a fundamental phenomenon. Every number is a
+          deterministic generator VM. The step function is deterministic. The digit stream is fully
+          determined by the initial state.
+        </p>
+        <p>
+          What people call &quot;random&quot; is a number whose generator is
+          <strong>inaccessible</strong> — not absent, not large, but hidden.
+        </p>
+        <p>
+          A random number is an encrypted number. The generator exists. The encryptor has it. But it
+          cannot be derived from the output. This is theoretically attacked with infinite compute —
+          brute-forcing the key — but that is as close as we get.
+        </p>
+        <p>This framing unifies several phenomena that are usually treated as distinct:</p>
+        <p>
+          <strong>Cryptographically hidden generators</strong>: AES-CTR output, ChaCha20 streams,
+          hash-based PRNGs. The generator is small and elegant. The key is small and secret. The
+          output looks random because the mapping from generator to output is one-way. The generator
+          is inaccessible in practice, not in principle.
+        </p>
+        <p>
+          <strong>Algorithmically inaccessible generators</strong>: Chaitin Ω, Martin-Löf random
+          reals. The generator exists — every real number has a shortest program that generates it —
+          but the generator is provably uncomputable. It cannot be derived by any algorithm, even
+          with infinite compute. This is inaccessibility in principle, not just in practice.
+        </p>
+        <p>
+          From the perspective of an observer reading the digit stream, these two classes look
+          identical. They differ only in <em>why</em> the generator is inaccessible, not in how the
+          output behaves. Cryptography is the engineered, intentional version of the general
+          phenomenon of generator inaccessibility.
+        </p>
+        <p>The real axis of classification is <strong>generator accessibility</strong>:</p>
+        <ul>
+          <li>
+            <strong>Accessible</strong>: the generator can be derived from the number (rationals,
+            algebraic irrationals, classical transcendentals with known recurrences)
+          </li>
+          <li>
+            <strong>Cryptographically inaccessible</strong>: the generator exists and is small, but
+            is hidden by a one-way function
+          </li>
+          <li>
+            <strong>Computably inaccessible</strong>: the generator exists but is provably
+            uncomputable
+          </li>
+        </ul>
+        <p>
+          All three classes are deterministic from the engineering standpoint. None of them invoke
+          metaphysical randomness in the library&#39;s operation. The distinction between them is
+          epistemic, not ontological.
+        </p>
+        <p>
+          A philosophical caveat is in order: the claim &quot;randomness is encrypted
+          determinism&quot; is a working stance, not a settled theorem. It conflates engineered
+          hiddenness (cryptographic) with in-principle inaccessibility (Chaitin Ω) and with the
+          standard philosophical category of randomness, and it presupposes a particular position in
+          the philosophy of mathematics. The library does not require this metaphysical commitment
+          to function — it requires only that every input it accepts implements the step interface,
+          and the framing is offered as a useful organizing principle rather than a proof. Every
+          number the library can ingest has, operationally, a seed; the question of whether there
+          exist numbers without seeds is left to philosophy.
+        </p>
+        <hr />
+        <h2>A Random Program Is a Valid Number</h2>
+        <p>
+          In this ontology, a random program is a perfectly valid number — not metaphorically, but
+          literally.
+        </p>
+        <p>
+          Any program that has a finite state representation, implements
+          <code>step(state) → (digit, next_state)</code>, and does not halt, is a number. Even if it
+          is chaotic. Even if it is incompressible. Even if it is algorithmically random.
+        </p>
+        <p>
+          Such a program corresponds to a random infinite binary expansion, which is a real number
+          in <code>[0, 1]</code> — with probability 1 transcendental, with probability 1 normal,
+          with probability 1 uncomputable. Via an affine wrapper VM, it is a valid number anywhere
+          on any interval.
+        </p>
+        <p>This collapses the operational distinction between program and number. In this model:</p>
+        <ul>
+          <li>Numbers are programs (operationally)</li>
+          <li>Programs are numbers (operationally)</li>
+          <li>The difference is only in how you interpret the generator</li>
+        </ul>
+        <p>
+          The space of numbers, as the library exposes it, is the space of all possible infinite
+          computations. This is the most general possible <em>operational</em> number ontology — a
+          strict superset of all existing computational frameworks. Whether it is a complete
+          ontology of numbers <em>qua</em> mathematical objects is a separate question; the library
+          does not require an answer.
+        </p>
+        <hr />
+        <h2>On Equality, Identity, and the Limits of the Substrate</h2>
+        <p>
+          A foundational caveat, presented honestly because the architecture&#39;s value depends on
+          its users understanding it. There is a Futurama line that captures the situation with
+          uncomfortable precision. Professor Farnsworth, having &quot;translated&quot; an alien
+          message, announces:
+          <em
+            >&quot;Of course we can translate it — but only into Betacrypt-3… a language so complex,
+            there is even less chance of understanding it.&quot;</em
+          >
+          The joke lands because the translation technically succeeds — it just maps the problem
+          into a representation where the operations people actually cared about have become harder,
+          not easier. This is, structurally, exactly the move Numbers as Machines makes. We
+          &quot;translate&quot; every number into a generator-VM that emits an infinite digit
+          stream, gaining uniformity, composability, and exactness. The bill for that translation
+          comes due precisely here: the very act of representing a number as a non-halting machine
+          is what makes &quot;is this equal?&quot; and &quot;which is bigger?&quot; non-primitive,
+          partial, or outright undecidable. We did not make the substrate too complex out of
+          carelessness — the translation preserves computability by discarding cheap equality.
+          Betacrypt-3, but the trade is honest and the dialect is at least the same one everywhere.
+        </p>
+        <p>
+          The natural equivalence relation on generator VMs is extensional: two VMs are equal iff
+          they produce identical digit streams on every query. This relation is
+          <strong>not computably decidable</strong> — it is the canonical example of an undecidable
+          semantic property of programs (Rice&#39;s theorem). The library therefore cannot ship an
+          <code>equals(x, y)</code> operation that returns <code>true</code> or
+          <code>false</code> in finite time for arbitrary inputs.
+        </p>
+        <p>
+          What it ships instead is a family of
+          <strong>interval-based and bounded-precision predicates</strong>:
+        </p>
+        <pre><code class="language-c">bool definitely_less_than(VM x, VM y);          // true / false / pending
+bool agrees_with(VM x, VM y, int digits);       // exact for a finite prefix
+Trit compare(VM x, VM y, int max_digits);       // Less | Greater | Indistinguishable
+</code></pre>
+        <p>
+          These are the honest computational counterparts of equality and ordering on the reals. The
+          library exposes them by name and does not pretend exact equality is a decidable operation.
+          This is forced by mathematics, not by implementation laziness — and it is the same
+          constraint every exact real arithmetic system operates under.
+        </p>
+        <p>
+          The same undecidability has a deeper consequence: the abstract equivalence class that a VM
+          &quot;represents&quot; cannot in general be characterized except
+          <em>through</em> generators like the VM itself. The library treats this as a non-issue at
+          the engineering level — it is a theory of digit-emitting machines and the operations
+          between them, not a metaphysical theory of what numbers ultimately are. The
+          MUX/codec/skip/fork machinery works regardless of whether one is a Platonist, a
+          constructivist, or a structuralist. That ontological neutrality is a feature: the library
+          serves users across the philosophical spectrum without forcing any of them into a corner.
+        </p>
+        <hr />
+        <h2>The User-Facing API</h2>
+        <p>
+          A substrate is not a library. The ABI is the foundation, but users interact with a
+          stratified API that hides the substrate where appropriate and exposes it where necessary.
+        </p>
+        <pre><code class="language-python"># Precision context — establishes target accuracy for a region of code
+with precision_context(digits=50):
+    result = sin(pi / 4) + sqrt(2)
+
+# Explicit comparison — interval-honest, never lies about decidability
+x.agrees_with(y, digits=20)  # bool
+x.definitely_less_than(y)  # True | False | Unknown
+
+# Explicit memoization policy — no hidden caches
+x = sqrt(2).cached(max_digits=1000)
+x = pi.streaming()  # O(1) space, sequential only
+
+# Forking with honest cost annotation
+x1, x2 = pi.fork()  # O(log n) for series-tier VMs
+
+# Skip-ahead when available
+digit_billion = pi.in_base(16).skip(10 ** 9).next_digit()
+</code></pre>
+        <p>Three layers:</p>
+        <ol>
+          <li>
+            <strong>Primitive layer</strong> — the raw <code>NumVMFn</code> ABI, used by combinator
+            authors
+          </li>
+          <li>
+            <strong>Combinator layer</strong> — arithmetic, comparison, codec, memoization wrappers
+          </li>
+          <li>
+            <strong>User layer</strong> — operator overloading, precision contexts, ergonomic
+            constructors
+          </li>
+        </ol>
+        <p>
+          Most users never see the primitive layer. The combinator layer is the contract; the user
+          layer is the convenience. Adoption requires that the user layer feel natural to anyone who
+          has used <code>mpmath</code>, <code>MPFR</code>, or <code>Decimal</code>.
+        </p>
+        <hr />
+        <h2>Implementation Roadmap</h2>
+        <p>
+          The architecture admits a staged build, with each phase delivering value and informing the
+          next.
+        </p>
+        <p>
+          <strong>Phase 1 — Automaton tier (high confidence).</strong> Rationals, quadratic
+          irrationals, p-adic numbers, base-conversion codecs, matrix-exponentiation skip-ahead. The
+          struct-copy fork story is exact. LLVM inlines across the whole graph. This phase ships a
+          working library for the entire algebraic and p-adic universe.
+        </p>
+        <p>
+          <strong>Phase 2 — Series tier (research-grade).</strong> Classical transcendentals with
+          built-in tail bound oracles. Signed-digit internal arithmetic for carry locality. Bounded
+          LRU memoization. Interval-based comparison. This phase requires per-constant convergence
+          proofs and careful engineering of the deep-copy fork path.
+        </p>
+        <p>
+          <strong>Phase 3 — User-facing API (required for adoption).</strong> Operator overloading,
+          precision contexts, explicit memoization modes, honest comparison predicates.
+          Documentation that makes the tier distinction visible to users who care and invisible to
+          users who don&#39;t.
+        </p>
+        <p>
+          <strong>Phase 4 — JIT compilation path.</strong> Expression-tree compilation for
+          runtime-constructed formulas. Struct-of-arrays layout for vector and matrix operations.
+          Batched digit computation API for SIMD.
+        </p>
+        <p>
+          Each phase is independently useful. The full system is the union, but no phase is wasted
+          if a later one is delayed.
+        </p>
+        <hr />
+        <h2>What This Is</h2>
+        <p>
+          This is not a numerics library in the conventional sense. It is a
+          <strong>coinductive computational substrate for numbers</strong> — a system in which:
+        </p>
+        <ul>
+          <li>
+            Numbers are forkable, deterministic nano-VMs, split honestly into automaton and series
+            tiers
+          </li>
+          <li>Arithmetic is VM composition over a signed-digit internal alphabet</li>
+          <li>Bases are codecs, not mathematical constants</li>
+          <li>Metrics are product VMs</li>
+          <li>p-adics are periodic automata with local digit commitment</li>
+          <li>
+            BBP formulas are automaton-codec resonances exposed as a first-class
+            <code>skip</code> primitive
+          </li>
+          <li>Randomness is operationally indistinguishable from inaccessible determinism</li>
+          <li>
+            Memory complexity is generator state dimension, a proposed numerical complexity metric
+          </li>
+          <li>Comparison is interval-honest, not falsely exact</li>
+          <li>The real line is the space of digit-generating computations under a chosen codec</li>
+        </ul>
+        <p>
+          LLVM is the execution engine for statically-known graphs; JIT compilation handles dynamic
+          ones. The ABI is a two-tier struct plus a step function. Forking is a struct copy for the
+          automaton tier and an explicit deep copy for the series tier. Inlining, specialization,
+          and optimization are LLVM&#39;s responsibility wherever possible.
+        </p>
+        <p>
+          The result is a system where every mathematical object — from a simple rational to a
+          transcendental constant to an encrypted stream to an algorithmically random real — is
+          represented uniformly as a tiny machine with the same interface, composable with every
+          other machine, projectable into any coordinate system, and executable at native speed.
+        </p>
+        <p>
+          The genuine novelty is the <strong>unified protocol</strong>: rationals, algebraic
+          numbers, p-adic numbers, and transcendentals all compose through the same interface,
+          rather than living in separate libraries with incompatible representations. Combined with
+          the codec/base separation and the first-class skip primitive, this is a real advance over
+          existing systems (MPFR, iRRAM, mpmath) even where it builds on their mathematical
+          foundations.
+        </p>
+        <p>
+          Alpha to omega: from mathematical definitions to compiled digit streams, with the
+          approximations made explicit, the costs made honest, and the limits made visible.
+        </p>
+      </article>
+      <section class="related">
+        <h2>More from Mathematical Explorations</h2>
+        <ul>
+          <li>
+            <a href="../quadratic-quasi-newton/index.html">Quadratic Quasi-Newton</a> — A new
+            optimization algorithm for smooth functions that interpolates between gradient descent
+            and L-BFGS.
+          </li>
+          <li>
+            <a href="../rcc-rational-certificate-complexity/index.html"
+              >RCC — Rational Certificate Complexity</a
+            >
+            — The foundation of the trilogy. Treats every convergence sequence as a rational
+            certificate engine, measures…
+          </li>
+          <li>
+            <a href="../pi-rcc-the-simplest-increment-x-sin-x/index.html"
+              >PI_RCC — The Simplest Increment: x + sin(x)</a
+            >
+            — A cubic-convergent iteration for π whose outer recurrence is not hypergeometric — it
+            falls outside RCC&#39;s…
+          </li>
+          <li>
+            <a href="../the-extension-ladder-one-way-to-watch-number-systems-grow/index.html"
+              >The Extension Ladder: One Way to Watch Number Systems Grow</a
+            >
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

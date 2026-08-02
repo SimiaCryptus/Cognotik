@@ -1,0 +1,335 @@
+{"https://ai.google.dev":{"$":5,"models":{"gemini#main-content":{"$":0}},"gemini-api":{"$":6,"docs":{"$":7,"interactions-overview":{"$":4},"models":{"gemini-3.6-flash":{"$":8},"gemini-3.5-flash":{"$":9},"gemini-3.5-flash-lite":{"$":10},"gemini-3.1-flash-lite":{"$":11},"gemini-3.1-flash-image":{"$":12},"gemini-3.1-flash-lite-image":{"$":13},"gemini-3-pro-image":{"$":14},"gemini-3.1-pro-preview":{"$":15},"gemini-3-flash-preview":{"$":16},"gemini-3.5-live-translate-preview":{"$":17},"gemini-3.1-flash-live-preview":{"$":18},"gemini-3.1-flash-tts-preview":{"$":19},"gemini-omni-flash":{"$":20},"gemini-2.5-flash":{"$":21},"gemini-2.5-flash-image":{"$":22},"gemini-2.5-flash-native-audio-preview-12-2025":{"$":23},"gemini-2.5-flash-preview-tts":{"$":24},"gemini-2.5-flash-lite":{"$":25},"gemini-2.5-pro":{"$":26},"gemini-2.5-pro-preview-tts":{"$":27},"veo-3.1-generate-preview":{"$":28},"veo-3.1-lite-generate-preview":{"$":29},"imagen":{"$":30},"lyria-3-pro-preview":{"$":31},"lyria-3-clip-preview":{"$":32},"lyria-realtime-exp":{"$":33},"gemini-2.5-computer-use-preview-10-2025":{"$":34},"deep-research-preview-04-2026":{"$":35},"deep-research-max-preview-04-2026":{"$":36},"antigravity-preview-05-2026":{"$":37},"gemini-embedding-2":{"$":38},"gemini-embedding-001":{"$":39},"gemini-robotics-er-1.6-preview":{"$":41},"gemini-2.0-flash":{"$":42},"gemini-2.0-flash-lite":{"$":43},"gemini-3.1-flash-lite-preview":{"$":44},"gemini-3-pro-preview":{"$":45}},"robotics-overview":{"$":40},"deprecations":{"$":46}}}},"https://aistudio.google.com":{"apikey":{"$":1}},"https://github.com":{"google-gemini":{"cookbook":{"$":2}}},"https://discuss.ai.google.dev":{"c":{"gemini-api":{"$":3}}},"https://creativecommons.org":{"licenses":{"by":{"4.0":{"$":47}}}},"https://www.apache.org":{"licenses":{"LICENSE-2.0":{"$":48}}},"https://developers.google.com":{"site-policies":{"$":49}}}
+
+<devsite-progress type="indeterminate"></devsite-progress>Skip to main content {0}
+<section>
+ <devsite-header role="banner">
+  <div>     Get API key {1} Cookbook {2} Community {3} <devsite-user> <span>Sign in</span> </devsite-user></div>
+ </devsite-header>
+ <main role="main">
+  <devsite-content>
+   <article>
+    <div>TheInteractions API {4}is now generally available. We recommend using this API for access to all the latest features and models.</div>
+    <div role="navigation">
+     <ul aria-label="Breadcrumb">
+      <li>Home {5}</li>
+      <li> Gemini API {6}</li>
+      <li> Docs {7}</li>
+     </ul> 
+    </div>
+    <h1>Models</h1> 
+    <div> 
+     <p>This guide introduces all the models available through the Gemini API.</p>
+     <hr>
+     <h2>Gemini 3</h2>
+     <h3>Stable</h3>
+     <div>spark Gemini 3.6 Flash Our latest model that balances speed with intelligence to deliver strong performance in agentic and multimodal tasks. Stable {8} spark Gemini 3.5 Flash Most intelligent model for sustained frontier performance on agentic and coding tasks. Stable {9} bolt Gemini 3.5 Flash-Lite Our fastest, most cost-effective 3.5 model for high-throughput execution. Stable {10} bolt Gemini 3.1 Flash-Lite Frontier-class performance rivaling larger models at a fraction of the cost. Stable {11} 🍌🍌 Nano Banana 2 Powerful, high-efficiency image generation and editing, optimized for speed and high-volume use cases. Stable {12} 🍌 Nano Banana 2 Lite Ultra-low latency and cost-effective image generation and editing, designed for high-volume interactive use cases. Stable {13} 🍌 Nano Banana Pro State-of-the-art image generation and editing models for highly contextual native image creation. Stable {14}</div>
+     <h3>Preview</h3>
+     <div>auto_awesome Gemini 3.1 Pro Advanced intelligence, complex problem-solving skills, and powerful agentic and vibe coding capabilities. Preview {15} spark Gemini 3 Flash Frontier-class performance rivaling larger models at a fraction of the cost. Preview {16} translate Gemini 3.5 Live Translate Low-latency, real-time speech to speech translation model that supports 70+ languages. NewPreview {17} settings_voice Gemini 3.1 Flash Live High-quality, low-latency Live API model for real-time dialogue and voice-first AI applications. NewPreview {18} graphic_eq Gemini 3.1 Flash TTS Powerful, low-latency speech generation. NewPreview {19} movie_filter Gemini Omni Flash Fast, conversational video generation and editing. Turn text and images into video, and refine results through natural language. NewPreview {20}</div>
+     <hr>
+     <h2>Gemini 2.5 Flash</h2>
+     <div>
+      <div>
+       <span>bolt</span>
+       <div>
+        <h3>Gemini 2.5 Flash {21}</h3>
+        <p>Our best price-performance model for low-latency, high-volume tasks that require reasoning.</p>
+       </div>
+      </div>
+      <div>
+       <span>image_search</span>
+       <div>
+        <h3>Nano Banana {22}</h3>
+        <p>State-of-the-art native image generation and editing designed for fast, creative workflows.</p>
+       </div>
+      </div>
+      <div>
+       <span>settings_voice</span>
+       <div>
+        <h3>Gemini 2.5 Flash LivePreview {23}</h3>
+        <p>Optimized for real-time conversational agents with sub-second native audio streaming.</p>
+       </div>
+      </div>
+      <div>
+       <span>record_voice_over</span>
+       <div>
+        <h3>Gemini 2.5 Flash TTSPreview {24}</h3>
+        <p>Controllable text-to-speech audio generation with fine control over style and pacing.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Gemini 2.5 Flash-Lite</h2>
+     <div>
+      <span>speed</span>
+      <div>
+       <h3>Gemini 2.5 Flash-Lite {25}</h3>
+       <p>The fastest and most budget-friendly multimodal model in the 2.5 family.</p>
+      </div>
+     </div>
+     <hr>
+     <h2>Gemini 2.5 Pro</h2>
+     <div>
+      <div>
+       <span>psychology</span>
+       <div>
+        <h3>Gemini 2.5 Pro {26}</h3>
+        <p>Our most advanced model for complex tasks, featuring deep reasoning and coding capabilities.</p>
+       </div>
+      </div>
+      <div>
+       <span>record_voice_over</span>
+       <div>
+        <h3>Gemini 2.5 Pro TTSPreview {27}</h3>
+        <p>High-fidelity speech synthesis optimized for quality in structured workflows like podcasts and audiobooks.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Audio models</h2>
+     <p>This section contains all audio models, including ones that may already be listed in other sections</p>
+     <div>
+      <div>
+       <span>settings_input_antenna</span>
+       <div>
+        <h3>Gemini 3.1 Flash LivePreview {18}</h3>
+        <p>Our high-quality, low-latency audio-to-audio (A2A) model designed for real-time dialogue and voice-first AI applications.</p>
+       </div>
+      </div>
+      <div>
+       <span>graphic_eq</span>
+       <div>
+        <h3>Gemini 3.1 Flash TTSPreview {19}</h3>
+        <p>Powerful, low-latency speech generation, with natural outputs, steerable prompts, and new expressive audio tags for precise narration control.</p>
+       </div>
+      </div>
+      <div>
+       <span>settings_voice</span>
+       <div>
+        <h3>Gemini 2.5 Flash LivePreview {23}</h3>
+        <p>Our flagship Live API model for low-latency, bidirectional voice and video agents with native audio reasoning.</p>
+       </div>
+      </div>
+      <div>
+       <span>bolt</span>
+       <div>
+        <h3>Gemini 2.5 Flash TTSPreview {24}</h3>
+        <p>Fast and controllable text-to-speech for low-latency, cost-efficient applications and real-time assistants.</p>
+       </div>
+      </div>
+      <div>
+       <span>record_voice_over</span>
+       <div>
+        <h3>Gemini 2.5 Pro TTSPreview {27}</h3>
+        <p>High-fidelity speech synthesis optimized for quality in structured workflows like podcasts and audiobooks.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Generative media models</h2>
+     <p>This section contains all generative media models, including ones that may already be listed in other sections</p>
+     <div>
+      <div>
+       <span>blur_on</span>
+       <div>
+        <h3>Nano Banana 2 {12}</h3>
+        <p>High-efficiency production-scale visual creation, combining the intelligence of the Gemini 3 series with lightning-fast generation speeds.</p>
+       </div>
+      </div>
+      <div>
+       <span>image_edit</span>
+       <div>
+        <h3>Nano Banana 2 Lite {13}</h3>
+        <p>Designed as the efficiency specialist of the image generation family, offering ultra-low latency and cost-effective image generation and editing.</p>
+       </div>
+      </div>
+      <div>
+       <span>movie_filter</span>
+       <div>
+        <h3>Veo 3.1Preview {28}</h3>
+        <p>State-of-the-art cinematic video generation with advanced creative controls and natively synchronized audio.</p>
+       </div>
+      </div>
+      <div>
+       <span>image_edit</span>
+       <div>
+        <h3>Nano Banana Pro {14}</h3>
+        <p>A professional design engine with a reasoning core for studio-quality 4K visuals, complex layouts, and precise text rendering.</p>
+       </div>
+      </div>
+      <div>
+       <span>movie_edit</span>
+       <div>
+        <h3>Veo 3.1 LitePreview {29}</h3>
+        <p>High-efficiency, low-cost, developer-first video generation, editing, and cinematic control from the Veo 3.1 family.</p>
+       </div>
+      </div>
+      <div>
+       <span>movie_filter</span>
+       <div>
+        <h3>Gemini Omni FlashPreview {20}</h3>
+        <p>Fast, conversational video generation and editing. Turn text and images into video, and refine results through natural language.</p>
+       </div>
+      </div>
+      <div>
+       <span>image_search</span>
+       <div>
+        <h3>Nano Banana {22}</h3>
+        <p>State-of-the-art native image generation and editing designed for fast, creative workflows.</p>
+       </div>
+      </div>
+      <div>
+       <span>palette</span>
+       <div>
+        <h3>Imagen 4Deprecated {30}</h3>
+        <p>Text-to-image model yet, featuring fast and ultra-fast generation and exceptional clarity up to 2K resolution.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Music generation models</h2>
+     <p>This section contains all music generation models, including ones that may already be listed in other sections</p>
+     <div>
+      <div>
+       <span>music_note</span>
+       <div>
+        <h3>Lyria 3 ProPreview {31}</h3>
+        <p>Our flagship music generation model, optimized for full-length songs with complex structural coherence.</p>
+       </div>
+      </div>
+      <div>
+       <span>music_note_2</span>
+       <div>
+        <h3>Lyria 3 ClipPreview {32}</h3>
+        <p>Optimized for generating short musical clips, loops, and previews up to 30 seconds.</p>
+       </div>
+      </div>
+      <div>
+       <span>music_history</span>
+       <div>
+        <h3>Lyria RealTimeExperimental {33}</h3>
+        <p>High-fidelity music generation model providing granular creative control and real-time streaming capabilities.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Tool and agent models</h2>
+     <div>
+      <div>
+       <span>desktop_windows</span>
+       <div>
+        <h3>Computer UsePreview {34}</h3>
+        <p>A specialized model that can "see" a digital screen and perform UI actions like clicking, typing, and navigating to automate complex browser tasks.</p>
+       </div>
+      </div>
+      <div>
+       <span>travel_explore</span>
+       <div>
+        <h3>Gemini Deep ResearchPreview {35}</h3>
+        <p>An agentic model that autonomously plans and executes multi-step research across hundreds of sources to produce cited, interactive reports.</p>
+       </div>
+      </div>
+      <div>
+       <span>travel_explore</span>
+       <div>
+        <h3>Gemini Deep Research MaxPreview {36}</h3>
+        <p>Maximum comprehensiveness for automated context gathering and synthesis across hundreds of sources.</p>
+       </div>
+      </div>
+      <div>
+       <span>terminal</span>
+       <div>
+        <h3>Antigravity AgentPreview {37}</h3>
+        <p>A general-purpose managed agent that autonomously plans, reasons, runs code, manages files, and browses the web inside a secure, isolated Linux sandbox.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Specialized task models</h2>
+     <div>
+      <div>
+       <span>hub</span>
+       <div>
+        <h3>Gemini Embedding 2 {38}</h3>
+        <p>Our first multimodal embedding model, mapping text, images, video, audio, and PDFs into a unified embedding space for advanced semantic search and RAG systems.</p>
+       </div>
+      </div>
+      <div>
+       <span>hub</span>
+       <div>
+        <h3>Gemini Embedding {39}</h3>
+        <p>High-dimensional vector representations for advanced semantic search, text classification, and RAG systems.</p>
+       </div>
+      </div>
+      <div>
+       <span>precision_manufacturing</span>
+       <div>
+        <h3>Gemini Robotics ER 2Preview {40}</h3>
+        <p>Embodied reasoning model delivering advanced video understanding, spatial reasoning, multi-step tool orchestration, and multi-robot collaboration for robotics tasks.</p>
+       </div>
+      </div>
+      <div>
+       <span>precision_manufacturing</span>
+       <div>
+        <h3>Gemini Robotics ER 1.6Preview {41}</h3>
+        <p>Advanced embodied reasoning model that understands physical spaces and plans multi-step tasks for robotic agents with new capabilities like instrument reading, improved spatial and physical reasoning.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Previous models</h2>
+     <div>
+      <div>
+       <span>history</span>
+       <div>
+        <h3>Gemini 2.0 FlashShut down {42}</h3>
+        <p>Our second generation workhorse model, with next-gen features and improved capabilities, including superior speed, native tool use, and a 1M token context window.</p>
+       </div>
+      </div>
+      <div>
+       <span>restore</span>
+       <div>
+        <h3>Gemini 2.0 Flash-LiteShut down {43}</h3>
+        <p>Our fastest second generation model, optimized for cost efficiency and low latency.</p>
+       </div>
+      </div>
+      <div>
+       <span>restore</span>
+       <div>
+        <h3>Gemini 3.1 Flash-Lite PreviewShut down {44}</h3>
+        <p>Our most cost-efficient multimodal model, offering the fastest performance for high-frequency, lightweight tasks.</p>
+       </div>
+      </div>
+      <div>
+       <span>restore</span>
+       <div>
+        <h3>Gemini 3 Pro PreviewShut down {45}</h3>
+        <p>Our state-of-the-art reasoning model, with advanced multimodal understanding.</p>
+       </div>
+      </div>
+     </div>
+     <hr>
+     <h2>Model version name patterns</h2>
+     <p>Gemini models are available in eitherstable,preview,latest, orexperimentalversions.</p>
+     <h3>Stable</h3>
+     <p>Points to a specific stable model. Stable models usually don't change. Most production apps should use a specific stable model.</p>
+     <p>For example:gemini-3.6-flash.</p>
+     <h3>Preview</h3>
+     <p>Points to a preview model which may be used for production. Preview models will typically have billing enabled, might come with more restrictive rate limits and will be deprecated with at least 2 weeks notice.</p>
+     <p>For example:gemini-2.5-flash-preview-09-2025.</p>
+     <h3>Latest</h3>
+     <p>Points to the latest release for a specific model variation. This can be a stable, preview or experimental release. This alias will get hot-swapped with every new release of a specific model variation. For breaking changes, a2-week noticewill be provided through email before the version behind latest is changed.</p>
+     <p>For example:gemini-flash-latest.</p>
+     <h3>Experimental</h3>
+     <p>Points to an experimental model which will typically be not be suitable for production use and come with more restrictive rate limits. We release experimental models to gather feedback and get our latest updates into the hands of developers quickly.</p>
+     <p>Experimental models are not stable and availability of model endpoints is subject to change.</p>
+     <h2>Model deprecations</h2>
+     <p>For information about model deprecations, visit theGemini deprecations {46}page.</p>
+    </div> 
+   </article>
+   <devsite-content-footer>
+    <p>Except as otherwise noted, the content of this page is licensed under theCreative Commons Attribution 4.0 License {47}, and code samples are licensed under theApache 2.0 License {48}. For details, see theGoogle Developers Site Policies {49}. Java is a registered trademark of Oracle and/or its affiliates.</p>
+    <p>Last updated 2026-07-30 UTC.</p>
+   </devsite-content-footer> 
+  </devsite-content>
+ </main>
+</section>

@@ -1,8 +1,0 @@
-{
-  "filename": "test_remove_line.txt",
-  "originalCode": "line1\nline2\nline3",
-  "diff": "line1\n- line2\nline3",
-  "newCode": "line1\nline3",
-  "isValid": true,
-  "errors": ""
-}

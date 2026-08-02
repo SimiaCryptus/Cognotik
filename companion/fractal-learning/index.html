@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="SimiaCryptus" />
+
+    <meta
+      name="description"
+      content="Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so the depth-N orbit of the origin matches a target point cloud under a Chamfer metric."
+    />
+    <title>Fractal Learning — Mathematical Explorations</title>
+    <link rel="canonical" href="https://math.cognotik.com/companion/fractal-learning/index.html" />
+    <meta name="theme-color" content="#0a0a14" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Mathematical Explorations" />
+    <meta property="og:title" content="Fractal Learning — Mathematical Explorations" />
+    <meta
+      property="og:description"
+      content="Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so the depth-N orbit of the origin matches a target point cloud under a Chamfer metric."
+    />
+    <meta
+      property="og:url"
+      content="https://math.cognotik.com/companion/fractal-learning/index.html"
+    />
+    <meta property="og:image" content="https://math.cognotik.com/og-image.png" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Fractal Learning — Mathematical Explorations" />
+    <meta
+      name="twitter:description"
+      content="Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so the depth-N orbit of the origin matches a target point cloud under a Chamfer metric."
+    />
+    <meta name="twitter:image" content="https://math.cognotik.com/og-image.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a14;
+        --panel: #12121f;
+        --ink: #e8e8f0;
+        --muted: #a0a0b8;
+        --accent: #7aa2ff;
+        --accent2: #b78aff;
+        --border: #23233a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .arrow {
+        font-size: 0.9em;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 20, 0.82);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
+      nav .brand-glyph {
+        font-size: 1.3rem;
+        color: var(--accent2);
+      }
+      nav .spacer {
+        flex: 1;
+      }
+      nav .nav-link {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 5rem;
+      }
+      .crumbs {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .crumbs a {
+        color: var(--muted);
+      }
+      .page-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .page-icon {
+        width: 54px;
+        height: 54px;
+        flex: none;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1.05rem;
+        background: linear-gradient(135deg, #1c2440, #2a1c40);
+        border: 1px solid var(--border);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: 'Fraunces', serif;
+        font-weight: 800;
+        font-size: 2.1rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin: 0.4rem 0 1.5rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #0a0a14;
+        font-weight: 700;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        margin: 0 0.6rem 1.5rem 0;
+      }
+      .cta:hover {
+        text-decoration: none;
+        filter: brightness(1.08);
+      }
+      .cta.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+      .media {
+        margin: 1.5rem 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .media video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      article {
+        font-size: 1.02rem;
+      }
+      article h1,
+      article h2,
+      article h3,
+      article h4 {
+        font-family: 'Fraunces', serif;
+        line-height: 1.2;
+        margin-top: 2rem;
+      }
+      article h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.3rem;
+      }
+      article h3 {
+        font-size: 1.2rem;
+      }
+      article code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        background: #1a1a2a;
+        padding: 0.15em 0.4em;
+        border-radius: 5px;
+      }
+      article pre {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow: auto;
+      }
+      article pre code {
+        background: none;
+        padding: 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      article blockquote {
+        border-left: 3px solid var(--accent2);
+        margin: 1rem 0;
+        padding: 0.2rem 0 0.2rem 1rem;
+        color: var(--muted);
+      }
+      article table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      article th,
+      article td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+      }
+      .mermaid {
+        background: #0d0d18;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .related {
+        margin-top: 3rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+      }
+      .related h2 {
+        font-family: 'Fraunces', serif;
+        font-size: 1.2rem;
+      }
+      .related ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .footer-mark {
+        font-size: 1.6rem;
+        color: var(--accent2);
+        margin-top: 1rem;
+      }
+      .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .hub-card {
+        display: block;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem;
+      }
+      .hub-card:hover {
+        border-color: var(--accent);
+        text-decoration: none;
+      }
+      .hub-card h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-family: 'Fraunces', serif;
+      }
+      .hub-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TechArticle",
+            "headline": "Fractal Learning",
+            "description": "Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine maps so the depth-N orbit of the origin matches a target point cloud under a Chamfer metric.",
+            "url": "https://math.cognotik.com/companion/fractal-learning/index.html",
+            "inLanguage": "en",
+            "author": { "@type": "Person", "name": "SimiaCryptus" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Mathematical Explorations",
+              "url": "https://math.cognotik.com/"
+            },
+            "mainEntityOfPage": "https://math.cognotik.com/companion/fractal-learning/index.html"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Mathematical Explorations",
+                "item": "https://math.cognotik.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Fractal Learning",
+                "item": "https://math.cognotik.com/companion/fractal-learning/index.html"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a class="brand" href="../../index.html">
+        <span class="brand-glyph">∑</span>
+        <span>Mathematical Explorations</span>
+      </a>
+      <span class="spacer"></span>
+      <a class="nav-link" href="../../index.html">Interactive home <span class="arrow">↗</span></a>
+      <a
+        class="nav-link"
+        href="https://github.com/SimiaCryptus/Fun_With_Math"
+        target="_blank"
+        rel="noopener"
+        >GitHub <span class="arrow">↗</span></a
+      >
+    </nav>
+    <main>
+      <div class="crumbs">
+        <a href="../../index.html">Home</a> › <a href="../index.html">Companion pages</a> ›
+        <span>Fractal Learning</span>
+      </div>
+      <div class="page-head">
+        <div class="page-icon" aria-hidden="true">FL</div>
+        <div>
+          <h1>Fractal Learning</h1>
+        </div>
+      </div>
+      <p class="subtitle">
+        Inverse iterated-function-system fitting: gradient-optimize a small alphabet of affine maps
+        so the depth-N orbit of the origin matches a target point cloud under a Chamfer metric.
+      </p>
+      <p>
+        <a class="cta" href="../../experiments/fractal_learning/index.html"
+          >Open the interactive lab <span class="arrow">→</span></a
+        >
+      </p>
+
+      <article>
+        <h1>Affine IFS Point-Set Fitting</h1>
+        <h2>Overview</h2>
+        <p>
+          We want to approximate a target point cloud in $\mathbb{R}^d$ by the <em>orbit</em> of the
+          origin under all length-$N$ words in a small alphabet of affine transforms. The transforms
+          are then optimized (e.g. via gradient descent) so that the generated orbit matches the
+          target as closely as possible under a nearest-neighbor metric.
+        </p>
+        <p>
+          This is closely related to the
+          <em>inverse problem for iterated function systems (IFS)</em>, but restricted to a fixed
+          depth $N$ and with an explicit (commutative-style) enumeration of all transform
+          compositions.
+        </p>
+        <hr />
+        <h2>1. Setup</h2>
+        <h3>1.1 Transforms</h3>
+        <p>
+          Let $K \in \mathbb{N}$ be the number of affine transforms. Each transform $T_k :
+          \mathbb{R}^d \to \mathbb{R}^d$ has the form
+        </p>
+        <p>
+          $$ T_k(x) ;=; A_k, x ;+; b_k, \qquad A_k \in \mathbb{R}^{d \times d},; b_k \in
+          \mathbb{R}^d. $$
+        </p>
+        <p>Collect all parameters into</p>
+        <p>$$ \theta ;=; {(A_k, b_k)}_{k=1}^{K} ;\in; \mathbb{R}^{K(d^2 + d)}. $$</p>
+        <h3>1.2 Generated point set</h3>
+        <p>
+          Fix a depth $N \in \mathbb{N}$ (&quot;number of transforms applied&quot;). For a
+          multi-index (word) $w = (k_1, k_2, \dots, k_N) \in {1,\dots,K}^N$ define
+        </p>
+        <p>
+          $$ P_w(\theta) ;=; \bigl(T_{k_N} \circ T_{k_{N-1}} \circ \cdots \circ T_{k_1}\bigr)(0). $$
+        </p>
+        <p>The full generated point set is</p>
+        <p>$$ \mathcal{P}_N(\theta) ;=; \bigl{, P_w(\theta) ;:; w \in \mathcal{W} ,\bigr}, $$</p>
+        <p>where $\mathcal{W}$ is the indexing set of words.</p>
+        <h4>Two flavors of enumeration</h4>
+        <ol>
+          <li>
+            <p>
+              <strong>Ordered words</strong> (non-commutative): $\mathcal{W} = {1,\dots,K}^N$,
+              $|\mathcal{W}| = K^N$.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Commutative / multiset words</strong>: only the <em>count</em> of each
+              transform matters, not the order. Then $$ \mathcal{W} ;=; \Bigl{ (n_1,\dots,n_K) \in
+              \mathbb{Z}_{\ge 0}^K ;:; \sum_k n_k = N \Bigr}, \qquad |\mathcal{W}| = \binom{N + K -
+              1}{K - 1}. $$ This is exact when the $T_k$ commute (e.g. pure translations, or
+              commuting diagonal maps); otherwise it is an approximation that collapses orbits by
+              transform-multiset.
+            </p>
+          </li>
+        </ol>
+        <p>
+          The idea.md note says &quot;every possible combination of transforms (commutative)&quot;,
+          which corresponds to flavor (2).
+        </p>
+        <h3>1.3 Target point set</h3>
+        <p>Let</p>
+        <p>$$ \mathcal{Q} ;=; {q_1, \dots, q_M} \subset \mathbb{R}^d $$</p>
+        <p>be a given target point cloud.</p>
+        <hr />
+        <h2>2. Loss function</h2>
+        <p>
+          We measure the discrepancy between $\mathcal{P}_N(\theta)$ and $\mathcal{Q}$ via a
+          (squared) nearest-neighbor distance.
+        </p>
+        <p>Define the one-sided Chamfer terms:</p>
+        <p>
+          $$ D_{P \to Q}(\theta) ;=; \frac{1}{|\mathcal{P}<em>N|} \sum</em>{p \in \mathcal{P}<em
+            >N(\theta)} \min</em
+          >{q \in \mathcal{Q}} ; |p - q|_2^2, $$
+        </p>
+        <p>
+          $$ D_{Q \to P}(\theta) ;=; \frac{1}{|\mathcal{Q}|} \sum_{q \in \mathcal{Q}} \min_{p \in
+          \mathcal{P}_N(\theta)} ; |p - q|_2^2. $$
+        </p>
+        <p>The symmetric Chamfer loss is</p>
+        <p>
+          $$ \mathcal{L}(\theta) ;=; \alpha, D_{P \to Q}(\theta) ;+; \beta, D_{Q \to P}(\theta),
+          \qquad \alpha, \beta \ge 0. $$
+        </p>
+        <p>
+          Common choice: $\alpha = \beta = 1$. Using only $D_{P \to Q}$ (&quot;forward&quot; only)
+          tends to let the model collapse onto a subset of $\mathcal{Q}$; using only $D_{Q \to P}$
+          (&quot;backward&quot; only) tends to leave stray generated points. The symmetric form is
+          preferred.
+        </p>
+        <hr />
+        <h2>3. Optimization problem</h2>
+        <p>$$ \theta^\star ;=; \arg\min_{\theta} ; \mathcal{L}(\theta). $$</p>
+        <h3>3.1 Optional constraints / regularizers</h3>
+        <p>To keep the system well-posed and the orbit bounded, we may add:</p>
+        <ul>
+          <li>
+            <strong>Contractivity:</strong> $|A_k|_2 \le 1 - \varepsilon$ for all $k$ (or a soft
+            penalty $\sum_k \max(0, |A_k|_2 - (1-\varepsilon))^2$).
+          </li>
+          <li>
+            <strong>Parameter regularization:</strong> $\lambda_A \sum_k |A_k|_F^2 + \lambda_b
+            \sum_k |b_k|_2^2$.
+          </li>
+          <li>
+            <strong>Diversity:</strong> penalize pairs $(T_i, T_j)$ that are too similar, e.g. $-\mu
+            \sum_{i&lt;j} |(A_i,b_i) - (A_j,b_j)|^2$ clipped.
+          </li>
+        </ul>
+        <hr />
+        <h2>4. Algorithm</h2>
+        <pre><code>Inputs:
+    target points  Q      (M x d)
+    num transforms K
+    depth          N
+    learning rate  eta
+    iterations     T
+
+Initialize:
+    For k = 1..K:
+        A_k &lt;- small random matrix (e.g. 0.5 * I + noise)
+        b_k &lt;- small random vector
+
+Enumerate words W:
+    if commutative:
+        W = all (n_1,...,n_K) with sum n_i = N         # multisets
+    else:
+        W = all (k_1,...,k_N) in {1..K}^N               # ordered
+
+For t = 1..T:
+    # Forward pass: build P_N(theta)
+    P &lt;- []
+    for w in W:
+        x &lt;- 0
+        for k_i in w:                                   # ordered case
+            x &lt;- A_{k_i} x + b_{k_i}
+        P.append(x)
+
+    # Loss
+    For each p in P:    d_p &lt;- min_q ||p - q||^2
+    For each q in Q:    d_q &lt;- min_p ||p - q||^2
+    L &lt;- mean(d_p) + mean(d_q)  (+ regularizers)
+
+    # Backward pass
+    Compute grad_theta L      (autodiff)
+    theta &lt;- theta - eta * grad_theta L
+
+Return theta, P
+</code></pre>
+        <h3>4.1 Efficient commutative enumeration</h3>
+        <p>In the commutative case, the orbit can be built incrementally:</p>
+        <p>
+          Let $\mathcal{P}_N^{(c)} = {, T_1^{n_1} \cdots T_K^{n_K}(0) : \sum n_i = N ,}$
+          (interpreting the product in some fixed order, which is exact iff the $T_k$ commute). Then
+        </p>
+        <p>
+          $$ \mathcal{P}<em>n^{(c)} ;=; \bigcup</em>{k=1}^{K}
+          T_k\bigl(\mathcal{P}_{n-1}^{(c)}\bigr), $$
+        </p>
+        <p>
+          with duplicates removed by multiset index. Implementation: index each point by
+          $(n_1,\dots,n_K)$, compute it from any parent $(n_1,\dots,n_k-1,\dots,n_K)$ via $T_k$, and
+          cache.
+        </p>
+        <h3>4.2 Nearest-neighbor computation</h3>
+        <ul>
+          <li>
+            For small $|\mathcal{P}_N|, |\mathcal{Q}|$: full pairwise distance matrix,
+            $O(|\mathcal{P}_N|,|\mathcal{Q}|,d)$, fully differentiable.
+          </li>
+          <li>
+            For larger sets: KD-tree / approximate NN for the <em>index lookup</em>, then recompute
+            the chosen distances exactly so gradients still flow.
+          </li>
+        </ul>
+        <hr />
+        <h2>5. Notes and caveats</h2>
+        <ul>
+          <li>
+            <strong>Commutativity assumption.</strong> Generic affine maps do not commute, so
+            &quot;every possible combination (commutative)&quot; is only literally correct for
+            commuting families (e.g. all translations, or all maps sharing a common eigenbasis). For
+            general $T_k$, flavor (2) should be understood as &quot;index orbits by
+            transform-multiset and pick a canonical application order&quot; — an explicit modeling
+            choice.
+          </li>
+          <li>
+            <strong>Size blow-up.</strong> $|\mathcal{P}_N| = K^N$ (ordered) or $\binom{N+K-1}{K-1}$
+            (commutative). Both grow fast; keep $K, N$ small or subsample words.
+          </li>
+          <li>
+            <strong>Non-convexity.</strong> The loss is highly non-convex; use multiple random
+            restarts, annealing of $N$ (start small, grow), or curriculum on $\mathcal{Q}$.
+          </li>
+          <li>
+            <strong>Relation to IFS.</strong> As $N \to \infty$ with contractive $T_k$, the orbit of
+            $0$ densifies in the attractor of the IFS ${T_k}$. So this method is effectively fitting
+            an IFS attractor to $\mathcal{Q}$, truncated at depth $N$.
+          </li>
+        </ul>
+      </article>
+      <section class="related">
+        <h2>More from Mathematical Explorations</h2>
+        <ul>
+          <li>
+            <a href="../pentagonal-lattice-geometry/index.html">Pentagonal Lattice Geometry</a> — A
+            multi-sheeted covering construction in which the regular pentagon develops fractional
+            dimension (d ≈ 2.37)…
+          </li>
+          <li>
+            <a href="../space-color-symmetry/index.html">Space-Color Symmetry</a> — A pixel canvas
+            where symmetry doesn&#39;t just mirror your strokes — it rewires the diffusion graph.
+            Heat flows…
+          </li>
+          <li>
+            <a href="../geometric-entropy/index.html">Geometric Entropy</a> — A continuous analogue
+            of the Erdős distinct-distance problem. Points on a manifold are arranged to extremize…
+          </li>
+          <li>
+            <a href="../spacelike-knots/index.html">Spacelike Knots</a> — A knot equipped with a
+            Minkowski metric, turning crossings into causal inversions. The distance matrix…
+          </li>
+          <li>
+            <a href="../layered-cellular-automata/index.html">Layered Cellular Automata</a> —
+            Langton&#39;s ants write a colored substrate that gates where Conway&#39;s Life is
+            allowed to live. Three feedback…
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Part of <a href="../../index.html">Mathematical Explorations</a> — original interactive
+        experiments in geometry, number theory, and dynamical systems.
+      </p>
+      <p class="footer-mark">∑</p>
+    </footer>
+  </body>
+</html>

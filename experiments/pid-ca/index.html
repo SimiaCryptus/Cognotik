@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PID-Regulated Cellular Automaton</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>PID-Regulated Cellular Automaton</h1>
+      <p class="tagline">
+        Each cell runs a local PID controller regulating its active-neighbour count toward a target.
+        Switch <em>Domain / mechanism</em> to the bioelectrical membrane for excitable media
+        (spiking, refractoriness, propagating waves). Space = play/pause &middot; S = step &middot;
+        R = reset &middot; click/drag the grid to paint (shift-drag erases).
+      </p>
+    </header>
+
+    <main class="app-main">
+      <section class="stage">
+        <div class="toolbar" id="playback"></div>
+        <div class="canvas-wrap">
+          <canvas id="grid-canvas" width="720" height="480"></canvas>
+        </div>
+        <div class="status" id="status"></div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <aside class="panel" id="panel"></aside>
+    </main>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>

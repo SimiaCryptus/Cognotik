@@ -1,0 +1,886 @@
+{
+  "version": "1.0.0",
+  "title": "Spectral Graph Theory Glossary",
+  "description": "Spectral graph theory vocabulary used in the project, covering the spectrum of the graph Laplacian, diffusion, random-walk behavior, density of states, and spectral dimension — all central diagnostics of multi-sheeted tilings.",
+  "concepts": {
+    "adjacency-matrix": {
+      "id": "adjacency-matrix",
+      "term": "Adjacency Matrix",
+      "aliases": ["A matrix"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["matrix", "graph", "spectrum", "eigenvalue"],
+      "summary": "The n×n symmetric matrix with A_ij = 1 if vertices i and j are adjacent, else 0.",
+      "definition": "The $n \\times n$ matrix with $A_{ij} = 1$ if vertices $i$ and $j$ are adjacent, else 0.\n\nFor undirected graphs (the project's focus): $A$ is **symmetric**, hence has real eigenvalues. The largest eigenvalue $\\lambda_{\\max}(A)$ controls the rate of exponential growth of walk counts. The full spectrum encodes detailed structural information.",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "A_{ij} = \\begin{cases} 1 & \\text{if } i \\sim j \\\\ 0 & \\text{otherwise} \\end{cases}",
+          "description": "Entry definition of the adjacency matrix.",
+          "variables": {
+            "A_{ij}": "Entry in row i, column j of the adjacency matrix",
+            "i \\sim j": "Vertices i and j are adjacent"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "degree-matrix" },
+          { "id": "graph-laplacian" },
+          { "id": "spectrum" },
+          { "id": "eigenvalue" }
+        ],
+        "enabledBy": [{ "id": "graph-laplacian" }, { "id": "ramanujan-graph" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "degree-matrix": {
+      "id": "degree-matrix",
+      "term": "Degree Matrix",
+      "aliases": ["D matrix"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "combinatorics"],
+      "difficulty": "foundational",
+      "tags": ["matrix", "graph", "degree", "diagonal"],
+      "summary": "The diagonal matrix with D_ii equal to the degree (number of neighbors) of vertex v_i.",
+      "definition": "The diagonal matrix with $D_{ii} = \\deg(v_i)$ = number of neighbors of vertex $v_i$.\n\nAll off-diagonal entries are zero. The degree matrix is used together with the adjacency matrix to construct the graph Laplacian.",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "D_{ii} = \\deg(v_i)",
+          "description": "Diagonal entry of the degree matrix equals the degree of vertex v_i.",
+          "variables": {
+            "D_{ii}": "Diagonal entry for vertex i",
+            "\\deg(v_i)": "Number of neighbors of vertex v_i"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "adjacency-matrix" }, { "id": "graph-laplacian" }],
+        "enabledBy": [{ "id": "graph-laplacian" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "graph-laplacian": {
+      "id": "graph-laplacian",
+      "term": "Graph Laplacian",
+      "aliases": ["Laplacian matrix", "discrete Laplacian", "Δ"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "physics", "geometry"],
+      "difficulty": "intermediate",
+      "tags": ["matrix", "laplacian", "spectrum", "diffusion", "eigenvalue"],
+      "summary": "The discrete analogue of the Laplace operator, defined as Δ = D − A, encoding diffusion and connectivity of a graph.",
+      "definition": "The **discrete analogue of the Laplace operator**, defined as $\\Delta = D - A$:\n\n$$(\\Delta f)(v) = \\sum_{u \\sim v} \\big(f(v) - f(u)\\big) = \\deg(v) f(v) - \\sum_{u \\sim v} f(u)$$\n\n**Properties:**\n\n- Symmetric (for undirected graphs).\n- Positive semi-definite: all eigenvalues $\\geq 0$.\n- $\\Delta \\mathbf{1} = 0$: constants are in the kernel.\n- The **multiplicity of eigenvalue 0** equals the number of connected components.",
+      "examples": [
+        {
+          "title": "Path graph P_3",
+          "body": "For a path graph on 3 vertices (1–2–3), the Laplacian is:\n\nΔ = [[1, -1, 0], [-1, 2, -1], [0, -1, 1]]\n\nEigenvalues: 0, 1, 3. The single zero eigenvalue confirms the graph is connected."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\Delta = D - A",
+          "description": "Graph Laplacian as the difference of degree matrix and adjacency matrix.",
+          "variables": {
+            "D": "Degree matrix",
+            "A": "Adjacency matrix"
+          }
+        },
+        {
+          "expression": "(\\Delta f)(v) = \\sum_{u \\sim v} \\big(f(v) - f(u)\\big)",
+          "description": "Action of the graph Laplacian on a function f defined on vertices.",
+          "variables": {
+            "f": "Function on vertices",
+            "v": "Current vertex",
+            "u \\sim v": "Neighbors of v"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "adjacency-matrix" }, { "id": "degree-matrix" }],
+        "related": [
+          { "id": "spectrum" },
+          { "id": "spectral-gap" },
+          { "id": "density-of-states" },
+          { "id": "random-walk" },
+          { "id": "sparse-matrix" }
+        ],
+        "enabledBy": [
+          { "id": "spectral-gap" },
+          { "id": "density-of-states" },
+          { "id": "return-probability" },
+          { "id": "lanczos-algorithm" },
+          { "id": "kernel-polynomial-method" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "sparse-matrix": {
+      "id": "sparse-matrix",
+      "term": "Sparse Matrix",
+      "aliases": ["sparse representation"],
+      "domain": "computation",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["matrix", "sparse", "efficiency", "linear-algebra"],
+      "summary": "A matrix with O(n) non-zero entries rather than O(n²), enabling efficient algorithms for large graphs.",
+      "definition": "A matrix with $O(n)$ non-zero entries (rather than $O(n^2)$). The adjacency matrix of a graph with bounded degree is automatically sparse. **Sparse linear algebra** algorithms (Lanczos, Arnoldi, conjugate gradient) exploit sparsity for efficiency.",
+      "examples": [
+        {
+          "title": "Bounded-degree graph adjacency matrix",
+          "body": "For a graph where every vertex has at most d neighbors, the adjacency matrix has at most n·d non-zero entries. For d fixed and n large, this is O(n) rather than O(n²), making matrix-vector products O(n) instead of O(n²)."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "sparse-linear-algebra" },
+          { "id": "adjacency-matrix" },
+          { "id": "graph-laplacian" }
+        ],
+        "enabledBy": [
+          { "id": "sparse-linear-algebra" },
+          { "id": "lanczos-algorithm" },
+          { "id": "kernel-polynomial-method" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "sparse-linear-algebra": {
+      "id": "sparse-linear-algebra",
+      "term": "Sparse Linear Algebra",
+      "aliases": ["sparse algorithms"],
+      "domain": "computation",
+      "crossDomains": ["algebra"],
+      "difficulty": "intermediate",
+      "tags": ["sparse", "linear-algebra", "efficiency", "iterative", "lanczos"],
+      "summary": "Algorithms designed for sparse matrices that exploit O(n) non-zero structure for efficient matrix-vector products and iterative eigensolvers.",
+      "definition": "Algorithms designed for sparse matrices. Standard for large graphs:\n\n- **Matrix-vector products** are $O(n)$ instead of $O(n^2)$.\n- **Iterative eigensolvers** (Lanczos, Arnoldi) avoid forming the full eigendecomposition.\n- **Shift-invert** transformations access specific spectral ranges.",
+      "examples": [],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sparse-matrix" }],
+        "related": [
+          { "id": "lanczos-algorithm" },
+          { "id": "shift-invert" },
+          { "id": "kernel-polynomial-method" }
+        ],
+        "enabledBy": [
+          { "id": "lanczos-algorithm" },
+          { "id": "shift-invert" },
+          { "id": "kernel-polynomial-method" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "eigenvalue": {
+      "id": "eigenvalue",
+      "term": "Eigenvalue",
+      "aliases": ["characteristic value"],
+      "domain": "algebra",
+      "crossDomains": ["computation"],
+      "difficulty": "foundational",
+      "tags": ["eigenvalue", "eigenvector", "spectrum", "linear-algebra"],
+      "summary": "A scalar λ such that Mv = λv for some non-zero eigenvector v.",
+      "definition": "A scalar $\\lambda$ such that $Mv = \\lambda v$ for some non-zero **eigenvector** $v$.\n\nFor symmetric matrices (such as the graph Laplacian), all eigenvalues are real. The collection of all eigenvalues forms the **spectrum** of the matrix.",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "Mv = \\lambda v",
+          "description": "Eigenvalue equation: M acts on eigenvector v by scaling it by λ.",
+          "variables": {
+            "M": "Square matrix or linear operator",
+            "v": "Non-zero eigenvector",
+            "\\lambda": "Eigenvalue (scalar)"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "spectrum" }, { "id": "graph-laplacian" }, { "id": "spectral-gap" }],
+        "enabledBy": [
+          { "id": "spectrum" },
+          { "id": "spectral-gap" },
+          { "id": "density-of-states" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "spectrum": {
+      "id": "spectrum",
+      "term": "Spectrum",
+      "aliases": ["eigenvalue spectrum", "spectral set"],
+      "domain": "algebra",
+      "crossDomains": ["computation", "physics"],
+      "difficulty": "foundational",
+      "tags": ["spectrum", "eigenvalue", "laplacian", "graph"],
+      "summary": "The set (or multiset) of eigenvalues of a matrix or operator; for the graph Laplacian, all eigenvalues are non-negative.",
+      "definition": "The **set (or multiset) of eigenvalues** of a matrix or operator. For the graph Laplacian:\n\n$$0 = \\lambda_0 \\leq \\lambda_1 \\leq \\lambda_2 \\leq \\cdots \\leq \\lambda_{n-1}$$\n\nThe spectrum encodes structural information about the graph, including connectivity (multiplicity of zero), mixing properties (spectral gap), and diffusion behavior (density of states).",
+      "examples": [],
+      "formulas": [
+        {
+          "expression": "0 = \\lambda_0 \\leq \\lambda_1 \\leq \\lambda_2 \\leq \\cdots \\leq \\lambda_{n-1}",
+          "description": "Ordered spectrum of the graph Laplacian, with all eigenvalues non-negative.",
+          "variables": {
+            "\\lambda_i": "i-th eigenvalue of the graph Laplacian in non-decreasing order",
+            "n": "Number of vertices"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "eigenvalue" }],
+        "related": [
+          { "id": "graph-laplacian" },
+          { "id": "spectral-gap" },
+          { "id": "density-of-states" },
+          { "id": "adjacency-matrix" }
+        ],
+        "enabledBy": [
+          { "id": "spectral-gap" },
+          { "id": "density-of-states" },
+          { "id": "lanczos-algorithm" },
+          { "id": "kernel-polynomial-method" }
+        ],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "spectral-gap": {
+      "id": "spectral-gap",
+      "term": "Spectral Gap",
+      "aliases": ["algebraic connectivity", "Fiedler value"],
+      "domain": "computation",
+      "crossDomains": ["algebra", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": ["spectral-gap", "connectivity", "mixing", "expander", "laplacian"],
+      "summary": "The smallest non-zero Laplacian eigenvalue λ₁, controlling random-walk mixing time and graph connectivity.",
+      "definition": "The **smallest non-zero Laplacian eigenvalue**, $\\lambda_1$.\n\n- $\\lambda_1 = 0$: graph is disconnected.\n- Large $\\lambda_1$: graph is well-connected, \"expander-like.\"\n- $\\lambda_1 \\to 0$ as $n \\to \\infty$: typical for graphs that \"look low-dimensional.\"\n\nThe spectral gap controls **mixing time** of random walks and the **isoperimetric** properties of the graph.",
+      "examples": [
+        {
+          "title": "Expander vs. lattice",
+          "body": "For a d-regular expander graph, λ₁ ≥ c > 0 uniformly as n → ∞, giving O(log n) mixing time. For the integer lattice ℤ^d restricted to an n-vertex ball, λ₁ ~ n^{-2/d} → 0, reflecting slow polynomial mixing."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "t_{\\text{mix}} \\sim \\frac{\\log n}{\\lambda_1}",
+          "description": "Mixing time of a random walk is inversely proportional to the spectral gap.",
+          "variables": {
+            "t_{\\text{mix}}": "Mixing time",
+            "\\lambda_1": "Spectral gap (smallest non-zero Laplacian eigenvalue)",
+            "n": "Number of vertices"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "spectrum" }, { "id": "graph-laplacian" }],
+        "related": [
+          { "id": "cheeger-constant" },
+          { "id": "mixing-time" },
+          { "id": "expander-graph" },
+          { "id": "random-walk" }
+        ],
+        "enabledBy": [
+          { "id": "expander-graph" },
+          { "id": "ramanujan-graph" },
+          { "id": "mixing-time" }
+        ],
+        "synonyms": [
+          { "id": "cheeger-constant", "label": "Cheeger constant (related via inequality)" }
+        ]
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "cheeger-constant": {
+      "id": "cheeger-constant",
+      "term": "Cheeger Constant",
+      "aliases": ["isoperimetric ratio", "edge expansion", "h(G)"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry", "computation"],
+      "difficulty": "intermediate",
+      "tags": ["cheeger", "isoperimetric", "bottleneck", "expansion", "spectral-gap"],
+      "summary": "The graph isoperimetric ratio h(G) measuring the minimum edge boundary relative to set size, related to the spectral gap by Cheeger's inequality.",
+      "definition": "The **graph isoperimetric ratio**:\n\n$$h(G) = \\min_S \\frac{|\\partial S|}{\\min(|S|, |V \\setminus S|)}$$\n\nwhere $\\partial S$ is the edge boundary. **Cheeger's inequality** relates it to the spectral gap:\n\n$$\\frac{h(G)^2}{2 d_{\\max}} \\leq \\lambda_1 \\leq 2 h(G)$$\n\nA small Cheeger constant indicates a **bottleneck**; the corresponding small $\\lambda_1$ reflects slow mixing.",
+      "examples": [
+        {
+          "title": "Dumbbell graph",
+          "body": "A graph consisting of two cliques connected by a single edge has h(G) = 1/n (one edge boundary, sets of size ~n/2). This small Cheeger constant signals a bottleneck and corresponds to a near-zero spectral gap λ₁ ~ 1/n²."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "h(G) = \\min_S \\frac{|\\partial S|}{\\min(|S|, |V \\setminus S|)}",
+          "description": "Cheeger constant as the minimum edge-boundary-to-volume ratio over all non-trivial subsets S.",
+          "variables": {
+            "\\partial S": "Edge boundary of S (edges with one endpoint in S, one outside)",
+            "S": "Non-empty proper subset of vertices V",
+            "V": "Vertex set"
+          }
+        },
+        {
+          "expression": "\\frac{h(G)^2}{2 d_{\\max}} \\leq \\lambda_1 \\leq 2 h(G)",
+          "description": "Cheeger's inequality bounding the spectral gap in terms of the Cheeger constant.",
+          "variables": {
+            "h(G)": "Cheeger constant",
+            "\\lambda_1": "Spectral gap",
+            "d_{\\max}": "Maximum vertex degree"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "spectral-gap" }],
+        "related": [{ "id": "spectral-gap" }, { "id": "expander-graph" }, { "id": "mixing-time" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "density-of-states": {
+      "id": "density-of-states",
+      "term": "Density of States",
+      "aliases": ["DOS", "spectral density", "ρ(λ)"],
+      "domain": "physics",
+      "crossDomains": ["computation", "algebra"],
+      "difficulty": "intermediate",
+      "tags": ["density-of-states", "spectrum", "diffusion", "spectral-dimension", "van-hove"],
+      "summary": "The density of Laplacian eigenvalues per unit eigenvalue interval per unit volume, whose low-energy behavior encodes the spectral dimension.",
+      "definition": "The **density of Laplacian eigenvalues** per unit eigenvalue interval per unit volume:\n\n$$\\rho(\\lambda) = \\frac{1}{n} \\sum_{i=0}^{n-1} \\delta(\\lambda - \\lambda_i)$$\n\nFor large graphs, viewed as a smooth function. The low-energy behavior controls diffusion:\n\n$$\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1} \\quad \\text{as } \\lambda \\to 0^+$$\n\nThe **van Hove singularities** at band edges (peaks in DOS) are diagnostic of structural features.",
+      "examples": [
+        {
+          "title": "DOS for ℤ^d lattice",
+          "body": "For the integer lattice ℤ^d, the DOS near λ = 0 scales as ρ(λ) ~ λ^{d/2 - 1}, consistent with spectral dimension d_spec = d. Van Hove singularities appear at the band edges of the Brillouin zone."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho(\\lambda) = \\frac{1}{n} \\sum_{i=0}^{n-1} \\delta(\\lambda - \\lambda_i)",
+          "description": "Density of states as a normalized sum of Dirac deltas at each Laplacian eigenvalue.",
+          "variables": {
+            "\\lambda_i": "i-th Laplacian eigenvalue",
+            "n": "Number of vertices",
+            "\\delta": "Dirac delta function"
+          }
+        },
+        {
+          "expression": "\\rho(\\lambda) \\sim \\lambda^{d_{\\text{spec}}/2 - 1} \\quad \\text{as } \\lambda \\to 0^+",
+          "description": "Low-energy power-law scaling of the DOS, defining the spectral dimension.",
+          "variables": {
+            "d_{\\text{spec}}": "Spectral dimension",
+            "\\lambda": "Laplacian eigenvalue"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "spectrum" }, { "id": "graph-laplacian" }],
+        "related": [
+          { "id": "return-probability" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "spectral-gap" }
+        ],
+        "enabledBy": [{ "id": "return-probability" }, { "id": "kernel-polynomial-method" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "return-probability": {
+      "id": "return-probability",
+      "term": "Return Probability",
+      "aliases": ["P_0(t)", "heat kernel diagonal"],
+      "domain": "physics",
+      "crossDomains": ["computation", "combinatorics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "return-probability",
+        "random-walk",
+        "spectral-dimension",
+        "diffusion",
+        "heat-kernel"
+      ],
+      "summary": "The probability that a continuous-time random walk returns to its starting vertex at time t, scaling as t^{-d_spec/2} and defining the spectral dimension.",
+      "definition": "The **probability that a continuous-time random walk** (with Laplacian generator) **returns to its starting vertex** at time $t$:\n\n$$P_0(t) = \\langle v_0 | e^{-t\\Delta} | v_0 \\rangle = \\int_0^\\infty \\rho(\\lambda) e^{-\\lambda t} d\\lambda$$\n\nAsymptotic scaling:\n\n$$P_0(t) \\sim t^{-d_{\\text{spec}}/2}$$\n\ndefines the **spectral dimension**.",
+      "examples": [
+        {
+          "title": "Return probability on ℤ^2",
+          "body": "On the 2D integer lattice, P_0(t) ~ 1/(πt) as t → ∞, consistent with spectral dimension d_spec = 2. The logarithmic correction in 2D is a well-known subtlety."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "P_0(t) = \\langle v_0 | e^{-t\\Delta} | v_0 \\rangle = \\int_0^\\infty \\rho(\\lambda) e^{-\\lambda t} d\\lambda",
+          "description": "Return probability as the Laplace transform of the density of states.",
+          "variables": {
+            "v_0": "Starting vertex",
+            "\\Delta": "Graph Laplacian",
+            "\\rho(\\lambda)": "Density of states",
+            "t": "Time"
+          }
+        },
+        {
+          "expression": "P_0(t) \\sim t^{-d_{\\text{spec}}/2}",
+          "description": "Asymptotic power-law decay of return probability, defining the spectral dimension.",
+          "variables": {
+            "d_{\\text{spec}}": "Spectral dimension",
+            "t": "Time"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "density-of-states" },
+          { "id": "random-walk" },
+          { "id": "graph-laplacian" }
+        ],
+        "related": [{ "id": "density-of-states" }, { "id": "random-walk" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "lanczos-algorithm": {
+      "id": "lanczos-algorithm",
+      "term": "Lanczos Algorithm",
+      "aliases": ["Lanczos iteration", "Lanczos method"],
+      "domain": "computation",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["lanczos", "eigensolver", "krylov", "sparse", "iterative"],
+      "summary": "An iterative method for extreme eigenvalues of sparse symmetric matrices, building a Krylov subspace and tridiagonalizing within it.",
+      "definition": "An **iterative method for extreme eigenvalues** of sparse symmetric matrices. Builds a Krylov subspace and tridiagonalizes within it. Extracts the largest and smallest eigenvalues efficiently.\n\n**Key features:**\n\n- Memory: $O(n)$ vectors stored.\n- Per-iteration cost: one sparse matrix-vector product.\n- Convergence: rapid for **isolated extreme eigenvalues**, slower for clustered.",
+      "examples": [
+        {
+          "title": "Computing the spectral gap",
+          "body": "To find λ₁ (the spectral gap) of a large sparse Laplacian, apply Lanczos with a shift-invert transformation near σ = 0. The algorithm converges to the smallest non-zero eigenvalue in O(√(λ₁/λ_max)) iterations."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sparse-linear-algebra" }, { "id": "graph-laplacian" }],
+        "related": [
+          { "id": "shift-invert" },
+          { "id": "kernel-polynomial-method" },
+          { "id": "sparse-matrix" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "shift-invert": {
+      "id": "shift-invert",
+      "term": "Shift-Invert",
+      "aliases": ["shift-invert transformation", "spectral transformation"],
+      "domain": "computation",
+      "crossDomains": ["algebra"],
+      "difficulty": "advanced",
+      "tags": ["shift-invert", "eigensolver", "spectral-transformation", "sparse", "lanczos"],
+      "summary": "A spectral transformation M → (M − σI)⁻¹ that maps eigenvalues near a target σ to the largest in absolute value, enabling efficient access to interior eigenvalues.",
+      "definition": "A **spectral transformation** giving access to eigenvalues near a target $\\sigma$:\n\n$$M \\to (M - \\sigma I)^{-1}$$\n\nThe eigenvalues closest to $\\sigma$ become the largest in absolute value, hence amenable to Lanczos/Arnoldi. Requires a sparse linear solver for $(M - \\sigma I)x = b$.",
+      "examples": [
+        {
+          "title": "Finding interior eigenvalues",
+          "body": "To find Laplacian eigenvalues near λ = 1.5, form (Δ − 1.5·I)⁻¹ and apply Lanczos. Eigenvalues of the transformed matrix are 1/(λᵢ − 1.5), so those closest to 1.5 become largest in magnitude and converge first."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "M \\to (M - \\sigma I)^{-1}",
+          "description": "Shift-invert transformation mapping eigenvalues near σ to the largest in absolute value.",
+          "variables": {
+            "M": "Original matrix (e.g., graph Laplacian)",
+            "\\sigma": "Target shift value",
+            "I": "Identity matrix"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "sparse-linear-algebra" }, { "id": "lanczos-algorithm" }],
+        "related": [{ "id": "lanczos-algorithm" }, { "id": "graph-laplacian" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "kernel-polynomial-method": {
+      "id": "kernel-polynomial-method",
+      "term": "Kernel Polynomial Method",
+      "aliases": ["KPM", "stochastic trace estimation"],
+      "domain": "computation",
+      "crossDomains": ["physics", "algebra"],
+      "difficulty": "advanced",
+      "tags": ["kpm", "chebyshev", "density-of-states", "matrix-free", "stochastic"],
+      "summary": "A matrix-free spectral approximation technique that expands the density of states in Chebyshev polynomials, estimated via stochastic trace estimation.",
+      "definition": "A **matrix-free spectral approximation** technique. Expands the density of states in **Chebyshev polynomials**:\n\n$$\\rho(\\lambda) \\approx \\sum_{k=0}^{K} \\mu_k T_k(\\lambda)$$\n\nThe **Chebyshev moments** $\\mu_k = \\text{Tr}\\, T_k(\\Delta)$ are estimated via random-vector trace estimators:\n\n$$\\mu_k \\approx \\frac{1}{R} \\sum_{r=1}^R v_r^T T_k(\\Delta) v_r$$\n\nCost: $O(nK)$ for $K$ Chebyshev polynomials and $R$ stochastic vectors. **Matrix-free**: only needs to apply $\\Delta$ to a vector.\n\nParticularly suited to large-scale DOS estimation on graphs like the pentagonal multi-sheeted adjacency graph.",
+      "examples": [
+        {
+          "title": "DOS estimation on a large tiling graph",
+          "body": "For a pentagonal multi-sheeted tiling with n = 10⁶ vertices, full diagonalization is infeasible (O(n³)). KPM with K = 1000 Chebyshev moments and R = 20 random vectors estimates ρ(λ) in O(n·K·R) = O(2×10¹⁰) operations — tractable on modern hardware."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\rho(\\lambda) \\approx \\sum_{k=0}^{K} \\mu_k T_k(\\lambda)",
+          "description": "Chebyshev expansion of the density of states.",
+          "variables": {
+            "\\mu_k": "k-th Chebyshev moment",
+            "T_k": "k-th Chebyshev polynomial",
+            "K": "Number of expansion terms"
+          }
+        },
+        {
+          "expression": "\\mu_k \\approx \\frac{1}{R} \\sum_{r=1}^R v_r^T T_k(\\Delta) v_r",
+          "description": "Stochastic trace estimator for the k-th Chebyshev moment.",
+          "variables": {
+            "v_r": "r-th random probe vector",
+            "R": "Number of stochastic vectors",
+            "T_k(\\Delta)": "k-th Chebyshev polynomial applied to the Laplacian"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "chebyshev-polynomial" },
+          { "id": "density-of-states" },
+          { "id": "graph-laplacian" },
+          { "id": "sparse-linear-algebra" }
+        ],
+        "related": [
+          { "id": "lanczos-algorithm" },
+          { "id": "density-of-states" },
+          { "id": "sparse-matrix" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "chebyshev-polynomial": {
+      "id": "chebyshev-polynomial",
+      "term": "Chebyshev Polynomial",
+      "aliases": ["Chebyshev polynomials of the first kind", "T_k"],
+      "domain": "algebra",
+      "crossDomains": ["computation"],
+      "difficulty": "intermediate",
+      "tags": ["chebyshev", "polynomial", "orthogonal", "recurrence", "approximation"],
+      "summary": "Orthogonal polynomials on [−1, 1] defined by a stable three-term recurrence, used in KPM for their optimal approximation properties and numerical stability.",
+      "definition": "Orthogonal polynomial family with three-term recurrence:\n\n$$T_0(x) = 1, \\quad T_1(x) = x, \\quad T_{k+1}(x) = 2x T_k(x) - T_{k-1}(x)$$\n\nDefined on $[-1, 1]$. Used in KPM because:\n\n- Stable three-term recurrence (no exponential growth of round-off).\n- Optimal approximation properties for the relevant function spaces.\n- Direct matrix-vector implementation via the recurrence.",
+      "examples": [
+        {
+          "title": "First few Chebyshev polynomials",
+          "body": "T_0(x) = 1\nT_1(x) = x\nT_2(x) = 2x² − 1\nT_3(x) = 4x³ − 3x\nT_4(x) = 8x⁴ − 8x² + 1\n\nFor matrix application: T_k(Δ)v is computed iteratively using the same recurrence with matrix-vector products, never forming T_k(Δ) explicitly."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "T_0(x) = 1, \\quad T_1(x) = x, \\quad T_{k+1}(x) = 2x T_k(x) - T_{k-1}(x)",
+          "description": "Three-term recurrence relation defining the Chebyshev polynomials of the first kind.",
+          "variables": {
+            "T_k": "k-th Chebyshev polynomial",
+            "x": "Argument in [−1, 1]"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "kernel-polynomial-method" }, { "id": "density-of-states" }],
+        "enabledBy": [{ "id": "kernel-polynomial-method" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "random-walk": {
+      "id": "random-walk",
+      "term": "Random Walk",
+      "aliases": ["stochastic walk", "Markov chain on graph"],
+      "domain": "combinatorics",
+      "crossDomains": ["physics", "computation"],
+      "difficulty": "foundational",
+      "tags": ["random-walk", "diffusion", "markov", "mixing", "stochastic"],
+      "summary": "A stochastic process stepping uniformly to neighbors on a graph, with the graph Laplacian as its continuous-time generator.",
+      "definition": "A **stochastic process stepping uniformly to neighbors** on a graph. In discrete time:\n\n$$\\text{Pr}[X_{t+1} = u \\mid X_t = v] = \\frac{1}{\\deg(v)} \\text{ for } u \\sim v$$\n\nIn continuous time: a Poisson clock of rate $\\deg(v)$ at vertex $v$ triggers a jump to a uniformly random neighbor. Generator is the graph Laplacian (suitably normalized).",
+      "examples": [
+        {
+          "title": "Random walk on a cycle",
+          "body": "On a cycle C_n, the random walk steps left or right with equal probability 1/2. The mixing time is O(n²), consistent with spectral gap λ₁ ~ 1/n² and the formula t_mix ~ log(n)/λ₁."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\text{Pr}[X_{t+1} = u \\mid X_t = v] = \\frac{1}{\\deg(v)} \\text{ for } u \\sim v",
+          "description": "Transition probability of a discrete-time random walk: uniform over neighbors.",
+          "variables": {
+            "X_t": "Position of the walk at time t",
+            "v": "Current vertex",
+            "u": "Neighboring vertex",
+            "\\deg(v)": "Degree of current vertex"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [
+          { "id": "graph-laplacian" },
+          { "id": "mixing-time" },
+          { "id": "return-probability" },
+          { "id": "spectral-gap" }
+        ],
+        "enabledBy": [{ "id": "mixing-time" }, { "id": "return-probability" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "mixing-time": {
+      "id": "mixing-time",
+      "term": "Mixing Time",
+      "aliases": ["t_mix"],
+      "domain": "combinatorics",
+      "crossDomains": ["computation", "physics"],
+      "difficulty": "intermediate",
+      "tags": [
+        "mixing-time",
+        "random-walk",
+        "spectral-gap",
+        "convergence",
+        "stationary-distribution"
+      ],
+      "summary": "The time for a random walk to approach its stationary distribution, scaling as log(n)/λ₁ and controlled by the spectral gap.",
+      "definition": "The **time for a random walk to approach its stationary distribution**. Typically:\n\n$$t_{\\text{mix}} \\sim \\frac{\\log n}{\\lambda_1}$$\n\nso spectral gap controls mixing.\n\nFor expander graphs, $t_{\\text{mix}}$ is $O(\\log n)$ — extremely fast. For low-dimensional lattices, $t_{\\text{mix}}$ is polynomial in $n$.",
+      "examples": [
+        {
+          "title": "Expander vs. lattice mixing",
+          "body": "On a 3-regular expander with λ₁ ≥ 0.1, mixing time is O(log n). On the 2D grid with n vertices, λ₁ ~ 1/n, giving mixing time O(n log n) — much slower."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "t_{\\text{mix}} \\sim \\frac{\\log n}{\\lambda_1}",
+          "description": "Mixing time of a random walk as a function of graph size and spectral gap.",
+          "variables": {
+            "t_{\\text{mix}}": "Mixing time",
+            "n": "Number of vertices",
+            "\\lambda_1": "Spectral gap"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "random-walk" }, { "id": "spectral-gap" }],
+        "related": [
+          { "id": "spectral-gap" },
+          { "id": "cheeger-constant" },
+          { "id": "expander-graph" }
+        ],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "diameter": {
+      "id": "diameter",
+      "term": "Diameter",
+      "aliases": ["graph diameter", "diam(G)"],
+      "domain": "combinatorics",
+      "crossDomains": ["geometry"],
+      "difficulty": "foundational",
+      "tags": ["diameter", "distance", "graph", "dimension"],
+      "summary": "The maximum graph distance between any two vertices, scaling as n^{1/d} for d-dimensional lattices.",
+      "definition": "The **maximum graph distance** between any two vertices:\n\n$$\\text{diam}(G) = \\max_{u, v} d(u, v)$$\n\nFor $\\mathbb{Z}^n$ restricted to a ball: $\\text{diam} \\sim n^{1/d}$. The diameter scales inversely with the effective dimension.",
+      "examples": [
+        {
+          "title": "Diameter of a hypercube",
+          "body": "The d-dimensional hypercube Q_d has 2^d vertices and diameter d. Thus diam ~ log₂(n), consistent with the expander-like behavior of hypercubes."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\text{diam}(G) = \\max_{u, v} d(u, v)",
+          "description": "Graph diameter as the maximum shortest-path distance over all vertex pairs.",
+          "variables": {
+            "d(u, v)": "Shortest-path distance between vertices u and v"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "girth" }, { "id": "expander-graph" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "girth": {
+      "id": "girth",
+      "term": "Girth",
+      "aliases": ["shortest cycle length"],
+      "domain": "combinatorics",
+      "crossDomains": [],
+      "difficulty": "foundational",
+      "tags": ["girth", "cycle", "tree", "expansion", "ramanujan"],
+      "summary": "The length of the shortest cycle in a graph; large girth is important for proving expansion and Ramanujan properties.",
+      "definition": "The **length of the shortest cycle**. A graph with no cycles (tree) has $\\text{girth} = \\infty$. **Large girth** is important for proving expansion / Ramanujan properties.",
+      "examples": [
+        {
+          "title": "Girth and Ramanujan graphs",
+          "body": "The Ramanujan graphs constructed by Lubotzky–Phillips–Sarnak have girth Ω(log n), which is optimal for regular graphs. Large girth prevents short-range correlations that would reduce the spectral gap."
+        }
+      ],
+      "formulas": [],
+      "references": [],
+      "relations": {
+        "requires": [],
+        "related": [{ "id": "expander-graph" }, { "id": "ramanujan-graph" }, { "id": "diameter" }],
+        "enabledBy": [{ "id": "ramanujan-graph" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "expander-graph": {
+      "id": "expander-graph",
+      "term": "Expander Graph",
+      "aliases": ["expander"],
+      "domain": "combinatorics",
+      "crossDomains": ["computation", "algebra"],
+      "difficulty": "intermediate",
+      "tags": ["expander", "spectral-gap", "mixing", "connectivity", "ramanujan"],
+      "summary": "A graph with spectral gap bounded away from 0 as graph size grows, exhibiting rapid random-walk mixing and no small bottlenecks.",
+      "definition": "A graph with **spectral gap bounded away from 0** as graph size grows:\n\n$$\\lambda_1 \\geq c > 0 \\quad \\text{(uniformly in } n\\text{)}$$\n\nEquivalently, a small Cheeger constant. Expanders have:\n\n- Rapid random-walk mixing ($O(\\log n)$).\n- No small \"bottlenecks.\"\n- Good error-correcting code performance.",
+      "examples": [
+        {
+          "title": "Random regular graphs",
+          "body": "A random d-regular graph (d ≥ 3) is an expander with high probability. Its spectral gap satisfies λ₁ ≥ d − 2√(d−1) − ε with high probability for large n, approaching the Ramanujan bound."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "\\lambda_1 \\geq c > 0 \\quad \\text{uniformly in } n",
+          "description": "Defining property of an expander: spectral gap bounded away from zero as graph size grows.",
+          "variables": {
+            "\\lambda_1": "Spectral gap",
+            "c": "Positive constant independent of n",
+            "n": "Number of vertices"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [{ "id": "spectral-gap" }],
+        "related": [
+          { "id": "ramanujan-graph" },
+          { "id": "cheeger-constant" },
+          { "id": "mixing-time" },
+          { "id": "girth" }
+        ],
+        "enabledBy": [{ "id": "ramanujan-graph" }],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    },
+    "ramanujan-graph": {
+      "id": "ramanujan-graph",
+      "term": "Ramanujan Graph",
+      "aliases": ["optimal expander"],
+      "domain": "combinatorics",
+      "crossDomains": ["algebra", "computation"],
+      "difficulty": "advanced",
+      "tags": ["ramanujan", "expander", "alon-boppana", "spectral-gap", "optimal"],
+      "summary": "A d-regular graph saturating the Alon–Boppana bound, with all non-trivial adjacency eigenvalues bounded by 2√(d−1) — the optimal expander.",
+      "definition": "A graph **saturating the Alon–Boppana bound** on spectral gap:\n\n$$|\\lambda_i(A)| \\leq 2\\sqrt{d-1} \\quad \\forall \\lambda_i \\neq \\pm d$$\n\n(for $d$-regular Ramanujan graphs). These are the \"optimal expanders.\"",
+      "examples": [
+        {
+          "title": "Lubotzky–Phillips–Sarnak construction",
+          "body": "For primes p ≡ 1 (mod 4) and q ≡ 1 (mod 4) with p ≠ q, the LPS construction yields (p+1)-regular Ramanujan graphs on q(q²−1)/2 vertices. These achieve the Alon–Boppana bound with equality."
+        }
+      ],
+      "formulas": [
+        {
+          "expression": "|\\lambda_i(A)| \\leq 2\\sqrt{d-1} \\quad \\forall \\lambda_i \\neq \\pm d",
+          "description": "Alon–Boppana bound: all non-trivial adjacency eigenvalues of a d-regular Ramanujan graph are bounded by 2√(d−1).",
+          "variables": {
+            "\\lambda_i(A)": "i-th eigenvalue of the adjacency matrix A",
+            "d": "Degree of the regular graph"
+          }
+        }
+      ],
+      "references": [],
+      "relations": {
+        "requires": [
+          { "id": "expander-graph" },
+          { "id": "spectral-gap" },
+          { "id": "adjacency-matrix" }
+        ],
+        "related": [{ "id": "expander-graph" }, { "id": "girth" }, { "id": "spectral-gap" }],
+        "enabledBy": [],
+        "synonyms": []
+      },
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "published": true
+    }
+  }
+}

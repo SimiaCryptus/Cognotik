@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Knot Topology Lab | Distance Matrix Analysis</title>
+    <meta
+      name="description"
+      content="Interactive demonstration of knot topology using distance matrices and spline-based optimization"
+    />
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-color: #0f1115;
+        --card-bg: #1a1d24;
+        --card-hover: #22262f;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --text-muted: #6b7280;
+        --accent-primary: #00d2ff;
+        --accent-secondary: #ff00ff;
+        --accent-tertiary: #00ff9d;
+        --danger: #ff4a4a;
+        --warning: #ffaa00;
+        --border-color: #2a2e36;
+        --border-focus: #4a4f5a;
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --font-mono: 'JetBrains Mono', monospace;
+        --font-sans: 'Inter', sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      header {
+        background-color: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .badge {
+        background: rgba(0, 210, 255, 0.1);
+        color: var(--accent-primary);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-mono);
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      main {
+        flex: 1;
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: 280px 1fr 1fr;
+        gap: 1.5rem;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        max-width: 1920px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      @media (max-width: 1200px) {
+        main {
+          grid-template-columns: 280px 1fr;
+        }
+
+        .matrix-container {
+          grid-column: span 2;
+        }
+      }
+
+      @media (max-width: 768px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        height: fit-content;
+      }
+
+      .panel-header {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+      }
+
+      .value-display {
+        font-family: var(--font-mono);
+        color: var(--accent-primary);
+        font-size: 0.75rem;
+        background: rgba(0, 210, 255, 0.1);
+        padding: 0.1rem 0.4rem;
+        border-radius: var(--radius-sm);
+      }
+
+      .value-input {
+        font-family: var(--font-mono);
+        color: var(--accent-primary);
+        font-size: 0.75rem;
+        background: rgba(0, 210, 255, 0.1);
+        padding: 0.1rem 0.4rem;
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        border-radius: var(--radius-sm);
+        width: 60px;
+        text-align: right;
+      }
+
+      select,
+      input[type='range'] {
+        width: 100%;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      select {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+      }
+
+      input[type='range'] {
+        -webkit-appearance: none;
+      }
+
+      input[type='range']::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 2px;
+      }
+
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 14px;
+        width: 14px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        margin-top: -5px;
+        transition: transform 0.1s;
+      }
+
+      input[type='range']::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      button {
+        padding: 0.75rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+      }
+
+      .btn-primary {
+        background-color: var(--accent-primary);
+        color: #000;
+      }
+
+      .btn-primary:hover {
+        background-color: #33dbff;
+      }
+
+      .btn-secondary {
+        background-color: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+      }
+
+      .btn-secondary:hover {
+        border-color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .btn-danger {
+        background-color: rgba(255, 74, 74, 0.1);
+        color: var(--danger);
+        border: 1px solid rgba(255, 74, 74, 0.3);
+      }
+
+      .btn-danger:hover {
+        background-color: rgba(255, 74, 74, 0.2);
+      }
+
+      .math-block {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        background: #13151a;
+        padding: 0.75rem;
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        line-height: 1.6;
+      }
+
+      .viz-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        height: auto;
+        min-height: 70vh;
+      }
+
+      .metrics-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .metric-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 0.75rem;
+        border-radius: var(--radius-md);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .metric-label {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .metric-value {
+        font-family: var(--font-mono);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .canvas-wrapper {
+        flex: 1;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .matrix-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .matrix-wrapper {
+        flex: 1;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+      }
+
+      .matrix-title {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+        z-index: 10;
+        background: rgba(26, 29, 36, 0.9);
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--radius-sm);
+      }
+
+      .colorbar {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 200px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .colorbar-gradient {
+        flex: 1;
+        border-radius: var(--radius-sm);
+      }
+
+      .colorbar-labels {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-size: 0.6rem;
+        font-family: var(--font-mono);
+        color: var(--text-muted);
+      }
+
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        flex-direction: column;
+        gap: 1rem;
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .knot-preset {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+      }
+
+      .knot-preset button {
+        padding: 0.5rem;
+        font-size: 0.65rem;
+      }
+      .home-link {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9999;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: rgba(26, 29, 36, 0.92);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.15s ease;
+      }
+      .home-link:hover {
+        background: var(--card-hover);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>Initializing TensorFlow.js...</div>
+    </div>
+
+    <header>
+      <h1>
+        Knot Topology Lab
+        <span class="badge">Distance Matrix</span>
+      </h1>
+    </header>
+
+    <main>
+      <!-- Controls Sidebar -->
+      <aside class="panel">
+        <div class="panel-header">Knot Configuration</div>
+
+        <div class="control-group">
+          <label>Knot Type</label>
+          <select id="knot-select">
+            <option value="random">Random Spline</option>
+            <option value="trefoil">Trefoil (3₁)</option>
+            <option value="figure8">Figure-Eight (4₁)</option>
+            <option value="cinquefoil">Cinquefoil (5₁)</option>
+            <option value="unknot">Unknot (Circle)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Distance Metric</label>
+          <select id="metric-select">
+            <option value="euclidean">Euclidean (L2)</option>
+            <option value="minkowski">Minkowski (Z=Time)</option>
+            <option value="minkowski-x">Minkowski (X=Time)</option>
+            <option value="minkowski-y">Minkowski (Y=Time)</option>
+          </select>
+        </div>
+        <div class="control-group" id="grp-c" style="display: none">
+          <label
+            >Time/Space Ratio (c)
+            <input type="number" class="value-input" id="val-c" value="1.0" step="0.1"
+          /></label>
+          <input type="range" id="param-c" min="0.1" max="5.0" step="0.1" value="1.0" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Points (N) <input type="number" class="value-input" id="val-n" value="64" step="1"
+          /></label>
+          <input type="range" id="param-n" min="16" max="256" step="1" value="64" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Control Points
+            <input type="number" class="value-input" id="val-ctrl" value="14" step="1"
+          /></label>
+          <input type="range" id="param-ctrl" min="4" max="32" step="1" value="14" />
+        </div>
+
+        <div class="panel-header">Physics Parameters</div>
+
+        <div class="control-group">
+          <label
+            >Target Edge Length
+            <input type="number" class="value-input" id="val-edge" value="0.15" step="0.01"
+          /></label>
+          <input type="range" id="param-edge" min="0.05" max="0.5" step="0.01" value="0.15" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Edge Stiffness
+            <input type="number" class="value-input" id="val-stiff" value="10.0" step="0.5"
+          /></label>
+          <input type="range" id="param-stiff" min="0.1" max="50" step="0.1" value="10.0" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Repulsion Strength
+            <input type="number" class="value-input" id="val-repel" value="0.5" step="0.05"
+          /></label>
+          <input type="range" id="param-repel" min="0" max="5" step="0.05" value="0.5" />
+        </div>
+
+        <div class="control-group">
+          <label
+            >Repulsion Cutoff
+            <input type="number" class="value-input" id="val-cutoff" value="0.5" step="0.05"
+          /></label>
+          <input type="range" id="param-cutoff" min="0.1" max="2.0" step="0.05" value="0.5" />
+        </div>
+
+        <div class="panel-header">Optimization</div>
+
+        <div class="control-group">
+          <label>Optimizer</label>
+          <select id="opt-optimizer">
+            <option value="adam">Adam</option>
+            <option value="qqn">QQN</option>
+            <option value="lbfgs">L-BFGS</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label
+            >Learning Rate
+            <input type="number" class="value-input" id="val-lr" value="0.01" step="0.001"
+          /></label>
+          <input type="range" id="param-lr" min="0.001" max="0.1" step="0.001" value="0.01" />
+        </div>
+        <div class="panel-header">Entropy-Extremal</div>
+        <div class="control-group">
+          <label
+            >Distance-Entropy Weight
+            <input type="number" class="value-input" id="val-entropy" value="0.0" step="0.01"
+          /></label>
+          <input type="range" id="param-entropy" min="-10.0" max="10.0" step="0.01" value="0.0" />
+          <div style="font-size: 0.6rem; color: var(--text-muted); margin-top: -2px">
+            Maximize Shannon entropy of pairwise distances (0 = off)
+          </div>
+        </div>
+        <div class="control-group">
+          <label
+            >Entropy Bin Width (τ)
+            <input type="number" class="value-input" id="val-entropy-tau" value="0.1" step="0.01"
+          /></label>
+          <input type="range" id="param-entropy-tau" min="0.02" max="0.5" step="0.01" value="0.1" />
+        </div>
+        <div class="panel-header">Metric Optimization</div>
+        <div class="control-group">
+          <div class="button-group">
+            <button id="btn-opt-time" class="btn-secondary">Max Timelike</button>
+            <button id="btn-opt-space" class="btn-secondary">Max Spacelike</button>
+            <button id="btn-opt-light" class="btn-secondary">Max Lightlike</button>
+            <button id="btn-align-time" class="btn-secondary">Align Time Axis</button>
+          </div>
+          <div class="math-block" style="margin-top: 0.5rem">
+            Optimizes rotation to minimize/maximize required c for lightlike separation.
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>
+            Auto-Rotate
+            <input type="checkbox" id="chk-autorotate" checked style="width: auto" />
+          </label>
+          <label>
+            Show Edges
+            <input type="checkbox" id="chk-edges" checked style="width: auto" />
+          </label>
+          <label>
+            Solid View
+            <input type="checkbox" id="chk-solid" style="width: auto" />
+          </label>
+        </div>
+
+        <div class="button-group">
+          <button id="btn-toggle" class="btn-primary">Start</button>
+          <button id="btn-reset" class="btn-secondary">Reset</button>
+          <button id="btn-step" class="btn-secondary">Step</button>
+          <button id="btn-distribute" class="btn-secondary">Redistribute</button>
+          <button id="btn-copy" class="btn-secondary">Copy</button>
+          <button id="btn-paste" class="btn-secondary">Paste</button>
+          <button id="btn-orbit-knot" class="btn-secondary">Orbit Knot</button>
+          <button id="btn-export-stl" class="btn-secondary">Export STL</button>
+        </div>
+        <div class="panel-header">Immersive (WebXR)</div>
+        <div class="control-group">
+          <button id="btn-enter-vr" class="btn-secondary" disabled>Enter VR</button>
+          <div id="vr-status" class="math-block" style="margin-top: 0.5rem">
+            Checking VR support...
+          </div>
+        </div>
+
+        <div class="math-block">
+          <strong>Loss Function:</strong><br />
+          L = L_edge + L_repel<br /><br />
+          L_edge = k Σ(|pᵢ - pᵢ₊₁| - d₀)²<br />
+          L_repel = r Σᵢ≠ⱼ±₁ 1/(|pᵢ - pⱼ|² + ε)<br /><br />
+          <strong>Entropy-Extremal:</strong><br />
+          L_entropy = −w · H(D)<br />
+          H(D) = −Σₖ pₖ log pₖ<br />
+          pₖ = soft-histogram of {|pᵢ−pⱼ|}<br />
+          Maximizes distance diversity (Erdős reframing)
+        </div>
+      </aside>
+
+      <!-- 3D Knot Visualization -->
+      <div class="viz-container">
+        <div class="metrics-bar">
+          <div class="metric-card">
+            <span class="metric-label">Total Loss</span>
+            <span class="metric-value" id="metric-loss" style="color: var(--danger)">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Edge Loss</span>
+            <span class="metric-value" id="metric-edge" style="color: var(--accent-primary)"
+              >--</span
+            >
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Repulsion</span>
+            <span class="metric-value" id="metric-repel" style="color: var(--accent-tertiary)"
+              >--</span
+            >
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Dist. Entropy</span>
+            <span class="metric-value" id="metric-entropy" style="color: var(--accent-secondary)"
+              >--</span
+            >
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Step</span>
+            <span class="metric-value" id="metric-step">0</span>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="knot-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Distance Matrix Visualization -->
+      <div class="matrix-container">
+        <div class="metrics-bar">
+          <div class="metric-card">
+            <span class="metric-label">Min Distance</span>
+            <span class="metric-value" id="metric-min-dist" style="color: var(--accent-secondary)"
+              >--</span
+            >
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Max Distance</span>
+            <span class="metric-value" id="metric-max-dist" style="color: var(--warning)">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Avg Distance</span>
+            <span class="metric-value" id="metric-avg-dist">--</span>
+          </div>
+        </div>
+
+        <div class="matrix-wrapper">
+          <div class="matrix-title">Distance Matrix D[i,j] = ||pᵢ - pⱼ||</div>
+          <canvas id="matrix-canvas"></canvas>
+          <div class="colorbar">
+            <div class="colorbar-gradient" id="colorbar-grad"></div>
+          </div>
+          <div class="colorbar-labels">
+            <span id="colorbar-max">2.0</span>
+            <span id="colorbar-mid">1.0</span>
+            <span id="colorbar-min">0.0</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

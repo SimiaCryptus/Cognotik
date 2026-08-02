@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Magnet Lattice Toy</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: #1a1a1f;
+                color: #e0e0e6;
+                display: flex;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            #sidebar {
+                width: 320px;
+                min-width: 320px;
+                background: #23232b;
+                padding: 16px;
+                overflow-y: auto;
+                border-right: 1px solid #333;
+            }
+
+            #main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+
+            canvas#scene {
+                flex: 1;
+                display: block;
+                background: #101014;
+                cursor: crosshair;
+            }
+
+            h1 {
+                font-size: 18px;
+                margin: 0 0 12px;
+            }
+
+            h2 {
+                font-size: 14px;
+                margin: 16px 0 8px;
+                color: #9ab;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .mode-tabs {
+                display: flex;
+                gap: 4px;
+                margin-bottom: 12px;
+            }
+
+            .mode-tabs button {
+                flex: 1;
+                padding: 8px;
+                border: none;
+                border-radius: 4px;
+                background: #33333d;
+                color: #ccc;
+                cursor: pointer;
+                font-size: 13px;
+            }
+
+            .mode-tabs button.active {
+                background: #4a7;
+                color: #fff;
+            }
+
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 6px 0;
+            }
+
+            .row label {
+                flex: 1;
+                font-size: 13px;
+            }
+
+            .row input[type='range'] {
+                flex: 2;
+            }
+
+            .row .val {
+                width: 56px;
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+                font-size: 12px;
+            }
+
+            button.action {
+                padding: 8px 12px;
+                margin: 4px 4px 4px 0;
+                border: none;
+                border-radius: 4px;
+                background: #3a5a7a;
+                color: #fff;
+                cursor: pointer;
+                font-size: 13px;
+            }
+
+            button.action:hover {
+                background: #4a6a8a;
+            }
+
+            textarea {
+                width: 100%;
+                height: 160px;
+                background: #101014;
+                color: #9c9;
+                border: 1px solid #333;
+                border-radius: 4px;
+                font-family: monospace;
+                font-size: 11px;
+                padding: 8px;
+                resize: vertical;
+            }
+
+            .readout {
+                font-family: monospace;
+                font-size: 12px;
+                line-height: 1.6;
+            }
+
+            .readout span {
+                color: #6cf;
+            }
+
+            #heatmap-wrap {
+                display: none;
+            }
+
+            #heatmap-wrap.show {
+                display: block;
+            }
+
+            canvas.small {
+                border: 1px solid #333;
+                background: #101014;
+                display: block;
+                margin: 8px 0;
+            }
+
+            .status {
+                font-size: 12px;
+                color: #8a8;
+                min-height: 16px;
+                margin-top: 4px;
+            }
+
+            .status.err {
+                color: #e77;
+            }
+
+            .hint {
+                font-size: 11px;
+                color: #778;
+                margin: 4px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="sidebar">
+            <h1>🧲 Magnet Lattice</h1>
+            <div class="mode-tabs">
+                <button data-mode="draw" class="active">Draw</button>
+                <button data-mode="sim">Simulate</button>
+                <button data-mode="analysis">Analyze</button>
+            </div>
+
+            <div id="panel-draw">
+                <h2>Grid</h2>
+                <div class="row">
+                    <label>Pitch (px)</label>
+                    <input type="range" id="pitch" min="20" max="80" step="2" value="48" />
+                    <span class="val" id="pitch-val">48</span>
+                </div>
+                <div class="row">
+                    <label><input type="checkbox" id="snap" checked /> Snap to grid</label>
+                </div>
+                <p class="hint">
+                    Click a cell to add/remove a magnet. Drag on a magnet to set its angle.
+                </p>
+                <div class="readout">Magnets: <span id="count">0</span></div>
+                <button class="action" id="clear">Clear All</button>
+            </div>
+
+            <div id="panel-sim" style="display: none">
+                <h2>Simulation</h2>
+                <div>
+                    <button class="action" id="play">▶ Play</button>
+                    <button class="action" id="step">Step</button>
+                    <button class="action" id="reset">Reset</button>
+                </div>
+                <div class="row">
+                    <label>Coupling k</label
+                    ><input type="range" id="k" min="0.1" max="10" step="0.1" value="1" /><span
+                        class="val"
+                        id="k-val"
+                        >1.0</span
+                    >
+                </div>
+                <div class="row">
+                    <label>Inertia I</label
+                    ><input type="range" id="I" min="0.1" max="10" step="0.1" value="1" /><span
+                        class="val"
+                        id="I-val"
+                        >1.0</span
+                    >
+                </div>
+                <div class="row">
+                    <label>Damping γ</label
+                    ><input type="range" id="gamma" min="0" max="2" step="0.01" value="0" /><span
+                        class="val"
+                        id="gamma-val"
+                        >0.00</span
+                    >
+                </div>
+                <div class="row">
+                    <label>Timestep h</label
+                    ><input
+                        type="range"
+                        id="h"
+                        min="0.001"
+                        max="0.1"
+                        step="0.001"
+                        value="0.02"
+                    /><span class="val" id="h-val">0.020</span>
+                </div>
+                <div class="row">
+                    <label>Integrator</label>
+                    <select id="integrator">
+                        <option value="verlet">Störmer–Verlet</option>
+                        <option value="variational">Variational (Newton)</option>
+                    </select>
+                </div>
+                <h2>Diagnostics</h2>
+                <div class="readout">
+                    t = <span id="t-val">0</span><br />
+                    E = <span id="E-val">0</span><br />
+                    T = <span id="T-val">0</span><br />
+                    U = <span id="U-val">0</span><br />
+                    L = <span id="L-val">0</span><br />
+                    ΔE/E₀ = <span id="dE-val">0</span>
+                </div>
+            </div>
+
+            <div id="panel-analysis" style="display: none">
+                <h2>Analysis</h2>
+                <button class="action" id="relax">Relax to Equilibrium</button>
+                <button class="action" id="analyze">Compute Modes</button>
+                <div id="heatmap-wrap">
+                    <h2>Coupling Matrix</h2>
+                    <canvas id="heatmap" class="small" width="280" height="280"></canvas>
+                    <h2>Eigen-spectrum</h2>
+                    <canvas id="spectrum" class="small" width="280" height="100"></canvas>
+                    <div class="row">
+                        <label>Mode</label>
+                        <input type="range" id="mode-pick" min="0" max="0" step="1" value="0" />
+                        <span class="val" id="mode-val">0</span>
+                    </div>
+                    <div class="readout">
+                        ω = <span id="omega-val">0</span> <span id="stab-val"></span>
+                    </div>
+                    <button class="action" id="anim-mode">Animate Mode</button>
+                </div>
+            </div>
+
+            <h2>Data (JSON)</h2>
+            <button class="action" id="export">Export</button>
+            <button class="action" id="import">Import</button>
+            <div class="status" id="status"></div>
+            <textarea id="json" spellcheck="false"></textarea>
+        </div>
+
+        <div id="main">
+            <canvas id="scene"></canvas>
+        </div>
+
+        <script type="module" src="src/main.js"></script>
+    </body>
+</html>

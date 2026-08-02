@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stereo-Tac-Toe</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Stereo-Tac-Toe</h1>
+      <p class="blurb">
+        A hidden Magic Eye tic-tac-toe board. Relax your eyes and let the image fuse — the grid,
+        cursor, and marks float out of the noise at different depths. Click a cell to play. Press
+        <kbd>D</kbd> to peek at the raw depth map.
+      </p>
+
+      <canvas id="game" width="640" height="480"></canvas>
+
+      <div class="controls">
+        <label>
+          <input type="checkbox" id="diagnostics" />
+          Diagnostics (raw depth map)
+        </label>
+        <button id="reset">New Game</button>
+        <span id="status" class="status">X to move</span>
+      </div>
+      <div id="panel" class="panel-container"></div>
+    </main>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

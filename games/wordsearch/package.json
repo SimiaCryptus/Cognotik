@@ -1,0 +1,13 @@
+{
+  "name": "predictive-markov-wordsearch",
+  "version": "0.1.0",
+  "description": "PWA wordsearch generator with Markov-predicted filler letters.",
+  "type": "module",
+  "scripts": {
+    "test": "mocha tests/**/*.test.js",
+    "serve": "npx http-server . -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  }
+}

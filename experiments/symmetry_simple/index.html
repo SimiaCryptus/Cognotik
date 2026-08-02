@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicons / site icon -->
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icon.png" />
+    <link rel="shortcut icon" href="../../icon.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Symmetry Diffusion</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .home-link {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9999;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: #e6edf3;
+        background: rgba(22, 27, 34, 0.92);
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.15s ease;
+      }
+      .home-link:hover {
+        background: rgba(48, 54, 61, 0.95);
+        border-color: #58a6ff;
+        color: #58a6ff;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="home-link" href="../../index.html" title="Back to home">← Home</a>
+    <div id="app">
+      <div id="sidebar">
+        <h2>Symmetry Diffusion</h2>
+
+        <section class="panel">
+          <h3>Drawing Tools</h3>
+          <div id="tool-buttons">
+            <button class="tool-btn active" data-tool="draw">✏️ Draw</button>
+            <button class="tool-btn" data-tool="erase">🧹 Erase</button>
+            <button class="tool-btn" data-tool="fill">🪣 Fill</button>
+          </div>
+          <div id="color-row">
+            <label>Color: <input type="color" id="color-picker" value="#ff4444" /></label>
+            <label>Size: <input type="range" id="brush-size" min="1" max="10" value="2" /></label>
+            <span id="brush-size-val">2</span>
+          </div>
+          <div id="palette">
+            <div class="swatch" style="background: #ff4444" data-color="#ff4444"></div>
+            <div class="swatch" style="background: #44aaff" data-color="#44aaff"></div>
+            <div class="swatch" style="background: #44ff88" data-color="#44ff88"></div>
+            <div class="swatch" style="background: #ffdd44" data-color="#ffdd44"></div>
+            <div class="swatch" style="background: #ff44ff" data-color="#ff44ff"></div>
+            <div class="swatch" style="background: #44ffff" data-color="#44ffff"></div>
+            <div class="swatch" style="background: #ffffff" data-color="#ffffff"></div>
+            <div class="swatch" style="background: #000000" data-color="#000000"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Symmetry</h3>
+          <label class="toggle-row">
+            <input type="checkbox" id="sym-translation-x" /> Translation X (wrap)
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="sym-translation-y" /> Translation Y (wrap)
+          </label>
+          <label class="toggle-row"> <input type="checkbox" id="sym-mirror-x" /> Mirror X </label>
+          <label class="toggle-row"> <input type="checkbox" id="sym-mirror-y" /> Mirror Y </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="sym-diagonal" /> Diagonal Mirror
+          </label>
+          <div class="rot-section">
+            <div class="rot-label">Rotations (each angle independent):</div>
+            <div id="rot-toggles"></div>
+            <div class="rot-actions">
+              <button id="btn-rot-clear" class="mini-btn">None</button>
+              <button id="btn-rot-c4" class="mini-btn">C4</button>
+              <button id="btn-rot-c6" class="mini-btn">C6</button>
+              <button id="btn-rot-c8" class="mini-btn">C8</button>
+              <button id="btn-rot-c12" class="mini-btn">C12</button>
+            </div>
+          </div>
+          <div class="rot-section">
+            <div class="rot-label">Lattice translations (relative; 1.0 = full grid):</div>
+            <div id="lat-trans-list"></div>
+            <div class="lat-trans-add">
+              <label
+                >x:
+                <input type="number" id="lat-trans-x" step="0.05" value="0.5" style="width: 60px"
+              /></label>
+              <label
+                >y: <input type="number" id="lat-trans-y" step="0.05" value="0" style="width: 60px"
+              /></label>
+              <button id="btn-lat-trans-add" class="mini-btn">Add</button>
+            </div>
+            <div class="rot-actions">
+              <button id="btn-lat-trans-clear" class="mini-btn">None</button>
+              <button id="btn-lat-half" class="mini-btn">½ tile</button>
+              <button id="btn-lat-third" class="mini-btn">⅓ tile</button>
+              <button id="btn-lat-quarter" class="mini-btn">¼ tile</button>
+              <button id="btn-lat-hex" class="mini-btn">hex</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>Color Permutation</h3>
+          <div style="font-size: 11px; opacity: 0.7; line-height: 1.4; margin-bottom: 6px">
+            Applied across symmetry linkages (mirror / rotation / translation). Negation flips the
+            channel around 0.5.
+          </div>
+          <div id="color-perm-row" style="display: flex; gap: 6px; align-items: center">
+            <label>R'=<select class="perm-sel" data-out="0"></select></label>
+            <label>G'=<select class="perm-sel" data-out="1"></select></label>
+            <label>B'=<select class="perm-sel" data-out="2"></select></label>
+          </div>
+          <div class="rot-actions" style="margin-top: 6px">
+            <button id="btn-perm-id" class="mini-btn">id</button>
+            <button id="btn-perm-negate" class="mini-btn">−id</button>
+            <button id="btn-perm-rgb-rot" class="mini-btn">rgb→gbr</button>
+            <button id="btn-perm-swap-rg" class="mini-btn">swap rg</button>
+            <button id="btn-perm-neg-g" class="mini-btn">r,−g,b</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Diffusion</h3>
+          <label
+            >Mode:
+            <select id="diff-mode">
+              <option value="local" selected>Local (graph step)</option>
+              <option value="spectral">Spectral filter</option>
+              <!--<option value="reaction">Reaction-Diffusion (matrix exp)</option>-->
+            </select>
+          </label>
+          <div id="local-controls">
+            <label
+              >Rate:
+              <input type="range" id="diff-rate" min="0" max="100" value="30" />
+              <span id="diff-rate-val">0.30</span>
+            </label>
+            <label
+              >Renorm:
+              <input type="range" id="diff-renorm" min="0" max="100" value="100" />
+              <span id="diff-renorm-val">1.0</span>
+            </label>
+            <label
+              >Neighborhood:
+              <select id="diff-neighborhood">
+                <option value="4" selected>4-connected</option>
+                <option value="8">8-connected</option>
+                <option value="12">12-radius</option>
+              </select>
+            </label>
+          </div>
+          <div id="spectral-controls" style="display: none">
+            <label
+              >Filter f(λ):
+              <select id="spectral-filter">
+                <option value="invsqrt" selected>Posterize: λ^(-t/2)</option>
+                <option value="heat">Heat (low-pass): exp(-tλ)</option>
+                <option value="tikhonov">Tikhonov: 1/(1+tλ)</option>
+                <option value="wave">Wave: sinc(t√λ)</option>
+              </select>
+            </label>
+            <label
+              >t:
+              <input type="range" id="spectral-t" min="1" max="500" value="50" />
+              <span id="spectral-t-val">0.50</span>
+            </label>
+            <label
+              >K (eigvecs):
+              <input type="range" id="spectral-k" min="4" max="256" value="64" />
+              <span id="spectral-k-val">64</span>
+            </label>
+            <button id="btn-recompute-spectral">Recompute basis</button>
+          </div>
+          <div id="reaction-controls" style="display: none">
+            <label
+              >Feed F:
+              <input type="range" id="rd-feed" min="10" max="100" value="55" />
+              <span id="rd-feed-val">0.055</span>
+            </label>
+            <label
+              >Kill k:
+              <input type="range" id="rd-kill" min="40" max="80" value="62" />
+              <span id="rd-kill-val">0.062</span>
+            </label>
+          </div>
+          <div id="diff-controls">
+            <button id="btn-step">Step</button>
+            <button id="btn-play">▶ Play</button>
+            <button id="btn-stop">⏹ Stop</button>
+          </div>
+          <label
+            >Speed:
+            <input type="range" id="diff-speed" min="1" max="120" value="15" />
+            <span id="diff-speed-val">15</span> fps
+          </label>
+        </section>
+
+        <section class="panel">
+          <h3>Canvas</h3>
+          <label
+            >Grid:
+            <select id="grid-size">
+              <option value="32">32</option>
+              <option value="64" selected>64</option>
+              <option value="128">128</option>
+              <option value="256">256</option>
+            </select>
+            (base width)
+          </label>
+          <label
+            >Aspect W/H:
+            <input type="range" id="aspect-ratio" min="25" max="400" value="100" />
+            <span id="aspect-ratio-val">1.00</span>
+          </label>
+          <div id="canvas-controls">
+            <button id="btn-clear">Clear</button>
+            <button id="btn-random">Random</button>
+            <button id="btn-save">Save PNG</button>
+          </div>
+          <label class="toggle-row"> <input type="checkbox" id="show-grid" /> Show Grid </label>
+        </section>
+        <section class="panel">
+          <h3>Lattice Geometry</h3>
+          <label
+            >Mode:
+            <select id="lattice-mode">
+              <option value="euclidean" selected>Euclidean (full grid)</option>
+              <option value="circular">Circular (disk, flat)</option>
+              <option value="hyperbolic">Hyperbolic (Poincaré disk)</option>
+              <option value="spherical">Spherical (stereographic disk)</option>
+            </select>
+          </label>
+          <label
+            >Curvature k:
+            <input type="range" id="lattice-curvature" min="10" max="500" value="100" />
+            <span id="lattice-curvature-val">1.00</span>
+          </label>
+          <label
+            >Radius (cells):
+            <input type="range" id="lattice-radius" min="0" max="128" value="0" />
+            <span id="lattice-radius-val">auto</span>
+          </label>
+          <div style="font-size: 11px; opacity: 0.7; line-height: 1.4">
+            Disk modes mask cells outside a circle and use a non-Euclidean metric for diffusion.
+            Hyperbolic stretches distances near the rim; spherical contracts them.
+          </div>
+        </section>
+
+        <section class="panel" id="info-panel">
+          <h3>Info</h3>
+          <div id="info-text">Hover over canvas</div>
+        </section>
+      </div>
+
+      <div id="canvas-area">
+        <canvas id="main-canvas"></canvas>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

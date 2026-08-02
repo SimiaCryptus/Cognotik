@@ -1,0 +1,17 @@
+{
+  "name": "static-secrets",
+  "version": "0.1.0",
+  "description": "Encrypted browser proxy PWA with a Node CLI encryptor.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "ssec-encrypt": "./tools/encrypt.js",
+    "ssec-decrypt": "./tools/decrypt.js"
+  },
+  "scripts": {
+    "serve": "npx http-server . -p 8080 -c-1"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Concept Explorer · Pentagon Lattice Geometry</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/png" href="../icon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../icon.png" />
+    <link rel="shortcut icon" href="../icon.png" />
+  </head>
+  <body>
+    <a class="home-link" href="../index.html" title="Back to home">← Home</a>
+    <header class="app-header">
+      <h1>Concept Explorer</h1>
+      <nav class="mode-switch">
+        <button data-mode="explore" class="active">Open Explore</button>
+        <button data-mode="path">Path Exploration</button>
+      </nav>
+    </header>
+
+    <main id="app">
+      <aside class="sidebar">
+        <input id="search" type="search" placeholder="Search concepts…" autocomplete="off" />
+        <div class="filters">
+          <select id="filter-domain">
+            <option value="">All domains</option>
+          </select>
+          <select id="filter-difficulty">
+            <option value="">All difficulties</option>
+            <option value="foundational">Foundational</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+        <ul id="concept-list" class="concept-list"></ul>
+      </aside>
+
+      <section class="content">
+        <div id="detail" class="detail">
+          <p class="placeholder">Select a concept to begin.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span id="status">Loading glossary…</span>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+    <!-- marked: load before the module so window.marked is available immediately -->
+    <script src="js/marked.min.js" defer></script>
+
+    <!-- MathJax configuration: must appear before the MathJax loader script -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ['$', '$'],
+            ['\\(', '\\)'],
+          ],
+          displayMath: [
+            ['$$', '$$'],
+            ['\\[', '\\]'],
+          ],
+          processEscapes: true,
+          processEnvironments: true,
+        },
+        options: {
+          // Do NOT skip 'code' globally — formula blocks use <code> tags.
+          // We still skip the standard noise tags.
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+        },
+        startup: {
+          // Don't typeset the whole page on load; we'll call it manually.
+          typeset: false,
+        },
+      };
+    </script>
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+    <!-- Mermaid: load after DOM so initialize() is called reliably -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <script defer>
+      // Initialize Mermaid in manual mode once the script has loaded.
+      // Using defer keeps execution order: mermaid script → this block.
+      document.addEventListener('DOMContentLoaded', function () {
+        if (window.mermaid) {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            securityLevel: 'loose',
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
