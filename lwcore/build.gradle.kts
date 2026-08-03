@@ -40,6 +40,7 @@ dependencies {
   implementation("jakarta.mail:jakarta.mail-api:2.1.2")
   implementation("org.eclipse.angus:angus-mail:2.0.2")
 
+  implementation(libs.jakarta.servlet.api)
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
   implementation(libs.jackson.kotlin)

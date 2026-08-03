@@ -174,7 +174,10 @@ object FsTerminalHandler {
     sessions[id] = session
     pump(session)
     session.append("system", "${command.joinToString(" ")}   [${target.virtual}]\n")
-    log.info("terminal $id started: ${command.joinToString(" ")} in ${target.file.absolutePath}")
+     log.info(
+       "terminal $id started by ${ctx.user?.email ?: "anonymous"}:" +
+           " ${command.joinToString(" ")} in ${target.file.absolutePath}"
+     )
     writeJson(ctx.resp, HttpServletResponse.SC_CREATED, session.describe())
   }
 
@@ -270,6 +273,9 @@ object FsTerminalHandler {
   }
 
   fun close(ctx: FsActionContext) {
+     if (!ctx.writeAllowed) {
+       throw FsException(FsErrorCode.EACCES, "terminal", null, "authentication required for terminal sessions")
+     }
     val id = ctx.req.getParameter("id")
       ?: throw FsException(FsErrorCode.EINVAL, "terminal", null, "missing 'id'")
     val session = sessions.remove(id)
@@ -280,6 +286,10 @@ object FsTerminalHandler {
   // --------------------------------------------------------------- helpers
 
   private fun requireEnabled(ctx: FsActionContext, syscall: String) {
+     /* A terminal is arbitrary code execution: never for an unidentified caller. */
+     if (!ctx.writeAllowed) {
+       throw FsException(FsErrorCode.EACCES, syscall, null, "authentication required for terminal sessions")
+     }
     if (!ctx.config.terminalEnabled) {
       throw FsException(FsErrorCode.ENOSYS, syscall, null, "terminal capability disabled for this mount")
     }

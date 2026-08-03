@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
+import com.simiacryptus.cognotik.platform.model.User
 
+import com.simiacryptus.cognotik.platform.model.UserProvider
 import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
 import com.simiacryptus.cognotik.webui.servlet.handler.FileRequestHandler
@@ -30,6 +32,46 @@ abstract class FileServlet : HttpServlet() {
 
   var forceNew = false
   abstract fun getDir(request: HttpServletRequest, response: HttpServletResponse): File?
+   /**
+    * Resolves the principal for this request; `null` means "anonymous".
+    * The result is memoised on the request so that a single request never
+    * authenticates twice, and so that downstream handlers (and subclasses)
+    * can read it back with [currentUser].
+    */
+   open fun getUser(request: HttpServletRequest, response: HttpServletResponse?): User? {
+     (request.getAttribute(USER_ATTRIBUTE) as? User)?.let { return it }
+     if (request.getAttribute(USER_RESOLVED_ATTRIBUTE) == true) return null
+     val user = try {
+       userResolver.authenticate(request, response)
+     } catch (e: Exception) {
+       log.warn("Failed to resolve user for ${request.requestURI}", e)
+       null
+     }
+     request.setAttribute(USER_RESOLVED_ATTRIBUTE, true)
+     if (user != null) request.setAttribute(USER_ATTRIBUTE, user)
+     return user
+   }
+   /** The already-resolved principal, without triggering authentication. */
+   protected fun currentUser(request: HttpServletRequest): User? =
+     request.getAttribute(USER_ATTRIBUTE) as? User
+   /**
+    * Authorization hook for every mutating operation (upload, PUT, DELETE,
+    * mutating git actions and mutating FS API actions).
+    *
+    * The base rule is deliberately strict: **an unidentified caller may never
+    * write.** Subclasses may narrow this further (per-user ACLs, quotas, ...)
+    * but should not widen it without understanding the consequences.
+    */
+   open fun isWriteAllowed(user: User?, request: HttpServletRequest): Boolean = user != null
+   protected fun denyAnonymous(response: HttpServletResponse, what: String) {
+     log.warn("Refusing $what: no authenticated user")
+     if (response.isCommitted) return
+     response.status = HttpServletResponse.SC_FORBIDDEN
+     response.contentType = "application/json"
+     response.characterEncoding = "UTF-8"
+     response.writer.write("""{"success": false, "message": "Authentication required for write operations"}""")
+   }
+
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Received GET request for path: ${request.pathInfo ?: request.servletPath}")
@@ -182,9 +224,17 @@ abstract class FileServlet : HttpServlet() {
   override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Received POST request for path: ${request.pathInfo ?: request.servletPath}")
     try {
+       val user = getUser(request, response)
+       val writeAllowed = isWriteAllowed(user, request)
       val gitAction = request.getParameter("gitAction")
       if (gitAction != null && isGitEnabled(request)) {
-        GitOperationHandler.handleGitOperation(request, response, getGitRoot(request, response))
+         GitOperationHandler.handleGitOperation(
+           request, response, getGitRoot(request, response), user, writeAllowed
+         )
+         return
+       }
+       if (!writeAllowed) {
+         denyAnonymous(response, "upload to ${request.requestURI}")
         return
       }
       val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
@@ -211,6 +261,11 @@ abstract class FileServlet : HttpServlet() {
   override fun doPut(request: HttpServletRequest, response: HttpServletResponse) {
     log.info("Received PUT request for path: ${request.pathInfo ?: request.servletPath}")
     try {
+       val user = getUser(request, response)
+       if (!isWriteAllowed(user, request)) {
+         denyAnonymous(response, "PUT to ${request.requestURI}")
+         return
+       }
       val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
       val dir = getDir(request, response)
       if (dir == null) {
@@ -234,6 +289,11 @@ abstract class FileServlet : HttpServlet() {
   override fun doDelete(request: HttpServletRequest, response: HttpServletResponse) {
     log.info("Received DELETE request for path: ${request.pathInfo ?: request.servletPath}")
     try {
+       val user = getUser(request, response)
+       if (!isWriteAllowed(user, request)) {
+         denyAnonymous(response, "DELETE of ${request.requestURI}")
+         return
+       }
       val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
       val dir = getDir(request, response)
       if (dir == null) {
@@ -397,6 +457,8 @@ abstract class FileServlet : HttpServlet() {
     response: HttpServletResponse
   ): Pair<String, String> {
     val baseDir = getDir(request, response)
+     /* An anonymous visitor gets a read-only listing: no delete affordances. */
+     val writeAllowed = isWriteAllowed(getUser(request, response), request)
     val files = file?.listFiles()
       ?.filter { it.isFile }
       ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
@@ -410,7 +472,7 @@ abstract class FileServlet : HttpServlet() {
           ""
         }
         val fileActions = getFileActions(it, request)
-        val deleteButton = if (!FileAccessControl.isReadOnly(baseDir, it)) {
+         val deleteButton = if (writeAllowed && !FileAccessControl.isReadOnly(baseDir, it)) {
           """<button class="delete-link" onclick="deleteItem(event, '${escapeJs(fileName)}', false)" title="Delete file">🗑️ Delete</button>"""
         } else ""
         val editButton =
@@ -422,7 +484,7 @@ abstract class FileServlet : HttpServlet() {
       ?.filterNot { FileAccessControl.isHidden(baseDir, it) }
       ?.sortedBy { it.name }?.joinToString("") {
         val folderActions = getFolderActions(it, request)
-        val deleteButton = if (!FileAccessControl.isReadOnly(baseDir, it)) {
+         val deleteButton = if (writeAllowed && !FileAccessControl.isReadOnly(baseDir, it)) {
           """<button class="delete-link" onclick="deleteItem(event, '${escapeJs(it.name)}', true)" title="Delete folder">🗑️ Delete</button>"""
         } else ""
         """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions$deleteButton</li>"""
@@ -498,5 +560,13 @@ abstract class FileServlet : HttpServlet() {
 
   companion object {
     val log = LoggerFactory.getLogger(FileServlet::class.java)
+     /** Request attribute holding the resolved [User] (absent == anonymous). */
+     const val USER_ATTRIBUTE = "com.simiacryptus.cognotik.webui.user"
+     private const val USER_RESOLVED_ATTRIBUTE = "com.simiacryptus.cognotik.webui.user.resolved"
+    var userResolver : UserProvider = object : UserProvider {
+      override fun authenticate(request: HttpServletRequest, response: HttpServletResponse?): com.simiacryptus.cognotik.platform.model.User? {
+        return null
+      }
+    }
   }
 }

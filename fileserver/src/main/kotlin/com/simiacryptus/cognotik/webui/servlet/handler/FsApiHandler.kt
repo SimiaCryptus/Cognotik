@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
+import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
 import com.simiacryptus.cognotik.webui.servlet.action.FsAction
@@ -163,7 +164,7 @@ object FsApiHandler {
         ActionParam("ops", "array", required = true, location = "body"),
         ActionParam("stopOnError", "boolean", location = "body")
       )
-    ) { ctx -> httpBatch(ctx.req, ctx.resp, ctx.root, ctx.config) }
+     ) { ctx -> httpBatch(ctx) }
     write(
       "POST", "exec", "Run an allowlisted child_process command",
       listOf(
@@ -172,7 +173,7 @@ object FsApiHandler {
         ActionParam("cwd", location = "body")
       ),
       capability = "exec"
-    ) { ctx -> FsExecHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
+     ) { ctx -> FsExecHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config, ctx.user) }
     write(
       "POST", "git", "Run a registered git action (see the 'git' section of /actions)",
       listOf(
@@ -278,6 +279,10 @@ object FsApiHandler {
     resp: HttpServletResponse,
     root: File?,
     config: FsApiConfig,
+     /** Authenticated principal, or null for an anonymous caller. */
+     user: User? = null,
+     /** Defaults to "only an identified caller may mutate". */
+     writeAllowed: Boolean = user != null,
   ) {
     val syscall = op.ifBlank { "fsapi" }
     val normalizedMethod = method.ifBlank { "GET" }.uppercase()
@@ -296,6 +301,10 @@ object FsApiHandler {
         log.info("FS API {} -> unsupported operation", tag)
         throw unknown(normalizedMethod, op)
       }
+       if (action.mutating && !writeAllowed) {
+         log.warn("FS API {} rejected: no authenticated user for a mutating operation", tag)
+         throw FsException(FsErrorCode.EACCES, syscall, null, "authentication required for write operations")
+       }
       if (action.mutating && config.requireApiHeader && req.getHeader("X-Fs-Api").isNullOrBlank()) {
         log.warn("FS API {} rejected: missing X-Fs-Api request header", tag)
         throw FsException(FsErrorCode.EACCES, syscall, null, "missing X-Fs-Api request header")
@@ -305,7 +314,7 @@ object FsApiHandler {
 
 
 
-      action.handler(FsActionContext(normalizedMethod, op, req, resp, root, config))
+       action.handler(FsActionContext(normalizedMethod, op, req, resp, root, config, user, writeAllowed))
       if (log.isDebugEnabled) {
         log.debug("FS API <- {} status={} in {}ms", tag, resp.status, elapsedMs(startedNanos))
       }
@@ -360,6 +369,7 @@ object FsApiHandler {
    */
   private fun toFsException(syscall: String, path: String?, e: Throwable): FsException = when (e) {
     is FsException -> e
+     is GitAccessDeniedException -> FsException(FsErrorCode.EACCES, syscall, path, e.message)
     is java.nio.file.NoSuchFileException -> FsException(FsErrorCode.ENOENT, syscall, path)
     is FileNotFoundException -> FsException(FsErrorCode.ENOENT, syscall, path)
     is FileAlreadyExistsException -> FsException(FsErrorCode.EEXIST, syscall, path)
@@ -1263,9 +1273,12 @@ object FsApiHandler {
     val params = (body["params"] as? Map<String, Any?>) ?: body
     val startedNanos = System.nanoTime()
     val payload = try {
-      GitActions.execute(name, params, ctx.root)
+       GitActions.execute(name, params, ctx.root, ctx.user, ctx.writeAllowed)
     } catch (e: FsException) {
       throw e
+     } catch (e: GitAccessDeniedException) {
+       log.warn("git action '{}' denied: {}", name, e.message)
+       throw FsException(FsErrorCode.EACCES, "git", null, e.message)
     } catch (e: IllegalArgumentException) {
       log.info("git action '{}' rejected: {}", name, e.message)
       throw FsException(FsErrorCode.EINVAL, "git", null, e.message)
@@ -1277,12 +1290,10 @@ object FsApiHandler {
     writeJson(ctx.resp, HttpServletResponse.SC_OK, payload)
   }
 
-  private fun httpBatch(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
-    root: File,
-    config: FsApiConfig,
-  ) {
+   private fun httpBatch(ctx: FsActionContext) {
+     val req = ctx.req
+     val resp = ctx.resp
+     val config = ctx.config
     val body = readBody(req, "batch")
     val ops = FsJson.list(body, "ops")
     val stopOnError = FsJson.boolean(body, "stopOnError", false)
@@ -1296,7 +1307,7 @@ object FsApiHandler {
       val op = raw as? Map<String, Any?>
       try {
         if (op == null) throw FsException(FsErrorCode.EINVAL, "batch", null, "each op must be an object")
-        results.add(linkedMapOf("ok" to true, "value" to runBatchOp(root, config, op)))
+         results.add(linkedMapOf("ok" to true, "value" to runBatchOp(ctx, op)))
       } catch (e: FsException) {
         if (log.isDebugEnabled) {
           log.debug("batch op #{} ({}) -> {}", index, op?.get("op"), e.message ?: e.javaClass.simpleName)
@@ -1318,7 +1329,9 @@ object FsApiHandler {
     writeJson(resp, HttpServletResponse.SC_OK, results)
   }
 
-  private fun runBatchOp(root: File, config: FsApiConfig, op: Map<String, Any?>): Any {
+   private fun runBatchOp(ctx: FsActionContext, op: Map<String, Any?>): Any {
+     val root = ctx.root
+     val config = ctx.config
     val name = (FsJson.string(op, "op") ?: "").lowercase()
     val path = FsJson.string(op, "path")
     return when (name) {
@@ -1382,7 +1395,7 @@ object FsApiHandler {
       "git" -> GitActions.execute(
         FsJson.string(op, "action") ?: throw FsException(FsErrorCode.EINVAL, "git", null, "missing 'action'"),
         @Suppress("UNCHECKED_CAST") ((op["params"] as? Map<String, Any?>) ?: op),
-        root
+         root, ctx.user, ctx.writeAllowed
       )
 
       else -> throw FsException(FsErrorCode.ENOSYS, "batch", path, "unknown batch op '$name'")

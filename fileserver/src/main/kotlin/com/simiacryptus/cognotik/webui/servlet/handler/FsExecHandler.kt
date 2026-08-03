@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
+import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.webui.servlet.util.FsPath
 import com.simiacryptus.cognotik.webui.servlet.util.FsJson
@@ -26,7 +27,13 @@ object FsExecHandler {
     "--config", "core.sshcommand", "core.pager", "core.editor", "--output"
   )
 
-  fun handle(req: HttpServletRequest, resp: HttpServletResponse, root: File, config: FsApiConfig) {
+   fun handle(
+     req: HttpServletRequest,
+     resp: HttpServletResponse,
+     root: File,
+     config: FsApiConfig,
+     user: User? = null,
+   ) {
     if (config.execAllowlist.isEmpty() && !config.execAllowAny) {
       throw FsException(FsErrorCode.ENOSYS, "exec", null, "exec capability disabled")
     }
@@ -45,7 +52,10 @@ object FsExecHandler {
     }
     if (!cwdTarget.file.isDirectory) throw FsException(FsErrorCode.ENOTDIR, "exec", cwdTarget.virtual)
 
-    log.info("exec ${listOf(cmd).plus(args).joinToString(" ")} in ${cwdTarget.file.absolutePath}")
+     log.info(
+       "exec ${listOf(cmd).plus(args).joinToString(" ")} in ${cwdTarget.file.absolutePath}" +
+           " as ${user?.email ?: "anonymous"}"
+     )
     val builder = ProcessBuilder(listOf(cmd) + args)
       .directory(cwdTarget.file)
       .redirectErrorStream(false)

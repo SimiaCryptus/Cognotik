@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
+import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import jakarta.servlet.http.HttpServletRequest
@@ -27,7 +28,13 @@ object GitOperationHandler {
     return false
   }
 
-  fun handleGitOperation(req: HttpServletRequest, resp: HttpServletResponse, gitRoot: File?) {
+   fun handleGitOperation(
+     req: HttpServletRequest,
+     resp: HttpServletResponse,
+     gitRoot: File?,
+     user: User? = null,
+     writeAllowed: Boolean = user != null,
+   ) {
     GitActions.install()
     val action = req.getParameter("gitAction") ?: ""
     if (gitRoot == null || !gitRoot.exists()) {
@@ -40,8 +47,14 @@ object GitOperationHandler {
     val params: Map<String, Any?> = req.parameterMap.mapValues { (_, values) -> values.firstOrNull() }
     try {
       val payload = linkedMapOf<String, Any?>("success" to true)
-      payload.putAll(GitActions.execute(action, params, gitRoot))
+       payload.putAll(GitActions.execute(action, params, gitRoot, user, writeAllowed))
       writeJson(resp, HttpServletResponse.SC_OK, payload)
+     } catch (e: GitAccessDeniedException) {
+       log.warn("Denied git operation '$action': ${e.message}")
+       writeJson(
+         resp, HttpServletResponse.SC_FORBIDDEN,
+         linkedMapOf("success" to false, "message" to (e.message ?: "Authentication required"))
+       )
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid git operation '$action': ${e.message}")
       writeJson(

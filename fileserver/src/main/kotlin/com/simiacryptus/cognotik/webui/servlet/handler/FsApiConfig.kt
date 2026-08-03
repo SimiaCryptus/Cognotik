@@ -48,6 +48,16 @@ data class FsApiConfig(
   /** Empty = auto-detect an interactive login-less shell ($SHELL, bash, sh, cmd). */
   val terminalShell: List<String> = emptyList(),
 ) {
+   /**
+    * The view presented to a caller that may not write: every mutating
+    * capability is withdrawn, not merely refused at call time.
+    */
+   fun readOnlyView(): FsApiConfig = copy(
+     readOnly = true,
+     execAllowlist = emptyMap(),
+     execAllowAny = false,
+     terminalEnabled = false,
+   )
 
 
   companion object {

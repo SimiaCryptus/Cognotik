@@ -10,6 +10,8 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.Operation
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserProvider
+import com.simiacryptus.cognotik.platform.model.defaultUser
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -36,6 +38,9 @@ abstract class ApplicationServer(
   open val root: File = dataStorageRoot,
   showMenubar: Boolean = true,
 ) : ChatServer(resourceBase, showMenubar) {
+  init {
+    FileServlet.userResolver = UserProviderImpl()
+  }
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
   open fun appInfo(session: Session, user: User) = appInfoMap.getOrPut(session) {
@@ -308,63 +313,70 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
 fun authenticate(
   request: HttpServletRequest,
   response: HttpServletResponse?
-): User? {
-  val claimedUser = request.getCookie("USER")?.let { username ->
-    val email = request.getCookie("EMAIL") ?: ""
-    User(
-      name = username,
-      email = email,
-      id = email
-    )
-  }
-  if (null != claimedUser) {
-    val userSettings =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
-    val token = request.getCookie() ?: ""
-    val verified = try {
-      if (userSettings.passwordHash != null) {
-        val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash)
-        when (result) {
-          is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
-          is LoginServlet.Companion.SessionVerificationResult.Failure -> {
-            log.debug(
-              "Session token verification failed for user: {} - {} ({})",
-              claimedUser.email, result.error, result.reason
-            )
-            null
+): User? = UserProviderImpl().authenticate(request, response)
+
+class UserProviderImpl : UserProvider {
+  override fun authenticate(
+    request: HttpServletRequest,
+    response: HttpServletResponse?
+  ): User? {
+    val claimedUser = request.getCookie("USER")?.let { username ->
+      val email = request.getCookie("EMAIL") ?: ""
+      User(
+        name = username,
+        email = email,
+        id = email
+      )
+    }
+    if (null != claimedUser) {
+      val userSettings =
+        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
+      val token = request.getCookie() ?: ""
+      val verified = try {
+        if (userSettings.passwordHash != null) {
+          val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash)
+          when (result) {
+            is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
+            is LoginServlet.Companion.SessionVerificationResult.Failure -> {
+              log.debug(
+                "Session token verification failed for user: {} - {} ({})",
+                claimedUser.email, result.error, result.reason
+              )
+              null
+            }
           }
-        }
-      } else null
-    } catch (e: Exception) {
-      log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
-      null
-    }
-    if (verified != null) {
-      if (authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
-        authenticationManager.putUser(token, claimedUser)
-        log.debug("Session token stored for user: {}", claimedUser.email)
-      } else {
-        log.debug("Session token valid for user: {}", claimedUser.email)
+        } else null
+      } catch (e: Exception) {
+        log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
+        null
       }
-      return claimedUser
-    } else {
-      log.debug("No valid session token found for user: {}", claimedUser.email)
+      if (verified != null) {
+        if (authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
+          authenticationManager.putUser(token, claimedUser)
+          log.debug("Session token stored for user: {}", claimedUser.email)
+        } else {
+          log.debug("Session token valid for user: {}", claimedUser.email)
+        }
+        return claimedUser
+      } else {
+        log.debug("No valid session token found for user: {}", claimedUser.email)
+      }
     }
-  }
-  try {
-    val user = authenticationManager.getUser(request.getCookie())
-    return user
-  } catch (e: RuntimeException) {
-    log.debug(e.message)
-    if (null != response) {
-      response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-      val originalRequest = request.requestURL.toString()
-      val queryString = request.queryString
-      val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-      val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-      response.setHeader("Location", "/login/?target=$encodedTarget")
+    try {
+      val user = authenticationManager.getUser(request.getCookie())
+      return user
+    } catch (e: RuntimeException) {
+      log.debug(e.message)
+      if (null != response) {
+        response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+        val originalRequest = request.requestURL.toString()
+        val queryString = request.queryString
+        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+        response.setHeader("Location", "/login/?target=$encodedTarget")
+      }
+      return null
     }
-    return null
   }
 }
 

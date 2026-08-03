@@ -2,6 +2,10 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import jakarta.servlet.ServletRequest
+import jakarta.servlet.ServletResponse
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 
 data class User(
   @get:JsonProperty("email") val email: String,
@@ -36,3 +40,10 @@ var defaultUser = User(
   id = "1",
   email = "user@localhost"
 )
+
+interface UserProvider {
+  fun authenticate(
+    request: HttpServletRequest,
+    response: HttpServletResponse?
+  ): User?
+}
