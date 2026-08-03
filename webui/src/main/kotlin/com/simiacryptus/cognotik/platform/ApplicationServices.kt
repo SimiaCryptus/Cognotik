@@ -51,14 +51,6 @@ object ApplicationServices {
         }
 
     @JvmStatic
-    var cloud: CloudPlatformInterface? =
-        AwsPlatform.get()
-        set(value) {
-            require(!isLocked) { "ApplicationServices is locked" }
-            field = value
-        }
-
-    @JvmStatic
     private val fileApplicationServicesCache = mutableMapOf<File, FileApplicationServices>()
 
     @JvmStatic

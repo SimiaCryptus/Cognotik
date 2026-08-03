@@ -115,7 +115,7 @@ package com.simiacryptus.cognotik.webui.servlet
       )
 
       /** The single place a `DocProcessor` is configured. */
-      open fun newProcessor(req: DocOpsRequest): DocProcessor = if (req.session != null) DocProcessor(
+      open fun newProcessor(req: DocOpsRequest): DocProcessor = DocProcessor(
         root = req.root,
         docsFolder = req.docsFolder,
         updateMode = req.updateMode,
@@ -130,22 +130,7 @@ package com.simiacryptus.cognotik.webui.servlet
         serverless = req.serverless,
         openBrowser = req.openBrowser,
         showMenubar = req.showMenubar,
-      ) else DocProcessor(
-        root = req.root,
-        docsFolder = req.docsFolder,
-        updateMode = req.updateMode,
-        fastModel = req.models.fast,
-        smartModel = req.models.smart,
-        imageModel = req.models.image,
-        audioModel = req.models.audio,
-        autoFix = req.autoFix,
-        user = req.user,
-        templateVarOverrides = req.templateVars,
-        serverless = req.serverless,
-        openBrowser = req.openBrowser,
-        showMenubar = req.showMenubar,
       )
-
       /** Plans [req]; pure (writes nothing, starts nothing). */
       open fun plan(
         req: DocOpsRequest,

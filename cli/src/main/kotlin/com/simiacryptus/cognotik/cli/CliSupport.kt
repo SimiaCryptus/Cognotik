@@ -48,9 +48,7 @@ object CliSupport {
       override fun authenticate(
         request: jakarta.servlet.http.HttpServletRequest,
         response: jakarta.servlet.http.HttpServletResponse?
-      ): User? {
-        return defaultUser()
-      }
+      ) = defaultUser()
     }
   }
 

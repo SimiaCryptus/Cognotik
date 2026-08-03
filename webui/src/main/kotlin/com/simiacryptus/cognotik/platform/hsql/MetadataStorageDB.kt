@@ -236,7 +236,7 @@ class MetadataStorageDB : MetadataStorageInterface {
         metadata.sessionTime?.let {
             upsertMetadata(session.sessionId, userEmail, "session_time", it.time.toString(), it.toInstant())
         }
-        metadata.ownerId?.let { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
+        metadata.workerId?.let { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
         metadata.path?.let { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
         log.debug("Unified session metadata set successfully for session: {}", session)
     }
