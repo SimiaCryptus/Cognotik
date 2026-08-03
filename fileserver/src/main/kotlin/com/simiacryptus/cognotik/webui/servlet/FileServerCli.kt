@@ -1,5 +1,4 @@
 package com.simiacryptus.cognotik.webui.servlet
-import com.simiacryptus.cognotik.platform.model.User
 
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
@@ -39,15 +38,6 @@ object FileServerCli {
   private const val ROOT_SEGMENT = "root"
   private const val FILES_PREFIX = "/files"
   const val UI_PREFIX = "/ui"
-   /**
-    * The CLI is a single-user, loopback-by-default tool with no authentication
-    * layer, so it declares the invoking OS account as the principal. Writes are
-    * still gated on a non-null [User]; this is simply where that user comes from.
-    */
-   private val LOCAL_USER: User = run {
-     val name = System.getProperty("user.name", "local")
-     User(email = "$name@localhost", name = name, id = "local:$name")
-   }
 
   /** Sends browsers landing on "/" (or "/files") to the served directory listing. */
   class RootRedirectServlet(private val target: String = "$FILES_PREFIX/$ROOT_SEGMENT/") : HttpServlet() {

@@ -11,7 +11,5 @@ import org.antlr.v4.runtime.TokenStream
 class JavaScriptGrammarValidator : AntlrGrammarValidator<ECMAScriptLexer, ECMAScriptParser>("JavaScript") {
   override fun createLexer(input: CharStream) = ECMAScriptLexer(input)
   override fun createParser(tokens: TokenStream) = ECMAScriptParser(tokens)
-  override fun parse(parser: ECMAScriptParser) {
-    parser.program()
-  }
+  override fun parse(parser: ECMAScriptParser) = parser.program()
 }

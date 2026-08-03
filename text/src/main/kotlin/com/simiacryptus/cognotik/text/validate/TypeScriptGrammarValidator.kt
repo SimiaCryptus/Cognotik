@@ -11,7 +11,5 @@ import org.antlr.v4.runtime.TokenStream
 class TypeScriptGrammarValidator : AntlrGrammarValidator<TypeScriptLexer, TypeScriptParser>("TypeScript") {
   override fun createLexer(input: CharStream) = TypeScriptLexer(input)
   override fun createParser(tokens: TokenStream) = TypeScriptParser(tokens)
-  override fun parse(parser: TypeScriptParser) {
-    parser.program()
-  }
+  override fun parse(parser: TypeScriptParser) = parser.program()
 }

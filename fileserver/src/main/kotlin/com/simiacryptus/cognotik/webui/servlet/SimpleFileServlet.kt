@@ -53,6 +53,7 @@ open class SimpleFileServlet(
   override fun getToolbarActions(req: HttpServletRequest, currentPath: String): String {
     if (!uiEnabled) return ""
     val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
-    return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}${FileServerCli.UI_PREFIX}/#$hash">🧭 Open in IDE view</a>"""
+    return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}${FileServerCli.UI_PREFIX}/#$hash">🧭 Open in IDE view</a>""" +
+        super.getToolbarActions(req, currentPath)
   }
 }

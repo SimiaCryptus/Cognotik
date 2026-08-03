@@ -28,6 +28,14 @@ data class FsApiConfig(
   val utimesEnabled: Boolean = true,
   val snapshotEnabled: Boolean = true,
   val resolveEnabled: Boolean = true,
+  /** SymbolIndexer-backed static analysis (`/symbols`). */
+  val symbolsEnabled: Boolean = true,
+  /** JsonSchemaDescriber-backed structure reports (`/describe`). */
+  val describeEnabled: Boolean = true,
+  /** Caveman text compression (`/caveman`). */
+  val cavemanEnabled: Boolean = true,
+  /** Upper bound on the text handed to `/describe` and `/caveman`. */
+  val maxToolInputBytes: Long = 8L * 1024 * 1024,
   val maxFileSize: Long = 50L * 1024 * 1024,
   val maxRequestSize: Long = 100L * 1024 * 1024,
   val maxBatchOps: Int = 256,
@@ -48,16 +56,16 @@ data class FsApiConfig(
   /** Empty = auto-detect an interactive login-less shell ($SHELL, bash, sh, cmd). */
   val terminalShell: List<String> = emptyList(),
 ) {
-   /**
-    * The view presented to a caller that may not write: every mutating
-    * capability is withdrawn, not merely refused at call time.
-    */
-   fun readOnlyView(): FsApiConfig = copy(
-     readOnly = true,
-     execAllowlist = emptyMap(),
-     execAllowAny = false,
-     terminalEnabled = false,
-   )
+  /**
+   * The view presented to a caller that may not write: every mutating
+   * capability is withdrawn, not merely refused at call time.
+   */
+  fun readOnlyView(): FsApiConfig = copy(
+    readOnly = true,
+    execAllowlist = emptyMap(),
+    execAllowAny = false,
+    terminalEnabled = false,
+  )
 
 
   companion object {

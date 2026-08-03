@@ -124,7 +124,8 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
          val sessionId = sessionIdOf(req) ?: return ""
          val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
          val encodedSession = URLEncoder.encode(sessionId, "UTF-8")
-        return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$webUiPath/?session=$encodedSession#$hash">🧭 Open in IDE view</a>"""
+        return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}$webUiPath/?session=$encodedSession#$hash">🧭 Open in IDE view</a>""" +
+            super.getToolbarActions(req, currentPath)
      }
      /**
       * Directory-listing GET requests (e.g. `/fileIndex/<session>/`) are redirected to the

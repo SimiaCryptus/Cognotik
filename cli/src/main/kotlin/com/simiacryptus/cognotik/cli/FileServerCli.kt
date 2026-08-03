@@ -306,6 +306,7 @@ object FileServerCli {
     bootstrapPlatform(cliUser)
     user = cliUser
 
+
     available = availableModels(cliUser)
     /* The pair is runtime state now: the web UI may replace it at any time. */
     ModelSelection.install(user = { FileServerCli.user }, smart = smartModel, fast = fastModel)

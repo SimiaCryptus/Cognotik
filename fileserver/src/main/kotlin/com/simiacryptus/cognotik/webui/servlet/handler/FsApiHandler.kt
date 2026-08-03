@@ -1,7 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
+
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
 
 import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
+import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
+import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
 import com.simiacryptus.cognotik.webui.servlet.action.FsAction
 import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
 
@@ -49,12 +53,14 @@ object FsApiHandler {
   private val log = LoggerFactory.getLogger(FsApiHandler::class.java)
   private val WRITE_FLAGS = setOf("w", "wx", "a", "ax", "r+", "w+", "a+")
   private const val OCTET_STREAM = "application/octet-stream"
+
   /** Types that can execute script/markup in the serving origin when rendered inline. */
   private val SCRIPTABLE_TYPES = setOf(
     "text/html", "application/xhtml+xml", "image/svg+xml",
     "application/xml", "text/xml", "application/mathml+xml"
   )
   private val MIME_TOKEN = Regex("^[A-Za-z0-9!#\$%&'*+.^_`|~-]+/[A-Za-z0-9!#\$%&'*+.^_`|~-]+$")
+
   /** Substrings that identify a disconnected client rather than a server fault. */
   private val CLIENT_ABORT_HINTS = listOf(
     "broken pipe", "connection reset", "connection closed", "closed channel",
@@ -68,6 +74,17 @@ object FsApiHandler {
    */
   init {
     val path = ActionParam("path", required = true, description = "virtual path, '/'-relative to the served root")
+
+    /*
+     * Menu placements shared by the file-oriented tools below. Anchors/groups follow
+     * docs/ui.md §19.1; the Tools menu keeps each action reachable with no selection,
+     * while the context anchors put it where the file already is.
+     */
+    fun fileToolMenus(order: Int) = listOf(
+      ActionMenu("explorer/context", "5_tools", order),
+      ActionMenu("editor/context", "5_tools", order),
+      ActionMenu("main/tools", "5_tools", order)
+    )
     read("meta", "API version, platform, limits and capabilities") { ctx ->
       writeJson(ctx.resp, HttpServletResponse.SC_OK, meta(ctx.config))
     }
@@ -100,7 +117,7 @@ object FsApiHandler {
     }
     read(
       "resolve", "CommonJS/ESM module resolution",
-      listOf(ActionParam("request", required = true), ActionParam("from")), capability = "resolve"
+      listOf(ActionParam("request", required = true), ActionParam("from"))
     ) { ctx -> FsResolveHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
     read(
       "snapshot", "Zip snapshot of a subtree",
@@ -110,6 +127,163 @@ object FsApiHandler {
       "watch", "SSE change stream (fs.watch)",
       listOf(path, ActionParam("recursive", "boolean")), capability = "watch"
     ) { ctx -> FsWatchHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config) }
+    read(
+      "symbols", "Read the SymbolIndexer sidecar (file) or folder rollup for a path",
+      listOf(path),
+    ) { ctx -> FsToolsHandler.httpSymbols(ctx) }
+    write(
+      "POST", "symbols", "Build or refresh the symbol index (writes .data sidecars)",
+      listOf(
+        ActionParam("path", location = "body", default = "/", label = "Folder"),
+        ActionParam(
+          "clean", "boolean", location = "body", label = "Clean rebuild",
+          description = "remove existing .data folders first"
+        ),
+        ActionParam(
+          "incremental", "boolean", location = "body", default = true, label = "Incremental",
+          description = "only re-index files whose mtime changed"
+        ),
+        ActionParam("parallel", "boolean", location = "body", default = true, label = "Parallel"),
+        ActionParam(
+          "references", "boolean", location = "body", default = true, label = "Index references",
+          description = "record where each symbol is used"
+        ),
+        ActionParam(
+          "referenceDetails", "boolean", location = "body", default = false, label = "Reference details",
+          description = "store per-reference line/column detail (larger sidecars)"
+        ),
+        ActionParam(
+          "resolve", "boolean", location = "body", default = true, label = "Resolve imports",
+          description = "link references across files"
+        ),
+        ActionParam(
+          "manifestDetails", "boolean", location = "body", default = false, label = "Manifest details",
+          description = "emit the full per-file manifest in the response"
+        )
+      ),
+      capability = "symbols",
+      ui = ActionUi(
+        title = "Index symbols…",
+        icon = "sitemap",
+        category = "Code",
+        menus = listOf(
+          ActionMenu("explorer/context/folder", "5_tools", 100),
+          ActionMenu("main/tools", "5_tools", 100)
+        ),
+        /* A file selection is fine: sendSelection="folder" sends its container. */
+        selection = ActionSelection(min = 0, max = 1, kinds = listOf("file", "dir")),
+        hiddenParams = setOf("path"),
+        sendSelection = "folder",
+        selectionParam = "path"
+      ),
+    ) { ctx -> FsToolsHandler.httpIndexSymbols(ctx) }
+    read(
+      "describe", "Describe JSON data (statistics) or a JSON Schema document",
+      listOf(
+        ActionParam("path", label = "File", description = "JSON file to describe (or pass 'text')"),
+        ActionParam("text", label = "Inline JSON", description = "inline JSON"),
+        ActionParam(
+          "mode", default = "auto", label = "Mode", options = listOf("auto", "data", "schema"),
+          description = "auto = sniff; data = value statistics; schema = read as a JSON Schema document"
+        ),
+        ActionParam(
+          "samples", "boolean", label = "Array is a sample list",
+          description = "treat a top-level array as a list of samples rather than one value"
+        ),
+        ActionParam("topN", "int", default = 5, label = "Top values per key"),
+        ActionParam("maxDepth", "int", default = 16, label = "Max depth"),
+        ActionParam("maxKeys", "int", default = 24, label = "Max keys per object"),
+        ActionParam(
+          "format", default = "json", label = "Output", options = listOf("json", "text"),
+          description = "json = machine readable; text = human readable report"
+        )
+      ),
+      capability = "describe",
+      ui = ActionUi(
+        title = "Describe JSON…",
+        icon = "braces",
+        category = "Data",
+        menus = fileToolMenus(120),
+        selection = ActionSelection(min = 1, max = 1, kinds = listOf("file")),
+        /* Meaningless without a file, so hide rather than grey out (fileserver-notes #6). */
+        hideWhenDisabled = true,
+        hiddenParams = setOf("path", "text"),
+        sendSelection = "first",
+        selectionParam = "path"
+      ),
+    ) { ctx -> FsToolsHandler.httpDescribe(ctx) }
+    write(
+      "POST", "describe", "Describe JSON supplied in the request body",
+      listOf(
+        ActionParam("text", location = "body"),
+        ActionParam("path", location = "body"),
+        ActionParam("mode", location = "body", default = "auto"),
+        ActionParam("samples", "boolean", location = "body")
+      ),
+    ) { ctx -> FsToolsHandler.httpDescribe(ctx) }
+    read(
+      "caveman", "Compress prose with the Caveman pipeline",
+      listOf(
+        ActionParam("path", label = "File", description = "text file to compress (or pass 'text')"),
+        ActionParam("text", label = "Inline text", description = "inline text"),
+        ActionParam(
+          "mode", default = "run", label = "Mode", options = listOf("run", "compress"),
+          description = "run = full pipeline with stages; compress = output only"
+        ),
+        ActionParam(
+          "preset", label = "Preset", options = listOf("default", "keywords", "aggressive"),
+          placeholder = "(pipeline default)",
+          description = "starting point; the switches below override it"
+        ),
+        ActionParam("topN", "int", label = "Keep top N terms"),
+        ActionParam("stem", "boolean", label = "Stem words"),
+        ActionParam("stopwords", "boolean", label = "Drop stopwords"),
+        ActionParam("salience", "boolean", label = "Weight by salience"),
+        ActionParam(
+          "extractor", label = "Extractor", options = listOf("freq", "textrank"),
+          placeholder = "(pipeline default)"
+        ),
+        ActionParam(
+          "pos", label = "Parts of speech",
+          description = "comma-separated POS categories, e.g. NOUN,VERB"
+        ),
+        ActionParam(
+          "grammar", label = "Grammar", options = listOf("default", "terse"),
+          placeholder = "(pipeline default)"
+        ),
+        ActionParam(
+          "domain", label = "Domain terms",
+          description = "'distributed' or comma-separated domain terms"
+        ),
+        ActionParam("trace", "boolean", label = "Include stage trace"),
+        ActionParam(
+          "format", default = "json", label = "Output", options = listOf("json", "text"),
+          description = "json = machine readable; text = the compressed prose alone"
+        )
+      ),
+      capability = "caveman",
+      ui = ActionUi(
+        title = "Compress prose (Caveman)…",
+        icon = "compress",
+        category = "Text",
+        menus = fileToolMenus(130),
+        selection = ActionSelection(min = 1, max = 1, kinds = listOf("file")),
+        hideWhenDisabled = true,
+        hiddenParams = setOf("path", "text"),
+        sendSelection = "first",
+        selectionParam = "path"
+      ),
+    ) { ctx -> FsToolsHandler.httpCaveman(ctx) }
+    write(
+      "POST", "caveman", "Compress text supplied in the request body",
+      listOf(
+        ActionParam("text", location = "body"),
+        ActionParam("path", location = "body"),
+        ActionParam("mode", location = "body", default = "run"),
+        ActionParam("preset", location = "body"),
+        ActionParam("trace", "boolean", location = "body")
+      ),
+    ) { ctx -> FsToolsHandler.httpCaveman(ctx) }
     write(
       "POST", "stat", "Batch fs.stat",
       listOf(
@@ -164,7 +338,7 @@ object FsApiHandler {
         ActionParam("ops", "array", required = true, location = "body"),
         ActionParam("stopOnError", "boolean", location = "body")
       )
-     ) { ctx -> httpBatch(ctx) }
+    ) { ctx -> httpBatch(ctx) }
     write(
       "POST", "exec", "Run an allowlisted child_process command",
       listOf(
@@ -173,7 +347,7 @@ object FsApiHandler {
         ActionParam("cwd", location = "body")
       ),
       capability = "exec"
-     ) { ctx -> FsExecHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config, ctx.user) }
+    ) { ctx -> FsExecHandler.handle(ctx.req, ctx.resp, ctx.root, ctx.config, ctx.user) }
     write(
       "POST", "git", "Run a registered git action (see the 'git' section of /actions)",
       listOf(
@@ -254,10 +428,30 @@ object FsApiHandler {
     description: String,
     parameters: List<ActionParam> = emptyList(),
     capability: String? = null,
+    ui: ActionUi? = null,
     handler: (FsActionContext) -> Unit,
   ) {
-    FsAction.register(FsAction(op, "GET", description, parameters, requiresCapability = capability, handler = handler))
-    FsAction.register(FsAction(op, "HEAD", description, parameters, requiresCapability = capability, handler = handler))
+    FsAction.register(
+      FsAction(
+        op = op,
+        method = "GET",
+        description = description,
+        parameters = parameters,
+        requiresCapability = capability,
+        handler = handler,
+        ui = ui
+      )
+    )
+    FsAction.register(
+      FsAction(
+        op = op,
+        method = "HEAD",
+        description = description,
+        parameters = parameters,
+        requiresCapability = capability,
+        handler = handler
+      )
+    )
   }
 
   private fun write(
@@ -266,9 +460,10 @@ object FsApiHandler {
     description: String,
     parameters: List<ActionParam> = emptyList(),
     capability: String? = null,
+    ui: ActionUi? = null,
     handler: (FsActionContext) -> Unit,
   ) = FsAction.register(
-    FsAction(op, method, description, parameters, requiresCapability = capability, handler = handler)
+    FsAction(op, method, description, parameters, requiresCapability = capability, ui = ui, handler = handler)
   )
 
 
@@ -279,10 +474,10 @@ object FsApiHandler {
     resp: HttpServletResponse,
     root: File?,
     config: FsApiConfig,
-     /** Authenticated principal, or null for an anonymous caller. */
-     user: User? = null,
-     /** Defaults to "only an identified caller may mutate". */
-     writeAllowed: Boolean = user != null,
+    /** Authenticated principal, or null for an anonymous caller. */
+    user: User? = null,
+    /** Defaults to "only an identified caller may mutate". */
+    writeAllowed: Boolean = user != null,
   ) {
     val syscall = op.ifBlank { "fsapi" }
     val normalizedMethod = method.ifBlank { "GET" }.uppercase()
@@ -301,20 +496,17 @@ object FsApiHandler {
         log.info("FS API {} -> unsupported operation", tag)
         throw unknown(normalizedMethod, op)
       }
-       if (action.mutating && !writeAllowed) {
-         log.warn("FS API {} rejected: no authenticated user for a mutating operation", tag)
-         throw FsException(FsErrorCode.EACCES, syscall, null, "authentication required for write operations")
-       }
+      if (action.mutating && !writeAllowed) {
+        log.warn("FS API {} rejected: no authenticated user for a mutating operation", tag)
+        throw FsException(FsErrorCode.EACCES, syscall, null, "authentication required for write operations")
+      }
       if (action.mutating && config.requireApiHeader && req.getHeader("X-Fs-Api").isNullOrBlank()) {
         log.warn("FS API {} rejected: missing X-Fs-Api request header", tag)
         throw FsException(FsErrorCode.EACCES, syscall, null, "missing X-Fs-Api request header")
       }
 
 
-
-
-
-       action.handler(FsActionContext(normalizedMethod, op, req, resp, root, config, user, writeAllowed))
+      action.handler(FsActionContext(normalizedMethod, op, req, resp, root, config, user, writeAllowed))
       if (log.isDebugEnabled) {
         log.debug("FS API <- {} status={} in {}ms", tag, resp.status, elapsedMs(startedNanos))
       }
@@ -327,8 +519,10 @@ object FsApiHandler {
       when (e) {
         is FsException ->
           log.debug("FS API {} -> {} ({}ms)", tag, e.message ?: e.javaClass.simpleName, elapsedMs(startedNanos))
+
         is IllegalArgumentException ->
           log.info("FS API {} rejected after {}ms: {}", tag, elapsedMs(startedNanos), e.message)
+
         else ->
           log.error("FS API {} failed after {}ms", tag, elapsedMs(startedNanos), e)
       }
@@ -345,8 +539,10 @@ object FsApiHandler {
 
   private fun unknown(method: String, op: String) =
     FsException(FsErrorCode.ENOSYS, op.ifBlank { "fsapi" }, null, "unsupported operation: $method /$op")
+
   // ------------------------------------------------- diagnostics & error mapping
   private fun elapsedMs(startedNanos: Long) = (System.nanoTime() - startedNanos) / 1_000_000
+
   /**
    * Compact, log-safe request identity. Only reads query parameters for methods whose
    * bodies the container will never consume as a form, so that `req.reader` stays intact.
@@ -363,13 +559,14 @@ object FsApiHandler {
     log.debug("unable to build request tag", e)
     "$method /$op"
   }
+
   /**
    * Single translation point from JVM failures to the errno-shaped API contract.
    * Deliberately reports the *virtual* path (or none) so that no host path escapes.
    */
   private fun toFsException(syscall: String, path: String?, e: Throwable): FsException = when (e) {
     is FsException -> e
-     is GitAccessDeniedException -> FsException(FsErrorCode.EACCES, syscall, path, e.message)
+    is GitAccessDeniedException -> FsException(FsErrorCode.EACCES, syscall, path, e.message)
     is java.nio.file.NoSuchFileException -> FsException(FsErrorCode.ENOENT, syscall, path)
     is FileNotFoundException -> FsException(FsErrorCode.ENOENT, syscall, path)
     is FileAlreadyExistsException -> FsException(FsErrorCode.EEXIST, syscall, path)
@@ -385,8 +582,10 @@ object FsApiHandler {
       Thread.currentThread().interrupt()
       FsException(FsErrorCode.EIO, syscall, path, "interrupted")
     }
+
     else -> FsException(FsErrorCode.EIO, syscall, path, e.message ?: e.javaClass.simpleName)
   }
+
   /** True when the failure is the peer disconnecting, not a server-side fault. */
   private fun isClientAbort(error: Throwable): Boolean {
     var cursor: Throwable? = error
@@ -400,6 +599,7 @@ object FsApiHandler {
     }
     return false
   }
+
   /** Never blow up while reporting a failure, and never corrupt an already-started body. */
   private fun writeError(resp: HttpServletResponse, tag: String, e: FsException) {
     if (resp.isCommitted) {
@@ -412,6 +612,7 @@ object FsApiHandler {
       log.warn("FS API {}: failed to write error response", tag, io)
     }
   }
+
   /** Attaches the syscall + virtual path to any raw IO failure inside [block]. */
   private inline fun <T> fsIo(syscall: String, path: String?, block: () -> T): T = try {
     block()
@@ -422,6 +623,7 @@ object FsApiHandler {
     else log.warn("FS API {} failed on {}", syscall, path, e)
     throw toFsException(syscall, path, e)
   }
+
   /** Tolerant, well-reported JSON body reader (empty body == `{}`). */
   private fun readBody(req: HttpServletRequest, syscall: String): Map<String, Any?> {
     val raw = try {
@@ -457,6 +659,7 @@ object FsApiHandler {
       "maxDirEntries" to config.maxDirEntries,
       "maxDepth" to config.maxDepth,
       "maxSnapshotBytes" to config.maxSnapshotBytes,
+      "maxToolInputBytes" to config.maxToolInputBytes,
       "maxTerminals" to config.maxTerminals
     ),
     "capabilities" to linkedMapOf(
@@ -468,6 +671,9 @@ object FsApiHandler {
       "git" to config.execAllowlist.containsKey("git"),
       "resolve" to config.resolveEnabled,
       "snapshot" to config.snapshotEnabled,
+      "symbols" to config.symbolsEnabled,
+      "describe" to config.describeEnabled,
+      "caveman" to config.cavemanEnabled,
       "watch" to config.watchMode,
       "utimes" to config.utimesEnabled,
       "symlink" to false,
@@ -552,6 +758,7 @@ object FsApiHandler {
     val value = req.getParameter(name) ?: return default
     return value.isEmpty() || value.equals("true", true) || value == "1"
   }
+
   /**
    * True when the browser is *navigating* to this URL (top-level, iframe, embed…).
    * Such responses must carry a real content type, otherwise Chrome turns them into a
@@ -567,6 +774,7 @@ object FsApiHandler {
     val accept = req.getHeader("Accept")?.lowercase() ?: return false
     return accept.startsWith("text/html") || accept.contains("application/xhtml+xml")
   }
+
   /**
    * `?mime=` / `?download=` win; otherwise navigations get the detected type and
    * programmatic readers keep the historical `application/octet-stream`.
@@ -578,12 +786,15 @@ object FsApiHandler {
       requested.isNullOrEmpty() -> if (isNavigation(req)) resolved else OCTET_STREAM
       requested.equals("binary", true) || requested.equals("raw", true) ||
           requested.equals("false", true) -> OCTET_STREAM
+
       requested.equals("auto", true) || requested.equals("true", true) -> resolved
       MIME_TOKEN.matches(requested) -> requested
       else -> throw FsException(FsErrorCode.EINVAL, "read", virtual, "malformed 'mime' parameter")
     }
   }
+
   private fun baseType(contentType: String) = contentType.substringBefore(';').trim().lowercase()
+
   /** RFC 6266-safe `filename` (plus `filename*` for non-ASCII names). */
   private fun contentDisposition(inline: Boolean, name: String): String {
     val ascii = name.map { if (it.code in 32..126 && it != '"' && it != '\\') it else '_' }.joinToString("")
@@ -1120,7 +1331,12 @@ object FsApiHandler {
     }
     val declared = req.contentLengthLong
     if (declared > config.maxFileSize) {
-      log.info("write to {} rejected: declared {} bytes exceeds maxFileSize {}", t.virtual, declared, config.maxFileSize)
+      log.info(
+        "write to {} rejected: declared {} bytes exceeds maxFileSize {}",
+        t.virtual,
+        declared,
+        config.maxFileSize
+      )
       throw FsException(FsErrorCode.EFBIG, "write", t.virtual)
     }
     requireWritableParent(root, t, "open", create = true)
@@ -1273,12 +1489,12 @@ object FsApiHandler {
     val params = (body["params"] as? Map<String, Any?>) ?: body
     val startedNanos = System.nanoTime()
     val payload = try {
-       GitActions.execute(name, params, ctx.root, ctx.user, ctx.writeAllowed)
+      GitActions.execute(name, params, ctx.root, ctx.user, ctx.writeAllowed)
     } catch (e: FsException) {
       throw e
-     } catch (e: GitAccessDeniedException) {
-       log.warn("git action '{}' denied: {}", name, e.message)
-       throw FsException(FsErrorCode.EACCES, "git", null, e.message)
+    } catch (e: GitAccessDeniedException) {
+      log.warn("git action '{}' denied: {}", name, e.message)
+      throw FsException(FsErrorCode.EACCES, "git", null, e.message)
     } catch (e: IllegalArgumentException) {
       log.info("git action '{}' rejected: {}", name, e.message)
       throw FsException(FsErrorCode.EINVAL, "git", null, e.message)
@@ -1290,10 +1506,10 @@ object FsApiHandler {
     writeJson(ctx.resp, HttpServletResponse.SC_OK, payload)
   }
 
-   private fun httpBatch(ctx: FsActionContext) {
-     val req = ctx.req
-     val resp = ctx.resp
-     val config = ctx.config
+  private fun httpBatch(ctx: FsActionContext) {
+    val req = ctx.req
+    val resp = ctx.resp
+    val config = ctx.config
     val body = readBody(req, "batch")
     val ops = FsJson.list(body, "ops")
     val stopOnError = FsJson.boolean(body, "stopOnError", false)
@@ -1307,7 +1523,7 @@ object FsApiHandler {
       val op = raw as? Map<String, Any?>
       try {
         if (op == null) throw FsException(FsErrorCode.EINVAL, "batch", null, "each op must be an object")
-         results.add(linkedMapOf("ok" to true, "value" to runBatchOp(ctx, op)))
+        results.add(linkedMapOf("ok" to true, "value" to runBatchOp(ctx, op)))
       } catch (e: FsException) {
         if (log.isDebugEnabled) {
           log.debug("batch op #{} ({}) -> {}", index, op?.get("op"), e.message ?: e.javaClass.simpleName)
@@ -1329,9 +1545,9 @@ object FsApiHandler {
     writeJson(resp, HttpServletResponse.SC_OK, results)
   }
 
-   private fun runBatchOp(ctx: FsActionContext, op: Map<String, Any?>): Any {
-     val root = ctx.root
-     val config = ctx.config
+  private fun runBatchOp(ctx: FsActionContext, op: Map<String, Any?>): Any {
+    val root = ctx.root
+    val config = ctx.config
     val name = (FsJson.string(op, "op") ?: "").lowercase()
     val path = FsJson.string(op, "path")
     return when (name) {
@@ -1391,11 +1607,17 @@ object FsApiHandler {
         FsJson.string(op, "from") ?: "/",
         FsJson.string(op, "request") ?: throw FsException(FsErrorCode.EINVAL, "resolve", null, "missing 'request'")
       )
+      /* Static-analysis / text utilities: the batch op object doubles as the option map. */
+      "symbols" -> FsToolsHandler.symbols(root, config, op)
+      "index-symbols" -> FsToolsHandler.indexSymbols(root, config, op, ctx.writeAllowed)
+      "describe" -> FsToolsHandler.describe(root, config, op)
+      "caveman" -> FsToolsHandler.caveman(root, config, op)
+
 
       "git" -> GitActions.execute(
         FsJson.string(op, "action") ?: throw FsException(FsErrorCode.EINVAL, "git", null, "missing 'action'"),
         @Suppress("UNCHECKED_CAST") ((op["params"] as? Map<String, Any?>) ?: op),
-         root, ctx.user, ctx.writeAllowed
+        root, ctx.user, ctx.writeAllowed
       )
 
       else -> throw FsException(FsErrorCode.ENOSYS, "batch", path, "unknown batch op '$name'")

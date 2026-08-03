@@ -11,7 +11,5 @@ import org.antlr.v4.runtime.TokenStream
 class CssGrammarValidator : AntlrGrammarValidator<css3Lexer, css3Parser>("CSS") {
   override fun createLexer(input: CharStream) = css3Lexer(input)
   override fun createParser(tokens: TokenStream) = css3Parser(tokens)
-  override fun parse(parser: css3Parser) {
-    parser.stylesheet()
-  }
+  override fun parse(parser: css3Parser) = parser.stylesheet()
 }

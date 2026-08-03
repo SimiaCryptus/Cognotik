@@ -87,6 +87,7 @@ slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jakarta-servlet-api = { group = "org.eclipse.jetty.toolchain", name = "jetty-jakarta-servlet-api", version = "5.0.2" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 jackson-jaxrs-json = { group = "com.fasterxml.jackson.jaxrs", name = "jackson-jaxrs-json-provider", version.ref = "jackson" }

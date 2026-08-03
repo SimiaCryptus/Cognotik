@@ -34,7 +34,6 @@ data class User(
 
 }
 
-@JvmField
 @JsonIgnore
 var defaultUser = User(
   id = "1",
