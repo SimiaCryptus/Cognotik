@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManag
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -50,7 +50,7 @@ class DeleteSessionServlet(
       response.writer.write("Session ID is required")
     } else {
       val session = Session(request.getParameter("sessionId"))
-      val user = authenticate(request, response)
+      val user = UserProviderImpl().authenticate(request, response)
       if (user == null) {
         throw RuntimeException("User must be authenticated to delete sessions")
       }

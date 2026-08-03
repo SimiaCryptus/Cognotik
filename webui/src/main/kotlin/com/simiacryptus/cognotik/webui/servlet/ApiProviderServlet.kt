@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -43,7 +43,8 @@ class ApiProviderServlet : HttpServlet() {
 
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
-      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      val user =
+        UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       val userSettings = user.userSettings()
       val providers = userSettings.providerInfos()
       val availableProviders = userSettings.getAvailableProviders()

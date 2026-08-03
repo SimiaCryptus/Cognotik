@@ -11,7 +11,7 @@ package com.simiacryptus.cognotik.webui.servlet
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-    import com.simiacryptus.cognotik.webui.application.authenticate
+    import com.simiacryptus.cognotik.webui.application.UserProviderImpl
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
     import jakarta.servlet.http.HttpServlet
@@ -327,7 +327,7 @@ package com.simiacryptus.cognotik.webui.servlet
       }
 
       protected open fun resolveUser(request: HttpServletRequest, response: HttpServletResponse): User? =
-        authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
 
       /** Session the request belongs to, if any (used as the parent of new sessions). */
       protected open fun resolveSession(request: HttpServletRequest): Session? =

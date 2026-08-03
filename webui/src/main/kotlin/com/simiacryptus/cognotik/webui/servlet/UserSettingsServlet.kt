@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.jsonCast
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -16,7 +16,8 @@ private const val mask = "********"
 class UserSettingsServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_OK
-    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+    val user =
+      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
@@ -85,7 +86,8 @@ class UserSettingsServlet : HttpServlet() {
   }
 
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
-    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+    val user =
+      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
     val userSettingsManager = ApplicationServices.fileApplicationServices().userSettingsManager
     val prevSettings =

@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserProvider
-import com.simiacryptus.cognotik.platform.model.defaultUser
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -255,7 +254,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
   val requestPath = (request as HttpServletRequest).requestURI
   val servletPath = request.servletPath
   log.debug("Processing request: {}", requestPath)
-  val user = authenticate(request, response as HttpServletResponse)
+  val user = UserProviderImpl().authenticate(request, response as HttpServletResponse)
   /*
    * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
    * redirecting its module/CSS requests to the login page would break the page load, while
@@ -309,11 +308,6 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
       if (cookie != null) "[PRESENT]" else "[NOT_FOUND]"
     )
   }
-
-fun authenticate(
-  request: HttpServletRequest,
-  response: HttpServletResponse?
-): User? = UserProviderImpl().authenticate(request, response)
 
 class UserProviderImpl : UserProvider {
   override fun authenticate(

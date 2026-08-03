@@ -1,13 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
-import com.simiacryptus.cognotik.webui.servlet.action.ActionOption
-import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
-import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
-import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
-import com.simiacryptus.cognotik.webui.servlet.action.FsAction
-import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
 import com.simiacryptus.cognotik.webui.servlet.handler.FsException
@@ -174,5 +168,5 @@ object ModelSelectionActions {
 }
 
 val FsActionContext.user: User
-  get() = com.simiacryptus.cognotik.webui.application.authenticate(this.req, this.resp)
+  get() = UserProviderImpl().authenticate(req, resp)
     ?: throw IllegalStateException("Authentication failed but no error response was sent")

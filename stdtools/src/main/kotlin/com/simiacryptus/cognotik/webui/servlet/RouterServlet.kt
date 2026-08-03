@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppEntry
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -43,12 +43,12 @@ class RouterServlet(
                 request,
                 response,
                 Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
-                authenticate(request, response) ?: run {
-                    response.sendError(
-                        HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
-                    )
-                    return
-                })
+              UserProviderImpl().authenticate(request, response) ?: run {
+                response.sendError(
+                  HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
+                )
+                return
+              })
 
             else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
         }
@@ -58,11 +58,11 @@ class RouterServlet(
         when {
             request.pathInfo?.startsWith("/share/") == true -> {
                 val session = Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: "")
-                val user = authenticate(request, response) ?: run {
-                    response.sendError(
-                        HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
-                    )
-                    return
+                val user = UserProviderImpl().authenticate(request, response) ?: run {
+                  response.sendError(
+                    HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
+                  )
+                  return
                 }
                 confirmShare(request, response, session, user)
             }

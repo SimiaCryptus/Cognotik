@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
@@ -278,7 +278,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
             }
             val session = Session(pathSegments.first())
             log.debug("Git API GET session: ${session.sessionId}")
-            val user = authenticate(request, response) ?: run {
+            val user = UserProviderImpl().authenticate(request, response) ?: run {
                 log.warn("Authentication failed for git API GET on session ${session.sessionId}")
                 throw IllegalStateException("Authentication failed")
             }
@@ -337,7 +337,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
             }
             val session = Session(pathSegments.first())
             log.debug("Git API POST session: ${session.sessionId}")
-            val user = authenticate(request, response) ?: run {
+            val user = UserProviderImpl().authenticate(request, response) ?: run {
                 log.warn("Authentication failed for git API POST on session ${session.sessionId}")
                 throw IllegalStateException("Authentication failed")
             }

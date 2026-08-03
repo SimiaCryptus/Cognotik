@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
     import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.ThreadPoolManager
-    import com.simiacryptus.cognotik.webui.application.authenticate
+    import com.simiacryptus.cognotik.webui.application.UserProviderImpl
     import jakarta.servlet.http.HttpServlet
     import jakarta.servlet.http.HttpServletRequest
     import jakarta.servlet.http.HttpServletResponse
@@ -14,7 +14,8 @@ package com.simiacryptus.cognotik.webui.servlet
             response.status = HttpServletResponse.SC_OK
             if (request.parameterMap.containsKey("sessionId")) {
                 val session = Session(request.getParameter("sessionId"))
-                val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+                val user = UserProviderImpl().authenticate(request, response)
+                  ?: throw IllegalStateException("Authentication failed")
                 val pool = threadPoolManager.getPool(session, user)
     
     

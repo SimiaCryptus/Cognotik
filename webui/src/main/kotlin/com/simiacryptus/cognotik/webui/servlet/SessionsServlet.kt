@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -18,7 +18,7 @@ class SessionsServlet : HttpServlet() {
     val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
     val usageDB by lazy { ApplicationServices.fileApplicationServices().usageDB }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
         val action = req.getParameter("action")?.lowercase()
         when (action) {
             "delete" -> handleDelete(req, resp, user)
@@ -31,7 +31,7 @@ class SessionsServlet : HttpServlet() {
     }
 
     override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
         handleDelete(req, resp, user)
     }
 
@@ -103,7 +103,8 @@ class SessionsServlet : HttpServlet() {
 
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to list sessions")
+        val user = UserProviderImpl().authenticate(req, resp)
+            ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
             metadataDB.listSessions(user).map { Session(it) }
         } catch (e: Exception) {

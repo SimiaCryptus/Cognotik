@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -63,7 +63,8 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
 
     private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
-        val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        val user =
+          UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         val mapper = jacksonObjectMapper()
         response.contentType = "application/json"
         try {
@@ -75,7 +76,8 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     }
 
     private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
-        val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        val user =
+          UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
             val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
                 it.server.javaClass,
