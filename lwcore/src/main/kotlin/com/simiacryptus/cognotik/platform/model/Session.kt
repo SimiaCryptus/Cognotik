@@ -18,8 +18,8 @@ open class Session(
   fun isGlobal(): Boolean = sessionId.startsWith("G-")
 
   fun toGlobal(): Session = when {
-      isGlobal() -> this
-      else -> Session("G-${sessionId.removePrefix("U-")}")
+    isGlobal() -> this
+    else -> Session("G-${sessionId.removePrefix("U-")}")
   }
 
   companion object {
@@ -28,8 +28,9 @@ open class Session(
         // No validation for NULL session
       }
     }
+
     fun long64(): String {
-      val src = ByteBuffer.allocate(8).putLong(Random.Default.nextLong()).array()
+      val src = ByteBuffer.allocate(8).putLong(Random.nextLong()).array()
       return Base64.getEncoder().encodeToString(src)
         .toString().replace("=", "").replace("/", ".").replace("+", "-")
     }

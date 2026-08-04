@@ -25,12 +25,12 @@ data class User(
     return email.hashCode()
   }
 
-    companion object {
-        val NULL: User = User(
-            id = "0",
-            email = "null@localhost"
-        )
-    }
+  companion object {
+    val NULL: User = User(
+      id = "0",
+      email = "null@localhost"
+    )
+  }
 
 }
 

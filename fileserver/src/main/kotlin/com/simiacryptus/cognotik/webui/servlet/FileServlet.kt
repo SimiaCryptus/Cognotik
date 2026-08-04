@@ -1,5 +1,4 @@
 package com.simiacryptus.cognotik.webui.servlet
-import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.platform.model.UserProvider

@@ -1,4 +1,6 @@
-package com.simiacryptus.cognotik.platform.model
+package com.simiacryptus.cognotik.platform
+
+import com.simiacryptus.cognotik.platform.model.User
 
 /**
  * Interface for managing user authentication and session management.
@@ -15,7 +17,7 @@ interface AuthenticationInterface {
    *
    * @param accessToken The authentication token used to identify the user session.
    *                    Can be null, in which case null should be returned.
-   * @return The [User] object associated with the token, or null if the token
+   * @return The [com.simiacryptus.cognotik.platform.model.User] object associated with the token, or null if the token
    *         is invalid, expired, or not provided.
    */
   fun getUser(accessToken: String?): User?

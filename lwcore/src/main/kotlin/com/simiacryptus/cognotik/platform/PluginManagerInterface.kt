@@ -1,34 +1,37 @@
-package com.simiacryptus.cognotik.platform.model
+package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.CognotikPlugin
 import java.io.File
 
 interface PluginManagerInterface {
-   /**
-    * Publish an event to all subscribers of the given topic.
-    *
-    * @param topic the event topic/channel name
-    * @param data the event payload
-    */
-   fun publish(topic: String, data: Any?)
-   /**
-    * Subscribe to events on a given topic.
-    *
-    * @param topic the event topic/channel name
-    * @param handler callback invoked with the event payload when an event is published
-    * @return a subscription ID that can be used to unsubscribe
-    */
-   fun subscribe(topic: String, handler: (Any?) -> Unit): String
-   /**
-    * Unsubscribe a previously registered event handler.
-    *
-    * @param subscriptionId the subscription ID returned by [subscribe]
-    */
-   fun unsubscribe(subscriptionId: String)
+  /**
+   * Publish an event to all subscribers of the given topic.
+   *
+   * @param topic the event topic/channel name
+   * @param data the event payload
+   */
+  fun publish(topic: String, data: Any?)
+
+  /**
+   * Subscribe to events on a given topic.
+   *
+   * @param topic the event topic/channel name
+   * @param handler callback invoked with the event payload when an event is published
+   * @return a subscription ID that can be used to unsubscribe
+   */
+  fun subscribe(topic: String, handler: (Any?) -> Unit): String
+
+  /**
+   * Unsubscribe a previously registered event handler.
+   *
+   * @param subscriptionId the subscription ID returned by [subscribe]
+   */
+  fun unsubscribe(subscriptionId: String)
 
 
   fun subscribeToChanges(subscriber: () -> Unit)
   fun triggerChangeNotification()
+
   /**
    * Load a plugin JAR and initialize all [com.simiacryptus.cognotik.platform.CognotikPlugin] implementations
    * discovered via ServiceLoader.
@@ -75,6 +78,7 @@ interface PluginManagerInterface {
    * Check if a JAR file has been loaded.
    */
   fun isLoaded(jarFile: File): Boolean
+
   /**
    * Delete a plugin JAR file from disk.
    * If the plugin is currently loaded, it will be unloaded first.

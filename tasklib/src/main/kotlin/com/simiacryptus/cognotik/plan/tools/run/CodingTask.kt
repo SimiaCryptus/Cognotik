@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
@@ -43,7 +43,7 @@ open class CodingTask<T : CodeRuntime>(
 
   open val canPlay by lazy {
     ApplicationServices.authorizationManager.isAuthorized(
-      this::class.java, user, AuthorizationInterface.OperationType.Execute
+      this::class.java, user, OperationType.Execute
     )
   }
 

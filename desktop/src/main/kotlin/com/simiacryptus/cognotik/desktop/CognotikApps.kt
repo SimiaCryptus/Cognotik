@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.PluginManagerInterface
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -300,7 +301,7 @@ open class CognotikApps(
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
-                operationType: AuthorizationInterface.OperationType
+                operationType: OperationType
             ): Boolean = true
         }
     }

@@ -2,7 +2,9 @@ package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.platform.model.GiftedCreditsInterface
+import com.simiacryptus.cognotik.platform.model.Claim
+import com.simiacryptus.cognotik.platform.model.Gift
+import com.simiacryptus.cognotik.platform.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -108,7 +110,7 @@ class GiftedCreditsDB(
         grantDuration: Duration,
         totalBudget: Double,
         theme: String?
-    ): GiftedCreditsInterface.Gift {
+    ): Gift {
         log.info(
             "Creating gift: creator={}, amountGranted={}, grantDuration={}, totalBudget={}, theme={}",
             creator.id, amountGranted, grantDuration, totalBudget, theme
@@ -187,15 +189,15 @@ class GiftedCreditsDB(
             }
 
             log.info("Successfully created gift id={}", id)
-            return GiftedCreditsInterface.Gift(
-                id = id,
-                claimants = 0,
-                amountGranted = amountGranted,
-                grantDuration = grantDuration,
-                totalBudget = totalBudget,
-                spentBudget = 0.0,
-                createdBy = creatorId,
-                theme = theme
+            return Gift(
+              id = id,
+              claimants = 0,
+              amountGranted = amountGranted,
+              grantDuration = grantDuration,
+              totalBudget = totalBudget,
+              spentBudget = 0.0,
+              createdBy = creatorId,
+              theme = theme
             )
         } catch (e: Exception) {
             log.error("Error creating gift id={}", id, e)
@@ -203,7 +205,7 @@ class GiftedCreditsDB(
         }
     }
 
-    override fun getGift(id: String): GiftedCreditsInterface.Gift? {
+    override fun getGift(id: String): Gift? {
         log.debug("Fetching gift with id={}", id)
         if (id.isBlank()) {
             log.warn("getGift called with blank id")
@@ -294,7 +296,7 @@ class GiftedCreditsDB(
     /**
      * Helper to fetch a gift inside an active Exposed transaction.
      */
-    private fun fetchGiftById(id: String): GiftedCreditsInterface.Gift? {
+    private fun fetchGiftById(id: String): Gift? {
         val claimCountExpr = GiftClaimsTable.userId.count()
         val row = GiftsTable
             .leftJoin(GiftClaimsTable, { GiftsTable.id }, { GiftClaimsTable.giftId })
@@ -320,7 +322,7 @@ class GiftedCreditsDB(
         return mapGift(row, claimCountExpr)
     }
 
-    override fun listGifts(): List<GiftedCreditsInterface.Gift> {
+    override fun listGifts(): List<Gift> {
         log.debug("Listing all gifts")
         try {
            return transaction(database) {
@@ -362,7 +364,7 @@ class GiftedCreditsDB(
         }
     }
 
-    override fun listClaims(giftId: String?, userId: String?): List<GiftedCreditsInterface.Claim> {
+    override fun listClaims(giftId: String?, userId: String?): List<Claim> {
         log.debug("Listing claims with filters giftId={}, userId={}", giftId, userId)
         try {
            return transaction(database) {
@@ -376,11 +378,11 @@ class GiftedCreditsDB(
                 query.orderBy(GiftClaimsTable.claimedAt, SortOrder.DESC)
                 val claims = query.mapNotNull { row ->
                     try {
-                        GiftedCreditsInterface.Claim(
-                            giftId = row[GiftClaimsTable.giftId],
-                            userId = row[GiftClaimsTable.userId],
-                            claimedAt = row[GiftClaimsTable.claimedAt]
-                        )
+                      Claim(
+                        giftId = row[GiftClaimsTable.giftId],
+                        userId = row[GiftClaimsTable.userId],
+                        claimedAt = row[GiftClaimsTable.claimedAt]
+                      )
                     } catch (e: Exception) {
                         log.error("Failed to map a claim row; skipping", e)
                         null
@@ -401,7 +403,7 @@ class GiftedCreditsDB(
     private fun mapGift(
         row: ResultRow,
         claimCountExpr: org.jetbrains.exposed.v1.core.Expression<Long>
-    ): GiftedCreditsInterface.Gift {
+    ): Gift {
         val id = row[GiftsTable.id]
         val amountGranted = row[GiftsTable.amountGranted]
         val grantSeconds = row[GiftsTable.grantDurationSeconds]
@@ -410,15 +412,15 @@ class GiftedCreditsDB(
         val theme = row[GiftsTable.theme]
         val claimants = row[claimCountExpr].toInt()
 
-        return GiftedCreditsInterface.Gift(
-            id = id,
-            claimants = claimants,
-            amountGranted = amountGranted,
-            grantDuration = Duration.ofSeconds(grantSeconds),
-            totalBudget = totalBudget,
-            spentBudget = claimants * amountGranted,
-            createdBy = createdBy,
-            theme = theme
+        return Gift(
+          id = id,
+          claimants = claimants,
+          amountGranted = amountGranted,
+          grantDuration = Duration.ofSeconds(grantSeconds),
+          totalBudget = totalBudget,
+          spentBudget = claimants * amountGranted,
+          createdBy = createdBy,
+          theme = theme
         )
     }
 

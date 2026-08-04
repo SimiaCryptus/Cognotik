@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -82,24 +82,24 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
             val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
                 it.server.javaClass,
                 user,
-                AuthorizationInterface.OperationType.Read
+                OperationType.Read
             )
             isAuthorized
         }.map {
             val canRead = ApplicationServices.authorizationManager.isAuthorized(
                 it.server.javaClass,
                 user,
-                AuthorizationInterface.OperationType.Read
+                OperationType.Read
             )
             val canWrite = ApplicationServices.authorizationManager.isAuthorized(
                 it.server.javaClass,
                 user,
-                AuthorizationInterface.OperationType.Write
+                OperationType.Write
             )
             val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(
                 it.server.javaClass,
                 user,
-                AuthorizationInterface.OperationType.Public
+                OperationType.Public
             )
             mapOf(
                 "path" to it.path,

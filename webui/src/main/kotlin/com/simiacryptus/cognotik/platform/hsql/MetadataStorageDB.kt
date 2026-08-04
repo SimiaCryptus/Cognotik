@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
+import com.simiacryptus.cognotik.platform.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import org.jetbrains.exposed.v1.core.*
@@ -292,7 +293,7 @@ class MetadataStorageDB : MetadataStorageInterface {
    * Listing-page optimized: project only the columns required by the
    * sessions list and skip "message_ids" entirely (which can be large).
    */
-  override fun listSessionEntries(user: User): List<MetadataStorageInterface.SessionListEntry> {
+  override fun listSessionEntries(user: User): List<SessionListEntry> {
     log.debug("Listing session entries (projection) for user: {}", user.email)
     return tx {
       val userSessionIds = sessionIdsForUser(user.email)
@@ -314,7 +315,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Loaded {} session entries for user: {}", it.size, user.email) }
   }
 
-  override fun listSessionEntries(path: String): List<MetadataStorageInterface.SessionListEntry> {
+  override fun listSessionEntries(path: String): List<SessionListEntry> {
     log.debug("Listing session entries (projection) for path: {}", path)
     return tx {
       val sessionIds = MetadataTable
@@ -469,7 +470,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   private fun buildSessionListEntries(
     rows: List<ResultRow>,
     restrictToSessionIds: Set<String>? = null
-  ): List<MetadataStorageInterface.SessionListEntry> {
+  ): List<SessionListEntry> {
     if (rows.isEmpty()) return emptyList()
     data class Accum(
       var name: String? = null,
@@ -506,7 +507,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     val ids = restrictToSessionIds ?: grouped.keys
     return ids.mapNotNull { sid ->
       val acc = grouped[sid] ?: return@mapNotNull null
-      MetadataStorageInterface.SessionListEntry(
+      SessionListEntry(
         id = Session(sid),
         name = acc.name,
         sessionTime = acc.sessionTime,

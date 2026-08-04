@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -56,7 +56,7 @@ class CancelThreadsServlet : HttpServlet() {
         ApplicationServices.authorizationManager.isAuthorized(
           javaClass,
           user,
-          AuthorizationInterface.OperationType.Delete
+          OperationType.Delete
         )
       )
       { "User $user is not authorized to cancel sessions" }
@@ -65,7 +65,7 @@ class CancelThreadsServlet : HttpServlet() {
           ApplicationServices.authorizationManager.isAuthorized(
             javaClass,
             user,
-            AuthorizationInterface.OperationType.Public
+            OperationType.Public
           )
         )
         { "User $user is not authorized to cancel global sessions" }

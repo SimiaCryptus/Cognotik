@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 
 open class AuthenticationManager : AuthenticationInterface {

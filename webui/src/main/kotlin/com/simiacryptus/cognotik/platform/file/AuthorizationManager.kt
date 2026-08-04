@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory.getLogger
 import java.util.*
@@ -10,7 +11,7 @@ open class AuthorizationManager : AuthorizationInterface {
   override fun isAuthorized(
     applicationClass: Class<*>?,
     user: User?,
-    operationType: AuthorizationInterface.OperationType,
+    operationType: OperationType,
   ) = try {
     log.debug(
       "Checking authorization for user: {}, operation: {}, application: {}",

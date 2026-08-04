@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -87,7 +88,7 @@ class SessionUsageDetailsServlet : HttpServlet() {
         }
     }
 
-    private fun metadataName(metadata: com.simiacryptus.cognotik.platform.model.SessionMetadata?): String? =
+    private fun metadataName(metadata: SessionMetadata?): String? =
         metadata?.name
 
     private fun sortRows(

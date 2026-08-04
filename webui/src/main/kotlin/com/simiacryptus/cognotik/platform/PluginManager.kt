@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.CognotikPlugin
-import com.simiacryptus.cognotik.platform.model.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.PluginManagerInterface
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -12,7 +12,6 @@ import java.net.URLClassLoader
 import java.util.ServiceLoader
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 
 /**
  * Manages loading and initialization of plugin JARs.

@@ -1,6 +1,7 @@
-package com.simiacryptus.cognotik.platform.model
+package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import java.io.File
 import java.util.*
 
@@ -211,56 +212,5 @@ interface StorageInterface {
     ids: List<String>
   )
 
-  /**
-   * Companion object containing deprecated utility methods.
-   *
-   * These methods have been moved to the Session class and are maintained
-   * here only for backward compatibility.
-   */
 
-  companion object {
-    /**
-     * @deprecated Use Session.long64() instead
-     */
-    @Deprecated("Use Session.long64() instead", ReplaceWith("Session.long64()"))
-    fun long64() = Session.long64()
-
-    /**
-     * @deprecated Use Session.validateSessionId(session) instead
-     */
-
-    @Deprecated("Use Session.validateSessionId(session) instead", ReplaceWith("Session.validateSessionId(session)"))
-    fun validateSessionId(session: Session) = Session.validateSessionId(session)
-
-    /**
-     * @deprecated Use Session.newGlobalID() instead
-     */
-
-    @Deprecated("Use Session.newGlobalID() instead", ReplaceWith("Session.newGlobalID()"))
-    fun newGlobalID(): Session = Session.newGlobalID()
-
-    /**
-     * @deprecated Use Session.newUserID() instead
-     */
-
-    @Deprecated("Use Session.newUserID() instead", ReplaceWith("Session.newUserID()"))
-    fun newUserID(): Session = Session.newUserID()
-
-    /**
-     * @deprecated Use Session.parseSessionID(sessionID) instead
-     */
-
-    @Deprecated("Use Session.parseSessionID(sessionID) instead", ReplaceWith("Session.parseSessionID(sessionID)"))
-    fun parseSessionID(sessionID: String): Session = Session.parseSessionID(sessionID)
-
-    /**
-     * @deprecated Use Session.id2() instead
-     */
-
-    @Deprecated("Use Session.id2() instead")
-    private fun id2() = Session.long64().filter {
-      it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9'
-    }.take(4)
-
-  }
 }

@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.platform.hsql.UserSettingsDB
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.util.PluginManager
-import com.simiacryptus.cognotik.util.resolveTool
 import java.io.File
 
 object ApplicationServices {
