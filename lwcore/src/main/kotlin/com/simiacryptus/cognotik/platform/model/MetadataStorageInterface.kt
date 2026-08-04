@@ -22,6 +22,7 @@ data class SessionMetadata(
     val messageIds: List<String> = emptyList(),
     val sessionTime: Date? = null,
     val ownerId: String? = null,
+    val workerId: String? = null,
     val path: String? = null,
 )
 
@@ -139,6 +140,9 @@ interface MetadataStorageInterface {
      */
     fun setSessionOwner(session: Session, ownerId: String?)
 
+    fun getSessionWorker(session: Session): String?
+    fun setSessionWorker(session: Session, ownerId: String?)
+
     /**
      * Deletes all metadata associated with a session.
      *
@@ -187,6 +191,7 @@ interface MetadataStorageInterface {
         if (metadata.messageIds.isNotEmpty()) setMessageIds(user, session, metadata.messageIds)
         metadata.sessionTime?.let { setSessionTime(user, session, it) }
         metadata.ownerId?.let { setSessionOwner(session, it) }
+        metadata.workerId?.let { setSessionWorker(session, it) }
     }
     /**
      * Bulk-fetch metadata for all sessions belonging to a user in a single backend call.
@@ -245,6 +250,7 @@ interface MetadataStorageInterface {
         val name: String?,
         val sessionTime: Date?,
         val ownerId: String?,
+        val workerId: String?,
         val path: String?,
     )
     /**
@@ -263,6 +269,7 @@ interface MetadataStorageInterface {
                 name = it.name,
                 sessionTime = it.sessionTime,
                 ownerId = it.ownerId,
+                workerId = it.workerId,
                 path = it.path,
             )
         }
@@ -280,22 +287,7 @@ interface MetadataStorageInterface {
                 name = it.name,
                 sessionTime = it.sessionTime,
                 ownerId = it.ownerId,
-                path = it.path,
-            )
-        }
-    }
-    /**
-     * Bulk-fetch lightweight session entries for an explicit set of session IDs.
-     * Default implementation delegates to [getSessionMetadataBulk]; DB-backed
-     * implementations may override for efficiency.
-     */
-    fun getSessionEntriesBulk(user: User?, sessionIds: Collection<String>): List<SessionListEntry> {
-        return getSessionMetadataBulk(user, sessionIds).map {
-            SessionListEntry(
-                id = it.id,
-                name = it.name,
-                sessionTime = it.sessionTime,
-                ownerId = it.ownerId,
+                workerId = it.workerId,
                 path = it.path,
             )
         }
