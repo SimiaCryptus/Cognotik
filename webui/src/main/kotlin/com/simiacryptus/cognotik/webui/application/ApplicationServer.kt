@@ -40,6 +40,7 @@ abstract class ApplicationServer(
   init {
     FileServlet.userResolver = UserProviderImpl()
   }
+
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
   open fun appInfo(session: Session, user: User) = appInfoMap.getOrPut(session) {
@@ -92,6 +93,7 @@ abstract class ApplicationServer(
     }
   }
   protected open val sessionSettingsServlet by lazy { ServletHolder("settings", SessionSettingsServlet(this)) }
+  protected open val sessionNameServlet by lazy { ServletHolder("sessionName", SessionNameServlet(this)) }
   protected open val sessionThreadsServlet by lazy { ServletHolder("threads", SessionThreadsServlet()) }
   protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
   protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
@@ -229,6 +231,8 @@ abstract class ApplicationServer(
     logger.debug("Added web ui (IDE view) servlet")
     webAppContext.addServlet(sessionSettingsServlet, "/settings")
     logger.debug("Added sessionSettings servlet")
+    webAppContext.addServlet(sessionNameServlet, "/sessionName")
+    logger.debug("Added sessionName servlet")
     webAppContext.addServlet(sessionThreadsServlet, "/threads")
     logger.debug("Added sessionThreads servlet")
     webAppContext.addServlet(deleteSessionServlet, "/delete")
