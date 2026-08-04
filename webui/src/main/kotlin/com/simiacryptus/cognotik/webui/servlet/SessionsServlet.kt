@@ -217,7 +217,7 @@ class SessionsServlet : HttpServlet() {
     ): List<SessionMetadata> {
         val comparator: Comparator<SessionMetadata> = when (sortBy) {
             "name" -> compareBy(nullsLast()) { it.name?.lowercase() }
-            "owner" -> compareBy(nullsLast()) { it.workerId?.lowercase() }
+            "owner" -> compareBy(nullsLast()) { it.ownerId?.lowercase() }
             "messages" -> compareBy { it.messageIds.size }
             "tokens" -> compareBy { totalTokens(usages[it]) }
             "cost" -> compareBy { totalCost(usages[it]) }
@@ -337,7 +337,7 @@ class SessionsServlet : HttpServlet() {
             sb.append("{")
             sb.append("\"id\":").append(jsonString(meta.id.sessionId)).append(",")
             sb.append("\"name\":").append(jsonString(meta.name)).append(",")
-            sb.append("\"ownerId\":").append(jsonString(meta.workerId)).append(",")
+            sb.append("\"ownerId\":").append(jsonString(meta.ownerId)).append(",")
             sb.append("\"path\":").append(jsonString(meta.path)).append(",")
             sb.append("\"shareUrl\":").append(jsonString(buildShareUrl(meta.path ?: "", meta.id.sessionId))).append(",")
             sb.append("\"sessionTime\":").append(
@@ -494,7 +494,7 @@ class SessionsServlet : HttpServlet() {
                     append("<tr class=\"clickable\" onclick=\"navigateTo('")
                         .append(jsEscape(path)).append("')\">")
                     append("<td>").append(htmlEscape(meta.name ?: id)).append("</td>")
-                    append("<td>").append(htmlEscape(meta.workerId ?: "")).append("</td>")
+                    append("<td>").append(htmlEscape(meta.ownerId ?: "")).append("</td>")
                     append("<td>").append(htmlEscape(meta.sessionTime?.let { isoDate(it) } ?: "")).append("</td>")
                     append("<td class=\"num\">").append(formatNumber(tokens)).append("</td>")
                     append("<td class=\"num\">").append(formatCost(cost)).append("</td>")

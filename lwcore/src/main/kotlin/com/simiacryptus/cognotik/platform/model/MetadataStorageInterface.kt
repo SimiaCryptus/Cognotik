@@ -12,7 +12,7 @@ import java.util.*
  * @property name The display name of the session, or null if not set
  * @property messageIds The list of message IDs associated with the session
  * @property sessionTime The timestamp associated with the session, or null if not set
- * @property workerId The worker ip:port for the session, or null if not set
+ * @property ownerId The worker ip:port for the session, or null if not set
  * @property ownerId The owner user.id for the session, or null if not set
  * @property path The path associated with the session, or null if not set
  */
@@ -21,7 +21,6 @@ data class SessionMetadata(
     val name: String? = null,
     val messageIds: List<String> = emptyList(),
     val sessionTime: Date? = null,
-    val workerId: String? = null,
     val ownerId: String? = null,
     val path: String? = null,
 )
@@ -187,7 +186,7 @@ interface MetadataStorageInterface {
         metadata.name?.let { setSessionName(user, session, it) }
         if (metadata.messageIds.isNotEmpty()) setMessageIds(user, session, metadata.messageIds)
         metadata.sessionTime?.let { setSessionTime(user, session, it) }
-        metadata.workerId?.let { setSessionOwner(session, it) }
+        metadata.ownerId?.let { setSessionOwner(session, it) }
     }
     /**
      * Bulk-fetch metadata for all sessions belonging to a user in a single backend call.
@@ -263,7 +262,7 @@ interface MetadataStorageInterface {
                 id = it.id,
                 name = it.name,
                 sessionTime = it.sessionTime,
-                ownerId = it.workerId,
+                ownerId = it.ownerId,
                 path = it.path,
             )
         }
@@ -280,7 +279,7 @@ interface MetadataStorageInterface {
                 id = it.id,
                 name = it.name,
                 sessionTime = it.sessionTime,
-                ownerId = it.workerId,
+                ownerId = it.ownerId,
                 path = it.path,
             )
         }
@@ -296,7 +295,7 @@ interface MetadataStorageInterface {
                 id = it.id,
                 name = it.name,
                 sessionTime = it.sessionTime,
-                ownerId = it.workerId,
+                ownerId = it.ownerId,
                 path = it.path,
             )
         }
