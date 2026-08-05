@@ -7,9 +7,9 @@ import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApiData
+import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.encrypt
@@ -171,27 +171,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 log.warn("Error building Developer Tools", e)
             }
 
-            try {
-                tabbedPane.addTab("AWS", JPanel(BorderLayout()).apply {
-                    add(JPanel().apply {
-                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                        add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                            add(JLabel("AWS Profile:"))
-                            add(component.awsProfile)
-                        })
-                        add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                            add(JLabel("AWS Region:"))
-                            add(component.awsRegion)
-                        })
-                        add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                            add(JLabel("AWS Bucket:"))
-                            add(component.awsBucket)
-                        })
-                    }, BorderLayout.NORTH)
-                })
-            } catch (e: Exception) {
-                log.warn("Error building AWS Settings", e)
-            }
         })
 
         return tabbedPane
@@ -411,9 +390,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         log.debug("Writing settings to UI components")
         try {
             component.diffLoggingEnabled.isSelected = settings.diffLoggingEnabled
-            component.awsProfile.text = settings.awsProfile ?: ""
-            component.awsRegion.text = settings.awsRegion ?: ""
-            component.awsBucket.text = settings.awsBucket ?: ""
             component.listeningPort.text = settings.listeningPort.toString()
             component.listeningEndpoint.text = settings.listeningEndpoint
             component.suppressErrors.isSelected = settings.suppressErrors
@@ -501,9 +477,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
             settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
             settings.imageChatModel = ApiChatModel(imageChatModel, imageChatApiData)
-            settings.awsProfile = component.awsProfile.text.takeIf { it.isNotBlank() }
-            settings.awsRegion = component.awsRegion.text.takeIf { it.isNotBlank() }
-            settings.awsBucket = component.awsBucket.text.takeIf { it.isNotBlank() }
             settings.listeningPort = component.listeningPort.text.safeInt()
             settings.listeningEndpoint = component.listeningEndpoint.text
             settings.suppressErrors = component.suppressErrors.isSelected

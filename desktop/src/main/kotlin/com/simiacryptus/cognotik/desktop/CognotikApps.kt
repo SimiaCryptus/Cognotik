@@ -7,7 +7,9 @@ import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.PluginManagerInterface
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -41,7 +43,7 @@ import kotlin.system.exitProcess
 val globalID = Session.newGlobalID()
 
 open class CognotikApps(
-    localName: String, publicName: String, port: Int
+    localName: String, publicName: String?, port: Int
 ) : ApplicationDirectory(
     localName = localName, publicName = publicName, port = port
 ) {
@@ -236,14 +238,14 @@ open class CognotikApps(
     }
 
     protected open fun PluginManagerInterface.subscribeToChanges() {
-        subscribeToChanges {
-            log.info("Plugin change detected, reinitializing apps...")
-            try {
-                reloadApps()
-            } catch (e: Exception) {
-                log.error("Failed to reload apps after plugin change: ${e.message}", e)
-            }
+      onChange {
+        log.info("Plugin change detected, reinitializing apps...")
+        try {
+          reloadApps()
+        } catch (e: Exception) {
+          log.error("Failed to reload apps after plugin change: ${e.message}", e)
         }
+      }
     }
 
     private fun initSystemTray() {
@@ -300,7 +302,7 @@ open class CognotikApps(
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
-                operationType: AuthorizationInterface.OperationType
+                operationType: OperationType
             ): Boolean = true
         }
     }

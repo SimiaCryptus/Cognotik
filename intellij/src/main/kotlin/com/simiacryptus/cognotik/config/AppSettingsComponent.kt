@@ -30,25 +30,6 @@ import javax.swing.table.DefaultTableModel
 class AppSettingsComponent : Disposable {
     @Name("Enable Diff Logging")
     val diffLoggingEnabled = JBCheckBox()
-
-    @Name("AWS Profile")
-    val awsProfile = JBTextField().apply {
-        toolTipText = "AWS Profile"
-        columns = 30
-    }
-
-    @Name("AWS Region")
-    val awsRegion = JBTextField().apply {
-        toolTipText = "AWS Region"
-        columns = 30
-    }
-
-    @Name("AWS Bucket")
-    val awsBucket = JBTextField().apply {
-        toolTipText = "AWS Bucket"
-        columns = 30
-    }
-
     @Suppress("unused")
     @Name("Store Metadata")
     val storeMetadata = JTextArea().apply {
@@ -388,9 +369,6 @@ class AppSettingsComponent : Disposable {
         log.debug("Initializing AppSettingsComponent")
         try {
             diffLoggingEnabled.isSelected = AppSettingsState.instance.diffLoggingEnabled
-            awsProfile.text = AppSettingsState.instance.awsProfile ?: ""
-            awsRegion.text = AppSettingsState.instance.awsRegion ?: ""
-            awsBucket.text = AppSettingsState.instance.awsBucket ?: ""
             disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
         } catch (e: Exception) {
             log.error("Error initializing basic settings: ${e.message}", e)

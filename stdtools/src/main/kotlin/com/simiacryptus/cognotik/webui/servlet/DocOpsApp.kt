@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.asPatch
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -72,44 +73,46 @@ open class DocOpsApp(
   override fun newSession(user: User, session: Session): SocketManager {
     val newSession = super.newSession(user, session)!!
     val sessionRoot = newSession.resolveUserFile(".")!!
-    val isExistingSession = sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true && sessionRoot.listFiles()?.size!! > 2
+    val isExistingSession =
+      sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true && sessionRoot.listFiles()?.size!! > 2
     val currentSettings = getSettings(session, user, Settings::class.java)
     if (currentSettings == null) {
-        throw IllegalStateException("Failed to load settings for session: $session")
+      throw IllegalStateException("Failed to load settings for session: $session")
     }
     if (isExistingSession && !currentSettings.overwriteOnRestart) {
       LoggerFactory.getLogger(DocOpsApp::class.java)
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
       return newSession
     }
-    metadataStorage.setSessionMetadata(user, session, SessionMetadata(
-      id = session,
-      name = applicationName,
-      path = "/${applicationName}/fileIndex/${session.sessionId}/app.html",
-      sessionTime = Date(),
-      ownerId = user.id
-    ))
+    metadataStorage.updateSessionMetadata(
+      user, session, SessionMetadata(
+        id = session,
+        name = applicationName,
+        path = "/${applicationName}/fileIndex/${session.sessionId}/app.html",
+        sessionTime = Date(),
+        ownerId = user.id
+      ).asPatch()
+    )
+    val extractUtil = extractResources("web/util", sessionRoot)
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
     }
-    // Automatically initialize a git repository and make an initial commit
-    if (!GitOperationHandler.isGitRepository(sessionRoot)) {
-      try {
-        GitOperationHandler.executeGitCommand(sessionRoot, "git", "init")
-        GitOperationHandler.executeGitCommand(sessionRoot, "git", "add", "-A")
-        GitOperationHandler.executeGitCommand(
-          sessionRoot,
-          "git",
-          "commit",
-          "-m",
-          "Initial commit from DocOps app session"
-        )
-      } catch (e: Exception) {
-        // Log but don't fail session creation if git init fails
-        LoggerFactory.getLogger(DocOpsApp::class.java)
-          .warn("Failed to initialize git repository for session: ${e.message}", e)
-      }
+    try {
+      GitOperationHandler.executeCommand(sessionRoot, "git", "init")
+      GitOperationHandler.executeCommand(sessionRoot, "git", "add", "-A", ".")
+      GitOperationHandler.executeCommand(
+        sessionRoot,
+        "git",
+        "commit",
+        "-a",
+        "-m",
+        "Initial commit from DocOps app session"
+      )
+    } catch (e: Exception) {
+      // Log but don't fail session creation if git init fails
+      LoggerFactory.getLogger(DocOpsApp::class.java)
+        .warn("Failed to initialize git repository for session: ${e.message}", e)
     }
     return newSession
   }

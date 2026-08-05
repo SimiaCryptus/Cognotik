@@ -4,13 +4,14 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
+import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.model.defaultUser
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -25,7 +26,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun user(): User {
-    return defaultUser
+    return ApplicationServicesConfig.defaultUser
   }
 
   @JvmStatic

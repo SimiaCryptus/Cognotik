@@ -12,7 +12,5 @@ import org.antlr.v4.runtime.TokenStream
 class Json5GrammarValidator : AntlrGrammarValidator<JSON5Lexer, JSON5Parser>("JSON5") {
   override fun createLexer(input: CharStream) = JSON5Lexer(input)
   override fun createParser(tokens: TokenStream) = JSON5Parser(tokens)
-  override fun parse(parser: JSON5Parser) {
-    parser.json5()
-  }
+  override fun parse(parser: JSON5Parser) = parser.json5()
 }

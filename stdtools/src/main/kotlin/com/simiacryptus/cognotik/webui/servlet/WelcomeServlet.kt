@@ -3,9 +3,11 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -52,18 +54,19 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
     private fun serveStaticPage(resp: HttpServletResponse?) {
         resp?.contentType = "text/html"
-        val inputStream = this::class.java.getResourceAsStream("/welcome/welcome.html")
+        val inputStream = this::class.java.getResourceAsStream("/web/index.html")
         if (inputStream != null) {
             inputStream.copyTo(resp?.outputStream!!)
         } else {
-            log.error("Failed to load welcome.html resource")
+            log.error("Failed to load index.html resource")
             resp?.sendError(500, "Welcome page not found")
         }
     }
 
 
     private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
-        val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        val user =
+          UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         val mapper = jacksonObjectMapper()
         response.contentType = "application/json"
         try {
@@ -75,30 +78,31 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     }
 
     private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
-        val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        val user =
+          UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
-            val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                AuthorizationInterface.OperationType.Read
-            )
+          val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Read
+          )
             isAuthorized
         }.map {
-            val canRead = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                AuthorizationInterface.OperationType.Read
-            )
-            val canWrite = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                AuthorizationInterface.OperationType.Write
-            )
-            val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                AuthorizationInterface.OperationType.Public
-            )
+          val canRead = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Read
+          )
+          val canWrite = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Write
+          )
+          val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Public
+          )
             mapOf(
                 "path" to it.path,
                 "thumbnail" to it.thumbnail,

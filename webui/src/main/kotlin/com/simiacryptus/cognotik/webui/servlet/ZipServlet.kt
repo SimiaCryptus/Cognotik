@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.StorageInterface
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -21,7 +21,8 @@ class ZipServlet(val dataStorage: StorageInterface) : HttpServlet() {
       }
       val session = Session(sessionParam)
       val path = request.parameterMap["path"]?.find { it.isNotBlank() } ?: "/"
-      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      val user =
+        UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       val sessionDir = dataStorage.getUserDir(user, session)
       val file = File(sessionDir, path)
       if (!file.exists()) {

@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
     import com.simiacryptus.cognotik.chat.ChatInterface
     import com.simiacryptus.cognotik.models.ModelSchema
+    import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.model.defaultUser
     import com.simiacryptus.cognotik.text.patch.PatchProcessors
     import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
     import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -55,13 +55,19 @@ package com.simiacryptus.cognotik.webui.servlet.action
      *     first request, so a server that never sees a modify request never starts it.
      *  4. **Path safety**: every requested path is canonicalised and must stay under the
      *     resolved root; folders are expanded with [FileSelectionUtils].
-     *  5. **Models are live.** [Config.smartModel]/[Config.fastModel] only seed
-     *     [ModelSelection]; the pair is resolved per request, so "Select Models…" also
+     *  5. **Models are live.** The pair is read from the calling user's settings on every
+     *     request (there is no configured default), so "Select Models…" immediately
      *     retargets the patch chat.
      */
     object ModifyFilesFsAction {
 
       const val MODIFY_OP = "modify"
+     /**
+      * Read-only companion to [MODIFY_OP]: resolves the chat UI URL of a session
+      * that already exists. Clients that hold an id (the IDE view rendering a
+      * `docops.status.json`) must not have to re-derive `{chatUri}/proxy/?session=…`.
+      */
+     const val SESSION_OP = "session"
 
       /** Guard rail: the summary goes into a prompt, not into a mmap. */
       private const val MAX_FILES = 64
@@ -74,17 +80,12 @@ package com.simiacryptus.cognotik.webui.servlet.action
         /** Base URI of the chat UI; resolved lazily so the server can start on demand. */
         val chatUri: () -> URI,
         val readOnly: Boolean = false,
-        /** Start-up default only; [ModelSelection] wins once anything is selected. */
-        val smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL"),
-        val fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL"),
         /**
          * Model resolution. Defaults to the installed DocOps endpoint's resolution, so a
-         * swapped proxy also decides which models a patch chat may use. The ids handed to it
-         * are the current [ModelSelection], falling back to the configured defaults.
+          * swapped proxy also decides which models a patch chat may use. Either way the ids
+          * come from the calling user's persisted selection - there is no other source.
          */
-        val models: (User) -> DocProcessorServlet.Models = { user ->
-          defaultModels(user, ModelSelection.smartOr(smartModel), ModelSelection.fastOr(fastModel))
-        },
+         val models: (User) -> DocProcessorServlet.Models = { user -> defaultModels(user) },
         /** Default for `?lineNumbers=` (IntelliJ: the MultiDiffChatWithLineNumbers variant). */
         val showLineNumbers: Boolean = false,
         val budget: Double = 2.0,
@@ -103,15 +104,16 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
       val isEnabled: Boolean get() = config != null
 
-      private fun defaultModels(user: User, smart: String?, fast: String?): DocProcessorServlet.Models {
-        DocOpsServlets.current?.let { return it.modelsFor(user, smart, fast) }
+       private fun defaultModels(user: User): DocProcessorServlet.Models {
+         DocOpsServlets.current?.let { return it.modelsFor(user) }
+        /* No endpoint installed: read the same authoritative source it would. */
+        val settings = user.userSettings()
         return DocProcessorServlet.models(
-          smartModel = smart,
-          fastModel = fast,
+          smartModel = settings.smartModel?.takeIf { it.isNotBlank() },
+          fastModel = settings.fastModel?.takeIf { it.isNotBlank() },
           imageModel = null,
           audioModel = null,
-          /* Same (cached, failure-tolerant) enumeration the model picker offers. */
-          available = ModelSelection.availableModels(user),
+          available = settings.models(),
         )
       }
 
@@ -119,12 +121,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
       @Synchronized
       fun install(cfg: Config) {
         config = cfg
-        /* Share the request-scoped user with the picker, and seed (never clobber) the pair. */
-        ModelSelection.installDefaults(
-          user = { ctx -> ctx?.let { cfg.user(it) } ?: defaultUser },
-          smart = cfg.smartModel,
-          fast = cfg.fastModel,
-        )
+         /* Share the request-scoped user with the picker; the pair itself lives in settings. */
+         ModelSelection.install(user = { ctx -> ctx?.let { cfg.user(it) } ?: ApplicationServicesConfig.defaultUser })
         ModelSelectionActions.install()
         if (!installed.compareAndSet(false, true)) return
         FsAction.register(
@@ -162,6 +160,23 @@ package com.simiacryptus.cognotik.webui.servlet.action
           ) { ctx -> handleModify(ctx) },
           replace = true,
         )
+       /* Same URL construction as handleModify, exposed for existing sessions so
+          that exactly one place owns the '{chatUri}/proxy/?session=…' contract. */
+       FsAction.register(
+         FsAction(
+           op = SESSION_OP,
+           method = "GET",
+           description = "Resolve the chat UI URL of an existing session id",
+           parameters = listOf(
+             ActionParam(
+               "id", required = false,
+               description = "session id; omit to fetch only the base and the URL template"
+             ),
+           ),
+           mutating = false,
+         ) { ctx -> handleSessionLink(ctx) },
+         replace = true,
+       )
       }
 
       /*
@@ -237,6 +252,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
           .toString()
         println("modify: session $session over ${selected.size} file(s) -> $url")
 
+        // TODO: use JsonUtil.toJson(mapOf(...))
         val sb = StringBuilder("{")
         sb.append("\"session\":\"").append(FsJson.esc(session.toString())).append("\",")
         sb.append("\"url\":\"").append(FsJson.esc(url)).append("\",")
@@ -247,6 +263,35 @@ package com.simiacryptus.cognotik.webui.servlet.action
         sb.append("]}")
         FsJson.write(ctx.resp, 200, sb.toString())
       }
+     /** Ids are echoed into a URL: keep them to the shape [Session.newUserID] produces. */
+     private val SESSION_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+     /**
+      * `GET {mount}/.fsapi/v1/session[?id=…]` ->
+      * `{ "base": "...", "template": "…/proxy/?session={session}", "session": …, "url": … }`
+      *
+      * The template is answered even without an id so a client can resolve a whole
+      * document of session ids (a `docops.status.json`) in one round trip.
+      */
+     private fun handleSessionLink(ctx: FsActionContext) {
+       val cfg = config
+         ?: return FsJson.fail(ctx.resp, FsErrorCode.ENOSYS, SESSION_OP, "session links are not enabled")
+       val id = ctx.req.getParameter("id")?.trim().orEmpty()
+       if (id.isNotBlank() && !SESSION_ID.matches(id)) {
+         return FsJson.fail(ctx.resp, FsErrorCode.EINVAL, SESSION_OP, "malformed session id")
+       }
+       val chatUri = cfg.chatUri()
+       val base = chatUri.resolve("/").toString().trimEnd('/')
+       val template = chatUri.resolve("/proxy/?session=").toString() + "{session}"
+       val url = if (id.isBlank()) null else chatUri.resolve("/proxy/?session=$id").toString()
+       val sb = StringBuilder("{")
+       sb.append("\"base\":\"").append(FsJson.esc(base)).append("\",")
+       sb.append("\"template\":\"").append(FsJson.esc(template)).append("\",")
+       sb.append("\"session\":").append(id.takeIf { it.isNotBlank() }?.let { "\"" + FsJson.esc(it) + "\"" } ?: "null")
+       sb.append(",\"url\":").append(url?.let { "\"" + FsJson.esc(it) + "\"" } ?: "null")
+       sb.append("}")
+       FsJson.write(ctx.resp, 200, sb.toString())
+     }
+
 
       /** Canonicalise, jail to [root], expand folders — the IDE's VIRTUAL_FILE_ARRAY equivalent. */
       private fun select(root: File, paths: List<String>): Set<Path> {

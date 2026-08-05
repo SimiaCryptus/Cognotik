@@ -77,7 +77,7 @@ against a local directory, or executed in the browser against the same directory
 
 ### 3.3 Access control today
 
-`FileAccessControl` enforces `.hidden` (→ 404), `.readonly` (→ 403) and `.writeable`
+`FileAccessControl` enforces `.hidden` (→ 404), `.readonly` (→ 403) and `.writeable_`
 (whitelist → everything else 403). This is the correct trust boundary and **must** be enforced identically by FS API
 v1 — the shim is untrusted client code.
 
@@ -228,7 +228,7 @@ HTTP/1.1 404 Not Found Content-Type: application/json
 | Condition                                  | HTTP | `code`                                          |
 |--------------------------------------------|------|-------------------------------------------------|
 | Path missing, or hidden by `.hidden`       | 404  | `ENOENT`                                        |
-| `.readonly` / `.writeable` denies write    | 403  | `EACCES`                                        |
+| `.readonly` / `.writeable_` denies write    | 403  | `EACCES`                                        |
 | Server read-only mode (`--read-only`)      | 403  | `EROFS`                                         |
 | Exclusive create on existing path (`wx`)   | 409  | `EEXIST`                                        |
 | Write to a directory                       | 400  | `EISDIR`                                        |
@@ -661,7 +661,7 @@ rather than "implement `fs`", cutting Phases 2–3 substantially.
 | `code`      | `errno` | Typical trigger                   |
 |-------------|---------|-----------------------------------|
 | `ENOENT`    | -2      | missing path, hidden path         |
-| `EACCES`    | -13     | `.readonly` / `.writeable` denial |
+| `EACCES`    | -13     | `.readonly` / `.writeable_` denial |
 | `EEXIST`    | -17     | `wx`/`ax`, `mkdir` non-recursive  |
 | `EISDIR`    | -21     | write/read a directory as a file  |
 | `ENOTDIR`   | -20     | traverse through a file           |

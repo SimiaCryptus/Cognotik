@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.hsql.GiftedCreditsDB
-import com.simiacryptus.cognotik.platform.model.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -217,7 +217,7 @@ class GiftedCreditsServlet : HttpServlet() {
         try {
             response.status = HttpServletResponse.SC_OK
             val user = try {
-                authenticate(request, response)
+              UserProviderImpl().authenticate(request, response)
             } catch (e: Exception) {
                 log.warn("Authentication error during GET from {}: {}", remoteAddr, e.message, e)
                 null
@@ -701,7 +701,7 @@ class GiftedCreditsServlet : HttpServlet() {
      * Attempt to determine a gift's assigned theme. Since the Gift data model may not
      * include a theme field, we try to read it reflectively; otherwise fall back to default.
      */
-    private fun resolveGiftTheme(gift: GiftedCreditsInterface.Gift): GiftTheme {
+    private fun resolveGiftTheme(gift: Gift): GiftTheme {
         return GiftThemes.byId(gift.theme)
     }
 
@@ -740,11 +740,11 @@ class GiftedCreditsServlet : HttpServlet() {
      * directing them to log in to claim the gift.
      */
     private fun showLoginRedirectForGift(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        giftId: String?,
-        gift: GiftedCreditsInterface.Gift?,
-        theme: GiftTheme
+      request: HttpServletRequest,
+      response: HttpServletResponse,
+      giftId: String?,
+      gift: Gift?,
+      theme: GiftTheme
     ) {
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
@@ -1089,7 +1089,7 @@ class GiftedCreditsServlet : HttpServlet() {
         log.debug("Handling POST request from {} for {} action={}", remoteAddr, requestUri, action)
 
         val user = try {
-            authenticate(request, response)
+          UserProviderImpl().authenticate(request, response)
         } catch (e: Exception) {
             log.warn("Authentication error during POST from {}: {}", remoteAddr, e.message, e)
             if (!response.isCommitted) {
@@ -1251,12 +1251,12 @@ class GiftedCreditsServlet : HttpServlet() {
     }
 
     private fun showClaimConfirmation(
-        userinfo: User,
-        giftId: String,
-        gift: GiftedCreditsInterface.Gift,
-        response: HttpServletResponse,
-        requestUri: String?,
-        theme: GiftTheme = GiftThemes.DEFAULT
+      userinfo: User,
+      giftId: String,
+      gift: Gift,
+      response: HttpServletResponse,
+      requestUri: String?,
+      theme: GiftTheme = GiftThemes.DEFAULT
     ) {
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
@@ -1439,12 +1439,12 @@ class GiftedCreditsServlet : HttpServlet() {
 
 
     private fun claimSuccess(
-        userinfo: User,
-        giftId: String,
-        gift: GiftedCreditsInterface.Gift,
-        response: HttpServletResponse,
-        requestUri: String?,
-        theme: GiftTheme = GiftThemes.DEFAULT
+      userinfo: User,
+      giftId: String,
+      gift: Gift,
+      response: HttpServletResponse,
+      requestUri: String?,
+      theme: GiftTheme = GiftThemes.DEFAULT
     ) {
         val redirectUri = "/?theme=${theme.id}"
         log.info(

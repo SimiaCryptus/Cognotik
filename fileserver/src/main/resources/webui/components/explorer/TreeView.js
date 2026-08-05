@@ -15,6 +15,8 @@ export class TreeView extends Component {
         this.rows = [];
         this.typeahead = '';
         this.typeaheadTimer = null;
+         /* A touch screen has no hover and no cheap double tap. */
+         this.coarse = !!window.matchMedia?.('(pointer: coarse)').matches;
     }
 
     render() {
@@ -79,6 +81,13 @@ export class TreeView extends Component {
                 text: this.model.query ? 'No matches' : 'Empty folder'
             }));
         }
+         /* Rows are taller on a coarse pointer than --fs-row-h suggests, and the
+            virtualiser's spacers must agree with reality. */
+         const first = this.inner.querySelector('.fs-tree__row');
+         if (first) {
+             const measured = first.getBoundingClientRect().height;
+             if (measured > 0) this.rowHeight = measured;
+         }
          if (this.el.scrollTop !== scrollTop) this.el.scrollTop = scrollTop;
     }
 
@@ -86,6 +95,9 @@ export class TreeView extends Component {
         const selected = this.model.selection.includes(node.path);
         const focused = this.model.focus === node.path;
         const badges = decorate(node);
+        /* A folder without write permission may still hold whitelisted files
+           (.writeable), so only a read-only *file* is flagged as such. */
+        const readOnly = node.type === 'file' && !!node.readOnly;
         const row = h('div', {
             class: 'fs-tree__row',
             role: 'treeitem',
@@ -95,9 +107,9 @@ export class TreeView extends Component {
             'aria-setsize': String(total),
             'aria-selected': String(selected),
             'aria-expanded': node.type === 'dir' ? String(this.model.expanded.has(node.path)) : null,
-            'aria-describedby': node.readOnly ? 'fs-readonly-hint' : null,
+            'aria-describedby': readOnly ? 'fs-readonly-hint' : null,
             tabindex: focused ? '0' : '-1',
-            dataset: {path: node.path, readonly: String(!!node.readOnly)},
+            dataset: {path: node.path, readonly: String(readOnly)},
             style: {paddingInlineStart: `${(node.level - 1) * 12 + 4}px`},
         }, [
             h('span', {
@@ -106,7 +118,7 @@ export class TreeView extends Component {
             }),
             h('span', {class: 'fs-tree__icon', 'aria-hidden': 'true', text: node.type === 'dir' ? '📁' : '📄'}),
             h('span', {class: 'fs-tree__label', text: node.name}),
-            node.readOnly ? h('span', {class: 'fs-tree__badge', 'aria-hidden': 'true', text: '🔒'}) : null,
+            readOnly ? h('span', {class: 'fs-tree__badge', 'aria-hidden': 'true', text: '🔒'}) : null,
             ...badges.map((b) => h('span', {
                 class: 'fs-tree__badge',
                 title: b.tooltip || '',
@@ -167,10 +179,14 @@ export class TreeView extends Component {
         const additive = event.ctrlKey || event.metaKey;
         const range = event.shiftKey;
         this.applySelection(node, {additive, range});
-        /* Only the twisty reacts to a single click; opening needs a double click
-           (or Enter) so the tree is not "over-reactive" while browsing. */
-        if (node.type === 'dir' && event.target.closest('.fs-tree__twisty')) {
+         const twisty = !!event.target.closest('.fs-tree__twisty');
+         /* With a precise pointer only the twisty reacts to a single click, so
+            the tree is not "over-reactive" while browsing; on a touch screen a
+            single tap has to do everything. */
+         if (node.type === 'dir' && (twisty || this.coarse)) {
             this.model.toggle(node.path);
+         } else if (node.type === 'file' && this.coarse && !additive && !range) {
+             this.props.onActivate?.(node, {preview: true});
         }
     }
 

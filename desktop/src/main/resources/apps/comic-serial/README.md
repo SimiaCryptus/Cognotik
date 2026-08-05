@@ -1,113 +1,43 @@
-# 📚 Comic Serial Generator
+# Comic Serial Generator
 
-**Turn any idea into a full comic book series — no drawing skills required.**
+Turns a single article / story idea into an ongoing comic book series, then compiles
+every episode into one self-contained HTML comicbook.
 
-Got a story idea, an interesting article, or just a spark of imagination? The Comic Serial Generator uses AI to transform it into a beautifully formatted, serialized comic book — episode by episode, automatically. You stay in the creative driver's seat while the AI does the heavy lifting.
-
----
-
-## ✨ What Can It Do?
-
-- **Generate a complete comic series** from a single idea or article
-- **Keep the story going** — each new episode picks up where the last one left off, with consistent characters, settings, and tone
-- **Batch-produce episodes** — generate 3, 5, or 10 episodes in one click
-- **Compile everything** into a polished, self-contained HTML comic book you can share or read offline
-- **Track AI costs** so you always know what you're spending
-- **Choose your AI models** to balance quality and cost
-
----
-
-## 🚀 Getting Started
-
-### Step 1 — Write Your Idea
-
-Head to the **💡 Idea** tab and type (or paste) your story concept. This could be:
-
-- A news article you want reimagined as a comic
-- A short story premise ("A detective who can only solve crimes in her dreams…")
-- A world-building concept, a character sketch, or anything that sparks your imagination
-
-Hit **💾 Save Idea** when you're ready.
-
----
-
-### Step 2 — Generate Your First Episode
-
-Switch to the **⚙️ Pipeline** tab and click **🎨 Generate Comic #1**.
-
-The AI will read your idea and create the first episode — establishing the characters, setting, visual style, and the story arc that will carry through the whole series.
-
----
-
-### Step 3 — Keep the Story Going
-
-Once Episode 1 exists, click **📖 Generate Next Episode** to continue the story. Each new episode builds naturally on the one before it, while staying true to your original idea.
-
-Want to generate a whole run at once? Use **⚡ Batch Generation** — just pick how many episodes you want and hit **🚀 Generate Series**. The app will handle everything in sequence, including compiling the final book.
-
----
-
-### Step 4 — Read & Share Your Comic
-
-Click **📕 Generate HTML Book** to compile all your episodes into a single, beautifully formatted HTML comic book. Then hit **🔗 Open in New Tab** to read it — or share the file with anyone you like.
-
----
-
-## 📖 Browsing Your Series
-
-The **📖 Series** tab gives you a clean overview of every episode you've generated. Click any episode to expand and read it. You can also generate new episodes or compile the book directly from this tab — no need to jump back to the Pipeline.
-## 🖼️ Reading Comics Comfortably
-Every comic preview — whether it's a single episode or the full compiled book — opens in its own mini viewer with handy controls:
-- **+ / −** buttons to make the viewing window taller or shorter
-- **⛶ Fullscreen** button to read distraction-free, edge-to-edge
-- Press **Esc** any time to exit fullscreen
-No more squinting at a tiny preview box — read your comics the way they're meant to be seen.
----
-## 📡 Keeping an Eye on Generation
-Comic generation happens in the background, so you're never stuck staring at a spinner. While episodes or your HTML book are being created, you'll see live status badges (pending → running → done) and **📡 Monitor** links that let you peek at what the AI is doing behind the scenes in real time. It's a great way to satisfy your curiosity — or just confirm everything's chugging along nicely.
----
-
----
-
-
-## 💰 Tracking Costs
-
-The **💰 Usage** tab shows you exactly how many AI tokens have been used and what it's cost — broken down by model. This is especially handy when generating longer series or experimenting with different AI models.
-Prefer raw numbers? Hit **{ } JSON View** to see the underlying data directly, or switch back to **📊 Table View** for an easy-to-read summary. You can also drill into individual **Task Sessions** to see the cost of each specific episode or book compilation.
-
----
-
-## 🤖 Choosing Your AI Models
-
-The **🤖 Models** tab lets you pick which AI models power the generator:
-
-| Model Role | What It Does |
-|---|---|
-| 🧠 **Smart Model** | Handles creative writing, story generation, and complex reasoning |
-| ⚡ **Fast Model** | Handles formatting, parsing, and lighter processing tasks |
-| 🎨 **Image Model** | Generates comic panel artwork and illustrations |
-
-Mix and match to find the right balance of quality and cost for your project. Your choices are saved automatically between sessions.
-
----
-
-## 💡 Tips for Great Results
-
-- **Be specific in your idea** — the more detail you give, the richer the first episode will be. Character names, settings, and a hint of conflict all help.
-- **Let the series breathe** — generating 3–5 episodes gives the AI enough room to develop a satisfying story arc.
-- **Experiment with ideas** — try the same concept with different AI models to see how the tone and style change.
-- **Save your HTML book** — once compiled, the HTML file is completely self-contained and works without an internet connection.
-
----
-
-## 🔄 How the Pipeline Works
+## Files
 
 ```
-Your Idea → Episode 1 → Episode 2 → Episode 3 → … → HTML Comic Book
+comic-serial/
+├── app.html   # entry point (Idea / Pipeline / Series / Models tabs)
+├── app.js     # ES module, imports everything shared from /app/
+├── style.css  # tokens + all styling
+├── ops/       # DocOp definitions
+└── README.md
 ```
 
-Each step flows naturally into the next. The app remembers where you left off, so you can come back any time and continue your series.
+## Pipeline
 
----
+| Step | Op                    | Input(s)                       | Output           |
+|------|-----------------------|--------------------------------|------------------|
+| 1    | `ops/comic_op.md`     | `idea.md`                      | `comic_1.md`     |
+| 2+   | `ops/sequel_op.md`    | `idea.md`, `comic_<n-1>.md`    | `comic_<n>.md`   |
+| 3    | `ops/html_book_op.md` | all `comic_*.md` / `comic_*.html` | `comicbook.html` |
 
-*Happy storytelling! 🎨*
+* **Idea** — `idea.md` auto-saves 800 ms after typing stops, and on explicit Save.
+* **Pipeline** — step 1, sequels, batch generation (first comic + N sequels + book).
+* **Series** — accordion of every episode, rendered HTML preferred over markdown.
+* **Models** — optional per-op overrides for smart / fast / image models.
+
+Episode count is derived from the filesystem (`comic_<n>.md` or `comic_<n>.html`),
+never from local state. Badges are restored from `docops.status.json` on load.
+
+## Conformance
+
+Usage, Sessions, Git and Download UI are provided by the shared menubar
+(`initMenu()`); this app only renders **inline** per-step session links via
+`updateSessionLinks(target, info, getProxyUrl, containerId)`.
+
+| 3-file | Modern JS | Menubar | No dup. chrome | Viewport | Mobile |
+|:------:|:---------:|:-------:|:--------------:|:--------:|:------:|
+|   ✅   |    ✅     |   ✅    |       ✅       |    ✅    |   ✅   |
+
+No outstanding items.

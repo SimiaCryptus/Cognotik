@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.webui.servlet
+import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiHandler
@@ -54,6 +55,16 @@ abstract class FilesystemServlet : FileServlet() {
   open fun getFsApiConfig(req: HttpServletRequest): FsApiConfig = FsApiConfig(
     execAllowlist = if (isGitEnabled(req)) mapOf("git" to GIT_SUBCOMMANDS) else emptyMap()
   )
+   /**
+    * The config actually enforced for this request. An unidentified caller is
+    * always downgraded to the read-only view, so `/meta` never advertises a
+    * capability that [isWriteAllowed] would then refuse.
+    */
+   protected fun effectiveFsApiConfig(req: HttpServletRequest, user: User?): FsApiConfig {
+     val base = getFsApiConfig(req)
+     return if (isWriteAllowed(user, req)) base else base.readOnlyView()
+   }
+
 
   /** Set to false to serve the classic v1 surface only. */
   open fun isFsApiEnabled(req: HttpServletRequest): Boolean = true
@@ -79,7 +90,9 @@ abstract class FilesystemServlet : FileServlet() {
       return
     }
     val method = (req.method ?: "GET").uppercase()
-    log.debug("FS API {} /{} (prefix='{}')", method, route.op, route.prefix)
+     val user = getUser(req, resp)
+     val writeAllowed = isWriteAllowed(user, req)
+     log.debug("FS API {} /{} (prefix='{}', user='{}')", method, route.op, route.prefix, user?.email ?: "anonymous")
     val root = try {
       getFsApiRoot(req, resp)
     } catch (e: Exception) {
@@ -87,7 +100,10 @@ abstract class FilesystemServlet : FileServlet() {
       null
     }
     if (resp.isCommitted) return
-    FsApiHandler.handle(method, route.op, req, resp, root, getFsApiConfig(req))
+     FsApiHandler.handle(
+       method, route.op, req, resp, root,
+       effectiveFsApiConfig(req, user), user, writeAllowed
+     )
   }
 
   companion object {

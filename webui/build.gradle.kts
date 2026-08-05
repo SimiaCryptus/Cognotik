@@ -248,7 +248,7 @@ tasks.register<Copy>("copyWebappStatic") {
   dependsOn("buildWebapp")
   onlyIf { !skipWebapp && File(webappDir, "build/static").hasContent() }
   from("../webapp-v2/build/static")
-  into("src/main/resources/welcome/static")
+  into("src/main/resources/web/static")
 }
 
 // Clean webapp build artifacts
@@ -257,7 +257,7 @@ tasks.register<Delete>("cleanWebapp") {
   onlyIf { pnpmExecutable != null }
   delete("../webapp-v2/build")
   delete("src/main/resources/application/static")
-  delete("src/main/resources/welcome/static")
+  delete("src/main/resources/web/static")
 }
 tasks.clean {
   dependsOn("cleanWebapp")

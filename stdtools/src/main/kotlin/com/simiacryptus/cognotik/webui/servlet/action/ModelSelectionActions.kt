@@ -1,12 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
-import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
-import com.simiacryptus.cognotik.webui.servlet.action.ActionOption
-import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
-import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
-import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
-import com.simiacryptus.cognotik.webui.servlet.action.FsAction
-import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
 import com.simiacryptus.cognotik.webui.servlet.handler.FsException
@@ -27,13 +22,14 @@ import jakarta.servlet.http.HttpServletResponse
  * SPA registers it as a first-class action - Tools menu, command palette, Alt+Enter -
  * with **no client-side code**. Both parameters are [ActionParam.dynamic], so the
  * generated dialog's two dropdowns are filled by calling this same endpoint with
-     * `?resolveParam=<name>` when it opens; the list is therefore always the set of
-     * models *the calling user's* API keys actually expose (the user is resolved from the
-     * request through [ModelSelection.userFor]), and the current choice is labelled.
-     *
-     * The chosen pair is not copied anywhere: DocOps, AutoFix and the patch chat read
-     * [ModelSelection.smart]/[ModelSelection.fast] when they are invoked, so a change
-     * applies to the very next run.
+ * `?resolveParam=<name>` when it opens; the list is therefore always the set of
+ * models *the calling user's* API keys actually expose (the user is resolved from the
+ * request through [ModelSelection.userFor]), and the current choice is labelled.
+ *
+ * The chosen pair is stored in that same user's settings by [ModelSelection.update] —
+ * this action keeps no copy of it — and DocOps, AutoFix and the patch chat read it
+ * back when they are invoked, so a change applies to the very next run and affects
+ * nobody else's session.
  *
  * Omitting a parameter leaves it unchanged, which is what makes the "(leave
  * unchanged)" entry of each select meaningful.
@@ -52,7 +48,7 @@ object ModelSelectionActions {
         parameters = listOf(
           ActionParam("refresh", "boolean", description = "re-query the configured providers")
         ),
-            handler = { ctx -> writeJson(ctx.resp, ModelSelection.describe(ctx, refresh(ctx))) },
+        handler = { ctx -> writeJson(ctx.resp, ModelSelection.describe(ctx, refresh(ctx))) },
       ),
       replace = true
     )
@@ -87,8 +83,8 @@ object ModelSelectionActions {
           sendSelection = "none",
         ),
         paramResolvers = mapOf<String, (FsActionContext) -> List<ActionOption>>(
-            "smart" to { ctx -> options(ctx, ModelSelection.smart, "smart", refresh(ctx)) },
-            "fast" to { ctx -> options(ctx, ModelSelection.fast, "fast", refresh(ctx)) },
+          "smart" to { ctx -> options(ctx, ModelSelection.smartFor(ctx), "smart", refresh(ctx)) },
+          "fast" to { ctx -> options(ctx, ModelSelection.fastFor(ctx), "fast", refresh(ctx)) },
         ),
         handler = { ctx -> post(ctx) },
       ),
@@ -101,7 +97,7 @@ object ModelSelectionActions {
     if (FsAction.serveParamResolution(ctx)) return
     val smart = param(ctx, "smart")
     val fast = param(ctx, "fast")
-      val known = ModelSelection.modelIds(ctx, false)
+    val known = ModelSelection.modelIds(ctx, false)
     for ((role, value) in listOf("smart" to smart, "fast" to fast)) {
       /* Only reject when we have a list to reject against: an id a provider knows
          but the registry does not is still legitimate (as on the command line). */
@@ -116,26 +112,29 @@ object ModelSelectionActions {
         return
       }
     }
-    val changed = ModelSelection.update(smart, fast)
+    /* Same user the model list was resolved for, so what was offered is what is stored. */
+    val user = ModelSelection.userFor(ctx)
+    val changed = ModelSelection.update(user, smart, fast)
+    val selected = ModelSelection.smartFor(user)
     val payload = LinkedHashMap<String, Any?>()
     payload["kind"] = "toast"
-    payload["severity"] = if (ModelSelection.smart == null) "warn" else "info"
+    payload["severity"] = if (selected == null) "warn" else "info"
     payload["message"] = when {
-        ModelSelection.smart == null -> "No smart model selected — DocOps, AutoFix and the patch chat will refuse to run"
-        changed -> "Models updated — ${ModelSelection.summary()} (applies to the next DocOps/AutoFix/patch-chat run)"
-      else -> "Models unchanged — ${ModelSelection.summary()}"
+      selected == null -> "No smart model selected — DocOps, AutoFix and the patch chat will refuse to run"
+      changed -> "Models updated — ${ModelSelection.summary(user)} (applies to the next DocOps/AutoFix/patch-chat run)"
+      else -> "Models unchanged — ${ModelSelection.summary(user)}"
     }
-      payload.putAll(ModelSelection.describe(ctx, false))
+    payload.putAll(ModelSelection.describe(ctx, false))
     writeJson(ctx.resp, payload)
   }
 
-    private fun options(
-      ctx: FsActionContext,
-      current: String?,
-      role: String,
-      refresh: Boolean,
-    ): List<ActionOption> {
-      val ids = ModelSelection.modelIds(ctx, refresh)
+  private fun options(
+    ctx: FsActionContext,
+    current: String?,
+    role: String,
+    refresh: Boolean,
+  ): List<ActionOption> {
+    val ids = ModelSelection.modelIds(ctx, refresh)
     if (ids.isEmpty()) {
       /* No API key configured: still show what is selected rather than nothing. */
       return listOfNotNull(
@@ -167,3 +166,7 @@ object ModelSelectionActions {
     resp.writer.write(FsJson.stringify(payload))
   }
 }
+
+val FsActionContext.user: User
+  get() = UserProviderImpl().authenticate(req, resp)
+    ?: throw IllegalStateException("Authentication failed but no error response was sent")

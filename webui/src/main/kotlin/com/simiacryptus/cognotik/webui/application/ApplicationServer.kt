@@ -5,10 +5,12 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
@@ -36,6 +38,10 @@ abstract class ApplicationServer(
   open val root: File = dataStorageRoot,
   showMenubar: Boolean = true,
 ) : ChatServer(resourceBase, showMenubar) {
+  init {
+    FileServlet.userResolver = UserProviderImpl()
+  }
+
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
   open fun appInfo(session: Session, user: User) = appInfoMap.getOrPut(session) {
@@ -88,6 +94,7 @@ abstract class ApplicationServer(
     }
   }
   protected open val sessionSettingsServlet by lazy { ServletHolder("settings", SessionSettingsServlet(this)) }
+  protected open val sessionNameServlet by lazy { ServletHolder("sessionName", SessionNameServlet(this)) }
   protected open val sessionThreadsServlet by lazy { ServletHolder("threads", SessionThreadsServlet()) }
   protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
   protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
@@ -225,6 +232,8 @@ abstract class ApplicationServer(
     logger.debug("Added web ui (IDE view) servlet")
     webAppContext.addServlet(sessionSettingsServlet, "/settings")
     logger.debug("Added sessionSettings servlet")
+    webAppContext.addServlet(sessionNameServlet, "/sessionName")
+    logger.debug("Added sessionName servlet")
     webAppContext.addServlet(sessionThreadsServlet, "/threads")
     logger.debug("Added sessionThreads servlet")
     webAppContext.addServlet(deleteSessionServlet, "/delete")
@@ -250,7 +259,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
   val requestPath = (request as HttpServletRequest).requestURI
   val servletPath = request.servletPath
   log.debug("Processing request: {}", requestPath)
-  val user = authenticate(request, response as HttpServletResponse)
+  val user = UserProviderImpl().authenticate(request, response as HttpServletResponse)
   /*
    * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
    * redirecting its module/CSS requests to the login page would break the page load, while
@@ -272,8 +281,8 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
     email
   }
   val canRead = authorizationManager.isAuthorized(
-    applicationClass = applicationClass,
-    user = user,
+    ResourceRef.of(applicationClass = applicationClass),
+    Principal.of(user = user),
     operationType = OperationType.Read
   )
   log.debug(
@@ -305,66 +314,68 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
     )
   }
 
-fun authenticate(
-  request: HttpServletRequest,
-  response: HttpServletResponse?
-): User? {
-  val claimedUser = request.getCookie("USER")?.let { username ->
-    val email = request.getCookie("EMAIL") ?: ""
-    User(
-      name = username,
-      email = email,
-      id = email
-    )
-  }
-  if (null != claimedUser) {
-    val userSettings =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
-    val token = request.getCookie() ?: ""
-    val verified = try {
-      if (userSettings.passwordHash != null) {
-        val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash)
-        when (result) {
-          is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
-          is LoginServlet.Companion.SessionVerificationResult.Failure -> {
-            log.debug(
-              "Session token verification failed for user: {} - {} ({})",
-              claimedUser.email, result.error, result.reason
-            )
-            null
+class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
+  override fun authenticate(
+    request: HttpServletRequest,
+    response: HttpServletResponse?
+  ): User? {
+    val claimedUser = request.getCookie("USER")?.let { username ->
+      val email = request.getCookie("EMAIL") ?: ""
+      User(
+        name = username,
+        email = email,
+        id = email
+      )
+    }
+    if (null != claimedUser) {
+      val userSettings =
+        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
+      val token = request.getCookie() ?: ""
+      val verified = try {
+        if (userSettings.passwordHash != null) {
+          val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash)
+          when (result) {
+            is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
+            is LoginServlet.Companion.SessionVerificationResult.Failure -> {
+              log.debug(
+                "Session token verification failed for user: {} - {} ({})",
+                claimedUser.email, result.error, result.reason
+              )
+              null
+            }
           }
-        }
-      } else null
-    } catch (e: Exception) {
-      log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
-      null
-    }
-    if (verified != null) {
-      if (authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
-        authenticationManager.putUser(token, claimedUser)
-        log.debug("Session token stored for user: {}", claimedUser.email)
-      } else {
-        log.debug("Session token valid for user: {}", claimedUser.email)
+        } else null
+      } catch (e: Exception) {
+        log.debug("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
+        null
       }
-      return claimedUser
-    } else {
-      log.debug("No valid session token found for user: {}", claimedUser.email)
+      if (verified != null) {
+        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.label.isNullOrBlank()) {
+          authenticationManager.putUser(token, claimedUser)
+          log.debug("Session token stored for user: {}", claimedUser.email)
+        } else {
+          log.debug("Session token valid for user: {}", claimedUser.email)
+        }
+        return claimedUser
+      } else {
+        log.debug("No valid session token found for user: {}", claimedUser.email)
+      }
     }
-  }
-  try {
-    val user = authenticationManager.getUser(request.getCookie())
-    return user
-  } catch (e: RuntimeException) {
-    log.debug(e.message)
-    if (null != response) {
-      response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-      val originalRequest = request.requestURL.toString()
-      val queryString = request.queryString
-      val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-      val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-      response.setHeader("Location", "/login/?target=$encodedTarget")
+    try {
+      val user = authenticationManager.getUser(request.getCookie())
+      return user
+    } catch (e: RuntimeException) {
+      log.debug(e.message)
+      if (null != response) {
+        response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+        val originalRequest = request.requestURL.toString()
+        val queryString = request.queryString
+        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+        response.setHeader("Location", "/login/?target=$encodedTarget")
+      }
+      return null
     }
-    return null
   }
 }
 
@@ -403,7 +414,7 @@ fun authenticate(
       null
     }
     if (verified != null) {
-      if (authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
+      if (authenticationManager.listTokens(claimedUser).firstOrNull()?.label.isNullOrBlank()) {
         authenticationManager.putUser(token, claimedUser)
         log.debug("Session token stored for user: {}", claimedUser.email)
       } else {
@@ -452,7 +463,7 @@ fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
 }
 
 fun User.getAuthCookies(): Map<String, String?> = mapOf(
-  AuthenticationInterface.AUTH_COOKIE to authenticationManager.getAccessToken(this),
+  AuthenticationInterface.AUTH_COOKIE to authenticationManager.listTokens(this).firstOrNull()?.label,
   "USER" to name,
   "EMAIL" to email
 )

@@ -3,12 +3,9 @@ package com.simiacryptus.cognotik.cli
     import com.simiacryptus.cognotik.CoreProviders
     import com.simiacryptus.cognotik.models.APIProvider
     import com.simiacryptus.cognotik.platform.ApplicationServices
-    import com.simiacryptus.cognotik.platform.FileApplicationServices
-    import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-    import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
-    import com.simiacryptus.cognotik.platform.model.ApiData
+    import com.simiacryptus.cognotik.platform.ApiData
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+    import com.simiacryptus.cognotik.platform.UserSettingsInterface
     import com.simiacryptus.cognotik.util.SecureString
     import java.io.File
     import java.io.PrintStream
@@ -90,7 +87,7 @@ package com.simiacryptus.cognotik.cli
           i++
         }
 
-        installServices(root)
+        installServices()
         initProviders()
         val user = defaultUser(email)
 
@@ -123,7 +120,7 @@ package com.simiacryptus.cognotik.cli
         verify: Boolean = false,
         installServices: Boolean = true,
       ): Int {
-        if (installServices) installServices(root)
+        if (installServices) installServices()
         initProviders()
         val providers = providers()
         if (providers.isEmpty()) {
@@ -264,9 +261,8 @@ package com.simiacryptus.cognotik.cli
        * ------------------------------------------------------------------
        */
 
-      private fun installServices(root: File) {
+      private fun installServices() {
         try {
-          val cache = mutableMapOf<File, FileApplicationServices>()
           CliSupport.installFileServices()
         } catch (e: Exception) {
           // Already configured (and possibly locked) by a host process; use whatever is installed.

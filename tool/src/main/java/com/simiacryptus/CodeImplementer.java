@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.simiacryptus.cognotik.platform.model.UserKt.defaultUser;
+import static com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")

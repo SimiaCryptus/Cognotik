@@ -26,9 +26,12 @@ open class SimpleFileServlet(
   private val modifyEnabled: Boolean = false,
   /** Default state of the code-summary line numbering handed to the patch chat. */
   private val lineNumbers: Boolean = false,
+  /** Symbol indexing / JSON describe / caveman: on unless explicitly disabled. */
+  private val toolsEnabled: Boolean = true,
 ) : FilesystemServlet() {
   override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
   override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
+  override fun isToolsEnabled(req: HttpServletRequest): Boolean = toolsEnabled
 
   /**
    * The FS API is dispatched from service() and therefore bypasses the
@@ -50,6 +53,13 @@ open class SimpleFileServlet(
     terminalEnabled = terminalEnabled && !readOnly,
     maxTerminals = maxTerminals,
     terminalShell = shell,
+    /*
+     * Tools are read-mostly (describe/caveman never touch the tree); building an index
+     * writes .data sidecars, which FsToolsHandler already refuses on a read-only mount.
+     */
+    symbolsEnabled = toolsEnabled,
+    describeEnabled = toolsEnabled,
+    cavemanEnabled = toolsEnabled,
   )
 
   override fun getZipLink(req: HttpServletRequest, filePath: String): String {
@@ -70,13 +80,15 @@ open class SimpleFileServlet(
     /* One selection drives every agentic surface, so it sits next to them. */
     val models = if (!tasksEnabled && !modifyEnabled) "" else
       """<a class="zip-link" style="background-color:#0dcaf0;color:#000;" href="#" onclick="return cognotikModels(event)">🧠 Models…</a>"""
-    if (!tasksEnabled) return ide + modify + models
+    /* Always chain: the base class contributes the symbols/index toolbar. */
+    if (!tasksEnabled) return ide + modify + models + super.getToolbarActions(req, currentPath)
     val fix = if (readOnly) "" else
       """<a class="zip-link" style="background-color:#d63384;" href="#" onclick="return cognotikAutoFix(event)">🩺 AutoFix…</a>"""
     return ide + modify + models +
         """<a class="zip-link" style="background-color:#0d6efd;" href="#" onclick="return cognotikDocOps(event,'plan','')">📘 DocOps plan</a>""" +
         fix +
-        """<a class="zip-link" style="background-color:#495057;" href="#" onclick="return cognotikTasks(event)">🗒 Tasks</a>"""
+        """<a class="zip-link" style="background-color:#495057;" href="#" onclick="return cognotikTasks(event)">🗒 Tasks</a>""" +
+        super.getToolbarActions(req, currentPath)
   }
 
   /** Markdown documents get direct DocOps entry points; every file gets a patch chat. */
@@ -92,11 +104,12 @@ open class SimpleFileServlet(
     if (modifyEnabled && !readOnly && file.isFile) {
       sb.append("""<a class="action-link" href="#" title="Open a patch chat for this file" onclick="return cognotikModify(event,'$rel')">✏️ Modify</a>""")
     }
-    return sb.toString()
+    return sb.toString() +
+        super.getFileActions(file, req)
   }
 
   override fun getAdditionalSections(dir: File?, req: HttpServletRequest, currentPath: String): String {
-    if (!tasksEnabled && !modifyEnabled) return ""
+    if (!tasksEnabled && !modifyEnabled) return super.getAdditionalSections(dir, req, currentPath)
     val base = "${req.contextPath}${FILES_PREFIX}/${ROOT_SEGMENT}/.fsapi/v1"
     return """
             <script>
@@ -110,21 +123,23 @@ open class SimpleFileServlet(
               <div id="cognotik-task-status" class="cognotik-task-status">idle</div>
               <pre id="cognotik-task-output" class="cognotik-task-output"></pre>
             </section>
-        """.trimIndent()
+        """.trimIndent() +
+        super.getAdditionalSections(dir, req, currentPath)
   }
 
   override fun getAdditionalStyles(): String {
-    if (!tasksEnabled && !modifyEnabled) return ""
+    if (!tasksEnabled && !modifyEnabled) return super.getAdditionalStyles()
     return """
             .cognotik-tasks { margin: 1rem 0; padding: 0.75rem 1rem; border: 1px solid #6f42c1; border-radius: 6px; }
             .cognotik-task-status { font-weight: 600; margin-bottom: 0.5rem; }
             .cognotik-task-output { max-height: 24rem; overflow: auto; white-space: pre-wrap;
                 font-family: monospace; font-size: 0.85rem; margin: 0; }
-        """.trimIndent()
+        """.trimIndent() +
+        super.getAdditionalStyles()
   }
 
   override fun getAdditionalScripts(): String {
-    if (!tasksEnabled && !modifyEnabled) return ""
+    if (!tasksEnabled && !modifyEnabled) return super.getAdditionalScripts()
     /* Plain ES5, no template literals: this string is also a Kotlin raw string. */
     return """
             function cognotikPanel() {
@@ -252,7 +267,8 @@ open class SimpleFileServlet(
               }).catch(function (e) { cognotikStatus('request failed: ' + e); });
               return false;
             }
-        """.trimIndent()
+        """.trimIndent() +
+        super.getAdditionalScripts()
   }
 
     private fun relativeToBase(file: File): String = try {

@@ -12,7 +12,10 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -399,15 +402,15 @@ open class UnifiedHarness(
       PlanHarness.initDynamicEnums()
       ApplicationServices.authenticationManager = object : AuthenticationInterface {
         override fun getUser(accessToken: String?) = user
-        override fun getAccessToken(user: User) = "test-token"
+        fun getAccessToken(user: User) = "test-token"
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-        override fun logout(accessToken: String, user: User) {}
+        fun logout(accessToken: String, user: User) {}
       }
       ApplicationServices.authorizationManager = object : AuthorizationManager() {
         override fun isAuthorized(
           applicationClass: Class<*>?,
           user: User?,
-          operationType: AuthorizationInterface.OperationType
+          operationType: OperationType
         ): Boolean = true
       }
     }

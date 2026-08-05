@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
-import com.simiacryptus.cognotik.platform.model.defaultUser
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -11,14 +11,14 @@ abstract class InterpreterTestBase {
     @Test
     fun `test run with valid code`() {
         val interpreter = newInterpreter(mapOf())
-        val result = interpreter.run("2 + 2", defaultUser)
+        val result = interpreter.run("2 + 2", ApplicationServicesConfig.defaultUser)
         Assertions.assertEquals(4, result)
     }
 
     @Test
     fun `test run with invalid code`() {
         val interpreter = newInterpreter(mapOf())
-        assertThrows<Exception> { interpreter.run("2 +", defaultUser) }
+        assertThrows<Exception> { interpreter.run("2 +", ApplicationServicesConfig.defaultUser) }
     }
 
     @Test
@@ -37,7 +37,7 @@ abstract class InterpreterTestBase {
     @Test
     open fun `test run with variables`() {
         val interpreter = newInterpreter(mapOf("x" to (2 as Any), "y" to (3 as Any)))
-        val result = interpreter.run("x * y", defaultUser)
+        val result = interpreter.run("x * y", ApplicationServicesConfig.defaultUser)
         Assertions.assertEquals(6, result)
     }
 
@@ -55,7 +55,7 @@ abstract class InterpreterTestBase {
     @Test
     fun `test run with tool Any`() {
         val interpreter = newInterpreter(mapOf("tool" to (FooBar() as Any)))
-        val result = interpreter.run("tool.bar()", defaultUser)
+        val result = interpreter.run("tool.bar()", ApplicationServicesConfig.defaultUser)
         Assertions.assertEquals("Foo says Hello World", result)
     }
 
@@ -69,7 +69,7 @@ abstract class InterpreterTestBase {
     @Test
     fun `test run with tool Any and invalid code`() {
         val interpreter = newInterpreter(mapOf("tool" to (FooBar() as Any)))
-        assertThrows<Exception> { interpreter.run("tool.baz()", defaultUser) }
+        assertThrows<Exception> { interpreter.run("tool.baz()", ApplicationServicesConfig.defaultUser) }
     }
 
     @Test

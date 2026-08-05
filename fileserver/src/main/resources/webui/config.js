@@ -35,6 +35,21 @@ const config = {
             fit: 'https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js',
         },
     },
+    /**
+     * Agent/chat sessions referenced by `docops.status.json`. The server normally
+     * answers the URL contract itself (`GET {base}/session`); these settings only
+     * matter when it does not, or when the chat UI lives on another host.
+     *   base:      origin of the chat UI (default: the FS API's own origin)
+     *   proxyPath: path the session id is appended to as `?session=`
+     *   template:  full override, `{session}` is replaced by the id
+     *   pollMs:    refresh interval while a task is still running (0 = never)
+     */
+    sessions: {
+        base: null,
+        proxyPath: '/proxy/',
+        template: null,
+        pollMs: 15000,
+    },
     quickOpen: {maxEntries: 20000},
     features: {git: true, search: true, watch: true},
 };

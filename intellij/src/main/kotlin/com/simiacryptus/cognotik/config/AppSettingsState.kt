@@ -25,10 +25,11 @@ import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
+import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -281,7 +282,7 @@ data class AppSettingsState(
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
 
-        val localUser: User = com.simiacryptus.cognotik.platform.model.defaultUser
+        val localUser: User = defaultUser
 
         init {
             require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization

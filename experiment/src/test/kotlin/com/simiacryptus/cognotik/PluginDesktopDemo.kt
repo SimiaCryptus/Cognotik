@@ -3,13 +3,13 @@ package com.simiacryptus.cognotik
 import com.simiacryptus.cognotik.desktop.CognotikApps
 import java.awt.Desktop
 
-class PluginDesktopDemo(localName: String, publicName: String, port: Int) : CognotikApps(localName, publicName, port) {
+class PluginDesktopDemo(localName: String, publicName: String?, port: Int) : CognotikApps(localName, publicName, port) {
   companion object {
     @JvmStatic
     fun main(args: Array<String>) {
       PluginDesktopDemo(
         localName = "localhost",
-        publicName = "localhost",
+        publicName = null,
         port = findAvailablePort(12892)
       ).apply {
         Thread {init(port, args)}.start()

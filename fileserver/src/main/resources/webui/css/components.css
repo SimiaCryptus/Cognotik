@@ -1350,6 +1350,47 @@ dialog.fs-modal::backdrop {
 .fs-markdown li + li {
     margin-block-start: var(--fs-space-2);
 }
+/* ------------------------------------------------- mermaid & math (markdown) */
+.fs-markdown .fs-mermaid {
+     display: flex;
+     justify-content: center;
+     padding: var(--fs-space-4);
+     overflow-x: auto;
+     background: var(--fs-bg-sunken);
+     border: 1px solid var(--fs-hairline);
+     border-radius: var(--fs-radius-md);
+}
+.fs-markdown .fs-mermaid svg {
+     max-width: 100%;
+     height: auto;
+}
+/* A diagram that failed to parse keeps its source, flagged rather than hidden. */
+.fs-markdown pre.fs-mermaid__error {
+     border-color: color-mix(in oklab, var(--fs-danger) 45%, var(--fs-border));
+     background: var(--fs-danger-soft);
+}
+/* Until MathJax replaces it, raw TeX should read as code, not as a mistake. */
+.fs-math {
+     font-family: var(--fs-font-mono);
+}
+.fs-math--display {
+     display: block;
+     margin-block: var(--fs-space-4);
+     overflow-x: auto;
+     overflow-y: hidden;
+     text-align: center;
+}
+.fs-markdown mjx-container {
+     max-width: 100%;
+     overflow-x: auto;
+     overflow-y: hidden;
+}
+.fs-markdown mjx-container[display="true"] {
+     margin-block: var(--fs-space-4) !important;
+}
+.fs-markdown mjx-container svg {
+     vertical-align: middle;
+}
 /* ----------------------------------------------------------- table preview */
 .fs-table-wrap {
     flex: 1;
@@ -1391,4 +1432,226 @@ table.fs-table {
 .fs-table td.num {
     text-align: end;
     font-variant-numeric: tabular-nums;
+}
+/* ------------------------------------------------- docops session index */
+.fs-docops {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--fs-space-5) clamp(var(--fs-space-4), 4vw, var(--fs-space-7));
+    background: var(--fs-bg);
+}
+.fs-docops:focus-visible {
+    outline: 2px solid var(--fs-focus-ring);
+    outline-offset: -3px;
+}
+.fs-docops__summary {
+    max-width: 96ch;
+    margin-inline: auto;
+    padding-block-end: var(--fs-space-3);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    font-variant-numeric: tabular-nums;
+}
+.fs-docops__list {
+    display: grid;
+    gap: var(--fs-space-2);
+    max-width: 96ch;
+    margin-inline: auto;
+}
+.fs-docops__row {
+    display: flex;
+    align-items: center;
+    gap: var(--fs-space-3);
+    padding: var(--fs-space-3) var(--fs-space-4);
+    background: var(--fs-bg-elevated);
+    border: 1px solid var(--fs-border);
+    border-radius: var(--fs-radius-md);
+    transition: border-color var(--fs-motion-fast) var(--fs-ease),
+    background-color var(--fs-motion-fast) var(--fs-ease);
+}
+.fs-docops__row:hover {
+    border-color: var(--fs-border-strong);
+    background: var(--fs-bg-overlay);
+}
+.fs-docops__status {
+    flex: 0 0 auto;
+    min-width: 9ch;
+    padding: 1px var(--fs-space-3);
+    border-radius: var(--fs-radius-pill);
+    background: var(--fs-bg-sunken);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    font-weight: 650;
+    letter-spacing: var(--fs-tracking-wide);
+    text-transform: uppercase;
+    text-align: center;
+}
+.fs-docops__status[data-status="RUNNING"],
+.fs-docops__status[data-status="IN_PROGRESS"],
+.fs-docops__status[data-status="STARTED"] {
+    background: var(--fs-accent-soft);
+    color: var(--fs-accent);
+}
+.fs-docops__status[data-status="COMPLETED"],
+.fs-docops__status[data-status="DONE"] {
+    background: var(--fs-ok-soft);
+    color: var(--fs-ok);
+}
+.fs-docops__status[data-status="FAILED"],
+.fs-docops__status[data-status="ERROR"],
+.fs-docops__status[data-status="CANCELLED"] {
+    background: var(--fs-danger-soft);
+    color: var(--fs-danger);
+}
+.fs-docops__main {
+    flex: 1;
+    min-width: 0;
+}
+.fs-docops__target {
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fs-accent);
+    font-weight: 600;
+    text-align: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+.fs-docops__target:hover {
+    color: var(--fs-accent-strong);
+    background: none;
+    text-decoration: underline;
+}
+.fs-docops__meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fs-fg-subtle);
+    font-family: var(--fs-font-mono);
+    font-size: var(--fs-text-xs);
+}
+.fs-docops__actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--fs-space-2);
+    align-items: center;
+}
+.fs-docops__actions button,
+.fs-docops__actions a {
+    padding: 2px var(--fs-space-3);
+    border-radius: var(--fs-radius-pill);
+    color: var(--fs-fg-muted);
+    font-size: var(--fs-text-xs);
+    font-weight: 600;
+    text-decoration: none;
+}
+.fs-docops__actions button:hover,
+.fs-docops__actions a:hover {
+    color: var(--fs-accent);
+    background: var(--fs-accent-soft);
+}
+.fs-docops__actions .fs-docops__open {
+    color: var(--fs-fg-on-accent);
+    background: var(--fs-accent);
+    box-shadow: var(--fs-shadow-1);
+}
+.fs-docops__actions .fs-docops__open:hover {
+    color: var(--fs-fg-on-accent);
+    background: var(--fs-accent-strong);
+}
+.fs-docops__empty {
+    max-width: 96ch;
+    margin-inline: auto;
+    padding: var(--fs-space-5);
+    color: var(--fs-fg-muted);
+    font-style: italic;
+    text-align: center;
+}
+/* ------------------------------------------------------- touch & small screens
+  * Hit targets, hover-only affordances and overlay geometry. Written against
+  * the *pointer*, not the viewport, so a touch laptop benefits too — and with
+  * max()/min() so the density tokens keep their say.
+  * ------------------------------------------------------------------------- */
+@media (hover: none) {
+     /* Nothing ever hovers: a close button that only appears on hover is a
+        close button that does not exist. */
+     .fs-tab__close,
+     .fs-terminal__tab .fs-tab__close {
+         opacity: 1;
+     }
+}
+@media (pointer: coarse) {
+     button,
+     [role="menuitem"],
+     [role="tab"],
+     [role="treeitem"] {
+         /* Kills the 300 ms double-tap-zoom delay; dblclick still fires. */
+         touch-action: manipulation;
+     }
+     .fs-tree__row {
+         height: max(var(--fs-row-h), 34px);
+         line-height: max(var(--fs-row-h), 34px);
+         gap: var(--fs-space-3);
+     }
+     .fs-activity button {
+         width: max(var(--fs-rail-size), 40px);
+         height: max(var(--fs-rail-size), 40px);
+         font-size: 17px;
+     }
+     .fs-explorer__toolbar button,
+     .fs-terminal__toolbar button {
+         width: 34px;
+         height: 34px;
+     }
+     .fs-explorer__filter {
+         height: 34px;
+     }
+     .fs-tab {
+         min-height: max(var(--fs-tab-h), 40px);
+         padding-inline: var(--fs-space-4) var(--fs-space-3);
+     }
+     .fs-tab__close {
+         width: 26px;
+         height: 26px;
+     }
+     .fs-menu [role="menuitem"],
+     .fs-quickpick__item {
+         padding-block: var(--fs-space-3);
+     }
+     .fs-menubar button {
+         padding-block: var(--fs-space-2);
+     }
+}
+@media (max-width: 620px) {
+     .fs-toasts {
+         inset-inline: var(--fs-space-3);
+         max-width: none;
+     }
+     .fs-quickpick {
+         margin-top: 4vh;
+         width: 96vw;
+     }
+     .fs-quickpick__list {
+         max-height: 62vh;
+     }
+     .fs-menu {
+         max-width: calc(100vw - var(--fs-space-5));
+     }
+     dialog.fs-modal {
+         min-width: 0;
+         width: calc(100vw - var(--fs-space-5));
+         padding: var(--fs-space-5);
+     }
+     .fs-tab {
+         max-width: 170px;
+     }
+     .fs-preview__toolbar,
+     .fs-chat__toolbar {
+         overflow-x: auto;
+         scrollbar-width: none;
+     }
 }

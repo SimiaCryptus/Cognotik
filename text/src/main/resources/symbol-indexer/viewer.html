@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Symbol Index Viewer</title>
+    <!--
+    HTML+ES6 script:
+      * Web UI for SymbolIndexer-generated metadata (.data/project.json + sidecars)
+      * Main feature: interactive graph of dependants/dependencies of a file / package / symbol
+      * Navigable: sidebar tree, search, breadcrumbs, back/forward, shareable URLs
+      * Monaco (if available) to view the code of the selected symbol
+      * Root path is provided via the ?root= query parameter
+  -->
+    <style>
+        :root {
+            --bg: #0e1116;
+            --bg2: #151a21;
+            --bg3: #1b222c;
+            --line: #28303c;
+            --fg: #d7dee8;
+            --fg2: #96a3b4;
+            --fg3: #6b7788;
+            --accent: #7aa2f7;
+            --out: #4fb8d4;
+            --in: #e0a35c;
+            --both: #b48ee8;
+            --err: #f7768e;
+            --ok: #9ece6a;
+            --warn: #e0af68;
+            --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font: 13px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        button, select, input {
+            background: var(--bg3);
+            color: var(--fg);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer
+        }
+
+        button:hover {
+            border-color: var(--accent)
+        }
+
+        button.on {
+            border-color: var(--accent);
+            color: var(--accent)
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line);
+            background: var(--bg2);
+            flex: 0 0 auto;
+            flex-wrap: wrap;
+        }
+
+        header .brand {
+            font-weight: 700;
+            letter-spacing: .3px;
+            margin-right: 4px
+        }
+
+        header .brand span {
+            color: var(--accent)
+        }
+
+        header .sep {
+            width: 1px;
+            height: 22px;
+            background: var(--line);
+            margin: 0 2px
+        }
+
+        header .grow {
+            flex: 1 1 auto
+        }
+
+        #rootInput {
+            min-width: 220px;
+            font-family: var(--mono);
+            font-size: 12px
+        }
+
+        #search {
+            min-width: 200px
+        }
+
+        .stats {
+            display: flex;
+            gap: 10px;
+            color: var(--fg2);
+            font-size: 12px;
+            flex-wrap: wrap
+        }
+
+        .stats b {
+            color: var(--fg);
+            font-weight: 600
+        }
+
+        main {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns:280px 1fr 380px;
+            min-height: 0
+        }
+
+        main.no-left {
+            grid-template-columns:0 1fr 380px
+        }
+
+        main.no-right {
+            grid-template-columns:280px 1fr 0
+        }
+
+        main.no-left.no-right {
+            grid-template-columns:0 1fr 0
+        }
+
+        aside {
+            background: var(--bg2);
+            min-height: 0;
+            overflow: auto;
+            border-color: var(--line)
+        }
+
+        #sidebar {
+            border-right: 1px solid var(--line)
+        }
+
+        #details {
+            border-left: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .pane-title {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--bg2);
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--line);
+            color: var(--fg2);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: .08em;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* ---- tree ---- */
+        #tree {
+            padding: 4px 6px 40px
+        }
+
+        #tree details {
+            margin: 0
+        }
+
+        #tree summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        #tree summary::-webkit-details-marker {
+            display: none
+        }
+
+        #tree summary:hover, #tree .leaf:hover {
+            background: var(--bg3)
+        }
+
+        #tree .leaf {
+            cursor: pointer;
+            padding: 2px 4px 2px 18px;
+            border-radius: 4px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        #tree .caret {
+            width: 10px;
+            color: var(--fg3)
+        }
+
+        #tree .cnt {
+            margin-left: auto;
+            color: var(--fg3);
+            font-size: 11px;
+            font-variant-numeric: tabular-nums
+        }
+
+        #tree .sel {
+            background: #243047;
+            color: #fff
+        }
+
+        .ico {
+            width: 14px;
+            text-align: center;
+            flex: 0 0 14px;
+            color: var(--fg3)
+        }
+
+        .ico.pkg {
+            color: var(--warn)
+        }
+
+        .ico.file {
+            color: var(--out)
+        }
+
+        .ico.sym {
+            color: var(--both)
+        }
+
+        /* ---- graph ---- */
+        #graphPane {
+            position: relative;
+            min-width: 0;
+            background: radial-gradient(circle at 50% 40%, #131922 0%, var(--bg) 70%);
+            overflow: hidden
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab
+        }
+
+        #graph.panning {
+            cursor: grabbing
+        }
+
+        .link {
+            stroke: #3a4658;
+            stroke-width: 1.2px;
+            fill: none
+        }
+
+        .link.out {
+            stroke: var(--out);
+            stroke-opacity: .75
+        }
+
+        .link.in {
+            stroke: var(--in);
+            stroke-opacity: .75
+        }
+
+        .link.dim {
+            stroke-opacity: .12
+        }
+
+        .link.hl {
+            stroke: #fff;
+            stroke-opacity: .95;
+            stroke-width: 2px
+        }
+
+        .node {
+            cursor: pointer
+        }
+
+        .node circle {
+            stroke: #0b0e13;
+            stroke-width: 1.5px;
+            fill: var(--bg3)
+        }
+
+        .node text {
+            fill: var(--fg);
+            font-size: 11px;
+            paint-order: stroke;
+            stroke: #0b0e13;
+            stroke-width: 3px
+        }
+
+        .node.focus circle {
+            fill: var(--accent);
+            stroke: #fff
+        }
+
+        .node.out circle {
+            fill: #1d3b45;
+            stroke: var(--out)
+        }
+
+        .node.in circle {
+            fill: #432f1c;
+            stroke: var(--in)
+        }
+
+        .node.both circle {
+            fill: #33244a;
+            stroke: var(--both)
+        }
+
+        .node.sel circle {
+            stroke: #fff;
+            stroke-width: 2.5px
+        }
+
+        .node.dim {
+            opacity: .25
+        }
+
+        .node.err circle {
+            stroke: var(--err)
+        }
+
+        #overlayGraph {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(14, 17, 22, .8);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 12px;
+            color: var(--fg2)
+        }
+
+        .legend {
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        .legend i {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px
+        }
+
+        #tooltip {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+            max-width: 420px;
+            display: none;
+            background: #0b0e13ee;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 12px;
+            box-shadow: 0 6px 24px #0008;
+            white-space: pre-wrap;
+            font-family: var(--mono)
+        }
+
+        #truncated {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            display: none;
+            background: #3a2a12;
+            color: var(--warn);
+            border: 1px solid #6b4c17;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px
+        }
+
+        /* ---- details ---- */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--line);
+            background: var(--bg2)
+        }
+
+        .tabs button {
+            border-radius: 6px 6px 0 0
+        }
+
+        #tabBody {
+            flex: 1 1 auto;
+            overflow: auto;
+            min-height: 0
+        }
+
+        .tabPane {
+            display: none;
+            padding: 10px 12px 40px
+        }
+
+        .tabPane.on {
+            display: block
+        }
+
+        #paneCode.on {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            height: 100%
+        }
+
+        #editorHost {
+            flex: 1 1 auto;
+            min-height: 220px
+        }
+
+        #plainCode {
+            flex: 1 1 auto;
+            overflow: auto;
+            margin: 0;
+            padding: 8px 10px;
+            font-family: var(--mono);
+            font-size: 12px
+        }
+
+        #plainCode .hl {
+            background: #2b3a55;
+            display: block
+        }
+
+        .codeBar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--line);
+            background: var(--bg2);
+            font-size: 12px;
+            color: var(--fg2)
+        }
+
+        h2.h {
+            margin: 0 0 2px;
+            font-size: 15px;
+            word-break: break-all
+        }
+
+        .sub {
+            color: var(--fg2);
+            font-family: var(--mono);
+            font-size: 11.5px;
+            word-break: break-all;
+            margin-bottom: 8px
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns:auto 1fr;
+            gap: 2px 10px;
+            margin: 6px 0 10px
+        }
+
+        .kv dt {
+            color: var(--fg3);
+            font-size: 11.5px
+        }
+
+        .kv dd {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            word-break: break-all
+        }
+
+        .sec {
+            margin: 14px 0 6px;
+            color: var(--fg2);
+            font-size: 11px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 3px;
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        .sec .n {
+            color: var(--fg3);
+            font-weight: 400
+        }
+
+        .row {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .row:hover {
+            background: var(--bg3)
+        }
+
+        .row .name {
+            font-family: var(--mono);
+            font-size: 11.5px
+        }
+
+        .row .path {
+            color: var(--fg3);
+            font-size: 11px;
+            margin-left: auto;
+            font-family: var(--mono)
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px
+        }
+
+        .chip {
+            background: var(--bg3);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--fg2)
+        }
+
+        .chip.bad {
+            border-color: #5c2a34;
+            color: #ffb3bd
+        }
+
+        .chip.amb {
+            border-color: #5b4a1c;
+            color: var(--warn)
+        }
+
+        .symrow {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+            padding: 1px 4px;
+            border-radius: 4px;
+            cursor: pointer
+        }
+
+        .symrow:hover {
+            background: var(--bg3)
+        }
+
+        .symrow .kind {
+            color: var(--fg3);
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .05em
+        }
+
+        .symrow .sig {
+            color: var(--fg2);
+            font-family: var(--mono);
+            font-size: 11px;
+            opacity: .85
+        }
+
+        .symrow.sel {
+            background: #243047
+        }
+
+        .muted {
+            color: var(--fg3)
+        }
+
+        .err {
+            color: var(--err)
+        }
+
+        .warnbox {
+            background: #3a2a12;
+            border: 1px solid #6b4c17;
+            color: var(--warn);
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin: 8px 0;
+            font-size: 12px
+        }
+
+        /* ---- search results ---- */
+        #results {
+            position: absolute;
+            z-index: 20;
+            top: 44px;
+            left: 0;
+            right: 0;
+            display: none
+        }
+
+        #resultsInner {
+            margin: 0 auto;
+            max-width: 760px;
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 12px 40px #000a;
+            max-height: 60vh;
+            overflow: auto;
+            padding: 4px
+        }
+
+        #resultsInner .row.active {
+            background: #243047
+        }
+
+        /* ---- boot / errors ---- */
+        #boot {
+            position: fixed;
+            inset: 0;
+            background: #0e1116f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px
+        }
+
+        #boot .card {
+            max-width: 720px;
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 18px 20px
+        }
+
+        #boot h1 {
+            margin: 0 0 6px;
+            font-size: 18px
+        }
+
+        #boot code {
+            font-family: var(--mono);
+            background: var(--bg3);
+            padding: 1px 5px;
+            border-radius: 4px
+        }
+
+        #boot .hint {
+            color: var(--fg2);
+            margin: 8px 0
+        }
+
+        #boot.hidden {
+            display: none
+        }
+
+        #spinner {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0b0e13cc;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 12px;
+            color: var(--fg2);
+            z-index: 6
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">Symbol<span>Index</span></div>
+    <label class="muted" for="rootInput">root</label>
+     <input id="rootInput" placeholder="?root=..  (default)" spellcheck="false"/>
+    <button id="reload" title="Reload manifest (Ctrl+R re-reads from server)">Load</button>
+    <div class="sep"></div>
+    <select id="mode" title="Graph granularity">
+        <option value="files">Files</option>
+        <option value="packages">Packages</option>
+        <option value="symbols">Symbols</option>
+    </select>
+    <select id="dir" title="Edge direction to expand">
+        <option value="both">dependencies + dependants</option>
+        <option value="out">dependencies (uses)</option>
+        <option value="in">dependants (used by)</option>
+    </select>
+    <label class="muted" for="depth">depth</label>
+    <input id="depth" type="number" min="1" max="6" value="1" style="width:52px"/>
+    <label class="muted" for="maxNodes">max</label>
+    <input id="maxNodes" type="number" min="10" max="2000" step="10" value="160" style="width:64px"/>
+    <div class="sep"></div>
+    <button id="back" title="Back (Alt+Left)">&#8592;</button>
+    <button id="fwd" title="Forward (Alt+Right)">&#8594;</button>
+    <button id="fit" title="Fit graph (f)">Fit</button>
+    <button id="relayout" title="Re-run layout">Re-layout</button>
+     <button id="clearSel" title="Clear selection (Esc, or click empty space)" disabled>Clear</button>
+    <div class="sep"></div>
+    <input id="search" placeholder="Search files, packages, symbols  ( / )" spellcheck="false"/>
+    <div class="grow"></div>
+    <div class="stats" id="stats"></div>
+    <button id="tglLeft" title="Toggle tree">&#9636;</button>
+    <button id="tglRight" title="Toggle details">&#9637;</button>
+</header>
+
+<div id="results">
+    <div id="resultsInner"></div>
+</div>
+
+<main id="main">
+    <aside id="sidebar">
+        <div class="pane-title">Project tree</div>
+        <div id="tree"></div>
+    </aside>
+
+    <section id="graphPane">
+        <svg id="graph">
+            <defs>
+                <marker id="arrow-out" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7"
+                        orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#4fb8d4"></path>
+                </marker>
+                <marker id="arrow-in" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7"
+                        orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#e0a35c"></path>
+                </marker>
+                <marker id="arrow-hl" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8"
+                        orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#ffffff"></path>
+                </marker>
+            </defs>
+            <g id="viewport">
+                <g id="links"></g>
+                <g id="nodes"></g>
+            </g>
+        </svg>
+        <div id="spinner">loading&hellip;</div>
+        <div id="truncated"></div>
+        <div id="tooltip"></div>
+        <div id="overlayGraph">
+            <div class="legend">
+                <span><i style="background:var(--accent)"></i>focus</span>
+                <span><i style="background:var(--out)"></i>dependency</span>
+                <span><i style="background:var(--in)"></i>dependant</span>
+                <span><i style="background:var(--both)"></i>both</span>
+            </div>
+             <span class="muted">drag = move &middot; wheel = zoom &middot; click = select &middot; dbl-click = focus &middot; click empty space / Esc = clear selection</span>
+        </div>
+    </section>
+
+    <aside id="details">
+        <div class="tabs">
+            <button data-tab="paneInfo" class="on">Info</button>
+            <button data-tab="paneSymbols">Symbols</button>
+            <button data-tab="paneRefs">Refs</button>
+            <button data-tab="paneCode">Code</button>
+        </div>
+        <div id="tabBody">
+            <div id="paneInfo" class="tabPane on"></div>
+            <div id="paneSymbols" class="tabPane"></div>
+            <div id="paneRefs" class="tabPane"></div>
+            <div id="paneCode" class="tabPane">
+                <div class="codeBar">
+                    <span id="codeTitle" class="muted">no selection</span>
+                    <span class="grow" style="flex:1"></span>
+                    <a id="rawLink" target="_blank" rel="noreferrer">raw</a>
+                    <a id="sidecarLink" target="_blank" rel="noreferrer">sidecar</a>
+                </div>
+                <div id="editorHost"></div>
+                <pre id="plainCode" hidden></pre>
+            </div>
+        </div>
+    </aside>
+</main>
+
+<div id="boot">
+    <div class="card">
+        <h1>Symbol Index Viewer</h1>
+        <div class="hint" id="bootMsg">Loading manifest&hellip;</div>
+        <div class="hint">
+            Pass the index root as a query parameter, e.g.
+             <code>viewer.html?root=/repo</code> or <code>viewer.html?root=../..</code>
+             (defaults to <code>..</code>, i.e. the parent of the folder this page is served from).
+            The viewer fetches <code>&lt;root&gt;/.data/project.json</code> and the per-file
+            <code>&lt;dir&gt;/.data/&lt;file&gt;.json</code> sidecars over HTTP, so serve the tree with a static
+            web server (<code>python3 -m http.server</code>) and keep the paths reachable.
+        </div>
+        <div class="hint">You can also drag &amp; drop a <code>project.json</code> / <code>package.json</code> onto this
+            page.
+        </div>
+    </div>
+</div>
+
+<script>
+    "use strict";
+    /* =========================================================================
+     0. tiny helpers
+     ========================================================================= */
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
+    const svgNS = "http://www.w3.org/2000/svg";
+    const params = new URLSearchParams(location.search);
+     /** where the index lives when ?root= is absent (viewer.html usually sits one level below the root) */
+     const DEFAULT_ROOT = "..";
+
+    function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, c => (
+            {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+    }
+
+    function svg(tag, attrs) {
+        const e = document.createElementNS(svgNS, tag);
+        for (const k in (attrs || {})) e.setAttribute(k, attrs[k]);
+        return e;
+    }
+
+    function dirOf(p) {
+        const i = p.lastIndexOf("/");
+        return i < 0 ? "" : p.slice(0, i);
+    }
+
+    function baseOf(p) {
+        const i = p.lastIndexOf("/");
+        return i < 0 ? p : p.slice(i + 1);
+    }
+
+    function extOf(n) {
+        const i = n.lastIndexOf(".");
+        return i <= 0 ? "" : n.slice(i + 1).toLowerCase();
+    }
+
+    function num(n) {
+        return (n == null ? 0 : n).toLocaleString();
+    }
+
+    function bytes(n) {
+        if (n == null) return "";
+        const u = ["B", "KB", "MB", "GB"];
+        let i = 0, v = n;
+        while (v >= 1024 && i < u.length - 1) {
+            v /= 1024;
+            i++;
+        }
+        return (i ? v.toFixed(1) : v) + " " + u[i];
+    }
+
+    function clamp(v, a, b) {
+        return Math.max(a, Math.min(b, v));
+    }
+
+    function uniq(a) {
+        return Array.from(new Set(a));
+    }
+
+    /* =========================================================================
+     1. state
+     ========================================================================= */
+    const state = {
+         rootParam: DEFAULT_ROOT, rootUrl: "", manifestUrl: "",
+        manifest: null,
+        files: new Map(),      // path -> slim FileRecord (from manifest)
+        folders: new Map(),    // folder -> {path, files:[], symbolCount, referenceCount, resolved, unresolved}
+        fileOut: new Map(),    // path -> Map(toPath -> edge)
+        fileIn: new Map(),
+        pkgOut: new Map(),
+        pkgIn: new Map(),
+        declByQN: new Map(),   // qualifiedName -> [path]
+        failures: new Map(),   // path -> error
+        sidecars: new Map(),   // path -> Promise<FileRecord>
+        symInfo: new Map(),   // path -> {list, byQN, refsAvailable, edges}
+        mode: "files", dir: "both", depth: 1, maxNodes: 160,
+        focus: null, selected: null,
+        history: [], histIdx: -1,
+        graph: {nodes: [], links: [], byId: new Map()},
+        view: {x: 0, y: 0, k: 1},
+        alpha: 0, raf: 0,
+        monaco: null, editor: null, decorations: [],
+        busy: 0
+    };
+
+    /* =========================================================================
+     2. url / fetch plumbing (root comes from ?root=)
+     ========================================================================= */
+    function normRoot(r) {
+        if (r == null) return "";
+        r = String(r).trim().replace(/\\/g, "/");
+        if (r === "." || r === "./") return "";
+        return r.replace(/\/+$/, "");
+    }
+
+    function u(rel) {
+        rel = String(rel).replace(/^\/+/, "");
+        return state.rootUrl ? state.rootUrl + "/" + rel : rel;
+    }
+
+    function sidecarUrl(path) {
+        const d = dirOf(path);
+        return u((d ? d + "/" : "") + ".data/" + baseOf(path) + ".json");
+    }
+
+    function packageManifestUrl(folder) {
+        return u((folder ? folder + "/" : "") + ".data/package.json");
+    }
+
+    async function fetchJSON(url) {
+        const r = await fetch(url, {cache: "no-cache"});
+        if (!r.ok) throw new Error("HTTP " + r.status + " " + r.statusText + " \u2014 " + url);
+        return r.json();
+    }
+
+    function busy(delta) {
+        state.busy += delta;
+        $("#spinner").style.display = state.busy > 0 ? "block" : "none";
+    }
+
+    /* =========================================================================
+     3. manifest loading + indexing
+     ========================================================================= */
+    async function loadManifest() {
+         state.rootParam = params.get("root") != null ? params.get("root") : DEFAULT_ROOT;
+        state.rootUrl = normRoot(state.rootParam);
+        $("#rootInput").value = state.rootParam;
+        const rel = params.get("manifest") || ".data/project.json";
+        state.manifestUrl = u(rel);
+        boot("Loading <code>" + esc(state.manifestUrl) + "</code>&hellip;");
+        state.manifest = await fetchJSON(state.manifestUrl);
+    }
+
+    function indexManifest() {
+        const m = state.manifest || {};
+        state.files.clear();
+        state.folders.clear();
+        state.declByQN.clear();
+        state.fileOut.clear();
+        state.fileIn.clear();
+        state.pkgOut.clear();
+        state.pkgIn.clear();
+        state.failures.clear();
+        state.symInfo.clear();
+        state.sidecars.clear();
+
+        for (const f of (m.failures || [])) state.failures.set(f.path, f.error || "failed");
+
+        for (const rec of (m.files || [])) {
+            if (!rec || !rec.path) continue;
+            state.files.set(rec.path, rec);
+            for (const qn of (rec.qualifiedNames || [])) {
+                let a = state.declByQN.get(qn);
+                if (!a) state.declByQN.set(qn, a = []);
+                a.push(rec.path);
+            }
+        }
+        // folder aggregates (recursive rollups, mirroring package.json semantics)
+        const touch = p => {
+            let f = state.folders.get(p);
+            if (!f) state.folders.set(p, f = {
+                path: p, files: [], direct: [], symbolCount: 0,
+                referenceCount: 0, resolved: 0, unresolved: 0, failures: 0
+            });
+            return f;
+        };
+        touch("");
+        for (const rec of state.files.values()) {
+            const d = dirOf(rec.path);
+            touch(d).direct.push(rec.path);
+            let cur = d;
+            for (; ;) {
+                const f = touch(cur);
+                f.files.push(rec.path);
+                f.symbolCount += rec.symbolCount || 0;
+                f.referenceCount += rec.referenceCount || 0;
+                f.resolved += (rec.resolutions || []).length;
+                f.unresolved += (rec.unresolvedNames || []).length;
+                if (state.failures.has(rec.path)) f.failures++;
+                if (!cur) break;
+                cur = dirOf(cur);
+            }
+        }
+        // edges from lexical resolutions
+        for (const rec of state.files.values()) {
+            for (const res of (rec.resolutions || [])) {
+                for (const t of (res.targets || [])) {
+                    if (!t || !t.path || t.path === rec.path) continue;
+                    addEdge(state.fileOut, state.fileIn, rec.path, t.path, res, t);
+                    const a = dirOf(rec.path), b = dirOf(t.path);
+                    if (a !== b) addEdge(state.pkgOut, state.pkgIn, a, b, res, t);
+                }
+            }
+        }
+    }
+
+    function addEdge(outMap, inMap, from, to, res, target) {
+        let om = outMap.get(from);
+        if (!om) outMap.set(from, om = new Map());
+        let e = om.get(to);
+        if (!e) {
+            e = {from, to, names: new Map(), count: 0, ambiguous: false, minDistance: Infinity};
+            om.set(to, e);
+            let im = inMap.get(to);
+            if (!im) inMap.set(to, im = new Map());
+            im.set(from, e);
+        }
+        e.count++;
+        if (res.ambiguous) e.ambiguous = true;
+        if (typeof res.distance === "number") e.minDistance = Math.min(e.minDistance, res.distance);
+        const k = res.name + (target.qualifiedName ? " \u2192 " + target.qualifiedName : "");
+        e.names.set(k, (e.names.get(k) || 0) + 1);
+        return e;
+    }
+
+    function adj(dirn) {
+        if (state.mode === "packages") return dirn === "out" ? state.pkgOut : state.pkgIn;
+        return dirn === "out" ? state.fileOut : state.fileIn;
+    }
+
+    function edgesOf(id, dirn) {
+        const p = parseId(id).path;
+        const m = adj(dirn).get(p);
+        return m ? Array.from(m.values()) : [];
+    }
+
+    /* =========================================================================
+     4. node ids:  f:<path>   p:<folder>   s:<path>#<qualifiedName>
+     ========================================================================= */
+    const fid = p => "f:" + p;
+    const pid = p => "p:" + p;
+    const sid = (p, qn) => "s:" + p + "#" + qn;
+
+    function parseId(id) {
+        if (!id) return {type: "none", path: ""};
+        const t = id.charAt(0), rest = id.slice(2);
+        if (t === "s") {
+            const i = rest.indexOf("#");
+            return {type: "sym", path: rest.slice(0, i), qn: rest.slice(i + 1)};
+        }
+        return {type: t === "p" ? "pkg" : "file", path: rest};
+    }
+
+    function labelOf(id) {
+        const p = parseId(id);
+        if (p.type === "pkg") return p.path === "" ? "\u2039root\u203a" : baseOf(p.path);
+        if (p.type === "sym") return p.qn.split(".").pop();
+        return baseOf(p.path);
+    }
+
+    function titleOf(id) {
+        const p = parseId(id);
+        if (p.type === "pkg") return (p.path || "\u2039root\u203a") + "/";
+        if (p.type === "sym") return p.qn + "\n" + p.path;
+        return p.path;
+    }
+
+    function nodeExists(id) {
+        const p = parseId(id);
+        if (p.type === "pkg") return state.folders.has(p.path);
+        if (p.type === "file") return state.files.has(p.path);
+        return state.files.has(p.path);
+    }
+
+    /* =========================================================================
+     5. sidecars, symbol flattening, symbol-level edges
+     ========================================================================= */
+    function loadSidecar(path) {
+        let p = state.sidecars.get(path);
+        if (p) return p;
+        busy(1);
+        p = fetchJSON(sidecarUrl(path))
+            .catch(() => state.files.get(path) || {path, symbols: []})
+            .finally(() => busy(-1));
+        state.sidecars.set(path, p);
+        return p;
+    }
+
+    function flattenSymbols(symbols, prefix, depth, out) {
+        for (const s of (symbols || [])) {
+            const qn = prefix ? prefix + "." + s.name : s.name;
+            const node = {
+                qn, name: s.name, kind: s.kind || "", signature: s.signature || "",
+                modifiers: s.modifiers || [], startLine: s.startLine || 0, endLine: s.endLine || 0,
+                depth, children: s.children || []
+            };
+            out.push(node);
+            flattenSymbols(s.children, qn, depth + 1, out);
+        }
+        return out;
+    }
+
+    async function symInfoFor(path) {
+        let info = state.symInfo.get(path);
+        if (info) return info;
+        const rec = await loadSidecar(path);
+        const list = flattenSymbols(rec.symbols || [], "", 0, []);
+        const byQN = new Map(list.map(s => [s.qn, s]));
+        const slim = state.files.get(path) || rec;
+        // name -> resolution (from the slim/manifest record, which is always resolved project-wide)
+        const resByName = new Map();
+        for (const r of (slim.resolutions || rec.resolutions || [])) resByName.set(r.name, r);
+        const refs = rec.references || [];
+        const edges = [];   // {fromQN|null, name, toPath, toQN, ambiguous, line}
+        if (refs.length) {
+            for (const ref of refs) {
+                const res = resByName.get(ref.name);
+                if (!res) continue;
+                const owner = innermostSymbol(list, ref.line);
+                for (const t of (res.targets || [])) {
+                    if (!t.path || t.path === path) continue;
+                    edges.push({
+                        fromQN: owner ? owner.qn : null, name: ref.name, toPath: t.path,
+                        toQN: t.qualifiedName || "", ambiguous: !!res.ambiguous, line: ref.line || 0
+                    });
+                }
+            }
+        } else {
+            // no reference details in the sidecar: degrade to file-level attribution
+            for (const res of resByName.values())
+                for (const t of (res.targets || [])) {
+                    if (!t.path || t.path === path) continue;
+                    edges.push({
+                        fromQN: null, name: res.name, toPath: t.path, toQN: t.qualifiedName || "",
+                        ambiguous: !!res.ambiguous, line: 0
+                    });
+                }
+        }
+        info = {path, record: rec, list, byQN, refsAvailable: refs.length > 0, edges};
+        state.symInfo.set(path, info);
+        return info;
+    }
+
+    function innermostSymbol(list, line) {
+        if (!line) return null;
+        let best = null;
+        for (const s of list) {
+            if (s.startLine && s.endLine && line >= s.startLine && line <= s.endLine) {
+                if (!best || s.depth > best.depth) best = s;
+            }
+        }
+        return best;
+    }
+
+    /** files whose manifest resolutions point at (path, qn) */
+    function callerFilesOf(path, qn) {
+        const out = [];
+        for (const rec of state.files.values()) {
+            if (rec.path === path) continue;
+            let hit = false;
+            for (const res of (rec.resolutions || [])) {
+                for (const t of (res.targets || [])) {
+                    if (t.path === path && (!qn || t.qualifiedName === qn || !t.qualifiedName)) {
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit) break;
+            }
+            if (hit) out.push(rec.path);
+        }
+        return out;
+    }
+
+    /* =========================================================================
+     6. graph construction (BFS neighbourhood around the focus)
+     ========================================================================= */
+    async function buildGraph() {
+        const focus = state.focus;
+        const nodes = new Map();   // id -> {id, level, reach:{out,in}}
+        const links = new Map();   // key -> link
+        let truncated = false;
+        if (!focus) {
+            state.graph = {nodes: [], links: [], byId: new Map()};
+            return;
+        }
+
+        const want = state.dir;
+        const dirs = want === "both" ? ["out", "in"] : [want];
+        const add = (id, level, reach) => {
+            let n = nodes.get(id);
+            if (!n) {
+                if (nodes.size >= state.maxNodes) {
+                    truncated = true;
+                    return null;
+                }
+                nodes.set(id, n = {id, level, reach: {out: false, in: false}});
+            }
+            n.level = Math.min(n.level, level);
+            if (reach) n.reach[reach] = true;
+            return n;
+        };
+        const link = (a, b, dirn, names, meta) => {
+            const key = a + "\u0000" + b;
+            let l = links.get(key);
+            if (!l) links.set(key, l = {a, b, dirn, names: new Map(), count: 0, ambiguous: false});
+            for (const [k, v] of (names || new Map())) l.names.set(k, (l.names.get(k) || 0) + v);
+            l.count += (meta && meta.count) || 1;
+            if (meta && meta.ambiguous) l.ambiguous = true;
+            return l;
+        };
+
+        add(focus, 0, null);
+        const seen = new Set([focus]);
+        let frontier = [focus];
+
+        for (let d = 1; d <= state.depth && frontier.length; d++) {
+            const next = [];
+            for (const id of frontier) {
+                for (const dirn of dirs) {
+                    const neigh = state.mode === "symbols"
+                        ? await symbolNeighbors(id, dirn)
+                        : edgesOf(id, dirn).map(e => ({
+                            id: (state.mode === "packages" ? pid : fid)(dirn === "out" ? e.to : e.from),
+                            names: e.names, count: e.count, ambiguous: e.ambiguous
+                        }));
+                    for (const nb of neigh) {
+                        const n = add(nb.id, d, dirn);
+                        if (!n) {
+                            truncated = true;
+                            continue;
+                        }
+                        if (dirn === "out") link(id, nb.id, "out", nb.names, nb);
+                        else link(nb.id, id, "in", nb.names, nb);
+                        if (!seen.has(nb.id)) {
+                            seen.add(nb.id);
+                            next.push(nb.id);
+                        }
+                    }
+                }
+            }
+            frontier = next;
+        }
+
+        // classify colours
+        for (const n of nodes.values()) {
+            n.cls = n.id === focus ? "focus"
+                : (n.reach.out && n.reach.in) ? "both"
+                    : n.reach.out ? "out" : n.reach.in ? "in" : "";
+            const p = parseId(n.id);
+            n.err = p.type === "file" && state.failures.has(p.path);
+            n.label = labelOf(n.id);
+            n.title = titleOf(n.id);
+            n.r = radiusOf(n.id);
+        }
+        // preserve positions across rebuilds
+        const old = state.graph.byId;
+        const list = Array.from(nodes.values());
+        for (const n of list) {
+            const o = old && old.get(n.id);
+            if (o) {
+                n.x = o.x;
+                n.y = o.y;
+                n.vx = 0;
+                n.vy = 0;
+            }
+        }
+        const linkList = [];
+        for (const l of links.values()) {
+            const s = nodes.get(l.a), t = nodes.get(l.b);
+            if (s && t) linkList.push({
+                source: s, target: t, dirn: l.dirn, names: l.names,
+                count: l.count, ambiguous: l.ambiguous
+            });
+        }
+        state.graph = {nodes: list, links: linkList, byId: nodes, truncated};
+        const tr = $("#truncated");
+        tr.style.display = truncated ? "block" : "none";
+        tr.textContent = truncated ? "graph truncated at " + state.maxNodes + " nodes \u2014 raise \u201cmax\u201d or lower depth" : "";
+    }
+
+    function radiusOf(id) {
+        const p = parseId(id);
+        if (p.type === "pkg") {
+            const f = state.folders.get(p.path);
+            return clamp(8 + Math.sqrt((f ? f.files.length : 1)) * 2.2, 8, 26);
+        }
+        if (p.type === "sym") return 7;
+        const rec = state.files.get(p.path);
+        return clamp(7 + Math.sqrt((rec && rec.symbolCount) || 1) * 1.6, 7, 22);
+    }
+
+    async function symbolNeighbors(id, dirn) {
+        const p = parseId(id);
+        const out = [];
+        const mk = (nid, name, ambiguous) => {
+            const names = new Map();
+            names.set(name, 1);
+            out.push({id: nid, names, count: 1, ambiguous: !!ambiguous});
+        };
+        if (dirn === "out") {
+            if (p.type === "sym" || p.type === "file") {
+                const info = await symInfoFor(p.path);
+                for (const e of info.edges) {
+                    if (p.type === "sym" && e.fromQN !== p.qn) continue;
+                    const target = e.toQN ? sid(e.toPath, e.toQN) : fid(e.toPath);
+                    mk(target, e.name, e.ambiguous);
+                }
+            }
+        } else {
+            const qn = p.type === "sym" ? p.qn : null;
+            const callers = callerFilesOf(p.path, qn).slice(0, 80);
+            for (const c of callers) {
+                const info = await symInfoFor(c);
+                let any = false;
+                for (const e of info.edges) {
+                    if (e.toPath !== p.path) continue;
+                    if (qn && e.toQN && e.toQN !== qn) continue;
+                    any = true;
+                    mk(e.fromQN ? sid(c, e.fromQN) : fid(c), e.name, e.ambiguous);
+                }
+                if (!any && !qn) mk(fid(c), "\u2026", false);
+            }
+        }
+        // merge duplicates
+        const merged = new Map();
+        for (const o of out) {
+            let m = merged.get(o.id);
+            if (!m) merged.set(o.id, m = {id: o.id, names: new Map(), count: 0, ambiguous: false});
+            for (const [k, v] of o.names) m.names.set(k, (m.names.get(k) || 0) + v);
+            m.count += o.count;
+            m.ambiguous = m.ambiguous || o.ambiguous;
+        }
+        return Array.from(merged.values());
+    }
+
+    /* =========================================================================
+     7. force layout + svg rendering
+     ========================================================================= */
+    const gLinks = $("#links"), gNodes = $("#nodes"), svgRoot = $("#graph"), viewport = $("#viewport");
+
+    function seedPositions() {
+        const nodes = state.graph.nodes;
+        nodes.forEach((n, i) => {
+            if (n.x === undefined) {
+                const R = n.level === 0 ? 0 : 130 + (n.level - 1) * 165;
+                const a = (i / Math.max(1, nodes.length)) * Math.PI * 2 + n.level;
+                n.x = R * Math.cos(a) + (Math.random() - .5) * 24;
+                n.y = R * Math.sin(a) + (Math.random() - .5) * 24;
+                n.vx = 0;
+                n.vy = 0;
+            }
+        });
+        const f = state.graph.byId.get(state.focus);
+        if (f) {
+            f.x = 0;
+            f.y = 0;
+            f.pinned = true;
+        }
+    }
+
+    function simStep() {
+        const nodes = state.graph.nodes, links = state.graph.links, n = nodes.length;
+        if (!n) return;
+        const alpha = state.alpha, rep = 14000;
+        for (let i = 0; i < n; i++) {
+            const a = nodes[i];
+            for (let j = i + 1; j < n; j++) {
+                const b = nodes[j];
+                let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+                if (d2 < 1) {
+                    dx = Math.random() - .5;
+                    dy = Math.random() - .5;
+                    d2 = dx * dx + dy * dy + 1e-6;
+                }
+                const d = Math.sqrt(d2), f = rep / d2, fx = f * dx / d, fy = f * dy / d;
+                a.vx -= fx;
+                a.vy -= fy;
+                b.vx += fx;
+                b.vy += fy;
+            }
+        }
+        for (const l of links) {
+            const a = l.source, b = l.target;
+            let dx = b.x - a.x, dy = b.y - a.y;
+            const d = Math.max(1, Math.hypot(dx, dy));
+            const f = (d - 150) * 0.045, fx = f * dx / d, fy = f * dy / d;
+            a.vx += fx;
+            a.vy += fy;
+            b.vx -= fx;
+            b.vy -= fy;
+        }
+        for (const nd of nodes) {
+            const R = nd.level === 0 ? 0 : 130 + (nd.level - 1) * 165;
+            const d = Math.hypot(nd.x, nd.y) || 1;
+            const f = (R - d) * 0.09;
+            nd.vx += f * nd.x / d;
+            nd.vy += f * nd.y / d;
+            if (nd.pinned || nd.dragging) {
+                nd.vx = 0;
+                nd.vy = 0;
+                continue;
+            }
+            nd.vx *= 0.78;
+            nd.vy *= 0.78;
+            nd.x += nd.vx * alpha;
+            nd.y += nd.vy * alpha;
+        }
+        state.alpha *= 0.985;
+    }
+
+    function runSim(iterations) {
+        cancelAnimationFrame(state.raf);
+        state.alpha = 1;
+        let first = true;
+        const loop = () => {
+            const steps = first ? (iterations || 6) : 2;
+            for (let i = 0; i < steps; i++) simStep();
+            first = false;
+            drawPositions();
+            if (state.alpha > 0.02) state.raf = requestAnimationFrame(loop);
+        };
+        loop();
+    }
+
+    function renderGraph() {
+        gLinks.textContent = "";
+        gNodes.textContent = "";
+        for (const l of state.graph.links) {
+            const p = svg("path", {
+                class: "link " + l.dirn,
+                "marker-end": "url(#arrow-" + (l.dirn === "in" ? "in" : "out") + ")"
+            });
+            l.el = p;
+            p.addEventListener("mousemove", ev => showTip(ev, linkTip(l)));
+            p.addEventListener("mouseleave", hideTip);
+            gLinks.appendChild(p);
+        }
+        for (const n of state.graph.nodes) {
+            const g = svg("g", {class: "node " + n.cls + (n.err ? " err" : "") + (n.id === state.selected ? " sel" : "")});
+            const c = svg("circle", {r: n.r});
+            const t = svg("text", {x: n.r + 5, y: 4});
+            t.textContent = n.label;
+            g.appendChild(c);
+            g.appendChild(t);
+            n.el = g;
+            g.addEventListener("mousemove", ev => showTip(ev, nodeTip(n)));
+            g.addEventListener("mouseleave", hideTip);
+            g.addEventListener("mousedown", ev => startDrag(ev, n));
+            g.addEventListener("click", ev => {
+                ev.stopPropagation();
+                select(n.id);
+            });
+            g.addEventListener("dblclick", ev => {
+                ev.stopPropagation();
+                setFocus(n.id);
+            });
+            gNodes.appendChild(g);
+        }
+        seedPositions();
+        drawPositions();
+        highlight(state.selected);
+    }
+
+    function drawPositions() {
+        for (const l of state.graph.links) {
+            const a = l.source, b = l.target;
+            let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+            const sx = a.x + dx / d * (a.r + 2), sy = a.y + dy / d * (a.r + 2);
+            const tx = b.x - dx / d * (b.r + 4), ty = b.y - dy / d * (b.r + 4);
+            const mx = (sx + tx) / 2 - dy / d * 18, my = (sy + ty) / 2 + dx / d * 18;
+            l.el.setAttribute("d", "M" + sx + "," + sy + " Q" + mx + "," + my + " " + tx + "," + ty);
+        }
+        for (const n of state.graph.nodes)
+            n.el.setAttribute("transform", "translate(" + n.x + "," + n.y + ")");
+        applyView();
+    }
+
+    function applyView() {
+        const v = state.view;
+        viewport.setAttribute("transform", "translate(" + v.x + "," + v.y + ") scale(" + v.k + ")");
+    }
+
+    function fit() {
+        const nodes = state.graph.nodes;
+        const rect = svgRoot.getBoundingClientRect();
+        if (!nodes.length) {
+            state.view = {x: rect.width / 2, y: rect.height / 2, k: 1};
+            applyView();
+            return;
+        }
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const n of nodes) {
+            x0 = Math.min(x0, n.x - n.r - 60);
+            y0 = Math.min(y0, n.y - n.r - 20);
+            x1 = Math.max(x1, n.x + n.r + 90);
+            y1 = Math.max(y1, n.y + n.r + 20);
+        }
+        const k = clamp(Math.min(rect.width / (x1 - x0), rect.height / (y1 - y0)), 0.1, 2.2);
+        state.view = {k, x: rect.width / 2 - ((x0 + x1) / 2) * k, y: rect.height / 2 - ((y0 + y1) / 2) * k};
+        applyView();
+    }
+
+    /* ---- pan / zoom / drag ---- */
+    (function () {
+         let panning = null, moved = false;
+        svgRoot.addEventListener("mousedown", ev => {
+            if (ev.target.closest(".node")) return;
+            panning = {x: ev.clientX, y: ev.clientY, vx: state.view.x, vy: state.view.y};
+             moved = false;
+            svgRoot.classList.add("panning");
+        });
+        window.addEventListener("mousemove", ev => {
+            if (!panning) return;
+             if (Math.abs(ev.clientX - panning.x) + Math.abs(ev.clientY - panning.y) > 3) moved = true;
+            state.view.x = panning.vx + (ev.clientX - panning.x);
+            state.view.y = panning.vy + (ev.clientY - panning.y);
+            applyView();
+        });
+        window.addEventListener("mouseup", () => {
+            panning = null;
+            svgRoot.classList.remove("panning");
+        });
+        svgRoot.addEventListener("wheel", ev => {
+            ev.preventDefault();
+            const rect = svgRoot.getBoundingClientRect();
+            const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+            const k0 = state.view.k, k = clamp(k0 * Math.pow(0.9985, ev.deltaY), 0.08, 4);
+            state.view.x = mx - (mx - state.view.x) * (k / k0);
+            state.view.y = my - (my - state.view.y) * (k / k0);
+            state.view.k = k;
+            applyView();
+        }, {passive: false});
+        svgRoot.addEventListener("click", ev => {
+             if (moved) {              // that was a pan, not a click
+                 moved = false;
+                 return;
+             }
+             if (!ev.target.closest(".node")) clearSelection();
+        });
+    })();
+
+    function toGraphXY(ev) {
+        const rect = svgRoot.getBoundingClientRect(), v = state.view;
+        return {x: (ev.clientX - rect.left - v.x) / v.k, y: (ev.clientY - rect.top - v.y) / v.k};
+    }
+
+    function startDrag(ev, n) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const start = toGraphXY(ev), ox = n.x, oy = n.y;
+        n.dragging = true;
+        const move = e => {
+            const p = toGraphXY(e);
+            n.x = ox + (p.x - start.x);
+            n.y = oy + (p.y - start.y);
+            drawPositions();
+        };
+        const up = () => {
+            n.dragging = false;
+            window.removeEventListener("mousemove", move);
+            window.removeEventListener("mouseup", up);
+            state.alpha = Math.max(state.alpha, .35);
+            runSim(1);
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+    }
+
+    /* ---- tooltips ---- */
+    function showTip(ev, html) {
+        const t = $("#tooltip");
+        t.innerHTML = html;
+        t.style.display = "block";
+        const pane = $("#graphPane").getBoundingClientRect();
+        t.style.left = clamp(ev.clientX - pane.left + 12, 4, pane.width - 430) + "px";
+        t.style.top = clamp(ev.clientY - pane.top + 12, 4, pane.height - 60) + "px";
+    }
+
+    function hideTip() {
+        $("#tooltip").style.display = "none";
+    }
+
+    function nodeTip(n) {
+        const p = parseId(n.id);
+        const head = "<b>" + esc(n.title) + "</b>";
+        if (p.type === "pkg") {
+            const f = state.folders.get(p.path) || {};
+            return head + "\n" + num((f.files || []).length) + " files \u00b7 " + num(f.symbolCount) +
+                " symbols \u00b7 " + num(f.unresolved) + " unresolved";
+        }
+        if (p.type === "sym") {
+            const info = state.symInfo.get(p.path), s = info && info.byQN.get(p.qn);
+            return head + (s ? "\n" + esc(s.kind) + (s.signature ? "  " + esc(s.signature) : "") +
+                "\nlines " + s.startLine + "\u2013" + s.endLine : "");
+        }
+        const rec = state.files.get(p.path) || {};
+        return head + "\n" + esc(rec.validator || "?") + " \u00b7 " + num(rec.symbolCount) + " symbols \u00b7 " +
+            num(rec.referenceCount) + " refs \u00b7 " + num((rec.resolutions || []).length) + " resolved \u00b7 " +
+            num((rec.unresolvedNames || []).length) + " unresolved" +
+            (state.failures.has(p.path) ? "\nFAILED: " + esc(state.failures.get(p.path)) : "");
+    }
+
+    function linkTip(l) {
+        const names = Array.from(l.names.entries()).sort((a, b) => b[1] - a[1]).slice(0, 24);
+        return "<b>" + esc(labelOf(l.source.id)) + " \u2192 " + esc(labelOf(l.target.id)) + "</b>\n" +
+            num(l.count) + " reference" + (l.count === 1 ? "" : "s") + (l.ambiguous ? " (ambiguous)" : "") + "\n" +
+            names.map(([k, v]) => "  " + esc(k) + (v > 1 ? "  \u00d7" + v : "")).join("\n") +
+            (l.names.size > names.length ? "\n  \u2026" : "");
+    }
+
+    function highlight(id) {
+        const near = new Set();
+        if (id) {
+            near.add(id);
+            for (const l of state.graph.links) {
+                if (l.source.id === id) near.add(l.target.id);
+                if (l.target.id === id) near.add(l.source.id);
+            }
+        }
+        for (const n of state.graph.nodes) {
+            if (!n.el) continue;
+            n.el.classList.toggle("sel", n.id === state.selected);
+            n.el.classList.toggle("dim", !!id && !near.has(n.id));
+        }
+        for (const l of state.graph.links) {
+            const hit = id && (l.source.id === id || l.target.id === id);
+            l.el.classList.toggle("hl", !!hit);
+            l.el.setAttribute("marker-end", hit ? "url(#arrow-hl)" :
+                "url(#arrow-" + (l.dirn === "in" ? "in" : "out") + ")");
+            l.el.classList.toggle("dim", !!id && !hit);
+        }
+    }
+
+    /* =========================================================================
+     8. navigation (focus / select / history / url)
+     ========================================================================= */
+    async function setFocus(id, push) {
+        if (!id) return;
+        state.focus = id;
+        state.selected = id;
+        if (push !== false) {
+            state.history = state.history.slice(0, state.histIdx + 1);
+            if (state.history[state.histIdx] !== id) state.history.push(id);
+            state.histIdx = state.history.length - 1;
+        }
+        syncUrl();
+        // switch mode implicitly when focusing a foreign node type
+        const t = parseId(id).type;
+        if (t === "pkg" && state.mode !== "packages") setMode("packages", false);
+        if (t === "sym" && state.mode !== "symbols") setMode("symbols", false);
+        await rebuild();
+        renderDetails(id);
+        markTree(id);
+         syncClearBtn();
+    }
+
+    function select(id) {
+        state.selected = id;
+        highlight(id);
+        renderDetails(id);
+        markTree(id);
+         syncClearBtn();
+     }
+     /** drop the current selection: un-dim the graph and fall back to the focus node's details */
+     function clearSelection() {
+         if (!state.selected) return;
+         state.selected = null;
+         hideTip();
+         highlight(null);
+         markTree(state.focus);
+         if (state.focus) renderDetails(state.focus);
+         syncClearBtn();
+     }
+     function syncClearBtn() {
+         const b = $("#clearSel");
+         if (b) b.disabled = !state.selected;
+    }
+
+    async function rebuild() {
+        busy(1);
+        try {
+            await buildGraph();
+        } finally {
+            busy(-1);
+        }
+        renderGraph();
+        runSim(30);
+        setTimeout(fit, 60);
+    }
+
+    function setMode(m, doRebuild) {
+        state.mode = m;
+        $("#mode").value = m;
+        // re-map focus to the new granularity
+        const p = parseId(state.focus || "");
+        if (m === "packages" && p.type !== "pkg") state.focus = pid(p.type === "none" ? "" : dirOf(p.path));
+        if (m === "files" && p.type !== "file" && p.path != null && state.files.has(p.path)) state.focus = fid(p.path);
+        if (m === "files" && p.type === "pkg") {
+            const f = state.folders.get(p.path);
+            if (f && f.direct.length) state.focus = fid(f.direct[0]);
+        }
+        if (m === "symbols" && p.type === "file") {
+            const rec = state.files.get(p.path);
+            const qn = rec && (rec.qualifiedNames || [])[0];
+            if (qn) state.focus = sid(p.path, qn);
+        }
+        syncUrl();
+        if (doRebuild !== false) setFocus(state.focus, false);
+    }
+
+    function syncUrl() {
+        const q = new URLSearchParams(location.search);
+        q.set("root", state.rootParam);
+        q.set("mode", state.mode);
+        q.set("dir", state.dir);
+        q.set("depth", String(state.depth));
+        if (state.focus) q.set("focus", state.focus);
+        history.replaceState(null, "", location.pathname + "?" + q.toString());
+    }
+
+    function go(delta) {
+        const i = state.histIdx + delta;
+        if (i < 0 || i >= state.history.length) return;
+        state.histIdx = i;
+        setFocus(state.history[i], false);
+    }
+
+    /* =========================================================================
+     9. sidebar tree
+     ========================================================================= */
+    function renderTree() {
+        const host = $("#tree");
+        host.textContent = "";
+        const roots = new Map();
+        const nodeFor = (map, name) => {
+            let n = map.get(name);
+            if (!n) map.set(name, n = {name, dirs: new Map(), files: []});
+            return n;
+        };
+        for (const path of Array.from(state.files.keys()).sort()) {
+            const parts = path.split("/");
+            let cur = {dirs: roots};
+            for (let i = 0; i < parts.length - 1; i++) cur = nodeFor(cur.dirs, parts[i]);
+            (cur.files || (cur.files = [])).push(path);
+        }
+        const build = (map, prefix, container, depth) => {
+            for (const [name, node] of Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+                const full = prefix ? prefix + "/" + name : name;
+                const agg = state.folders.get(full) || {files: [], symbolCount: 0};
+                const det = document.createElement("details");
+                if (depth < 1) det.open = true;
+                const sum = document.createElement("summary");
+                sum.dataset.id = pid(full);
+                sum.innerHTML = '<span class="caret">\u25b8</span><span class="ico pkg">\u25a3</span>' +
+                    "<span>" + esc(name) + "</span><span class=\"cnt\">" + agg.files.length + "</span>";
+                sum.addEventListener("click", ev => {
+                    if (ev.detail === 2) return;
+                });
+                sum.addEventListener("dblclick", ev => {
+                    ev.preventDefault();
+                    setFocus(pid(full));
+                });
+                sum.querySelector(".cnt").addEventListener("click", ev => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    setFocus(pid(full));
+                });
+                det.appendChild(sum);
+                const body = document.createElement("div");
+                body.style.marginLeft = "10px";
+                det.appendChild(body);
+                container.appendChild(det);
+                build(node.dirs, full, body, depth + 1);
+                for (const p of (node.files || [])) body.appendChild(fileRow(p));
+            }
+        };
+        build(roots, "", host, 0);
+        const rootFiles = state.folders.get("");
+        for (const p of ((rootFiles && rootFiles.direct) || []).sort()) host.appendChild(fileRow(p));
+        markTree(state.selected);
+    }
+
+    function fileRow(path) {
+        const rec = state.files.get(path) || {};
+        const div = document.createElement("div");
+        div.className = "leaf";
+        div.dataset.id = fid(path);
+        div.innerHTML = '<span class="ico file">\u25c8</span><span>' + esc(baseOf(path)) +
+            '</span><span class="cnt">' + (rec.symbolCount || 0) + "</span>";
+        if (state.failures.has(path)) div.querySelector("span:nth-child(2)").classList.add("err");
+        div.addEventListener("click", () => select(fid(path)));
+        div.addEventListener("dblclick", () => setFocus(fid(path)));
+        return div;
+    }
+
+    function markTree(id) {
+        $$("#tree .sel").forEach(e => e.classList.remove("sel"));
+        if (!id) return;
+        const p = parseId(id);
+        const target = p.type === "sym" ? fid(p.path) : id;
+        const el = $('#tree [data-id="' + CSS.escape(target) + '"]');
+        if (el) {
+            el.classList.add("sel");
+            let d = el.closest("details");
+            while (d) {
+                d.open = true;
+                d = d.parentElement && d.parentElement.closest("details");
+            }
+            el.scrollIntoView({block: "nearest"});
+        }
+    }
+
+    /* =========================================================================
+     10. details panes
+     ========================================================================= */
+    function renderStats() {
+        const m = state.manifest || {};
+        $("#stats").innerHTML =
+            "<span><b>" + num(m.fileCount) + "</b> files</span>" +
+            "<span><b>" + num(m.symbolCount) + "</b> symbols</span>" +
+            "<span><b>" + num(m.referenceCount) + "</b> refs</span>" +
+            "<span><b>" + num(m.resolvedNameCount) + "</b> resolved</span>" +
+            "<span><b>" + num(m.unresolvedNameCount) + "</b> unresolved</span>" +
+            ((m.failures || []).length ? '<span class="err"><b>' + m.failures.length + "</b> failures</span>" : "") +
+            (m.generatedAt ? '<span class="muted">' + esc(m.generatedAt) + "</span>" : "");
+    }
+
+    function row(html, onClick, cls) {
+        const d = document.createElement("div");
+        d.className = "row " + (cls || "");
+        d.innerHTML = html;
+        if (onClick) d.addEventListener("click", onClick);
+        return d;
+    }
+
+    function sec(title, n) {
+        return '<div class="sec">' + esc(title) + (n != null ? ' <span class="n">' + num(n) + "</span>" : "") + "</div>";
+    }
+
+    function renderDetails(id) {
+        const p = parseId(id);
+        if (p.type === "pkg") renderPkgInfo(p.path);
+        else renderFileInfo(p.path, p.type === "sym" ? p.qn : null);
+    }
+
+    function renderPkgInfo(folder) {
+        const f = state.folders.get(folder) || {files: [], direct: []};
+        const info = $("#paneInfo");
+        info.innerHTML =
+            '<h2 class="h">' + esc(folder ? baseOf(folder) : "\u2039root\u203a") + "/</h2>" +
+            '<div class="sub">' + esc(folder || "\u2039root\u203a") + "</div>" +
+            '<dl class="kv">' +
+            "<dt>files (recursive)</dt><dd>" + num(f.files.length) + "</dd>" +
+            "<dt>files (direct)</dt><dd>" + num(f.direct.length) + "</dd>" +
+            "<dt>symbols</dt><dd>" + num(f.symbolCount) + "</dd>" +
+            "<dt>references</dt><dd>" + num(f.referenceCount) + "</dd>" +
+            "<dt>resolved / unresolved</dt><dd>" + num(f.resolved) + " / " + num(f.unresolved) + "</dd>" +
+            (f.failures ? '<dt class="err">failures</dt><dd class="err">' + f.failures + "</dd>" : "") +
+            "<dt>rollup</dt><dd><a target=\"_blank\" rel=\"noreferrer\" href=\"" +
+            esc(packageManifestUrl(folder)) + '">package.json</a></dd>' +
+            "</dl>";
+        const deps = document.createElement("div");
+        deps.innerHTML = sec("Depends on (packages)", (state.pkgOut.get(folder) || new Map()).size);
+        for (const e of edgesOf(pid(folder), "out").sort((a, b) => b.count - a.count))
+            deps.appendChild(row('<span class="name">' + esc(e.to || "\u2039root\u203a") + '</span><span class="path">' +
+                num(e.count) + "</span>", () => setFocus(pid(e.to))));
+        deps.innerHTML += sec("Used by (packages)", (state.pkgIn.get(folder) || new Map()).size);
+        for (const e of edgesOf(pid(folder), "in").sort((a, b) => b.count - a.count))
+            deps.appendChild(row('<span class="name">' + esc(e.from || "\u2039root\u203a") + '</span><span class="path">' +
+                num(e.count) + "</span>", () => setFocus(pid(e.from))));
+        info.appendChild(deps);
+
+        const files = $("#paneSymbols");
+        files.innerHTML = sec("Files in this package (recursive)", f.files.length);
+        for (const p of f.files.slice().sort())
+            files.appendChild(row('<span class="name">' + esc(baseOf(p)) + '</span><span class="path">' +
+                esc(dirOf(p)) + "</span>", () => setFocus(fid(p))));
+
+        const refs = $("#paneRefs");
+        refs.innerHTML = sec("Unresolved names in this package");
+        const unres = new Map();
+        for (const p of f.files) for (const n of (state.files.get(p).unresolvedNames || []))
+            unres.set(n, (unres.get(n) || 0) + 1);
+        refs.innerHTML += '<div class="chips">' + Array.from(unres.entries())
+            .sort((a, b) => b[1] - a[1]).slice(0, 400)
+            .map(([n, c]) => '<span class="chip bad">' + esc(n) + (c > 1 ? " \u00d7" + c : "") + "</span>").join("") + "</div>";
+
+        setCodeTarget(null, null);
+    }
+
+    async function renderFileInfo(path, qn) {
+        const rec = state.files.get(path) || {path, name: baseOf(path)};
+        const info = $("#paneInfo");
+        info.innerHTML =
+            '<h2 class="h">' + esc(baseOf(path)) + (qn ? ' <span class="muted">\u00b7 ' + esc(qn) + "</span>" : "") + "</h2>" +
+            '<div class="sub">' + esc(path) + "</div>" +
+            (state.failures.has(path) ? '<div class="warnbox">FAILED: ' + esc(state.failures.get(path)) + "</div>" : "") +
+            '<dl class="kv">' +
+            "<dt>package</dt><dd><a href=\"#\" data-pkg=\"1\">" + esc(dirOf(path) || "\u2039root\u203a") + "</a></dd>" +
+            "<dt>validator</dt><dd>" + esc(rec.validator || "\u2014") + "</dd>" +
+            "<dt>size</dt><dd>" + bytes(rec.size) + "</dd>" +
+            "<dt>modified</dt><dd>" + esc(rec.lastModified || "") + "</dd>" +
+            "<dt>symbols</dt><dd>" + num(rec.symbolCount) + "</dd>" +
+            "<dt>references</dt><dd>" + num(rec.referenceCount) + "</dd>" +
+            "<dt>resolved / unresolved</dt><dd>" + num((rec.resolutions || []).length) + " / " +
+            num((rec.unresolvedNames || []).length) + "</dd>" +
+            (rec.contentHash ? "<dt>sha-256</dt><dd>" + esc(rec.contentHash.slice(0, 16)) + "\u2026</dd>" : "") +
+            "<dt>json</dt><dd><a target=\"_blank\" rel=\"noreferrer\" href=\"" + esc(sidecarUrl(path)) +
+            '">sidecar</a> &middot; <a target="_blank" rel="noreferrer" href="' + esc(u(path)) + '">source</a></dd>' +
+            "</dl>";
+        const pkgLink = info.querySelector("[data-pkg]");
+        if (pkgLink) pkgLink.addEventListener("click", ev => {
+            ev.preventDefault();
+            setFocus(pid(dirOf(path)));
+        });
+
+        const dep = document.createElement("div");
+        dep.innerHTML = sec("Depends on (files)", (state.fileOut.get(path) || new Map()).size);
+        for (const e of edgesOf(fid(path), "out").sort((a, b) => b.count - a.count))
+            dep.appendChild(row('<span class="name">' + esc(baseOf(e.to)) + (e.ambiguous ?
+                    ' <span class="chip amb">amb</span>' : "") + '</span><span class="path">' + esc(dirOf(e.to)) +
+                " \u00b7 " + num(e.count) + "</span>", () => setFocus(fid(e.to))));
+        dep.innerHTML += sec("Used by (files)", (state.fileIn.get(path) || new Map()).size);
+        for (const e of edgesOf(fid(path), "in").sort((a, b) => b.count - a.count))
+            dep.appendChild(row('<span class="name">' + esc(baseOf(e.from)) + '</span><span class="path">' +
+                esc(dirOf(e.from)) + " \u00b7 " + num(e.count) + "</span>", () => setFocus(fid(e.from))));
+        if ((rec.errors || []).length) {
+            dep.innerHTML += sec("Validation errors", rec.errors.length);
+            for (const err of rec.errors)
+                dep.appendChild(row('<span class="name err">' + esc(err.severity || "ERROR") + "</span><span>" +
+                    esc(err.message || "") + '</span><span class="path">' + (err.line || 0) + ":" + (err.column || 0) + "</span>",
+                    () => revealLines(path, err.line, err.line)));
+        }
+        info.appendChild(dep);
+
+        /* ---- refs pane ---- */
+        const refs = $("#paneRefs");
+        refs.innerHTML = "";
+        const res = (rec.resolutions || []).slice().sort((a, b) => a.name.localeCompare(b.name));
+        refs.innerHTML += sec("Resolutions", res.length);
+        const rHost = document.createElement("div");
+        for (const r of res) {
+            const t = (r.targets || [])[0] || {};
+            rHost.appendChild(row('<span class="name">' + esc(r.name) + "</span>" +
+                (r.ambiguous ? '<span class="chip amb">' + num(r.candidateCount) + " cand</span>" : "") +
+                '<span class="path">' + esc(t.qualifiedName || "") + " @ " + esc(t.path || "?") +
+                (typeof r.distance === "number" ? " (d" + r.distance + ")" : "") + "</span>",
+                () => t.path && setFocus(t.qualifiedName ? sid(t.path, t.qualifiedName) : fid(t.path))));
+        }
+        refs.appendChild(rHost);
+        refs.innerHTML += sec("Unresolved names", (rec.unresolvedNames || []).length);
+        refs.innerHTML += '<div class="chips">' + (rec.unresolvedNames || [])
+            .map(n => '<span class="chip bad">' + esc(n) + "</span>").join("") + "</div>";
+        if ((rec.referencedNames || []).length) {
+            refs.innerHTML += sec("Referenced names", rec.referencedNames.length);
+            refs.innerHTML += '<div class="chips">' + rec.referencedNames.slice(0, 800)
+                .map(n => '<span class="chip">' + esc(n) + "</span>").join("") + "</div>";
+        }
+
+        /* ---- symbols pane (needs the sidecar) ---- */
+        const symHost = $("#paneSymbols");
+        symHost.innerHTML = sec("Public symbols") + '<div class="muted">loading sidecar\u2026</div>';
+        const sinfo = await symInfoFor(path);
+        symHost.innerHTML = sec("Public symbols", sinfo.list.length) +
+            (sinfo.refsAvailable ? "" : '<div class="warnbox">This sidecar has no reference details ' +
+                "(includeReferenceDetails = false), so symbol-level edges fall back to file granularity.</div>");
+        for (const s of sinfo.list) {
+            const d = document.createElement("div");
+            d.className = "symrow" + (qn === s.qn ? " sel" : "");
+            d.style.paddingLeft = (4 + s.depth * 14) + "px";
+            d.innerHTML = '<span class="ico sym">\u25cf</span><span class="kind">' + esc(s.kind) + "</span>" +
+                '<span class="name">' + esc(s.name) + "</span>" +
+                (s.signature ? '<span class="sig">' + esc(s.signature) + "</span>" : "") +
+                '<span class="path">' + s.startLine + "\u2013" + s.endLine + "</span>";
+            d.addEventListener("click", () => {
+                select(sid(path, s.qn));
+                revealLines(path, s.startLine, s.endLine);
+            });
+            d.addEventListener("dblclick", () => setFocus(sid(path, s.qn)));
+            symHost.appendChild(d);
+        }
+        if (!sinfo.list.length) symHost.innerHTML += '<div class="muted">no public symbols recorded</div>';
+
+        /* ---- code pane ---- */
+        const sym = qn ? sinfo.byQN.get(qn) : null;
+        setCodeTarget(path, sym);
+    }
+
+    /* =========================================================================
+     11. code viewer (Monaco if reachable, plain <pre> otherwise)
+     ========================================================================= */
+    const MONACO_BASES = [params.get("monaco"), "monaco/vs", "./vs", "../monaco/vs", "/monaco/vs",
+        "https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs"].filter(Boolean);
+    const LANG = {
+        kt: "kotlin", kts: "kotlin", java: "java", js: "javascript", mjs: "javascript", jsx: "javascript",
+        ts: "typescript", tsx: "typescript", py: "python", rb: "ruby", go: "go", rs: "rust", c: "c", h: "cpp",
+        cpp: "cpp", cc: "cpp", cxx: "cpp", hpp: "cpp", cs: "csharp", php: "php", swift: "swift", scala: "scala",
+        sh: "shell", bash: "shell", json: "json", xml: "xml", html: "html", css: "css", scss: "scss",
+        md: "markdown", sql: "sql", yaml: "yaml", yml: "yaml", groovy: "groovy", gradle: "groovy", dart: "dart"
+    };
+
+    function loadScript(src) {
+        return new Promise((res, rej) => {
+            const s = document.createElement("script");
+            s.src = src;
+            s.onload = res;
+            s.onerror = () => rej(new Error("cannot load " + src));
+            document.head.appendChild(s);
+        });
+    }
+
+    async function ensureMonaco() {
+        if (state.monacoPromise) return state.monacoPromise;
+        state.monacoPromise = (async () => {
+            for (const raw of MONACO_BASES) {
+                const base = String(raw).replace(/\/+$/, "");
+                try {
+                    if (!window.require || !window.require.config) await loadScript(base + "/loader.js");
+                    window.require.config({paths: {vs: base}});
+                    await new Promise((res, rej) => window.require(["vs/editor/editor.main"], res, rej));
+                    if (window.monaco) return window.monaco;
+                } catch (e) { /* try the next candidate */
+                }
+            }
+            throw new Error("Monaco not available");
+        })();
+        return state.monacoPromise;
+    }
+
+    const sourceCache = new Map();
+
+    function loadSource(path) {
+        let p = sourceCache.get(path);
+        if (p) return p;
+        busy(1);
+        p = fetch(u(path), {cache: "no-cache"})
+            .then(r => {
+                if (!r.ok) throw new Error("HTTP " + r.status);
+                return r.text();
+            })
+            .catch(e => {
+                throw e;
+            })
+            .finally(() => busy(-1));
+        sourceCache.set(path, p);
+        return p;
+    }
+
+    async function setCodeTarget(path, sym) {
+        $("#codeTitle").textContent = path ? path + (sym ? "  \u00b7  " + sym.qn : "") : "no selection";
+        $("#rawLink").href = path ? u(path) : "#";
+        $("#sidecarLink").href = path ? sidecarUrl(path) : "#";
+        state.codePath = path;
+        state.codeSym = sym;
+        if (!path) return;
+        if (!$("#paneCode").classList.contains("on")) return;   // lazy: only when tab visible
+        await showCode(path, sym);
+    }
+
+    async function showCode(path, sym) {
+        let text;
+        try {
+            text = await loadSource(path);
+        } catch (e) {
+            $("#editorHost").hidden = true;
+            const pre = $("#plainCode");
+            pre.hidden = false;
+            pre.innerHTML = '<span class="err">Cannot fetch source: ' + esc(String(e.message || e)) +
+                "</span>\n\nThe viewer reads source files as <" + "code>&lt;root&gt;/&lt;path&gt;</" +
+                "code>; make sure the tree is served over HTTP.";
+            return;
+        }
+        let monaco = null;
+        try {
+            monaco = await ensureMonaco();
+        } catch (e) { /* fall back */
+        }
+        if (monaco) {
+            $("#plainCode").hidden = true;
+            $("#editorHost").hidden = false;
+            const lang = LANG[extOf(path)] || "plaintext";
+            if (!state.editor) {
+                state.editor = monaco.editor.create($("#editorHost"), {
+                    value: text, language: lang, readOnly: true, automaticLayout: true,
+                    theme: "vs-dark", minimap: {enabled: true}, fontSize: 12, scrollBeyondLastLine: false
+                });
+            } else {
+                const model = state.editor.getModel();
+                if (state.editorPath !== path || model.getValue() !== text) {
+                    monaco.editor.setModelLanguage(model, lang);
+                    model.setValue(text);
+                }
+            }
+            state.editorPath = path;
+            state.decorations = state.editor.deltaDecorations(state.decorations || [], sym && sym.startLine ? [{
+                range: new monaco.Range(sym.startLine, 1, sym.endLine || sym.startLine, 1),
+                options: {
+                    isWholeLine: true, className: "", linesDecorationsClassName: "", inlineClassName: "",
+                    marginClassName: "", overviewRuler: {color: "#7aa2f7", position: 4},
+                    backgroundColor: "#7aa2f722"
+                }
+            }] : []);
+            if (sym && sym.startLine) {
+                state.editor.revealLineInCenter(sym.startLine);
+                state.editor.setPosition({lineNumber: sym.startLine, column: 1});
+            }
+        } else {
+            $("#editorHost").hidden = true;
+            const pre = $("#plainCode");
+            pre.hidden = false;
+            const lines = text.split("\n");
+            const from = sym && sym.startLine ? sym.startLine : 0, to = sym && sym.endLine ? sym.endLine : -1;
+            pre.innerHTML = lines.map((l, i) => {
+                const n = i + 1, mark = (n >= from && n <= to);
+                const html = String(n).padStart(5, " ") + "  " + esc(l);
+                return mark ? '<span class="hl" id="' + (n === from ? "hlFirst" : "") + '">' + html + "</span>" : html;
+            }).join("\n");
+            const first = $("#hlFirst");
+            if (first) first.scrollIntoView({block: "center"});
+        }
+    }
+
+    async function revealLines(path, start, end) {
+        showTab("paneCode");
+        await setCodeTarget(path, {qn: "", startLine: start, endLine: end || start});
+    }
+
+    /* =========================================================================
+     12. search
+     ========================================================================= */
+    let searchIndex = null;
+
+    function buildSearchIndex() {
+        searchIndex = [];
+        for (const folder of state.folders.keys())
+            if (folder) searchIndex.push({id: pid(folder), text: folder, kind: "pkg", sub: "package"});
+        for (const rec of state.files.values()) {
+            searchIndex.push({id: fid(rec.path), text: rec.path, kind: "file", sub: rec.validator || "file"});
+            for (const qn of (rec.qualifiedNames || []))
+                searchIndex.push({id: sid(rec.path, qn), text: qn, kind: "sym", sub: rec.path});
+        }
+    }
+
+    function doSearch(q) {
+        const box = $("#results"), host = $("#resultsInner");
+        q = q.trim();
+        if (!q) {
+            box.style.display = "none";
+            return;
+        }
+        if (!searchIndex) buildSearchIndex();
+        const lq = q.toLowerCase();
+        const hits = [];
+        for (const e of searchIndex) {
+            const i = e.text.toLowerCase().indexOf(lq);
+            if (i < 0) continue;
+            const score = (e.text.toLowerCase() === lq ? 0 : 1) + (i === 0 ? 0 : 1) +
+                (e.kind === "sym" ? 0 : e.kind === "file" ? .5 : 1) + e.text.length / 500;
+            hits.push({e, score});
+            if (hits.length > 4000) break;
+        }
+        hits.sort((a, b) => a.score - b.score);
+        host.textContent = "";
+        for (const {e} of hits.slice(0, 120)) {
+            const ico = e.kind === "pkg" ? '<span class="ico pkg">\u25a3</span>'
+                : e.kind === "file" ? '<span class="ico file">\u25c8</span>'
+                    : '<span class="ico sym">\u25cf</span>';
+            host.appendChild(row(ico + '<span class="name">' + esc(e.text) + '</span><span class="path">' +
+                esc(e.sub) + "</span>", () => {
+                box.style.display = "none";
+                $("#search").value = "";
+                setFocus(e.id);
+            }));
+        }
+        if (!hits.length) host.innerHTML = '<div class="row muted">no matches</div>';
+        box.style.display = "block";
+    }
+
+    /* =========================================================================
+     13. tabs + ui wiring
+     ========================================================================= */
+    function showTab(id) {
+        $$(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === id));
+        $$(".tabPane").forEach(p => p.classList.toggle("on", p.id === id));
+        if (id === "paneCode" && state.codePath) showCode(state.codePath, state.codeSym);
+    }
+
+    function bindUI() {
+        $$(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+        $("#mode").addEventListener("change", e => setMode(e.target.value));
+        $("#dir").addEventListener("change", e => {
+            state.dir = e.target.value;
+            syncUrl();
+            rebuild();
+        });
+        $("#depth").addEventListener("change", e => {
+            state.depth = clamp(parseInt(e.target.value, 10) || 1, 1, 6);
+            e.target.value = state.depth;
+            syncUrl();
+            rebuild();
+        });
+        $("#maxNodes").addEventListener("change", e => {
+            state.maxNodes = clamp(parseInt(e.target.value, 10) || 160, 10, 2000);
+            e.target.value = state.maxNodes;
+            rebuild();
+        });
+        $("#fit").addEventListener("click", fit);
+         $("#clearSel").addEventListener("click", clearSelection);
+        $("#relayout").addEventListener("click", () => {
+            for (const n of state.graph.nodes) {
+                if (!n.pinned) {
+                    n.x = undefined;
+                }
+            }
+            seedPositions();
+            runSim(40);
+            setTimeout(fit, 80);
+        });
+        $("#back").addEventListener("click", () => go(-1));
+        $("#fwd").addEventListener("click", () => go(1));
+        $("#tglLeft").addEventListener("click", () => {
+            $("#main").classList.toggle("no-left");
+            setTimeout(fit, 50);
+        });
+        $("#tglRight").addEventListener("click", () => {
+            $("#main").classList.toggle("no-right");
+            setTimeout(fit, 50);
+        });
+        $("#reload").addEventListener("click", () => {
+            const q = new URLSearchParams(location.search);
+             q.set("root", $("#rootInput").value || DEFAULT_ROOT);
+            location.search = q.toString();
+        });
+        $("#rootInput").addEventListener("keydown", e => {
+            if (e.key === "Enter") $("#reload").click();
+        });
+
+        let t = 0;
+        $("#search").addEventListener("input", e => {
+            clearTimeout(t);
+            const v = e.target.value;
+            t = setTimeout(() => doSearch(v), 120);
+        });
+        $("#search").addEventListener("keydown", e => {
+            if (e.key === "Escape") {
+                e.target.value = "";
+                $("#results").style.display = "none";
+                e.target.blur();
+            }
+            if (e.key === "Enter") {
+                const first = $("#resultsInner .row");
+                if (first) first.click();
+            }
+        });
+        document.addEventListener("click", e => {
+            if (!e.target.closest("#results") && e.target !== $("#search")) $("#results").style.display = "none";
+        });
+         // clicking the empty area of the tree pane also clears the selection
+         $("#sidebar").addEventListener("click", e => {
+             if (e.target === $("#tree") || e.target === $("#sidebar")) clearSelection();
+         });
+        window.addEventListener("keydown", e => {
+            const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) ||
+                document.activeElement.closest(".monaco-editor");
+            if (typing) return;
+            if (e.key === "/") {
+                e.preventDefault();
+                $("#search").focus();
+             } else if (e.key === "Escape") {
+                 clearSelection();
+            } else if (e.key === "f") {
+                fit();
+            } else if (e.key === "1") {
+                setMode("files");
+            } else if (e.key === "2") {
+                setMode("packages");
+            } else if (e.key === "3") {
+                setMode("symbols");
+            } else if (e.key === "[") {
+                $("#depth").value = clamp(state.depth - 1, 1, 6);
+                $("#depth").dispatchEvent(new Event("change"));
+            } else if (e.key === "]") {
+                $("#depth").value = clamp(state.depth + 1, 1, 6);
+                $("#depth").dispatchEvent(new Event("change"));
+            } else if (e.altKey && e.key === "ArrowLeft") {
+                go(-1);
+            } else if (e.altKey && e.key === "ArrowRight") {
+                go(1);
+            }
+        });
+        window.addEventListener("resize", () => applyView());
+
+        // drag & drop a manifest (project.json / package.json) for offline inspection
+        document.addEventListener("dragover", e => e.preventDefault());
+        document.addEventListener("drop", async e => {
+            e.preventDefault();
+            const f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (!f) return;
+            try {
+                state.manifest = JSON.parse(await f.text());
+                bootDone();
+                start();
+            } catch (err) {
+                boot('<span class="err">' + esc(String(err)) + "</span>");
+            }
+        });
+    }
+
+    /* =========================================================================
+     14. boot
+     ========================================================================= */
+    function boot(msg) {
+        $("#boot").classList.remove("hidden");
+        $("#bootMsg").innerHTML = msg;
+    }
+
+    function bootDone() {
+        $("#boot").classList.add("hidden");
+    }
+
+    function resolveFocusParam(f) {
+        if (!f) return null;
+        if (/^[fps]:/.test(f) && nodeExists(f)) return f;
+        const bare = f.replace(/^\/+/, "");
+        if (state.files.has(bare)) return fid(bare);
+        if (state.folders.has(bare)) return pid(bare);
+        const decl = state.declByQN.get(bare);
+        if (decl && decl.length) return sid(decl[0], bare);
+        return null;
+    }
+
+    function defaultFocus() {
+        let best = null, bestScore = -1;
+        for (const rec of state.files.values()) {
+            const out = (state.fileOut.get(rec.path) || new Map()).size;
+            const inn = (state.fileIn.get(rec.path) || new Map()).size;
+            const s = out + inn * 1.5;
+            if (s > bestScore) {
+                bestScore = s;
+                best = rec.path;
+            }
+        }
+        return best ? fid(best) : pid("");
+    }
+
+    function start() {
+        indexManifest();
+        searchIndex = null;
+        renderStats();
+        renderTree();
+        state.mode = ["files", "packages", "symbols"].indexOf(params.get("mode")) >= 0 ? params.get("mode") : "files";
+        state.dir = ["out", "in", "both"].indexOf(params.get("dir")) >= 0 ? params.get("dir") : "both";
+        state.depth = clamp(parseInt(params.get("depth") || "1", 10) || 1, 1, 6);
+        state.maxNodes = clamp(parseInt(params.get("maxNodes") || "160", 10) || 160, 10, 2000);
+        $("#mode").value = state.mode;
+        $("#dir").value = state.dir;
+        $("#depth").value = state.depth;
+        $("#maxNodes").value = state.maxNodes;
+        const focus = resolveFocusParam(params.get("focus")) ||
+            (state.mode === "packages" ? pid("") : defaultFocus());
+        state.history = [];
+        state.histIdx = -1;
+        setFocus(focus);
+    }
+
+    (async function main() {
+        bindUI();
+        try {
+            await loadManifest();
+            bootDone();
+            start();
+        } catch (e) {
+            boot('<span class="err">Could not load the manifest:</span> <code>' + esc(String(e.message || e)) +
+                "</code><br/>Check the <code>root</code> parameter, that <code>SymbolIndexer</code> has run, " +
+                "and that <code>.data/</code> is served.");
+             $("#rootInput").value = params.get("root") || DEFAULT_ROOT;
+        }
+    })();
+</script>
+</body>
+</html>

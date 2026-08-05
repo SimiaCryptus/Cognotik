@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
@@ -847,7 +847,7 @@ class LoginServlet : HttpServlet() {
                         log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
                     } else {
                         try {
-                            ApplicationServices.authenticationManager.logout(token, user)
+                            ApplicationServices.authenticationManager.logoutIfMatching(token, user)
                             log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
                         } catch (e: Exception) {
                             log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)

@@ -76,6 +76,18 @@ object FileServerCli {
    var docProcessorServlet: CliDocProcessorServlet? = null
    /** Mount point of [docProcessorServlet]. */
    const val DOCOPS_PREFIX = "/docops"
+  /**
+   * Some UI builds address sessions as `{host}/proxy/?session=...` while the servers
+   * in this module serve them from the context root (`{host}/?session=...`). Both are
+   * supported: everything under this prefix is forwarded to the equivalent root path.
+   */
+  const val PROXY_PREFIX = "/proxy"
+  /** Servers that already carry the [PROXY_PREFIX] alias (weakly held, so no leaks). */
+  private val proxyAliasedServers: MutableSet<Server> =
+    java.util.Collections.synchronizedSet(
+      java.util.Collections.newSetFromMap(java.util.WeakHashMap<Server, Boolean>())
+    )
+
 
   /** First path segment consumed by [FileServlet] (normally a session id). */
 
@@ -85,6 +97,55 @@ object FileServerCli {
       response.sendRedirect("${request.contextPath}$target")
     }
   }
+  /**
+   * Serves `{PROXY_PREFIX}/rest/of/path?query` exactly like `/rest/of/path?query` by
+   * forwarding internally. Forwarding (rather than redirecting) is deliberate: a page
+   * loaded from `/proxy/` resolves its relative resources against `/proxy/...`, and
+   * those requests land here too and reach the very same servlets.
+   */
+  class ProxyAliasServlet(private val prefix: String = PROXY_PREFIX) : HttpServlet() {
+    override fun service(request: HttpServletRequest, response: HttpServletResponse) {
+      val contextPath = request.contextPath ?: ""
+      var path = (request.requestURI ?: "/").removePrefix(contextPath)
+      /* Tolerate (accidentally) repeated prefixes, and never forward to ourselves. */
+      while (path == prefix || path.startsWith("$prefix/")) path = path.removePrefix(prefix)
+      if (!path.startsWith("/")) path = "/$path"
+      val query = request.queryString
+      val target = if (query.isNullOrEmpty()) path else "$path?$query"
+      val dispatcher = request.getRequestDispatcher(target)
+      if (dispatcher == null) {
+        response.sendError(HttpServletResponse.SC_NOT_FOUND)
+        return
+      }
+      dispatcher.forward(request, response)
+    }
+  }
+  /**
+   * Adds the [PROXY_PREFIX] alias to [context]. Safe to call on an already started
+   * context (the chat server is created lazily, long after it was started).
+   */
+  fun installProxyAlias(context: ServletContextHandler) {
+    val holder = ServletHolder("proxy-alias", ProxyAliasServlet())
+    context.addServlet(holder, "$PROXY_PREFIX/*")
+    context.addServlet(holder, PROXY_PREFIX)
+    if (context.isStarted && !holder.isStarted) holder.start()
+  }
+  /** Idempotent, best-effort variant that finds the servlet context of [server]. */
+  fun installProxyAlias(server: Server) {
+    if (!proxyAliasedServers.add(server)) return
+    try {
+      val context = server.getChildHandlerByClass(ServletContextHandler::class.java) as? ServletContextHandler
+      if (context == null) {
+        System.err.println("warning: no servlet context found; $PROXY_PREFIX alias not installed")
+        return
+      }
+      installProxyAlias(context)
+    } catch (e: Exception) {
+      proxyAliasedServers.remove(server)
+      System.err.println("warning: could not install $PROXY_PREFIX alias: ${e.message}")
+    }
+  }
+
 
   private fun usage(): String = """
                 Usage: FileServerCli [options] [directory]
@@ -137,6 +198,9 @@ object FileServerCli {
                    Omit 'path' to select the whole served tree. Folders are expanded; the
                    selection is embedded in the chat's system prompt and the model's patches
                    are applied to the workspace, so it is refused with EROFS when read-only.
+                   Session URLs are served both from the context root and from /proxy/,
+                   i.e. http://host:port/?session=ID and http://host:port/proxy/?session=ID
+                   are equivalent (on this server and on the chat server).
 
 
                 By default this is a PERMISSIVE LOCAL server: interactive terminals and
@@ -242,6 +306,7 @@ object FileServerCli {
     bootstrapPlatform(cliUser)
     user = cliUser
 
+
     available = availableModels(cliUser)
     /* The pair is runtime state now: the web UI may replace it at any time. */
     ModelSelection.install(user = { FileServerCli.user }, smart = smartModel, fast = fastModel)
@@ -295,7 +360,12 @@ object FileServerCli {
       ModifyFilesActions.install(
         ModifyFilesActions.Config(
           root = taskRoot,
-          chatUri = { CognotikAppServer.getServer(host, chatPort).server.uri },
+          chatUri = {
+            val appServer = CognotikAppServer.getServer(host, chatPort)
+            /* The chat server is created on demand; alias it the first time we see it. */
+            installProxyAlias(appServer.server)
+            appServer.server.uri
+          },
           readOnly = readOnly,
           smartModel = smartModel,
           fastModel = fastModel,
@@ -335,6 +405,7 @@ object FileServerCli {
     println("  ->  http://$displayHost:$boundPort/")
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
+    println("  Alias     -> http://$displayHost:$boundPort$PROXY_PREFIX/ (same as /, for ?session=... URLs)")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
     println(
       "  Mode      -> ${if (readOnly) "read-only" else "read-write"}" +
@@ -471,6 +542,10 @@ object FileServerCli {
     val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
     context.addServlet(redirect, "")
     context.addServlet(redirect, FILES_PREFIX)
+    /* Accept the UI's "/proxy/..." session URLs as aliases of the context root. */
+    installProxyAlias(context)
+    proxyAliasedServers.add(server)
+
 
     server.handler = context
     server.stopAtShutdown = true

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.UsageInterface
+import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
 import com.simiacryptus.cognotik.webui.servlet.payment.PaymentProvider
 import jakarta.servlet.http.HttpServlet
@@ -51,7 +51,8 @@ open class CreditsServlet(
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
+        val user = UserProviderImpl().authenticate(req, resp)
+          ?: throw RuntimeException("User must be authenticated to purchase credits")
         if (authorizedProviders(user).isEmpty()) {
             resp.status = HttpServletResponse.SC_FORBIDDEN
             renderError(resp, "You are not authorized to purchase credits. Please contact support.")
@@ -69,7 +70,8 @@ open class CreditsServlet(
     }
 
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = authenticate(req, resp) ?: throw RuntimeException("User must be authenticated to purchase credits")
+        val user = UserProviderImpl().authenticate(req, resp)
+          ?: throw RuntimeException("User must be authenticated to purchase credits")
         if (authorizedProviders(user).isEmpty()) {
             resp.status = HttpServletResponse.SC_FORBIDDEN
             renderError(resp, "You are not authorized to purchase credits. Please contact support.")

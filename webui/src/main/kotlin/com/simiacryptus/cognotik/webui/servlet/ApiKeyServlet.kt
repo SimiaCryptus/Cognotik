@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -32,7 +32,7 @@ class ApiKeyServlet : HttpServlet() {
 
 
     response.contentType = "text/html"
-    val user = authenticate(request, response) ?: return response.sendError(
+    val user = UserProviderImpl().authenticate(request, response) ?: return response.sendError(
       HttpServletResponse.SC_UNAUTHORIZED
     )
     val action = request.getParameter("action")
@@ -100,7 +100,7 @@ class ApiKeyServlet : HttpServlet() {
     val comment = request.getParameter("comment")
 
     val welcomeMessage = request.getParameter("welcomeMessage")
-    val user = authenticate(request, response)
+    val user = UserProviderImpl().authenticate(request, response)
     val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
 
     if (action == "acceptInvite") {
@@ -152,7 +152,7 @@ class ApiKeyServlet : HttpServlet() {
   }
 
   private fun indexPage(request: HttpServletRequest, response: HttpServletResponse): String {
-    val user = authenticate(request, response) ?: return ""
+    val user = UserProviderImpl().authenticate(request, response) ?: return ""
     return """
           <html>
           <head>

@@ -3,8 +3,10 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -48,24 +50,24 @@ class CancelThreadsServlet : HttpServlet() {
       response.writer.write("Session ID is required")
     } else {
       val session = Session(request.getParameter("sessionId"))
-      val user = authenticate(request, response)
+      val user = UserProviderImpl().authenticate(request, response)
       if (user == null) {
         throw RuntimeException("User must be authenticated to cancel sessions")
       }
       require(
         ApplicationServices.authorizationManager.isAuthorized(
-          javaClass,
-          user,
-          AuthorizationInterface.OperationType.Delete
+          ResourceRef.of(javaClass),
+          Principal.of(user),
+          OperationType.Delete
         )
       )
       { "User $user is not authorized to cancel sessions" }
       if (session.isGlobal()) {
         require(
           ApplicationServices.authorizationManager.isAuthorized(
-            javaClass,
-            user,
-            AuthorizationInterface.OperationType.Public
+            ResourceRef.of(javaClass),
+            Principal.of(user),
+            OperationType.Public
           )
         )
         { "User $user is not authorized to cancel global sessions" }

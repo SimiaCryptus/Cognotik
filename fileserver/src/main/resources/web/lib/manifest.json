@@ -1,0 +1,1082 @@
+{
+  "generatedAt": "2026-08-02T17:21:14.755Z",
+  "cdn": "https://cdn.jsdelivr.net/npm",
+  "packages": {
+    "mermaid": {
+      "specifier": "11",
+      "version": "11.16.0"
+    },
+    "marked": {
+      "specifier": "15",
+      "version": "15.0.12"
+    },
+    "dompurify": {
+      "specifier": "3",
+      "version": "3.4.12"
+    },
+    "mathjax": {
+      "specifier": "3",
+      "version": "3.2.2"
+    },
+    "prismjs": {
+      "specifier": "1",
+      "version": "1.30.0"
+    },
+    "monaco-editor": {
+      "specifier": "0.52",
+      "version": "0.52.2"
+    }
+  },
+  "assets": [
+    {
+      "name": "marked",
+      "group": "marked",
+      "file": "marked.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js",
+      "version": "15.0.12",
+      "bytes": 39903,
+      "sha256": "3e7e7d7feb3e5d58cb6c804f68ab5c24cc7e5eb6270fd6e5cbb9124739217d0c",
+      "integrity": "sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 40808,
+      "sha256": "3de784d07b9fa8f104c10928a878ee879cf3305cae5195cba663c9c2bb0195eb",
+      "integrity": "sha384-J100qCjhK4tLcQXp7G/t738GlUJqXEqKXVdNOnwGL/SBiFCtvdbDuXQwSmzihq4p"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 9908,
+      "sha256": "af04542b29eaac04550a140c5f1760a649783989426f2540855bf4157819367d",
+      "integrity": "sha384-4y+2s3kVmFv2qffpuxpFgTQmi9r7njQZY3QEXP2LygL735DGnmDlWMfkhEsNEoj1"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 9600,
+      "sha256": "26683bf201fb258a2237d9754616de9d4ecf4cc1cd39dd1902476df7d75f1d16",
+      "integrity": "sha384-K6ErdJpfBs5JsIaU7zc2e6NslVEX1O8L5G8H8tpppH941xHfxSx/XKAofKtCpdcL"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Fraktur-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 22340,
+      "sha256": "721921bab0d001ebff0206c24cb5de6ca136467bf1843a7aa32030ba061d1e92",
+      "integrity": "sha384-/ID2mQxQjInRqJU7dlhqe8ETEfz2NHl3RerX2w52SrbBMlmzacFcFVCWawgQPS72"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Fraktur-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 21480,
+      "sha256": "870673df72e70f87c91a5a317d558c2c3b54392264ad79bbadc6d424ae8765fe",
+      "integrity": "sha384-mTOhoFaZCzo/qdICIPa5fIfswUAiYLlO1bPsfpV1tGvZI3qR3Uwqwy+m5NoWtTCZ"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Main-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Main-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 34464,
+      "sha256": "88b98cad3688915e50da55553ff6ad185e0dce134b47f176e91b100f8a9b175c",
+      "integrity": "sha384-BSBl3odBOVMt/+QnYXlotT7hpQxhtuDFeCxt83+OVRuk8meaOjDGOrgul7LyHoen"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Main-Italic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Main-Italic.woff",
+      "version": "3.2.2",
+      "bytes": 20832,
+      "sha256": "355254db9ca10a09a3b5f0929d74eb4670f44fbe864c07526a06213e0a0caf6c",
+      "integrity": "sha384-vOrilE19Hvk/9iCzaUEq4zRWFyJ2+gin9851VOpZ1YT5GIW0k9YHsFFuVxhbuoPn"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 34160,
+      "sha256": "1cb1c39ea642f26a4dfed230b4aea1c3c218689421f6e9c0a7c1811693c4fa07",
+      "integrity": "sha384-p3AOOFqjfipWVUZxGZ3OsK9ftW9XWNRY7LtgfnXg5MsMvWE1j8E5KD5Vcef7rMTs"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Math-BoldItalic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Math-BoldItalic.woff",
+      "version": "3.2.2",
+      "bytes": 19776,
+      "sha256": "8ea8dbb1b02e6f730f55b4cb5d413b785b9f5c39807d0a0fa7da206a0824a457",
+      "integrity": "sha384-cSFtBcB7DNPXZL9BP7LGK6tLyX3BshScsrVj0uFwezNS0tYF6Qg/2hX5e2C51Ce7"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff",
+      "version": "3.2.2",
+      "bytes": 19360,
+      "sha256": "a009bea404f7a500ded48f8b9ad9cf16e12504b3195dd9e25975289b8256b0f0",
+      "integrity": "sha384-vd/tFmOLPFI/PejEUimgXyFL50k/NYkNL/ReA4THPRFfD5jCxQvEnn3coQhiYn6o"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Math-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Math-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 19288,
+      "sha256": "c01d3321e89b403c4b811aa153c4e618eda3421f92d8a072a02c8d190782a191",
+      "integrity": "sha384-5O1Nw9Un5i2/Zrr1RnKXU9sx5hHn4BajNmkAyQp3MJEx06HEdysubDaDeD23anYh"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_SansSerif-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 15944,
+      "sha256": "32792104b5ef69eded905b6d1598ed05d8087684d38e7a94d52e3c38ba16f47e",
+      "integrity": "sha384-YoCwqyWyARMYcx7HqSoCTKrPvSgwX/WBo/wCDp6KcbNheN9VjkJG2zqSN3FcZGQU"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_SansSerif-Italic.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Italic.woff",
+      "version": "3.2.2",
+      "bytes": 14628,
+      "sha256": "fc6ddf5df402b263cfb158aed8e89972542c34b719cd87b1db30461985f7bd5b",
+      "integrity": "sha384-G3y8utMtjEBtrUGjj4QoIFeGAd8367SjhhCm2e0OdHloc+U8o2YHiWXBbFjIbG0J"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_SansSerif-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 12660,
+      "sha256": "b418136e3b384baaadecb70bd3c48a8da9825210130b2897db808c44efc883cb",
+      "integrity": "sha384-wfb0AxYEymEWxB4SFYKhP78l87ZzZhqhbVTjL0QsEmIMK0Q2LXKc73l+tuqJSbaL"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Script-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Script-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 11852,
+      "sha256": "af96f67d7accf5fd2a4a682d0b9f8b339f8ea6fe34c310c1694c8ba7f6ddc96f",
+      "integrity": "sha384-qgZx9RvL/Unr/XTmPjXxeMWQMu0my+qJ2V/7L45V1XnRLa/CmungHAduApagpjD6"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size1-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size1-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 5792,
+      "sha256": "c49810b53ecc0d87d8028762c518924197dd9d3f905b08f99ea241301085b9cb",
+      "integrity": "sha384-ys62eBAN3sZHV78Ams0Hf7tcsoJVwFm4P5LYJYiL7u9Ld6Yg3WvCnsMXzKrhJqgv"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size2-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size2-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 5464,
+      "sha256": "30e889b58cbc51adfbb038ab1a96dc4025aa3542a3cff7712fc55ece510675e2",
+      "integrity": "sha384-XuBmAwKdDtZvnDlIo4vWkQ7wt6jRUF0A/W+VnqvwKA9YkMoL2zBoi+nSoS+avBUg"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size3-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size3-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 3244,
+      "sha256": "5cda41563a095bd70c78e2dda13d0f8cb922c71c90fffd0a0044c65173a66e83",
+      "integrity": "sha384-53fNKngkS9cdZD5iJem4KvTifKRjuUr5CD5GBcGmtrCpZFjhPIg2b+Ah0TIXcTmX"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Size4-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Size4-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 5148,
+      "sha256": "3bc6ecaae7ecf6f8d7f8ea07bddbaca8601e2cb6e89d6aef58e78d9f6d8a398f",
+      "integrity": "sha384-61o3f+bHTTkL+k1YMEKx5LOjRvyUtGRjh5ahNiYBTCGTs30LkC9EsRb49d61B14g"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Typewriter-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Typewriter-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 17604,
+      "sha256": "c56da8d69f1a0208b8e0703656c3264b6dd748bd452524c82b0385b60f6a68c1",
+      "integrity": "sha384-691oE843IEknJv4SOD9g7nQZVg3yZ/9I3sMG/AHqL4vTOFrDn1kihswVqFSY4UpZ"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Vector-Bold.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Bold.woff",
+      "version": "3.2.2",
+      "bytes": 1116,
+      "sha256": "36e0d72d8a7afc696a3e7a5c7369807634640de9b02257bca447bdf126221a27",
+      "integrity": "sha384-Mx7rmHwX5y5LSky1XSZ9UYn84eSOZjfhNAi+vI6dQRa5nXjjRK/WwJBpbGmb6QIE"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Vector-Regular.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Regular.woff",
+      "version": "3.2.2",
+      "bytes": 1136,
+      "sha256": "72bc573386dd1d48c5bbd286302ca9e3400c5eb0f298e7cfbf945b9d08fc688f",
+      "integrity": "sha384-sqhOdMG39nGNxBhGsgUDKH8duHuPl5B8ASGp6G3i0Sy8jtuYtIKT0Aq8Pv0QVY7j"
+    },
+    {
+      "name": "mathjax",
+      "group": "fonts",
+      "file": "mathjax/output/chtml/fonts/woff-v2/MathJax_Zero.woff",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2/MathJax_Zero.woff",
+      "version": "3.2.2",
+      "bytes": 1368,
+      "sha256": "481e39042508ae313a60618af1e37146ab93e9324c98e4c78b8f17fe55d41e0b",
+      "integrity": "sha384-o1selG1mtGbrFYmRwR7ixEo/2Jalq/jeTjvkmLFhELagOoEBP89cnfl/e8WDzn+o"
+    },
+    {
+      "name": "mathjax",
+      "group": "mathjax",
+      "file": "mathjax/tex-mml-chtml.js",
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js",
+      "version": "3.2.2",
+      "bytes": 1173007,
+      "sha256": "300480069078b5892d2363a2b65e2dfbbf30fe5c80f83edbfecf4610fd093862",
+      "integrity": "sha384-Wuix6BuhrWbjDBs24bXrjf4ZQ5aFeFWBuKkFekO2t8xFU0iNaLQfp2K6/1Nxveei"
+    },
+    {
+      "name": "mermaid",
+      "group": "mermaid",
+      "file": "mermaid.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js",
+      "version": "11.16.0",
+      "bytes": 3565102,
+      "sha256": "74d7c46dabca328c2294733910a8aa1ed0c37451776e8d5295da38a2b758fb9b",
+      "integrity": "sha384-T/0lMUdJpd2S1ZHtRiofG3htU3xPCrFVeAQ1UUE2TJwlEJSV5NUwn30kP28n238E"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/base/browser/ui/codicons/codicon/codicon.ttf",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/base/browser/ui/codicons/codicon/codicon.ttf",
+      "version": "0.52.2",
+      "bytes": 80340,
+      "sha256": "0f1d5219934e96e83b8db162d60b4d8c09b5de1e7d38031cbafe4a3c0f2889c9",
+      "integrity": "sha384-7JbEA4N9p7IShUCYjNeFsUfYuAi68DV+AhR1T8Ais0/e3NqJ3JVutl04EqC8lQ21"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/base/worker/workerMain.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/base/worker/workerMain.js",
+      "version": "0.52.2",
+      "bytes": 376515,
+      "sha256": "dbe4aa4f2874f5768e8d98e94281667c0bc493e02dd9760adca930699ff3279b",
+      "integrity": "sha384-E+dAR/J/5QJorSgHftYIrvbbqdcfQ6JdmC6+/Bk17oJDltobW75bUWcqWEA4M+AA"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/bat/bat.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/bat/bat.js",
+      "version": "0.52.2",
+      "bytes": 2666,
+      "sha256": "75cbd235b127d3eef0a6b90cd83edc049cb264381971cba3d0fce660f9e5a68f",
+      "integrity": "sha384-WNn6zw/IF82tsAcCbqPbwH2cpXAIHSvJH/gr1PoyrCkUytPNr/85h4YNeGG59Fg7"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/clojure/clojure.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/clojure/clojure.js",
+      "version": "0.52.2",
+      "bytes": 10472,
+      "sha256": "1ac122e851515c788c65589dfabe18fa40b03a90d67b6c835bf27fdd678d8fc5",
+      "integrity": "sha384-QLBLstgDdWPM0sIu4d6crHaFtnA5I0g60Fw4T7VaJ1zq5c9Cscz8m8RDlHKfjOqy"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/coffee/coffee.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/coffee/coffee.js",
+      "version": "0.52.2",
+      "bytes": 4417,
+      "sha256": "4756a8c0d68cc19b2490403f39b22bcf3a518364eace045eaf87ca36fc7a3124",
+      "integrity": "sha384-lqB0vkUtd1b7eXP5m07xrS7q0WUwPEwWS4DC0yOLqz+HQ2zY8ABGIfn95qDh+/tv"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/cpp/cpp.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/cpp/cpp.js",
+      "version": "0.52.2",
+      "bytes": 6121,
+      "sha256": "52124e8e802797f89ca8e4415c6b9d63a55264de54ea1b38b5aa663159c46c1b",
+      "integrity": "sha384-xWERe8RAN9NjvLMTAl1DlIZ1hEpdgajh7V+hXUpJmoOQqmrTbX8ZJ5EE+KcywBt+"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/csharp/csharp.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/csharp/csharp.js",
+      "version": "0.52.2",
+      "bytes": 5351,
+      "sha256": "efe2ca37b83f691348ccfa1b310fe4ddd1f42653fe13f4354e4e724e39153e95",
+      "integrity": "sha384-pw9ORightKvZAeje0N28zJVLybFSBDCvvvZ+oPpuNdPY9788F1Ag2Y93ydQuN2NB"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/css/css.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/css/css.js",
+      "version": "0.52.2",
+      "bytes": 5331,
+      "sha256": "92220aad32d0a817016e500ff7f7d1b072d6c8c36367742c133f83882c1b7ffe",
+      "integrity": "sha384-Cfj8rBoPYfc+sI+pqxLxJa404mlTZMxoZ7gBcf2aDQwAO8pZVc2cJFKLJ+5LBV15"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/dart/dart.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/dart/dart.js",
+      "version": "0.52.2",
+      "bytes": 5073,
+      "sha256": "9ed4583d2ad0605822f006d25c04525e5869891f884808a43c79c1a96b658473",
+      "integrity": "sha384-F+anXug5zIHy7GNTdHxh0ouTS2omcLFPR+cjhRBw3b/THfOdunorCYSGkCRoUPMQ"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/dockerfile/dockerfile.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/dockerfile/dockerfile.js",
+      "version": "0.52.2",
+      "bytes": 2704,
+      "sha256": "0de466e07b2045975ebdfe8ee61fc6adeba7aa5a36bb7bb0b1532762650fb342",
+      "integrity": "sha384-PObthbVNI1N3njVrUaUkV1h/N0AUAZ48KSnOAIYYVz4g8IIgL7c3Ft0Rk/2XLFJW"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/go/go.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/go/go.js",
+      "version": "0.52.2",
+      "bytes": 3476,
+      "sha256": "b94f30b9854f995a608da2bac17802da8cc83234a34b374b307569df850ec839",
+      "integrity": "sha384-aTWWZoUPyRvdVHHTThqvW7cLL7zwt7uXXyQl1PBP33YtZqEROEbImYDycT62PrJ9"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/graphql/graphql.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/graphql/graphql.js",
+      "version": "0.52.2",
+      "bytes": 3089,
+      "sha256": "5bab64815245a9e79fe922f0d010d5028395f31c92b3aa4e187113c968b6c58b",
+      "integrity": "sha384-W+dpmI0v2q++UmEIKw8OJkWlElA5DoS1OODFYGZpGtf3rs+VmbezjS50pFVdlqpY"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/handlebars/handlebars.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/handlebars/handlebars.js",
+      "version": "0.52.2",
+      "bytes": 7827,
+      "sha256": "55f04266be83009aebd6b25a5fa46452f524c99d17ad17c4b18c24b8e6f89496",
+      "integrity": "sha384-MYi3jBHCUX4xbGVMqn7a1XZgyzdkeYO0TmRPi/cVspE/NSpRJ+mP70YOKcQJ1hkw"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/html/html.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/html/html.js",
+      "version": "0.52.2",
+      "bytes": 6055,
+      "sha256": "001b44bd88d864aa5cd165d2c326d0ea253f80647a88b92683759eaee4b0702d",
+      "integrity": "sha384-jJFhCqILy9vx0ekxrQ9QKp5x7/xuHlHbojw0O1fXHm/itds9s/VpolToVnTrao9C"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/ini/ini.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/ini/ini.js",
+      "version": "0.52.2",
+      "bytes": 1922,
+      "sha256": "25e9a52de4fd77a5f87bf22baa94703d2bcee82d119f93cf58921a751f3c203f",
+      "integrity": "sha384-t5pKQlbatzFTb0uMDAn57bqbhixlmjIJ7rA+IWiWTZ0QeEuaqSIWQHQvSHJ5cWuN"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/java/java.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/java/java.js",
+      "version": "0.52.2",
+      "bytes": 4044,
+      "sha256": "f5a6e854d70a317188bdc3000928665d811bc1ad63237312f8954e10037a28b1",
+      "integrity": "sha384-FCcva6j5pfIFwQCAQZkspePiAizuaIC7xwGJZMBBkjKp0hxxRBo0FWdYAFP5sQpV"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/javascript/javascript.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/javascript/javascript.js",
+      "version": "0.52.2",
+      "bytes": 7137,
+      "sha256": "169988c69c81eeccdd58435c502efcb7d6c1a667da072f0bba3a0022f8b85e46",
+      "integrity": "sha384-YYSSe7yqFkfQUQTP2/R5dXw89AI+2wNdquBWmJnB55Qb/HagPtWL3S838P80FEpu"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/julia/julia.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/julia/julia.js",
+      "version": "0.52.2",
+      "bytes": 8052,
+      "sha256": "03319b1c3b9d780c9ec06575a2c349d5e48f262bd7af42716007efbccdb563ed",
+      "integrity": "sha384-Q4CCTxmn3EIXK4h4txAV9zXOoRis+x7WPQaCK37iJKnbsRaHJ/VKoilmI29pM8S5"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/kotlin/kotlin.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/kotlin/kotlin.js",
+      "version": "0.52.2",
+      "bytes": 4266,
+      "sha256": "d736176b14856a1ebb09bdfd043a898da4b97cc3c5145b0996832f8ef73baa1c",
+      "integrity": "sha384-e2/fkGuaOUQA0zIx71BUdnTcJs7lgKtn9O6xdiAEQNLBV3bkMBu4iVMYOlXS+waC"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/less/less.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/less/less.js",
+      "version": "0.52.2",
+      "bytes": 4721,
+      "sha256": "47c17c686d409d11023d1b9e470d7e4c4971d8418fe6ffb6d7844a8f27a6c979",
+      "integrity": "sha384-FQkPcXHv8v6VsctunHDXNz7s5FjlN0fO4WtWStxE0epEj8L/qBNu+A7pn6YdNs6w"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/lua/lua.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/lua/lua.js",
+      "version": "0.52.2",
+      "bytes": 2944,
+      "sha256": "5d46959daacfc940fc177d59e1dcf75fc18b0aa3d0ccf18594316c297c71da86",
+      "integrity": "sha384-FuCF8e5dCg1YCYuN0/cNd8KEpsTPAaa7H1Xr6oS+0jQtjfc03Ttpqigv8C5IDmeA"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/markdown/markdown.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/markdown/markdown.js",
+      "version": "0.52.2",
+      "bytes": 4619,
+      "sha256": "0e3ddec8d09da9e89b0e8f46786f30b781982f759f29c5e6c22b0b4b00acae78",
+      "integrity": "sha384-C47IFBRFv8f58A8rCC4v6uUjDWhEUJCxtaFZXIYfg5n3YE+pIPjS05GSahsrtnBd"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/objective-c/objective-c.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/objective-c/objective-c.js",
+      "version": "0.52.2",
+      "bytes": 3239,
+      "sha256": "ac02b80f4ecaf3650cac477ce9f9fc810d7dfc9083805adeba6b272c85548712",
+      "integrity": "sha384-eg2AJa5Bci4P/OE/E5ys+tTnH533DXrPZR/9dT9z8VtTMkaiwXn/PO523/N0T9zp"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/perl/perl.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/perl/perl.js",
+      "version": "0.52.2",
+      "bytes": 9078,
+      "sha256": "ed897b714002e7089e1c10074e3694db1d4d702ebb52cf84de63bd9e093f9add",
+      "integrity": "sha384-D19vNSC4kuQ4EiApn8LJmpVbfgrXqWJM4f2N6QkF87UKaHg+oafFlVMe/kgAKxsv"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/php/php.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/php/php.js",
+      "version": "0.52.2",
+      "bytes": 8848,
+      "sha256": "ce048845100cdc880feb2e6d13474eb9963bb0e76beb6d7a9363d25acd6c44c8",
+      "integrity": "sha384-o91EG2aKIyt7FezL0cGF2jcBHQa81Hvxhy5YB2aKW1O43xF7OZjMDdE9W+14pjUX"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/powershell/powershell.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/powershell/powershell.js",
+      "version": "0.52.2",
+      "bytes": 4104,
+      "sha256": "948d8bccfa1045b07b87f1d8f9c9058a507d2a167aad14f3b83c64b6523e588c",
+      "integrity": "sha384-CVa0++8isAAKRdwDoLi0UoJdgVa3Y60FDFacmvEfl9XYJa0bDhQ1RbOp/OD77EHy"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/protobuf/protobuf.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/protobuf/protobuf.js",
+      "version": "0.52.2",
+      "bytes": 9877,
+      "sha256": "1ec0534959a0499a9165892506f98c465cdc9a7c25ad3868a20e9c99e71db335",
+      "integrity": "sha384-awEVgh6T/OzE2tuyTIB9B5jWEV8W1sWJ0f3VUfMGZBEaSj1VdG68oj6BGZhAtvHs"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/python/python.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/python/python.js",
+      "version": "0.52.2",
+      "bytes": 5239,
+      "sha256": "043c66f7b48025022bd6fc15db72ea18d566534c4e8859774e6f52f23210d720",
+      "integrity": "sha384-/Wl5Hgl7Fc9gZLvdjcTzg+L7i8Y8PI2GvOnkyvPeDONgUhsPoBEYKlatO3XfMbFC"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/r/r.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/r/r.js",
+      "version": "0.52.2",
+      "bytes": 3948,
+      "sha256": "b717d83cb4dfd7129826e2d9d42e39a5e099b49b434b2bfab85de3e3a459dc65",
+      "integrity": "sha384-oYRzwD2EHwuPKtxsSgaMwlZ/erlgeKFymoas3t7Ucvh5IWeYN2GPOf/kfiiSlbtZ"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/ruby/ruby.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/ruby/ruby.js",
+      "version": "0.52.2",
+      "bytes": 9327,
+      "sha256": "69da50c3194c76a3530dc36309ea85a933c75aa9e7058cf29e7516ac80951729",
+      "integrity": "sha384-B5neM77m4I/DEdAZzrkl/3pws0Nhgs04wK/wfbO27T6DfOzxgi6fBihLl26LZ+HH"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/rust/rust.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/rust/rust.js",
+      "version": "0.52.2",
+      "bytes": 4983,
+      "sha256": "37dc707b3ea97d761a3bab49359d32fd7b641f58bad4e2fd8c4c1cd0800cb4d2",
+      "integrity": "sha384-UGZL96TQ5ZgZriICAd3KKz5/2KGwFR/ytRoEWGubDVjFocjVFb6Ct+yb0L1OhPZ1"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/scala/scala.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/scala/scala.js",
+      "version": "0.52.2",
+      "bytes": 8143,
+      "sha256": "d513b09bbfbc050b372beac78e2584608212046ad068a08f8ab4e0dd1207b621",
+      "integrity": "sha384-zRdgC2VEqZnwi1lo9YVz6UEe1L3z/Ujp1Jze5vIqtcR1edHRITq8s9N3pkp5fKnv"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/scss/scss.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/scss/scss.js",
+      "version": "0.52.2",
+      "bytes": 7232,
+      "sha256": "6cf67bc2644efec58329cf02036c11215524007fe09ac2460ab46989bc6ae3cf",
+      "integrity": "sha384-2wrmc++JXHUO/DCwmKOCyPOn9CJ5wWavPdNmr+VrCMVqQfWVQWEASItlWMjD2Byw"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/shell/shell.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/shell/shell.js",
+      "version": "0.52.2",
+      "bytes": 3898,
+      "sha256": "fd62075e804809482b0ffa432f40b927564527fc4150f5251072e8ac455a6886",
+      "integrity": "sha384-/N/jEriMC282caPhXk6QZoagHMegKlMgMyjEUoLF23qjiM1dugczDR7xWJNA8Qde"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/sql/sql.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/sql/sql.js",
+      "version": "0.52.2",
+      "bytes": 11118,
+      "sha256": "17d3fa62658c8d29a806dbf786b8b5f90f913845daa18b24896710164a1661d8",
+      "integrity": "sha384-fDR6TWhcDPO+n5kurZeYa0feofNf58DFqCS7A/UaFfzmVRoTwXNtZFaOZBLB0w+W"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/swift/swift.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/swift/swift.js",
+      "version": "0.52.2",
+      "bytes": 5997,
+      "sha256": "cdc358689959b892a4b0a0d284e405adc22603bf9a8202fd8d4d1e4a0d16ae9a",
+      "integrity": "sha384-coXSxbC4kvcy5lwU4HYi3ZuisIUPf47V8e2aeoSjkpwYFdWAdAJMBTA9y2KF3Y/4"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/typescript/typescript.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/typescript/typescript.js",
+      "version": "0.52.2",
+      "bytes": 6460,
+      "sha256": "c4da8cd5fa6ea11fb7e9734f512b848877c1b5bf7f0faea76402ceb4da618887",
+      "integrity": "sha384-iZuX5uXpRo9b1ck7XqemCF1yKsRAsKtYvzJabNVTOK67tY1ZB+ZG9Zum6mNnDf81"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/xml/xml.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/xml/xml.js",
+      "version": "0.52.2",
+      "bytes": 3452,
+      "sha256": "d5cc3332e96b3300636a1677e535d16e8fa444538dcea17abe7b7ccdba6aab55",
+      "integrity": "sha384-ycCvuJVG2aHDFfOmfY+nFa9xCKYVBOr6VIawxPGVj4y0/39/yhAm1XuUP0NSA8l7"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/basic-languages/yaml/yaml.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/basic-languages/yaml/yaml.js",
+      "version": "0.52.2",
+      "bytes": 5056,
+      "sha256": "f4407dcc5601eec349552548557f3656a907b094575e7395402390aa08f8d7f2",
+      "integrity": "sha384-xooTL+fT4QcZM34MAF40XoZNk2YQ7Vjw8kle2rJlIjsvUW8D417YeObfR3jY7Trd"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/editor/editor.main.css",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/editor/editor.main.css",
+      "version": "0.52.2",
+      "bytes": 131858,
+      "sha256": "857bc0beafefbcc83ab5cf3510e929391c0314add43ee1a4cb8ecaf4726abbac",
+      "integrity": "sha384-06yHXpYRlHEPaR4AS0fB/W+lMN09Zh5e1XMtfkNQdHV38OlhfkOEW5M+pCj3QskC"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/editor/editor.main.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/editor/editor.main.js",
+      "version": "0.52.2",
+      "bytes": 3766654,
+      "sha256": "90b588bc0b624e24052a576e1bcab2eaffec7bc666895188862eebd9c9745782",
+      "integrity": "sha384-fj9z+NUc93I3woCCy5IRQfrQ8Amu1E27tllwgb5gz3d9Vr1ymS13xcF6two3e4KH"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/css/cssMode.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/css/cssMode.js",
+      "version": "0.52.2",
+      "bytes": 33094,
+      "sha256": "4d30d446fe1afe1e93325c6e2f363e67f4ca402fec5fccbb66b9a6342b191930",
+      "integrity": "sha384-gMDCNqTq+dkncmqOFiNW7sqCt2fH8mxCO7+/nbFLVca+cdgE22laPIu6q0RExhnT"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/css/cssWorker.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/css/cssWorker.js",
+      "version": "0.52.2",
+      "bytes": 778035,
+      "sha256": "83e129c073104332b16b9bdc69dca3446534abd77aa6a9edc63b7b957f6816f1",
+      "integrity": "sha384-m8TciMwFa+bZgwb2pCjttg37hKsOj3TUYbnmLZiNO09CKG5DvQP9qSw4ONblZbyI"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/html/htmlMode.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/html/htmlMode.js",
+      "version": "0.52.2",
+      "bytes": 33634,
+      "sha256": "0766d33510c464c14f09607a8fe85c1925c0b827844b72a87742e9b37af310bb",
+      "integrity": "sha384-Z9mTGgULWBO8nB9wxfnGZdn4P9qF71glrS7iDOU6xtIDyMAa5+AW3JJHjA03wDPQ"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/html/htmlWorker.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/html/htmlWorker.js",
+      "version": "0.52.2",
+      "bytes": 449070,
+      "sha256": "2c246b7c0288fe575bc3bc187fe394a3ac27c2e7db7df52f154b5ac39097a67c",
+      "integrity": "sha384-EqeN2jIwf6xy3w4wgD0AbbPnLw2+e4iuoyEqJtOrglJkAaxij0hUzG/Dh5R4iQ45"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/json/jsonMode.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/json/jsonMode.js",
+      "version": "0.52.2",
+      "bytes": 42545,
+      "sha256": "9200ffce4ac390675f6cb4c64ffaf4b4d8e650d3888caf631709cb136615e379",
+      "integrity": "sha384-ON1D6f/k0tR0oeAaqJbcIQ+nw97pg7oOWAmzv8Sl6I8h6ECs2Mh8MSj1X5nq0Y60"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/json/jsonWorker.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/json/jsonWorker.js",
+      "version": "0.52.2",
+      "bytes": 131177,
+      "sha256": "4b197c4165e356a04857e9317ec3d536fdbb92b91077bc483590c4f51056e3df",
+      "integrity": "sha384-/M5NNHL+L6fCC4tQ8EFet5L5vSTDWm2ek99a2GPG6pjKDGBBtjvCAgGcfcsw6jOp"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/typescript/tsMode.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/typescript/tsMode.js",
+      "version": "0.52.2",
+      "bytes": 23919,
+      "sha256": "fb2707ee84013e2be4c58f5654e3d623ccf73cfc33dbcdd0bf82a780945cfcf1",
+      "integrity": "sha384-LJDXVt7WHdcjvmrQwGPaDPpsAmD0FfVF59daseEl2Ifa/jHppeHXJeJzBPLScQ/e"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/language/typescript/tsWorker.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/language/typescript/tsWorker.js",
+      "version": "0.52.2",
+      "bytes": 5749518,
+      "sha256": "ffdf8b0d4d41c145afae6919beba110336860759dce0bdadc2a145c06a1a48ed",
+      "integrity": "sha384-zxA6if3z1xYplirytIKRk7JyAbAW634/ADgNtSvYwCdedcuLuz8EApt3TC4PsUGB"
+    },
+    {
+      "name": "monaco-editor",
+      "group": "monaco",
+      "file": "monaco/vs/loader.js",
+      "url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js",
+      "version": "0.52.2",
+      "bytes": 30051,
+      "sha256": "28f3584fd04b182dfce15a9a1ce35b25bea22b31464aee500372bed18b7fee1a",
+      "integrity": "sha384-pHG02SG8pId94Np3AbPmBEJ1yPqaH0IkJGLSNGXYmuGhkazT8Lr/57WYpbkGjJtu"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-bash.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-bash.min.js",
+      "version": "1.30.0",
+      "bytes": 6143,
+      "sha256": "6260814110e5182f2956e3bd257429548d9dbf2a9b66a63719b26cf9fac966a7",
+      "integrity": "sha384-9WmlN8ABpoFSSHvBGGjhvB3E/D8UkNB9HpLJjBQFC2VSQsM1odiQDv4NbEo+7l15"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-c.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-c.min.js",
+      "version": "1.30.0",
+      "bytes": 1893,
+      "sha256": "9e05cf21207bff46afbf80cb8f43bb58bc4a4a87b68f28bc0470342f69345209",
+      "integrity": "sha384-gaD4ncierlmWk42Z3BmTp37/z+Dqt8V4Wf74UjTvFeo+M+SgnEI6Ysd98pWhksQv"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-cpp.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-cpp.min.js",
+      "version": "1.30.0",
+      "bytes": 2596,
+      "sha256": "12077d9ea67882c149066e94843a6ede9036994b3724bfc45b31d97619328e14",
+      "integrity": "sha384-NiOrAquf32LSG3Vuig99LKS03EZPUuM8a51NOp+XXsqx08hUVo3wbNWALY7K/2J8"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-csharp.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-csharp.min.js",
+      "version": "1.30.0",
+      "bytes": 6179,
+      "sha256": "f4eca14394e584a4a3a747fe6dc0a93ddbc657880f7dbac3f8d119ccb206107e",
+      "integrity": "sha384-nMKYzg6yfy0qgpaRpVhHvZp0gT5sgvmZYlFC0XAKZSp+zFUB9rE6zsdmIEiou4bV"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-css.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-css.min.js",
+      "version": "1.30.0",
+      "bytes": 1232,
+      "sha256": "8c9760dba7f26ea842016919544dd9b73a78a36d5b07a1e9842c333ed18ab6ae",
+      "integrity": "sha384-0mV13Neu0xhJFylI+HV43C+XiR13bGSeL7D0/7e6hK7sJgvyvK6HVjeQwmvXTstY"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-diff.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-diff.min.js",
+      "version": "1.30.0",
+      "bytes": 605,
+      "sha256": "f16816fb2242a84c6ff6715a48c6d0a3e469e3250912cb9f1b755ca537d02f48",
+      "integrity": "sha384-5MjMyjeLq48jKCQkz3wbIdVG8+jWbG3Dlh9oy9LkluQL7zDQghWEa+UYZiYi5qRJ"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-docker.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-docker.min.js",
+      "version": "1.30.0",
+      "bytes": 1529,
+      "sha256": "a6cc0faa5977a40652f62798a692a5ae171e0380480df3ed056e117597ec52dd",
+      "integrity": "sha384-44ggPevoK6FC5kDMdbbWoMCAFkSCwaRoXXtKMkslR2lf8Ra3OSzCRrFIyeK+TQBi"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-go.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-go.min.js",
+      "version": "1.30.0",
+      "bytes": 970,
+      "sha256": "1225b4afb593126d4082da5fd2b131aede39831c2b2a62d6b07ea025acd2bf3f",
+      "integrity": "sha384-YxCco6ByOY5rJ3jD18514fa8w5so07zigIyV6tZa3CWSE5vYrbDSuFkZ5zOknnZ6"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-groovy.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-groovy.min.js",
+      "version": "1.30.0",
+      "bytes": 1611,
+      "sha256": "23797a1e79b83c0216c7ca025671b1d8575305b13ce22b64aa3d2a96b4a3b5ef",
+      "integrity": "sha384-uqA81jlsX/AkEjTZ0+2gG8zUVcGhamqkuxyvks22QPFDrwxz1n/ZtEkwsOPhodXS"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-java.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-java.min.js",
+      "version": "1.30.0",
+      "bytes": 2770,
+      "sha256": "4c2dc81dfc9efa51e38a7573938065288c63c64850f01a32f8a7b20a3e24c5a7",
+      "integrity": "sha384-DioAMZB4yk91W6LuFit5wJDh8c5Ov09f/MBvja94y0PodMqTpTZeBeejqpRUru7D"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-javascript.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-javascript.min.js",
+      "version": "1.30.0",
+      "bytes": 4611,
+      "sha256": "0345ea83e12b7b974e953c79a64dea35a40308309449db70b82020fb688ac321",
+      "integrity": "sha384-D44bgYYKvaiDh4cOGlj1dbSDpSctn2FSUj118HZGmZEShZcO2v//Q5vvhNy206pp"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-json.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-json.min.js",
+      "version": "1.30.0",
+      "bytes": 449,
+      "sha256": "956d86baa5ae7ec4106758f354ac2d140bdcd7fc103dece02f73ed12b8d663e4",
+      "integrity": "sha384-RhrmFFMb0ZCHImjFMpR/UE3VEtIVTCtNrtKQqXCzqXZNJala02N3UbVhi+qzw3CY"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-kotlin.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-kotlin.min.js",
+      "version": "1.30.0",
+      "bytes": 1921,
+      "sha256": "68c1ddff0d10147c006688289c310ccbfb5283c8687b4bcb9bf7bc9bbdf9f41c",
+      "integrity": "sha384-zz49ukKZF8e3sr9aiW45Ju61sb9hptYyPOufuu9eutOrjwnOK3D1CGRU+eb12fGy"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-markdown.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-markdown.min.js",
+      "version": "1.30.0",
+      "bytes": 5138,
+      "sha256": "9f1166a087d9a9ffb3a833f2bccbe00920b55b41ade02a0b3054b7ab5fbc70ea",
+      "integrity": "sha384-s888ApkYHxfPsp8n81g77Unl/0XYnYltLvWbwqKHcheRE8/dZPlT4IjW3mRGv/Hd"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-markup.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-markup.min.js",
+      "version": "1.30.0",
+      "bytes": 2850,
+      "sha256": "879fc9d256c352d980e053857fa707330853b8bfb67ce284ea661a24dec5756e",
+      "integrity": "sha384-HkMr0bZB9kBW4iVtXn6nd35kO/L/dQtkkUBkL9swzTEDMdIe5ExJChVDSnC79aNA"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-python.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-python.min.js",
+      "version": "1.30.0",
+      "bytes": 2113,
+      "sha256": "ed4385685bcf2d4935c8dbbab4bde16603da1329e092d2bf36c3dadd67e9a85c",
+      "integrity": "sha384-WJdEkJKrbsqw0evQ4GB6mlsKe5cGTxBOw4KAEIa52ZLB7DDpliGkwdme/HMa5n1m"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-rust.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-rust.min.js",
+      "version": "1.30.0",
+      "bytes": 2472,
+      "sha256": "8ca261bb964333c717703059de8ff81e80a75d52c637913ef6f982da1ee82acb",
+      "integrity": "sha384-JyDgFjMbyrE/TGiEUSXW3CLjQOySrsoiUNAlXTFdIsr/XUfaB7E+eYlR+tGQ9bCO"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-scala.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-scala.min.js",
+      "version": "1.30.0",
+      "bytes": 1368,
+      "sha256": "2b73d569dc4cd469bce912291cd285819e8798f20c7ca56b16b40e6ffc737a24",
+      "integrity": "sha384-Ny05Z+BdncAWg13NKXaiXEbxcdi9Ej7lvfA0H405vGxx3gyoh1cc64pNrXx9jN/y"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-sql.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-sql.min.js",
+      "version": "1.30.0",
+      "bytes": 3261,
+      "sha256": "3fc5f8ce69950ec73adc972f061df42aaea78faa4864709134ea2adc083f3a33",
+      "integrity": "sha384-/MKWdycCDliku23mP5sYXbZNuXrzgmQO/jsVxwPFn99dVOaXRyKsqDjarqpueGAp"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-typescript.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-typescript.min.js",
+      "version": "1.30.0",
+      "bytes": 1294,
+      "sha256": "852f5513bb9ca9db247f86ecfce74acc91c541749d34929157240518fef8152a",
+      "integrity": "sha384-PeOqKNW/piETaCg8rqKFy+Pm6KEk7e36/5YZE5XO/OaFdO+/Aw3O8qZ9qDPKVUgx"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/components/prism-yaml.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-yaml.min.js",
+      "version": "1.30.0",
+      "bytes": 1970,
+      "sha256": "719c8e8b8c344dc9de510c729f65ba840b1502a0a8e7e25e2ad19ee715f65c02",
+      "integrity": "sha384-AKAiycghK0jDCjD+aavMHzDkLzRR7Yzcwh3+xL/295cvyVMe+cxQfyQC8xxGGcI8"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/plugins/prism-copy-to-clipboard.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js",
+      "version": "1.30.0",
+      "bytes": 1558,
+      "sha256": "a9fdcca872f30e1e2aa809dcf50566aa3116040e027f33f56304456df35fa671",
+      "integrity": "sha384-ZdEfx8sYX8i4IVXU1tUbqwOp4PBUCCmnpagpiHchnstXkEczkzPfUd9fvBrntM+F"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/plugins/prism-line-numbers.min.css",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/line-numbers/prism-line-numbers.min.css",
+      "version": "1.30.0",
+      "bytes": 609,
+      "sha256": "e0244e08ecf5ea74636a7bb1320864cd9cc239d9b02d7c45a823025bb5c6fe50",
+      "integrity": "sha384-nUkTNLI8COlMCRJ0FHIdX76If83145OTCLUx4gQyfnO0gGeO/sD9czGEUBxtkcUv"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/plugins/prism-line-numbers.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/line-numbers/prism-line-numbers.min.js",
+      "version": "1.30.0",
+      "bytes": 2601,
+      "sha256": "f5c99feed70b757a4ab0f8bfd80584f773db6694e9e0ce2dab3164fa55a89a35",
+      "integrity": "sha384-6QJu8apxMmB9TiPVWzYKF5pRgKcz7snO0/QU+MrWmgBLECQjoa6erxX2VQ5t41Jd"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/plugins/prism-toolbar.min.css",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/toolbar/prism-toolbar.min.css",
+      "version": "1.30.0",
+      "bytes": 1196,
+      "sha256": "8ec41b48ed728fad9ebba74fe9fd9f2444918241cd344a71acaf0d9ceebfa327",
+      "integrity": "sha384-EUzJ34/1CCeefTGUKLgvA5Z/vYIwi+Jyu8aAaCfFDxfwZ3Xs3OfkkIeegsLRM11e"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/plugins/prism-toolbar.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/toolbar/prism-toolbar.min.js",
+      "version": "1.30.0",
+      "bytes": 1757,
+      "sha256": "352c1beced07ac325c0bed92012806b823fcfad769221aa7ccb4d99064494429",
+      "integrity": "sha384-jC1G68eGEXJpPwMDNqyIUQsQlcUCdCU+a7GGuoV4TUZvM1gLYTMJUDvqBnxtZLWA"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/prism-tomorrow.min.css",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/prism-tomorrow.min.css",
+      "version": "1.30.0",
+      "bytes": 1313,
+      "sha256": "1b15fe2971998a048aebb60f26f6eed76122071db9ef3b995abd003224f52a98",
+      "integrity": "sha384-wFjoQjtV1y5jVHbt0p35Ui8aV8GVpEZkyF99OXWqP/eNJDU93D3Ugxkoyh6Y2I4A"
+    },
+    {
+      "name": "prismjs",
+      "group": "prismjs",
+      "file": "prism/prism.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/prismjs@1.30.0/prism.min.js",
+      "version": "1.30.0",
+      "bytes": 19683,
+      "sha256": "ed5ea2ce218febaea989b0734596bf218694488a4e92b6f107c6536d5675e04b",
+      "integrity": "sha384-Cn/s7dpCMIb2rgIjtCYcpcv3LPJjUciybJ5G/sGMK025lFiqdJ4pRgUEgIcolGuJ"
+    },
+    {
+      "name": "dompurify",
+      "group": "dompurify",
+      "file": "purify.min.js",
+      "url": "https://cdn.jsdelivr.net/npm/dompurify@3.4.12/dist/purify.min.js",
+      "version": "3.4.12",
+      "bytes": 29209,
+      "sha256": "c45ba939765574f96cbf35ee9b6d89f73756a17921814425e74b82f7c54603ce",
+      "integrity": "sha384-piCcpDdJ7qVeK4Tv8Z6Hpcr3ZBIgP16TxQTPVfsLFdZ5uDgwc3Y8Ho7oUnqf12qu"
+    }
+  ]
+}

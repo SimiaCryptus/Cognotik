@@ -3,9 +3,10 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageInterface
+import com.simiacryptus.cognotik.platform.model.SessionMetadata
+import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -32,8 +33,8 @@ class SessionUsageDetailsServlet : HttpServlet() {
     private val usageDB by lazy { ApplicationServices.fileApplicationServices().usageDB }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = authenticate(req, resp)
-            ?: throw RuntimeException("User must be authenticated to view session usage details")
+        val user = UserProviderImpl().authenticate(req, resp)
+          ?: throw RuntimeException("User must be authenticated to view session usage details")
 
         val sessionId = req.getParameter("session")?.trim().orEmpty()
         if (sessionId.isEmpty()) {
@@ -87,7 +88,7 @@ class SessionUsageDetailsServlet : HttpServlet() {
         }
     }
 
-    private fun metadataName(metadata: com.simiacryptus.cognotik.platform.model.SessionMetadata?): String? =
+    private fun metadataName(metadata: SessionMetadata?): String? =
         metadata?.name
 
     private fun sortRows(

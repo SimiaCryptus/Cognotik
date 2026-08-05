@@ -65,8 +65,6 @@ package com.simiacryptus.cognotik.cli
           user = { FileServerCli.user },
           chatUri = cfg.chatUri,
           readOnly = cfg.readOnly,
-          smartModel = ModelSelection.smart ?: cfg.smartModel,
-          fastModel = ModelSelection.fast ?: cfg.fastModel,
           showLineNumbers = cfg.showLineNumbers,
           budget = cfg.budget,
         )

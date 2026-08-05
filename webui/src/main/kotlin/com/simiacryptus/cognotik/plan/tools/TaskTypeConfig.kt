@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DatabindContext
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApiChatModel
 
 @JsonTypeIdResolver(TaskTypeConfig.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(

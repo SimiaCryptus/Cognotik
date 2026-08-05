@@ -10,7 +10,7 @@ Types), and the "environment" (Models/Limits) the AI uses to solve the problem.
 
 Depending on your interface, the entry point differs slightly:
 
-* **Web UI:** You navigate through a 4-step wizard starting at the "Welcome" screen (`welcome.html`).
+* **Web UI:** You navigate through a 4-step wizard starting at the "Welcome" screen (`index.html`).
 * **IntelliJ Plugin:** You open the **Plan Config Dialog** (`PlanConfigDialog.kt`), usually accessible via the plugin's
   action menu when starting a new task.
 

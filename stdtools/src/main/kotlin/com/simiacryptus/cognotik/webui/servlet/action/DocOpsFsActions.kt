@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.model.defaultUser
     import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
     import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
     import java.io.File
@@ -26,10 +25,11 @@ package com.simiacryptus.cognotik.webui.servlet.action
      *  - **the endpoint**, which is always the installed [DocProcessorServlet] - possibly a
      *    swapped proxy - never a locally built `DocProcessor` (see [DocOpsServlets]).
      *
-     * Models are *not* host-specific: [Config.smartModel]/[Config.fastModel] only seed
-     * [ModelSelection], which is then read on every invocation, so the "Select Models…"
-     * action (registered here, see [ModelSelectionActions]) retargets DocOps and AutoFix
-     * without a restart.
+     * Models are *not* host-specific and are *not* configured here at all: the request
+     * user's persisted settings are the only source of a selection (read through the
+     * endpoint's `modelsFor`, or through [ModelSelection] for AutoFix). The "Select
+     * Models…" action (registered here, see [ModelSelectionActions]) therefore retargets
+     * DocOps and AutoFix without a restart.
      */
     object DocOpsFsActions {
 
@@ -45,9 +45,6 @@ package com.simiacryptus.cognotik.webui.servlet.action
         /** Owner of the model credentials and of the generated sessions. */
         val user: (FsActionContext) -> User,
         val readOnly: Boolean = false,
-        /** Start-up default only; [ModelSelection] wins once anything is selected. */
-        val smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL"),
-        val fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL"),
         val timeoutMinutes: Long = 30,
         /** true = let a run start its own monitor server (requires [monitorFactory]). */
         val monitor: Boolean = false,
@@ -74,13 +71,6 @@ package com.simiacryptus.cognotik.webui.servlet.action
       @Synchronized
       fun install(cfg: Config) {
         config = cfg
-        /* The selection is process-wide but its *user* is per-request: reuse the same
-           resolver the actions use, so the model list belongs to the caller. */
-        ModelSelection.installDefaults(
-          user = { ctx -> ctx?.let { cfg.user(it) } ?: defaultUser },
-          smart = cfg.smartModel,
-          fast = cfg.fastModel,
-        )
         ModelSelectionActions.install()
         FsTasks.install()
         if (!installed.compareAndSet(false, true)) return
@@ -212,8 +202,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
       /**
        * Maps the query parameters onto a [ServerDocOps.Request] bound to the **installed**
-       * [DocProcessorServlet]; the model pair comes from [ModelSelection] (falling back to the
-       * server's [Config] defaults), the user and root from the request.
+       * [DocProcessorServlet], which resolves the model pair from the request user's stored
+       * settings; the user and root come from the request.
        */
       private fun docOpsRequest(cfg: Config, ctx: FsActionContext): ServerDocOps.Request {
         val vars = linkedMapOf<String, String>()
@@ -235,8 +225,6 @@ package com.simiacryptus.cognotik.webui.servlet.action
           /* Repeatable: the dialog renders a checkbox list of planned outputs. */
           targets = ctx.req.getParameterValues("target").orEmpty().map { it.trim() }.filter { it.isNotBlank() },
           templateVars = vars,
-          smartModel = ModelSelection.smartOr(cfg.smartModel),
-          fastModel = ModelSelection.fastOr(cfg.fastModel),
           concurrency = cfg.docOpsConcurrency,
           monitor = cfg.monitor && cfg.monitorFactory != null,
           monitorFactory = cfg.monitorFactory,
@@ -258,15 +246,18 @@ package com.simiacryptus.cognotik.webui.servlet.action
         }
         val dir = ctx.req.getParameter("dir")?.trim().orEmpty()
         val timeout = ctx.req.getParameter("timeout")?.toLongOrNull() ?: cfg.timeoutMinutes
+        val user = cfg.user(ctx)
         val request = AutoFixRequest(
           root = cfg.root(ctx).canonicalFile,
           dir = if (dir == "/" || dir == ".") "" else dir,
           commands = commands,
           autoFix = ctx.req.getParameter("autoFix")?.toBoolean() ?: true,
           timeoutMinutes = timeout.coerceAtLeast(1),
-          /* Live selection, so "Select Models…" retargets the next AutoFix run. */
-          smartModel = ModelSelection.smartOr(cfg.smartModel),
-          fastModel = ModelSelection.fastOr(cfg.fastModel),
+          user = user,
+          /* Read from this user's stored settings on every invocation, so
+             "Select Models…" retargets the next AutoFix run. */
+          smartModel = ModelSelection.smartFor(user),
+          fastModel = ModelSelection.fastFor(user),
           // There is nobody to click an approval link, so a headless run must auto-apply.
           serverless = !cfg.monitor,
         )

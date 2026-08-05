@@ -16,6 +16,10 @@ import {Explorer} from './explorer/Explorer.js';
 
 const MIN_SIDEBAR = 160;
 const MAX_SIDEBAR = 720;
+/* Must match the breakpoint in css/layout.css: below it the sidebar stops
+    being a grid column (the track collapses to 0) and becomes an overlay
+    drawer. When the two disagree the explorer is 0 px wide and unreachable. */
+const NARROW = '(max-width: 860px)';
 
 export class AppShell extends Component {
     render() {
@@ -23,7 +27,26 @@ export class AppShell extends Component {
 
         this.header = h('header', {class: 'fs-header', role: 'banner'});
         this.activity = h('nav', {class: 'fs-activity', 'aria-label': 'Activity'});
-        this.sidebar = h('aside', {class: 'fs-sidebar', 'aria-label': 'Explorer', id: 'fs-explorer'});
+         this.sidebarTitle = h('h2', {class: 'fs-sidebar__title', text: 'Explorer'});
+         this.sidebarHeader = h('div', {class: 'fs-sidebar__header'}, [
+             this.sidebarTitle,
+             h('span', {style: {flex: '1'}}),
+             h('button', {
+                 type: 'button', class: 'fs-sidebar__close', title: 'Close',
+                 onclick: () => this.setSidebarVisible(false),
+             }, [
+                 h('span', {'aria-hidden': 'true', text: '✕'}),
+                 h('span', {class: 'sr-only', text: 'Close the navigation drawer'}),
+             ]),
+         ]);
+         this.sidebarBody = h('div', {class: 'fs-sidebar__body'});
+         this.sidebar = h('aside', {class: 'fs-sidebar', 'aria-label': 'Explorer', id: 'fs-explorer'},
+             [this.sidebarHeader, this.sidebarBody]);
+         /* Tap-anywhere-to-dismiss layer, only rendered for the drawer. */
+         this.scrim = h('div', {
+             class: 'fs-scrim', hidden: true, 'aria-hidden': 'true',
+             onclick: () => this.setSidebarVisible(false),
+         });
         this.splitter = h('div', {
             class: 'fs-splitter', role: 'separator', tabindex: '0',
             'aria-orientation': 'vertical', 'aria-label': 'Resize sidebar',
@@ -32,7 +55,7 @@ export class AppShell extends Component {
         this.main = h('main', {class: 'fs-main', id: 'fs-main'});
 
         this.el = h('div', {class: 'fs-shell', dataset: {sidebar: 'visible'}});
-        this.el.append(this.header, this.activity, this.sidebar, this.splitter, this.main);
+         this.el.append(this.header, this.activity, this.sidebar, this.splitter, this.main, this.scrim);
 
         this.buildHeader();
         this.buildActivityBar();
@@ -41,6 +64,19 @@ export class AppShell extends Component {
     }
 
     mounted() {
+         this.sidebarVisible = true;
+         /* One live query decides "column or drawer": a rotation or a resize
+            must move the sidebar with it, not strand it off screen. */
+         this.narrowQuery = window.matchMedia(NARROW);
+         const onNarrowChange = () => this.applySidebarState();
+         if (this.narrowQuery.addEventListener) {
+             this.narrowQuery.addEventListener('change', onNarrowChange);
+             this.track(() => this.narrowQuery.removeEventListener('change', onNarrowChange));
+         }
+         this.track(on(window, 'orientationchange', onNarrowChange));
+         /* On a phone the drawer covers the editor: opening a file dismisses it. */
+         this.track(bus.on('tab:opened', () => this.closeDrawer()));
+
         this.tabBar = new TabBar();
         this.tabBar.mount(this.main);
         this.editorArea = new EditorArea();
@@ -54,8 +90,6 @@ export class AppShell extends Component {
         this.setSidebarWidth(width);
         this.showPanel(persist.get('layout', {})?.panel || 'explorer');
 
-        this.track(bus.on('caps:ready', () => this.updateReadOnlyBadge()));
-        this.updateReadOnlyBadge();
 
         ui.setSidebar = (visible) => this.setSidebarVisible(visible);
         ui.focusPanel = (id) => (allPanels('bottom').some((panel) => panel.id === id)
@@ -65,7 +99,6 @@ export class AppShell extends Component {
 
     buildHeader() {
         this.menuBar = new MenuBar();
-        this.readOnlyBadge = h('span', {class: 'fs-badge', hidden: true, text: 'Read-only'});
 
         const theme = h('select', {
             class: 'fs-theme', 'aria-label': 'Theme',
@@ -84,27 +117,9 @@ export class AppShell extends Component {
         const saved = persist.get('theme', 'auto');
         theme.value = saved;
         document.documentElement.setAttribute('data-theme', saved);
-        /* Accent is orthogonal to light/dark: one hue drives every token that
-           derives from --fs-accent (focus rings, selection, tabs, links…). */
-        const accent = h('select', {
-            class: 'fs-theme', 'aria-label': 'Accent colour',
-            onchange: (e) => {
-                document.documentElement.setAttribute('data-accent', e.target.value);
-                persist.set('accent', e.target.value);
-                /* Editors read colours from the tokens, so re-theme them too. */
-                bus.emit('theme:changed', persist.get('theme', 'auto'));
-            },
-        }, [
-            h('option', {value: 'indigo', text: '◆ Indigo'}),
-            h('option', {value: 'violet', text: '◆ Violet'}),
-            h('option', {value: 'blue', text: '◆ Blue'}),
-            h('option', {value: 'teal', text: '◆ Teal'}),
-            h('option', {value: 'amber', text: '◆ Amber'}),
-            h('option', {value: 'rose', text: '◆ Rose'}),
-        ]);
-        const savedAccent = persist.get('accent', 'indigo');
-        accent.value = savedAccent;
-        document.documentElement.setAttribute('data-accent', savedAccent);
+        /* The accent is a deployment/token choice, not a user-facing control:
+           one theme picker is enough. Whatever was persisted still applies. */
+        document.documentElement.setAttribute('data-accent', persist.get('accent', 'indigo'));
 
 
         const classic = h('a', {
@@ -116,7 +131,7 @@ export class AppShell extends Component {
             h('span', {class: 'fs-header__title', text: 'Files'}),
             this.menuBar.mount(h('div')),
             h('span', {class: 'fs-header__spacer'}),
-            this.readOnlyBadge, theme, accent, classic,
+            theme, classic,
         );
 
     }
@@ -130,6 +145,7 @@ export class AppShell extends Component {
             seen.add(panel.id);
             const button = h('button', {
                 type: 'button', 'aria-pressed': 'false', title: panel.title,
+                 'aria-controls': 'fs-explorer',
                 onclick: () => this.showPanel(panel.id, {toggle: true, focus: true}),
             }, [
                 h('span', {'aria-hidden': 'true', text: panel.icon || '▪'}),
@@ -142,36 +158,80 @@ export class AppShell extends Component {
 
     showPanel(id, {toggle = false, focus = false} = {}) {
         const current = store.get().panels.sidebar;
-        if (toggle && current === id && this.el.dataset.sidebar === 'visible') {
+         /* 'drawer' is just "visible, but floating": comparing against 'visible'
+            alone made the rail button a no-op on a phone. */
+         if (toggle && current === id && this.isSidebarVisible()) {
             this.setSidebarVisible(false);
             return;
         }
         store.set({panels: {...store.get().panels, sidebar: id}});
         persist.patch({layout: {...(persist.get('layout', {}) || {}), panel: id}});
-        for (const [panelId, button] of this.activityButtons) {
-            button.setAttribute('aria-pressed', String(panelId === id));
-        }
-        clear(this.sidebar);
+         clear(this.sidebarBody);
         let instance = this.panelInstances.get(id);
         if (!instance) {
             instance = id === 'explorer' ? new Explorer() : allPanels('sidebar').find((p) => p.id === id)?.create?.();
             if (instance) this.panelInstances.set(id, instance);
         }
+         const title = id === 'explorer' ? 'Explorer'
+             : (allPanels('sidebar').find((p) => p.id === id)?.title || id);
+         this.sidebar.setAttribute('aria-label', title);
+         this.sidebarTitle.textContent = title;
         if (instance) {
-            if (instance.el) this.sidebar.appendChild(instance.el);
-            else instance.mount(this.sidebar);
-            this.sidebar.setAttribute('aria-label', id === 'explorer' ? 'Explorer' : (allPanels('sidebar').find((p) => p.id === id)?.title || id));
-            if (focus) instance.focus?.();
+             if (instance.el) this.sidebarBody.appendChild(instance.el);
+             else instance.mount(this.sidebarBody);
         }
         this.setSidebarVisible(true);
+         /* Focus only once the sidebar is no longer inert. */
+         if (focus) instance?.focus?.();
     }
 
     setSidebarVisible(visible) {
-        const narrow = window.matchMedia('(max-width: 720px)').matches;
-        this.el.dataset.sidebar = visible ? (narrow ? 'drawer' : 'visible') : 'hidden';
-        this.splitter.setAttribute('aria-valuenow', String(visible ? store.get().panels.sidebarWidth : 0));
+         this.sidebarVisible = !!visible;
+         this.applySidebarState();
         announce(visible ? 'Sidebar shown' : 'Sidebar hidden');
     }
+     isNarrow() {
+         return this.narrowQuery ? this.narrowQuery.matches : window.matchMedia(NARROW).matches;
+     }
+     isSidebarVisible() {
+         return this.el.dataset.sidebar !== 'hidden';
+     }
+     /** Single source of truth for the sidebar: column, drawer, or gone. */
+     applySidebarState() {
+         const visible = !!this.sidebarVisible;
+         const narrow = this.isNarrow();
+         const drawer = visible && narrow;
+         this.el.dataset.sidebar = visible ? (drawer ? 'drawer' : 'visible') : 'hidden';
+         this.scrim.hidden = !drawer;
+         /* Nothing to drag when the sidebar is not a column. */
+         this.splitter.hidden = narrow;
+         this.splitter.setAttribute('aria-valuenow',
+             String(visible && !narrow ? store.get().panels.sidebarWidth : 0));
+         /* A collapsed sidebar is 0 px wide but still focusable: take it out of
+            the tab order and the accessibility tree. */
+         if (visible) {
+             this.sidebar.removeAttribute('inert');
+             this.sidebar.removeAttribute('aria-hidden');
+         } else {
+             this.sidebar.setAttribute('inert', '');
+             this.sidebar.setAttribute('aria-hidden', 'true');
+         }
+         const active = store.get().panels.sidebar;
+         for (const [panelId, button] of this.activityButtons) {
+             button.setAttribute('aria-pressed', String(visible && panelId === active));
+         }
+         if (visible) {
+             /* A panel measured while hidden has zero height: let it re-measure. */
+             const instance = this.panelInstances.get(active);
+             requestAnimationFrame(() => instance?.onShown?.());
+         }
+     }
+     /** Escape / opening a file dismisses the drawer. True when one was open. */
+     closeDrawer() {
+         if (this.el.dataset.sidebar !== 'drawer') return false;
+         this.setSidebarVisible(false);
+         return true;
+     }
 
     /**
      * The bottom dock lives *inside* .fs-main (below the editor) so the
@@ -415,7 +475,4 @@ export class AppShell extends Component {
         }));
     }
 
-    updateReadOnlyBadge() {
-        this.readOnlyBadge.hidden = !caps.readOnly;
-    }
 }

@@ -4,7 +4,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.model.UsageInterface
+import com.simiacryptus.cognotik.platform.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component

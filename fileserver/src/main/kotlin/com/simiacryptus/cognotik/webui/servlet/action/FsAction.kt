@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
@@ -136,7 +137,15 @@ data class ActionUi(
   )
 }
 
-/** Everything an [FsAction] handler needs; the root is already validated. */
+/**
+  * Everything an [FsAction] handler needs; the root is already validated.
+  *
+  * [user] is the authenticated principal (null == anonymous) and is carried on
+  * every request so that handlers, subclasses and downstream-registered actions
+  * can make their own authorization decisions. [writeAllowed] is the servlet's
+  * summary verdict: it is false whenever [user] is null, and `FsApiHandler`
+  * refuses any mutating action before the handler is ever invoked.
+  */
 class FsActionContext(
   val method: String,
   val op: String,
@@ -144,6 +153,8 @@ class FsActionContext(
   val resp: HttpServletResponse,
   val root: File,
   val config: FsApiConfig,
+   val user: User? = null,
+   val writeAllowed: Boolean = user != null,
 )
 
 /**

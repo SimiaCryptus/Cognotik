@@ -1,7 +1,12 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.CognotikPlugin
-import com.simiacryptus.cognotik.platform.model.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.CognotikPlugin
+import com.simiacryptus.cognotik.platform.PluginAlreadyLoadedException
+import com.simiacryptus.cognotik.platform.PluginLoadException
+import com.simiacryptus.cognotik.platform.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.PluginNotFoundException
+import com.simiacryptus.cognotik.platform.PluginUnloadException
+import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -12,7 +17,6 @@ import java.net.URLClassLoader
 import java.util.ServiceLoader
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 
 /**
  * Manages loading and initialization of plugin JARs.
@@ -47,7 +51,6 @@ class PluginManager(
 
   /** Map from JAR file path to the persisted plugin entry metadata */
   private val loadedPluginEntries = ConcurrentHashMap<String, PluginEntry>()
-  private val changeSubscribers = mutableListOf<() -> Unit>()
 
   /** Event router: topic -> (subscriptionId -> handler) */
   private val eventSubscribers = ConcurrentHashMap<String, ConcurrentHashMap<String, (Any?) -> Unit>>()
@@ -57,11 +60,11 @@ class PluginManager(
 
 
   init {
-    Thread {
+    Thread({
       sleep(1000)
       root.mkdirs()
       restorePlugins()
-    }.start()
+    }, "PluginManager-restore").apply { isDaemon = true }.start()
   }
 
   override fun publish(topic: String, data: Any?) {
@@ -163,16 +166,47 @@ class PluginManager(
   }
 
 
-  override fun subscribeToChanges(subscriber: () -> Unit) {
-    changeSubscribers.add(subscriber)
-  }
+  @Deprecated(
+    "Use onChange, which returns a subscription id usable with unsubscribe.",
+    ReplaceWith("onChange(subscriber)")
+  )
+  fun subscribeToChanges(subscriber: () -> Unit): String = onChange(subscriber)
 
   override fun triggerChangeNotification() {
-    triggerChange()
+    publish(PluginEvents.CHANGE_NOTIFICATION, null)
   }
 
+  /**
+   * Routed through the event bus so that [onChange] subscribers (registered via
+   * the [com.simiacryptus.cognotik.platform.EventBus] contract) are notified too.
+   */
+
   fun triggerChange() {
-    changeSubscribers.forEach { it.invoke() }
+    triggerChangeNotification()
+  }
+
+  override fun shutdown() {
+    log.info("Shutting down PluginManager")
+    loadedJars.keys.toList().forEach { path ->
+      try {
+        unloadPlugin(File(path))
+      } catch (e: Exception) {
+        log.warn("Error unloading plugin JAR during shutdown: {}", path, e)
+      }
+    }
+    eventSubscribers.clear()
+    subscriptionIndex.clear()
+  }
+
+  override fun installPlugin(jarFile: File): File {
+    if (!jarFile.exists()) throw PluginNotFoundException("Plugin JAR does not exist: ${jarFile.canonicalPath}")
+    if (!jarFile.name.endsWith(".jar")) throw PluginNotFoundException("File is not a JAR: ${jarFile.canonicalPath}")
+    root.mkdirs()
+    val target = File(root, jarFile.name)
+    if (jarFile.canonicalFile == target.canonicalFile) return target
+    log.info("Installing plugin artifact {} -> {}", jarFile.canonicalPath, target.canonicalPath)
+    jarFile.copyTo(target, overwrite = true)
+    return target
   }
 
   /**
@@ -186,10 +220,12 @@ class PluginManager(
    */
   override fun loadPlugin(jarFile: File): List<CognotikPlugin> {
     val canonicalPath = jarFile.canonicalPath
-    require(jarFile.exists()) { "Plugin JAR does not exist: $canonicalPath" }
-    require(jarFile.name.endsWith(".jar")) { "File is not a JAR: $canonicalPath" }
+    if (!jarFile.exists()) throw PluginNotFoundException("Plugin JAR does not exist: $canonicalPath")
+    if (!jarFile.name.endsWith(".jar")) throw PluginNotFoundException("File is not a JAR: $canonicalPath")
     synchronized(this) {
-      check(!loadedJars.containsKey(canonicalPath)) { "Plugin JAR already loaded: $canonicalPath" }
+      if (loadedJars.containsKey(canonicalPath)) {
+        throw PluginAlreadyLoadedException("Plugin JAR already loaded: $canonicalPath")
+      }
 
       log.info("Loading plugin JAR: {}", canonicalPath)
 
@@ -239,8 +275,8 @@ class PluginManager(
    */
   override fun loadPlugin(jarFile: File, entryPointClass: String): CognotikPlugin {
     val canonicalPath = jarFile.canonicalPath
-    require(jarFile.exists()) { "Plugin JAR does not exist: $canonicalPath" }
-    require(jarFile.name.endsWith(".jar")) { "File is not a JAR: $canonicalPath" }
+    if (!jarFile.exists()) throw PluginNotFoundException("Plugin JAR does not exist: $canonicalPath")
+    if (!jarFile.name.endsWith(".jar")) throw PluginNotFoundException("File is not a JAR: $canonicalPath")
 
     log.info("Loading plugin JAR: {} with entry point: {}", canonicalPath, entryPointClass)
 
@@ -255,13 +291,15 @@ class PluginManager(
     }
 
     val clazz = classLoader.loadClass(entryPointClass)
-    require(CognotikPlugin::class.java.isAssignableFrom(clazz)) {
-      "Class $entryPointClass does not implement CognotikPlugin"
+    if (!CognotikPlugin::class.java.isAssignableFrom(clazz)) {
+      throw PluginLoadException("Class $entryPointClass does not implement CognotikPlugin")
     }
 
     val plugin = clazz.getDeclaredConstructor().newInstance() as CognotikPlugin
     log.info("Initializing plugin: {} from {}", plugin.pluginName, canonicalPath)
-    try { plugin.init() } catch (e: Throwable) {
+    try {
+      plugin.init()
+    } catch (e: Throwable) {
       log.warn("Failed to initialize plugin: {} from {}", plugin.pluginName, canonicalPath, e)
     }
 
@@ -361,11 +399,17 @@ class PluginManager(
    */
   override fun deletePlugin(jarFile: File) {
     val canonicalPath = jarFile.canonicalPath
-    require(jarFile.exists()) { "Plugin JAR does not exist: $canonicalPath" }
-    // Unload first if currently loaded
+    if (!jarFile.exists()) throw PluginNotFoundException("Plugin JAR does not exist: $canonicalPath")
+    // Unload first if currently loaded. If unloading fails the artifact is left in
+    // place and the failure is propagated (PluginInstaller contract).
     if (loadedJars.containsKey(canonicalPath)) {
       log.info("Plugin JAR is loaded, unloading before delete: {}", canonicalPath)
-      unloadPlugin(jarFile)
+      try {
+        unloadPlugin(jarFile)
+      } catch (e: Exception) {
+        log.error("Failed to unload plugin before delete; leaving artifact in place: {}", canonicalPath, e)
+        throw PluginUnloadException("Failed to unload plugin before delete: $canonicalPath", e)
+      }
     }
     log.info("Deleting plugin JAR: {}", canonicalPath)
     try {

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Hallucipedia</title>
+        <link rel="stylesheet" href="/lib/prism/prism-tomorrow.min.css">
+        <link rel="stylesheet" href="style.css">
+        <script>
+            /* MathJax must be configured before the script tag loads. */
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                    processEscapes: true
+                },
+                options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']},
+                startup: {typeset: false}
+            };
+        </script>
+    </head>
+    <body>
+    <div id="app">
+
+        <header class="addressbar">
+            <div class="nav-buttons">
+                <button id="nav-back" type="button" title="Back">&#8592;</button>
+                <button id="nav-forward" type="button" title="Forward">&#8594;</button>
+                <button id="nav-home" type="button" title="Front page">&#8962;</button>
+            </div>
+
+            <form id="path-form" class="path-form" autocomplete="off">
+                <span class="path-root">articles/</span>
+                <input id="path-input" type="text" spellcheck="false"
+                       placeholder="root.md" aria-label="Article path">
+                <button type="submit" class="go">Go</button>
+            </form>
+             <div class="search-wrap">
+                 <form id="search-form" class="search-form" autocomplete="off">
+                     <input id="search-input" type="search" spellcheck="false"
+                            placeholder="Search…  ( / )" aria-label="Search Hallucipedia">
+                     <button type="submit" class="go" title="Search the unwritten">&#128269;</button>
+                 </form>
+                 <div id="search-results" class="search-results" hidden></div>
+             </div>
+
+
+            <div class="actions">
+                <button id="btn-illustrate" type="button" title="Add diagrams and images to this page">
+                    &#127912; Illustrate
+                </button>
+                <button id="btn-regenerate" type="button" title="Rewrite this page from scratch">
+                    &#8635; Regenerate
+                </button>
+                 <button id="btn-setup" type="button" title="Define the world (setup)">&#127793;</button>
+                <button id="btn-settings" type="button" title="Models">&#9881;</button>
+            </div>
+        </header>
+
+        <section id="settings-panel" class="panel" hidden>
+            <label>Smart model <select id="smart-model"></select></label>
+            <label>Fast model <select id="fast-model"></select></label>
+            <label>Image model <select id="image-model"></select></label>
+            <p class="hint">Models are used for every article generation and illustration run.</p>
+        </section>
+
+        <div id="status-bar" class="status" hidden><span class="spinner"></span><span id="status-text"></span></div>
+
+        <main class="layout">
+            <article id="content" class="content"></article>
+
+            <aside class="sidebar">
+                <section>
+                    <h3>On this page</h3>
+                    <nav id="toc" class="toc"></nav>
+                </section>
+                <section>
+                    <h3>Links from here</h3>
+                    <ul id="outlinks" class="linklist"></ul>
+                </section>
+                <section>
+                    <h3>Linked from</h3>
+                    <ul id="backlinks" class="linklist"></ul>
+                </section>
+                <section>
+                    <h3>All pages <span id="pagecount" class="badge"></span></h3>
+                    <ul id="allpages" class="linklist"></ul>
+                </section>
+            </aside>
+        </main>
+    </div>
+     <div id="setup-overlay" class="overlay" hidden>
+         <form id="setup-form" class="setup" autocomplete="off">
+             <h2>Describe a world</h2>
+             <p class="hint">
+                 One or two sentences. It is expanded into <code>control/notes.md</code> — the canon every
+                 article must obey — and then into a front page full of unwritten links.
+             </p>
+             <textarea id="setup-prompt" rows="5"
+                       placeholder="A world like ours, but the printing press was never invented and knowledge is kept by singing guilds."></textarea>
+             <div class="examples" id="setup-examples">
+                 <button type="button" data-prompt="Earth, 2190, a generation after the Ardent Compact ended the water wars; dry, bureaucratic, engineering-minded.">water wars, 2190</button>
+                 <button type="button" data-prompt="A world of shallow seas and glass beaches where light travels slowly enough to be farmed.">slow light</button>
+                 <button type="button" data-prompt="Nineteenth-century Europe, but mathematics was discovered two hundred years late and is treated as an occult science.">late mathematics</button>
+             </div>
+             <div class="setup-actions">
+                 <button type="button" id="setup-skip">Keep the current world</button>
+                 <button type="submit" id="setup-go">Create it</button>
+             </div>
+             <p id="setup-status" class="hint"></p>
+         </form>
+     </div>
+
+
+    <!-- marked must be a classic script so the global exists before modules run -->
+    <script src="/lib/marked.min.js"></script>
+    <script src="/lib/purify.min.js"></script>
+    <script src="/lib/mermaid.min.js"></script>
+    <script src="/lib/prism/prism.min.js"></script>
+    <script src="/lib/mathjax/tex-mml-chtml.js" async></script>
+    <script type="module" src="app.js"></script>
+    </body>
+    </html>

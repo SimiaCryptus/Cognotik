@@ -121,6 +121,10 @@
                     text="🧠 Task Planning"
                     description="Choose from multiple planning strategies in a unified interface with customizable task settings">
             </action>
+            <action class="cognotik.actions.agent.MicroIdeAction"
+                    text="🛠️ Micro IDE"
+                    description="Open a micro IDE interface for focused development on selected files, with AI-assisted code analysis and generation">
+            </action>
 
             <group id="cognotik.ui.ProjectMenu.Chat"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"

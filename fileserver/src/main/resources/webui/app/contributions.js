@@ -8,6 +8,7 @@ import {ImageViewer, BinaryPlaceholder} from '../components/editors/SimpleEditor
 import {HtmlPreview} from '../components/editors/HtmlPreview.js';
 import {MarkdownPreview} from '../components/editors/MarkdownPreview.js';
 import {TablePreview} from '../components/editors/TablePreview.js';
+import {DocOpsStatusView} from '../components/editors/DocOpsStatusView.js';
 import {openQuickPick} from '../components/overlays/QuickPick.js';
 import {TerminalPanel} from '../components/terminal/TerminalPanel.js';
 import {ChatSessionEditor, openChatTab, requestChatSession, withTheme} from '../components/chat/ChatSession.js';
@@ -24,6 +25,7 @@ import {copyText} from '../core/clipboard.js';
 import {keysFor} from '../core/keymap.js';
 import {basename, dirname, extname, join, validateName} from '../core/paths.js';
 import {classicBase, publicUrl} from '../core/urls.js';
+import {isDocOpsStatus} from '../core/sessions.js';
 import {buildContext} from '../core/context.js';
 import config from '../config.js';
 
@@ -54,6 +56,15 @@ function registerEditors() {
          priority: 200,
          canOpen: HtmlPreview.canOpen,
          create: (ctx) => new HtmlPreview(ctx)
+     });
+     /* docops.status.json rendered as a navigable index of agent sessions. Like
+        the previews below it is only ever matched by a preview tab (its stat
+        carries `previewKind`), so the raw JSON still opens in Monaco. */
+     registerEditor({
+         id: DocOpsStatusView.id,
+         priority: 270,
+         canOpen: DocOpsStatusView.canOpen,
+         create: (ctx) => new DocOpsStatusView(ctx),
      });
      /* Rendered Markdown / delimited text. Like HtmlPreview these are only ever
         matched by a preview tab (their stat carries `previewKind`), so the same
@@ -251,9 +262,12 @@ function registerCoreCommands(shell) {
              /* The keybinding preventDefault()s Escape, which suppresses the
                 native <dialog> cancel: dismiss action/parameter dialogs here. */
              const {closeTopModal} = await import('../components/overlays/Modal.js');
-            closeContextMenu();
-            close();
-             closeTopModal();
+             let closed = false;
+             closed = closeContextMenu() || closed;
+             closed = close() || closed;
+             closed = closeTopModal() || closed;
+             /* Nothing was stacked above: Escape dismisses the mobile drawer. */
+             if (!closed) shell.closeDrawer?.();
         },
     });
 }
@@ -388,7 +402,7 @@ function registerEditorActions() {
 /* ------------------------------------------------------------------ preview */
 /** Documents the browser renders itself, inside a sandboxed iframe. */
 const IFRAME_PREVIEW = new Set(['html', 'htm', 'xhtml', 'svg', 'pdf']);
-/** Rendered by MarkdownPreview (marked.js from /lib/). */
+/** Rendered by MarkdownPreview (marked + mermaid + MathJax, all from /lib/). */
 const MARKDOWN_PREVIEW = new Set(['md', 'markdown', 'mdown', 'mkd', 'mkdn']);
 /** Rendered by TablePreview. */
 const TABLE_PREVIEW = new Set(['csv', 'tsv', 'tab']);
@@ -403,6 +417,8 @@ const PREVIEWABLE = new Set([
 
 function previewKindFor(path) {
      const ext = extname(path);
+     /* A status document is an index of sessions, not source. */
+     if (isDocOpsStatus(path)) return 'docops-status';
      if (MARKDOWN_PREVIEW.has(ext)) return 'markdown';
      if (TABLE_PREVIEW.has(ext)) return 'table';
      if (IMAGE_PREVIEW.has(ext)) return 'image';
@@ -450,8 +466,15 @@ function registerFileActions() {
          },
         run: async (ctx) => {
             for (const resource of ctx.resources) {
-                if (resource.type === 'file') await ui.openPath(resource.path, {pinned: true});
-                else await ui.revealPath(resource.path);
+                if (resource.type !== 'file') {
+                    await ui.revealPath(resource.path);
+                } else {
+                    /* "Edit" always means the source document — even for a
+                       docops.status.json, whose session index is reached through
+                       'docops.openSessions' instead (it would otherwise be
+                       impossible to edit the raw JSON). */
+                    await ui.openPath(resource.path, {pinned: true});
+                }
             }
         },
     });
@@ -465,12 +488,41 @@ function registerFileActions() {
          selection: {min: 1, max: 1, kinds: ['file']},
          /* Only documents a browser can render; everything else stays "Edit". */
          hideWhenDisabled: true,
-         enablement: (ctx) => PREVIEWABLE.has(extname(ctx.resources[0]?.path || '')),
+         enablement: (ctx) => {
+             const path = ctx.resources[0]?.path || '';
+             /* A status document has its own first-class entry
+                ('docops.openSessions'); claiming it here too would list
+                "Open Sessions in …" twice in the same menu group. */
+             return !isDocOpsStatus(path) && PREVIEWABLE.has(extname(path));
+         },
          update: (ctx, p) => {
              const kind = previewKindFor(ctx.resources[0].path);
-             p.text = kind === 'markdown' || kind === 'table'
-                 ? `Preview ${ctx.resources[0].name}`
-                 : `View ${ctx.resources[0].name}`;
+             if (kind === 'markdown' || kind === 'table') p.text = `Preview ${ctx.resources[0].name}`;
+             else p.text = `View ${ctx.resources[0].name}`;
+         },
+         run: async (ctx) => {
+             await ui.openPreview(ctx.resources[0].path);
+             return {kind: 'none'};
+         },
+     });
+     /**
+      * A docops.status.json is a directory of live agent sessions, so it gets a
+      * first-class entry of its own rather than hiding behind "View".
+      */
+     registerAction({
+         id: 'docops.openSessions', title: 'Open Sessions…', icon: '🗂', category: 'Cognotik',
+         description: 'List the agent sessions recorded in this status document',
+         menus: [
+             {anchor: 'explorer/context', group: '1_open', order: 4},
+             {anchor: 'tab/context', group: '1_open', order: 4},
+             {anchor: 'main/tools', group: '7_run', order: 26},
+         ],
+         selection: {min: 1, max: 1, kinds: ['file']},
+         hideWhenDisabled: true,
+         enablement: (ctx) => isDocOpsStatus(ctx.resources[0]?.path || ''),
+         disabledReason: 'Select a docops.status.json file',
+         update: (ctx, p) => {
+             p.text = `Open Sessions in ${ctx.resources[0].name}`;
          },
          run: async (ctx) => {
              await ui.openPreview(ctx.resources[0].path);
@@ -562,7 +614,7 @@ function registerFileActions() {
             group: '4_refactor'
         }],
         selection: {min: 1, max: 1, kinds: ['file', 'dir']},
-        enablement: (ctx) => !caps.readOnly && !ctx.resources[0]?.readOnly,
+        enablement: (ctx) => !caps.readOnly && writable(ctx.resources[0]),
         disabledReason: 'This item is read-only',
         update: (ctx, p) => {
             if (ctx.resources[0]) p.text = `Rename ${ctx.resources[0].name}…`;
@@ -606,7 +658,7 @@ function registerFileActions() {
         id: 'file.delete', title: 'Delete…', keys: ['Delete'],
         menus: [{anchor: 'explorer/context', group: '9_danger', order: 10}],
         selection: {min: 1, kinds: ['file', 'dir']},
-        enablement: (ctx) => !caps.readOnly && !ctx.resources.some((r) => r.readOnly),
+        enablement: (ctx) => !caps.readOnly && ctx.resources.every(writable),
         disabledReason: 'One or more items are read-only',
         update: (ctx, p) => {
             p.text = ctx.resources.length > 1 ? `Delete ${ctx.resources.length} items…` : `Delete ${ctx.resources[0]?.name ?? ''}…`;
@@ -730,6 +782,19 @@ function targetFolder(ctx) {
     if (!first) return '/';
     return first.type === 'dir' ? first.path : dirname(first.path);
 }
+/**
+* Whether the UI should let the user *attempt* to modify this resource.
+*
+* A folder we cannot write to is *not* a veto: individual files inside it may
+* be whitelisted (`.writeable`), and creating/renaming/deleting those needs no
+* permission on the parent. The server owns that decision and answers EACCES
+* when it really means it, which surfaces as a toast — far better than an
+* action greyed out on a guess.
+*/
+function writable(resource) {
+    return !resource || resource.type === 'dir' || !resource.readOnly;
+}
+
 
 /** POSIX-ish quoting so a file name with spaces survives the shell. */
 function shellQuote(value) {

@@ -1,9 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
+import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
 import com.simiacryptus.cognotik.webui.servlet.action.GitAction
 import com.simiacryptus.cognotik.webui.servlet.action.GitActionContext
 import java.io.File
+/** Raised when a mutating git action is attempted without a principal. */
+class GitAccessDeniedException(message: String) : RuntimeException(message)
+
 
 /**
  * Registry of the built-in [GitAction]s. Touching this object registers
@@ -117,11 +121,24 @@ object GitActions {
   /**
    * Runs [name] against [gitRoot]. Throws [IllegalArgumentException] for an
    * unknown action or a missing/invalid parameter (callers map that to 400).
+    *
+    * Mutating actions additionally require [writeAllowed] — which the callers
+    * derive from the resolved [user] — and raise [GitAccessDeniedException]
+    * (mapped to 403 / EACCES) otherwise.
    */
-  fun execute(name: String, params: Map<String, Any?>, gitRoot: File): Map<String, Any?> {
+   fun execute(
+     name: String,
+     params: Map<String, Any?>,
+     gitRoot: File,
+     user: User? = null,
+     writeAllowed: Boolean = user != null,
+   ): Map<String, Any?> {
     val action = GitAction.find(name)
       ?: throw IllegalArgumentException("Unknown git action: '$name' (known: ${names().joinToString(", ")})")
-    return action.handler(GitActionContext(gitRoot, params))
+     if (action.mutating && !writeAllowed) {
+       throw GitAccessDeniedException("Git action '$name' requires an authenticated user")
+     }
+     return action.handler(GitActionContext(gitRoot, params, user))
   }
 
   private fun reg(

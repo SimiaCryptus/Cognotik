@@ -1,21 +1,21 @@
-import { parseSessionUrl, getProxyUrl, getAppRoot } from './utils/session.js';
+import { parseSessionUrl, getProxyUrl, getAppRoot } from '/app/session.js';
 import {
     loadApiProviders,
     populateModelDropdowns,
     saveModelSelections,
     loadModelSelections
-} from './utils/models.js';
+} from '/app/models.js';
 import {
     readFile,
     writeFile,
     fileExists,
     listFiles
-} from './utils/fileIO.js';
+} from '/app/fileIO.js';
 import {
     runDocOp,
     waitForTask,
     createStatusPoller
-} from './utils/docops.js';
+} from '/app/docops.js';
 import {
     renderMarkdown,
     setStatus,
@@ -24,10 +24,14 @@ import {
     createBatchLogger,
     getFileIcon,
     escapeHtml
-} from './utils/ui.js';
+} from '/app/ui.js';
+import { initMenu } from '/app/menu.js';
 
 (async function main() {
     'use strict';
+     // ---------- Shared menubar ----------
+     initMenu({ appName: 'Quiz Wiz' });
+
 
     // ---------- Session bootstrap ----------
     const { basePath, sessionId } = parseSessionUrl();

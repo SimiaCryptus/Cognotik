@@ -51,7 +51,7 @@ directory listings, uploads, downloads, in-browser editing, Git integration, and
   `foo.txt` and it will transparently render `foo.md` if the literal file doesn't exist.
 - 🔀 **Git integration** — status, diff (staged/unstaged), log, add, commit, reset, branch list/create/switch/delete, and
   repository initialization, all driven through a small AJAX + JSON API and rendered in-page.
-- 🔒 **Fine-grained access control** using `.gitignore`-style marker files: `.hidden`, `.readonly`, and `.writeable`.
+- 🔒 **Fine-grained access control** using `.gitignore`-style marker files: `.hidden`, `.readonly`, and `.writeable_`.
 - 🚀 **Efficient file serving** via a shared `FileChannel` cache (Guava `LoadingCache`) with async, non-blocking writes
   for both small and large files (memory-mapped I/O for files > 1MB).
 - 🧩 **Fully extensible** — override hooks let you inject custom toolbar buttons, per-file/per-folder actions, additional
@@ -263,7 +263,7 @@ directory tree between the served base directory and the target path:
 |--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `.hidden`    | Paths matching the patterns inside are treated as **non-existent** (404) for all HTTP verbs. The marker file itself is always hidden.               |
 | `.readonly`  | Paths matching the patterns inside **cannot be modified** (upload/PUT/DELETE all rejected with 403). The marker file itself is always read-only.    |
-| `.writeable` | Acts as a **whitelist** — when present, anything *not* matched by its patterns is treated as read-only. The marker file itself is always read-only. |
+| `.writeable_` | Acts as a **whitelist** — when present, anything *not* matched by its patterns is treated as read-only. The marker file itself is always read-only. |
 
 Pattern matching and file discovery reuse `IgnoreFileUtil` (compiled ignore-style regex patterns), matched against the
 path relative to the directory containing the marker file, the bare filename, and each path segment individually — so a
@@ -394,7 +394,7 @@ Errors return `500` with `{"success": false, "message": "<exception message>"}`;
 - Git commands are executed via `ProcessBuilder` with explicit argument arrays (no shell interpolation), but since this
   exposes a **generic git CLI wrapper** over HTTP, you should ensure this servlet is only reachable by
   trusted/authenticated users in your deployment (there is no built-in auth layer here).
-- The `.readonly` / `.hidden` / `.writeable` marker files themselves are always protected (cannot be viewed, edited, or
+- The `.readonly` / `.hidden` / `.writeable_` marker files themselves are always protected (cannot be viewed, edited, or
   deleted through the servlet), preventing users from disabling their own restrictions.
 
 ---
@@ -437,7 +437,7 @@ line `*` (matches everything under that directory), or target specific patterns:
 generated/
 ```
 
-**Whitelist only specific writeable paths** (everything else becomes read-only) by adding a `.writeable`
+**Whitelist only specific writeable paths** (everything else becomes read-only) by adding a `.writeable_`
 file with the allowed patterns.
 ---
 

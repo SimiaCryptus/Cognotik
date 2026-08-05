@@ -84,12 +84,7 @@ open class Selenium2S3(
 
     htmlPages += mutableMapOf((currentFilename ?: url.file.split("/").last()) to editPage(driver.pageSource ?: ""))
     val baseUrl = url.toString().split("#").first()
-    links += toAbsolute(baseUrl, *currentPageLinks(driver).map { link ->
-      val relative = toRelative(baseUrl, link) ?: return@map link
-      linkReplacements[link] = "${ApplicationServices.cloud!!.shareBase}/$saveRoot/${toArchivePath(relative)}"
-      linkReplacements[relative] = "${ApplicationServices.cloud!!.shareBase}/$saveRoot/${toArchivePath(relative)}"
-      link
-    }.toTypedArray()).toMutableList()
+    links += toAbsolute(baseUrl, *currentPageLinks(driver).toTypedArray()).toMutableList()
     val completionSemaphores = mutableListOf<Semaphore>()
 
     log.info("Fetching page source")
@@ -186,11 +181,7 @@ open class Selenium2S3(
         log.debug("Fetched $href")
         val html = p0?.body?.bodyText ?: ""
         htmlPages[relative] = html
-        links += toAbsolute(href, *currentPageLinks(html).map { link ->
-          val relative = toArchivePath(toRelative(href, link) ?: return@map link)
-          linkReplacements[link] = "${ApplicationServices.cloud!!.shareBase}/$saveRoot/$relative"
-          link
-        }.toTypedArray())
+        links += toAbsolute(href, *currentPageLinks(html).toTypedArray())
         semaphore.release()
       }
 
@@ -247,13 +238,6 @@ open class Selenium2S3(
       override fun completed(p0: SimpleHttpResponse?) {
         try {
           log.debug("Fetched {}", request)
-          val bytes = p0?.body?.bodyBytes ?: return
-          if (validate(mimeType, p0.body.contentType.mimeType, bytes))
-            ApplicationServices.cloud!!.upload(
-              path = "/$saveRoot/$relative",
-              contentType = mimeType,
-              bytes = bytes
-            )
         } finally {
           semaphore.release()
         }
@@ -301,26 +285,9 @@ open class Selenium2S3(
   }
 
   protected open fun saveJS(js: String, saveRoot: String, filename: String) {
-    val finalJs = linkReplacements.toList().sortedBy { it.first.length }
-      .fold(js) { acc, (href, relative) ->
-
-        acc.replace("""(?<![/\w])$href""".toRegex(), relative)
-      }
-    ApplicationServices.cloud!!.upload(
-      path = "/$saveRoot/$filename",
-      contentType = "application/json",
-      request = finalJs
-    )
   }
 
   protected open fun saveHTML(html: String, saveRoot: String, filename: String) {
-    val finalHtml = linkReplacements.toList().filter { it.first.isNotEmpty() }.fold(html)
-    { acc, (href, relative) -> acc.replace("""(?<![/\w#])$href""".toRegex(), relative) }
-    ApplicationServices.cloud!!.upload(
-      path = "/$saveRoot/$filename",
-      contentType = "text/html",
-      request = finalHtml
-    )
   }
 
   protected open fun get(href: String): SimpleHttpRequest {

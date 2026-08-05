@@ -1,12 +1,14 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.simiacryptus.cognotik.auth.AuthorizationChain
 import com.simiacryptus.cognotik.auth.PendingAuthorization
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -120,10 +122,13 @@ class PluginManagerServlet(
       request.requestURI,
       request.queryString
     )
-    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+    val user =
+      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user: {}", user)
     if (!ApplicationServices.authorizationManager.isAuthorized(
-        PluginManagerServlet::class.java, user, OperationType.Admin
+        ResourceRef.of(PluginManagerServlet::class.java),
+        Principal.of(user),
+        OperationType.Admin
       )
     ) {
       log.warn("Unauthorized access attempt by user: {} from IP: {}", user, request.remoteAddr)
@@ -205,10 +210,13 @@ class PluginManagerServlet(
       request.requestURI,
       request.contentType
     )
-    val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+    val user =
+      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user for POST: {}", user)
     if (!ApplicationServices.authorizationManager.isAuthorized(
-        PluginManagerServlet::class.java, user, OperationType.Admin
+        ResourceRef.of(PluginManagerServlet::class.java),
+        Principal.of(user),
+        OperationType.Admin
       )
     ) {
       log.warn("Unauthorized POST access attempt by user: {} from IP: {}", user, request.remoteAddr)

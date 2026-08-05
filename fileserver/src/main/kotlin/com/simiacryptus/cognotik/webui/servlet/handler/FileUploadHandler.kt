@@ -27,13 +27,12 @@ object FileUploadHandler {
       resp.writer.write("Invalid target directory")
       return
     }
-    if (FileAccessControl.isReadOnly(baseDir, targetDir)) {
-      log.warn("Refusing upload to read-only directory: ${targetDir.absolutePath}")
-      resp.status = HttpServletResponse.SC_FORBIDDEN
-      resp.contentType = "application/json"
-      resp.writer.write("""{"success": false, "message": "Target directory is read-only"}""")
-      return
-    }
+    /*
+     * The directory's own read-only bit is deliberately NOT checked here: a
+     * `.writeable` whitelist names files, so the containing folder is read-only
+     * while the entries it whitelists are not. A `.readonly` tree already marks
+     * every descendant read-only, so the per-file check below is authoritative.
+     */
     val filePart: Part? = req.getPart("file")
     if (filePart == null) {
       log.warn("No file part found in upload request")

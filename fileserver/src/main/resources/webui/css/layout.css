@@ -145,6 +145,54 @@
     border-inline-end: 1px solid var(--fs-hairline);
     z-index: 2;
 }
+/* Only shown while the sidebar is a drawer: a title and a way out. */
+.fs-sidebar__header {
+     display: none;
+     align-items: center;
+     gap: var(--fs-space-2);
+     flex: 0 0 auto;
+     padding: var(--fs-space-2) var(--fs-space-2) var(--fs-space-2) var(--fs-space-4);
+     border-block-end: 1px solid var(--fs-hairline);
+}
+.fs-sidebar__title {
+     font-size: var(--fs-text-xs);
+     font-weight: 650;
+     letter-spacing: var(--fs-tracking-wide);
+     text-transform: uppercase;
+     color: var(--fs-fg-muted);
+}
+.fs-sidebar__close {
+     width: 30px;
+     height: 30px;
+     padding: 0;
+     border-radius: var(--fs-radius-sm);
+     color: var(--fs-fg-muted);
+}
+.fs-sidebar__close:hover {
+     color: var(--fs-fg);
+}
+.fs-sidebar__body {
+     display: flex;
+     flex: 1;
+     flex-direction: column;
+     min-height: 0;
+     min-width: 0;
+     overflow: hidden;
+}
+/* Dismiss layer behind the drawer. */
+.fs-scrim {
+     position: fixed;
+     inset: 0;
+     z-index: calc(var(--fs-z-overlay) - 2);
+     background: var(--fs-scrim);
+     -webkit-backdrop-filter: blur(2px);
+     backdrop-filter: blur(2px);
+     animation: fs-fade var(--fs-motion-fast) var(--fs-ease) both;
+}
+.fs-scrim[hidden] {
+     display: none !important;
+}
+
 
 /* --------------------------------------------------------------- splitters */
 
@@ -215,18 +263,26 @@
 }
 
 /* --------------------------------------------------------------- responsive */
+/* Below this width the sidebar is no longer a column — it floats above the
+    editor. AppShell uses the *same* breakpoint (NARROW); when the two disagree
+    the explorer ends up in a 0 px track and cannot be seen at all. */
 
 @media (max-width: 860px) {
-    .fs-shell {
+     .fs-shell,
+     .fs-shell[data-sidebar="visible"],
+     .fs-shell[data-sidebar="drawer"] {
         grid-template-columns: auto 0 0 minmax(0, 1fr);
     }
 
     /* Drawer: the sidebar floats above the editor instead of squeezing it. */
+     .fs-shell[data-sidebar="visible"] .fs-sidebar,
     .fs-shell[data-sidebar="drawer"] .fs-sidebar {
         position: fixed;
         inset-block: var(--fs-header-h) var(--fs-status-h);
-        inset-inline-start: calc(var(--fs-rail-size) + var(--fs-space-4));
-        width: min(84vw, 340px);
+         inset-inline-start: calc(var(--fs-rail-size) + var(--fs-space-4)
+             + env(safe-area-inset-left));
+         width: min(86vw, 360px);
+         max-width: calc(100vw - var(--fs-rail-size) - var(--fs-space-6));
         z-index: calc(var(--fs-z-overlay) - 1);
         border-radius: var(--fs-radius-lg);
         border: 1px solid var(--fs-border);
@@ -234,12 +290,56 @@
         animation: fs-pop var(--fs-motion) var(--fs-ease-out) both;
     }
 
-    .fs-header__title span:not(.sr-only) {
+     .fs-shell[data-sidebar="hidden"] .fs-sidebar {
+         display: none;
+     }
+
+     .fs-sidebar__header {
+         display: flex;
+     }
+
+     /* There is no column left to resize. */
+     .fs-splitter {
+         display: none;
+     }
+
+     .fs-main {
+         border-start-start-radius: 0;
+         border-inline-start: 0;
+     }
+
+     .fs-activity {
+         padding-inline-start: max(var(--fs-space-2), env(safe-area-inset-left));
+     }
+
+     .fs-status {
+         padding-inline: max(var(--fs-space-4), env(safe-area-inset-left))
+             max(var(--fs-space-4), env(safe-area-inset-right));
+     }
+
+     .fs-header__title span:not(.sr-only) {
         display: none;
     }
 }
 
 @media (max-width: 620px) {
+     .fs-header {
+         gap: var(--fs-space-2);
+         padding-inline: var(--fs-space-2);
+     }
+     /* Seven top-level menus do not fit: let them scroll rather than overflow. */
+     .fs-menubar {
+         min-width: 0;
+         overflow-x: auto;
+         scrollbar-width: none;
+     }
+     .fs-menubar::-webkit-scrollbar {
+         height: 0;
+     }
+     .fs-header .fs-theme[aria-label="Accent colour"] {
+         display: none;
+     }
+
     .fs-header__classic {
         display: none;
     }

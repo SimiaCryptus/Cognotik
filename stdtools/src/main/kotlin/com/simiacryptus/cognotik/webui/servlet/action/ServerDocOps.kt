@@ -55,10 +55,6 @@ package com.simiacryptus.cognotik.webui.servlet.action
         /** Only run the tasks producing these output files (empty = all of them). */
         val targets: List<String> = emptyList(),
         val templateVars: Map<String, String> = emptyMap(),
-        val smartModel: String? = null,
-        val fastModel: String? = null,
-        val imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL"),
-        val audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL"),
         val concurrency: Int = 4,
         /** true = start a monitor server (when [monitorFactory] supplies one). */
         val monitor: Boolean = false,
@@ -201,20 +197,15 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
       /** Translates the FS-API shaped [Request] into the servlet's request. */
       private fun docOpsRequest(req: Request): DocProcessorServlet.DocOpsRequest {
-        /* Model resolution goes through the servlet, so a proxy's defaults/credentials win. */
+        /* Model resolution goes through the servlet, which reads the user's stored
+           settings — the only source of a selection — so a proxy's credentials win. */
         val models = try {
-          req.servlet.modelsFor(
-            user = req.user,
-            smartModel = req.smartModel,
-            fastModel = req.fastModel,
-            imageModel = req.imageModel,
-            audioModel = req.audioModel,
-          )
+          req.servlet.modelsFor(req.user)
         } catch (e: IllegalArgumentException) {
           throw IllegalArgumentException(
             (e.message ?: "no smart model selected") +
                 "\nSelect one with the \"Select Models…\" action (POST .fsapi/v1/models?smart=<id>)," +
-                " with --smart-model / COGNOTIK_SMART_MODEL, or configure the DocOps endpoint default."
+                " which stores it in your user settings."
           )
         }
         println(

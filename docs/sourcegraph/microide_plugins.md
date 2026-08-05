@@ -263,13 +263,13 @@ The SPA communicates exclusively through `GET /.fsapi/v1/actions`, making it a z
 
 ## 8. Access Control as an Extension Point
 
-[`FileAccessControl`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik@48dbede/-/blob/fileserver/src/main/kotlin/com/simiacryptus/cognotik/webui/servlet/handler/FileAccessControl.kt) implements `.gitignore`-style marker-file rules. The marker files themselves (`.hidden`, `.readonly`, `.writeable`) are a declarative, filesystem-resident extension mechanism:
+[`FileAccessControl`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik@48dbede/-/blob/fileserver/src/main/kotlin/com/simiacryptus/cognotik/webui/servlet/handler/FileAccessControl.kt) implements `.gitignore`-style marker-file rules. The marker files themselves (`.hidden`, `.readonly`, `.writeable_`) are a declarative, filesystem-resident extension mechanism:
 
 | Marker | Effect |
 |--------|--------|
 | `.hidden` | Patterns inside are 404 for all verbs |
 | `.readonly` | Patterns inside are 403 for mutations |
-| `.writeable` | Whitelist — everything not matched is read-only |
+| `.writeable_` | Whitelist — everything not matched is read-only |
 
 Custom subclasses can override `FileServlet.listContents()` entirely to apply alternative access policies (RBAC, session-based permissions, etc.) without touching the access control files.
 

@@ -1,16 +1,21 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import java.io.File
 
 /**
  * Parameter bag for a [GitAction]; sourced either from form parameters
  * (`?gitAction=...`) or from a JSON body (`POST /.fsapi/v1/git`).
+  *
+  * [user] is the authenticated principal, carried so that custom actions can
+  * apply their own policy (author identity, per-branch permissions, ...).
  */
 class GitActionContext(
   val gitRoot: File,
   val params: Map<String, Any?> = emptyMap(),
+   val user: User? = null,
 ) {
   fun param(name: String): String? = params[name]?.toString()?.takeIf { it.isNotBlank() }
   fun param(name: String, default: String): String = param(name) ?: default
@@ -20,7 +25,7 @@ class GitActionContext(
   fun flag(name: String, default: Boolean = false): Boolean =
     param(name)?.let { it.equals("true", ignoreCase = true) || it == "1" } ?: default
 
-  fun git(vararg command: String): String = GitOperationHandler.executeGitCommand(gitRoot, *command)
+  fun git(vararg command: String): String = GitOperationHandler.executeCommand(gitRoot, *command)
 }
 
 /**

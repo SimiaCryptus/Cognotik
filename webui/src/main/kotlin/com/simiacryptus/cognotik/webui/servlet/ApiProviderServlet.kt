@@ -5,9 +5,9 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -43,7 +43,8 @@ class ApiProviderServlet : HttpServlet() {
 
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
-      val user = authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      val user =
+        UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
       val userSettings = user.userSettings()
       val providers = userSettings.providerInfos()
       val availableProviders = userSettings.getAvailableProviders()
@@ -153,28 +154,6 @@ class ApiProviderServlet : HttpServlet() {
                tr:last-child td {
                    border-bottom: none;
                }
-               table {
-                   width: 100%;
-                   border-collapse: collapse;
-                   background-color: white;
-                   margin-bottom: 20px;
-                   border-radius: 8px;
-                   overflow: hidden;
-                   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-               }
-               th, td {
-                   padding: 12px;
-                   text-align: left;
-                   border-bottom: 1px solid #eee;
-               }
-               th {
-                   background-color: #0066cc;
-                   color: white;
-                   font-weight: bold;
-               }
-               tr:last-child td {
-                   border-bottom: none;
-               }
                 h1 {
                     color: #333;
                 }
@@ -236,20 +215,6 @@ class ApiProviderServlet : HttpServlet() {
                </tbody>
            </table>
            <h2>Configured Providers with Models</h2>
-           <h2>All Available Providers</h2>
-           <table>
-               <thead>
-                   <tr>
-                       <th>Provider Name</th>
-                       <th>Base URL</th>
-                       <th>Configured</th>
-                   </tr>
-               </thead>
-               <tbody>
-                   $availableProvidersHtml
-               </tbody>
-           </table>
-           <h2>Configured Providers with Models</h2>
             $providersHtml
             <script>
                 (function() {
@@ -283,10 +248,13 @@ class ApiProviderServlet : HttpServlet() {
           if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
 
             models += try {
-              provider.getChatModels(
-                key = apiConfig.key,
-                baseUrl = apiConfig.apiBase
-              )?.filter { !it.deprecated } ?: emptyList()
+             (provider.getChatModels(
+               key = apiConfig.key,
+               baseUrl = apiConfig.apiBase
+             ) ?: emptyList())
+               .filter { !it.deprecated }
+               /* Multiple enum aliases can share the same modelId - collapse them */
+               .distinctBy { it.modelId }
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -296,7 +264,7 @@ class ApiProviderServlet : HttpServlet() {
           log.error("Error processing provider ${provider.name}", e)
         }
       }
-      return models.associateBy { it.name }
+     return models.distinctBy { it.modelId }.associateBy { it.name }
     }
 
     fun UserSettings.providerInfos(): List<ProviderInfo> {
@@ -312,10 +280,17 @@ class ApiProviderServlet : HttpServlet() {
 
           if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
             val models = try {
-              provider.getChatModels(
-                key = apiConfig.key,
-                baseUrl = apiConfig.apiBase
-              ).filter { !it.deprecated } ?: emptyList()
+             (provider.getChatModels(
+               key = apiConfig.key,
+               baseUrl = apiConfig.apiBase
+             ) ?: emptyList())
+               .filter { !it.deprecated }
+               /*
+                * A provider can expose several enum constants that resolve to the
+                * same wire-level modelId (aliases / dated snapshots / "latest").
+                * Keep only the first occurrence of each modelId.
+                */
+               .distinctBy { it.modelId }
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -326,18 +301,12 @@ class ApiProviderServlet : HttpServlet() {
                 name = provider.name,
                 baseUrl = apiConfig.apiBase,
                 models = models.map { model ->
-                  if (model is ChatModel) {
-                    ModelInfo(
-                      name = model.modelId,
-                      inputModalities = model.inputModalities.map { it.name }.toSet(),
-                      outputModalities = model.outputModalities.map { it.name }.toSet(),
-                    )
-                  } else {
-                    ModelInfo(
-                      name = model.modelId,
-                    )
-                  }
-                },
+                  ModelInfo(
+                    name = model.modelId,
+                    inputModalities = model.inputModalities.map { it.name }.toSet(),
+                    outputModalities = model.outputModalities.map { it.name }.toSet(),
+                  )
+               }.distinctBy { it.name }.sortedBy { it.name },
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = try {
                   provider.getEmbeddingClient(

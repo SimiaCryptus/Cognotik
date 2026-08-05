@@ -67,7 +67,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
 
      private fun registerSessionOwner(session: Session) {
        try {
-         metadataStorage.setSessionOwner(session, OWNER_ID)
+         metadataStorage.setSessionWorker(session, OWNER_ID)
        } catch (e: Exception) {
          log.info("Failed to register session owner for session: $session", e)
        }

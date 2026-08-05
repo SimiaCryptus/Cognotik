@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageInterface
-import com.simiacryptus.cognotik.webui.application.authenticate
+import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -59,7 +59,8 @@ class UsageServlet : HttpServlet() {
         useJson: Boolean,
         usageManager: UsageInterface
     ) {
-        val userinfo = authenticate(request, response) ?: throw RuntimeException("Authentication failed")
+        val userinfo =
+          UserProviderImpl().authenticate(request, response) ?: throw RuntimeException("Authentication failed")
         val (from, to) = parseDateRange(request)
 
         val usage = usageManager.getUserUsageSummary(userinfo, from, to)

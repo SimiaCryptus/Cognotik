@@ -78,7 +78,7 @@ the agent to run immediately upon session start.
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApiChatModel
 
 class MyRefactoringApp(
     taskConfig: TaskExecutionConfig,
