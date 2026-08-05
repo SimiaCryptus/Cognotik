@@ -104,10 +104,6 @@
                     text="📝 Edit"
                     description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
             </action>
-            <action class="cognotik.actions.agent.MicroIdeAction"
-                    text="🛠️ Micro IDE"
-                    description="Open a micro IDE interface for focused development on selected files, with AI-assisted code analysis and generation">
-            </action>
             <action class="cognotik.actions.task.DocProcessorAction"
                     id="cognotik.ui.ProjectMenu.DocProcessor"
                     text="📋 Build Related"
@@ -124,6 +120,10 @@
             <action class="cognotik.actions.plan.UnifiedPlanAction"
                     text="🧠 Task Planning"
                     description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+            </action>
+            <action class="cognotik.actions.agent.MicroIdeAction"
+                    text="🛠️ Micro IDE"
+                    description="Open a micro IDE interface for focused development on selected files, with AI-assisted code analysis and generation">
             </action>
 
             <group id="cognotik.ui.ProjectMenu.Chat"
