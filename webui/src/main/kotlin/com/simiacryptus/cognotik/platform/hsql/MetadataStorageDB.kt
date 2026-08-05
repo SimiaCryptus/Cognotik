@@ -4,7 +4,9 @@ import com.simiacryptus.cognotik.platform.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
+import com.simiacryptus.cognotik.platform.model.SessionMetadataPatch
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.ifSet
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.*
@@ -76,10 +78,17 @@ class MetadataStorageDB : MetadataStorageInterface {
     session: Session,
     time: Instant
   ) {
-    TODO("Not yet implemented")
+    log.debug("Setting session timestamp for session: {}, user: {} to {}", session, user?.email, time)
+    upsertMetadata(
+      session.sessionId,
+      user?.email ?: "",
+      "session_time",
+      time.toEpochMilli().toString(),
+      time
+    )
   }
 
-  fun getSessionTime(user: User?, session: Session): Instant? {
+  override fun getSessionTimestamp(user: User?, session: Session): Instant? {
     log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
     return tx {
       MetadataTable
@@ -107,6 +116,41 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
+  @Deprecated("Use getSessionTimestamp", ReplaceWith("getSessionTimestamp(user, session)"))
+  fun getSessionTime(user: User?, session: Session): Instant? = getSessionTimestamp(user, session)
+  override fun getSessionPath(user: User?, session: Session): String? {
+    log.debug("Fetching session path for session: {}, user: {}", session, user?.email)
+    return tx {
+      MetadataTable
+        .selectAll()
+        .where {
+          (MetadataTable.sessionId eq session.sessionId) and
+              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.key eq "path")
+        }
+        .limit(1)
+        .map { it[MetadataTable.value] }
+        .firstOrNull()
+    }
+  }
+
+  override fun setSessionPath(user: User?, session: Session, path: String?) {
+    log.debug("Setting session path for session: {}, user: {} to {}", session, user?.email, path)
+    upsertMetadata(session.sessionId, user?.email ?: "", "path", path)
+  }
+
+  override fun exists(user: User?, session: Session): Boolean = tx {
+    MetadataTable
+      .selectAll()
+      .where {
+        (MetadataTable.sessionId eq session.sessionId) and
+            ((MetadataTable.userEmail eq (user?.email ?: "")) or (MetadataTable.userEmail eq ""))
+      }
+      .limit(1)
+      .any()
+  }
+
+
   fun setSessionTime(user: User?, session: Session, time: Instant) {
     log.debug("Setting session time for session: {}, user: {} to {}", session, user?.email, time)
     upsertMetadata(
@@ -118,7 +162,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     )
   }
 
-  fun listSessions(path: String): List<String> {
+  override fun listSessionsByPath(path: String): List<String> {
     log.debug("Listing sessions for path: {}", path)
     return tx {
       MetadataTable
@@ -131,7 +175,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Found {} sessions for path: {}", it.size, path) }
   }
 
-  fun listSessions(user: User): List<String> {
+  override fun listSessionsForUser(user: User): List<String> {
     log.debug("Listing sessions for user: {}", user.email)
     return tx {
       MetadataTable
@@ -141,6 +185,13 @@ class MetadataStorageDB : MetadataStorageInterface {
         .map { it[MetadataTable.sessionId] }
     }.also { log.debug("Found {} sessions for user: {}", it.size, user.email) }
   }
+
+  @Deprecated("Use listSessionsByPath", ReplaceWith("listSessionsByPath(path)"))
+  fun listSessions(path: String): List<String> = listSessionsByPath(path)
+
+  @Deprecated("Use listSessionsForUser", ReplaceWith("listSessionsForUser(user)"))
+  fun listSessions(user: User): List<String> = listSessionsForUser(user)
+
 
   override fun getSessionOwner(session: Session): String? {
     log.debug("Fetching session owner for session: {}", session)
@@ -203,6 +254,44 @@ class MetadataStorageDB : MetadataStorageInterface {
       throw e
     }
   }
+
+  override fun deleteAllForUser(user: User): Int {
+    log.info("Deleting all sessions for user: {}", user.email)
+    return tx {
+      val ids = sessionIdsForUser(user.email)
+      if (ids.isEmpty()) 0
+      else {
+        MetadataTable.deleteWhere {
+          (MetadataTable.sessionId inList ids) and (MetadataTable.userEmail eq user.email)
+        }
+        ids.size
+      }
+    }.also { log.info("Deleted {} session(s) for user: {}", it, user.email) }
+  }
+
+  /**
+   * Field-wise update. Unlike the snapshot-style writer below, `Patch.Set(null)`
+   * clears a field rather than being indistinguishable from "unchanged"
+   * (REVIEW.md §3.4).
+   */
+  override fun updateSessionMetadata(user: User?, session: Session, patch: SessionMetadataPatch) {
+    log.debug("Patching session metadata for session: {}, user: {}", session, user?.email)
+    val userEmail = user?.email ?: ""
+    val now = Instant.now()
+    tx {
+      patch.name.ifSet { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
+      patch.messageIds.ifSet {
+        upsertMetadata(session.sessionId, userEmail, "message_ids", it.joinToString(","), now)
+      }
+      patch.sessionTime.ifSet { t ->
+        upsertMetadata(session.sessionId, userEmail, "session_time", t?.toEpochMilli()?.toString(), t ?: now)
+      }
+      patch.ownerId.ifSet { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
+      patch.workerId.ifSet { upsertMetadata(session.sessionId, "", KEY_WORKER_ID, it, now) }
+      patch.path.ifSet { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
+    }
+  }
+
 
   override fun getSessionMetadata(user: User?, session: Session): SessionMetadata {
     log.debug("Fetching unified session metadata for session: {}, user: {}", session, user?.email)
@@ -367,11 +456,18 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Loaded metadata for {} session(s) on path: {}", it.size, path) }
   }
 
-  fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
-    if (sessionIds.isEmpty()) return emptyList()
+  /**
+   * Single-round-trip override of the interface's N+1 default. Session IDs with
+   * no recorded metadata are intentionally omitted from the result.
+   */
+  override fun getSessionMetadataMap(
+    user: User?,
+    sessionIds: Collection<String>
+  ): Map<String, SessionMetadata> {
+    if (sessionIds.isEmpty()) return emptyMap()
     val userEmail = user?.email ?: ""
-    log.debug("Bulk fetching session metadata for {} session(s), user: {}", sessionIds.size, userEmail)
     val sessionIdSet = sessionIds.toSet()
+    log.debug("Bulk fetching session metadata map for {} session(s), user: {}", sessionIdSet.size, userEmail)
     return tx {
       val rows = MetadataTable
         .selectAll()
@@ -380,10 +476,15 @@ class MetadataStorageDB : MetadataStorageInterface {
               ((MetadataTable.userEmail eq userEmail) or (MetadataTable.userEmail eq ""))
         }
         .toList()
-      val byId = buildSessionMetadataMap(rows)
-      // Preserve caller-provided ordering and fill blanks for unknown sessions.
-      sessionIds.map { id -> byId[id] ?: SessionMetadata(id = Session(id)) }
+      buildSessionMetadataMap(rows)
     }
+  }
+
+  fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
+    if (sessionIds.isEmpty()) return emptyList()
+    val byId = getSessionMetadataMap(user, sessionIds)
+    // Preserve caller-provided ordering and fill blanks for unknown sessions.
+    return sessionIds.map { id -> byId[id] ?: SessionMetadata(id = Session(id)) }
   }
 
   /**

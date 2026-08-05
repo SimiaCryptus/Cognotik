@@ -41,7 +41,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
   override fun updateUserSettings(user: User, settings: UserSettings) {
     log.debug("Updating user settings for user: {}", user)
     val file = File(userConfigDirectory, "$user.json")
-    if(file.exists()) {
+    if (file.exists()) {
       log.info("Updating existing user settings for user: {} at file: {}", user, file)
       val prevJson = fromJson<UserSettings>(file.readText(), UserSettings::class.java)
       val mergedJson = settings.copy(
@@ -68,11 +68,13 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
   }
 
   companion object {
-      private val log = getLogger(UserSettingsManager::class.java)
+    private val log = getLogger(UserSettingsManager::class.java)
 
     fun merge_gson(prevJson: String, newJson: String): String {
-      val prev: com.google.gson.JsonObject = GsonBuilder().create().fromJson(prevJson, com.google.gson.JsonObject::class.java)
-      val new: com.google.gson.JsonObject = GsonBuilder().create().fromJson(newJson, com.google.gson.JsonObject::class.java)
+      val prev: com.google.gson.JsonObject =
+        GsonBuilder().create().fromJson(prevJson, com.google.gson.JsonObject::class.java)
+      val new: com.google.gson.JsonObject =
+        GsonBuilder().create().fromJson(newJson, com.google.gson.JsonObject::class.java)
       val gson = GsonBuilder().setPrettyPrinting().create()
       val merged = com.google.gson.JsonObject()
       val keys = HashSet<String>()
@@ -83,7 +85,14 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
         val newValue = new.get(key)
         if (prevValue != null && newValue != null) {
           if (prevValue.isJsonObject && newValue.isJsonObject) {
-            merged.add(key, merge_gson(gson.toJson(prevValue), gson.toJson(newValue)).let { gson.fromJson(it, com.google.gson.JsonObject::class.java) })
+            merged.add(
+              key,
+              merge_gson(gson.toJson(prevValue), gson.toJson(newValue)).let {
+                gson.fromJson(
+                  it,
+                  com.google.gson.JsonObject::class.java
+                )
+              })
           } else {
             merged.add(key, newValue)
           }

@@ -21,7 +21,7 @@ open class DataStorage(
     log.info("Data storage directory: ${dataDir.absolutePath}")
   }
 
-  fun getMessages(
+  override fun getMessageMap(
     user: User?,
     session: Session
   ): LinkedHashMap<String, String> {
@@ -42,6 +42,27 @@ open class DataStorage(
     return messages
   }
 
+  @Deprecated("Use getMessageMap", ReplaceWith("getMessageMap(user, session)"))
+  fun getMessages(user: User?, session: Session): LinkedHashMap<String, String> =
+    getMessageMap(user, session)
+
+  override fun <T : Any> getJson(
+    user: User?,
+    session: Session,
+    filename: String,
+    type: Class<T>
+  ): T? {
+    val file = getSystemDir(user, session).resolve(filename)
+    if (!file.exists()) return null
+    return try {
+      JsonUtil.objectMapper().readValue(file, type)
+    } catch (e: Exception) {
+      log.warn("Failed to read JSON '{}' for session: {}", filename, session, e)
+      null
+    }
+  }
+
+
   override fun getUserDir(
     user: User?,
     session: Session
@@ -55,6 +76,9 @@ open class DataStorage(
     user: User?,
     session: Session
   ): File {
+    // The Session.NULL sentinel has an empty id; deriving a directory from it
+    // would silently collapse every session onto one path (REVIEW.md §3.11).
+    require(!session.isNull()) { "A valid session ID is required for storage access" }
     if (systemPaths.containsKey(session)) {
       return systemPaths[session]!!
     }
@@ -87,7 +111,7 @@ open class DataStorage(
     }
   }
 
-  fun listSessions(
+  override fun listSessionsForUser(
     user: User?,
     path: String
   ): List<Session> {
@@ -112,6 +136,10 @@ open class DataStorage(
       }
     }).toList()).filterNotNull()
   }
+
+  @Deprecated("Use listSessionsForUser", ReplaceWith("listSessionsForUser(user, path)"))
+  fun listSessions(user: User?, path: String): List<Session> = listSessionsForUser(user, path)
+
 
   override fun <T : Any> setJson(
     user: User?,
@@ -156,13 +184,12 @@ open class DataStorage(
     }
   }
 
-  fun userRoot(user: User?) = dataDir.resolve("users").resolve(
-    if (user?.email != null) {
-      user.email
-    } else {
-      throw IllegalArgumentException("User required for private session")
-    }
-  ).apply { mkdirs() }
+  override fun userRootFor(user: User): File =
+    dataDir.resolve("users").resolve(user.email).apply { mkdirs() }
+
+  @Deprecated("Use userRootFor(user)", ReplaceWith("userRootFor(user!!)"))
+  fun userRoot(user: User?): File =
+    userRootFor(user ?: throw IllegalArgumentException("User required for private session"))
 
   override fun deleteSession(user: User?, session: Session) {
     Session.validateSessionId(session)
@@ -171,6 +198,18 @@ open class DataStorage(
     metadataStorage.deleteSession(user, session)
     sessionDir.deleteRecursively()
   }
+
+  override fun deleteSessionIfExists(user: User?, session: Session): Boolean {
+    Session.validateSessionId(session)
+    val sessionDir = getSystemDir(user, session)
+    if (!sessionDir.exists() && !metadataStorage.exists(user, session)) {
+      log.debug("Session {} does not exist; nothing to delete", session)
+      return false
+    }
+    deleteSession(user, session)
+    return true
+  }
+
 
   @Deprecated("Use metadataStorage instead")
   fun listSessions(dir: File, path: String): List<String> =

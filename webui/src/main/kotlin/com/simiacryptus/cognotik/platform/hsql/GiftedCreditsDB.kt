@@ -32,399 +32,402 @@ import java.util.UUID
  * Manages gifts and claims using a relational database via [DatabaseFacet] and Exposed DSL.
  */
 class GiftedCreditsDB(
-    root: File? = ApplicationServicesConfig.dataStorageRoot.resolve("giftsdb")
+  root: File? = ApplicationServicesConfig.dataStorageRoot.resolve("giftsdb")
 ) : GiftedCreditsInterface {
 
-    /**
-     * Exposed table definition for gifts.
-     */
-    object GiftsTable : Table("gifts") {
-        val id = varchar("id", 36)
-        val amountGranted = double("amount_granted")
-        val grantDurationSeconds = long("grant_duration_seconds")
-        val totalBudget = double("total_budget")
-        val createdBy = varchar("created_by", 255).nullable()
-        val theme = varchar("theme", 64).nullable()
-        override val primaryKey = PrimaryKey(id)
-        init {
-            // Supports admin queries that list gifts by creator.
-            index("idx_gifts_created_by", isUnique = false, createdBy)
-        }
-    }
-
-    /**
-     * Exposed table definition for gift claims.
-     */
-    object GiftClaimsTable : Table("gift_claims") {
-        val giftId = varchar("gift_id", 36).references(GiftsTable.id)
-        val userId = varchar("user_id", 255)
-        val claimedAt = timestamp("claimed_at").clientDefault { Instant.now() }
-        override val primaryKey = PrimaryKey(giftId, userId)
-        init {
-            // Supports listClaims(userId = ...) and per-user claim history,
-            // including ordering by claimedAt DESC for that user.
-            index("idx_gift_claims_user", isUnique = false, userId, claimedAt)
-            // Supports listClaims(giftId = ...) ordered by claimedAt. The PK
-            // leading column already covers giftId equality, but does not help
-            // ordering by claimedAt within a single gift.
-            index("idx_gift_claims_gift_time", isUnique = false, giftId, claimedAt)
-        }
-    }
-
-    val facet = DatabaseFacet(
-        name = "gifted_credits",
-        tables = listOf(GiftsTable, GiftClaimsTable)
-    )
-    /**
-     * Route all Exposed DSL access through [ExposedDatabase], which delegates
-     * connection acquisition to [DatabaseFacet.getConnection]. That path
-     * includes retry-with-demotion handling for file-backed databases that
-     * cannot be opened (falling back to an in-memory database) and keeps the
-     * shared connection (and therefore the in-memory database) alive for the
-     * lifetime of the application. Using [DatabaseFacet.database] directly
-     * bypasses all of that and can leave an in-memory fallback without a
-     * durable connection or a correctly-initialized schema.
-     */
-    private val database = ExposedDatabase.get(facet)
-
+  /**
+   * Exposed table definition for gifts.
+   */
+  object GiftsTable : Table("gifts") {
+    val id = varchar("id", 36)
+    val amountGranted = double("amount_granted")
+    val grantDurationSeconds = long("grant_duration_seconds")
+    val totalBudget = double("total_budget")
+    val createdBy = varchar("created_by", 255).nullable()
+    val theme = varchar("theme", 64).nullable()
+    override val primaryKey = PrimaryKey(id)
 
     init {
-        // Trigger lazy database initialization and schema creation.
-        try {
-            log.debug("Initializing Exposed schema for GiftedCreditsDB")
-           transaction(database) {
-                // Touch the tables to ensure schema is created via the facet.
-                GiftsTable.selectAll().limit(1).toList()
-                GiftClaimsTable.selectAll().limit(1).toList()
-            }
-            log.info("GiftedCreditsDB schema initialization completed successfully")
-        } catch (e: Exception) {
-            log.error("Failed to initialize GiftedCreditsDB schema", e)
-            throw IllegalStateException("Failed to initialize GiftedCreditsDB", e)
-        }
+      // Supports admin queries that list gifts by creator.
+      index("idx_gifts_created_by", isUnique = false, createdBy)
+    }
+  }
+
+  /**
+   * Exposed table definition for gift claims.
+   */
+  object GiftClaimsTable : Table("gift_claims") {
+    val giftId = varchar("gift_id", 36).references(GiftsTable.id)
+    val userId = varchar("user_id", 255)
+    val claimedAt = timestamp("claimed_at").clientDefault { Instant.now() }
+    override val primaryKey = PrimaryKey(giftId, userId)
+
+    init {
+      // Supports listClaims(userId = ...) and per-user claim history,
+      // including ordering by claimedAt DESC for that user.
+      index("idx_gift_claims_user", isUnique = false, userId, claimedAt)
+      // Supports listClaims(giftId = ...) ordered by claimedAt. The PK
+      // leading column already covers giftId equality, but does not help
+      // ordering by claimedAt within a single gift.
+      index("idx_gift_claims_gift_time", isUnique = false, giftId, claimedAt)
+    }
+  }
+
+  val facet = DatabaseFacet(
+    name = "gifted_credits",
+    tables = listOf(GiftsTable, GiftClaimsTable)
+  )
+
+  /**
+   * Route all Exposed DSL access through [ExposedDatabase], which delegates
+   * connection acquisition to [DatabaseFacet.getConnection]. That path
+   * includes retry-with-demotion handling for file-backed databases that
+   * cannot be opened (falling back to an in-memory database) and keeps the
+   * shared connection (and therefore the in-memory database) alive for the
+   * lifetime of the application. Using [DatabaseFacet.database] directly
+   * bypasses all of that and can leave an in-memory fallback without a
+   * durable connection or a correctly-initialized schema.
+   */
+  private val database = ExposedDatabase.get(facet)
+
+
+  init {
+    // Trigger lazy database initialization and schema creation.
+    try {
+      log.debug("Initializing Exposed schema for GiftedCreditsDB")
+      transaction(database) {
+        // Touch the tables to ensure schema is created via the facet.
+        GiftsTable.selectAll().limit(1).toList()
+        GiftClaimsTable.selectAll().limit(1).toList()
+      }
+      log.info("GiftedCreditsDB schema initialization completed successfully")
+    } catch (e: Exception) {
+      log.error("Failed to initialize GiftedCreditsDB schema", e)
+      throw IllegalStateException("Failed to initialize GiftedCreditsDB", e)
+    }
+  }
+
+  fun createGift(
+    creator: User,
+    amountGranted: Double,
+    grantDuration: Duration,
+    totalBudget: Double,
+    theme: String?
+  ): Gift {
+    log.info(
+      "Creating gift: creator={}, amountGranted={}, grantDuration={}, totalBudget={}, theme={}",
+      creator.id, amountGranted, grantDuration, totalBudget, theme
+    )
+    val creatorId = creator.id
+    if (creatorId.isNullOrBlank()) {
+      log.warn("Invalid creator id (null/blank) for gift creation")
+      throw IllegalArgumentException("Creator must have a valid id")
+    }
+    if (amountGranted <= 0.0) {
+      log.warn("Invalid amountGranted={} (must be > 0)", amountGranted)
+      throw IllegalArgumentException("amountGranted must be greater than 0, got $amountGranted")
+    }
+    if (totalBudget < amountGranted) {
+      log.warn("Invalid totalBudget={} (must be >= amountGranted={})", totalBudget, amountGranted)
+      throw IllegalArgumentException("totalBudget ($totalBudget) must be >= amountGranted ($amountGranted)")
+    }
+    if (grantDuration.isNegative || grantDuration.isZero) {
+      log.warn("Invalid grantDuration={} (must be positive)", grantDuration)
+      throw IllegalArgumentException("grantDuration must be positive, got $grantDuration")
     }
 
-    fun createGift(
-        creator: User,
-        amountGranted: Double,
-        grantDuration: Duration,
-        totalBudget: Double,
-        theme: String?
-    ): Gift {
-        log.info(
-            "Creating gift: creator={}, amountGranted={}, grantDuration={}, totalBudget={}, theme={}",
-            creator.id, amountGranted, grantDuration, totalBudget, theme
+    // Check creator has sufficient credit balance
+    val usageManager = ApplicationServices.fileApplicationServices().usageDB
+    val creatorBalance = try {
+      usageManager.getUserBalance(creator.id)
+    } catch (e: Exception) {
+      log.error("Failed to retrieve balance for creator={}", creatorId, e)
+      throw RuntimeException("Unable to verify creator credit balance", e)
+    }
+    log.debug("Creator '{}' has balance={}, required totalBudget={}", creatorId, creatorBalance, totalBudget)
+    if (creatorBalance < totalBudget) {
+      log.warn(
+        "Creator '{}' has insufficient credit: balance={}, required={}",
+        creatorId, creatorBalance, totalBudget
+      )
+      throw IllegalArgumentException(
+        "Insufficient credit balance: have ${"%.2f".format(creatorBalance)}, need ${"%.2f".format(totalBudget)}"
+      )
+    }
+
+    val id = UUID.randomUUID().toString()
+    log.debug("Generated new gift id={}", id)
+    try {
+      transaction(database) {
+        GiftsTable.insert {
+          it[GiftsTable.id] = id
+          it[GiftsTable.amountGranted] = amountGranted
+          it[GiftsTable.grantDurationSeconds] = grantDuration.seconds
+          it[GiftsTable.totalBudget] = totalBudget
+          it[GiftsTable.createdBy] = creatorId
+          it[GiftsTable.theme] = theme
+        }
+        log.debug("Inserted gift id={}", id)
+      }
+
+      // Reserve the budget by debiting the creator's account upfront
+      try {
+        usageManager.creditUser(
+          user = creator,
+          amount = -totalBudget,
+          comment = "Created gift $id (budget reservation)"
         )
-        val creatorId = creator.id
-        if (creatorId.isNullOrBlank()) {
-            log.warn("Invalid creator id (null/blank) for gift creation")
-            throw IllegalArgumentException("Creator must have a valid id")
-        }
-        if (amountGranted <= 0.0) {
-            log.warn("Invalid amountGranted={} (must be > 0)", amountGranted)
-            throw IllegalArgumentException("amountGranted must be greater than 0, got $amountGranted")
-        }
-        if (totalBudget < amountGranted) {
-            log.warn("Invalid totalBudget={} (must be >= amountGranted={})", totalBudget, amountGranted)
-            throw IllegalArgumentException("totalBudget ($totalBudget) must be >= amountGranted ($amountGranted)")
-        }
-        if (grantDuration.isNegative || grantDuration.isZero) {
-            log.warn("Invalid grantDuration={} (must be positive)", grantDuration)
-            throw IllegalArgumentException("grantDuration must be positive, got $grantDuration")
-        }
-
-        // Check creator has sufficient credit balance
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
-        val creatorBalance = try {
-            usageManager.getUserBalance(creator.id)
-        } catch (e: Exception) {
-            log.error("Failed to retrieve balance for creator={}", creatorId, e)
-            throw RuntimeException("Unable to verify creator credit balance", e)
-        }
-        log.debug("Creator '{}' has balance={}, required totalBudget={}", creatorId, creatorBalance, totalBudget)
-        if (creatorBalance < totalBudget) {
-            log.warn(
-                "Creator '{}' has insufficient credit: balance={}, required={}",
-                creatorId, creatorBalance, totalBudget
-            )
-            throw IllegalArgumentException(
-                "Insufficient credit balance: have ${"%.2f".format(creatorBalance)}, need ${"%.2f".format(totalBudget)}"
-            )
-        }
-
-        val id = UUID.randomUUID().toString()
-        log.debug("Generated new gift id={}", id)
+        log.info("Debited {} credits from creator='{}' for gift id={}", totalBudget, creatorId, id)
+      } catch (e: Exception) {
+        log.error("Failed to debit creator='{}' for gift id={}; attempting rollback delete", creatorId, id, e)
         try {
-           transaction(database) {
-                GiftsTable.insert {
-                    it[GiftsTable.id] = id
-                   it[GiftsTable.amountGranted] = amountGranted
-                   it[GiftsTable.grantDurationSeconds] = grantDuration.seconds
-                   it[GiftsTable.totalBudget] = totalBudget
-                   it[GiftsTable.createdBy] = creatorId
-                   it[GiftsTable.theme] = theme
-                }
-                log.debug("Inserted gift id={}", id)
-            }
+          transaction(database) {
+            GiftsTable.deleteWhere { GiftsTable.id eq id }
+          }
+          log.info("Rolled back gift row id={} after debit failure", id)
+        } catch (rollbackEx: Exception) {
+          log.error("Failed to rollback gift row id={} after debit failure", id, rollbackEx)
+        }
+        throw RuntimeException("Failed to debit creator account; gift creation aborted", e)
+      }
 
-            // Reserve the budget by debiting the creator's account upfront
-            try {
-                usageManager.creditUser(
-                    user = creator,
-                    amount = -totalBudget,
-                    comment = "Created gift $id (budget reservation)"
-                )
-                log.info("Debited {} credits from creator='{}' for gift id={}", totalBudget, creatorId, id)
-            } catch (e: Exception) {
-                log.error("Failed to debit creator='{}' for gift id={}; attempting rollback delete", creatorId, id, e)
-                try {
-                   transaction(database) {
-                        GiftsTable.deleteWhere { GiftsTable.id eq id }
-                    }
-                    log.info("Rolled back gift row id={} after debit failure", id)
-                } catch (rollbackEx: Exception) {
-                    log.error("Failed to rollback gift row id={} after debit failure", id, rollbackEx)
-                }
-                throw RuntimeException("Failed to debit creator account; gift creation aborted", e)
-            }
+      log.info("Successfully created gift id={}", id)
+      return Gift(
+        id = id,
+        claimants = 0,
+        amountGranted = amountGranted,
+        grantDuration = grantDuration,
+        totalBudget = totalBudget,
+        spentBudget = 0.0,
+        createdBy = creatorId,
+        theme = theme
+      )
+    } catch (e: Exception) {
+      log.error("Error creating gift id={}", id, e)
+      throw RuntimeException("Failed to create gift due to database error", e)
+    }
+  }
 
-            log.info("Successfully created gift id={}", id)
-            return Gift(
-              id = id,
-              claimants = 0,
-              amountGranted = amountGranted,
-              grantDuration = grantDuration,
-              totalBudget = totalBudget,
-              spentBudget = 0.0,
-              createdBy = creatorId,
-              theme = theme
+  override fun getGift(id: String): Gift? {
+    log.debug("Fetching gift with id={}", id)
+    if (id.isBlank()) {
+      log.warn("getGift called with blank id")
+      return null
+    }
+    try {
+      return transaction(database) {
+        fetchGiftById(id)
+      }
+    } catch (e: Exception) {
+      log.error("Error retrieving gift id={}", id, e)
+      throw RuntimeException("Failed to retrieve gift '$id' due to database error", e)
+    }
+  }
+
+  fun claimGift(user: User, giftId: String): Boolean {
+    val userId = user.id
+    log.info("User '{}' attempting to claim gift id={}", userId, giftId)
+    if (userId.isNullOrBlank()) {
+      log.warn("Cannot claim gift: user id is blank/null for gift id={}", giftId)
+      return false
+    }
+    if (giftId.isBlank()) {
+      log.warn("Cannot claim gift: giftId is blank for user='{}'", userId)
+      return false
+    }
+
+    return try {
+      transaction(database) {
+        // 1. Check if the user has already claimed this gift
+        val alreadyClaimed = GiftClaimsTable
+          .selectAll()
+          .where { (GiftClaimsTable.giftId eq giftId) and (GiftClaimsTable.userId eq userId) }
+          .limit(1)
+          .any()
+        if (alreadyClaimed) {
+          log.info("User '{}' has already claimed gift id={}", userId, giftId)
+          return@transaction false
+        }
+
+        // 2. Get current gift stats to check the budget
+        val gift = fetchGiftById(giftId) ?: run {
+          log.warn("Gift id={} does not exist; cannot be claimed by user '{}'", giftId, userId)
+          return@transaction false
+        }
+
+        // 3. Check if there is enough budget left
+        if (gift.spentBudget + gift.amountGranted > gift.totalBudget) {
+          log.info(
+            "Budget exhausted for gift id={}: spent={}, requested={}, total={}; user '{}' denied",
+            giftId, gift.spentBudget, gift.amountGranted, gift.totalBudget, userId
+          )
+          return@transaction false
+        }
+
+        // 4. Verify the creator's balance (safety check; non-fatal)
+        val creatorId = gift.createdBy
+        if (!creatorId.isNullOrBlank()) {
+          try {
+            val creatorBalance =
+              ApplicationServices.fileApplicationServices().usageDB.getUserBalance(creatorId)
+            log.debug(
+              "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
+              creatorId, creatorBalance, gift.amountGranted
             )
-        } catch (e: Exception) {
-            log.error("Error creating gift id={}", id, e)
-            throw RuntimeException("Failed to create gift due to database error", e)
+          } catch (e: Exception) {
+            log.warn("Failed to verify creator balance for gift id={} (non-fatal): {}", giftId, e.message)
+          }
+        } else {
+          log.debug("Gift id={} has no recorded creator (legacy); skipping creator balance check", giftId)
         }
+
+        // 5. Insert the claim
+        GiftClaimsTable.insert {
+          it[GiftClaimsTable.giftId] = giftId
+          it[GiftClaimsTable.userId] = userId
+          it[claimedAt] = Instant.now()
+        }
+        log.info("User '{}' successfully claimed gift id={}", userId, giftId)
+        true
+      }
+    } catch (e: Exception) {
+      log.error("Error during claimGift userId='{}', giftId={}", userId, giftId, e)
+      throw RuntimeException("Failed to claim gift '$giftId' for user '$userId' due to database error", e)
     }
+  }
 
-    override fun getGift(id: String): Gift? {
-        log.debug("Fetching gift with id={}", id)
-        if (id.isBlank()) {
-            log.warn("getGift called with blank id")
-            return null
-        }
-        try {
-           return transaction(database) {
-                fetchGiftById(id)
-            }
-        } catch (e: Exception) {
-            log.error("Error retrieving gift id={}", id, e)
-            throw RuntimeException("Failed to retrieve gift '$id' due to database error", e)
-        }
-    }
+  /**
+   * Helper to fetch a gift inside an active Exposed transaction.
+   */
+  private fun fetchGiftById(id: String): Gift? {
+    val claimCountExpr = GiftClaimsTable.userId.count()
+    val row = GiftsTable
+      .leftJoin(GiftClaimsTable, { GiftsTable.id }, { GiftClaimsTable.giftId })
+      .select(
+        GiftsTable.id,
+        GiftsTable.amountGranted,
+        GiftsTable.grantDurationSeconds,
+        GiftsTable.totalBudget,
+        GiftsTable.createdBy,
+        GiftsTable.theme,
+        claimCountExpr
+      )
+      .where { GiftsTable.id eq id }
+      .groupBy(
+        GiftsTable.id,
+        GiftsTable.amountGranted,
+        GiftsTable.grantDurationSeconds,
+        GiftsTable.totalBudget,
+        GiftsTable.createdBy,
+        GiftsTable.theme
+      )
+      .firstOrNull() ?: return null
+    return mapGift(row, claimCountExpr)
+  }
 
-    fun claimGift(user: User, giftId: String): Boolean {
-        val userId = user.id
-        log.info("User '{}' attempting to claim gift id={}", userId, giftId)
-        if (userId.isNullOrBlank()) {
-            log.warn("Cannot claim gift: user id is blank/null for gift id={}", giftId)
-            return false
-        }
-        if (giftId.isBlank()) {
-            log.warn("Cannot claim gift: giftId is blank for user='{}'", userId)
-            return false
-        }
-
-        return try {
-           transaction(database) {
-                // 1. Check if the user has already claimed this gift
-                val alreadyClaimed = GiftClaimsTable
-                    .selectAll()
-                    .where { (GiftClaimsTable.giftId eq giftId) and (GiftClaimsTable.userId eq userId) }
-                    .limit(1)
-                    .any()
-                if (alreadyClaimed) {
-                    log.info("User '{}' has already claimed gift id={}", userId, giftId)
-                    return@transaction false
-                }
-
-                // 2. Get current gift stats to check the budget
-                val gift = fetchGiftById(giftId) ?: run {
-                    log.warn("Gift id={} does not exist; cannot be claimed by user '{}'", giftId, userId)
-                    return@transaction false
-                }
-
-                // 3. Check if there is enough budget left
-                if (gift.spentBudget + gift.amountGranted > gift.totalBudget) {
-                    log.info(
-                        "Budget exhausted for gift id={}: spent={}, requested={}, total={}; user '{}' denied",
-                        giftId, gift.spentBudget, gift.amountGranted, gift.totalBudget, userId
-                    )
-                    return@transaction false
-                }
-
-                // 4. Verify the creator's balance (safety check; non-fatal)
-                val creatorId = gift.createdBy
-                if (!creatorId.isNullOrBlank()) {
-                    try {
-                        val creatorBalance =
-                            ApplicationServices.fileApplicationServices().usageDB.getUserBalance(creatorId)
-                        log.debug(
-                            "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
-                            creatorId, creatorBalance, gift.amountGranted
-                        )
-                    } catch (e: Exception) {
-                        log.warn("Failed to verify creator balance for gift id={} (non-fatal): {}", giftId, e.message)
-                    }
-                } else {
-                    log.debug("Gift id={} has no recorded creator (legacy); skipping creator balance check", giftId)
-                }
-
-                // 5. Insert the claim
-                GiftClaimsTable.insert {
-                    it[GiftClaimsTable.giftId] = giftId
-                    it[GiftClaimsTable.userId] = userId
-                    it[claimedAt] = Instant.now()
-                }
-                log.info("User '{}' successfully claimed gift id={}", userId, giftId)
-                true
-            }
-        } catch (e: Exception) {
-            log.error("Error during claimGift userId='{}', giftId={}", userId, giftId, e)
-            throw RuntimeException("Failed to claim gift '$giftId' for user '$userId' due to database error", e)
-        }
-    }
-
-    /**
-     * Helper to fetch a gift inside an active Exposed transaction.
-     */
-    private fun fetchGiftById(id: String): Gift? {
+  override fun listGifts(): List<Gift> {
+    log.debug("Listing all gifts")
+    try {
+      return transaction(database) {
         val claimCountExpr = GiftClaimsTable.userId.count()
-        val row = GiftsTable
-            .leftJoin(GiftClaimsTable, { GiftsTable.id }, { GiftClaimsTable.giftId })
-            .select(
-                GiftsTable.id,
-                GiftsTable.amountGranted,
-                GiftsTable.grantDurationSeconds,
-                GiftsTable.totalBudget,
-                GiftsTable.createdBy,
-                GiftsTable.theme,
-                claimCountExpr
-            )
-            .where { GiftsTable.id eq id }
-            .groupBy(
-                GiftsTable.id,
-                GiftsTable.amountGranted,
-                GiftsTable.grantDurationSeconds,
-                GiftsTable.totalBudget,
-                GiftsTable.createdBy,
-                GiftsTable.theme
-            )
-            .firstOrNull() ?: return null
-        return mapGift(row, claimCountExpr)
-    }
-
-    override fun listGifts(): List<Gift> {
-        log.debug("Listing all gifts")
-        try {
-           return transaction(database) {
-                val claimCountExpr = GiftClaimsTable.userId.count()
-                val rows = GiftsTable
-                    .leftJoin(GiftClaimsTable, { GiftsTable.id }, { GiftClaimsTable.giftId })
-                    .select(
-                        GiftsTable.id,
-                        GiftsTable.amountGranted,
-                        GiftsTable.grantDurationSeconds,
-                        GiftsTable.totalBudget,
-                        GiftsTable.createdBy,
-                        GiftsTable.theme,
-                        claimCountExpr
-                    )
-                    .groupBy(
-                        GiftsTable.id,
-                        GiftsTable.amountGranted,
-                        GiftsTable.grantDurationSeconds,
-                        GiftsTable.totalBudget,
-                        GiftsTable.createdBy,
-                        GiftsTable.theme
-                    )
-                    .toList()
-                val gifts = rows.mapNotNull { row ->
-                    try {
-                        mapGift(row, claimCountExpr)
-                    } catch (e: Exception) {
-                        log.error("Failed to map a gift row; skipping", e)
-                        null
-                    }
-                }
-                log.debug("Retrieved {} gift(s)", gifts.size)
-                gifts
-            }
-        } catch (e: Exception) {
-            log.error("Error while listing gifts", e)
-            throw RuntimeException("Failed to list gifts due to database error", e)
+        val rows = GiftsTable
+          .leftJoin(GiftClaimsTable, { GiftsTable.id }, { GiftClaimsTable.giftId })
+          .select(
+            GiftsTable.id,
+            GiftsTable.amountGranted,
+            GiftsTable.grantDurationSeconds,
+            GiftsTable.totalBudget,
+            GiftsTable.createdBy,
+            GiftsTable.theme,
+            claimCountExpr
+          )
+          .groupBy(
+            GiftsTable.id,
+            GiftsTable.amountGranted,
+            GiftsTable.grantDurationSeconds,
+            GiftsTable.totalBudget,
+            GiftsTable.createdBy,
+            GiftsTable.theme
+          )
+          .toList()
+        val gifts = rows.mapNotNull { row ->
+          try {
+            mapGift(row, claimCountExpr)
+          } catch (e: Exception) {
+            log.error("Failed to map a gift row; skipping", e)
+            null
+          }
         }
+        log.debug("Retrieved {} gift(s)", gifts.size)
+        gifts
+      }
+    } catch (e: Exception) {
+      log.error("Error while listing gifts", e)
+      throw RuntimeException("Failed to list gifts due to database error", e)
     }
+  }
 
-    override fun listClaims(giftId: String?, userId: String?): List<Claim> {
-        log.debug("Listing claims with filters giftId={}, userId={}", giftId, userId)
-        try {
-           return transaction(database) {
-                val query = GiftClaimsTable.selectAll()
-                if (!giftId.isNullOrBlank()) {
-                    query.andWhere { GiftClaimsTable.giftId eq giftId }
-                }
-                if (!userId.isNullOrBlank()) {
-                    query.andWhere { GiftClaimsTable.userId eq userId }
-                }
-                query.orderBy(GiftClaimsTable.claimedAt, SortOrder.DESC)
-                val claims = query.mapNotNull { row ->
-                    try {
-                      Claim(
-                        giftId = row[GiftClaimsTable.giftId],
-                        userId = row[GiftClaimsTable.userId],
-                        claimedAt = row[GiftClaimsTable.claimedAt]
-                      )
-                    } catch (e: Exception) {
-                        log.error("Failed to map a claim row; skipping", e)
-                        null
-                    }
-                }
-                log.debug("Retrieved {} claim(s)", claims.size)
-                claims
-            }
-        } catch (e: Exception) {
-            log.error("Error while listing claims", e)
-            throw RuntimeException("Failed to list claims due to database error", e)
+  override fun listClaims(giftId: String?, userId: String?): List<Claim> {
+    log.debug("Listing claims with filters giftId={}, userId={}", giftId, userId)
+    try {
+      return transaction(database) {
+        val query = GiftClaimsTable.selectAll()
+        if (!giftId.isNullOrBlank()) {
+          query.andWhere { GiftClaimsTable.giftId eq giftId }
         }
+        if (!userId.isNullOrBlank()) {
+          query.andWhere { GiftClaimsTable.userId eq userId }
+        }
+        query.orderBy(GiftClaimsTable.claimedAt, SortOrder.DESC)
+        val claims = query.mapNotNull { row ->
+          try {
+            Claim(
+              giftId = row[GiftClaimsTable.giftId],
+              userId = row[GiftClaimsTable.userId],
+              claimedAt = row[GiftClaimsTable.claimedAt]
+            )
+          } catch (e: Exception) {
+            log.error("Failed to map a claim row; skipping", e)
+            null
+          }
+        }
+        log.debug("Retrieved {} claim(s)", claims.size)
+        claims
+      }
+    } catch (e: Exception) {
+      log.error("Error while listing claims", e)
+      throw RuntimeException("Failed to list claims due to database error", e)
     }
+  }
 
-    /**
-     * Helper function to map a ResultRow to a Gift object.
-     */
-    private fun mapGift(
-        row: ResultRow,
-        claimCountExpr: org.jetbrains.exposed.v1.core.Expression<Long>
-    ): Gift {
-        val id = row[GiftsTable.id]
-        val amountGranted = row[GiftsTable.amountGranted]
-        val grantSeconds = row[GiftsTable.grantDurationSeconds]
-        val totalBudget = row[GiftsTable.totalBudget]
-        val createdBy = row[GiftsTable.createdBy]
-        val theme = row[GiftsTable.theme]
-        val claimants = row[claimCountExpr].toInt()
+  /**
+   * Helper function to map a ResultRow to a Gift object.
+   */
+  private fun mapGift(
+    row: ResultRow,
+    claimCountExpr: org.jetbrains.exposed.v1.core.Expression<Long>
+  ): Gift {
+    val id = row[GiftsTable.id]
+    val amountGranted = row[GiftsTable.amountGranted]
+    val grantSeconds = row[GiftsTable.grantDurationSeconds]
+    val totalBudget = row[GiftsTable.totalBudget]
+    val createdBy = row[GiftsTable.createdBy]
+    val theme = row[GiftsTable.theme]
+    val claimants = row[claimCountExpr].toInt()
 
-        return Gift(
-          id = id,
-          claimants = claimants,
-          amountGranted = amountGranted,
-          grantDuration = Duration.ofSeconds(grantSeconds),
-          totalBudget = totalBudget,
-          spentBudget = claimants * amountGranted,
-          createdBy = createdBy,
-          theme = theme
-        )
-    }
+    return Gift(
+      id = id,
+      claimants = claimants,
+      amountGranted = amountGranted,
+      grantDuration = Duration.ofSeconds(grantSeconds),
+      totalBudget = totalBudget,
+      spentBudget = claimants * amountGranted,
+      createdBy = createdBy,
+      theme = theme
+    )
+  }
 
-    companion object {
-        val log = LoggerFactory.getLogger(GiftedCreditsInterface::class.java)!!
-    }
+  companion object {
+    val log = LoggerFactory.getLogger(GiftedCreditsInterface::class.java)!!
+  }
 }
