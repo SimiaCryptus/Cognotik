@@ -66,15 +66,10 @@ abstract class FileServlet : HttpServlet() {
           serveNonExistentFile(file, response)
         }
 
-        !isWriteAllowed(getUser(request, response), request) -> {
-          throw IllegalStateException("Write operations are not allowed for this user")
-        }
-
         file != null && file.isFile && editParam != null && editParam != "false" -> {
           serveEditor(file, dir, response)
         }
-
-
+        
         file != null && file.isFile -> {
           FileRequestHandler.serveFile(file, request, response)
         }

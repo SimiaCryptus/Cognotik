@@ -188,6 +188,8 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
         return null
       }
       log.debug("Authenticated user: ${user?.email} for session ${session.sessionId}")
+      val dataDir = dataStorage.getSystemDir(user, session)
+      if (session.isGlobal() && dataDir.exists()) return dataDir
       try {
         onSession(session, user)
       } catch (e: Exception) {
@@ -195,7 +197,6 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
         throw e
       }
       val sessionDir = dataStorage.getUserDir(user, session)
-      val dataDir = dataStorage.getSystemDir(user, session)
       log.debug("sessionDir=${sessionDir.absolutePath}, dataDir=${dataDir.absolutePath}")
       val dirs = if (sessionDir.absolutePath != dataDir.absolutePath) {
         listOf(sessionDir, dataDir)
