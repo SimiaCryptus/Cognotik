@@ -1,7 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
+import com.simiacryptus.cognotik.webui.servlet.FileServlet.Companion.getUser
+import com.simiacryptus.cognotik.webui.servlet.FileServlet.Companion.isWriteAllowed
 import com.simiacryptus.cognotik.webui.servlet.util.EtagUtil
 import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -25,14 +29,14 @@ object FsStat {
   private const val PERM_444 = 292
   private const val PERM_777 = 511
 
-  fun payload(root: File?, file: File, virtual: String, followLinks: Boolean = true): MutableMap<String, Any?> {
+  fun payload(request: HttpServletRequest, response: HttpServletResponse, root: File?, file: File, virtual: String, followLinks: Boolean = true): MutableMap<String, Any?> {
     val attrs: BasicFileAttributes = try {
       if (followLinks) Files.readAttributes(file.toPath(), BasicFileAttributes::class.java)
       else Files.readAttributes(file.toPath(), BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
     } catch (e: IOException) {
       throw FsException(FsErrorCode.ENOENT, if (followLinks) "stat" else "lstat", virtual)
     }
-    val readOnly = FileAccessControl.isReadOnly(root, file)
+    val readOnly = FileAccessControl.isReadOnly(root, file) || !isWriteAllowed(getUser(request, response), request)
     val type = when {
       attrs.isSymbolicLink -> "symlink"
       attrs.isDirectory -> "dir"
@@ -73,7 +77,7 @@ object FsStat {
   }
 
   /** Compact Dirent-style entry used by readdir. */
-  fun dirent(root: File?, file: File, name: String, relative: String, includeStat: Boolean): Map<String, Any?> {
+  fun dirent(request: HttpServletRequest, response: HttpServletResponse, root: File?, file: File, name: String, relative: String, includeStat: Boolean): Map<String, Any?> {
     val type = when {
       Files.isSymbolicLink(file.toPath()) -> "symlink"
       file.isDirectory -> "dir"
@@ -88,7 +92,7 @@ object FsStat {
     if (includeStat) {
       map["size"] = if (file.isFile) file.length() else 0L
       map["mtimeMs"] = file.lastModified()
-      map["readOnly"] = FileAccessControl.isReadOnly(root, file)
+      map["readOnly"] = FileAccessControl.isReadOnly(root, file) || !isWriteAllowed(getUser(request, response), request)
       if (file.isFile) map["mimeType"] = MimeTypeResolver.getMimeType(file.name)
     }
     return map

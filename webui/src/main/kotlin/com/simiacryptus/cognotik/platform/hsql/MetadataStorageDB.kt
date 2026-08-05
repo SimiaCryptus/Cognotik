@@ -703,86 +703,88 @@ class MetadataStorageDB : MetadataStorageInterface {
     private val LIST_PROJECTION_KEYS =
       listOf("name", "session_time", "owner_id", KEY_WORKER_ID, "path")
 
-    internal val facet = DatabaseFacet(
-      name = "metadata",
-      schema = { provider ->
-        // Portable DDL kept inline to avoid invoking Exposed's
-        // schema generator before a Database is connected. The
-        // shape mirrors MetadataTable exactly.
-        val textType = if (provider == "postgresql") "TEXT" else "CLOB"
-        listOf(
-          // Migration: rename legacy "key" column to "meta_key" if present.
-          // This must run BEFORE the CREATE TABLE IF NOT EXISTS so that
-          // a legacy table with a "key" column is migrated rather than
-          // left alongside a new table definition. If the table doesn't
-          // exist yet, this is a no-op.
-          if (provider == "postgresql") {
+    internal val facet by lazy {
+      DatabaseFacet(
+        name = "metadata",
+        schema = { provider ->
+          // Portable DDL kept inline to avoid invoking Exposed's
+          // schema generator before a Database is connected. The
+          // shape mirrors MetadataTable exactly.
+          val textType = if (provider == "postgresql") "TEXT" else "CLOB"
+          listOf(
+            // Migration: rename legacy "key" column to "meta_key" if present.
+            // This must run BEFORE the CREATE TABLE IF NOT EXISTS so that
+            // a legacy table with a "key" column is migrated rather than
+            // left alongside a new table definition. If the table doesn't
+            // exist yet, this is a no-op.
+            if (provider == "postgresql") {
+              """
+                          DO ${'$'}${'$'}
+                          BEGIN
+                              IF EXISTS (
+                                  SELECT 1 FROM information_schema.tables
+                                  WHERE table_name = 'metadata'
+                              ) AND EXISTS (
+                                  SELECT 1 FROM information_schema.columns
+                                  WHERE table_name = 'metadata' AND column_name = 'key'
+                              ) AND NOT EXISTS (
+                                  SELECT 1 FROM information_schema.columns
+                                  WHERE table_name = 'metadata' AND column_name = 'meta_key'
+                              ) THEN
+                                  ALTER TABLE metadata RENAME COLUMN "key" TO meta_key;
+                              END IF;
+                          END
+                          ${'$'}${'$'};
+                          """
+            } else {
+              // doesn't already exist). H2 doesn't support
+              // "ALTER COLUMN IF EXISTS ... RENAME TO" syntax, so
+              // we guard with information_schema checks via a
+              // conditional approach using separate statements.
+              // H2: rename legacy "key" column to meta_key if both
+              // the table and the legacy column exist (and meta_key
+              // doesn't already exist). Use ALTER TABLE ... ALTER COLUMN
+              // ... RENAME TO with proper H2 syntax. The "IF EXISTS"
+              // on ALTER COLUMN is supported in H2 2.x.
+              """
+                          ALTER TABLE IF EXISTS metadata ALTER COLUMN IF EXISTS "key" RENAME TO meta_key
+                          """
+            },
+            // Also handle the case where the legacy column exists without quotes
+            // (some older H2 versions stored it unquoted, treating it as identifier).
+            if (provider == "postgresql") {
+              "SELECT 1"
+            } else {
+              """
+                          ALTER TABLE IF EXISTS metadata ALTER COLUMN IF EXISTS key RENAME TO meta_key
+                          """
+            },
             """
-                        DO ${'$'}${'$'}
-                        BEGIN
-                            IF EXISTS (
-                                SELECT 1 FROM information_schema.tables
-                                WHERE table_name = 'metadata'
-                            ) AND EXISTS (
-                                SELECT 1 FROM information_schema.columns
-                                WHERE table_name = 'metadata' AND column_name = 'key'
-                            ) AND NOT EXISTS (
-                                SELECT 1 FROM information_schema.columns
-                                WHERE table_name = 'metadata' AND column_name = 'meta_key'
-                            ) THEN
-                                ALTER TABLE metadata RENAME COLUMN "key" TO meta_key;
-                            END IF;
-                        END
-                        ${'$'}${'$'};
-                        """
-          } else {
-            // doesn't already exist). H2 doesn't support
-            // "ALTER COLUMN IF EXISTS ... RENAME TO" syntax, so
-            // we guard with information_schema checks via a
-            // conditional approach using separate statements.
-            // H2: rename legacy "key" column to meta_key if both
-            // the table and the legacy column exist (and meta_key
-            // doesn't already exist). Use ALTER TABLE ... ALTER COLUMN
-            // ... RENAME TO with proper H2 syntax. The "IF EXISTS"
-            // on ALTER COLUMN is supported in H2 2.x.
-            """
-                        ALTER TABLE IF EXISTS metadata ALTER COLUMN IF EXISTS "key" RENAME TO meta_key
-                        """
-          },
-          // Also handle the case where the legacy column exists without quotes
-          // (some older H2 versions stored it unquoted, treating it as identifier).
-          if (provider == "postgresql") {
-            "SELECT 1"
-          } else {
-            """
-                        ALTER TABLE IF EXISTS metadata ALTER COLUMN IF EXISTS key RENAME TO meta_key
-                        """
-          },
-          """
-                 CREATE TABLE IF NOT EXISTS metadata (
-                     session_id VARCHAR(255) NOT NULL,
-                     user_email VARCHAR(255) NOT NULL,
-                      meta_key VARCHAR(255) NOT NULL,
-                     value $textType,
-                     timestamp TIMESTAMP NOT NULL,
-                      PRIMARY KEY (session_id, user_email, meta_key)
-                 )
-                 """,
-          "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
-          "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
-          // Supports listSessionMetadata/listSessionEntries which first
-          // collects session IDs for a user, then re-queries by
-          // (session_id inList ..., user_email = ? OR user_email = '').
-          // The PK covers (session_id, user_email, meta_key) leading-edge
-          // queries, but a dedicated (user_email, session_id) index
-          // accelerates the initial sessionIdsForUser distinct scan.
-          "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
-          // Supports queries that filter by meta_key alone (e.g. scanning
-          // for all "owner_id" rows or all "path" rows during admin tasks).
-          "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(meta_key)",
-        )
-      },
-      tables = listOf(MetadataTable),
-    )
+                   CREATE TABLE IF NOT EXISTS metadata (
+                       session_id VARCHAR(255) NOT NULL,
+                       user_email VARCHAR(255) NOT NULL,
+                        meta_key VARCHAR(255) NOT NULL,
+                       value $textType,
+                       timestamp TIMESTAMP NOT NULL,
+                        PRIMARY KEY (session_id, user_email, meta_key)
+                   )
+                   """,
+            "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
+            "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
+            // Supports listSessionMetadata/listSessionEntries which first
+            // collects session IDs for a user, then re-queries by
+            // (session_id inList ..., user_email = ? OR user_email = '').
+            // The PK covers (session_id, user_email, meta_key) leading-edge
+            // queries, but a dedicated (user_email, session_id) index
+            // accelerates the initial sessionIdsForUser distinct scan.
+            "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
+            // Supports queries that filter by meta_key alone (e.g. scanning
+            // for all "owner_id" rows or all "path" rows during admin tasks).
+            "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(meta_key)",
+          )
+        },
+        tables = listOf(MetadataTable),
+      )
+    }
   }
 }

@@ -11,10 +11,13 @@ import com.simiacryptus.cognotik.text.caveman.LightEnglishStemmer
 import com.simiacryptus.cognotik.text.caveman.PorterStemmer
 import com.simiacryptus.cognotik.text.caveman.PosCategory
 import com.simiacryptus.cognotik.text.caveman.TextRankSalienceExtractor
+import com.simiacryptus.cognotik.webui.servlet.FileServlet.Companion.getUser
+import com.simiacryptus.cognotik.webui.servlet.FileServlet.Companion.isWriteAllowed
 import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
 import com.simiacryptus.cognotik.webui.servlet.util.FsJson
 import com.simiacryptus.cognotik.webui.servlet.util.FsPath
 import com.simiacryptus.cognotik.webui.servlet.util.FsTarget
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -52,7 +55,7 @@ object FsToolsHandler {
   fun httpIndexSymbols(ctx: FsActionContext) =
     writeJson(
       ctx.resp, HttpServletResponse.SC_OK,
-      indexSymbols(ctx.root, ctx.config, options(ctx), ctx.writeAllowed)
+      indexSymbols(ctx.req, ctx.resp, ctx.root, ctx.config, options(ctx), ctx.writeAllowed)
     )
 
   fun httpDescribe(ctx: FsActionContext) {
@@ -116,6 +119,7 @@ object FsToolsHandler {
 
   /** Builds/refreshes the index. Mutating: writes `.data/<name>.json` sidecars. */
   fun indexSymbols(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     options: Map<String, Any?>,
@@ -128,7 +132,7 @@ object FsToolsHandler {
     if (config.readOnly) throw FsException(FsErrorCode.EROFS, "symbols", null)
     val target = visible(root, str(options, "path") ?: "/", "symbols")
     if (!target.file.exists()) throw FsException(FsErrorCode.ENOENT, "symbols", target.virtual)
-    if (FileAccessControl.isReadOnly(root, target.file)) {
+    if (FileAccessControl.isReadOnly(root, target.file) || !isWriteAllowed(getUser(request, response), request)) {
       throw FsException(FsErrorCode.EACCES, "symbols", target.virtual, "target is read-only")
     }
     val indexerConfig = indexerConfig(config, options)

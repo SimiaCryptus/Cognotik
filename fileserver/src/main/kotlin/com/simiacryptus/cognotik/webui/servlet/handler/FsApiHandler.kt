@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet.handler
 
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.webui.servlet.FileServlet.Companion.getUser
+import com.simiacryptus.cognotik.webui.servlet.FileServlet.Companion.isWriteAllowed
 import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
 
 import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
@@ -338,7 +340,7 @@ object FsApiHandler {
         ActionParam("ops", "array", required = true, location = "body"),
         ActionParam("stopOnError", "boolean", location = "body")
       )
-    ) { ctx -> httpBatch(ctx) }
+    ) { ctx -> httpBatch(ctx.req, ctx.resp, ctx) }
     write(
       "POST", "exec", "Run an allowlisted child_process command",
       listOf(
@@ -724,9 +726,9 @@ object FsApiHandler {
     return target
   }
 
-  private fun requireWritable(root: File, target: FsTarget, syscall: String, config: FsApiConfig) {
+  private fun requireWritable(request: HttpServletRequest, response: HttpServletResponse, root: File, target: FsTarget, syscall: String, config: FsApiConfig) {
     if (config.readOnly) throw FsException(FsErrorCode.EROFS, syscall, target.virtual)
-    if (FileAccessControl.isReadOnly(root, target.file)) {
+    if (FileAccessControl.isReadOnly(root, target.file) || !isWriteAllowed(getUser(request, response), request)) {
       throw FsException(FsErrorCode.EACCES, syscall, target.virtual)
     }
   }
@@ -826,13 +828,13 @@ object FsApiHandler {
     return total
   }
 
-  private fun assertSubtreeWritable(root: File, dir: File, syscall: String) {
+  private fun assertSubtreeWritable(request: HttpServletRequest, response: HttpServletResponse, root: File, dir: File, syscall: String) {
     val children = dir.listFiles() ?: return
     for (child in children) {
-      if (FileAccessControl.isReadOnly(root, child)) {
+      if (FileAccessControl.isReadOnly(root, child) || !isWriteAllowed(getUser(request, response), request)) {
         throw FsException(FsErrorCode.EACCES, syscall, FsPath.virtualPath(root, child), "read-only descendant")
       }
-      if (child.isDirectory) assertSubtreeWritable(root, child, syscall)
+      if (child.isDirectory) assertSubtreeWritable(request, response, root, child, syscall)
     }
   }
 
@@ -847,19 +849,20 @@ object FsApiHandler {
   // ------------------------------------------------------------ core ops
   // Each op* is HTTP-agnostic so /batch can reuse it verbatim.
 
-  private fun opStat(root: File, path: String?, lstat: Boolean, throwIfNoEntry: Boolean): Map<String, Any?> {
+  private fun opStat(request: HttpServletRequest, response: HttpServletResponse, root: File, path: String?, lstat: Boolean, throwIfNoEntry: Boolean): Map<String, Any?> {
     val syscall = if (lstat) "lstat" else "stat"
     val t = target(root, path, syscall, "/")
     if (!t.file.exists()) {
       if (throwIfNoEntry) throw FsException(FsErrorCode.ENOENT, syscall, t.virtual)
       return linkedMapOf("path" to t.virtual, "exists" to false)
     }
-    val payload = FsStat.payload(root, t.file, t.virtual, followLinks = !lstat)
+    val payload = FsStat.payload(request, response, root, t.file, t.virtual, followLinks = !lstat)
     payload["exists"] = true
     return payload
   }
 
   private fun opReaddir(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     path: String?,
@@ -871,7 +874,7 @@ object FsApiHandler {
     if (!t.file.isDirectory) throw FsException(FsErrorCode.ENOTDIR, "scandir", t.virtual)
     val entries = ArrayList<Any?>()
     val effectiveDepth = if (recursive) depth.coerceIn(1, config.maxDepth) else 1
-    collect(root, config, t.file, "", effectiveDepth, includeStat, entries)
+    collect(request, response, root, config, t.file, "", effectiveDepth, includeStat, entries)
     return linkedMapOf(
       "path" to t.virtual,
       "entries" to entries,
@@ -880,6 +883,7 @@ object FsApiHandler {
   }
 
   private fun collect(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     dir: File,
@@ -894,14 +898,14 @@ object FsApiHandler {
       if (out.size >= config.maxDirEntries) return
       if (FileAccessControl.isHidden(root, child)) continue
       val relative = if (prefix.isEmpty()) child.name else "$prefix/${child.name}"
-      out.add(FsStat.dirent(root, child, child.name, relative, includeStat))
-      if (child.isDirectory) collect(root, config, child, relative, depth - 1, includeStat, out)
+      out.add(FsStat.dirent(request, response, root, child, child.name, relative, includeStat))
+      if (child.isDirectory) collect(request, response, root, config, child, relative, depth - 1, includeStat, out)
     }
   }
 
-  private fun opMkdir(root: File, config: FsApiConfig, path: String?, recursive: Boolean): Map<String, Any?> {
+  private fun opMkdir(request: HttpServletRequest, response: HttpServletResponse, root: File, config: FsApiConfig, path: String?, recursive: Boolean): Map<String, Any?> {
     val t = target(root, path, "mkdir")
-    requireWritable(root, t, "mkdir", config)
+    requireWritable(request, response, root, t, "mkdir", config)
     if (t.file.exists()) {
       if (!t.file.isDirectory) throw FsException(FsErrorCode.EEXIST, "mkdir", t.virtual)
       if (!recursive) throw FsException(FsErrorCode.EEXIST, "mkdir", t.virtual)
@@ -914,6 +918,7 @@ object FsApiHandler {
   }
 
   private fun opRemove(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     path: String?,
@@ -925,13 +930,13 @@ object FsApiHandler {
       if (force) return linkedMapOf("path" to resolved.virtual, "removed" to false)
       throw FsException(FsErrorCode.ENOENT, "unlink", resolved.virtual)
     }
-    requireWritable(root, resolved, "unlink", config)
+    requireWritable(request, response, root, resolved, "unlink", config)
     if (resolved.file.isDirectory) {
       val children = resolved.file.listFiles() ?: emptyArray()
       if (children.isNotEmpty() && !recursive) {
         throw FsException(FsErrorCode.ENOTEMPTY, "rmdir", resolved.virtual)
       }
-      if (recursive) assertSubtreeWritable(root, resolved.file, "rm")
+      if (recursive) assertSubtreeWritable(request, response, root, resolved.file, "rm")
       invalidateTree(resolved.file)
       val ok = fsIo("rmdir", resolved.virtual) {
         if (recursive) resolved.file.deleteRecursively() else resolved.file.delete()
@@ -947,6 +952,7 @@ object FsApiHandler {
   }
 
   private fun opRename(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     from: String?,
@@ -955,10 +961,10 @@ object FsApiHandler {
   ): Map<String, Any?> {
     val source = requireExisting(target(root, from, "rename"), "rename")
     val dest = target(root, to, "rename")
-    requireWritable(root, source, "rename", config)
-    requireWritable(root, dest, "rename", config)
+    requireWritable(request, response, root, source, "rename", config)
+    requireWritable(request, response, root, dest, "rename", config)
     requireWritableParent(root, dest, "rename", create = false)
-    if (source.file.isDirectory) assertSubtreeWritable(root, source.file, "rename")
+    if (source.file.isDirectory) assertSubtreeWritable(request, response, root, source.file, "rename")
     if (dest.file.exists() && !overwrite) throw FsException(FsErrorCode.EEXIST, "rename", dest.virtual)
     invalidateTree(source.file)
     if (dest.file.exists()) invalidateTree(dest.file)
@@ -988,6 +994,7 @@ object FsApiHandler {
   }
 
   private fun opCopy(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     from: String?,
@@ -998,15 +1005,16 @@ object FsApiHandler {
   ): Map<String, Any?> {
     val source = requireExisting(target(root, from, "copyfile"), "copyfile")
     val dest = target(root, to, "copyfile")
-    requireWritable(root, dest, "copyfile", config)
+    requireWritable(request, response, root, dest, "copyfile", config)
     requireWritableParent(root, dest, "copyfile", create = true)
     if (source.file.isDirectory && !recursive) throw FsException(FsErrorCode.EISDIR, "copyfile", source.virtual)
     if (dest.file.exists() && !force) throw FsException(FsErrorCode.EEXIST, "copyfile", dest.virtual)
-    val copied = copyTree(root, config, source.file, dest.file, force, preserveTimestamps)
+    val copied = copyTree(request, response, root, config, source.file, dest.file, force, preserveTimestamps)
     return linkedMapOf("from" to source.virtual, "to" to dest.virtual, "files" to copied)
   }
 
   private fun copyTree(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     source: File,
@@ -1022,7 +1030,7 @@ object FsApiHandler {
       }
       var count = 0
       for (child in source.listFiles() ?: emptyArray()) {
-        count += copyTree(root, config, child, File(dest, child.name), force, preserveTimestamps)
+        count += copyTree(request, response, root, config, child, File(dest, child.name), force, preserveTimestamps)
       }
       return count
     }
@@ -1040,12 +1048,14 @@ object FsApiHandler {
     return 1
   }
 
-  private fun opTruncate(root: File, config: FsApiConfig, path: String?, len: Long): Map<String, Any?> {
+  private fun opTruncate(
+    request: HttpServletRequest, response: HttpServletResponse,
+    root: File, config: FsApiConfig, path: String?, len: Long): Map<String, Any?> {
     if (len < 0) throw FsException(FsErrorCode.EINVAL, "truncate", path, "negative length")
     if (len > config.maxFileSize) throw FsException(FsErrorCode.EFBIG, "truncate", path)
     val t = requireExisting(target(root, path, "truncate"), "truncate")
     if (t.file.isDirectory) throw FsException(FsErrorCode.EISDIR, "truncate", t.virtual)
-    requireWritable(root, t, "truncate", config)
+    requireWritable(request, response, root, t, "truncate", config)
     FileChannelCache.invalidate(t.file)
     fsIo("truncate", t.virtual) { RandomAccessFile(t.file, "rw").use { it.setLength(len) } }
     return linkedMapOf(
@@ -1057,6 +1067,7 @@ object FsApiHandler {
   }
 
   private fun opUtimes(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     path: String?,
@@ -1065,7 +1076,7 @@ object FsApiHandler {
   ): Map<String, Any?> {
     if (!config.utimesEnabled) throw FsException(FsErrorCode.ENOSYS, "utimes", path, "utimes capability disabled")
     val t = requireExisting(target(root, path, "utimes"), "utimes")
-    requireWritable(root, t, "utimes", config)
+    requireWritable(request, response, root, t, "utimes", config)
     fsIo("utimes", t.virtual) {
       val view = Files.getFileAttributeView(t.file.toPath(), BasicFileAttributeView::class.java)
         ?: throw FsException(FsErrorCode.ENOSYS, "utimes", t.virtual, "attribute view unsupported")
@@ -1084,6 +1095,7 @@ object FsApiHandler {
   }
 
   private fun opReadEncoded(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     path: String?,
@@ -1114,6 +1126,7 @@ object FsApiHandler {
   }
 
   private fun opWriteEncoded(
+    request: HttpServletRequest, response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
     path: String?,
@@ -1126,7 +1139,7 @@ object FsApiHandler {
     if (normalizedFlag !in WRITE_FLAGS) {
       throw FsException(FsErrorCode.EINVAL, "open", t.virtual, "unsupported flag '$flag'")
     }
-    requireWritable(root, t, "open", config)
+    requireWritable(request, response, root, t, "open", config)
     val exists = t.file.exists()
     if (exists && t.file.isDirectory) throw FsException(FsErrorCode.EISDIR, "open", t.virtual)
     if (exists && (normalizedFlag == "wx" || normalizedFlag == "ax")) {
@@ -1170,24 +1183,25 @@ object FsApiHandler {
 
   // ------------------------------------------------------- HTTP adapters
 
-  private fun httpStat(req: HttpServletRequest, resp: HttpServletResponse, root: File) {
+  private fun httpStat(request: HttpServletRequest, response: HttpServletResponse, root: File) {
     val payload = opStat(
+      request, response,
       root,
-      req.getParameter("path"),
-      boolParam(req, "lstat"),
-      req.getParameter("throwIfNoEntry")?.equals("false", true) != true
+      request.getParameter("path"),
+      boolParam(request, "lstat"),
+      request.getParameter("throwIfNoEntry")?.equals("false", true) != true
     )
-    (payload["etag"] as? String)?.let { resp.setHeader("ETag", it) }
-    writeJson(resp, HttpServletResponse.SC_OK, payload)
+    (payload["etag"] as? String)?.let { response.setHeader("ETag", it) }
+    writeJson(response, HttpServletResponse.SC_OK, payload)
   }
 
   private fun httpStatBatch(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val body = readBody(req, "stat")
+    val body = readBody(request, "stat")
     val paths = FsJson.list(body, "paths")
     if (paths.size > config.maxBatchOps) {
       log.info("rejecting batch stat with {} paths (max {})", paths.size, config.maxBatchOps)
@@ -1196,7 +1210,7 @@ object FsApiHandler {
     val lstat = FsJson.boolean(body, "lstat", false)
     val results = paths.map { raw ->
       try {
-        linkedMapOf<String, Any?>("ok" to true, "stat" to opStat(root, raw?.toString(), lstat, true))
+        linkedMapOf<String, Any?>("ok" to true, "stat" to opStat(request, response, root, raw?.toString(), lstat, true))
       } catch (e: FsException) {
         linkedMapOf<String, Any?>("ok" to false, "error" to FsErrors.payload(e))
       } catch (e: Exception) {
@@ -1204,22 +1218,22 @@ object FsApiHandler {
         linkedMapOf<String, Any?>("ok" to false, "error" to FsErrors.payload(toFsException("stat", null, e)))
       }
     }
-    writeJson(resp, HttpServletResponse.SC_OK, results)
+    writeJson(response, HttpServletResponse.SC_OK, results)
   }
 
   private fun httpReaddir(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val recursive = boolParam(req, "recursive")
-    val depth = req.getParameter("depth")?.toIntOrNull() ?: if (recursive) config.maxDepth else 1
-    val includeStat = req.getParameter("stat")?.let { it.isEmpty() || it.equals("true", true) }
-      ?: boolParam(req, "withFileTypes", true)
+    val recursive = boolParam(request, "recursive")
+    val depth = request.getParameter("depth")?.toIntOrNull() ?: if (recursive) config.maxDepth else 1
+    val includeStat = request.getParameter("stat")?.let { it.isEmpty() || it.equals("true", true) }
+      ?: boolParam(request, "withFileTypes", true)
     writeJson(
-      resp, HttpServletResponse.SC_OK,
-      opReaddir(root, config, req.getParameter("path"), recursive, depth, includeStat)
+      response, HttpServletResponse.SC_OK,
+      opReaddir(request, response, root, config, request.getParameter("path"), recursive, depth, includeStat)
     )
   }
 
@@ -1304,19 +1318,19 @@ object FsApiHandler {
   }
 
   private fun httpWriteFile(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val t = target(root, req.getParameter("path"), "open")
-    val flag = (req.getParameter("flag") ?: "w").lowercase()
+    val t = target(root, request.getParameter("path"), "open")
+    val flag = (request.getParameter("flag") ?: "w").lowercase()
     if (flag !in WRITE_FLAGS) throw FsException(FsErrorCode.EINVAL, "open", t.virtual, "unsupported flag '$flag'")
-    requireWritable(root, t, "open", config)
+    requireWritable(request, response, root, t, "open", config)
     val exists = t.file.exists()
     if (exists && t.file.isDirectory) throw FsException(FsErrorCode.EISDIR, "open", t.virtual)
-    val ifNoneMatch = req.getHeader("If-None-Match")
-    val ifMatch = req.getHeader("If-Match")
+    val ifNoneMatch = request.getHeader("If-None-Match")
+    val ifMatch = request.getHeader("If-Match")
     if (exists && (flag == "wx" || flag == "ax" || ifNoneMatch?.trim() == "*")) {
       log.debug("write to {} rejected: exclusive create on existing file", t.virtual)
       throw FsException(FsErrorCode.EEXIST, "open", t.virtual)
@@ -1329,7 +1343,7 @@ object FsApiHandler {
         throw FsException(FsErrorCode.EBUSY, "write", t.virtual, "ETag mismatch (concurrent modification)")
       }
     }
-    val declared = req.contentLengthLong
+    val declared = request.contentLengthLong
     if (declared > config.maxFileSize) {
       log.info(
         "write to {} rejected: declared {} bytes exceeds maxFileSize {}",
@@ -1340,8 +1354,8 @@ object FsApiHandler {
       throw FsException(FsErrorCode.EFBIG, "write", t.virtual)
     }
     requireWritableParent(root, t, "open", create = true)
-    val position = req.getParameter("position")?.toLongOrNull()
-      ?: RangeUtil.contentRangeStart(req.getHeader("Content-Range"), "write", t.virtual)
+    val position = request.getParameter("position")?.toLongOrNull()
+      ?: RangeUtil.contentRangeStart(request.getHeader("Content-Range"), "write", t.virtual)
     FileChannelCache.invalidate(t.file)
     val bytesWritten = fsIo("write", t.virtual) {
       RandomAccessFile(t.file, "rw").use { raf ->
@@ -1355,7 +1369,7 @@ object FsApiHandler {
           }
         }
         copyStream(
-          req.inputStream,
+          request.inputStream,
           { buf, len -> raf.write(buf, 0, len) },
           config.maxFileSize,
           "write",
@@ -1365,10 +1379,10 @@ object FsApiHandler {
     }
     if (log.isDebugEnabled) log.debug("wrote {} byte(s) to {} (flag={})", bytesWritten, t.virtual, flag)
     val etag = EtagUtil.weakEtag(t.file)
-    resp.setHeader("ETag", etag)
-    resp.setDateHeader("Last-Modified", t.file.lastModified())
+    response.setHeader("ETag", etag)
+    response.setDateHeader("Last-Modified", t.file.lastModified())
     writeJson(
-      resp,
+      response,
       if (exists) HttpServletResponse.SC_OK else HttpServletResponse.SC_CREATED,
       linkedMapOf(
         "path" to t.virtual,
@@ -1382,81 +1396,83 @@ object FsApiHandler {
   }
 
   private fun httpRemove(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    opRemove(root, config, req.getParameter("path"), boolParam(req, "recursive"), boolParam(req, "force"))
-    resp.status = HttpServletResponse.SC_NO_CONTENT
+    opRemove(request, response, root, config, request.getParameter("path"), boolParam(request, "recursive"), boolParam(request, "force"))
+    response.status = HttpServletResponse.SC_NO_CONTENT
   }
 
   private fun httpMkdir(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val body = readBody(req, "mkdir")
+    val body = readBody(request, "mkdir")
     val payload = opMkdir(
+      request, response,
       root, config,
-      FsJson.string(body, "path") ?: req.getParameter("path"),
-      FsJson.boolean(body, "recursive", boolParam(req, "recursive"))
+      FsJson.string(body, "path") ?: request.getParameter("path"),
+      FsJson.boolean(body, "recursive", boolParam(request, "recursive"))
     )
     writeJson(
-      resp,
+      response,
       if (payload["created"] == true) HttpServletResponse.SC_CREATED else HttpServletResponse.SC_OK,
       payload
     )
   }
 
   private fun httpRename(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val body = readBody(req, "rename")
+    val body = readBody(request, "rename")
     opRename(
+      request, response,
       root, config,
-      FsJson.string(body, "from") ?: req.getParameter("from"),
-      FsJson.string(body, "to") ?: req.getParameter("to"),
+      FsJson.string(body, "from") ?: request.getParameter("from"),
+      FsJson.string(body, "to") ?: request.getParameter("to"),
       FsJson.boolean(body, "overwrite", true)
     )
-    resp.status = HttpServletResponse.SC_NO_CONTENT
+    response.status = HttpServletResponse.SC_NO_CONTENT
   }
 
   private fun httpCopy(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val body = readBody(req, "copyfile")
+    val body = readBody(request, "copyfile")
     opCopy(
-      root, config,
-      FsJson.string(body, "from") ?: req.getParameter("from"),
-      FsJson.string(body, "to") ?: req.getParameter("to"),
+      request, response, root, config,
+      FsJson.string(body, "from") ?: request.getParameter("from"),
+      FsJson.string(body, "to") ?: request.getParameter("to"),
       FsJson.boolean(body, "recursive", false),
       FsJson.boolean(body, "force", true),
       FsJson.boolean(body, "preserveTimestamps", false)
     )
-    resp.status = HttpServletResponse.SC_NO_CONTENT
+    response.status = HttpServletResponse.SC_NO_CONTENT
   }
 
   private fun httpTruncate(
-    req: HttpServletRequest,
-    resp: HttpServletResponse,
+    request: HttpServletRequest,
+    response: HttpServletResponse,
     root: File,
     config: FsApiConfig,
   ) {
-    val body = readBody(req, "truncate")
-    opTruncate(
+    val body = readBody(request, "truncate")
+    opTruncate(request, response,
       root, config,
-      FsJson.string(body, "path") ?: req.getParameter("path"),
-      FsJson.long(body, "len") ?: req.getParameter("len")?.toLongOrNull() ?: 0L
+      FsJson.string(body, "path") ?: request.getParameter("path"),
+      FsJson.long(body, "len") ?: request.getParameter("len")?.toLongOrNull() ?: 0L
     )
-    resp.status = HttpServletResponse.SC_NO_CONTENT
+    response.status = HttpServletResponse.SC_NO_CONTENT
   }
 
   private fun httpUtimes(
@@ -1467,6 +1483,7 @@ object FsApiHandler {
   ) {
     val body = readBody(req, "utimes")
     opUtimes(
+      req, resp,
       root, config,
       FsJson.string(body, "path") ?: req.getParameter("path"),
       FsJson.long(body, "atime") ?: FsJson.long(body, "atimeMs"),
@@ -1506,7 +1523,7 @@ object FsApiHandler {
     writeJson(ctx.resp, HttpServletResponse.SC_OK, payload)
   }
 
-  private fun httpBatch(ctx: FsActionContext) {
+  private fun httpBatch(request: HttpServletRequest, response: HttpServletResponse, ctx: FsActionContext) {
     val req = ctx.req
     val resp = ctx.resp
     val config = ctx.config
@@ -1523,7 +1540,7 @@ object FsApiHandler {
       val op = raw as? Map<String, Any?>
       try {
         if (op == null) throw FsException(FsErrorCode.EINVAL, "batch", null, "each op must be an object")
-        results.add(linkedMapOf("ok" to true, "value" to runBatchOp(ctx, op)))
+        results.add(linkedMapOf("ok" to true, "value" to runBatchOp(request, response, ctx, op)))
       } catch (e: FsException) {
         if (log.isDebugEnabled) {
           log.debug("batch op #{} ({}) -> {}", index, op?.get("op"), e.message ?: e.javaClass.simpleName)
@@ -1545,40 +1562,42 @@ object FsApiHandler {
     writeJson(resp, HttpServletResponse.SC_OK, results)
   }
 
-  private fun runBatchOp(ctx: FsActionContext, op: Map<String, Any?>): Any {
+  private fun runBatchOp(request: HttpServletRequest, response: HttpServletResponse, ctx: FsActionContext, op: Map<String, Any?>): Any {
     val root = ctx.root
     val config = ctx.config
     val name = (FsJson.string(op, "op") ?: "").lowercase()
     val path = FsJson.string(op, "path")
     return when (name) {
-      "stat" -> opStat(root, path, false, FsJson.boolean(op, "throwIfNoEntry", true))
-      "lstat" -> opStat(root, path, true, FsJson.boolean(op, "throwIfNoEntry", true))
+      "stat" -> opStat(request, response, root, path, false, FsJson.boolean(op, "throwIfNoEntry", true))
+      "lstat" -> opStat(request, response, root, path, true, FsJson.boolean(op, "throwIfNoEntry", true))
       "exists" -> {
-        val stat = opStat(root, path, false, false)
+        val stat = opStat(request, response, root, path, false, false)
         linkedMapOf("path" to stat["path"], "exists" to (stat["exists"] == true))
       }
 
-      "readdir" -> opReaddir(
+      "readdir" -> opReaddir(request, response,
         root, config, path,
         FsJson.boolean(op, "recursive", false),
         FsJson.int(op, "depth") ?: config.maxDepth,
         FsJson.boolean(op, "withFileTypes", true)
       )
 
-      "mkdir" -> opMkdir(root, config, path, FsJson.boolean(op, "recursive", false))
+      "mkdir" -> opMkdir(request, response, root, config, path, FsJson.boolean(op, "recursive", false))
       "rm", "unlink", "rmdir" -> opRemove(
+        request, response,
         root, config, path,
         FsJson.boolean(op, "recursive", name == "rm"),
         FsJson.boolean(op, "force", false)
       )
 
       "rename" -> opRename(
+        request, response,
         root, config,
         FsJson.string(op, "from"), FsJson.string(op, "to"),
         FsJson.boolean(op, "overwrite", true)
       )
 
-      "copy" -> opCopy(
+      "copy" -> opCopy(request, response,
         root, config,
         FsJson.string(op, "from"), FsJson.string(op, "to"),
         FsJson.boolean(op, "recursive", false),
@@ -1586,17 +1605,17 @@ object FsApiHandler {
         FsJson.boolean(op, "preserveTimestamps", false)
       )
 
-      "truncate" -> opTruncate(root, config, path, FsJson.long(op, "len") ?: 0L)
+      "truncate" -> opTruncate(request, response, root, config, path, FsJson.long(op, "len") ?: 0L)
       "utimes" -> opUtimes(
-        root, config, path,
+        request, response, root, config, path,
         FsJson.long(op, "atime") ?: FsJson.long(op, "atimeMs"),
         FsJson.long(op, "mtime") ?: FsJson.long(op, "mtimeMs")
       )
 
       "realpath" -> opRealpath(root, path)
-      "read" -> opReadEncoded(root, config, path, FsJson.long(op, "offset") ?: 0L, FsJson.long(op, "length"))
+      "read" -> opReadEncoded(request, response, root, config, path, FsJson.long(op, "offset") ?: 0L, FsJson.long(op, "length"))
       "write" -> opWriteEncoded(
-        root, config, path,
+        request, response, root, config, path,
         FsJson.string(op, "flag") ?: "w",
         FsJson.string(op, "data"),
         FsJson.string(op, "encoding") ?: "base64"
@@ -1609,7 +1628,7 @@ object FsApiHandler {
       )
       /* Static-analysis / text utilities: the batch op object doubles as the option map. */
       "symbols" -> FsToolsHandler.symbols(root, config, op)
-      "index-symbols" -> FsToolsHandler.indexSymbols(root, config, op, ctx.writeAllowed)
+      "index-symbols" -> FsToolsHandler.indexSymbols(request, response, root, config, op, ctx.writeAllowed)
       "describe" -> FsToolsHandler.describe(root, config, op)
       "caveman" -> FsToolsHandler.caveman(root, config, op)
 

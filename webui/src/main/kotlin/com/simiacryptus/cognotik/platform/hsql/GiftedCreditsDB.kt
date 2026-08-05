@@ -73,11 +73,6 @@ class GiftedCreditsDB(
     }
   }
 
-  val facet = DatabaseFacet(
-    name = "gifted_credits",
-    tables = listOf(GiftsTable, GiftClaimsTable)
-  )
-
   /**
    * Route all Exposed DSL access through [ExposedDatabase], which delegates
    * connection acquisition to [DatabaseFacet.getConnection]. That path
@@ -429,5 +424,11 @@ class GiftedCreditsDB(
 
   companion object {
     val log = LoggerFactory.getLogger(GiftedCreditsInterface::class.java)!!
+    val facet by lazy {
+      DatabaseFacet(
+        name = "gifted_credits",
+        tables = listOf(GiftsTable, GiftClaimsTable)
+      )
+    }
   }
 }

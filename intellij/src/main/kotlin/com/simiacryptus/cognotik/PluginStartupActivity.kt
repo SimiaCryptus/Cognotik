@@ -49,12 +49,10 @@ class PluginStartupActivity : ProjectActivity {
     }
 
     override suspend fun execute(project: Project) {
-
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         DatabaseFacet.root = (project.basePath?.let { File(it) } ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
-
         System.getProperty("cognotik.config")?.let { configFile ->
             try {
                 log.debug("Attempting to load config from: $configFile")
