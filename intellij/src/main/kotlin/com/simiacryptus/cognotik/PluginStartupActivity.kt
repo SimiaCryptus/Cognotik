@@ -16,11 +16,13 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.AwsPlatform
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -120,45 +122,21 @@ class PluginStartupActivity : ProjectActivity {
         require(TaskType.values().isNotEmpty())
         AppSettingsState.instance.apply {
             log.debug("Configuring AWS platform - profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
-            ApplicationServices.cloud = when {
-                awsProfile.isNullOrBlank() -> {
-                    log.debug("AWS profile not configured")
-                    null
-                }
-
-                awsRegion.isNullOrBlank() -> {
-                    log.debug("AWS region not configured")
-                    null
-                }
-
-                awsBucket.isNullOrBlank() -> {
-                    log.debug("AWS bucket not configured")
-                    null
-                }
-
-                else -> AwsPlatform(
-                    bucket = awsBucket!!,
-                    region = Region.of(awsRegion!!),
-                    profileName = awsProfile!!,
-                ).also {
-                    log.info("AWS platform configured successfully with profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
-                }
-            }
         }
         OrchestrationConfig.instanceFn =
             { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ApplicationServices.authorizationManager = object : AuthorizationInterface {
             override fun isAuthorized(
-                applicationClass: Class<*>?,
-                user: User?,
-                operationType: AuthorizationInterface.OperationType
-            ) = true
+                resource: ResourceRef?,
+                principal: Principal,
+                operationType: OperationType
+            ): Boolean {
+                return true
+            }
         }
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
             override fun getUser(accessToken: String?) = AppSettingsState.localUser
-            override fun getAccessToken(user: User) = "local-token"
             override fun putUser(accessToken: String, user: User) = user
-            override fun logout(accessToken: String, user: User) {}
         }
         isLocked = true
     }
