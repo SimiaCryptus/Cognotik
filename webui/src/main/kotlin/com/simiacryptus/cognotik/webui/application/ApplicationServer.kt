@@ -40,7 +40,18 @@ abstract class ApplicationServer(
 ) : ChatServer(resourceBase, showMenubar) {
   init {
     FileServlet.userResolver = UserProviderImpl()
+    FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
+      val session = request.session()
+      return when {
+        user == null -> false
+        session == null -> false
+        metadataDB.getSessionOwner(session) != user.id -> false
+        else -> true
+      }
+    }
   }
+  private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
+
 
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
@@ -249,6 +260,8 @@ abstract class ApplicationServer(
     private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
     val appInfoMap = mutableMapOf<Session, AppInfoData>()
+    fun HttpServletRequest.session(): Session? =
+      (getParameter("sessionId") ?: getParameter("session"))?.let { Session(it) }
   }
 
 }

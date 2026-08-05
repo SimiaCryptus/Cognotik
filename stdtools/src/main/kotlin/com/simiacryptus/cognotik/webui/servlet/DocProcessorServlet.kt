@@ -362,7 +362,7 @@ open class DocProcessorServlet() : HttpServlet() {
       }
 
       else -> {
-        log.info("User '${user.id}' accessing session '$session' owned by '${sessionOwner}'")
+        log.debug("User '{}' accessing session '{}' owned by '{}'", user.id, session, sessionOwner)
         return sessionDir
       }
     }

@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.webui.servlet.FileServlet
+import jakarta.servlet.http.HttpServletRequest
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -48,6 +49,10 @@ object CliSupport {
         request: jakarta.servlet.http.HttpServletRequest,
         response: jakarta.servlet.http.HttpServletResponse?
       ) = defaultUser()
+    }
+    FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest) = when {
+      user == null -> false
+      else -> true
     }
   }
 
