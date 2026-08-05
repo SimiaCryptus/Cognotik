@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.session
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.JdbcSessionTask
-import com.simiacryptus.cognotik.platform.model.defaultUser
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -17,7 +17,7 @@ object JdbcSessionTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.Companion.configurePlatform(defaultUser)
+    UnifiedHarness.Companion.configurePlatform(ApplicationServicesConfig.defaultUser)
   }
 
   //@org.junit.jupiter.api.Test
@@ -44,7 +44,7 @@ object JdbcSessionTaskTest {
         closeSession = true
       ),
       timeoutMinutes = 5,
-      user = defaultUser,
+      user = ApplicationServicesConfig.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -77,7 +77,7 @@ object JdbcSessionTaskTest {
         closeSession = false
       ),
       timeoutMinutes = 2,
-      user = defaultUser,
+      user = ApplicationServicesConfig.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -99,7 +99,7 @@ object JdbcSessionTaskTest {
         closeSession = true
       ),
       timeoutMinutes = 2,
-      user = defaultUser,
+      user = ApplicationServicesConfig.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

@@ -10,8 +10,6 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.time.Instant
-import java.util.*
 
 /**
  * Interface defining storage operations for managing sessions, messages, and associated data.
@@ -40,48 +38,6 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
     get() = null
 
   /**
-   * Gets the display name for a session.
-   *
-   * @deprecated Use metadataStorage instead for metadata operations
-   */
-  @Deprecated(
-    "Use metadataStorage instead",
-    ReplaceWith("metadataStorage!!.getSessionName(user, session)")
-  )
-  fun getSessionName(
-    user: User?,
-    session: Session
-  ): String = metadataStorage?.getSessionName(user, session) ?: session.sessionId
-
-  /**
-   * Gets the creation or last modification time of a session.
-   *
-   * @deprecated Use metadataStorage instead for metadata operations
-   */
-  @Deprecated(
-    "Use metadataStorage instead",
-    ReplaceWith("metadataStorage!!.getSessionTime(user, session)")
-  )
-  fun getSessionTime(
-    user: User?,
-    session: Session
-  ): Instant? = metadataStorage?.getSessionTimestamp(user, session)
-
-  /**
-   * Lists all sessions accessible to a user at a given path.
-   *
-   * @deprecated Ambiguous overload; use [listSessionsForUser]
-   */
-  @Deprecated(
-    "Confusing overload set; use listSessionsForUser.",
-    ReplaceWith("listSessionsForUser(user, path)")
-  )
-  fun listSessions(
-    user: User?,
-    path: String,
-  ): List<Session> = listSessionsForUser(user, path)
-
-  /**
    * Lists all sessions accessible to a user at a given path.
    *
    * This includes both global sessions and user-specific sessions.
@@ -92,7 +48,7 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
    * @return A list of Session objects
    */
   @Suppress("DEPRECATION")
-  fun listSessionsForUser(user: User?, path: String): List<Session> = listSessions(user, path)
+  fun listSessionsForUser(user: User?, path: String): List<Session> = listSessionsForUser(user, path)
 
   /**
    * Paged variant of [listSessionsForUser].
@@ -101,18 +57,6 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
    */
   fun listSessionsForUser(user: User?, path: String, page: Page): PageResult<Session> =
     listSessionsForUser(user, path).paginate(page)
-
-  /**
-   * Lists sessions in a specific directory.
-   *
-   * @deprecated Use metadataStorage instead for listing operations
-   */
-  @Deprecated(
-    "Use metadataStorage instead",
-    ReplaceWith("metadataStorage!!.listSessionsByPath(path)")
-  )
-  fun listSessions(dir: File, path: String): List<String> =
-    metadataStorage?.listSessionsByPath(path) ?: emptyList()
 
   /**
    * Deletes a session and all its associated data.
@@ -134,35 +78,6 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
     deleteSession(user, session)
     return true
   }
-
-  /**
-   * Gets the list of message IDs for a session.
-   *
-   * @deprecated Use metadataStorage instead for metadata operations
-   */
-  @Deprecated(
-    "Use metadataStorage instead",
-    ReplaceWith("metadataStorage!!.getMessageIds(user, session)")
-  )
-  fun getMessageIds(
-    user: User?,
-    session: Session
-  ): List<String> = metadataStorage?.getMessageIds(user, session) ?: emptyList()
-
-  /**
-   * Sets the list of message IDs for a session.
-   *
-   * @deprecated Use metadataStorage instead for metadata operations
-   */
-  @Deprecated(
-    "Use metadataStorage instead",
-    ReplaceWith("metadataStorage!!.setMessageIds(user, session, ids)")
-  )
-  fun setMessageIds(
-    user: User?,
-    session: Session,
-    ids: List<String>
-  ) = metadataStorage?.setMessageIds(user, session, ids)
 
   /* ------------------------------------------------------------------ *
    * SessionContentStore defaults, implemented over the legacy File API  *

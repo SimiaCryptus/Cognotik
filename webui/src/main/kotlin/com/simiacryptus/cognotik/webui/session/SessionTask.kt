@@ -17,7 +17,7 @@ import java.util.function.Consumer
 
 
 open class SessionTask(
-  val messageID: String = Session.long64(),
+  val messageID: String = Session.randomId(11),
   private var buffer: MutableList<StringBuilder> = mutableListOf(),
   private val spinner: String = SessionTask.spinner,
   val ui: SocketManager
@@ -301,7 +301,7 @@ Stack Trace:
   fun image(
     @Description("The image to display")
     image: BufferedImage
-  ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
+  ) = add("""<img src="${saveFile("images/${Session.randomId(11)}.png", image.toPng())}" />""")
 
   fun newSession(session: Session = Session.newUserID(), appname: String = session.toString()): SocketManager {
     SessionProxyServer.setParentSession(session, ui.sessionId)

@@ -104,7 +104,7 @@ class GiftedCreditsDB(
         }
     }
 
-    override fun createGift(
+    fun createGift(
         creator: User,
         amountGranted: Double,
         grantDuration: Duration,
@@ -221,7 +221,7 @@ class GiftedCreditsDB(
         }
     }
 
-    override fun claimGift(user: User, giftId: String): Boolean {
+    fun claimGift(user: User, giftId: String): Boolean {
         val userId = user.id
         log.info("User '{}' attempting to claim gift id={}", userId, giftId)
         if (userId.isNullOrBlank()) {

@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.model.defaultUser
     import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
     import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
     import java.io.File

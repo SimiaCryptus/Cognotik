@@ -237,14 +237,14 @@ open class CognotikApps(
     }
 
     protected open fun PluginManagerInterface.subscribeToChanges() {
-        subscribeToChanges {
-            log.info("Plugin change detected, reinitializing apps...")
-            try {
-                reloadApps()
-            } catch (e: Exception) {
-                log.error("Failed to reload apps after plugin change: ${e.message}", e)
-            }
+      onChange {
+        log.info("Plugin change detected, reinitializing apps...")
+        try {
+          reloadApps()
+        } catch (e: Exception) {
+          log.error("Failed to reload apps after plugin change: ${e.message}", e)
         }
+      }
     }
 
     private fun initSystemTray() {

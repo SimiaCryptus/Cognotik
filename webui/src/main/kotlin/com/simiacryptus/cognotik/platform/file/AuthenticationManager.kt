@@ -12,7 +12,7 @@ open class AuthenticationManager : AuthenticationInterface {
     return if (user != null) user else null
   }
 
-  override fun getAccessToken(user: User): String? {
+  fun getAccessToken(user: User): String? {
     return users.entries.firstOrNull { it.value == user }?.key
   }
 
@@ -21,7 +21,7 @@ open class AuthenticationManager : AuthenticationInterface {
     return user
   }
 
-  override fun logout(accessToken: String, user: User) {
+  fun logout(accessToken: String, user: User) {
     require(users[accessToken] == user) { "Invalid user" }
     users.remove(accessToken)
   }

@@ -9,8 +9,9 @@ import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -280,8 +281,8 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
     email
   }
   val canRead = authorizationManager.isAuthorized(
-    applicationClass = applicationClass,
-    user = user,
+    ResourceRef.of(applicationClass = applicationClass),
+    Principal.of(user = user),
     operationType = OperationType.Read
   )
   log.debug(
@@ -313,7 +314,7 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
     )
   }
 
-class UserProviderImpl : UserProvider {
+class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
   override fun authenticate(
     request: HttpServletRequest,
     response: HttpServletResponse?
@@ -349,7 +350,7 @@ class UserProviderImpl : UserProvider {
         null
       }
       if (verified != null) {
-        if (authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
+        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.label.isNullOrBlank()) {
           authenticationManager.putUser(token, claimedUser)
           log.debug("Session token stored for user: {}", claimedUser.email)
         } else {
@@ -413,7 +414,7 @@ fun authenticate(
       null
     }
     if (verified != null) {
-      if (authenticationManager.getAccessToken(claimedUser).isNullOrBlank()) {
+      if (authenticationManager.listTokens(claimedUser).firstOrNull()?.label.isNullOrBlank()) {
         authenticationManager.putUser(token, claimedUser)
         log.debug("Session token stored for user: {}", claimedUser.email)
       } else {
@@ -462,7 +463,7 @@ fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
 }
 
 fun User.getAuthCookies(): Map<String, String?> = mapOf(
-  AuthenticationInterface.AUTH_COOKIE to authenticationManager.getAccessToken(this),
+  AuthenticationInterface.AUTH_COOKIE to authenticationManager.listTokens(this).firstOrNull()?.label,
   "USER" to name,
   "EMAIL" to email
 )

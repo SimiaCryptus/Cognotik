@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -43,7 +44,7 @@ class OrchestrationConfig(
   var cognitiveSettings: CognitiveModeConfig? = null,
   var autoFix: Boolean = false,
   val workingDir: String? = ".",
-  var user: User = com.simiacryptus.cognotik.platform.model.defaultUser
+  var user: User = ApplicationServicesConfig.defaultUser
 ) {
 
   @get:JsonIgnore

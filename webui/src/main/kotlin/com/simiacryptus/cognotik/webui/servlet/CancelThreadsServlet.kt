@@ -4,6 +4,8 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -54,8 +56,8 @@ class CancelThreadsServlet : HttpServlet() {
       }
       require(
         ApplicationServices.authorizationManager.isAuthorized(
-          javaClass,
-          user,
+          ResourceRef.of(javaClass),
+          Principal.of(user),
           OperationType.Delete
         )
       )
@@ -63,8 +65,8 @@ class CancelThreadsServlet : HttpServlet() {
       if (session.isGlobal()) {
         require(
           ApplicationServices.authorizationManager.isAuthorized(
-            javaClass,
-            user,
+            ResourceRef.of(javaClass),
+            Principal.of(user),
             OperationType.Public
           )
         )

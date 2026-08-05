@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
@@ -15,7 +16,7 @@ class ExceptionFixer(
   val projectRoot: File = File(".").gitRoot()
     ?: throw IllegalStateException("Could not find .git folder in any parent directory"),
   val model: ChatModel,
-  val user: User = com.simiacryptus.cognotik.platform.model.defaultUser
+  val user: User = ApplicationServicesConfig.defaultUser
 ) {
   fun fix(throwable: Throwable) {
     val codeFiles = throwable.getCodeFiles(projectRoot)

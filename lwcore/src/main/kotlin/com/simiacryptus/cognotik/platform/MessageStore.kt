@@ -16,29 +16,13 @@ import com.simiacryptus.cognotik.platform.model.User
 interface MessageStore {
 
   /**
-   * Retrieves all messages for a given session.
-   *
-   * @param user The user requesting the messages, or null for global sessions
-   * @param session The session identifier for which to retrieve messages
-   * @return A LinkedHashMap of message IDs to message content, preserving insertion order
-   * @throws IllegalArgumentException if the session ID is invalid
-   */
-  @Deprecated(
-    "Returns a concrete mutable map type, leaking internals; use getMessageMap.",
-    ReplaceWith("getMessageMap(user, session)")
-  )
-  fun getMessages(
-    user: User?,
-    session: Session
-  ): LinkedHashMap<String, String> = getMessageMap(user, session).toMap(LinkedHashMap())
-
-  /**
    * Retrieves all messages for a session, in insertion order.
    *
    * @return an immutable-by-contract map of message id to content
    */
   @Suppress("DEPRECATION")
-  fun getMessageMap(user: User?, session: Session): Map<String, String> = getMessages(user, session)
+  fun getMessageMap(user: User?, session: Session): Map<String, String> =
+    getMessageMap(user, session).toMap(LinkedHashMap())
 
   /**
    * Retrieves a single message.

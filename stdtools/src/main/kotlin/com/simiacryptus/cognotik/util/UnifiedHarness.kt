@@ -400,9 +400,9 @@ open class UnifiedHarness(
       PlanHarness.initDynamicEnums()
       ApplicationServices.authenticationManager = object : AuthenticationInterface {
         override fun getUser(accessToken: String?) = user
-        override fun getAccessToken(user: User) = "test-token"
+        fun getAccessToken(user: User) = "test-token"
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-        override fun logout(accessToken: String, user: User) {}
+        fun logout(accessToken: String, user: User) {}
       }
       ApplicationServices.authorizationManager = object : AuthorizationManager() {
         override fun isAuthorized(

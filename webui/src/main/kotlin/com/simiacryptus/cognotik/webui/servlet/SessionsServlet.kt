@@ -59,7 +59,7 @@ class SessionsServlet : HttpServlet() {
             null
         }
         val userSessions = try {
-            metadataDB.listSessions(user).toSet()
+            metadataDB.listSessionsForUser(user).toSet()
         } catch (e: Exception) {
             log.warn("Failed to list sessions for user ${user.email}", e)
             emptySet()
@@ -106,7 +106,7 @@ class SessionsServlet : HttpServlet() {
         val user = UserProviderImpl().authenticate(req, resp)
             ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
-            metadataDB.listSessions(user).map { Session(it) }
+            metadataDB.listSessionsForUser(user).map { Session(it) }
         } catch (e: Exception) {
             log.error("Failed to list sessions for user ${user.email}", e)
             emptyList()

@@ -62,31 +62,3 @@ data class User(
 
 }
 
-/**
- * Global mutable default user.
- *
- * Retained as a source-compatible proxy onto [ApplicationServicesConfig.defaultUser];
- * new code should inject a [Principal] instead of reading process-wide state.
- */
-@Deprecated(
-  "Global mutable state; inject a Principal or read ApplicationServicesConfig.defaultUser.",
-  ReplaceWith("ApplicationServicesConfig.defaultUser")
-)
-var defaultUser: User
-  get() = ApplicationServicesConfig.defaultUser
-  set(value) {
-    ApplicationServicesConfig.defaultUser = value
-  }
-
-/**
- * Servlet-based user resolution.
- *
- * Moved to the web-facing package so that `platform.model` carries no framework
- * dependencies (REVIEW.md §3.2). This alias remains so existing implementations
- * and call sites keep compiling.
- */
-@Deprecated(
-  "Moved out of platform.model to keep the model framework-free.",
-  ReplaceWith("com.simiacryptus.cognotik.platform.web.UserProvider")
-)
-interface UserProvider : com.simiacryptus.cognotik.platform.web.UserProvider

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -79,28 +81,28 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
         val user =
           UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
-            val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                OperationType.Read
-            )
+          val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Read
+          )
             isAuthorized
         }.map {
-            val canRead = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                OperationType.Read
-            )
-            val canWrite = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                OperationType.Write
-            )
-            val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(
-                it.server.javaClass,
-                user,
-                OperationType.Public
-            )
+          val canRead = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Read
+          )
+          val canWrite = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Write
+          )
+          val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(
+            ResourceRef.of(it.server.javaClass),
+            Principal.of(user),
+            OperationType.Public
+          )
             mapOf(
                 "path" to it.path,
                 "thumbnail" to it.thumbnail,

@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.MathematicalReasoningTask.MathematicalReasoningTaskExecutionConfigData
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -14,7 +15,7 @@ object MathematicalReasoningTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
+    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
   }
 
   @org.junit.jupiter.api.Tag("Integration")
@@ -34,7 +35,7 @@ object MathematicalReasoningTaskTest {
         detail_level = "detailed"
       ),
       timeoutMinutes = 10,
-      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+      user = ApplicationServicesConfig.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -59,7 +60,7 @@ object MathematicalReasoningTaskTest {
         detail_level = "standard"
       ),
       timeoutMinutes = 10,
-      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+      user = ApplicationServicesConfig.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

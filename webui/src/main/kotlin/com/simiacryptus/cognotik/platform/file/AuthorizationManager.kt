@@ -8,7 +8,7 @@ import java.util.*
 
 open class AuthorizationManager : AuthorizationInterface {
 
-  override fun isAuthorized(
+  open fun isAuthorized(
     applicationClass: Class<*>?,
     user: User?,
     operationType: OperationType,

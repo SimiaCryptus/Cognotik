@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.model.User
 
-import com.simiacryptus.cognotik.platform.model.UserProvider
 import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
 import com.simiacryptus.cognotik.webui.servlet.handler.FileRequestHandler
@@ -770,7 +769,7 @@ abstract class FileServlet : HttpServlet() {
      /** Request attribute holding the resolved [User] (absent == anonymous). */
      const val USER_ATTRIBUTE = "com.simiacryptus.cognotik.webui.user"
      private const val USER_RESOLVED_ATTRIBUTE = "com.simiacryptus.cognotik.webui.user.resolved"
-    var userResolver : UserProvider = object : UserProvider {
+    var userResolver : com.simiacryptus.cognotik.platform.web.UserProvider = object : com.simiacryptus.cognotik.platform.web.UserProvider {
       override fun authenticate(request: HttpServletRequest, response: HttpServletResponse?): com.simiacryptus.cognotik.platform.model.User? {
         return null
       }

@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.defaultUser
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import java.util.concurrent.ConcurrentHashMap
@@ -44,7 +44,7 @@ object ModelSelection {
   private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
   @Volatile
-  private var userFn: (FsActionContext?) -> User = { defaultUser }
+  private var userFn: (FsActionContext?) -> User = { ApplicationServicesConfig.defaultUser }
 
 
 
@@ -72,7 +72,7 @@ object ModelSelection {
     userFn(ctx)
   } catch (e: Exception) {
     System.err.println("warning: could not resolve the request user: ${e.message}")
-    defaultUser
+    ApplicationServicesConfig.defaultUser
   }
 
   /* ---------------------------------------------------------------- reading */

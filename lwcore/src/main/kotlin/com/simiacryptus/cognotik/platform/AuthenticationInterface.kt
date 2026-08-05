@@ -28,19 +28,6 @@ interface AuthenticationInterface {
   fun getUser(accessToken: AccessToken?): User? = getUser(accessToken?.value)
 
   /**
-   * Reverse lookup from user to token.
-   *
-   * @deprecated Implies tokens are recoverable (i.e. not hashed) and that a user has
-   *             at most one session. Use [listTokens] for non-secret session metadata.
-   */
-  @Deprecated(
-    "Reverse token lookup implies recoverable (unhashed) storage and a single session per " +
-        "user; use listTokens(user) for non-secret metadata.",
-    ReplaceWith("listTokens(user)")
-  )
-  fun getAccessToken(user: User): String? = listTokens(user).firstOrNull()?.label
-
-  /**
    * Lists the active sessions for a user as non-secret metadata.
    *
    * @return one entry per active session; empty if the implementation does not track sessions
@@ -71,24 +58,6 @@ interface AuthenticationInterface {
     putUser(accessToken.value, user, ttl)
 
   /**
-   * Terminates a user session by removing the association between the access token and user.
-   *
-   * @param accessToken The authentication token of the session to terminate.
-   * @param user The [User] object requesting logout. Must match the user associated
-   *             with the access token.
-   * @throws IllegalArgumentException if the provided user doesn't match the user
-   *                                  associated with the access token.
-   * @deprecated Throwing on mismatch is an oracle; use [logoutIfMatching].
-   */
-  @Deprecated(
-    "Throwing on user mismatch leaks token validity; use the idempotent logoutIfMatching.",
-    ReplaceWith("logoutIfMatching(accessToken, user)")
-  )
-  fun logout(accessToken: String, user: User) {
-    logoutIfMatching(accessToken, user)
-  }
-
-  /**
    * Idempotently terminates a session.
    *
    * @return true if a session was terminated; false if the token was unknown,
@@ -97,7 +66,7 @@ interface AuthenticationInterface {
   @Suppress("DEPRECATION")
   fun logoutIfMatching(accessToken: String, user: User): Boolean =
     try {
-      logout(accessToken, user)
+      logoutIfMatching(accessToken, user)
       true
     } catch (e: IllegalArgumentException) {
       false

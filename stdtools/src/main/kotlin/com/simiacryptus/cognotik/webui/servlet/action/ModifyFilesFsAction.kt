@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
     import com.simiacryptus.cognotik.chat.ChatInterface
     import com.simiacryptus.cognotik.models.ModelSchema
+    import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.model.defaultUser
     import com.simiacryptus.cognotik.text.patch.PatchProcessors
     import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
     import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -122,7 +122,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
       fun install(cfg: Config) {
         config = cfg
          /* Share the request-scoped user with the picker; the pair itself lives in settings. */
-         ModelSelection.install(user = { ctx -> ctx?.let { cfg.user(it) } ?: defaultUser })
+         ModelSelection.install(user = { ctx -> ctx?.let { cfg.user(it) } ?: ApplicationServicesConfig.defaultUser })
         ModelSelectionActions.install()
         if (!installed.compareAndSet(false, true)) return
         FsAction.register(

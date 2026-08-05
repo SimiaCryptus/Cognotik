@@ -6,6 +6,8 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
@@ -28,7 +30,7 @@ abstract class SocketManager(
 ) {
   private val messageStates = Collections.synchronizedMap(
     try {
-        dataStorage.getMessages(owner, sessionId)
+      dataStorage.getMessageMap(owner, sessionId).toMap(LinkedHashMap())
     } catch (e: Exception) {
       log.info("Failed to load messages from storage for session: {}, using empty map", sessionId, e)
       LinkedHashMap()
@@ -131,8 +133,8 @@ abstract class SocketManager(
     )
 
     if (!ApplicationServices.authorizationManager.isAuthorized(
-        applicationClass = applicationClass,
-        user = user,
+        ResourceRef.of(applicationClass = applicationClass),
+        Principal.of(user = user),
         operationType = OperationType.Read
       )
     ) {
@@ -480,8 +482,8 @@ abstract class SocketManager(
   }
 
   open fun canWrite(user: User?) = ApplicationServices.authorizationManager.isAuthorized(
-    applicationClass = applicationClass,
-    user = user,
+    ResourceRef.of(applicationClass = applicationClass),
+    Principal.of(user = user),
     operationType = OperationType.Write
   )
 

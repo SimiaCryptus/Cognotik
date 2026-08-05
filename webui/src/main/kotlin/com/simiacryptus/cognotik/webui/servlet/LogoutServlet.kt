@@ -14,7 +14,7 @@ class LogoutServlet : HttpServlet() {
     if (null == user) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
     } else {
-      ApplicationServices.authenticationManager.logout(cookie ?: "", user)
+      ApplicationServices.authenticationManager.logoutIfMatching(cookie ?: "", user)
       response.sendRedirect("/")
     }
   }

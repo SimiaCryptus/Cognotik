@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserProvider
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
@@ -44,7 +43,7 @@ object CliSupport {
   fun defaultUser(): User = User(id = "1", email = email)
 
   init {
-    FileServlet.userResolver = object : UserProvider {
+    FileServlet.userResolver = object : com.simiacryptus.cognotik.platform.web.UserProvider {
       override fun authenticate(
         request: jakarta.servlet.http.HttpServletRequest,
         response: jakarta.servlet.http.HttpServletResponse?

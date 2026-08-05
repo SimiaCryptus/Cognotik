@@ -66,12 +66,6 @@ open class Session(
       repeat(length) { append(ID_ALPHABET[secureRandom.nextInt(ID_ALPHABET.length)]) }
     }
 
-    @Deprecated(
-      "Base64 output can be filtered down to fewer characters than session-id " +
-          "validation requires; use randomId() instead.",
-      ReplaceWith("randomId(11)")
-    )
-    fun long64(): String = randomId(11)
     fun validateSessionId(session: Session) {
       session.validateSessionId()
     }

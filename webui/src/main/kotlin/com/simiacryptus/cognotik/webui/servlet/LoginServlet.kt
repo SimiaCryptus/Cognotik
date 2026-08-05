@@ -847,7 +847,7 @@ class LoginServlet : HttpServlet() {
                         log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
                     } else {
                         try {
-                            ApplicationServices.authenticationManager.logout(token, user)
+                            ApplicationServices.authenticationManager.logoutIfMatching(token, user)
                             log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
                         } catch (e: Exception) {
                             log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)

@@ -71,7 +71,15 @@ class MetadataStorageDB : MetadataStorageInterface {
     upsertMetadata(session.sessionId, user?.email ?: "", "message_ids", ids.joinToString(","))
   }
 
-  override fun getSessionTime(user: User?, session: Session): Instant? {
+  override fun setSessionTimestamp(
+    user: User?,
+    session: Session,
+    time: Instant
+  ) {
+    TODO("Not yet implemented")
+  }
+
+  fun getSessionTime(user: User?, session: Session): Instant? {
     log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
     return tx {
       MetadataTable
@@ -99,7 +107,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setSessionTime(user: User?, session: Session, time: Instant) {
+  fun setSessionTime(user: User?, session: Session, time: Instant) {
     log.debug("Setting session time for session: {}, user: {} to {}", session, user?.email, time)
     upsertMetadata(
       session.sessionId,
@@ -110,7 +118,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     )
   }
 
-  override fun listSessions(path: String): List<String> {
+  fun listSessions(path: String): List<String> {
     log.debug("Listing sessions for path: {}", path)
     return tx {
       MetadataTable
@@ -123,7 +131,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Found {} sessions for path: {}", it.size, path) }
   }
 
-  override fun listSessions(user: User): List<String> {
+  fun listSessions(user: User): List<String> {
     log.debug("Listing sessions for user: {}", user.email)
     return tx {
       MetadataTable
@@ -251,7 +259,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) {
+  fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) {
     log.debug("Setting unified session metadata for session: {}, user: {}", session, user?.email)
     val userEmail = user?.email ?: ""
     val now = Instant.now()
@@ -359,7 +367,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Loaded metadata for {} session(s) on path: {}", it.size, path) }
   }
 
-  override fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
+  fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
     if (sessionIds.isEmpty()) return emptyList()
     val userEmail = user?.email ?: ""
     log.debug("Bulk fetching session metadata for {} session(s), user: {}", sessionIds.size, userEmail)

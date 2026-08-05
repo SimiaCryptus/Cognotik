@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.Assertions
@@ -17,7 +18,7 @@ class IterativeImageGenerationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-      UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
+      UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
     }
   }
 
@@ -41,7 +42,7 @@ class IterativeImageGenerationTaskTest {
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(TiledImageGenerationTask.TiledImageGeneration.name),
-      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+      user = ApplicationServicesConfig.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

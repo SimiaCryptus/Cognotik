@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.SessionMetadataPatch
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.asPatch
 import com.simiacryptus.cognotik.platform.model.ifSet
 import com.simiacryptus.cognotik.platform.model.paginate
 import java.time.Instant
@@ -73,76 +72,22 @@ interface MetadataStorageInterface {
    */
   fun setMessageIds(user: User?, session: Session, ids: List<String>)
 
-  /**
-   * Retrieves the timestamp associated with a session.
-   *
-   * This typically represents when the session was created or last modified.
-   *
-   * @param user The user associated with the session, or null for anonymous sessions
-   * @param session The session object containing the session ID
-   * @return The session timestamp, or null if not set. Implementations may return
-   *         a default value (e.g., current time) instead of null.
-   */
-  @Deprecated(
-    "java.util.Date is mutable and inconsistent with the rest of the platform; use getSessionTimestamp.",
-    ReplaceWith("getSessionTimestamp(user, session)")
-  )
-  fun getSessionTime(user: User?, session: Session): Instant? = getSessionTimestamp(user, session)
-
-  /**
-   * Sets or updates the timestamp for a session.
-   *
-   * @param user The user associated with the session, or null for anonymous sessions
-   * @param session The session object containing the session ID
-   * @param time The timestamp to associate with the session
-   */
-  @Deprecated(
-    "java.util.Date is mutable and inconsistent with the rest of the platform; use setSessionTimestamp.",
-    ReplaceWith("setSessionTimestamp(user, session, time)")
-  )
-  fun setSessionTime(user: User?, session: Session, time: Instant) : Unit = setSessionTimestamp(user, session, time)
-
   /** `java.time` accessor for the session timestamp. */
   @Suppress("DEPRECATION")
   fun getSessionTimestamp(user: User?, session: Session): Instant? =
-    getSessionTime(user, session)
+    getSessionTimestamp(user, session)
 
   /** `java.time` mutator for the session timestamp. */
   @Suppress("DEPRECATION")
-  fun setSessionTimestamp(user: User?, session: Session, time: Instant) =
-    setSessionTime(user, session, time)
-
-  /**
-   * Lists all session IDs associated with a specific path.
-   *
-   * @param path The path to search for associated sessions
-   * @return A list of session IDs that are associated with the given path
-   */
-  @Deprecated(
-    "Ambiguous overload; use listSessionsByPath.",
-    ReplaceWith("listSessionsByPath(path)")
-  )
-  fun listSessions(path: String): List<String> = listSessionsByPath(path)
-
-  /**
-   * Lists all session IDs associated with a specific user.
-   *
-   * @param user The user whose sessions should be listed
-   * @return A list of session IDs associated with the given user
-   */
-  @Deprecated(
-    "Ambiguous overload; use listSessionsForUser.",
-    ReplaceWith("listSessionsForUser(user)")
-  )
-  fun listSessions(user: User): List<String> = listSessionsForUser(user)
+  fun setSessionTimestamp(user: User?, session: Session, time: Instant)
 
   /** Lists all session IDs associated with [path]. */
   @Suppress("DEPRECATION")
-  fun listSessionsByPath(path: String): List<String> = listSessions(path)
+  fun listSessionsByPath(path: String): List<String> = listSessionsByPath(path)
 
   /** Lists all session IDs associated with [user]. */
   @Suppress("DEPRECATION")
-  fun listSessionsForUser(user: User): List<String> = listSessions(user)
+  fun listSessionsForUser(user: User): List<String> = listSessionsForUser(user)
 
   /**
    * Retrieves the owner ID associated with a session.
@@ -253,22 +198,6 @@ interface MetadataStorageInterface {
   }
 
   /**
-   * Sets multiple metadata fields for a session in a single call.
-   *
-   * Only non-null fields in the provided [SessionMetadata] will be updated, and
-   * [SessionMetadata.messageIds] is written only when non-empty — which means this
-   * method cannot clear a value.
-   *
-   * @deprecated Use [updateSessionMetadata] with an explicit [SessionMetadataPatch]
-   */
-  @Deprecated(
-    "Null-means-skip cannot express 'clear this field'; use updateSessionMetadata with a patch.",
-    ReplaceWith("updateSessionMetadata(user, session, metadata.asPatch())")
-  )
-  fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) =
-    updateSessionMetadata(user, session, metadata.asPatch())
-
-  /**
    * Applies an explicit, field-wise patch to a session's metadata.
    *
    * Unlike [setSessionMetadata], "absent" and "set to null" are distinguishable,
@@ -312,21 +241,6 @@ interface MetadataStorageInterface {
       getSessionMetadata(null, Session(sessionId))
     }
   }
-
-  /**
-   * Bulk-fetch metadata for an explicit set of session IDs.
-   *
-   * @param user The user associated with the sessions, or null for anonymous sessions
-   * @param sessionIds The session IDs to fetch metadata for
-   * @return A list of [SessionMetadata] objects in the same order as [sessionIds];
-   *         sessions with no recorded metadata are returned with default field values
-   */
-  @Deprecated(
-    "Cannot express 'no such session'; use getSessionMetadataMap.",
-    ReplaceWith("getSessionMetadataMap(user, sessionIds).values.toList()")
-  )
-  fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> =
-    sessionIds.map { getSessionMetadata(user, Session(it)) }
 
   /**
    * Bulk-fetch metadata for an explicit set of session IDs.

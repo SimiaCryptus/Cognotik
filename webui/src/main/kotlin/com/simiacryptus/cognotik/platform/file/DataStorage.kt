@@ -21,7 +21,7 @@ open class DataStorage(
     log.info("Data storage directory: ${dataDir.absolutePath}")
   }
 
-  override fun getMessages(
+  fun getMessages(
     user: User?,
     session: Session
   ): LinkedHashMap<String, String> {
@@ -87,14 +87,14 @@ open class DataStorage(
     }
   }
 
-  override fun listSessions(
+  fun listSessions(
     user: User?,
     path: String
   ): List<Session> {
     log.debug("Listing sessions for user: ${user?.email}")
     val globalSessions = listSessions(dataDir.resolve("global"), path)
     val userSessions =
-      if (user == null) listOf() else metadataStorage.listSessions(
+      if (user == null) listOf() else metadataStorage.listSessionsByPath(
         path
       )
     log.debug("Found ${globalSessions.size} global sessions and ${userSessions.size} user sessions for user: ${user?.email}")
@@ -173,40 +173,35 @@ open class DataStorage(
   }
 
   @Deprecated("Use metadataStorage instead")
-
-  override fun listSessions(dir: File, path: String): List<String> =
-    metadataStorage.listSessions(path)
+  fun listSessions(dir: File, path: String): List<String> =
+    metadataStorage.listSessionsByPath(path)
 
   @Deprecated("Use metadataStorage instead")
-
-  override fun getSessionName(
+  fun getSessionName(
     user: User?,
     session: Session
   ): String =
     metadataStorage.getSessionName(user, session)
 
   @Deprecated("Use metadataStorage instead")
-
-  override fun getMessageIds(
+  fun getMessageIds(
     user: User?,
     session: Session
   ): List<String> =
     metadataStorage.getMessageIds(user, session)
 
   @Deprecated("Use metadataStorage instead")
-
-  override fun setMessageIds(
+  fun setMessageIds(
     user: User?,
     session: Session,
     ids: List<String>
   ) = metadataStorage.setMessageIds(user, session, ids)
 
   @Deprecated("Use metadataStorage instead")
-
-  override fun getSessionTime(
+  fun getSessionTime(
     user: User?,
     session: Session
-  ): Instant? = metadataStorage.getSessionTime(user, session)
+  ): Instant? = metadataStorage.getSessionTimestamp(user, session)
 
   companion object {
     val log = LoggerFactory.getLogger(DataStorage::class.java)

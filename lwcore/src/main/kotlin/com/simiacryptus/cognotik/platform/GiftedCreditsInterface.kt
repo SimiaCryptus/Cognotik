@@ -29,30 +29,6 @@ import java.time.Instant
 interface GiftedCreditsInterface {
 
   /**
-   * Creates a new gift.
-   *
-   * @param creator The user creating the gift; their account will be debited for the totalBudget
-   * @param amountGranted The amount of credits to grant per claim
-   * @param grantDuration The duration for which the granted credits are valid
-   * @param totalBudget The total budget allocated for this gift
-   * @param theme Optional theme id for the gift's visual appearance
-   * @return The created Gift object
-   * @deprecated `Double` money accumulates error and makes budget checks unsound;
-   *             use the [Credits] overload.
-   */
-  @Deprecated(
-    "Binary floating-point money is unsound for budget arithmetic; use the Credits overload.",
-    ReplaceWith("createGift(creator, Credits.of(amountGranted), grantDuration, Credits.of(totalBudget), theme)")
-  )
-  fun createGift(
-    creator: User,
-    amountGranted: Double,
-    grantDuration: Duration,
-    totalBudget: Double,
-    theme: String? = null
-  ): Gift = createGift(creator, Credits.of(amountGranted), grantDuration, Credits.of(totalBudget), theme)
-
-  /**
    * Creates a new gift using exact credit amounts.
    *
    * @param idempotencyKey Optional caller-supplied key; repeating a call with the same key
@@ -70,7 +46,8 @@ interface GiftedCreditsInterface {
     idempotencyKey: String? = null,
     expiresAt: Instant? = null,
     maxClaimsPerUser: Int? = null,
-  ): Gift = createGift(creator, amountGranted.toDouble(), grantDuration, totalBudget.toDouble(), theme)
+  ): Gift =
+    createGift(creator, Credits.of(amountGranted.toDouble()), grantDuration, Credits.of(totalBudget.toDouble()), theme)
 
   /**
    * Retrieves a gift by its ID.
@@ -87,20 +64,6 @@ interface GiftedCreditsInterface {
   fun getGiftStats(id: GiftId): GiftStats? = getGift(id)?.stats()
 
   /**
-   * Allows a user to claim a gift.
-   *
-   * @param user The user claiming the gift
-   * @param giftId The unique identifier of the gift
-   * @return True if the claim was successful, false otherwise
-   * @deprecated Cannot distinguish the several distinct failure causes; use [claim].
-   */
-  @Deprecated(
-    "Boolean cannot distinguish 'already claimed' from 'budget exhausted' from 'not found'; use claim().",
-    ReplaceWith("claim(user, giftId) is ClaimResult.Granted")
-  )
-  fun claimGift(user: User, giftId: String): Boolean = claim(user, giftId) is ClaimResult.Granted
-
-  /**
    * Allows a user to claim a gift, reporting a precise outcome.
    *
    * @param idempotencyKey Optional caller-supplied key; repeating a call with the same key
@@ -112,7 +75,7 @@ interface GiftedCreditsInterface {
     if (gift.revoked) return ClaimResult.GiftRevoked
     if (gift.isExpired()) return ClaimResult.GiftExpired
     if (!gift.canGrantAnother()) return ClaimResult.BudgetExhausted
-    return if (claimGift(user, giftId)) {
+    return if (claim(user, giftId) is ClaimResult.Granted) {
       ClaimResult.Granted(
         amount = gift.amountGrantedCredits,
         expiresAt = Instant.now().plus(gift.grantDuration),

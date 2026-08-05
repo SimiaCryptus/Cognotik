@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.platform
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.model.User
 
 /**
  * Interface for managing authorization and access control within the platform.
@@ -19,27 +18,6 @@ import com.simiacryptus.cognotik.platform.model.User
 interface AuthorizationInterface {
 
   /**
-   * Determines whether a user is authorized to perform a specific operation.
-   *
-   * @param applicationClass The class of the application for which authorization is being checked,
-   *                         or null for global checks.
-   * @param user The user for whom authorization is being checked, or null for anonymous access.
-   * @param operationType The type of operation for which authorization is being requested.
-   * @return true if the user is authorized to perform the operation, false otherwise.
-   * @deprecated Keys policy on JVM type identity and cannot express per-resource
-   *             permissions; use the [ResourceRef]/[Principal] overload.
-   */
-  @Deprecated(
-    "Keys policy on JVM type identity and cannot express instance-scoped permissions.",
-    ReplaceWith("isAuthorized(ResourceRef.of(applicationClass), Principal.of(user), operationType)")
-  )
-  fun isAuthorized(
-    applicationClass: Class<*>?,
-    user: User?,
-    operationType: OperationType,
-  ): Boolean = isAuthorized(ResourceRef.of(applicationClass), Principal.of(user), operationType)
-
-  /**
    * Determines whether [principal] may perform [operationType] on [resource].
    *
    * @param resource the resource being accessed, or null for a global check
@@ -52,7 +30,7 @@ interface AuthorizationInterface {
     resource: ResourceRef?,
     principal: Principal,
     operationType: OperationType,
-  ): Boolean = isAuthorized(resource?.applicationClass, principal.user, operationType)
+  ): Boolean = isAuthorized(ResourceRef.of(resource?.applicationClass), Principal.of(principal.user), operationType)
 
   /**
    * Bulk query: which operations may [principal] perform on [resource]?

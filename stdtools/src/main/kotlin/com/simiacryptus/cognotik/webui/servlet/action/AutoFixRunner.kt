@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet.action
+    import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.model.defaultUser
 
     import java.io.File
 
@@ -13,7 +13,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
       val autoFix: Boolean = true,
       val timeoutMinutes: Long = 30,
       /** Owner of the credentials *and* of the model selection (its stored settings). */
-      val user: User = defaultUser,
+      val user: User = ApplicationServicesConfig.defaultUser,
       /**
        * Resolved from [user]'s persisted settings by the action — there is no static or
        * environment-configured fallback. null = nothing has been selected yet.

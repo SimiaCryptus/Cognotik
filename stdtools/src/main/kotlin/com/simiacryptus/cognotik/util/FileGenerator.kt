@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
@@ -27,7 +28,7 @@ open class FileGenerator {
     targetFile: (File) -> File = { it },
     updateMode: UpdateMode = UpdateModes.SkipExisting,
     concurrencyLimit: Int = 4,
-    user: User = com.simiacryptus.cognotik.platform.model.defaultUser
+    user: User = ApplicationServicesConfig.defaultUser
   ) {
     val concurrencyProcessor = FixedConcurrencyProcessor(
       pool = Executors.newCachedThreadPool(),

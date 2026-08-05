@@ -162,7 +162,7 @@ class PluginManager(
   }
 
 
-  override fun subscribeToChanges(subscriber: () -> Unit) {
+  fun subscribeToChanges(subscriber: () -> Unit) {
     changeSubscribers.add(subscriber)
   }
 

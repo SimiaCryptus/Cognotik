@@ -47,20 +47,6 @@ interface EventBus {
   fun unsubscribe(subscriptionId: String)
 
   /**
-   * Register a change listener.
-   *
-   * @deprecated Leaks the lambda (and its captured receiver) forever because there is
-   *             no way to unsubscribe; use [onChange].
-   */
-  @Deprecated(
-    "No way to unsubscribe, so every caller leaks its handler; use onChange.",
-    ReplaceWith("onChange(subscriber)")
-  )
-  fun subscribeToChanges(subscriber: () -> Unit)  {
-    onChange(subscriber)
-  }
-
-  /**
    * Register a change listener, returning a handle for [unsubscribe].
    *
    * @return a subscription ID
