@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.social.GameTheoryTask
 import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.writing.*
+import com.simiacryptus.cognotik.platform.CognotikPlugin
 
 object CoreTasks : CognotikPlugin {
 

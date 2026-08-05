@@ -1,13 +1,16 @@
-package com.simiacryptus.cognotik.platform.model
+package com.simiacryptus.cognotik.platform
 
 import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import java.time.LocalDate
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.iterator
 
 /**
  * Interface for managing and tracking AI model usage across users and sessions.
@@ -103,11 +106,11 @@ interface UsageInterface {
      * @param usage The usage details including prompt tokens, completion tokens, and cost
      */
     fun incrementUsage(
-        session: Session,
-        user: User,
-        model: AIModel,
-        usage: ModelSchema.Usage,
-        data: ModelSchema.UsageData? = null
+      session: Session,
+      user: User,
+      model: AIModel,
+      usage: ModelSchema.Usage,
+      data: ModelSchema.UsageData? = null
     )
 
     /**
@@ -147,10 +150,10 @@ interface UsageInterface {
      * @return The new available budget after applying the credit
      */
     fun creditUser(
-        user: User,
-        amount: Double,
-        comment: String? = null,
-        metadata: Map<String, String>? = null
+      user: User,
+      amount: Double,
+      comment: String? = null,
+      metadata: Map<String, String>? = null
     ): Double
 
     /**
@@ -232,9 +235,9 @@ interface UsageInterface {
      */
 
     data class UsageKey(
-        val session: Session,
-        val user: User?,
-        val model: AIModel,
+      val session: Session,
+      val user: User?,
+      val model: AIModel,
     )
 
     /**

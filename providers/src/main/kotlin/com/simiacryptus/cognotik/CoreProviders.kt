@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.CognotikPlugin
 import com.simiacryptus.cognotik.providers.AnthropicProvider
 import com.simiacryptus.cognotik.providers.BedrockProvider
 import com.simiacryptus.cognotik.providers.DeepSeekProvider

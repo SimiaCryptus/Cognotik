@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet.payment
 
-import com.simiacryptus.cognotik.platform.model.UsageInterface
+import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

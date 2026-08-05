@@ -50,21 +50,8 @@ interface SessionFileStore {
   ): File
 
   /**
-   * Gets the root directory for a user's data.
-   *
-   * @param user The user whose root directory to retrieve
-   * @return The File object representing the user's root directory
-   * @throws IllegalArgumentException if user is null or has no email
-   */
-  @Deprecated(
-    "Accepts null and then throws on null; use userRootFor(user).",
-    ReplaceWith("userRootFor(user!!)")
-  )
-  fun userRoot(user: User?): File
-
-  /**
    * Gets the root directory for a user's data, with null-safety enforced by the type system.
    */
   @Suppress("DEPRECATION")
-  fun userRootFor(user: User): File = userRoot(user)
+  fun userRootFor(user: User): File = userRootFor(user)
 }

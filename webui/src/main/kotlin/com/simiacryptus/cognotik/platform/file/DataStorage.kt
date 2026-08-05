@@ -156,7 +156,7 @@ open class DataStorage(
     }
   }
 
-  override fun userRoot(user: User?) = dataDir.resolve("users").resolve(
+  fun userRoot(user: User?) = dataDir.resolve("users").resolve(
     if (user?.email != null) {
       user.email
     } else {

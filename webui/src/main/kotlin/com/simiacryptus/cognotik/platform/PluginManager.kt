@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.CognotikPlugin
+import com.simiacryptus.cognotik.platform.CognotikPlugin
 import com.simiacryptus.cognotik.platform.PluginManagerInterface
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

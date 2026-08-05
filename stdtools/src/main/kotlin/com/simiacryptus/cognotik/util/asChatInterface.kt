@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.asApiChatModel
+import com.simiacryptus.cognotik.platform.asApiChatModel
 
 fun ChatModel.asChatInterface(
     user: User

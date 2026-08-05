@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.google.gson.GsonBuilder
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory.getLogger

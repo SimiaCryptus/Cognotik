@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
 import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
+import com.simiacryptus.cognotik.platform.CognotikPlugin
 
 @Suppress("unused") class ExperimentalStuff : CognotikPlugin {
 

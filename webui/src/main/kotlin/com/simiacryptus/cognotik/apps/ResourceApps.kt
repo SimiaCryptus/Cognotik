@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.apps
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.CognotikPlugin
+import com.simiacryptus.cognotik.platform.CognotikPlugin
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import org.slf4j.LoggerFactory
 

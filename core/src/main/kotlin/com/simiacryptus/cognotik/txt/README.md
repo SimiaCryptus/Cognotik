@@ -13,7 +13,7 @@ This module provides core infrastructure classes used throughout the Cognotik pl
 
 ## CognotikPlugin
 
-`com.simiacryptus.cognotik.CognotikPlugin`
+`com.simiacryptus.cognotik.platform.CognotikPlugin`
 
 Interface that all plugin JARs must implement in order to be loaded by the Cognotik plugin system.
 
