@@ -223,9 +223,11 @@ open class UserSettingsDB : UserSettingsInterface {
   companion object {
     private val log = LoggerFactory.getLogger(UserSettingsDB::class.java)
 
-    internal val facet = DatabaseFacet(
-      name = "user_settings",
-      tables = listOf(UserSettingsTable),
-    )
+    internal val facet by lazy {
+      DatabaseFacet(
+        name = "user_settings",
+        tables = listOf(UserSettingsTable),
+      )
+    }
   }
 }
