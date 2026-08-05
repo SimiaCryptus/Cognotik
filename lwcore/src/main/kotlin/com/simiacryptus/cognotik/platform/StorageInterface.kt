@@ -1,100 +1,85 @@
 package com.simiacryptus.cognotik.platform
 
+import com.simiacryptus.cognotik.platform.model.Page
+import com.simiacryptus.cognotik.platform.model.PageResult
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.paginate
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.time.Instant
 import java.util.*
 
 /**
  * Interface defining storage operations for managing sessions, messages, and associated data.
  *
- * This interface provides methods for:
- * - Session management (creation, listing, deletion)
- * - Message storage and retrieval
- * - File system operations for session data
- * - User-specific data management
+ * As of the REVIEW.md refactor this interface is a *composition* of narrower ports:
+ * - [SessionFileStore] — legacy filesystem view (deprecated)
+ * - [SessionContentStore] — backend-agnostic content access
+ * - [MessageStore] — message persistence
+ * - [JsonStore] — JSON blob persistence
+ *
+ * It retains session listing/deletion plus the deprecated metadata accessors,
+ * which now default to delegating to [metadataStorage].
  *
  * Implementations should handle both global sessions (accessible to all users) and
- * user-specific sessions with appropriate access controls.
+ * user-specific sessions with appropriate access controls. Implementations must be
+ * thread-safe and may block.
  */
-
-interface StorageInterface {
-  /**
-   * Retrieves all messages for a given session.
-   *
-   * @param user The user requesting the messages, or null for global sessions
-   * @param session The session identifier for which to retrieve messages
-   * @return A LinkedHashMap of message IDs to message content, preserving insertion order
-   * @throws IllegalArgumentException if the session ID is invalid
-   */
-
-  fun getMessages(
-    user: User?,
-    session: Session
-  ): LinkedHashMap<String, String>
+interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore, JsonStore {
 
   /**
-   * Gets the directory path for a specific session.
+   * Optional metadata backend used by the deprecated metadata accessors below.
    *
-   * This method may return a cached path if available, otherwise delegates to getDataDir.
-   *
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @return The File object representing the session directory
+   * Implementations that still override those accessors need not provide this.
    */
-
-  fun getUserDir(
-    user: User?,
-    session: Session
-  ): File
-
-  /**
-   * Gets the data directory for a specific session.
-   *
-   * The directory structure is determined by the session ID format:
-   * - "G-{date}-{id}" for global sessions
-   * - "U-{date}-{id}" for user sessions
-   *
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @return The File object representing the data directory
-   * @throws IllegalArgumentException if the session ID format is invalid
-   */
-
-  fun getSystemDir(
-    user: User?,
-    session: Session
-  ): File
+  val metadataStorage: MetadataStorageInterface?
+    get() = null
 
   /**
    * Gets the display name for a session.
    *
    * @deprecated Use metadataStorage instead for metadata operations
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @return The session name as a String
    */
-
-  @Deprecated("Use metadataStorage instead")
+  @Deprecated(
+    "Use metadataStorage instead",
+    ReplaceWith("metadataStorage!!.getSessionName(user, session)")
+  )
   fun getSessionName(
     user: User?,
     session: Session
-  ): String
+  ): String = metadataStorage?.getSessionName(user, session) ?: session.sessionId
 
   /**
    * Gets the creation or last modification time of a session.
    *
    * @deprecated Use metadataStorage instead for metadata operations
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @return The session timestamp, or null if not available
    */
-
-  @Deprecated("Use metadataStorage instead")
+  @Deprecated(
+    "Use metadataStorage instead",
+    ReplaceWith("metadataStorage!!.getSessionTime(user, session)")
+  )
   fun getSessionTime(
     user: User?,
     session: Session
-  ): Date?
+  ): Instant? = metadataStorage?.getSessionTimestamp(user, session)
+
+  /**
+   * Lists all sessions accessible to a user at a given path.
+   *
+   * @deprecated Ambiguous overload; use [listSessionsForUser]
+   */
+  @Deprecated(
+    "Confusing overload set; use listSessionsForUser.",
+    ReplaceWith("listSessionsForUser(user, path)")
+  )
+  fun listSessions(
+    user: User?,
+    path: String,
+  ): List<Session> = listSessionsForUser(user, path)
 
   /**
    * Lists all sessions accessible to a user at a given path.
@@ -106,69 +91,28 @@ interface StorageInterface {
    * @param path The path filter for sessions (implementation-specific)
    * @return A list of Session objects
    */
-
-  fun listSessions(
-    user: User?,
-    path: String,
-  ): List<Session>
+  @Suppress("DEPRECATION")
+  fun listSessionsForUser(user: User?, path: String): List<Session> = listSessions(user, path)
 
   /**
-   * Saves an object as JSON to a file within a session's directory.
+   * Paged variant of [listSessionsForUser].
    *
-   * @param T The type of the object to save
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @param filename The name of the file to save (relative to session directory)
-   * @param settings The object to serialize and save
-   * @return The same settings object that was saved
+   * The default implementation pages in memory; backends should override.
    */
-
-  fun <T : Any> setJson(
-    user: User?,
-    session: Session,
-    filename: String,
-    settings: T
-  ): T
-
-  /**
-   * Updates or creates a message in the session's message store.
-   *
-   * If the message doesn't exist, it will be created and added to the message ID list.
-   *
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @param messageId The unique identifier for the message
-   * @param value The message content to store
-   * @throws IllegalArgumentException if the session ID is invalid
-   */
-
-  fun updateMessage(
-    user: User?,
-    session: Session,
-    messageId: String,
-    value: String
-  )
+  fun listSessionsForUser(user: User?, path: String, page: Page): PageResult<Session> =
+    listSessionsForUser(user, path).paginate(page)
 
   /**
    * Lists sessions in a specific directory.
    *
    * @deprecated Use metadataStorage instead for listing operations
-   * @param dir The directory to search for sessions
-   * @param path The path filter for sessions
-   * @return A list of session identifiers as strings
    */
-
-  @Deprecated("Use metadataStorage instead")
-  fun listSessions(dir: File, path: String): List<String>
-
-  /**
-   * Gets the root directory for a user's data.
-   *
-   * @param user The user whose root directory to retrieve
-   * @return The File object representing the user's root directory
-   * @throws IllegalArgumentException if user is null or has no email
-   */
-  fun userRoot(user: User?): File
+  @Deprecated(
+    "Use metadataStorage instead",
+    ReplaceWith("metadataStorage!!.listSessionsByPath(path)")
+  )
+  fun listSessions(dir: File, path: String): List<String> =
+    metadataStorage?.listSessionsByPath(path) ?: emptyList()
 
   /**
    * Deletes a session and all its associated data.
@@ -182,35 +126,89 @@ interface StorageInterface {
   fun deleteSession(user: User?, session: Session)
 
   /**
+   * Deletes a session, reporting whether anything was removed.
+   *
+   * @return true if the session existed and was deleted, false if it did not exist
+   */
+  fun deleteSessionIfExists(user: User?, session: Session): Boolean {
+    deleteSession(user, session)
+    return true
+  }
+
+  /**
    * Gets the list of message IDs for a session.
    *
    * @deprecated Use metadataStorage instead for metadata operations
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @return A list of message IDs in order
    */
-
-  @Deprecated("Use metadataStorage instead")
+  @Deprecated(
+    "Use metadataStorage instead",
+    ReplaceWith("metadataStorage!!.getMessageIds(user, session)")
+  )
   fun getMessageIds(
     user: User?,
     session: Session
-  ): List<String>
+  ): List<String> = metadataStorage?.getMessageIds(user, session) ?: emptyList()
 
   /**
    * Sets the list of message IDs for a session.
    *
    * @deprecated Use metadataStorage instead for metadata operations
-   * @param user The user owning the session, or null for global sessions
-   * @param session The session identifier
-   * @param ids The ordered list of message IDs to set
    */
-
-  @Deprecated("Use metadataStorage instead")
+  @Deprecated(
+    "Use metadataStorage instead",
+    ReplaceWith("metadataStorage!!.setMessageIds(user, session, ids)")
+  )
   fun setMessageIds(
     user: User?,
     session: Session,
     ids: List<String>
-  )
+  ) = metadataStorage?.setMessageIds(user, session, ids)
 
+  /* ------------------------------------------------------------------ *
+   * SessionContentStore defaults, implemented over the legacy File API  *
+   * so existing implementations gain the new API for free.              *
+   * ------------------------------------------------------------------ */
 
+  @Suppress("DEPRECATION")
+  override fun openRead(user: User?, session: Session, path: String): InputStream =
+    FileInputStream(resolveSessionFile(getUserDir(user, session), path))
+
+  @Suppress("DEPRECATION")
+  override fun openWrite(user: User?, session: Session, path: String): OutputStream {
+    val file = resolveSessionFile(getUserDir(user, session), path)
+    file.parentFile?.mkdirs()
+    return FileOutputStream(file)
+  }
+
+  @Suppress("DEPRECATION")
+  override fun list(user: User?, session: Session, prefix: String): List<String> {
+    val root = getUserDir(user, session)
+    if (!root.exists()) return emptyList()
+    val base = root.canonicalFile.toPath()
+    return root.canonicalFile.walkTopDown()
+      .filter { it.isFile }
+      .map { base.relativize(it.toPath()).toString().replace(File.separatorChar, '/') }
+      .filter { it.startsWith(prefix) }
+      .toList()
+  }
+
+  @Suppress("DEPRECATION")
+  override fun exists(user: User?, session: Session, path: String): Boolean =
+    resolveSessionFile(getUserDir(user, session), path).exists()
+
+  @Suppress("DEPRECATION")
+  override fun delete(user: User?, session: Session, path: String): Boolean {
+    val file = resolveSessionFile(getUserDir(user, session), path)
+    return file.exists() && if (file.isDirectory) file.deleteRecursively() else file.delete()
+  }
+}
+
+/**
+ * Resolves [path] beneath [root], rejecting traversal outside the session root.
+ */
+private fun resolveSessionFile(root: File, path: String): File {
+  val base = root.canonicalFile
+  val target = File(base, path).canonicalFile
+  require(target.toPath().startsWith(base.toPath())) { "Path escapes session directory: $path" }
+  return target
 }

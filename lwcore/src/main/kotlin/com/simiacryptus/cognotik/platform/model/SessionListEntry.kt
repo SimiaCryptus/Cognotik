@@ -9,10 +9,10 @@ import java.util.Date
  * accelerate listings.
  */
 data class SessionListEntry(
-  val id: Session,
-  val name: String?,
-  val sessionTime: Date?,
-  val ownerId: String?,
-  val workerId: String?,
-  val path: String?,
-)
+  override val id: Session,
+  override val name: String?,
+  override val sessionTime: Date?,
+  override val ownerId: String?,
+  override val workerId: String?,
+  override val path: String?,
+) : SessionSummary

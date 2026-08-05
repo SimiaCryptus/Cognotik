@@ -71,7 +71,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     upsertMetadata(session.sessionId, user?.email ?: "", "message_ids", ids.joinToString(","))
   }
 
-  override fun getSessionTime(user: User?, session: Session): Date? {
+  override fun getSessionTime(user: User?, session: Session): Instant? {
     log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
     return tx {
       MetadataTable
@@ -85,28 +85,28 @@ class MetadataStorageDB : MetadataStorageInterface {
         .map { row ->
           val time = row[MetadataTable.value]
           try {
-            if (time != null) Date(time.toLong())
-            else Date.from(row[MetadataTable.timestamp])
+            if (time != null) Date(time.toLong()).toInstant()
+            else Date.from(row[MetadataTable.timestamp]).toInstant()
           } catch (e: NumberFormatException) {
             log.warn(
               "Invalid session time value '{}' for session: {}, user: {}; falling back to row timestamp",
               time, session, user?.email, e
             )
-            Date.from(row[MetadataTable.timestamp])
+            Date.from(row[MetadataTable.timestamp]).toInstant()
           }
         }
         .firstOrNull()
     }
   }
 
-  override fun setSessionTime(user: User?, session: Session, time: Date) {
+  override fun setSessionTime(user: User?, session: Session, time: Instant) {
     log.debug("Setting session time for session: {}, user: {} to {}", session, user?.email, time)
     upsertMetadata(
       session.sessionId,
       user?.email ?: "",
       "session_time",
-      time.time.toString(),
-      time.toInstant()
+      time.toEpochMilli().toString(),
+      time
     )
   }
 

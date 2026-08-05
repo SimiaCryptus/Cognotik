@@ -1,21 +1,34 @@
 package com.simiacryptus.cognotik.platform.model
 
 import java.nio.ByteBuffer
+import java.security.SecureRandom
 import java.time.LocalDate
 import java.util.Base64
-import kotlin.random.Random
 
 open class Session(
   val sessionId: String
 ) {
 
-
+  /*
+   * NOTE: this init block calls an `open` member, which is a known hazard
+   * (REVIEW.md §3.1). It is retained only because `Session.NULL` relies on
+   * overriding validation; new code should not subclass Session.
+   */
   init {
+    @Suppress("LeakingThis")
     validateSessionId()
   }
 
   override fun toString() = sessionId
+
   fun isGlobal(): Boolean = sessionId.startsWith("G-")
+
+  /**
+   * True for the [NULL] sentinel (and any other empty-id session).
+   * Storage implementations should reject such sessions rather than deriving
+   * a directory from them.
+   */
+  fun isNull(): Boolean = sessionId.isEmpty()
 
   fun toGlobal(): Session = when {
     isGlobal() -> this
@@ -23,21 +36,55 @@ open class Session(
   }
 
   companion object {
+
+    private val secureRandom = SecureRandom()
+
+    /** Alphabet used to generate session id suffixes; every character is valid in [SESSION_ID_REGEX]. */
+    const val ID_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+    /** Canonical session id syntax. */
+    val SESSION_ID_REGEX = """([GU]-)?\d{8}-[\w+.\-]{4,12}""".toRegex()
+
+    @Deprecated(
+      "Sentinel session with an invalid, empty id; prefer a nullable Session. " +
+          "Storage boundaries must reject it explicitly.",
+      ReplaceWith("null")
+    )
     val NULL = object : Session("") {
       override fun validateSessionId() {
         // No validation for NULL session
       }
     }
 
-    fun long64(): String {
-      val src = ByteBuffer.allocate(8).putLong(Random.nextLong()).array()
-      return Base64.getEncoder().encodeToString(src)
-        .toString().replace("=", "").replace("/", ".").replace("+", "-")
+    /**
+     * Generates a cryptographically random id of [length] characters drawn from [ID_ALPHABET].
+     *
+     * Unlike the previous base64-filtering approach, the result is always exactly
+     * [length] characters and always passes [isValid] when used as a suffix.
+     */
+    fun randomId(length: Int = 8): String = buildString(length) {
+      repeat(length) { append(ID_ALPHABET[secureRandom.nextInt(ID_ALPHABET.length)]) }
     }
 
+    @Deprecated(
+      "Base64 output can be filtered down to fewer characters than session-id " +
+          "validation requires; use randomId() instead.",
+      ReplaceWith("randomId(11)")
+    )
+    fun long64(): String = randomId(11)
     fun validateSessionId(session: Session) {
       session.validateSessionId()
     }
+
+    /** @return true if [sessionID] is syntactically valid. */
+    fun isValid(sessionID: String): Boolean = SESSION_ID_REGEX.matches(sessionID)
+
+    /**
+     * Non-throwing counterpart of [parseSessionID], for untrusted input.
+     *
+     * @return the parsed session, or null when [sessionID] is invalid
+     */
+    fun tryParse(sessionID: String): Session? = if (isValid(sessionID)) Session(sessionID) else null
 
     fun newGlobalID(): Session {
       val yyyyMMdd = LocalDate.now().toString().replace("-", "")
@@ -49,14 +96,7 @@ open class Session(
       return Session("U-$yyyyMMdd-${id2()}")
     }
 
-    private fun id2() = long64().filter {
-      when (it) {
-        in 'a'..'z' -> true
-        in 'A'..'Z' -> true
-        in '0'..'9' -> true
-        else -> false
-      }
-    }.take(8)
+    private fun id2() = randomId(8)
 
     fun parseSessionID(sessionID: String): Session {
       val session = Session(sessionID)
@@ -66,7 +106,7 @@ open class Session(
   }
 
   internal open fun validateSessionId() {
-    if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4,12}""".toRegex())) {
+    if (!SESSION_ID_REGEX.matches(sessionId)) {
       throw IllegalArgumentException("Invalid session ID: $this")
     }
   }

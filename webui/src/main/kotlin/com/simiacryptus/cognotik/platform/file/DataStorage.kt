@@ -9,11 +9,12 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.time.Instant
 import java.util.*
 
 open class DataStorage(
   private val dataDir: File,
-  val metadataStorage: MetadataStorageInterface = ApplicationServices.fileApplicationServices(dataDir.parentFile).metadataDB
+  override val metadataStorage: MetadataStorageInterface = ApplicationServices.fileApplicationServices(dataDir.parentFile).metadataDB
 ) : StorageInterface {
 
   init {
@@ -205,7 +206,7 @@ open class DataStorage(
   override fun getSessionTime(
     user: User?,
     session: Session
-  ): Date? = metadataStorage.getSessionTime(user, session)
+  ): Instant? = metadataStorage.getSessionTime(user, session)
 
   companion object {
     val log = LoggerFactory.getLogger(DataStorage::class.java)

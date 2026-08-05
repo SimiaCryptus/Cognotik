@@ -10,7 +10,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static com.simiacryptus.cognotik.platform.model.UserKt.defaultUser;
+import static com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.configureEnvironmentalKeys;
 import static com.simiacryptus.cognotik.util.CognotikUtils.relativize;
 

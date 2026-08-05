@@ -41,6 +41,10 @@ import java.security.MessageDigest
  * [SymbolResolver]; the result is stored in `resolutions` / `unresolvedNames` in both the
  * sidecars and the manifest.
 *
+* Every reported file also carries a `relatedFiles` list produced by [RelatedFileAnalyzer]:
+* a TF-IDF/cosine ranking over the grammatically-extracted declarations and references, so
+* files that share distinctive (high-IDF) names are linked to each other.
+*
 * Reports (`project.json` and the per-folder `package.json` rollups) hide ambiguous
 * resolutions; same-file resolutions are hidden everywhere (see [Config]).
  */
@@ -100,6 +104,20 @@ class SymbolIndexer(
      * The per-file sidecars always keep the full set.
      */
     val hideAmbiguousInReports: Boolean = true,
+        /**
+         * Populate [FileRecord.relatedFiles] by IDF-weighted similarity of the extracted
+         * tokens/symbols. Computed project-wide by [index]; kept in the sidecars *and* in the
+         * reports (it survives [FileRecord.slim]).
+         */
+        val computeRelatedFiles: Boolean = true,
+        /** Maximum number of neighbours stored per file. */
+        val maxRelatedFiles: Int = RelatedFileAnalyzer.DEFAULT_MAX_RELATED,
+        /** Minimum cosine similarity required before a neighbour is reported. */
+        val minRelatedFileScore: Double = RelatedFileAnalyzer.DEFAULT_MIN_SCORE,
+        /** Highest-IDF shared tokens stored as evidence with each relation. */
+        val maxSharedTokensPerRelatedFile: Int = RelatedFileAnalyzer.DEFAULT_MAX_SHARED_TOKENS,
+        /** Tokens appearing in more than this fraction of the indexed files are ignored. */
+        val relatedFileMaxDocumentFrequency: Double = RelatedFileAnalyzer.DEFAULT_MAX_DOCUMENT_FREQUENCY_RATIO,
     /**
      * Keep the verbose `symbols` / `references` lists in the project manifest.
      * Off by default - the sidecars already hold the detail and the manifest would explode.
@@ -141,11 +159,16 @@ class SymbolIndexer(
     val resolutions: List<SymbolResolver.Resolution> = emptyList(),
     /** Referenced names that matched no qualified name anywhere in the index. */
     val unresolvedNames: List<String> = emptyList(),
+       /**
+        * Files with a similar symbol/reference vocabulary, nearest first.
+        * Produced by [RelatedFileAnalyzer] (TF-IDF cosine over grammar-extracted tokens).
+        */
+       val relatedFiles: List<RelatedFileAnalyzer.RelatedFile> = emptyList(),
     val errors: List<GrammarValidator.ValidationError> = emptyList(),
   ) {
     /**
      * Manifest-friendly copy: drops the two huge detail lists (`symbols`, `references`).
-     * Counts, [qualifiedNames], [referencedNames] and [resolutions] are preserved.
+        * Counts, [qualifiedNames], [referencedNames], [resolutions] and [relatedFiles] are preserved.
      */
     fun slim(): FileRecord = copy(symbols = emptyList(), references = emptyList())
     /**
@@ -175,6 +198,8 @@ class SymbolIndexer(
     val resolvedNameCount: Int = 0,
     /** Number of referenced names that matched nothing. */
     val unresolvedNameCount: Int = 0,
+       /** Total number of related-file links reported across [files]. */
+       val relatedFileCount: Int = 0,
     /** Slim records unless [Config.includeDetailsInManifest] is set. */
     val files: List<FileRecord> = emptyList(),
     val failures: List<Failure> = emptyList(),
@@ -214,7 +239,10 @@ class SymbolIndexer(
         config.excludeSelfFileResolutions,
       )
       else parsed.map { it.second }
-    val indexed: List<Pair<Path, FileRecord>> = parsed.mapIndexed { i, (path, _) -> path to resolved[i] }
+       val related: List<FileRecord> =
+         if (config.computeRelatedFiles) RelatedFileAnalyzer.analyze(resolved, relatedFileOptions())
+         else resolved.map { if (it.relatedFiles.isEmpty()) it else it.copy(relatedFiles = emptyList()) }
+       val indexed: List<Pair<Path, FileRecord>> = parsed.mapIndexed { i, (path, _) -> path to related[i] }
 
 
     val writeStream = if (config.parallel) indexed.parallelStream() else indexed.stream()
@@ -234,9 +262,9 @@ class SymbolIndexer(
     if (config.writePackageManifests) writePackageManifests(reportRecords, sortedFailures, manifest.generatedAt)
      if (config.writeViewer) writeViewer()
     log.info(
-      "Indexed {} file(s) / {} symbol(s) / {} reference(s) / {} resolved / {} unresolved in {} ms -> {}",
+           "Indexed {} file(s) / {} symbol(s) / {} reference(s) / {} resolved / {} unresolved / {} related link(s) in {} ms -> {}",
       manifest.fileCount, manifest.symbolCount, manifest.referenceCount,
-      manifest.resolvedNameCount, manifest.unresolvedNameCount,
+           manifest.resolvedNameCount, manifest.unresolvedNameCount, manifest.relatedFileCount,
       System.currentTimeMillis() - start, manifestFile()
     )
     return manifest
@@ -406,6 +434,13 @@ class SymbolIndexer(
     val filtered = if (config.hideAmbiguousInReports) record.withoutAmbiguousResolutions() else record
     return if (config.includeDetailsInManifest) filtered else filtered.slim()
   }
+     /** [RelatedFileAnalyzer] settings derived from [config]. */
+     private fun relatedFileOptions() = RelatedFileAnalyzer.Options(
+       maxRelated = config.maxRelatedFiles,
+       minScore = config.minRelatedFileScore,
+       maxSharedTokens = config.maxSharedTokensPerRelatedFile,
+       maxDocumentFrequencyRatio = config.relatedFileMaxDocumentFrequency,
+     )
   /** Build a report over [records] (already passed through [reportRecord]). */
   private fun buildManifest(
     folder: String,
@@ -421,6 +456,7 @@ class SymbolIndexer(
     referenceCount = records.sumOf { it.referenceCount },
     resolvedNameCount = records.sumOf { it.resolutions.size },
     unresolvedNameCount = records.sumOf { it.unresolvedNames.size },
+       relatedFileCount = records.sumOf { it.relatedFiles.size },
     files = records,
     failures = failures,
   )
@@ -533,7 +569,7 @@ class SymbolIndexer(
     /**
      * CLI: `SymbolIndexer <root> [--clean] [--no-incremental] [--sequential] [--no-errors]
      *      [--no-references] [--no-reference-details] [--no-resolve] [--manifest-details]
-      *      [--self-refs] [--keep-ambiguous] [--no-package-manifests] [--no-viewer]`
+         *      [--self-refs] [--keep-ambiguous] [--no-package-manifests] [--no-viewer] [--no-related]`
      */
     @JvmStatic
     fun main(args: Array<String>) {
@@ -553,6 +589,7 @@ class SymbolIndexer(
           excludeSelfFileResolutions = "--self-refs" !in flags,
           hideAmbiguousInReports = "--keep-ambiguous" !in flags,
           includeDetailsInManifest = "--manifest-details" in flags,
+             computeRelatedFiles = "--no-related" !in flags,
         )
       )
       if ("--clean" in flags) indexer.clean()
@@ -560,7 +597,8 @@ class SymbolIndexer(
       println(
         "${manifest.fileCount} files, ${manifest.symbolCount} symbols, " +
             "${manifest.referenceCount} references, ${manifest.resolvedNameCount} resolved, " +
-            "${manifest.unresolvedNameCount} unresolved -> ${indexer.manifestFile()}"
+               "${manifest.unresolvedNameCount} unresolved, ${manifest.relatedFileCount} related links " +
+               "-> ${indexer.manifestFile()}"
       )
       manifest.failures.forEach { println("FAILED ${it.path}: ${it.error}") }
     }

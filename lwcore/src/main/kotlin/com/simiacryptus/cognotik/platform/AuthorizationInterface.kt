@@ -1,55 +1,67 @@
 package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Principal
+import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 
 /**
  * Interface for managing authorization and access control within the platform.
  *
- * This interface provides a contract for implementing various authorization strategies
- * to control user access to different resources and operations within applications.
+ * Authorization is expressed over a ([ResourceRef], [Principal], [OperationType])
+ * triple, which — unlike the original `Class<*>`-keyed form — can express
+ * instance-scoped permissions such as "may Delete *session S*" and can be
+ * serialized into configuration (REVIEW.md §3.5).
  *
- * Implementations of this interface should handle the logic for determining whether
- * a user has the necessary permissions to perform specific operations on resources
- * associated with particular application classes.
- *
-
- * @see AuthorizationManager for the default file-based implementation
+ * Error strategy: implementations MUST fail securely by returning `false`.
+ * Exceptions are reserved for programmer/configuration errors.
  */
 interface AuthorizationInterface {
 
   /**
    * Determines whether a user is authorized to perform a specific operation.
    *
-   * This method checks if the given user has the necessary permissions to perform
-   * the specified operation type. The authorization can be scoped to a specific
-   * application class, allowing for fine-grained access control at the application level.
-   *
-   * The implementation may use various strategies for authorization, such as:
-   * - File-based permission lists
-   * - Database-backed access control lists (ACLs)
-   * - Role-based access control (RBAC)
-   * - Attribute-based access control (ABAC)
-   *
-   * @param applicationClass The class of the application for which authorization is being checked.
-   *                        Can be null for global authorization checks that are not specific
-   *                        to any particular application.
-   * @param user The user for whom authorization is being checked. Can be null to represent
-   *             anonymous or unauthenticated access.
+   * @param applicationClass The class of the application for which authorization is being checked,
+   *                         or null for global checks.
+   * @param user The user for whom authorization is being checked, or null for anonymous access.
    * @param operationType The type of operation for which authorization is being requested.
-   *                      This determines what kind of access is being checked.
-   *
    * @return true if the user is authorized to perform the operation, false otherwise.
-   *         In case of any errors during authorization checking, implementations should
-   *         typically return false to fail securely.
-   *
-   * @throws SecurityException May be thrown by implementations if there are critical
-   *                          security violations or configuration errors.
+   * @deprecated Keys policy on JVM type identity and cannot express per-resource
+   *             permissions; use the [ResourceRef]/[Principal] overload.
    */
-
+  @Deprecated(
+    "Keys policy on JVM type identity and cannot express instance-scoped permissions.",
+    ReplaceWith("isAuthorized(ResourceRef.of(applicationClass), Principal.of(user), operationType)")
+  )
   fun isAuthorized(
     applicationClass: Class<*>?,
     user: User?,
     operationType: OperationType,
-  ): Boolean
+  ): Boolean = isAuthorized(ResourceRef.of(applicationClass), Principal.of(user), operationType)
+
+  /**
+   * Determines whether [principal] may perform [operationType] on [resource].
+   *
+   * @param resource the resource being accessed, or null for a global check
+   * @param principal the acting principal ([Principal.Anonymous] for unauthenticated access)
+   * @param operationType the requested operation
+   * @return true if authorized; false otherwise (implementations must fail securely)
+   */
+  @Suppress("DEPRECATION")
+  fun isAuthorized(
+    resource: ResourceRef?,
+    principal: Principal,
+    operationType: OperationType,
+  ): Boolean = isAuthorized(resource?.applicationClass, principal.user, operationType)
+
+  /**
+   * Bulk query: which operations may [principal] perform on [resource]?
+   *
+   * Lets a UI render permission-dependent controls with one call instead of one
+   * call per [OperationType].
+   */
+  fun authorizedOperations(
+    resource: ResourceRef?,
+    principal: Principal,
+  ): Set<OperationType> = OperationType.values().filter { isAuthorized(resource, principal, it) }.toSet()
 }

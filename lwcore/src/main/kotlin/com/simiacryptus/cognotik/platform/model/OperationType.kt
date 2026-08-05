@@ -48,4 +48,27 @@ enum class OperationType {
    * This typically grants all other permissions and system-level access.
    */
   Admin,
+  ;
+
+  /**
+   * Operations transitively granted by this one.
+   *
+   * Encoding the matrix here means implementations no longer re-derive (and
+   * disagree about) implication semantics — see REVIEW.md §3.10.
+   */
+  val impliedOperations: Set<OperationType>
+    get() = when (this) {
+      Admin -> setOf(Read, Write, Public, Share, Execute, Delete)
+      Write -> kotlin.collections.setOf(Read)
+      Delete -> kotlin.collections.setOf(Read)
+      Share -> kotlin.collections.setOf(Read)
+      Execute -> kotlin.collections.setOf(Read)
+      Public -> kotlin.collections.setOf(Read)
+      Read -> emptySet()
+    }
+
+  /**
+   * @return true if holding `this` permission also grants [other]
+   */
+  fun implies(other: OperationType): Boolean = other == this || other in impliedOperations
 }
