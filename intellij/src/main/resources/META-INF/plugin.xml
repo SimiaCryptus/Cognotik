@@ -104,6 +104,10 @@
                     text="📝 Edit"
                     description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
             </action>
+            <action class="cognotik.actions.agent.MicroIdeAction"
+                    text="🛠️ Micro IDE"
+                    description="Open a micro IDE interface for focused development on selected files, with AI-assisted code analysis and generation">
+            </action>
             <action class="cognotik.actions.task.DocProcessorAction"
                     id="cognotik.ui.ProjectMenu.DocProcessor"
                     text="📋 Build Related"

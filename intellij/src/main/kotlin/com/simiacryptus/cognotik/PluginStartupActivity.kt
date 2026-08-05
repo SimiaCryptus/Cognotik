@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.OperationType
@@ -48,7 +49,9 @@ class PluginStartupActivity : ProjectActivity {
     }
 
     override suspend fun execute(project: Project) {
+
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
+        DatabaseFacet.root = (project.basePath?.let { File(it) } ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
 
