@@ -42,6 +42,7 @@ htmlDocument
 scriptletOrSeaWs
     : SCRIPTLET
     | SEA_WS
+    | htmlComment
     ;
 
 htmlElements

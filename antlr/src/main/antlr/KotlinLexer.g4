@@ -38,8 +38,8 @@ LPAREN           : '(' -> pushMode(Inside);
 RPAREN           : ')';
 LSQUARE          : '[' -> pushMode(Inside);
 RSQUARE          : ']';
-LCURL            : '{';
-RCURL            : '}';
+LCURL            : '{' -> pushMode(DEFAULT_MODE);
+RCURL            : '}' -> popMode;
 MULT             : '*';
 MOD              : '%';
 DIV              : '/';
@@ -254,13 +254,24 @@ BooleanLiteral: 'true' | 'false';
 
 NullLiteral: 'null';
 
-Identifier: (Letter | '_') (Letter | '_' | DecDigit)* | '`' ~('`')+ '`';
+Identifier: IdentifierName | QuotedIdentifierName;
+
+fragment IdentifierName: (Letter | '_') (Letter | '_' | DecDigit)*;
+
+// A back-tick quoted name must stay on a single line; otherwise an unbalanced
+// back-tick (very common inside markdown/regex string literals) lets this rule
+// swallow the rest of the file.
+fragment QuotedIdentifierName: '`' ~('`' | '\u000A' | '\u000D')+ '`';
 
 LabelReference: '@' Identifier;
 
 LabelDefinition: Identifier '@';
 
-FieldIdentifier: '$' Identifier;
+// Only a *plain* identifier may follow '$' in a string template. Kotlin has no
+// `$`quoted`` form, and allowing Identifier here means a literal '$' followed by
+// a back-tick (e.g. "... `^` and `$` ...") produces a giant token that consumes
+// text up to the next back-tick and desynchronizes the string modes.
+FieldIdentifier: '$' IdentifierName;
 
 CharacterLiteral: '\'' (EscapeSeq | .) '\'';
 
@@ -287,7 +298,9 @@ Inside_RSQUARE : ']' -> popMode, type(RSQUARE);
 Inside_LPAREN  : LPAREN  -> pushMode(Inside), type(LPAREN);
 Inside_LSQUARE : LSQUARE -> pushMode(Inside), type(LSQUARE);
 
-Inside_LCURL            : LCURL            -> type(LCURL);
+// A block/lambda inside (...) or [...] must go back to the default mode so that
+// newlines become NL tokens again and statements keep their separators.
+Inside_LCURL            : LCURL            -> pushMode(DEFAULT_MODE), type(LCURL);
 Inside_RCURL            : RCURL            -> type(RCURL);
 Inside_DOT              : DOT              -> type(DOT);
 Inside_COMMA            : COMMA            -> type(COMMA);
@@ -336,22 +349,41 @@ Inside_QUOTE_OPEN       : QUOTE_OPEN       -> pushMode(LineString), type(QUOTE_O
 Inside_TRIPLE_QUOTE_OPEN:
     TRIPLE_QUOTE_OPEN -> pushMode(MultiLineString), type(TRIPLE_QUOTE_OPEN)
 ;
+Inside_PACKAGE     : PACKAGE        -> type(PACKAGE);
+Inside_IMPORT      : IMPORT         -> type(IMPORT);
+Inside_CLASS       : CLASS          -> type(CLASS);
+Inside_INTERFACE   : INTERFACE      -> type(INTERFACE);
+Inside_CONTEXT     : CONTEXT        -> type(CONTEXT);
+Inside_FUN         : FUN            -> type(FUN);
 
 Inside_VAL         : VAL            -> type(VAL);
 Inside_VAR         : VAR            -> type(VAR);
 Inside_OBJECT      : OBJECT         -> type(OBJECT);
+Inside_TYPE_ALIAS  : TYPE_ALIAS     -> type(TYPE_ALIAS);
+Inside_CONSTRUCTOR : CONSTRUCTOR    -> type(CONSTRUCTOR);
+Inside_BY          : BY             -> type(BY);
+Inside_COMPANION   : COMPANION      -> type(COMPANION);
+Inside_INIT        : INIT           -> type(INIT);
+Inside_THIS        : THIS           -> type(THIS);
 Inside_SUPER       : SUPER          -> type(SUPER);
+Inside_TYPEOF      : TYPEOF         -> type(TYPEOF);
+Inside_WHERE       : WHERE          -> type(WHERE);
 Inside_IN          : IN             -> type(IN);
 Inside_OUT         : OUT            -> type(OUT);
+Inside_AS          : AS             -> type(AS);
+Inside_IS          : IS             -> type(IS);
 Inside_FIELD       : FIELD          -> type(FIELD);
 Inside_FILE        : FILE_SITE      -> type(FILE_SITE);
 Inside_PROPERTY    : PROPERTY_SITE  -> type(PROPERTY_SITE);
 Inside_GET         : GET_SITE       -> type(GET_SITE);
 Inside_SET         : SET_SITE       -> type(SET_SITE);
+Inside_GETTER      : GETTER         -> type(GETTER);
+Inside_SETTER      : SETTER         -> type(SETTER);
 Inside_RECEIVER    : RECEIVER_SITE  -> type(RECEIVER_SITE);
 Inside_PARAM       : PARAM_SITE     -> type(PARAM_SITE);
 Inside_SETPARAM    : SETPARAM_SITE  -> type(SETPARAM_SITE);
 Inside_DELEGATE    : DELEGATE_SITE  -> type(DELEGATE_SITE);
+Inside_DYNAMIC     : DYNAMIC        -> type(DYNAMIC);
 Inside_THROW       : THROW          -> type(THROW);
 Inside_RETURN      : RETURN         -> type(RETURN);
 Inside_CONTINUE    : CONTINUE       -> type(CONTINUE);
@@ -449,7 +481,7 @@ StrExpr_LSQUARE : LSQUARE -> pushMode(Inside), type(LSQUARE);
 
 StrExpr_RPAREN           : ')'              -> type(RPAREN);
 StrExpr_RSQUARE          : ']'              -> type(RSQUARE);
-StrExpr_LCURL            : LCURL            -> pushMode(StringExpression), type(LCURL);
+StrExpr_LCURL            : LCURL            -> pushMode(DEFAULT_MODE), type(LCURL);
 StrExpr_DOT              : DOT              -> type(DOT);
 StrExpr_COMMA            : COMMA            -> type(COMMA);
 StrExpr_MULT             : MULT             -> type(MULT);
@@ -486,9 +518,81 @@ StrExpr_LE               : LE               -> type(LE);
 StrExpr_GE               : GE               -> type(GE);
 StrExpr_EXCL_EQ          : EXCL_EQ          -> type(EXCL_EQ);
 StrExpr_EXCL_EQEQ        : EXCL_EQEQ        -> type(EXCL_EQEQ);
-StrExpr_AS               : AS               -> type(IS);
-StrExpr_IS               : IS               -> type(IN);
-StrExpr_IN               : IN;
+StrExpr_PACKAGE     : PACKAGE        -> type(PACKAGE);
+StrExpr_IMPORT      : IMPORT         -> type(IMPORT);
+StrExpr_CLASS       : CLASS          -> type(CLASS);
+StrExpr_INTERFACE   : INTERFACE      -> type(INTERFACE);
+StrExpr_CONTEXT     : CONTEXT        -> type(CONTEXT);
+StrExpr_FUN         : FUN            -> type(FUN);
+StrExpr_OBJECT      : OBJECT         -> type(OBJECT);
+StrExpr_VAL         : VAL            -> type(VAL);
+StrExpr_VAR         : VAR            -> type(VAR);
+StrExpr_TYPE_ALIAS  : TYPE_ALIAS     -> type(TYPE_ALIAS);
+StrExpr_CONSTRUCTOR : CONSTRUCTOR    -> type(CONSTRUCTOR);
+StrExpr_BY          : BY             -> type(BY);
+StrExpr_COMPANION   : COMPANION      -> type(COMPANION);
+StrExpr_INIT        : INIT           -> type(INIT);
+StrExpr_THIS        : THIS           -> type(THIS);
+StrExpr_SUPER       : SUPER          -> type(SUPER);
+StrExpr_TYPEOF      : TYPEOF         -> type(TYPEOF);
+StrExpr_WHERE       : WHERE          -> type(WHERE);
+StrExpr_IF          : IF             -> type(IF);
+StrExpr_ELSE        : ELSE           -> type(ELSE);
+StrExpr_WHEN        : WHEN           -> type(WHEN);
+StrExpr_TRY         : TRY            -> type(TRY);
+StrExpr_CATCH       : CATCH          -> type(CATCH);
+StrExpr_FINALLY     : FINALLY        -> type(FINALLY);
+StrExpr_FOR         : FOR            -> type(FOR);
+StrExpr_DO          : DO             -> type(DO);
+StrExpr_WHILE       : WHILE          -> type(WHILE);
+StrExpr_THROW       : THROW          -> type(THROW);
+StrExpr_RETURN      : RETURN         -> type(RETURN);
+StrExpr_CONTINUE    : CONTINUE       -> type(CONTINUE);
+StrExpr_BREAK       : BREAK          -> type(BREAK);
+StrExpr_AS          : AS             -> type(AS);
+StrExpr_IS          : IS             -> type(IS);
+StrExpr_IN          : IN             -> type(IN);
+StrExpr_OUT         : OUT            -> type(OUT);
+StrExpr_GETTER      : GETTER         -> type(GETTER);
+StrExpr_SETTER      : SETTER         -> type(SETTER);
+StrExpr_FIELD       : FIELD          -> type(FIELD);
+StrExpr_FILE        : FILE_SITE      -> type(FILE_SITE);
+StrExpr_PROPERTY    : PROPERTY_SITE  -> type(PROPERTY_SITE);
+StrExpr_GET         : GET_SITE       -> type(GET_SITE);
+StrExpr_SET         : SET_SITE       -> type(SET_SITE);
+StrExpr_RECEIVER    : RECEIVER_SITE  -> type(RECEIVER_SITE);
+StrExpr_PARAM       : PARAM_SITE     -> type(PARAM_SITE);
+StrExpr_SETPARAM    : SETPARAM_SITE  -> type(SETPARAM_SITE);
+StrExpr_DELEGATE    : DELEGATE_SITE  -> type(DELEGATE_SITE);
+StrExpr_DYNAMIC     : DYNAMIC        -> type(DYNAMIC);
+StrExpr_RETURN_AT   : RETURN_AT      -> type(RETURN_AT);
+StrExpr_CONTINUE_AT : CONTINUE_AT    -> type(CONTINUE_AT);
+StrExpr_BREAK_AT    : BREAK_AT       -> type(BREAK_AT);
+StrExpr_PUBLIC      : PUBLIC      -> type(PUBLIC);
+StrExpr_PRIVATE     : PRIVATE     -> type(PRIVATE);
+StrExpr_PROTECTED   : PROTECTED   -> type(PROTECTED);
+StrExpr_INTERNAL    : INTERNAL    -> type(INTERNAL);
+StrExpr_ENUM        : ENUM        -> type(ENUM);
+StrExpr_SEALED      : SEALED      -> type(SEALED);
+StrExpr_ANNOTATION  : ANNOTATION  -> type(ANNOTATION);
+StrExpr_DATA        : DATA        -> type(DATA);
+StrExpr_INNER       : INNER       -> type(INNER);
+StrExpr_TAILREC     : TAILREC     -> type(TAILREC);
+StrExpr_OPERATOR    : OPERATOR    -> type(OPERATOR);
+StrExpr_INLINE      : INLINE      -> type(INLINE);
+StrExpr_INFIX       : INFIX       -> type(INFIX);
+StrExpr_EXTERNAL    : EXTERNAL    -> type(EXTERNAL);
+StrExpr_SUSPEND     : SUSPEND     -> type(SUSPEND);
+StrExpr_OVERRIDE    : OVERRIDE    -> type(OVERRIDE);
+StrExpr_ABSTRACT    : ABSTRACT    -> type(ABSTRACT);
+StrExpr_FINAL       : FINAL       -> type(FINAL);
+StrExpr_OPEN        : OPEN        -> type(OPEN);
+StrExpr_CONST       : CONST       -> type(CONST);
+StrExpr_LATEINIT    : LATEINIT    -> type(LATEINIT);
+StrExpr_VARARG      : VARARG      -> type(VARARG);
+StrExpr_NOINLINE    : NOINLINE    -> type(NOINLINE);
+StrExpr_CROSSINLINE : CROSSINLINE -> type(CROSSINLINE);
+StrExpr_REIFIED     : REIFIED     -> type(REIFIED);
 StrExpr_NOT_IS           : NOT_IS       -> type(NOT_IS);
 StrExpr_NOT_IN           : NOT_IN       -> type(NOT_IN);
 StrExpr_AS_SAFE          : AS_SAFE      -> type(AS_SAFE);

@@ -19,9 +19,9 @@ import java.nio.file.Paths
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.security.MessageDigest
-  import java.time.Instant
-  import java.util.Collections
-  import java.util.stream.Collectors
+import java.time.Instant
+import java.util.Collections
+import java.util.stream.Collectors
 
 /**
  * Crawls a source tree, finds every file that has a language-specific [com.simiacryptus.cognotik.text.validate.GrammarValidator],
@@ -32,21 +32,21 @@ import java.security.MessageDigest
  * ```
  * package/foo.java              -> package/.data/foo.java.json
  * package/sub/bar.kt            -> package/sub/.data/bar.kt.json
-* package/.data/package.json    -> rollup summary of package/ (and everything below it)
+ * package/.data/package.json    -> rollup summary of package/ (and everything below it)
  * <root>/.data/project.json     -> manifest of every indexed file (slim: no symbol/reference detail)
-* <root>/.data/viewer.html      -> standalone HTML report viewer (reads project.json)
+ * <root>/.data/viewer.html      -> standalone HTML report viewer (reads project.json)
  * ```
  *
  * Referenced names are resolved lexically against every file's qualified names by
  * [SymbolResolver]; the result is stored in `resolutions` / `unresolvedNames` in both the
  * sidecars and the manifest.
-*
-* Every reported file also carries a `relatedFiles` list produced by [RelatedFileAnalyzer]:
-* a TF-IDF/cosine ranking over the grammatically-extracted declarations and references, so
-* files that share distinctive (high-IDF) names are linked to each other.
-*
-* Reports (`project.json` and the per-folder `package.json` rollups) hide ambiguous
-* resolutions; same-file resolutions are hidden everywhere (see [Config]).
+ *
+ * Every reported file also carries a `relatedFiles` list produced by [RelatedFileAnalyzer]:
+ * a TF-IDF/cosine ranking over the grammatically-extracted declarations and references, so
+ * files that share distinctive (high-IDF) names are linked to each other.
+ *
+ * Reports (`project.json` and the per-folder `package.json` rollups) hide ambiguous
+ * resolutions; same-file resolutions are hidden everywhere (see [Config]).
  */
 class SymbolIndexer(
   val root: Path,
@@ -67,12 +67,12 @@ class SymbolIndexer(
      * folder **and all of its subfolders** with the same rules as the project manifest.
      */
     val writePackageManifests: Boolean = true,
-     /** Copy the bundled HTML viewer into `<root>/<dataDirName>`, next to the manifest. */
-     val writeViewer: Boolean = true,
-     /** File name written next to the manifest for the HTML viewer. */
-     val viewerName: String = "viewer.html",
-     /** Classpath resource holding the HTML viewer. */
-     val viewerResource: String = "/symbol-indexer/viewer.html",
+    /** Copy the bundled HTML viewer into `<root>/<dataDirName>`, next to the manifest. */
+    val writeViewer: Boolean = true,
+    /** File name written next to the manifest for the HTML viewer. */
+    val viewerName: String = "viewer.html",
+    /** Classpath resource holding the HTML viewer. */
+    val viewerResource: String = "/symbol-indexer/viewer.html",
     /** Directory names never descended into. */
     val excludedDirNames: Set<String> = setOf(
       ".git", ".hg", ".svn", ".gradle", ".idea", ".vscode",
@@ -104,20 +104,20 @@ class SymbolIndexer(
      * The per-file sidecars always keep the full set.
      */
     val hideAmbiguousInReports: Boolean = true,
-        /**
-         * Populate [FileRecord.relatedFiles] by IDF-weighted similarity of the extracted
-         * tokens/symbols. Computed project-wide by [index]; kept in the sidecars *and* in the
-         * reports (it survives [FileRecord.slim]).
-         */
-        val computeRelatedFiles: Boolean = true,
-        /** Maximum number of neighbours stored per file. */
-        val maxRelatedFiles: Int = RelatedFileAnalyzer.DEFAULT_MAX_RELATED,
-        /** Minimum cosine similarity required before a neighbour is reported. */
-        val minRelatedFileScore: Double = RelatedFileAnalyzer.DEFAULT_MIN_SCORE,
-        /** Highest-IDF shared tokens stored as evidence with each relation. */
-        val maxSharedTokensPerRelatedFile: Int = RelatedFileAnalyzer.DEFAULT_MAX_SHARED_TOKENS,
-        /** Tokens appearing in more than this fraction of the indexed files are ignored. */
-        val relatedFileMaxDocumentFrequency: Double = RelatedFileAnalyzer.DEFAULT_MAX_DOCUMENT_FREQUENCY_RATIO,
+    /**
+     * Populate [FileRecord.relatedFiles] by IDF-weighted similarity of the extracted
+     * tokens/symbols. Computed project-wide by [index]; kept in the sidecars *and* in the
+     * reports (it survives [FileRecord.slim]).
+     */
+    val computeRelatedFiles: Boolean = true,
+    /** Maximum number of neighbours stored per file. */
+    val maxRelatedFiles: Int = RelatedFileAnalyzer.DEFAULT_MAX_RELATED,
+    /** Minimum cosine similarity required before a neighbour is reported. */
+    val minRelatedFileScore: Double = RelatedFileAnalyzer.DEFAULT_MIN_SCORE,
+    /** Highest-IDF shared tokens stored as evidence with each relation. */
+    val maxSharedTokensPerRelatedFile: Int = RelatedFileAnalyzer.DEFAULT_MAX_SHARED_TOKENS,
+    /** Tokens appearing in more than this fraction of the indexed files are ignored. */
+    val relatedFileMaxDocumentFrequency: Double = RelatedFileAnalyzer.DEFAULT_MAX_DOCUMENT_FREQUENCY_RATIO,
     /**
      * Keep the verbose `symbols` / `references` lists in the project manifest.
      * Off by default - the sidecars already hold the detail and the manifest would explode.
@@ -159,18 +159,19 @@ class SymbolIndexer(
     val resolutions: List<SymbolResolver.Resolution> = emptyList(),
     /** Referenced names that matched no qualified name anywhere in the index. */
     val unresolvedNames: List<String> = emptyList(),
-       /**
-        * Files with a similar symbol/reference vocabulary, nearest first.
-        * Produced by [RelatedFileAnalyzer] (TF-IDF cosine over grammar-extracted tokens).
-        */
-       val relatedFiles: List<RelatedFileAnalyzer.RelatedFile> = emptyList(),
+    /**
+     * Files with a similar symbol/reference vocabulary, nearest first.
+     * Produced by [RelatedFileAnalyzer] (TF-IDF cosine over grammar-extracted tokens).
+     */
+    val relatedFiles: List<RelatedFileAnalyzer.RelatedFile> = emptyList(),
     val errors: List<GrammarValidator.ValidationError> = emptyList(),
   ) {
     /**
      * Manifest-friendly copy: drops the two huge detail lists (`symbols`, `references`).
-        * Counts, [qualifiedNames], [referencedNames], [resolutions] and [relatedFiles] are preserved.
+     * Counts, [qualifiedNames], [referencedNames], [resolutions] and [relatedFiles] are preserved.
      */
     fun slim(): FileRecord = copy(symbols = emptyList(), references = emptyList())
+
     /**
      * Report-friendly copy: ambiguous resolutions are dropped, so `ambiguous = true`
      * never appears in `project.json` / `package.json`.
@@ -198,8 +199,8 @@ class SymbolIndexer(
     val resolvedNameCount: Int = 0,
     /** Number of referenced names that matched nothing. */
     val unresolvedNameCount: Int = 0,
-       /** Total number of related-file links reported across [files]. */
-       val relatedFileCount: Int = 0,
+    /** Total number of related-file links reported across [files]. */
+    val relatedFileCount: Int = 0,
     /** Slim records unless [Config.includeDetailsInManifest] is set. */
     val files: List<FileRecord> = emptyList(),
     val failures: List<Failure> = emptyList(),
@@ -239,10 +240,10 @@ class SymbolIndexer(
         config.excludeSelfFileResolutions,
       )
       else parsed.map { it.second }
-       val related: List<FileRecord> =
-         if (config.computeRelatedFiles) RelatedFileAnalyzer.analyze(resolved, relatedFileOptions())
-         else resolved.map { if (it.relatedFiles.isEmpty()) it else it.copy(relatedFiles = emptyList()) }
-       val indexed: List<Pair<Path, FileRecord>> = parsed.mapIndexed { i, (path, _) -> path to related[i] }
+    val related: List<FileRecord> =
+      if (config.computeRelatedFiles) RelatedFileAnalyzer.analyze(resolved, relatedFileOptions())
+      else resolved.map { if (it.relatedFiles.isEmpty()) it else it.copy(relatedFiles = emptyList()) }
+    val indexed: List<Pair<Path, FileRecord>> = parsed.mapIndexed { i, (path, _) -> path to related[i] }
 
 
     val writeStream = if (config.parallel) indexed.parallelStream() else indexed.stream()
@@ -260,11 +261,11 @@ class SymbolIndexer(
     val manifest = buildManifest("", reportRecords, sortedFailures, Instant.now().toString())
     writeJson(manifestFile(), manifest)
     if (config.writePackageManifests) writePackageManifests(reportRecords, sortedFailures, manifest.generatedAt)
-     if (config.writeViewer) writeViewer()
+    if (config.writeViewer) writeViewer()
     log.info(
-           "Indexed {} file(s) / {} symbol(s) / {} reference(s) / {} resolved / {} unresolved / {} related link(s) in {} ms -> {}",
+      "Indexed {} file(s) / {} symbol(s) / {} reference(s) / {} resolved / {} unresolved / {} related link(s) in {} ms -> {}",
       manifest.fileCount, manifest.symbolCount, manifest.referenceCount,
-           manifest.resolvedNameCount, manifest.unresolvedNameCount, manifest.relatedFileCount,
+      manifest.resolvedNameCount, manifest.unresolvedNameCount, manifest.relatedFileCount,
       System.currentTimeMillis() - start, manifestFile()
     )
     return manifest
@@ -307,7 +308,11 @@ class SymbolIndexer(
       emptyList()
     }
     val errors = if (!config.includeValidationErrors) emptyList() else try {
-      validator.validateGrammar(code)
+      val validateGrammar = validator.validateGrammar(code)
+      if(validateGrammar.isNotEmpty()) {
+        log.debug("Validation errors for {}: {}", file, validateGrammar.joinToString("; ") { it.message })
+      }
+      validateGrammar
     } catch (e: Throwable) {
       log.warn("Error validating $file", e)
       emptyList()
@@ -379,68 +384,78 @@ class SymbolIndexer(
     (file.parent ?: root).resolve(config.dataDirName).resolve(file.fileName.toString() + ".json")
 
   fun manifestFile(): Path = root.resolve(config.dataDirName).resolve(config.manifestName)
-   /** `<root>/<dataDirName>/<viewerName>` - sibling of [manifestFile]. */
-   fun viewerFile(): Path = root.resolve(config.dataDirName).resolve(config.viewerName)
-   /**
-    * Copy [Config.viewerResource] from the classpath to [viewerFile].
-    * Missing resources / IO failures are logged and ignored - the index itself is still valid.
-    */
-   fun writeViewer(): Path? {
-     val bytes = loadResource(config.viewerResource)
-     if (bytes == null) {
-       log.warn("Viewer resource {} not found on the classpath; skipping {}", config.viewerResource, config.viewerName)
-       return null
-     }
-     return try {
-       val target = viewerFile()
-       target.parent?.let { Files.createDirectories(it) }
-       Files.write(target, bytes)
-       log.info("Wrote viewer -> {}", target)
-       target
-     } catch (e: Throwable) {
-       log.warn("Unable to write viewer ${config.viewerName}", e)
-       null
-     }
-   }
-   private fun loadResource(resource: String): ByteArray? {
-     val name = resource.removePrefix("/")
-     val streams = sequenceOf(
-       { SymbolIndexer::class.java.getResourceAsStream(resource) },
-       { SymbolIndexer::class.java.classLoader?.getResourceAsStream(name) },
-       { Thread.currentThread().contextClassLoader?.getResourceAsStream(name) },
-     )
-     for (open in streams) {
-       val stream = try {
-         open()
-       } catch (e: Throwable) {
-         null
-       } ?: continue
-       stream.use { return it.readBytes() }
-     }
-     return null
-   }
+
+  /** `<root>/<dataDirName>/<viewerName>` - sibling of [manifestFile]. */
+  fun viewerFile(): Path = root.resolve(config.dataDirName).resolve(config.viewerName)
+
+  /**
+   * Copy [Config.viewerResource] from the classpath to [viewerFile].
+   * Missing resources / IO failures are logged and ignored - the index itself is still valid.
+   */
+  fun writeViewer(): Path? {
+    val bytes = loadResource(config.viewerResource)
+    if (bytes == null) {
+      log.warn("Viewer resource {} not found on the classpath; skipping {}", config.viewerResource, config.viewerName)
+      return null
+    }
+    return try {
+      val target = viewerFile()
+      target.parent?.let { Files.createDirectories(it) }
+      Files.write(target, bytes)
+      log.info("Wrote viewer -> {}", target)
+      target
+    } catch (e: Throwable) {
+      log.warn("Unable to write viewer ${config.viewerName}", e)
+      null
+    }
+  }
+
+  private fun loadResource(resource: String): ByteArray? {
+    val name = resource.removePrefix("/")
+    val streams = sequenceOf(
+      { SymbolIndexer::class.java.getResourceAsStream(resource) },
+      { SymbolIndexer::class.java.classLoader?.getResourceAsStream(name) },
+      { Thread.currentThread().contextClassLoader?.getResourceAsStream(name) },
+    )
+    for (open in streams) {
+      val stream = try {
+        open()
+      } catch (e: Throwable) {
+        null
+      } ?: continue
+      stream.use { return it.readBytes() }
+    }
+    return null
+  }
 
 
   fun loadManifest(): Manifest? = readJson(manifestFile(), Manifest::class.java)
+
   /** `<folder>/<dataDirName>/<packageManifestName>`; `""` / blank means the crawl root. */
   fun packageManifestFile(folder: String): Path =
-    (if (folder.isBlank()) root else root.resolve(folder)).resolve(config.dataDirName).resolve(config.packageManifestName)
+    (if (folder.isBlank()) root else root.resolve(folder)).resolve(config.dataDirName)
+      .resolve(config.packageManifestName)
+
   /** `dir/.data/package.json` for an absolute/relative directory [dir]. */
   fun packageManifestFile(dir: Path): Path =
     dir.resolve(config.dataDirName).resolve(config.packageManifestName)
+
   fun loadPackageManifest(dir: Path): Manifest? = readJson(packageManifestFile(dir), Manifest::class.java)
+
   /** Apply the report rules: hide ambiguous resolutions, then slim unless details were requested. */
   private fun reportRecord(record: FileRecord): FileRecord {
     val filtered = if (config.hideAmbiguousInReports) record.withoutAmbiguousResolutions() else record
     return if (config.includeDetailsInManifest) filtered else filtered.slim()
   }
-     /** [RelatedFileAnalyzer] settings derived from [config]. */
-     private fun relatedFileOptions() = RelatedFileAnalyzer.Options(
-       maxRelated = config.maxRelatedFiles,
-       minScore = config.minRelatedFileScore,
-       maxSharedTokens = config.maxSharedTokensPerRelatedFile,
-       maxDocumentFrequencyRatio = config.relatedFileMaxDocumentFrequency,
-     )
+
+  /** [RelatedFileAnalyzer] settings derived from [config]. */
+  private fun relatedFileOptions() = RelatedFileAnalyzer.Options(
+    maxRelated = config.maxRelatedFiles,
+    minScore = config.minRelatedFileScore,
+    maxSharedTokens = config.maxSharedTokensPerRelatedFile,
+    maxDocumentFrequencyRatio = config.relatedFileMaxDocumentFrequency,
+  )
+
   /** Build a report over [records] (already passed through [reportRecord]). */
   private fun buildManifest(
     folder: String,
@@ -456,17 +471,20 @@ class SymbolIndexer(
     referenceCount = records.sumOf { it.referenceCount },
     resolvedNameCount = records.sumOf { it.resolutions.size },
     unresolvedNameCount = records.sumOf { it.unresolvedNames.size },
-       relatedFileCount = records.sumOf { it.relatedFiles.size },
+    relatedFileCount = records.sumOf { it.relatedFiles.size },
     files = records,
     failures = failures,
   )
+
   /** `a/b/Foo.kt` -> `["a", "a/b"]`; the crawl root itself (`""`, i.e. `project.json`) is excluded. */
   private fun folderAncestors(path: String): List<String> {
     val segments = path.replace('\\', '/').split('/').filter { it.isNotBlank() && it != "." }.dropLast(1)
     return segments.indices.map { i -> segments.subList(0, i + 1).joinToString("/") }
   }
+
   private fun isRootRelative(path: String): Boolean =
     path.isNotBlank() && !path.startsWith("/") && !path.contains("..") && !path.contains(':')
+
   /** One rollup per folder, summarizing that folder and everything beneath it. */
   private fun writePackageManifests(records: List<FileRecord>, failures: List<Failure>, generatedAt: String) {
     val recordsByFolder = LinkedHashMap<String, MutableList<FileRecord>>()
@@ -569,7 +587,7 @@ class SymbolIndexer(
     /**
      * CLI: `SymbolIndexer <root> [--clean] [--no-incremental] [--sequential] [--no-errors]
      *      [--no-references] [--no-reference-details] [--no-resolve] [--manifest-details]
-         *      [--self-refs] [--keep-ambiguous] [--no-package-manifests] [--no-viewer] [--no-related]`
+     *      [--self-refs] [--keep-ambiguous] [--no-package-manifests] [--no-viewer] [--no-related]`
      */
     @JvmStatic
     fun main(args: Array<String>) {
@@ -579,7 +597,7 @@ class SymbolIndexer(
       val indexer = SymbolIndexer(
         root, Config(
           writePackageManifests = "--no-package-manifests" !in flags,
-           writeViewer = "--no-viewer" !in flags,
+          writeViewer = "--no-viewer" !in flags,
           incremental = "--no-incremental" !in flags,
           parallel = "--sequential" !in flags,
           includeValidationErrors = "--no-errors" !in flags,
@@ -589,7 +607,7 @@ class SymbolIndexer(
           excludeSelfFileResolutions = "--self-refs" !in flags,
           hideAmbiguousInReports = "--keep-ambiguous" !in flags,
           includeDetailsInManifest = "--manifest-details" in flags,
-             computeRelatedFiles = "--no-related" !in flags,
+          computeRelatedFiles = "--no-related" !in flags,
         )
       )
       if ("--clean" in flags) indexer.clean()
@@ -597,8 +615,8 @@ class SymbolIndexer(
       println(
         "${manifest.fileCount} files, ${manifest.symbolCount} symbols, " +
             "${manifest.referenceCount} references, ${manifest.resolvedNameCount} resolved, " +
-               "${manifest.unresolvedNameCount} unresolved, ${manifest.relatedFileCount} related links " +
-               "-> ${indexer.manifestFile()}"
+            "${manifest.unresolvedNameCount} unresolved, ${manifest.relatedFileCount} related links " +
+            "-> ${indexer.manifestFile()}"
       )
       manifest.failures.forEach { println("FAILED ${it.path}: ${it.error}") }
     }
