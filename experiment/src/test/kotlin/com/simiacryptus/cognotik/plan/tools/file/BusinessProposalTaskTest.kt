@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.writing
+package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig

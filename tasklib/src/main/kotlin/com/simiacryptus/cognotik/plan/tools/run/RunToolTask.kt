@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.resolveTool
 import com.simiacryptus.cognotik.webui.session.SessionTask

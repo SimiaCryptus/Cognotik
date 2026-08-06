@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.webui.chat
+package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -7,11 +7,10 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Retryable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.Retryable.Companion.async
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.io.OutputStream

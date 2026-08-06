@@ -13,11 +13,11 @@ import com.simiacryptus.cognotik.platform.PluginManagerInterface
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
-import com.simiacryptus.cognotik.webui.chat.BasicChatApp
+import com.simiacryptus.cognotik.webui.session.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import jakarta.servlet.DispatcherType

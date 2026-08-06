@@ -15,8 +15,10 @@ import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Retryable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.Retryable.Companion.async
+import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger

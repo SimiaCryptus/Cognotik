@@ -384,7 +384,7 @@ object FsToolsHandler {
       fileCount = visible.size,
       symbolCount = visible.sumOf { it.symbolCount },
       referenceCount = visible.sumOf { it.referenceCount },
-      resolvedNameCount = visible.sumOf { it.resolutions.size },
+      resolvedNameCount = visible.sumOf { it.referencesTo.size },
       unresolvedNameCount = visible.sumOf { it.unresolvedNames.size },
       files = visible
     )

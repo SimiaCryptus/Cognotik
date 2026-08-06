@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.OutputStream

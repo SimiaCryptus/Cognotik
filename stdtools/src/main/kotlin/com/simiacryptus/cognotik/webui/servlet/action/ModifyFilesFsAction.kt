@@ -12,12 +12,12 @@ package com.simiacryptus.cognotik.webui.servlet.action
     import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
     import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
     import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-    import com.simiacryptus.cognotik.util.SessionProxyServer
+    import com.simiacryptus.cognotik.apps.SessionProxyServer
     import com.simiacryptus.cognotik.util.asChatInterface
     import com.simiacryptus.cognotik.util.renderMarkdown
     import com.simiacryptus.cognotik.webui.application.AppInfoData
     import com.simiacryptus.cognotik.webui.application.ApplicationServer
-    import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+    import com.simiacryptus.cognotik.webui.session.ChatSocketManager
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
     import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
     import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet

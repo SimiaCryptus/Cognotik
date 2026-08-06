@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.platform.hsql.UsageDB
 import com.simiacryptus.cognotik.platform.hsql.UserSettingsDB
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
-import com.simiacryptus.cognotik.util.PluginManager
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 

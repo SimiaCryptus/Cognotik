@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
 
 import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
@@ -69,7 +70,7 @@ abstract class FileServlet : HttpServlet() {
         file != null && file.isFile && editParam != null && editParam != "false" -> {
           serveEditor(file, dir, response)
         }
-        
+
         file != null && file.isFile -> {
           FileRequestHandler.serveFile(file, request, response)
         }
@@ -755,7 +756,7 @@ abstract class FileServlet : HttpServlet() {
       object : com.simiacryptus.cognotik.platform.web.UserProvider {
         override fun authenticate(
           request: HttpServletRequest,
-          response: HttpServletResponse?
+          response: AbstractHttpServletResponse?
         ): User? {
           return null
         }

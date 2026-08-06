@@ -37,10 +37,33 @@ import java.util.stream.Collectors
  * <root>/.data/viewer.html      -> standalone HTML report viewer (reads project.json)
  * ```
  *
+  * **Every path stored in a report is relative to what that report describes**, so a report can be
+  * moved/served together with the code it documents:
+  *
+  * ```
+  * package/.data/foo.java.json   -> paths relative to package/      ("foo.java", "../util/Bar.java")
+  * package/.data/package.json    -> paths relative to package/      ("sub/bar.kt", "../other/Baz.kt")
+  * <root>/.data/project.json     -> paths relative to <root>        ("package/foo.java")
+  * ```
+  *
+  * This applies to [FileRecord.path], [SymbolResolver.Target.path],
+  * [RelatedFileAnalyzer.RelatedFile.path], [IncomingReference.path] and [Failure.path]. Internally
+  * (and in the [Manifest] returned by [index]) everything is crawl-root relative; use
+  * [relativeTo] / [resolvePath] / [rootRelative] to convert. [loadManifest] /
+  * [loadPackageManifest] convert back automatically.
+  *
  * Referenced names are resolved lexically against every file's qualified names by
  * [SymbolResolver]; the result is stored in `resolutions` / `unresolvedNames` in both the
- * sidecars and the manifest.
+* sidecars and the manifest. Resolution never crosses grammars: a reference is only matched
+* against declarations extracted by the same
+* [com.simiacryptus.cognotik.text.validate.GrammarValidator] (see [Config.sameGrammarResolutionOnly]),
+* so identically-named symbols in different languages are never linked.
  *
+* [index] additionally inverts the resolution graph: every record gets a `referencesFrom` list
+* naming the **upstream** files that point at its declarations (see [IncomingReference] and
+* [Config.computeIncomingReferences]), so the sidecars/reports can be navigated in both
+* directions without re-scanning the project.
+*
  * Every reported file also carries a `relatedFiles` list produced by [RelatedFileAnalyzer]:
  * a TF-IDF/cosine ranking over the grammatically-extracted declarations and references, so
  * files that share distinctive (high-IDF) names are linked to each other.
@@ -99,6 +122,23 @@ class SymbolIndexer(
      * declarations are same-file is hidden entirely (neither resolved nor unresolved).
      */
     val excludeSelfFileResolutions: Boolean = SymbolResolver.DEFAULT_EXCLUDE_SELF_FILE,
+     /**
+      * Only match references against declarations produced by the **same grammar** - i.e. by the
+      * same [com.simiacryptus.cognotik.text.validate.GrammarValidator]. A Java `Buffer` can then
+      * never resolve to a C++ or TypeScript `Buffer`. Names that only match in another language are
+      * reported as unresolved. Turn off to get language-agnostic (lexical-only) matching.
+      */
+     val sameGrammarResolutionOnly: Boolean = SymbolResolver.DEFAULT_SAME_GRAMMAR_ONLY,
+    /**
+     * Populate [FileRecord.referencesFrom] - the reverse of [FileRecord.referencesTo] - by
+     * inverting the project-wide resolution graph. Only meaningful for [index]; [indexFile]
+     * cannot see the rest of the project and leaves whatever the sidecar already held.
+     */
+    val computeIncomingReferences: Boolean = true,
+    /** Maximum number of referencing files stored per record. */
+    val maxIncomingReferencesPerFile: Int = 500,
+    /** Maximum number of names stored per incoming link ([IncomingReference.count] stays exact). */
+    val maxIncomingReferenceNames: Int = 100,
     /**
      * Omit `ambiguous = true` resolutions from `project.json` and the `package.json` rollups.
      * The per-file sidecars always keep the full set.
@@ -133,7 +173,12 @@ class SymbolIndexer(
   /** Everything known about one indexed source file. */
   @JsonIgnoreProperties(ignoreUnknown = true)
   data class FileRecord(
-    /** Path relative to the crawl root, always '/'-separated. */
+    /**
+     * Path of the described file, always '/'-separated and **relative to the report that holds
+     * this record**: to the source file's own folder in the sidecars, to [Manifest.folder] in a
+     * `package.json` rollup and to the crawl root in `project.json`.
+     * In memory (and in the [Manifest] returned by [index]) it is always crawl-root relative.
+     */
     val path: String = "",
     val name: String = "",
     val extension: String = "",
@@ -156,9 +201,14 @@ class SymbolIndexer(
     /** Distinct referenced names (sorted) - cheap enough to always keep. */
     val referencedNames: List<String> = emptyList(),
     /** Lexical resolutions of [referencedNames] against the project's [qualifiedNames]. */
-    val resolutions: List<SymbolResolver.Resolution> = emptyList(),
+    val referencesTo: List<SymbolResolver.Resolution> = emptyList(),
     /** Referenced names that matched no qualified name anywhere in the index. */
     val unresolvedNames: List<String> = emptyList(),
+    /**
+     * Upstream files that reference the declarations of this file, strongest link first.
+     * The exact inverse of [referencesTo] across the whole index; self-references are omitted.
+     */
+    val referencesFrom: List<IncomingReference> = emptyList(),
     /**
      * Files with a similar symbol/reference vocabulary, nearest first.
      * Produced by [RelatedFileAnalyzer] (TF-IDF cosine over grammar-extracted tokens).
@@ -168,16 +218,51 @@ class SymbolIndexer(
   ) {
     /**
      * Manifest-friendly copy: drops the two huge detail lists (`symbols`, `references`).
-     * Counts, [qualifiedNames], [referencedNames], [resolutions] and [relatedFiles] are preserved.
+     * Counts, [qualifiedNames], [referencedNames], [referencesTo], [referencesFrom] and
+     * [relatedFiles] are preserved.
      */
     fun slim(): FileRecord = copy(symbols = emptyList(), references = emptyList())
 
     /**
      * Report-friendly copy: ambiguous resolutions are dropped, so `ambiguous = true`
-     * never appears in `project.json` / `package.json`.
+     * never appears in `project.json` / `package.json` - in either direction.
      */
-    fun withoutAmbiguousResolutions(): FileRecord =
-      if (resolutions.none { it.ambiguous }) this else copy(resolutions = resolutions.filterNot { it.ambiguous })
+    fun withoutAmbiguousResolutions(): FileRecord {
+      val ambiguousOut = referencesTo.any { it.ambiguous }
+      val ambiguousIn = referencesFrom.any { it.ambiguousNames.isNotEmpty() }
+      if (!ambiguousOut && !ambiguousIn) return this
+      return copy(
+        referencesTo = if (ambiguousOut) referencesTo.filterNot { it.ambiguous } else referencesTo,
+        referencesFrom = if (ambiguousIn) referencesFrom.mapNotNull { it.withoutAmbiguous() } else referencesFrom,
+      )
+    }
+  }
+  /**
+   * One incoming edge of the resolution graph: the file [path] resolves [names] to declarations
+   * of the record holding this entry. The mirror image of [SymbolResolver.Resolution].
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  data class IncomingReference(
+    /**
+     * Path of the *referencing* file, '/'-separated and relative to the report that holds it
+     * (same rules as [FileRecord.path]).
+     */
+    val path: String = "",
+    /** Names declared here that [path] refers to, sorted; truncated to [Config.maxIncomingReferenceNames]. */
+    val names: List<String> = emptyList(),
+    /** Number of distinct referenced names, before any truncation of [names]. */
+    val count: Int = 0,
+    /** Subset of [names] whose resolution was ambiguous (the name matched several declarations). */
+    val ambiguousNames: List<String> = emptyList(),
+  ) {
+    /** Report-friendly copy, or `null` when nothing unambiguous is left. */
+    fun withoutAmbiguous(): IncomingReference? {
+      if (ambiguousNames.isEmpty()) return this
+      val drop = ambiguousNames.toSet()
+      val kept = names.filterNot { it in drop }
+      if (kept.isEmpty()) return null
+      return copy(names = kept, count = maxOf(kept.size, count - ambiguousNames.size), ambiguousNames = emptyList())
+    }
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -188,7 +273,8 @@ class SymbolIndexer(
     val root: String = "",
     /**
      * Root-relative folder summarized by this report; `""` for the whole-project manifest.
-     * [FileRecord.path] entries stay relative to [root], never to the folder.
+     * Every path inside [files] / [failures] is relative to **this folder** (so `project.json`,
+     * with `folder = ""`, keeps crawl-root relative paths).
      */
     val folder: String = "",
     val generatedAt: String = "",
@@ -199,6 +285,8 @@ class SymbolIndexer(
     val resolvedNameCount: Int = 0,
     /** Number of referenced names that matched nothing. */
     val unresolvedNameCount: Int = 0,
+    /** Total number of incoming (`referencesFrom`) links reported across [files]. */
+    val incomingReferenceCount: Int = 0,
     /** Total number of related-file links reported across [files]. */
     val relatedFileCount: Int = 0,
     /** Slim records unless [Config.includeDetailsInManifest] is set. */
@@ -238,18 +326,22 @@ class SymbolIndexer(
         parsed.map { it.second },
         config.maxResolutionTargets,
         config.excludeSelfFileResolutions,
+         config.sameGrammarResolutionOnly,
       )
       else parsed.map { it.second }
     val related: List<FileRecord> =
       if (config.computeRelatedFiles) RelatedFileAnalyzer.analyze(resolved, relatedFileOptions())
       else resolved.map { if (it.relatedFiles.isEmpty()) it else it.copy(relatedFiles = emptyList()) }
-    val indexed: List<Pair<Path, FileRecord>> = parsed.mapIndexed { i, (path, _) -> path to related[i] }
+    val linked: List<FileRecord> =
+      if (config.computeIncomingReferences) linkIncomingReferences(related)
+      else related.map { if (it.referencesFrom.isEmpty()) it else it.copy(referencesFrom = emptyList()) }
+    val indexed: List<Pair<Path, FileRecord>> = parsed.mapIndexed { i, (path, _) -> path to linked[i] }
 
 
     val writeStream = if (config.parallel) indexed.parallelStream() else indexed.stream()
     writeStream.forEach { (path, record) ->
       try {
-        writeJson(dataFileFor(path), record)
+        writeJson(dataFileFor(path), folderRelative(record, folderOf(record.path)))
       } catch (e: Throwable) {
         log.warn("Unable to write record for $path", e)
         failures.add(Failure(record.path, e.message ?: e.javaClass.simpleName))
@@ -263,9 +355,10 @@ class SymbolIndexer(
     if (config.writePackageManifests) writePackageManifests(reportRecords, sortedFailures, manifest.generatedAt)
     if (config.writeViewer) writeViewer()
     log.info(
-      "Indexed {} file(s) / {} symbol(s) / {} reference(s) / {} resolved / {} unresolved / {} related link(s) in {} ms -> {}",
+      "Indexed {} file(s) / {} symbol(s) / {} reference(s) / {} resolved / {} unresolved / {} incoming link(s) / {} related link(s) in {} ms -> {}",
       manifest.fileCount, manifest.symbolCount, manifest.referenceCount,
-      manifest.resolvedNameCount, manifest.unresolvedNameCount, manifest.relatedFileCount,
+      manifest.resolvedNameCount, manifest.unresolvedNameCount,
+      manifest.incomingReferenceCount, manifest.relatedFileCount,
       System.currentTimeMillis() - start, manifestFile()
     )
     return manifest
@@ -274,14 +367,20 @@ class SymbolIndexer(
   /**
    * Parse a single file and (re)write its `.data/<name>.json` sidecar.
    * References are resolved against this file's own symbols only - use [index] for
-   * project-wide resolution.
+   * project-wide resolution; [FileRecord.referencesFrom] therefore keeps whatever the previous
+   * (project-wide) run stored and is not recomputed here.
    */
   fun indexFile(file: Path): FileRecord {
     val parsed = buildRecord(file)
     val record = if (config.resolveReferences)
-      SymbolResolver.resolve(listOf(parsed), config.maxResolutionTargets, config.excludeSelfFileResolutions).first()
+       SymbolResolver.resolve(
+         listOf(parsed),
+         config.maxResolutionTargets,
+         config.excludeSelfFileResolutions,
+         config.sameGrammarResolutionOnly,
+       ).first()
     else parsed
-    writeJson(dataFileFor(file), record)
+    writeJson(dataFileFor(file), folderRelative(record, folderOf(record.path)))
     return record
   }
 
@@ -296,7 +395,10 @@ class SymbolIndexer(
     if (config.incremental) {
       val existing = readRecord(dataFile)
       if (existing != null && existing.size == attrs.size() && existing.lastModified == lastModified) {
-        return existing
+        // sidecars store folder-relative paths - bring them back to crawl-root relative form
+        val relPath = relativePath(file)
+        val restored = rootRelative(existing, folderOf(relPath))
+        return if (restored.path == relPath) restored else restored.copy(path = relPath)
       }
     }
     val bytes = Files.readAllBytes(file)
@@ -308,7 +410,7 @@ class SymbolIndexer(
       emptyList()
     }
     val errors = if (!config.includeValidationErrors) emptyList() else try {
-      val validateGrammar = validator.validateGrammar(code)
+      val validateGrammar = validator.validateGrammar(code.trim().sanitizeSource())
       if(validateGrammar.isNotEmpty()) {
         log.debug("Validation errors for {}: {}", file, validateGrammar.joinToString("; ") { it.message })
       }
@@ -429,7 +531,8 @@ class SymbolIndexer(
   }
 
 
-  fun loadManifest(): Manifest? = readJson(manifestFile(), Manifest::class.java)
+  /** Loads `project.json`; paths are converted back to crawl-root relative form. */
+  fun loadManifest(): Manifest? = readJson(manifestFile(), Manifest::class.java)?.let { rootRelative(it) }
 
   /** `<folder>/<dataDirName>/<packageManifestName>`; `""` / blank means the crawl root. */
   fun packageManifestFile(folder: String): Path =
@@ -440,13 +543,58 @@ class SymbolIndexer(
   fun packageManifestFile(dir: Path): Path =
     dir.resolve(config.dataDirName).resolve(config.packageManifestName)
 
-  fun loadPackageManifest(dir: Path): Manifest? = readJson(packageManifestFile(dir), Manifest::class.java)
+  /** Loads a folder rollup; paths are converted back to crawl-root relative form. */
+  fun loadPackageManifest(dir: Path): Manifest? =
+    readJson(packageManifestFile(dir), Manifest::class.java)?.let { rootRelative(it) }
 
   /** Apply the report rules: hide ambiguous resolutions, then slim unless details were requested. */
   private fun reportRecord(record: FileRecord): FileRecord {
     val filtered = if (config.hideAmbiguousInReports) record.withoutAmbiguousResolutions() else record
     return if (config.includeDetailsInManifest) filtered else filtered.slim()
   }
+  /**
+   * Invert the resolution graph: every record learns which other files reference its declarations.
+   * Runs over the already-resolved [records] (crawl-root relative paths); self-references are
+   * dropped and stale [FileRecord.referencesFrom] entries (e.g. restored from a sidecar by the
+   * incremental path) are cleared.
+   */
+  private fun linkIncomingReferences(records: List<FileRecord>): List<FileRecord> {
+    if (records.isEmpty()) return records
+    val byTarget = HashMap<String, MutableMap<String, MutableSet<String>>>()
+    val ambiguousByTarget = HashMap<String, MutableMap<String, MutableSet<String>>>()
+    records.forEach { source ->
+      source.referencesTo.forEach { resolution ->
+        resolution.targets.asSequence().map { it.path }.distinct().forEach { target ->
+          if (target.isBlank() || target == source.path) return@forEach
+          byTarget.getOrPut(target) { HashMap() }.getOrPut(source.path) { HashSet() }.add(resolution.name)
+          if (resolution.ambiguous) ambiguousByTarget.getOrPut(target) { HashMap() }
+            .getOrPut(source.path) { HashSet() }.add(resolution.name)
+        }
+      }
+    }
+    return records.map { record ->
+      val bySource = byTarget[record.path]
+      if (bySource.isNullOrEmpty())
+        return@map if (record.referencesFrom.isEmpty()) record else record.copy(referencesFrom = emptyList())
+      val ambiguousBySource = ambiguousByTarget[record.path] ?: emptyMap()
+      val links = bySource.entries
+        .map { (source, referenced) ->
+          val sorted = referenced.sorted()
+          val kept = sorted.take(config.maxIncomingReferenceNames)
+          val keptSet = kept.toSet()
+          IncomingReference(
+            path = source,
+            names = kept,
+            count = sorted.size,
+            ambiguousNames = (ambiguousBySource[source] ?: emptySet()).filter { it in keptSet }.sorted(),
+          )
+        }
+        .sortedWith(compareByDescending<IncomingReference> { it.count }.thenBy { it.path })
+        .take(config.maxIncomingReferencesPerFile)
+      record.copy(referencesFrom = links)
+    }
+  }
+
 
   /** [RelatedFileAnalyzer] settings derived from [config]. */
   private fun relatedFileOptions() = RelatedFileAnalyzer.Options(
@@ -456,7 +604,10 @@ class SymbolIndexer(
     maxDocumentFrequencyRatio = config.relatedFileMaxDocumentFrequency,
   )
 
-  /** Build a report over [records] (already passed through [reportRecord]). */
+  /**
+   * Build a report over [records] (already passed through [reportRecord]).
+   * [records] / [failures] arrive crawl-root relative and are rewritten relative to [folder].
+   */
   private fun buildManifest(
     folder: String,
     records: List<FileRecord>,
@@ -469,11 +620,12 @@ class SymbolIndexer(
     fileCount = records.size,
     symbolCount = records.sumOf { it.symbolCount },
     referenceCount = records.sumOf { it.referenceCount },
-    resolvedNameCount = records.sumOf { it.resolutions.size },
+    resolvedNameCount = records.sumOf { it.referencesTo.size },
     unresolvedNameCount = records.sumOf { it.unresolvedNames.size },
+    incomingReferenceCount = records.sumOf { it.referencesFrom.size },
     relatedFileCount = records.sumOf { it.relatedFiles.size },
-    files = records,
-    failures = failures,
+    files = records.map { folderRelative(it, folder) },
+    failures = failures.map { folderRelative(it, folder) },
   )
 
   /** `a/b/Foo.kt` -> `["a", "a/b"]`; the crawl root itself (`""`, i.e. `project.json`) is excluded. */
@@ -579,6 +731,79 @@ class SymbolIndexer(
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
     }
+    /* ------------------------------------------------------------------ *
+     *  report-relative path plumbing                                     *
+     * ------------------------------------------------------------------ */
+    private fun pathSegments(path: String): List<String> =
+      path.replace('\\', '/').split('/').filter { it.isNotBlank() && it != "." }
+    private fun isAbsoluteish(path: String) = path.startsWith("/") || path.contains(':')
+    /** Folder part of a root-relative '/'-separated path (`""` for files directly in the root). */
+    @JvmStatic
+    fun folderOf(path: String): String = path.replace('\\', '/').substringBeforeLast('/', "")
+    /**
+     * [path] as seen from the folder [base] (both crawl-root relative, '/'-separated):
+     * `relativeTo("a/b", "a/b/Foo.kt") == "Foo.kt"`, `relativeTo("a/b", "a/c/Bar.kt") == "../c/Bar.kt"`.
+     * A blank [base] (the crawl root) or an absolute [path] is returned unchanged.
+     */
+    @JvmStatic
+    fun relativeTo(base: String, path: String): String {
+      if (base.isBlank() || path.isBlank() || isAbsoluteish(path)) return path
+      val from = pathSegments(base)
+      val to = pathSegments(path)
+      if (to.isEmpty()) return path
+      var common = 0
+      while (common < from.size && common < to.size - 1 && from[common] == to[common]) common++
+      val up = List(from.size - common) { ".." }
+      return (up + to.subList(common, to.size)).joinToString("/")
+    }
+    /** Inverse of [relativeTo]: `resolvePath("a/b", "../c/Bar.kt") == "a/c/Bar.kt"`. */
+    @JvmStatic
+    fun resolvePath(base: String, path: String): String {
+      if (path.isBlank() || isAbsoluteish(path)) return path
+      val segments = pathSegments(base).toMutableList()
+      pathSegments(path).forEach {
+        if (it == "..") {
+          if (segments.isNotEmpty()) segments.removeAt(segments.size - 1)
+        } else segments.add(it)
+      }
+      return segments.joinToString("/")
+    }
+    /** Report-local copy of [record]: every stored path becomes relative to the folder [base]. */
+    @JvmStatic
+    fun folderRelative(record: FileRecord, base: String): FileRecord =
+      if (base.isBlank()) record else record.copy(
+        path = relativeTo(base, record.path),
+        referencesTo = record.referencesTo.map { r ->
+          r.copy(targets = r.targets.map { t -> t.copy(path = relativeTo(base, t.path)) })
+        },
+        referencesFrom = record.referencesFrom.map { it.copy(path = relativeTo(base, it.path)) },
+        relatedFiles = record.relatedFiles.map { it.copy(path = relativeTo(base, it.path)) },
+      )
+    @JvmStatic
+    fun folderRelative(failure: Failure, base: String): Failure =
+      if (base.isBlank()) failure else failure.copy(path = relativeTo(base, failure.path))
+    /** Undo [folderRelative] for a record stored in the report of folder [base]. */
+    @JvmStatic
+    fun rootRelative(record: FileRecord, base: String): FileRecord =
+      if (base.isBlank()) record else record.copy(
+        path = resolvePath(base, record.path),
+        referencesTo = record.referencesTo.map { r ->
+          r.copy(targets = r.targets.map { t -> t.copy(path = resolvePath(base, t.path)) })
+        },
+        referencesFrom = record.referencesFrom.map { it.copy(path = resolvePath(base, it.path)) },
+        relatedFiles = record.relatedFiles.map { it.copy(path = resolvePath(base, it.path)) },
+      )
+    /** Rewrite a loaded report's [Manifest.folder]-relative paths back to crawl-root relative ones. */
+    @JvmStatic
+    fun rootRelative(manifest: Manifest): Manifest {
+      val base = manifest.folder
+      if (base.isBlank()) return manifest
+      return manifest.copy(
+        files = manifest.files.map { rootRelative(it, base) },
+        failures = manifest.failures.map { it.copy(path = resolvePath(base, it.path)) },
+      )
+    }
+
 
     /** One-liner: index [root] with default settings. */
     @JvmStatic
@@ -587,7 +812,8 @@ class SymbolIndexer(
     /**
      * CLI: `SymbolIndexer <root> [--clean] [--no-incremental] [--sequential] [--no-errors]
      *      [--no-references] [--no-reference-details] [--no-resolve] [--manifest-details]
-     *      [--self-refs] [--keep-ambiguous] [--no-package-manifests] [--no-viewer] [--no-related]`
+      *      [--self-refs] [--cross-grammar] [--keep-ambiguous] [--no-package-manifests]
+      *      [--no-viewer] [--no-related] [--no-incoming]`
      */
     @JvmStatic
     fun main(args: Array<String>) {
@@ -605,6 +831,8 @@ class SymbolIndexer(
           includeReferenceDetails = "--no-reference-details" !in flags,
           resolveReferences = "--no-resolve" !in flags,
           excludeSelfFileResolutions = "--self-refs" !in flags,
+           sameGrammarResolutionOnly = "--cross-grammar" !in flags,
+          computeIncomingReferences = "--no-incoming" !in flags,
           hideAmbiguousInReports = "--keep-ambiguous" !in flags,
           includeDetailsInManifest = "--manifest-details" in flags,
           computeRelatedFiles = "--no-related" !in flags,
@@ -615,10 +843,64 @@ class SymbolIndexer(
       println(
         "${manifest.fileCount} files, ${manifest.symbolCount} symbols, " +
             "${manifest.referenceCount} references, ${manifest.resolvedNameCount} resolved, " +
-            "${manifest.unresolvedNameCount} unresolved, ${manifest.relatedFileCount} related links " +
+            "${manifest.unresolvedNameCount} unresolved, ${manifest.incomingReferenceCount} incoming links, " +
+            "${manifest.relatedFileCount} related links " +
             "-> ${indexer.manifestFile()}"
       )
       manifest.failures.forEach { println("FAILED ${it.path}: ${it.error}") }
     }
   }
 }
+
+
+
+
+ /**
+  * Characters that are invisible (or effectively invisible) and are never meaningful in source code,
+  * but which `String.trim()` will NOT remove because `Char.isWhitespace()` returns false for them.
+  * The classic offender is the UTF-8 BOM (U+FEFF, "ZERO WIDTH NO-BREAK SPACE") left at the head of a file.
+  */
+ private val INVISIBLE_JUNK: Set<Char> = setOf(
+   '\uFEFF', // BOM / ZERO WIDTH NO-BREAK SPACE
+   '\uFFFE', // byte-swapped BOM (mis-decoded file)
+   '\uFFFD', // replacement char from a bad decode
+   '\u0000', // stray NUL
+   '\u200B', // zero width space
+   '\u200C', // zero width non-joiner
+   '\u200D', // zero width joiner
+   '\u2060', // word joiner
+   '\u00AD', // soft hyphen
+   '\u180E', // mongolian vowel separator
+   '\u200E', '\u200F', // LRM / RLM
+   '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', // bidi embedding/override (trojan-source)
+   '\u2066', '\u2067', '\u2068', '\u2069' // bidi isolates
+ )
+
+ /** Whitespace-ish characters that should be normalized to a plain space rather than deleted. */
+ private val EXOTIC_SPACES: Set<Char> = setOf(
+   '\u00A0', // no-break space
+   '\u2007', // figure space
+   '\u202F', // narrow no-break space
+   '\u2028', '\u2029' // line/paragraph separator
+ )
+
+ private fun Char.isInvisibleJunk(): Boolean =
+   this in INVISIBLE_JUNK || Character.getType(this) == Character.FORMAT.toInt()
+
+ /**
+  * Strips BOM/zero-width/bidi-control characters, normalizes exotic spaces, and trims.
+  * Safe to call on any source text before handing it to a parser/validator.
+  */
+ fun String.sanitizeSource(): String {
+   if (isEmpty()) return this
+   val needsWork = any { it.isInvisibleJunk() || it in EXOTIC_SPACES }
+   val cleaned = if (!needsWork) this else buildString(length) {
+     for (c in this@sanitizeSource) when {
+       c.isInvisibleJunk() -> {} // drop
+       c == '\u2028' || c == '\u2029' -> append('\n')
+       c in EXOTIC_SPACES -> append(' ')
+       else -> append(c)
+     }
+   }
+   return cleaned.trim()
+ }

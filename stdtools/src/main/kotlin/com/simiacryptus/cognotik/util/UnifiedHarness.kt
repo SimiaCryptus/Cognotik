@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.chat.ChatInterface

@@ -1,15 +1,12 @@
-package com.simiacryptus.cognotik.webui.chat
+package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.String
@@ -83,7 +80,7 @@ class BasicChatApp(
     return ChatSocketManager(
       session = session,
       smartModel = smartApi ?: throw RuntimeException("No API key for model ${smartModel}"),
-      fastModel = fastApi?: throw RuntimeException("No API key for model ${fastModel}"),
+      fastModel = fastApi ?: throw RuntimeException("No API key for model ${fastModel}"),
       systemPrompt = "",
       temperature = settings.temperature,
       applicationClass = this::class.java,

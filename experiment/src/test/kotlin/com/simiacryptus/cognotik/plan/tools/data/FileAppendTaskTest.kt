@@ -1,12 +1,12 @@
-package com.simiacryptus.cognotik.plan.tools.file
+package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.data.FileAppendTask
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
@@ -19,7 +19,7 @@ object FileAppendTaskTest {
     UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
   }
 
-  @org.junit.jupiter.api.Tag("Integration")
+  @Tag("Integration")
   //@org.junit.jupiter.api.Test
   @Timeout(10, unit = TimeUnit.MINUTES)
   fun test() {

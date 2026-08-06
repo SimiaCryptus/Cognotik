@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.application
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server

@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.webui.servlet.GiftedCreditsServlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets

@@ -1,9 +1,10 @@
 ﻿@file:Suppress("NAME_SHADOWING")
 
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.txt
 
-import com.simiacryptus.cognotik.util.TextBlock.Companion.DELIMITER
-import com.simiacryptus.cognotik.util.TextBlock.Companion.TAB_REPLACEMENT
+import com.simiacryptus.cognotik.txt.TextBlock.Companion.DELIMITER
+import com.simiacryptus.cognotik.txt.TextBlock.Companion.TAB_REPLACEMENT
+import com.simiacryptus.cognotik.util.StringUtil
 import java.util.*
 import java.util.stream.Collectors
 

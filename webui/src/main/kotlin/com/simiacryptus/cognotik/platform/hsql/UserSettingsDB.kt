@@ -87,7 +87,7 @@ open class UserSettingsDB : UserSettingsInterface {
   }
 
   override fun updateUserSettings(user: User, settings: UserSettings) {
-    log.debug("Updating user settings for user: {}", user)
+    log.warn("Updating user settings for user: {}", user)
     try {
       // Merge and write inside a single transaction so concurrent writers
       // cannot interleave between the read and the write.

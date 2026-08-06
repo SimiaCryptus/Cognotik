@@ -1,4 +1,4 @@
-package com.openai.models
+package com.simiacryptus.cognotik.chat.model.src.main.kotlin.com.openai.models
 
 /**
  * Represents the set of OpenAI (ChatGPT) models currently offered across

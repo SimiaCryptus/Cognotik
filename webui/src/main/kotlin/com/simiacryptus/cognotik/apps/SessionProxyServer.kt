@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -6,10 +6,11 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.chat.ChatServer
-import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+import com.simiacryptus.cognotik.webui.session.ChatServer
+import com.simiacryptus.cognotik.webui.session.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
 open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : ApplicationServer(
   applicationName = appname,
@@ -73,7 +74,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
        }
      }
 
-     val agents: MutableMap<Session, SocketManager> = object : java.util.concurrent.ConcurrentHashMap<Session, SocketManager>() {
+     val agents: MutableMap<Session, SocketManager> = object : ConcurrentHashMap<Session, SocketManager>() {
        override fun put(key: Session, value: SocketManager): SocketManager? {
          registerSessionOwner(key)
          return super.put(key, value)
@@ -86,7 +87,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
        }
      }
 
-     val chats: MutableMap<Session, ChatServer> = object : java.util.concurrent.ConcurrentHashMap<Session, ChatServer>() {
+     val chats: MutableMap<Session, ChatServer> = object : ConcurrentHashMap<Session, ChatServer>() {
        override fun put(key: Session, value: ChatServer): ChatServer? {
          registerSessionOwner(key)
          return super.put(key, value)

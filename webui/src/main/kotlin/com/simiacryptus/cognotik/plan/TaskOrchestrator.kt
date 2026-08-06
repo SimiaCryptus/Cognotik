@@ -11,6 +11,8 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.TabbedDisplay
+import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isBinaryFile
 import com.simiacryptus.cognotik.webui.session.SessionTask

@@ -15,6 +15,8 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -234,34 +236,34 @@ open class ConversationalMode(
             result
         } else {
             Discussable(
-                task = planTask,
-                heading = "Plan Task",
-                userMessage = { userMessage },
-                initialResponse = {
-                    requestToTask(
-                        defaultModel, parserChatter,
-                        userMessage,
-                        this@ConversationalMode.orchestrationConfig,
-                        this@ConversationalMode.systemPrompt,
-                        this.getConversationContext()
-                    )
-                },
-                outputFn = { (reasoning, taskConfig) ->
-                    reasoning.text.renderMarkdown() +
-                            "\n\nProposed Task:\n```json\n${JsonUtil.toJson(taskConfig)}\n```".renderMarkdown()
-                },
-                reviseResponse = { history ->
-                    val discussionContext = history.map { (msg, role) ->
-                        "${role.name.uppercase()}: $msg"
-                    }
-                    requestToTask(
-                        defaultModel, parserChatter,
-                        userMessage,
-                        this@ConversationalMode.orchestrationConfig,
-                        this@ConversationalMode.systemPrompt,
-                        this.getConversationContext() + discussionContext
-                    )
+              task = planTask,
+              heading = "Plan Task",
+              userMessage = { userMessage },
+              initialResponse = {
+                requestToTask(
+                  defaultModel, parserChatter,
+                  userMessage,
+                  this@ConversationalMode.orchestrationConfig,
+                  this@ConversationalMode.systemPrompt,
+                  this.getConversationContext()
+                )
+              },
+              outputFn = { (reasoning, taskConfig) ->
+                reasoning.text.renderMarkdown() +
+                    "\n\nProposed Task:\n```json\n${JsonUtil.toJson(taskConfig)}\n```".renderMarkdown()
+              },
+              reviseResponse = { history ->
+                val discussionContext = history.map { (msg, role) ->
+                  "${role.name.uppercase()}: $msg"
                 }
+                requestToTask(
+                  defaultModel, parserChatter,
+                  userMessage,
+                  this@ConversationalMode.orchestrationConfig,
+                  this@ConversationalMode.systemPrompt,
+                  this.getConversationContext() + discussionContext
+                )
+              }
             ).call()
         }
 

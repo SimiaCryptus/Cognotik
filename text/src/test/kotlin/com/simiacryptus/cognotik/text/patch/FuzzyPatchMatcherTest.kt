@@ -1,7 +1,6 @@
-package com.simiacryptus.diff
+package com.simiacryptus.cognotik.text.patch
 
-import com.simiacryptus.cognotik.text.patch.FuzzyPatchMatcher
-import com.simiacryptus.diff.PatchTestCase.Companion.test
+import com.simiacryptus.cognotik.text.patch.PatchTestCase.Companion.test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
