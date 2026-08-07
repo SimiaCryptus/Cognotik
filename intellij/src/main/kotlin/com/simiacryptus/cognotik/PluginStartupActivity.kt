@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.getExternalConfigurationDir
 import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
@@ -50,8 +51,10 @@ class PluginStartupActivity : ProjectActivity {
 
     override suspend fun execute(project: Project) {
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
-        DatabaseFacet.resetAll()
-        DatabaseFacet.root = (project.basePath?.let { File(it) } ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
+        //DatabaseFacet.resetAll()
+        val extFile = project.getExternalConfigurationDir()?.toFile()
+        DatabaseFacet.root = (extFile ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
+        //DatabaseFacet.root = (project.basePath?.let { File(it) } ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
         System.getProperty("cognotik.config")?.let { configFile ->
