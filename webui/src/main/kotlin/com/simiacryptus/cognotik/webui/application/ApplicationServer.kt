@@ -25,7 +25,6 @@ import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
-import org.eclipse.jetty.websocket.server.JettyServerUpgradeResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -345,20 +344,14 @@ class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
       val userSettings =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
       val token = request.getCookie() ?: ""
+      val passwordHash = userSettings.passwordHash
+      val internalToken = userSettings.internalToken
       val verified = try {
-        if (userSettings.passwordHash != null) {
-          val result = LoginServlet.verifySessionToken(token, userSettings.passwordHash)
-          when (result) {
-            is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
-            is LoginServlet.Companion.SessionVerificationResult.Failure -> {
-              log.warn(
-                "Session token verification failed for user: {} - {} ({})",
-                claimedUser.email, result.error, result.reason
-              )
-              null
-            }
-          }
-        } else {
+        (if (internalToken != null) {
+          claimedUser.isMatch(LoginServlet.verifySessionToken(token, internalToken))
+        } else null) ?: (if (passwordHash != null) {
+          claimedUser.isMatch(LoginServlet.verifySessionToken(token, passwordHash))
+        } else null) ?: apply {
           log.warn("No password hash found for user: {}, cannot verify session token", claimedUser.email)
           null
         }
@@ -392,6 +385,19 @@ class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
         response.setHeader("Location", "/login/?target=$encodedTarget")
       }
       return null
+    }
+  }
+
+  private fun User.isMatch(
+    result: LoginServlet.Companion.SessionVerificationResult
+  ): LoginServlet.Companion.SessionEnvelope? = when (result) {
+    is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
+    is LoginServlet.Companion.SessionVerificationResult.Failure -> {
+      log.warn(
+        "Session token verification failed for user: {} - {} ({})",
+        email, result.error, result.reason
+      )
+      null
     }
   }
 }

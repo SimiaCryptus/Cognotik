@@ -757,9 +757,7 @@ abstract class FileServlet : HttpServlet() {
         override fun authenticate(
           request: HttpServletRequest,
           response: AbstractHttpServletResponse?
-        ): User? {
-          return null
-        }
+        ) = null
       }
     var isWriteAllowed = fun(user: User?, request: HttpServletRequest) = when {
       user == null -> false
