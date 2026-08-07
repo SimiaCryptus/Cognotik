@@ -12,10 +12,12 @@ import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown

@@ -2,6 +2,9 @@
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.simiacryptus.cognotik.txt.BlockComment
+import com.simiacryptus.cognotik.txt.LineComment
+import com.simiacryptus.cognotik.txt.TextBlockFactory
 import java.util.*
 
 enum class ComputerLanguage(configuration: Configuration) {

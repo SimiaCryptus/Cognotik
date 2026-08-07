@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.webui.application.AppInfoData

@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import icons.MyIcons
 import org.slf4j.LoggerFactory.getLogger

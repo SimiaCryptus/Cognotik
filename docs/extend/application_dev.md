@@ -154,7 +154,7 @@ This is the most critical step. The `SessionProxyServer` acts as the router. You
 `/#<session_id>`, use *this* app instance."
 
 ```kotlin
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 

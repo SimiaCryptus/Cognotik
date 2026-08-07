@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
@@ -20,6 +21,9 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.Retryable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -190,31 +194,31 @@ class MultiStepPatchAction : BaseAction() {
 
             val toInput = { it: String -> listOf(codeSummary(), it) }
             val architectureResponse = Discussable(
-                task = task,
-                userMessage = { userMessage },
-                heading = renderMarkdown(userMessage),
-                initialResponse = { it: String -> designActor.answer(toInput(it)) },
-                outputFn = { design: ParsedResponse<TaskList> ->
+              task = task,
+              userMessage = { userMessage },
+              heading = renderMarkdown(userMessage),
+              initialResponse = { it: String -> designActor.answer(toInput(it)) },
+              outputFn = { design: ParsedResponse<TaskList> ->
 
-                    val map = mapOf(
-                      "Text" to design.text.renderMarkdown(true),
-                      "JSON" to "```json\n${toJson(design.obj)}\n```".renderMarkdown(true),
-                    )
-                  TabbedDisplay.displayMapInTabs(
-                    map,
-                    null,
-                    map.entries.map { it.value.length + it.key.length }.sum() > 10000
-                  )
-                },
-                reviseResponse = { userMessages: List<Pair<String, Role>> ->
-                    designActor.respond(
-                        messages = (userMessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
-                            .toTypedArray<ModelSchema.ChatMessage>()),
-                        input = toInput(userMessage),
-                    )
-                },
-                atomicRef = AtomicReference(),
-                semaphore = Semaphore(0),
+                val map = mapOf(
+                  "Text" to design.text.renderMarkdown(true),
+                  "JSON" to "```json\n${toJson(design.obj)}\n```".renderMarkdown(true),
+                )
+                TabbedDisplay.displayMapInTabs(
+                  map,
+                  null,
+                  map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                )
+              },
+              reviseResponse = { userMessages: List<Pair<String, Role>> ->
+                designActor.respond(
+                  messages = (userMessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                    .toTypedArray<ModelSchema.ChatMessage>()),
+                  input = toInput(userMessage),
+                )
+              },
+              atomicRef = AtomicReference(),
+              semaphore = Semaphore(0),
             ).call()
 
             try {
@@ -229,13 +233,13 @@ class MultiStepPatchAction : BaseAction() {
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
                     ApplicationServices.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
-                        Retryable(task) {
-                            try {
-                                val filter = codeFiles.filter { path ->
-                                    paths?.find { path.toString().contains(it) }?.isNotEmpty() == true
-                                }
-                                require(filter.isNotEmpty()) {
-                                    """
+                      Retryable(task) {
+                        try {
+                          val filter = codeFiles.filter { path ->
+                            paths?.find { path.toString().contains(it) }?.isNotEmpty() == true
+                          }
+                          require(filter.isNotEmpty()) {
+                            """
                   No files found for """.trimIndent() + paths + """
 
                   Root:
@@ -246,39 +250,39 @@ class MultiStepPatchAction : BaseAction() {
 
                   Paths:
                   """.trimIndent() + (paths?.joinToString("\n") ?: "")
+                          }
+                          renderMarkdown(
+                            DiffInstrumentor(
+                              processor,
+                              SessionRenderer(task),
+                            ).instrument(
+                              root = root,
+                              response = taskActor.answer(
+                                listOf(
+                                  codeSummary(),
+                                  userMessage,
+                                  filter.joinToString("\n\n") {
+                                    "# ${it}\n```${
+                                      it.toString().split('.').last()
+                                    }\n${root.resolve(it).toFile().readText()}\n```"
+                                  },
+                                  architectureResponse.text,
+                                  "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
+                                )),
+                              handle = { newCodeMap: Map<Path, String> ->
+                                newCodeMap.forEach { (path, newCode) ->
+                                  task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
-                                renderMarkdown(
-                                  DiffInstrumentor(
-                                    processor,
-                                    SessionRenderer(task),
-                                  ).instrument(
-                                    root = root,
-                                    response = taskActor.answer(
-                                      listOf(
-                                        codeSummary(),
-                                        userMessage,
-                                        filter.joinToString("\n\n") {
-                                          "# ${it}\n```${
-                                            it.toString().split('.').last()
-                                          }\n${root.resolve(it).toFile().readText()}\n```"
-                                        },
-                                        architectureResponse.text,
-                                        "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
-                                      )),
-                                    handle = { newCodeMap: Map<Path, String> ->
-                                      newCodeMap.forEach { (path, newCode) ->
-                                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                      }
-                                    },
-                                    resolver = ::resolveToRelativePath,
-                                    prefilterFilename = ::prefilterFilename
-                                  )
-                                )
-                            } catch (e: Exception) {
-                                task.error(e)
-                                ""
-                            }
+                              },
+                              resolver = ::resolveToRelativePath,
+                              prefilterFilename = ::prefilterFilename
+                            )
+                          )
+                        } catch (e: Exception) {
+                          task.error(e)
+                          ""
                         }
+                      }
                     }
                 }?.toTypedArray()?.forEach { it.get() }
             } catch (e: Exception) {

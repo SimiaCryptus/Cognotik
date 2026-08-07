@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.LanguageUtils
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
