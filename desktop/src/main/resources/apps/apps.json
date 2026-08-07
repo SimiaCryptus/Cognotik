@@ -115,7 +115,10 @@
     "id": "app-hallucipedia",
     "category": "Imagine",
     "tags": [
-    ]
+    ],
+    "exampleSessions": {
+      "Encyclopedia of Mathematics": "https://hosted.cognotik.com/hallucipedia/fileIndex/G-20260802-M58da7o2/app.html#/root.md"
+    }
   },
   {
     "name": "Omega App Factory",

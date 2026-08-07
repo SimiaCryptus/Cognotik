@@ -1,5 +1,5 @@
 {
-  "lastUpdated" : "2026-08-01T00:24:36.025473771Z",
+  "lastUpdated" : "2026-08-07T22:15:17.003751290Z",
   "tasks" : {
     "cli/demo/jokes.md" : {
       "target" : "cli/demo/jokes.md",
@@ -14,6 +14,48 @@
       "sessionId" : "U-20260731-Y7w825x2",
       "startedAt" : "2026-08-01T00:22:11.904591623Z",
       "completedAt" : "2026-08-01T00:24:36.025473771Z"
+    },
+    "desktop/src/main/resources/apps/hallucipedia/README.md" : {
+      "target" : "desktop/src/main/resources/apps/hallucipedia/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260807-10xF2boe",
+      "startedAt" : "2026-08-07T21:13:03.441095310Z",
+      "completedAt" : "2026-08-07T21:13:16.141902079Z"
+    },
+    "desktop/src/main/resources/apps/comic-serial/README.md" : {
+      "target" : "desktop/src/main/resources/apps/comic-serial/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260807-TCeaRY1W",
+      "startedAt" : "2026-08-07T21:17:48.993268556Z",
+      "completedAt" : "2026-08-07T21:17:57.871019198Z"
+    },
+    "desktop/src/main/resources/apps/interactive-stories/README.md" : {
+      "target" : "desktop/src/main/resources/apps/interactive-stories/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260807-q1Ub2aUs",
+      "startedAt" : "2026-08-07T21:17:57.888726742Z",
+      "completedAt" : "2026-08-07T21:18:07.816249970Z"
+    },
+    "desktop/src/main/resources/apps/philosophical-calculator/README.md" : {
+      "target" : "desktop/src/main/resources/apps/philosophical-calculator/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260807-xE15oH2Q",
+      "startedAt" : "2026-08-07T21:19:18.592633911Z",
+      "completedAt" : "2026-08-07T21:19:31.373910586Z"
+    },
+    "desktop/src/main/resources/apps/hallucipedia/icon.png" : {
+      "target" : "desktop/src/main/resources/apps/hallucipedia/icon.png",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260807-9koMaGhj",
+      "startedAt" : "2026-08-07T22:15:10.163645189Z",
+      "completedAt" : "2026-08-07T22:15:17.003751290Z"
+    },
+    "desktop/src/main/resources/apps/hallucipedia/background.png" : {
+      "target" : "desktop/src/main/resources/apps/hallucipedia/background.png",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260807-UHiJwak0",
+      "startedAt" : "2026-08-07T22:14:12.883721491Z",
+      "completedAt" : "2026-08-07T22:14:20.209644732Z"
     }
   }
 }
