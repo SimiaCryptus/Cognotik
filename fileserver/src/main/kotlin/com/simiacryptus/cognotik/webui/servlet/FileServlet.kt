@@ -235,7 +235,13 @@ abstract class FileServlet : HttpServlet() {
     try {
       val user = getUser(request, response)
       if (!isWriteAllowed(user, request)) {
-        denyAnonymous(response, "PUT to ${request.requestURI}")
+        if(null == user) {
+          denyAnonymous(response, "PUT to ${request.requestURI}")
+        } else {
+          log.warn("Refusing PUT for user ${user.id}: insufficient permissions")
+          response.status = HttpServletResponse.SC_FORBIDDEN
+          response.writer.write("Insufficient permissions for user ${user.id}")
+        }
         return
       }
       val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")

@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
@@ -260,8 +261,12 @@ abstract class ApplicationServer(
     private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
     val appInfoMap = mutableMapOf<Session, AppInfoData>()
-    fun HttpServletRequest.session(): Session? =
-      (getParameter("sessionId") ?: getParameter("session"))?.let { Session(it) }
+    fun HttpServletRequest.session(): Session? {
+      val sessionId = getParameter("sessionId") ?: getParameter("session") ?: pathInfo.let {
+        it.split("/").firstOrNull { it.isNotBlank() && it.validateSessionId() }
+      }
+      return sessionId?.let { Session(it) }
+    }
   }
 
 }
