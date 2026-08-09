@@ -30,9 +30,9 @@ import java.util.stream.Collectors
  * Layout produced (with the default [Config.dataDirName] of `.data`):
  *
  * ```
- * package/foo.java              -> package/.data/foo.java.json
- * package/sub/bar.kt            -> package/sub/.data/bar.kt.json
- * package/.data/package.json    -> rollup summary of package/ (and everything below it)
+* package/foo.java              -> .data/package/foo.java.json
+* package/sub/bar.kt            -> .data/package/sub/bar.kt.json
+* package/.data/package.json    -> .data/package/package.json (rollup summary)
  * <root>/.data/project.json     -> manifest of every indexed file (slim: no symbol/reference detail)
  * <root>/.data/viewer.html      -> standalone HTML report viewer (reads project.json)
  * ```
@@ -41,8 +41,8 @@ import java.util.stream.Collectors
   * moved/served together with the code it documents:
   *
   * ```
-  * package/.data/foo.java.json   -> paths relative to package/      ("foo.java", "../util/Bar.java")
-  * package/.data/package.json    -> paths relative to package/      ("sub/bar.kt", "../other/Baz.kt")
+  * .data/package/foo.java.json   -> paths relative to package/      ("foo.java", "../util/Bar.java")
+  * .data/package/package.json    -> paths relative to package/      ("sub/bar.kt", "../other/Baz.kt")
   * <root>/.data/project.json     -> paths relative to <root>        ("package/foo.java")
   * ```
   *
@@ -481,9 +481,9 @@ class SymbolIndexer(
     return result
   }
 
-  /** `package/foo.java` -> `package/.data/foo.java.json` */
+  /** `package/foo.java` -> `<root>/.data/package/foo.java.json` */
   fun dataFileFor(file: Path): Path =
-    (file.parent ?: root).resolve(config.dataDirName).resolve(file.fileName.toString() + ".json")
+    root.resolve(config.dataDirName).resolve(relativePath(file) + ".json")
 
   fun manifestFile(): Path = root.resolve(config.dataDirName).resolve(config.manifestName)
 
@@ -534,14 +534,14 @@ class SymbolIndexer(
   /** Loads `project.json`; paths are converted back to crawl-root relative form. */
   fun loadManifest(): Manifest? = readJson(manifestFile(), Manifest::class.java)?.let { rootRelative(it) }
 
-  /** `<folder>/<dataDirName>/<packageManifestName>`; `""` / blank means the crawl root. */
+  /** `<root>/<dataDirName>/<folder>/<packageManifestName>`; `""` / blank means the crawl root. */
   fun packageManifestFile(folder: String): Path =
-    (if (folder.isBlank()) root else root.resolve(folder)).resolve(config.dataDirName)
-      .resolve(config.packageManifestName)
+    if (folder.isBlank()) root.resolve(config.dataDirName).resolve(config.packageManifestName)
+    else root.resolve(config.dataDirName).resolve(folder).resolve(config.packageManifestName)
 
-  /** `dir/.data/package.json` for an absolute/relative directory [dir]. */
+  /** `<root>/<dataDirName>/<relDir>/package.json` for a directory [dir]. */
   fun packageManifestFile(dir: Path): Path =
-    dir.resolve(config.dataDirName).resolve(config.packageManifestName)
+    packageManifestFile(relativePath(dir))
 
   /** Loads a folder rollup; paths are converted back to crawl-root relative form. */
   fun loadPackageManifest(dir: Path): Manifest? =
@@ -670,21 +670,11 @@ class SymbolIndexer(
   }
 
 
-  /** Remove every generated data folder under [root]. */
+  /** Remove the generated data directory at [root]. */
   fun clean() {
-    if (!Files.isDirectory(root)) return
-    val dataDirs = mutableListOf<Path>()
-    Files.walkFileTree(root, object : SimpleFileVisitor<Path>() {
-      override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-        if (dir.fileName?.toString() == config.dataDirName) {
-          dataDirs.add(dir)
-          return FileVisitResult.SKIP_SUBTREE
-        }
-        return FileVisitResult.CONTINUE
-      }
-    })
-    dataDirs.forEach { dir ->
-      Files.walk(dir).use { walk ->
+    val dataDir = root.resolve(config.dataDirName)
+    if (Files.exists(dataDir)) {
+      Files.walk(dataDir).use { walk ->
         walk.sorted(Comparator.reverseOrder()).forEach { p ->
           try {
             Files.deleteIfExists(p)
@@ -693,8 +683,8 @@ class SymbolIndexer(
           }
         }
       }
+      log.info("Removed data folder {}", dataDir)
     }
-    log.info("Removed {} data folder(s) under {}", dataDirs.size, root)
   }
 
   private fun relativePath(file: Path): String =

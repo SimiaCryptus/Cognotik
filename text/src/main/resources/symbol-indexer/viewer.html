@@ -833,7 +833,7 @@
              <code>viewer.html?root=/repo</code> or <code>viewer.html?root=../..</code>
              (defaults to <code>..</code>, i.e. the parent of the folder this page is served from).
             The viewer fetches <code>&lt;root&gt;/.data/project.json</code> and the per-file
-            <code>&lt;dir&gt;/.data/&lt;file&gt;.json</code> sidecars over HTTP, so serve the tree with a static
+            <code>&lt;root&gt;/.data/&lt;path&gt;.json</code> sidecars over HTTP, so serve the tree with a static
             web server (<code>python3 -m http.server</code>) and keep the paths reachable.
         </div>
         <div class="hint">You can also drag &amp; drop a <code>project.json</code> / <code>package.json</code> onto this
@@ -947,12 +947,11 @@
     }
 
     function sidecarUrl(path) {
-        const d = dirOf(path);
-        return u((d ? d + "/" : "") + ".data/" + baseOf(path) + ".json");
+        return u(".data/" + path + ".json");
     }
 
     function packageManifestUrl(folder) {
-        return u((folder ? folder + "/" : "") + ".data/package.json");
+        return u(".data/" + (folder ? folder + "/" : "") + "package.json");
     }
     /* ---- report-relative paths -------------------------------------------
        Every report stores its paths relative to what it describes:
