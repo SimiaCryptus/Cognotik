@@ -127,7 +127,6 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
       planned.task.rebase(config.root, effectiveRoot)
     } else planned.task
     val rebased = planned.copy(task = task)
-    val workingDir = task.data.main_file?.parentFile ?: config.root
 
     ctx.reset()
     if (cancelFlag.get()) {
@@ -145,7 +144,7 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
           executionConfig = configFactory.build(rebased, ctx),
           typeConfig = task.typeConfig,
           patchProcessor = task.patchProcessor,
-          workingDir = workingDir,
+          workingDir = task.data.root,
           timeoutMinutes = config.taskTimeoutMinutes,
         ),
         object : DocTaskCallbacks<S> {

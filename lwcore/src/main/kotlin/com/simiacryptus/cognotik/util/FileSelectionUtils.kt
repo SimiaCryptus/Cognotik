@@ -6,7 +6,6 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.name
 
 private const val MAX_TEXT_SIZE = 1024 * 1024
 
@@ -21,7 +20,7 @@ object FileSelectionUtils {
       treatDocumentsAsText && file.isDocumentFile() -> true
       file.length() > 100_000_000L -> false // 100MB limit
       isGitignore(file.toPath()) -> false
-      isLLMIgnored(file.toPath()) -> false
+      isIgnored(file.toPath()) -> false
       file.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> false
 
       isBinaryFile(file) -> false
@@ -67,7 +66,7 @@ object FileSelectionUtils {
     rootFile: File,
     maxFilesPerDir: Int = 20,
     treatDocumentsAsText: Boolean = false,
-    filter: (File) -> Boolean = { !isLLMIgnored(it.toPath()) },
+    filter: (File) -> Boolean = { !isIgnored(it.toPath()) },
     render: (File) -> String = { it.name }
   ): String {
     val sb = StringBuilder()
@@ -133,7 +132,7 @@ object FileSelectionUtils {
     file: File,
     maxFilesPerDir: Int = 20,
     treatDocumentsAsText: Boolean = false,
-    fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+    fn: (File) -> Boolean = { !isIgnored(it.toPath()) }
   ): List<File> {
     val filterFn = if (treatDocumentsAsText) {
       { f: File -> fn(f) || f.isDocumentFile() }
@@ -198,7 +197,7 @@ object FileSelectionUtils {
           arrayOf()
         }
 
-        isLLMIgnored(it.toPath()) -> {
+        isIgnored(it.toPath()) -> {
           log.debug("File ignored by llmignore: ${it.absolutePath}")
           arrayOf()
         }
@@ -351,22 +350,23 @@ object FileSelectionUtils {
     }
   }
 
-
-
-
-
-
-
-
-
-  fun isLLMIgnored(path: Path): Boolean {
-    if (path.toFile().name == ".llmignore") return true
-     return IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.LLMIGNORE)
+  fun isIgnored(path: Path) = when {
+    path.toFile().name == ".llmignore" -> true
+    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.LLMIGNORE) -> true
+    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.GITIGNORE) -> true
+    else -> false
   }
 
-  fun isGitignore(path: Path): Boolean {
-    if (path.fileName.toString() == ".gitignore") return true
-     return IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.GITIGNORE)
+  fun isLLMIgnored(path: Path) = when {
+    path.toFile().name == ".llmignore" -> true
+    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.LLMIGNORE) -> true
+    else -> false
+  }
+
+  fun isGitignore(path: Path) = when {
+    path.toFile().name == ".gitignore" -> true
+    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.GITIGNORE) -> true
+    else -> false
   }
 
   fun String.relativizeFrom(root: Path) = try {

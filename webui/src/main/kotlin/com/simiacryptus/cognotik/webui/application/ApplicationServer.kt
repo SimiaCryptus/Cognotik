@@ -42,13 +42,8 @@ abstract class ApplicationServer(
   init {
     FileServlet.userResolver = UserProviderImpl()
     FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val session = request.session()
-      return when {
-        user == null -> false
-        session == null -> false
-        metadataDB.getSessionOwner(session) != user.id -> false
-        else -> true
-      }
+      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(it) }
+      return sessionOwner == null || sessionOwner == user?.id
     }
   }
   private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }

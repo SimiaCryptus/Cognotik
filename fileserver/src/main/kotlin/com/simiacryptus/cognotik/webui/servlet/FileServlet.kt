@@ -765,9 +765,11 @@ abstract class FileServlet : HttpServlet() {
           response: AbstractHttpServletResponse?
         ) = null
       }
-    var isWriteAllowed = fun(user: User?, request: HttpServletRequest) = when {
-      user == null -> false
-      else -> true
+    var isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
+      return when {
+        user == null -> false
+        else -> true
+      }
     }
 
     fun getUser(request: HttpServletRequest, response: HttpServletResponse?): User? {

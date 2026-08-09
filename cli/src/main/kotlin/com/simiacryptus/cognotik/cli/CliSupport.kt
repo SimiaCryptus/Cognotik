@@ -51,10 +51,6 @@ object CliSupport {
         response: AbstractHttpServletResponse?
       ) = defaultUser()
     }
-    FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest) = when {
-      user == null -> false
-      else -> true
-    }
   }
 
   /**

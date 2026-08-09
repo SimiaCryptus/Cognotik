@@ -94,7 +94,7 @@ class UnrunnableProtocolDialogTask(
             val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             (FileSelectionUtils.filteredWalk(root.toFile()) {
                 when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    FileSelectionUtils.isIgnored(it.toPath()) -> false
                     matcher.matches(root.relativize(it.toPath())) -> true
                     it.isDirectory -> true
                     else -> false

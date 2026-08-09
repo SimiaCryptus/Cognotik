@@ -700,7 +700,7 @@ Format as a clear table or structured list.
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
         when {
-          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isIgnored(it.toPath()) -> false
           matcher.matches(root.relativize(it.toPath())) -> true
           it.isDirectory -> true
           else -> false

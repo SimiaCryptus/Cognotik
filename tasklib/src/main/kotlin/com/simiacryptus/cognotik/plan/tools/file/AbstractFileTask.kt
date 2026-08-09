@@ -53,7 +53,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
             //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
             val relativize = file.relativeTo(root.toFile())
             when {
-              FileSelectionUtils.isLLMIgnored(file.toPath()) -> false
+              FileSelectionUtils.isIgnored(file.toPath()) -> false
               !file.exists() -> false
               file.isDirectory -> true
               !matcher.matches(relativize.toPath()) -> false

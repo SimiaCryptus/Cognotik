@@ -117,7 +117,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             (FileSelectionUtils.filteredWalk(root.toFile(), treatDocumentsAsText = treatDocumentsAsText) {
                 when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    FileSelectionUtils.isIgnored(it.toPath()) -> false
                     it.isDirectory -> true
                     !matcher.matches(root.relativize(it.toPath())) -> false
                     else -> true

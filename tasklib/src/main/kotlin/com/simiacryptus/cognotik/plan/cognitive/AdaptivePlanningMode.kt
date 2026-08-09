@@ -85,13 +85,13 @@ open class AdaptivePlanningMode(
         log.debug("Starting main execution loop")
         task.complete()
 
-        val coordinator = task.ui.dataStorage?.let {
+        val coordinator = task.ui.dataStorage.let {
           TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.ui.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
         log.debug("Created plan coordinator")
@@ -305,6 +305,40 @@ open class AdaptivePlanningMode(
   ): List<TaskData>? {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     Tasks.initDescriber(orchestrationConfig, describer)
+    val prompt = buildString {
+      append("Given the following input, choose up to ")
+      append(config.maxTasksPerIteration)
+      append(" tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
+      append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
+      append("Available task types:\n")
+      append(
+        TaskType.getAvailableTaskTypes(orchestrationConfig)
+          .flatMap { taskType ->
+            val configs = orchestrationConfig.getTaskConfigs(taskType)
+            configs.map { config ->
+              val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
+              "* ${taskType.name}$configName:\n  ${
+                orchestrationConfig.getImpl(taskType).promptSegment().trim()
+                  .trimIndent()
+                  .indent("  ")
+              }"
+            }
+          }
+          .joinToString("\n\n"))
+      orchestrationConfig.workingDir?.let { root ->
+        append(                "\nAvailable files:\n\n" + FileSelectionUtils.getAvailableFiles(Path(root))
+          .joinToString("\n") { "      - $it" })
+      }
+      append("\nChoose the most suitable task types and provide details of how they should be executed.")
+      val namedConfigs = orchestrationConfig.taskSettings.values.filter { it.name != null }
+      if (namedConfigs.isNotEmpty()) {
+        append("\n\nAvailable named configurations:")
+        namedConfigs.groupBy { it.task_type }.forEach { (taskType, configs) ->
+          append("\n* $taskType: ${configs.mapNotNull { it.name }.joinToString(", ")}")
+        }
+        append("\nYou can specify which configuration to use by setting the task_config_name field.")
+      }
+    }
     val parsedActor = ParsedAgent(
       name = "TaskChooser",
       resultClass = Tasks::class.java,
@@ -315,39 +349,7 @@ open class AdaptivePlanningMode(
           )
         ).toMutableList()
       ),
-      prompt = buildString {
-        append("Given the following input, choose up to ")
-        append(config.maxTasksPerIteration)
-        append(" tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
-        append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
-        append("Available task types:\n")
-        append(
-          TaskType.getAvailableTaskTypes(orchestrationConfig)
-            .flatMap { taskType ->
-              val configs = orchestrationConfig.getTaskConfigs(taskType)
-              configs.map { config ->
-                val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
-                "* ${taskType.name}$configName:\n  ${
-                  orchestrationConfig.getImpl(taskType).promptSegment().trim()
-                    .trimIndent()
-                    .indent("  ")
-                }" + (orchestrationConfig.workingDir?.let { root ->
-                  "\nAvailable files:\n\n" + FileSelectionUtils.getAvailableFiles(Path(root))
-                    .joinToString("\n") { "      - $it" } + "\n"
-                } ?: "")
-              }
-            }
-            .joinToString("\n\n"))
-        append("\nChoose the most suitable task types and provide details of how they should be executed.")
-        val namedConfigs = orchestrationConfig.taskSettings.values.filter { it.name != null }
-        if (namedConfigs.isNotEmpty()) {
-          append("\n\nAvailable named configurations:")
-          namedConfigs.groupBy { it.task_type }.forEach { (taskType, configs) ->
-            append("\n* $taskType: ${configs.mapNotNull { it.name }.joinToString(", ")}")
-          }
-          append("\nYou can specify which configuration to use by setting the task_config_name field.")
-        }
-      },
+      prompt = prompt,
       model = orchestrationConfig.defaultSmart.getChildClient(task),
       parsingModel = orchestrationConfig.defaultFast.getChildClient(task),
       temperature = orchestrationConfig.temperature,

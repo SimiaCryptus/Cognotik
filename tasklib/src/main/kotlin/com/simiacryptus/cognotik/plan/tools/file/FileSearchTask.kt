@@ -166,7 +166,7 @@ FileSearch - Search for patterns in files and provide results with context
       .flatMap { filePattern ->
         val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
         FileSelectionUtils.filteredWalk(root.toFile()) { path ->
-          matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+          matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isIgnored(path.toPath())
         }.map { it.toPath() }.flatMap { path ->
           try {
             val fileContentLines = if (currentConfig.extractContent && !isTextFile(path.toFile())) {

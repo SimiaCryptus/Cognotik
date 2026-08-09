@@ -5,21 +5,21 @@
       <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
           <target>System.out</target>
           <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-              <level>WARN</level>
+              <level>INFO</level>
           </filter>
           <encoder>
               <pattern>%-5level %msg%n</pattern>
           </encoder>
       </appender>
 
-      <logger name="com.simiacryptus" level="WARN"/>
+      <logger name="com.simiacryptus" level="INFO"/>
       <!-- Traffic logs are for the web UI; silence them in the CLI -->
       <logger name="TRAFFIC" level="OFF"/>
       <!-- Common noisy third-party loggers -->
       <logger name="org.eclipse.jetty" level="OFF"/>
       <logger name="okhttp3" level="OFF"/>
 
-      <root level="WARN">
+      <root level="INFO">
           <appender-ref ref="STDOUT"/>
       </root>
   </configuration>

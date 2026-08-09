@@ -708,10 +708,10 @@ class MetadataStorageDB : MetadataStorageInterface {
         name = "metadata",
         schema = { provider ->
           listOf(
-            "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(meta_key)",
+//            "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
+//            "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
+//            "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
+//            "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(meta_key)",
           )
         },
         tables = listOf(MetadataTable),
