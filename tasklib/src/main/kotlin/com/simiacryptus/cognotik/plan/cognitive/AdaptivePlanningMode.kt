@@ -253,6 +253,7 @@ open class AdaptivePlanningMode(
       } catch (e: Throwable) {
         task.error(e)
         log.error("Error in startAutoPlanChat", e)
+        writeToTranscript("Error in Auto Plan Chat: ${e.message}\n\n")
       } finally {
         log.debug("Finalizing auto plan chat")
         isRunning = false
