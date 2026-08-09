@@ -1,0 +1,124 @@
+/* Additions used by the front page; loaded after styles.css so it only extends it. */
+
+  .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      text-decoration: none;
+      color: inherit;
+  }
+
+  .hero-blurb {
+      max-width: 62ch;
+      opacity: .85;
+      line-height: 1.55;
+  }
+
+  .home-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+  }
+
+  .card {
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid rgba(127, 127, 127, .28);
+      border-radius: .75rem;
+      text-decoration: none;
+      color: inherit;
+      background: rgba(127, 127, 127, .05);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+
+  .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(127, 127, 127, .55);
+      background: rgba(127, 127, 127, .1);
+  }
+
+  .card.disabled {
+      opacity: .5;
+      pointer-events: none;
+      transform: none;
+  }
+
+  .card-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+  }
+
+  .card-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+  }
+
+  .card-desc {
+      font-size: .9rem;
+      opacity: .8;
+      line-height: 1.45;
+  }
+
+  .card-path,
+  .card-note {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      opacity: .65;
+      margin-top: .3rem;
+  }
+
+  .config-grid {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: .45rem 1.25rem;
+      margin: 0;
+  }
+
+  .config-grid dt {
+      font-weight: 600;
+      opacity: .75;
+  }
+
+  .config-grid dd {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      word-break: break-all;
+  }
+
+  .config-grid dd.muted {
+      opacity: .7;
+  }
+
+  .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+  }
+
+  .chip {
+      padding: .25rem .6rem;
+      border-radius: 999px;
+      font-size: .82rem;
+      border: 1px solid rgba(127, 127, 127, .35);
+  }
+
+  .chip.on {
+      border-color: rgba(64, 160, 96, .6);
+      background: rgba(64, 160, 96, .12);
+  }
+
+  .chip.off {
+      opacity: .6;
+  }
+
+  .warn {
+      margin-top: .9rem;
+      padding: .65rem .8rem;
+      border-radius: .5rem;
+      border: 1px solid rgba(200, 120, 40, .5);
+      background: rgba(200, 120, 40, .12);
+      font-size: .9rem;
+  }

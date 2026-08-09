@@ -2,7 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.data.FileSearchTask.SearchTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.autofix.SingleFixTask
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
 import com.simiacryptus.cognotik.plan.tools.images.GenerateQRImageTask
 import com.simiacryptus.cognotik.plan.tools.images.ImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
@@ -22,7 +23,7 @@ import com.simiacryptus.cognotik.platform.CognotikPlugin
 
         // --- Data & File Task Types ---
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileAppendTask.FileAppend)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileSearchTask.FileSearch)
+        TaskType.registerTaskType(FileSearchTask.FileSearch)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DecisionTreeTask.DecisionTree)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.EntropyReductionTreeTask.EntropyReductionTree)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.JdbcSessionTask.JdbcSession)

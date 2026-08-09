@@ -162,6 +162,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     open fun getOutputFile(extension: String): String? = when {
         executionConfig?.main_file?.endsWith(extension) == true -> executionConfig?.main_file
+        executionConfig?.main_file != null -> executionConfig?.main_file + extension.ensureStartsWith(".")
         else -> null
     }
 
@@ -175,4 +176,8 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         val log = getLogger(AbstractTask::class.java)
         private fun now(): String? = SimpleDateFormat("yyyyMMddHHmmss").format(Date())
     }
+}
+
+private fun String.ensureStartsWith(prefix: String): String {
+    return if (this.startsWith(prefix)) this else prefix + this
 }

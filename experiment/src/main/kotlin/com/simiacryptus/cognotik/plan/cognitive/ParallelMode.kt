@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -54,8 +55,8 @@ open class ParallelMode(
     val mode: ParallelModeConfig.CombinationMode = ParallelModeConfig.CombinationMode.CrossJoin
   )
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
-    val transcript = task.transcript()
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+     val transcript = transcriptStream
     try {
       task.echo(userMessage.renderMarkdown(true))
 
@@ -164,7 +165,7 @@ open class ParallelMode(
       task.error(e)
       log.error("Error in ParallelMode", e)
     } finally {
-      transcript?.close()
+       transcript?.flush()
     }
   }
 

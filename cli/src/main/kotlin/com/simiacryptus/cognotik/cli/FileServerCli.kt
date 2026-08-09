@@ -12,6 +12,9 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.StaticZipServlet
 import com.simiacryptus.cognotik.webui.servlet.WebUiServlet
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
+import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
+import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
 
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
@@ -22,7 +25,6 @@ import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import java.io.File
-import kotlin.system.exitProcess
 
 /**
  * Minimal foreground file server, and the reference example of a **permissive
@@ -76,6 +78,36 @@ object FileServerCli {
    var docProcessorServlet: CliDocProcessorServlet? = null
    /** Mount point of [docProcessorServlet]. */
    const val DOCOPS_PREFIX = "/docops"
+  /** Mount point of the resource-based homepage ([StaticResourceServlet]). */
+  const val HOME_PREFIX = "/home"
+  /**
+   * Immutable snapshot of how the running server was configured. [start] publishes it so
+   * the homepage and the settings API can describe the mount without every flag having to
+   * be threaded through yet another constructor.
+   */
+  data class ServerInfo(
+    val servedDir: String = "",
+    val host: String = "",
+    val port: Int = 0,
+    val gitEnabled: Boolean = false,
+    val readOnly: Boolean = false,
+    val uiEnabled: Boolean = false,
+    val homeEnabled: Boolean = false,
+    val terminalEnabled: Boolean = false,
+    val execPermissive: Boolean = false,
+    val tasksEnabled: Boolean = false,
+    val modifyEnabled: Boolean = false,
+  )
+  @Volatile
+  var serverInfo: ServerInfo = ServerInfo()
+  /**
+   * Re-binds every toolchain that caches a model handle. Called after the web UI changes
+   * the selection; cheap and safe when nothing is installed.
+   */
+  fun notifyModelsChanged() {
+    runCatching { ServerTaskActions.refreshModels() }
+    runCatching { ModifyFilesActions.refreshModels() }
+  }
   /**
    * Some UI builds address sessions as `{host}/proxy/?session=...` while the servers
    * in this module serve them from the context root (`{host}/?session=...`). Both are
@@ -158,8 +190,9 @@ object FileServerCli {
                       --no-terminal  Disable interactive terminal sessions
                        --secure       Shorthand for --read-only --no-terminal --no-exec --no-tasks --no-modify
                       --shell <cmd>  Shell for new terminals (default: auto-detect)
-                      --ui           Make the IDE-style SPA (/ui/) the landing page
                       --no-ui        Do not serve the SPA at all
+                      --no-home      Do not serve the homepage / settings UI (/home/)
+                      --files        Make the classic listing the landing page
                       --help         Show this message
 
                 Task actions (DocOps / AutoFix), enabled by default:
@@ -220,6 +253,8 @@ object FileServerCli {
     var readOnly = false
     var uiEnabled = true
     var uiDefault = false
+    var homeEnabled = true
+    var filesDefault = false
     var terminalEnabled = true
     var execPermissive = true
     var shell: List<String> = emptyList()
@@ -286,6 +321,9 @@ object FileServerCli {
 
         "--no-ui" -> uiEnabled = false
         "--ui" -> uiDefault = true
+        "--no-home" -> homeEnabled = false
+        "--home" -> homeEnabled = true
+        "--files" -> filesDefault = true
         "--help" -> {
           println(usage())
           return
@@ -396,13 +434,19 @@ object FileServerCli {
     val server = start(
       baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
       terminalEnabled, execPermissive, shell, tasksEnabled, fixCommand,
-      modifyEnabled, lineNumbers
+      modifyEnabled, lineNumbers, homeEnabled, filesDefault
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
 
     println("Serving ${baseDir.absolutePath}")
     println("  ->  http://$displayHost:$boundPort/")
+    if (homeEnabled) {
+       println("  Home      -> http://$displayHost:$boundPort$HOME_PREFIX/ (overview: links, config, endpoints)")
+       println("  Settings  -> http://$displayHost:$boundPort$HOME_PREFIX/settings.html (models & API keys)")
+       println("               GET      http://$displayHost:$boundPort/serverInfo")
+       println("               GET/POST http://$displayHost:$boundPort/apiKeys")
+    }
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
     println("  Alias     -> http://$displayHost:$boundPort$PROXY_PREFIX/ (same as /, for ?session=... URLs)")
@@ -480,6 +524,8 @@ object FileServerCli {
     defaultFixCommand: String = "",
     modifyEnabled: Boolean = false,
     lineNumbers: Boolean = false,
+    homeEnabled: Boolean = true,
+    filesDefault: Boolean = false,
   ): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
@@ -495,6 +541,20 @@ object FileServerCli {
 
     val showTasks = tasksEnabled && ServerTaskActions.isEnabled
     val showModify = modifyEnabled && !readOnly && ModifyFilesActions.isEnabled
+    /* Publish the effective configuration for the homepage / settings API. */
+    serverInfo = ServerInfo(
+      servedDir = baseDir.absolutePath,
+      host = host,
+      port = port,
+      gitEnabled = gitEnabled,
+      readOnly = readOnly,
+      uiEnabled = uiEnabled,
+      homeEnabled = homeEnabled,
+      terminalEnabled = terminalEnabled && !readOnly,
+      execPermissive = execPermissive,
+      tasksEnabled = showTasks,
+      modifyEnabled = showModify,
+    )
     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks)
     else SimpleFileServlet(
       baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled,
@@ -538,7 +598,25 @@ object FileServerCli {
       context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
     }
 
-    val landing = if (uiEnabled && uiDefault) "$UI_PREFIX/" else "$FILES_PREFIX/$ROOT_SEGMENT/"
+    /*
+     * The homepage is classpath-served (never from the workspace) and is the default
+     * landing page: it is the only place that explains the mount and lets the user pick
+     * models. --ui and --files move the landing page without unmounting anything.
+     */
+    if (homeEnabled) {
+      register(context, ServletHolder("home", StaticResourceServlet()), this@FileServerCli.HOME_PREFIX)
+       /* The overview page is a pure client of this: never let the two drift apart. */
+       register(context, ServletHolder("server-info", ServerInfoServlet()), "/serverInfo")
+      register(context, ServletHolder("settings-api", UserSettingsServlet()), "/userSettings")
+      register(context, ServletHolder("provider-api", ApiProviderServlet()), "/apiProviders")
+      register(context, ServletHolder("keys-api", ApiKeyServlet()), "/apiKeys")
+    }
+
+    val landing = when {
+      uiEnabled && uiDefault -> "$UI_PREFIX/"
+      homeEnabled && !filesDefault -> "$HOME_PREFIX/"
+      else -> "$FILES_PREFIX/$ROOT_SEGMENT/"
+    }
     val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
     context.addServlet(redirect, "")
     context.addServlet(redirect, FILES_PREFIX)
@@ -551,6 +629,15 @@ object FileServerCli {
     server.stopAtShutdown = true
     server.start()
     return server
+  }
+
+  private fun register(
+    context: ServletContextHandler,
+    homeHolder: ServletHolder,
+    prefix: String
+  ) {
+    context.addServlet(homeHolder, "$prefix/*")
+    context.addServlet(homeHolder, prefix)
   }
 
 }

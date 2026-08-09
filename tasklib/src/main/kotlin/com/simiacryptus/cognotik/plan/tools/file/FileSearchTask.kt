@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.data
+package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.LoggerFactory.getLogger
+import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.util.regex.Pattern
@@ -252,7 +253,7 @@ FileSearch - Search for patterns in files and provide results with context
       }
   }
 
-  private fun isTextFile(file: java.io.File): Boolean {
+  private fun isTextFile(file: File): Boolean {
     val textExtensions = setOf(
       "txt",
       "md",

@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
@@ -57,14 +57,14 @@ open class AdaptivePlanningMode(
   private val executionRecords = mutableListOf<ExecutionRecord>()
   private val reasoningState = AtomicReference<Any?>(null)
   private var isRunning = false
-  private var transcriptStream: FileOutputStream? = null
+  private var transcriptStream: OutputStream? = null
   private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+  override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     log.debug("Handling user message: $userMessage")
     if (!isRunning) {
       isRunning = true
       log.debug("Starting new auto plan chat session")
-      startAutoPlanChat(task, userMessage)
+      startAutoPlanChat(task, userMessage, transcriptStream)
     } else {
       log.debug("Injecting user message into ongoing chat")
       task.echo("User: $userMessage".renderMarkdown(true))
@@ -72,10 +72,10 @@ open class AdaptivePlanningMode(
     }
   }
 
-  private fun startAutoPlanChat(task: SessionTask, userMessage: String) {
+  private fun startAutoPlanChat(task: SessionTask, userMessage: String, transcriptStream: OutputStream?) {
     log.debug("Starting auto plan chat with initial message: $userMessage")
     task.echo(userMessage.renderMarkdown())
-    transcriptStream = task.transcript()
+    this.transcriptStream = transcriptStream
 
     val continueLoop = true
     val tabbedDisplay = TabbedDisplay(task)
@@ -266,9 +266,7 @@ open class AdaptivePlanningMode(
         )
         writeToTranscript("\n## Summary\n\nAuto Plan Chat completed.\n\n")
         transcriptStream?.flush()
-        transcriptStream?.close()
-        transcriptStream = null
-        task.complete()
+        this.transcriptStream = null
         task.complete()
       }
     }

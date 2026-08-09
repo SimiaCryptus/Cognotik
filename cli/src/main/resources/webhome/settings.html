@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Settings · Cognotik File Server</title>
+      <link rel="stylesheet" href="styles.css">
+      <link rel="stylesheet" href="home.css">
+  </head>
+  <body>
+  <header class="top-bar">
+      <div class="brand">
+          <a class="brand-link" href="./">
+              <span class="brand-mark" aria-hidden="true">◧</span>
+              <span class="brand-text">Cognotik <em>File Server</em></span>
+          </a>
+      </div>
+      <div class="spacer"></div>
+      <a class="button ghost" href="./" title="Back to the overview page">← Overview</a>
+      <button class="button ghost" id="reload-all" type="button" title="Re-read every setting from the server">↻</button>
+  </header>
+
+  <main class="page">
+      <section class="hero">
+          <h1>Settings</h1>
+          <p class="served-dir">Model selection and API keys for the local CLI user.</p>
+      </section>
+
+      <section class="panel">
+          <div class="panel-header">
+              <h2>Model settings</h2>
+              <p>
+                  One selection drives everything: DocOps, AutoFix and the patch chat all
+                  re-bind as soon as you save.
+              </p>
+          </div>
+
+          <div class="panel-body">
+              <div class="field-row">
+                  <div class="field">
+                      <label for="smart-model">Smart model</label>
+                      <input id="smart-model" list="model-list" autocomplete="off"
+                             placeholder="e.g. gpt-4o">
+                      <small>Primary model: planning, patches, long-form reasoning.</small>
+                  </div>
+
+                  <div class="field">
+                      <label for="fast-model">Fast model</label>
+                      <input id="fast-model" list="model-list" autocomplete="off"
+                             placeholder="e.g. gpt-4o-mini">
+                      <small>Secondary model: parsing, cheap classification, summaries.</small>
+                  </div>
+              </div>
+
+              <datalist id="model-list"></datalist>
+
+              <div class="panel-actions">
+                  <button class="button primary" id="save-models" type="button">Save models</button>
+                  <button class="button" id="refresh-models" type="button">Refresh catalog</button>
+                  <span class="hint" id="model-summary"></span>
+              </div>
+
+              <p class="empty" id="models-empty" hidden>
+                  No models were reported by your API keys. Add a provider key below (or set
+                  <code>COGNOTIK_SMART_MODEL</code>) and press <em>Refresh catalog</em>.
+                  You can also type a model id by hand.
+              </p>
+
+              <div class="catalog" id="model-catalog" hidden></div>
+              <p class="hint catalog-hint" id="catalog-hint" hidden>
+                  Click a model to set it as <strong>smart</strong>; Shift- or Alt-click to set it
+                  as <strong>fast</strong>. Nothing is applied until you press <em>Save models</em>.
+              </p>
+          </div>
+      </section>
+
+      <section class="panel">
+          <div class="panel-header">
+              <h2>API providers &amp; keys</h2>
+              <p>
+                  Keys and models live in one server-side settings record for the local CLI user.
+                  Saving re-reads the model catalog, so new keys light up the pickers above immediately.
+              </p>
+          </div>
+          <div class="panel-body">
+              <div class="key-rows" id="key-rows"></div>
+              <datalist id="provider-list"></datalist>
+
+              <p class="empty" id="providers-empty" hidden>
+                  No providers configured. Add one — for a local Ollama the key is filled in for you.
+              </p>
+
+              <div class="panel-actions">
+                  <button class="button" id="add-provider" type="button">+ Add provider</button>
+                  <button class="button primary" id="save-keys" type="button">Save API settings</button>
+                  <span class="hint" id="providers-summary"></span>
+              </div>
+
+              <label class="checkbox" for="collect-session-data">
+                  <input type="checkbox" id="collect-session-data">
+                  <span>Collect session data (transcripts &amp; usage kept for this user)</span>
+              </label>
+          </div>
+      </section>
+
+      <section class="panel">
+          <div class="panel-header">
+              <h2>API</h2>
+              <p>The same settings are scriptable via <code>/userSettings/</code> - the homepage is only a client.</p>
+          </div>
+          <div class="panel-body">
+              <pre class="snippet" id="api-snippet"></pre>
+          </div>
+      </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+  </body>
+  </html>

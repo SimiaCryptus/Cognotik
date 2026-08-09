@@ -71,11 +71,10 @@ open class HierarchicalPlanningMode(
     goalIdCounter.set(1)
     taskIdCounter.set(1)
     stopRequested.set(false)
-    transcriptStream?.close()
     transcriptStream = null
   }
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     processor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
     log.debug("Handling user message: $userMessage")
     if (isRunning.getAndSet(true)) {
@@ -84,7 +83,7 @@ open class HierarchicalPlanningMode(
     }
     stopRequested.set(false)
     try {
-      startGoalOrientedSession(userMessage, task)
+       startGoalOrientedSession(userMessage, task, transcriptStream)
     } catch (e: Throwable) {
       log.error("Error in Goal-Oriented session", e)
       task.error(e)
@@ -93,10 +92,9 @@ open class HierarchicalPlanningMode(
     }
   }
 
-  private fun startGoalOrientedSession(userMessage: String, task: SessionTask) {
+   private fun startGoalOrientedSession(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     task.echo("User: $userMessage".renderMarkdown())
-    // Initialize transcript
-    transcriptStream = task.transcript()
+     this.transcriptStream = transcriptStream
     logToSession("# Goal-Oriented Planning Session Transcript\n")
     logToSession("**User Request:** $userMessage\n")
     logToSession("**Started:** ${java.time.LocalDateTime.now()}\n\n")
@@ -201,8 +199,8 @@ open class HierarchicalPlanningMode(
     logToSession("- Total Goals: ${goalTree.size}")
     logToSession("- Total Tasks: ${taskMap.size}")
     logToSession("- Iterations: $iteration")
-    transcriptStream?.close()
-    transcriptStream = null
+     transcriptStream?.flush()
+     this.transcriptStream = null
   }
 
   private fun nextIteration(
