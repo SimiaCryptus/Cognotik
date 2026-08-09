@@ -580,7 +580,6 @@
 
       const paths = (slug) => ({
           query: join(workDir(), slug + '.query.md'),
-          response: join(workDir(), slug + '.response.md'),
           research: join(workDir(), slug + '.research.md'),
           summary: join(workDir(), slug + '.summary.md'),
      followup: join(workDir(), slug + '.followup.json'),
@@ -676,17 +675,11 @@
           return false;
       }
 
-      /** Makes sure `<slug>.research.md` exists, bridging from `<slug>.response.md` if needed. */
+      /** Makes sure `<slug>.research.md` exists before we can act on it. */
       async function ensureResearchFile(p) {
           if ((await readFile(state.basePath, p.research)) !== null) return true;
-          const fallback = await readFile(state.basePath, p.response);
-          if (fallback === null) {
-              log('Missing ' + p.research + ' — run the research step first.', 'error');
-              return false;
-          }
-          await writeFile(state.basePath, p.research, fallback);
-          log('Bridged ' + p.response + ' → ' + p.research);
-          return true;
+          log('Missing ' + p.research + ' — run the research step first.', 'error');
+          return false;
       }
 /** Makes sure `<slug>.followup.json` exists before we can act on it. */
 async function ensureFollowupFile(p) {
@@ -723,13 +716,11 @@ async function ensureFollowupFile(p) {
           // Running this step on its own should still persist the current query text.
           if ((await readFile(state.basePath, p.query)) === null && !(await stageSaveQuery())) return null;
 
-          await runOp('process', p.response, 'research');
+          await runOp('process', p.research, 'research');
 
-          const response = await readFile(state.basePath, p.response);
-          if (response === null) throw new Error('Research output missing: ' + p.response);
+          const response = await readFile(state.basePath, p.research);
+          if (response === null) throw new Error('Research output missing: ' + p.research);
 
-          // Bridge: downstream ops consume `*.research.md`.
-          await writeFile(state.basePath, p.research, response);
           showMarkdown('view-research', response);
           activateTab('research');
           await refreshHistory();
@@ -840,7 +831,7 @@ async function stageFollowupExec() {
               if (!info || !info.status) return;
               const p = state.slug ? paths(state.slug) : null;
               if (!p) return;
-              if (target.endsWith(p.response)) setStep('research', mapState(info.status), info.status);
+              if (target.endsWith(p.research)) setStep('research', mapState(info.status), info.status);
               else if (target.endsWith(p.summary)) setStep('summary', mapState(info.status), info.status);
               else if (target.endsWith(p.followup)) setStep('followup', mapState(info.status), info.status);
              else if (target.endsWith(p.followupDoc)) setStep('followup-exec', mapState(info.status), info.status);
@@ -1060,8 +1051,7 @@ const docRawMode = {research: false, summary: false, patches: false};
               setStep('query', 'done', p.query);
           }
 
-          let research = await readFile(state.basePath, p.research);
-          if (research === null) research = await readFile(state.basePath, p.response);
+          const research = await readFile(state.basePath, p.research);
           showMarkdown('view-research', research);
           if (research !== null) setStep('research', 'done', 'loaded');
 
@@ -1094,7 +1084,7 @@ const docRawMode = {research: false, summary: false, patches: false};
           const slugs = new Set();
           entries.forEach((entry) => {
               const name = entry && entry.name ? entry.name : '';
-              const match = name.match(/^(.*)\.(query|research|response)\.md$/);
+              const match = name.match(/^(.*)\.(query|research)\.md$/);
               if (match) slugs.add(match[1]);
           });
 
