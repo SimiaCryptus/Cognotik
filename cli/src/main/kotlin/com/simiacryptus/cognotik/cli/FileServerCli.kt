@@ -69,17 +69,32 @@ object FileServerCli {
   var user: User = CliSupport.defaultUser()
   var available: Map<String, ChatModel> = emptyMap()
   var models: CliSupport.Models? = null
-   /**
-    * The DocOps servlet installed by [ServerTaskActions.install]. It is mounted at
-    * [DOCOPS_PREFIX] and is the same instance the `.fsapi/v1/docops` action drives,
-    * so there is a single DocOps implementation in the server.
-    */
-   @Volatile
-   var docProcessorServlet: CliDocProcessorServlet? = null
-   /** Mount point of [docProcessorServlet]. */
-   const val DOCOPS_PREFIX = "/docops"
+
+  /**
+   * The DocOps servlet installed by [ServerTaskActions.install]. It is mounted at
+   * [DOCOPS_PREFIX] and is the same instance the `.fsapi/v1/docops` action drives,
+   * so there is a single DocOps implementation in the server.
+   */
+  @Volatile
+  var docProcessorServlet: CliDocProcessorServlet? = null
+
+  /** Mount point of [docProcessorServlet]. */
+  const val DOCOPS_PREFIX = "/docops"
+
   /** Mount point of the resource-based homepage ([StaticResourceServlet]). */
   const val HOME_PREFIX = "/home"
+
+  /**
+   * Shared web assets served straight from the classpath, independent of the served
+   * directory and of every feature flag: `web/lib` is published at [LIB_PREFIX] and
+   * `web/app` at [APP_PREFIX]. Pages (homepage, IDE view, generated listings) may link
+   * to `/lib/...` and `/app/...` without knowing how the mount was configured.
+   */
+  const val LIB_PREFIX = "/lib"
+
+  /** @see LIB_PREFIX */
+  const val APP_PREFIX = "/app"
+
   /**
    * Immutable snapshot of how the running server was configured. [start] publishes it so
    * the homepage and the settings API can describe the mount without every flag having to
@@ -98,8 +113,10 @@ object FileServerCli {
     val tasksEnabled: Boolean = false,
     val modifyEnabled: Boolean = false,
   )
+
   @Volatile
   var serverInfo: ServerInfo = ServerInfo()
+
   /**
    * Re-binds every toolchain that caches a model handle. Called after the web UI changes
    * the selection; cheap and safe when nothing is installed.
@@ -108,12 +125,14 @@ object FileServerCli {
     runCatching { ServerTaskActions.refreshModels() }
     runCatching { ModifyFilesActions.refreshModels() }
   }
+
   /**
    * Some UI builds address sessions as `{host}/proxy/?session=...` while the servers
    * in this module serve them from the context root (`{host}/?session=...`). Both are
    * supported: everything under this prefix is forwarded to the equivalent root path.
    */
   const val PROXY_PREFIX = "/proxy"
+
   /** Servers that already carry the [PROXY_PREFIX] alias (weakly held, so no leaks). */
   private val proxyAliasedServers: MutableSet<Server> =
     java.util.Collections.synchronizedSet(
@@ -129,6 +148,7 @@ object FileServerCli {
       response.sendRedirect("${request.contextPath}$target")
     }
   }
+
   /**
    * Serves `{PROXY_PREFIX}/rest/of/path?query` exactly like `/rest/of/path?query` by
    * forwarding internally. Forwarding (rather than redirecting) is deliberate: a page
@@ -152,6 +172,7 @@ object FileServerCli {
       dispatcher.forward(request, response)
     }
   }
+
   /**
    * Adds the [PROXY_PREFIX] alias to [context]. Safe to call on an already started
    * context (the chat server is created lazily, long after it was started).
@@ -162,6 +183,7 @@ object FileServerCli {
     context.addServlet(holder, PROXY_PREFIX)
     if (context.isStarted && !holder.isStarted) holder.start()
   }
+
   /** Idempotent, best-effort variant that finds the servlet context of [server]. */
   fun installProxyAlias(server: Server) {
     if (!proxyAliasedServers.add(server)) return
@@ -442,13 +464,14 @@ object FileServerCli {
     println("Serving ${baseDir.absolutePath}")
     println("  ->  http://$displayHost:$boundPort/")
     if (homeEnabled) {
-       println("  Home      -> http://$displayHost:$boundPort$HOME_PREFIX/ (overview: links, config, endpoints)")
-       println("  Settings  -> http://$displayHost:$boundPort$HOME_PREFIX/settings.html (models & API keys)")
-       println("               GET      http://$displayHost:$boundPort/serverInfo")
-       println("               GET/POST http://$displayHost:$boundPort/apiKeys")
+      println("  Home      -> http://$displayHost:$boundPort$HOME_PREFIX/ (overview: links, config, endpoints)")
+      println("  Settings  -> http://$displayHost:$boundPort$HOME_PREFIX/settings.html (models & API keys)")
+      println("               GET      http://$displayHost:$boundPort/serverInfo")
+      println("               GET/POST http://$displayHost:$boundPort/apiKeys")
     }
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
+    println("  Assets    -> http://$displayHost:$boundPort$LIB_PREFIX/ (classpath web/lib), $APP_PREFIX/ (classpath web/app)")
     println("  Alias     -> http://$displayHost:$boundPort$PROXY_PREFIX/ (same as /, for ?session=... URLs)")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
     println(
@@ -462,7 +485,7 @@ object FileServerCli {
     if (tasksEnabled) {
       println("  Tasks     -> docops/autofix enabled (root ${taskRoot.absolutePath})")
       println("               POST $apiBase/docops?command=plan")
-       println("               POST http://$displayHost:$boundPort$DOCOPS_PREFIX?doc=<file>  (DocProcessorServlet)")
+      println("               POST http://$displayHost:$boundPort$DOCOPS_PREFIX?doc=<file>  (DocProcessorServlet)")
       println("               POST $apiBase/autofix?cmd=<command>")
       println("               GET  $apiBase/tasks")
       if (readOnly) println("               (read-only mount: 'docops run' and 'autofix' answer EROFS)")
@@ -579,24 +602,32 @@ object FileServerCli {
       ServletHolder("zip", StaticZipServlet(baseDir.parentFile?.absolutePath ?: baseDir.absolutePath)),
       "/zip"
     )
-     /*
-      * The DocOps engine, exposed as itself. This is the same instance the FS API
-      * 'docops' action invokes (see ServerTaskActions.install), so the HTTP endpoint
-      * and the action can never drift apart.
-      */
-     docProcessorServlet?.let { servlet ->
-       val docopsHolder = ServletHolder("docops", servlet)
-       docopsHolder.registration.setMultipartConfig(
-         MultipartConfigElement(System.getProperty("java.io.tmpdir"))
-       )
-       context.addServlet(docopsHolder, "$DOCOPS_PREFIX/*")
-       context.addServlet(docopsHolder, DOCOPS_PREFIX)
-     }
+    /*
+     * The DocOps engine, exposed as itself. This is the same instance the FS API
+     * 'docops' action invokes (see ServerTaskActions.install), so the HTTP endpoint
+     * and the action can never drift apart.
+     */
+    docProcessorServlet?.let { servlet ->
+      val docopsHolder = ServletHolder("docops", servlet)
+      docopsHolder.registration.setMultipartConfig(
+        MultipartConfigElement(System.getProperty("java.io.tmpdir"))
+      )
+      context.addServlet(docopsHolder, "$DOCOPS_PREFIX/*")
+      context.addServlet(docopsHolder, DOCOPS_PREFIX)
+    }
 
 
     if (uiEnabled) {
       context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
     }
+    /*
+     * Shared classpath assets, always mounted: /lib -> web/lib, /app -> web/app.
+     * They are read from the classpath (never from the workspace), so they are safe on
+     * read-only, --no-ui and --secure mounts alike.
+     */
+    register(context, ServletHolder("web-lib", WebUiServlet("web/lib")), LIB_PREFIX)
+    register(context, ServletHolder("web-app", WebUiServlet("web/app")), APP_PREFIX)
+
 
     /*
      * The homepage is classpath-served (never from the workspace) and is the default
@@ -605,8 +636,8 @@ object FileServerCli {
      */
     if (homeEnabled) {
       register(context, ServletHolder("home", StaticResourceServlet()), this@FileServerCli.HOME_PREFIX)
-       /* The overview page is a pure client of this: never let the two drift apart. */
-       register(context, ServletHolder("server-info", ServerInfoServlet()), "/serverInfo")
+      /* The overview page is a pure client of this: never let the two drift apart. */
+      register(context, ServletHolder("server-info", ServerInfoServlet()), "/serverInfo")
       register(context, ServletHolder("settings-api", UserSettingsServlet()), "/userSettings")
       register(context, ServletHolder("provider-api", ApiProviderServlet()), "/apiProviders")
       register(context, ServletHolder("keys-api", ApiKeyServlet()), "/apiKeys")

@@ -168,6 +168,17 @@
           @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
           .steps li .state { margin-left: auto; font-size: .75rem; color: var(--muted); }
+          .steps li .step-run {
+              padding: .05rem .45rem;
+              font-size: .75rem;
+              line-height: 1.4;
+              background: transparent;
+              color: var(--muted);
+              flex: 0 0 auto;
+          }
+          .steps li .step-run:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
+          .banner.info { border-color: var(--border); color: var(--muted); background: var(--panel-2); }
+
 
           /* log */
           #log {
@@ -219,6 +230,18 @@
           }
 
           .doc code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+          /* raw (unrendered) document view */
+          .doc pre.raw {
+              white-space: pre-wrap;
+              overflow-wrap: anywhere;
+              margin: 0;
+          }
+          .view-toolbar { margin-bottom: .6rem; }
+          .view-toolbar button[aria-pressed="true"] {
+              border-color: var(--accent);
+              color: #fff;
+          }
+
 
           .doc table { border-collapse: collapse; }
 
@@ -286,7 +309,6 @@
       </style>
   </head>
   <body>
-  <div id="menu-mount"></div>
 
   <div class="wrap">
       <div id="session-banner" class="banner warn hidden"></div>
@@ -297,9 +319,6 @@
               <section class="panel">
                   <h2>Session</h2>
                   <div class="small muted" id="ctx-info">detecting…</div>
-                  <div class="row" style="margin-top:.6rem">
-                      <a id="ide-link" class="hidden" target="_blank" rel="noopener">Open IDE ↗</a>
-                  </div>
               </section>
 
               <section class="panel">
@@ -361,17 +380,34 @@
                             placeholder="Describe what you want researched about the codebase…"></textarea>
 
                   <div class="row" style="margin-top:.75rem">
-                      <button id="run" class="primary">Run Research</button>
+                      <button id="run" class="primary" title="Run every enabled stage in order">Run All Steps</button>
+                      <button id="save-query">Save Query</button>
                       <button id="summarize-only">Summarize Existing</button>
                       <button id="followups-only">Generate Follow-ups</button>
                       <button id="delete-doc" class="danger" style="margin-left:auto">Delete</button>
                   </div>
 
                   <ul class="steps" id="steps">
-                      <li data-step="query" data-state="idle"><span class="dot"></span><span>Save query</span><span class="state"></span></li>
-                      <li data-step="research" data-state="idle"><span class="dot"></span><span>Research (SubPlan)</span><span class="state"></span></li>
-                      <li data-step="summary" data-state="idle"><span class="dot"></span><span>Summary</span><span class="state"></span></li>
-                      <li data-step="followup" data-state="idle"><span class="dot"></span><span>Follow-up plan</span><span class="state"></span></li>
+                      <li data-step="query" data-state="idle">
+                          <span class="dot"></span><span>Save query</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="query" title="Run this step only">▶ run</button>
+                      </li>
+                      <li data-step="research" data-state="idle">
+                          <span class="dot"></span><span>Research (SubPlan)</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="research" title="Run this step only">▶ run</button>
+                      </li>
+                      <li data-step="summary" data-state="idle">
+                          <span class="dot"></span><span>Summary</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="summary" title="Run this step only">▶ run</button>
+                      </li>
+                      <li data-step="followup" data-state="idle">
+                          <span class="dot"></span><span>Follow-up plan</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="followup" title="Run this step only">▶ run</button>
+                      </li>
                   </ul>
 
                   <div id="log" aria-live="polite"></div>
@@ -386,9 +422,19 @@
                   </div>
 
                   <div class="tabpanel" data-tab="research">
+                      <div class="row view-toolbar">
+                          <button class="small view-toggle" data-view="research" aria-pressed="false"
+                                  title="Toggle between rendered markdown and the raw source">View raw</button>
+                          <button class="small view-copy" data-view="research">Copy source</button>
+                      </div>
                       <div class="doc" id="view-research"><p class="muted">Nothing loaded yet.</p></div>
                   </div>
                   <div class="tabpanel" data-tab="summary" hidden>
+                      <div class="row view-toolbar">
+                          <button class="small view-toggle" data-view="summary" aria-pressed="false"
+                                  title="Toggle between rendered markdown and the raw source">View raw</button>
+                          <button class="small view-copy" data-view="summary">Copy source</button>
+                      </div>
                       <div class="doc" id="view-summary"><p class="muted">No summary yet.</p></div>
                   </div>
                   <div class="tabpanel" data-tab="followups" hidden>
@@ -398,6 +444,9 @@
                       </div>
                   </div>
                   <div class="tabpanel" data-tab="raw" hidden>
+                      <div class="row view-toolbar">
+                          <button class="small view-copy" data-view="raw">Copy JSON</button>
+                      </div>
                       <div class="doc"><pre><code id="view-raw">{}</code></pre></div>
                   </div>
               </section>
@@ -406,9 +455,8 @@
   </div>
 
   <!-- Local copy of marked — required for markdown rendering. Must load before the module. -->
-  <script src="/app/marked.min.js"></script>
+  <script src="/lib/marked.min.js"></script>
   <script type="module">
-      import {initMenu, getMenuContext, getIdeUrl} from '/app/menu.js';
       import {runDocOp, waitForTask, createStatusPoller} from '/app/docops.js';
       import {readFile, writeFile, listFiles, deleteFile} from '/app/fileIO.js';
       import {
@@ -436,7 +484,8 @@
           slug: null,
           busy: false,
           poller: null,
-          plan: null
+          plan: null,
+          standalone: false
       };
 
       const $ = (id) => document.getElementById(id);
@@ -499,8 +548,9 @@
 
       function setBusy(busy) {
           state.busy = busy;
-          ['run', 'summarize-only', 'followups-only', 'delete-doc', 'new-research']
-              .forEach((id) => { $(id).disabled = busy; });
+          ['run', 'save-query', 'summarize-only', 'followups-only', 'delete-doc', 'new-research']
+              .forEach((id) => { const el = $(id); if (el) el.disabled = busy; });
+          document.querySelectorAll('.step-run').forEach((b) => { b.disabled = busy; });
       }
 
       /* ───────────────────────── path helpers ───────────────────────── */
@@ -514,13 +564,29 @@
 
       const paths = (slug) => ({
           query: join(workDir(), slug + '.query.md'),
-          response: join(workDir(), slug + '.query-response.md'),
+          response: join(workDir(), slug + '.response.md'),
           research: join(workDir(), slug + '.research.md'),
           summary: join(workDir(), slug + '.summary.md'),
           followup: join(workDir(), slug + '.followup.json')
       });
 
       const opPath = (key) => join(opsDir(), OPS[key]);
+      /**
+       * When the page is not opened through a session URL we simply run against the
+       * directory the document itself is served from.
+       *
+       *   http://host/files/root/code_research/index.html
+       *     → basePath: "/files/root"     (files are addressed relative to this)
+       *     → appDir:   "code_research"   (default work/ops directory)
+       */
+      function inferContextFromLocation() {
+          const segments = location.pathname.split('/').filter(Boolean);
+          // Drop the document itself (last segment carrying a file extension).
+          if (segments.length && /\.[a-z0-9]+$/i.test(segments[segments.length - 1])) segments.pop();
+          const appDir = segments.length ? segments[segments.length - 1] : '';
+          const base = ('/' + segments.slice(0, -1).join('/')).replace(/\/{2,}/g, '/');
+          return {basePath: base, appDir};
+      }
 
       function selectedModels() {
           const models = {};
@@ -537,7 +603,13 @@
           setStep(step, 'running', 'starting…');
           log('Running ' + opPath(opKey) + ' → ' + targetPath);
 
-          const taskId = await runDocOp(state.sessionId, opPath(opKey), targetPath, selectedModels());
+          let taskId = null;
+          try {
+              taskId = await runDocOp(state.sessionId || null, opPath(opKey), targetPath, selectedModels());
+          } catch (e) {
+              log('Could not start doc op: ' + (e && e.message ? e.message : e), 'error');
+              throw e;
+          }
           if (!taskId) {
               log('No task id returned for ' + targetPath + ' — cannot link to monitor.', 'warn');
           } else {
@@ -553,91 +625,166 @@
           return task;
       }
 
-      /* ───────────────────────── pipeline ───────────────────────── */
 
-      async function runPipeline() {
+
+
+
+
+
+
+
+
+
+
+      /* ───────────────────────── pipeline stages ───────────────────────── */
+
+      function ensureSlug(quiet) {
+          const typed = $('doc-name').value.trim();
+          const queryText = $('query').value.trim();
+          const slug = typed
+              ? slugify(typed)
+              : (state.slug || (queryText ? slugify(queryText) : ''));
+          if (!slug) {
+              if (!quiet) log('Enter a query or a document name first.', 'warn');
+              return null;
+          }
+          $('doc-name').value = slug;
+          state.slug = slug;
+          return slug;
+      }
+
+      function requireBase() {
+          if (state.basePath) return true;
+          log('No base path could be resolved — cannot read or write files.', 'error');
+          return false;
+      }
+
+      /** Makes sure `<slug>.research.md` exists, bridging from `<slug>.response.md` if needed. */
+      async function ensureResearchFile(p) {
+          if ((await readFile(state.basePath, p.research)) !== null) return true;
+          const fallback = await readFile(state.basePath, p.response);
+          if (fallback === null) {
+              log('Missing ' + p.research + ' — run the research step first.', 'error');
+              return false;
+          }
+          await writeFile(state.basePath, p.research, fallback);
+          log('Bridged ' + p.response + ' → ' + p.research);
+          return true;
+      }
+
+      async function stageSaveQuery() {
           const queryText = $('query').value.trim();
           if (!queryText) {
               log('Enter a query first.', 'warn');
+              setStep('query', 'error', 'empty');
               $('query').focus();
-              return;
+              return null;
           }
-          if (!state.sessionId || !state.basePath) {
-              log('No active session — cannot run docops.', 'error');
-              return;
-          }
-
-          const slug = slugify($('doc-name').value || queryText);
-          $('doc-name').value = slug;
-          state.slug = slug;
+          const slug = ensureSlug();
+          if (!slug) return null;
           const p = paths(slug);
 
-          resetSteps();
+          setStep('query', 'running', 'saving…');
+          await writeFile(state.basePath, p.query, queryText.endsWith('\n') ? queryText : queryText + '\n');
+          setStep('query', 'done', p.query);
+          log('Saved ' + p.query, 'ok');
+          await refreshHistory();
+          return slug;
+      }
+
+      async function stageResearch() {
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+
+          // Running this step on its own should still persist the current query text.
+          if ((await readFile(state.basePath, p.query)) === null && !(await stageSaveQuery())) return null;
+
+          await runOp('process', p.response, 'research');
+
+          const response = await readFile(state.basePath, p.response);
+          if (response === null) throw new Error('Research output missing: ' + p.response);
+
+          // Bridge: downstream ops consume `*.research.md`.
+          await writeFile(state.basePath, p.research, response);
+          showMarkdown('view-research', response);
+          activateTab('research');
+          await refreshHistory();
+          return response;
+      }
+
+      async function stageSummary() {
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+          if (!(await ensureResearchFile(p))) return null;
+          await runOp('summary', p.summary, 'summary');
+          return loadSummary(slug);
+      }
+
+      async function stageFollowup() {
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+          if (!(await ensureResearchFile(p))) return null;
+          await runOp('followup', p.followup, 'followup');
+          return loadFollowups(slug);
+      }
+
+      const STAGES = {
+          query: {step: 'query', run: stageSaveQuery},
+          research: {step: 'research', run: stageResearch},
+          summary: {step: 'summary', run: stageSummary},
+          followup: {step: 'followup', run: stageFollowup}
+      };
+
+      /** Runs a single stage in isolation (used by the ▶ buttons and the toolbar). */
+      async function runStage(name) {
+          const stage = STAGES[name];
+          if (!stage || state.busy || !requireBase()) return;
           setBusy(true);
           startPoller();
-
           try {
-              setStep('query', 'running');
-              await writeFile(state.basePath, p.query, queryText.endsWith('\n') ? queryText : queryText + '\n');
-              setStep('query', 'done', p.query);
-              log('Saved ' + p.query, 'ok');
-
-              await runOp('process', p.response, 'research');
-
-              const response = await readFile(state.basePath, p.response);
-              if (response === null) throw new Error('Research output missing: ' + p.response);
-
-              // Bridge: downstream ops consume `*.research.md`.
-              await writeFile(state.basePath, p.research, response);
-              showMarkdown('view-research', response);
-              activateTab('research');
-
-              if ($('opt-summary').checked) {
-                  await runOp('summary', p.summary, 'summary');
-                  await loadSummary(slug);
-              } else {
-                  setStep('summary', 'skipped', 'skipped');
-              }
-
-              if ($('opt-followups').checked) {
-                  await runOp('followup', p.followup, 'followup');
-                  await loadFollowups(slug);
-              } else {
-                  setStep('followup', 'skipped', 'skipped');
-              }
-
-              log('Pipeline finished for "' + slug + '".', 'ok');
-              await refreshHistory();
+              await stage.run();
           } catch (err) {
+              setStep(stage.step, 'error', 'failed');
               log(err && err.message ? err.message : String(err), 'error');
-              ['research', 'summary', 'followup'].forEach((s) => {
-                  const li = document.querySelector('.steps li[data-step="' + s + '"]');
-                  if (li && li.dataset.state === 'running') setStep(s, 'error', 'failed');
-              });
           } finally {
               stopPoller();
               setBusy(false);
           }
       }
 
-      async function runSingle(opKey, step, targetKey, after) {
-          if (!state.slug) {
-              log('Load or run a research document first.', 'warn');
+      async function runPipeline() {
+          if (state.busy || !requireBase()) return;
+          if (!$('query').value.trim()) {
+              log('Enter a query first.', 'warn');
+              $('query').focus();
               return;
           }
-          const p = paths(state.slug);
-          if ((await readFile(state.basePath, p.research)) === null) {
-              log('Missing ' + p.research + ' — run the research step first.', 'error');
-              return;
-          }
+
+          resetSteps();
           setBusy(true);
           startPoller();
+
           try {
-              await runOp(opKey, p[targetKey], step);
-              if (after) await after(state.slug);
+              if (!(await stageSaveQuery())) return;
+              await stageResearch();
+
+              if ($('opt-summary').checked) await stageSummary();
+              else setStep('summary', 'skipped', 'skipped');
+
+              if ($('opt-followups').checked) await stageFollowup();
+              else setStep('followup', 'skipped', 'skipped');
+
+              log('Pipeline finished for "' + state.slug + '".', 'ok');
+              await refreshHistory();
           } catch (err) {
-              setStep(step, 'error', 'failed');
               log(err && err.message ? err.message : String(err), 'error');
+              ['query', 'research', 'summary', 'followup'].forEach((s) => {
+                  const li = document.querySelector('.steps li[data-step="' + s + '"]');
+                  if (li && li.dataset.state === 'running') setStep(s, 'error', 'failed');
+              });
           } finally {
               stopPoller();
               setBusy(false);
@@ -675,10 +822,47 @@
 
       /* ───────────────────────── rendering ───────────────────────── */
 
+      /** Markdown documents that support a rendered ⇄ raw toggle. */
+      const DOC_VIEWS = {research: 'view-research', summary: 'view-summary'};
+      const docSource = {research: null, summary: null};
+      const docRawMode = {research: false, summary: false};
+
+      function renderDoc(name) {
+          const el = $(DOC_VIEWS[name]);
+          if (!el) return;
+          const text = docSource[name];
+
+          if (text === null || text === undefined || text === '') {
+              el.innerHTML = '<p class="muted">Nothing to display.</p>';
+          } else if (docRawMode[name]) {
+              el.innerHTML = '<pre class="raw"><code>' + escapeHtml(text) + '</code></pre>';
+          } else {
+              el.innerHTML = renderMarkdown(text);
+          }
+
+          const btn = document.querySelector('.view-toggle[data-view="' + name + '"]');
+          if (btn) {
+              btn.textContent = docRawMode[name] ? 'View rendered' : 'View raw';
+              btn.setAttribute('aria-pressed', String(docRawMode[name]));
+          }
+      }
+
+      /** Returns the untouched source behind a view (used by the copy buttons). */
+      function viewSource(name) {
+          if (name === 'raw') return $('view-raw').textContent || '';
+          return docSource[name] || '';
+      }
+
       function showMarkdown(elementId, markdown) {
-          $(elementId).innerHTML = markdown
-              ? renderMarkdown(markdown)
-              : '<p class="muted">Nothing to display.</p>';
+          const name = Object.keys(DOC_VIEWS).find((k) => DOC_VIEWS[k] === elementId);
+          if (!name) {
+              $(elementId).innerHTML = markdown
+                  ? renderMarkdown(markdown)
+                  : '<p class="muted">Nothing to display.</p>';
+              return;
+          }
+          docSource[name] = (markdown === undefined ? null : markdown);
+          renderDoc(name);
       }
 
       function activateTab(name) {
@@ -864,7 +1048,7 @@
           const slugs = new Set();
           entries.forEach((entry) => {
               const name = entry && entry.name ? entry.name : '';
-              const match = name.match(/^(.*)\.(query|research)\.md$/);
+              const match = name.match(/^(.*)\.(query|research|response)\.md$/);
               if (match) slugs.add(match[1]);
           });
 
@@ -918,12 +1102,20 @@
       /* ───────────────────────── bootstrap ───────────────────────── */
 
       function restoreSettings() {
+          const restored = {workDir: false, opsDir: false};
           try {
               const dir = localStorage.getItem(STORAGE_PREFIX + '_workDir');
-              if (dir) $('work-dir').value = dir;
+              if (dir) { $('work-dir').value = dir; restored.workDir = true; }
               const ops = localStorage.getItem(STORAGE_PREFIX + '_opsDir');
-              if (ops) $('ops-dir').value = ops;
+              if (ops) { $('ops-dir').value = ops; restored.opsDir = true; }
           } catch (e) { /* storage may be unavailable */ }
+          return restored;
+      }
+      /** In direct-file mode the folder containing this page is the sensible default. */
+      function applyInferredDirs(appDir, restored) {
+          if (!appDir) return;
+          if (!restored.workDir) $('work-dir').value = appDir;
+          if (!restored.opsDir) $('ops-dir').value = appDir;
       }
 
       function persistSettings() {
@@ -964,13 +1156,15 @@
 
       function wireEvents() {
           $('run').addEventListener('click', runPipeline);
-          $('summarize-only').addEventListener('click', () =>
-              runSingle('summary', 'summary', 'summary', loadSummary));
-          $('followups-only').addEventListener('click', () =>
-              runSingle('followup', 'followup', 'followup', loadFollowups));
+          $('save-query').addEventListener('click', () => runStage('query'));
+          $('summarize-only').addEventListener('click', () => runStage('summary'));
+          $('followups-only').addEventListener('click', () => runStage('followup'));
           $('delete-doc').addEventListener('click', deleteCurrent);
           $('new-research').addEventListener('click', newDocument);
           $('refresh-history').addEventListener('click', refreshHistory);
+          document.querySelectorAll('.step-run').forEach((b) =>
+              b.addEventListener('click', () => runStage(b.dataset.run)));
+
 
           ['work-dir', 'ops-dir'].forEach((id) =>
               $(id).addEventListener('change', () => {
@@ -980,6 +1174,15 @@
 
           document.querySelectorAll('.tabs button').forEach((b) =>
               b.addEventListener('click', () => activateTab(b.dataset.tab)));
+          document.querySelectorAll('.view-toggle').forEach((b) =>
+              b.addEventListener('click', () => {
+                  const name = b.dataset.view;
+                  docRawMode[name] = !docRawMode[name];
+                  renderDoc(name);
+              }));
+          document.querySelectorAll('.view-copy').forEach((b) =>
+              b.addEventListener('click', () => copyText(viewSource(b.dataset.view), b)));
+
 
           $('query').addEventListener('keydown', (e) => {
               if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runPipeline();
@@ -989,41 +1192,35 @@
       }
 
       async function init() {
-          restoreSettings();
+          const restored = restoreSettings();
           wireEvents();
 
-          try {
-              initMenu({appName: 'Code Research'});
-          } catch (e) {
-              console.warn('menu init failed', e);
+          state.ctx = {};
+          state.sessionId = state.ctx.sessionId || null;
+          state.basePath = state.ctx.basePath || null;
+
+          // No session in the URL is a perfectly normal way to run: serve the page from a
+          // file browser and address everything relative to the document's own directory.
+          if (!state.basePath) {
+              const inferred = inferContextFromLocation();
+              state.basePath = inferred.basePath;
+              state.standalone = true;
+              applyInferredDirs(inferred.appDir, restored);
+              log('Direct file mode — base "' + state.basePath + '", working directory "' + workDir() + '".');
           }
 
-          state.ctx = getMenuContext();
-          state.sessionId = state.ctx.sessionId;
-          state.basePath = state.ctx.basePath;
+          $('ctx-info').innerHTML =
+              (state.sessionId
+                  ? 'session <code>' + escapeHtml(state.sessionId) + '</code><br>'
+                  : 'mode <code>direct files</code><br>') +
+              'base <code>' + escapeHtml(state.basePath || '(unresolved)') + '</code>';
 
-          $('ctx-info').innerHTML = state.sessionId
-              ? 'session <code>' + escapeHtml(state.sessionId) + '</code><br>base <code>' +
-                escapeHtml(state.basePath || '') + '</code>'
-              : 'no session detected';
-
-          if (state.sessionId && state.ctx.appRoot) {
-              const ide = getIdeUrl(state.ctx);
-              if (ide) {
-                  const link = $('ide-link');
-                  link.href = ide;
-                  link.textContent = 'Open IDE ↗';
-                  link.classList.remove('hidden');
-              }
-          }
-
-          if (!state.sessionId || !state.basePath) {
-              const banner = $('session-banner');
-              const newHref = (state.ctx.appRoot || '') + '/new';
-              banner.innerHTML =
-                  'No active session was detected in the URL. ' +
-                  'Open this page from a session (<code>/&lt;app&gt;/fileIndex/&lt;session&gt;/…</code>) ' +
-                  'or <a href="' + escapeHtml(newHref) + '">start a new session</a>.';
+          const banner = $('session-banner');
+          if (!state.basePath) {
+              banner.classList.remove('warn');
+              banner.classList.add('error');
+              banner.textContent =
+                  'Could not determine a base path from this URL — file reads and writes are disabled.';
               banner.classList.remove('hidden');
               setBusy(true);
               $('new-research').disabled = false;
@@ -1031,9 +1228,18 @@
               return;
           }
 
+          if (!state.sessionId) {
+              banner.classList.remove('warn');
+              banner.classList.add('info');
+              banner.innerHTML =
+                  'Direct file mode — documents are read and written under <code>' +
+                  escapeHtml(state.basePath) + '/' + escapeHtml(workDir()) + '/</code>.';
+              banner.classList.remove('hidden');
+          }
+
           await initModels();
           await refreshHistory();
-          log('Ready. Ctrl/Cmd+Enter runs the pipeline.');
+          log('Ready. Ctrl/Cmd+Enter runs the whole pipeline; each step can also be run on its own.');
       }
 
       init().catch((err) => {
