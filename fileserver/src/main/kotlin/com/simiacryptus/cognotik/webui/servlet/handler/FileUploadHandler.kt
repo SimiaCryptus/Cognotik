@@ -11,6 +11,7 @@ import jakarta.servlet.http.Part
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 object FileUploadHandler {
@@ -87,7 +88,7 @@ object FileUploadHandler {
     )
   }
 
-  fun handlePut(request: HttpServletRequest, response: HttpServletResponse, baseDir: File, pathSegments: List<String>) {
+  fun handlePut(request: HttpServletRequest, response: HttpServletResponse, baseDir: File, pathSegments: Path) {
     val targetFile = File(baseDir, pathSegments.drop(1).joinToString("/"))
     if (FileAccessControl.isHidden(baseDir, targetFile)) {
       log.warn("Refusing PUT to hidden path: ${targetFile.absolutePath}")

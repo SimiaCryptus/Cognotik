@@ -16,13 +16,14 @@ import com.simiacryptus.cognotik.webui.servlet.render.git.GitHtml
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitScripts
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitStyles
 import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
-import com.simiacryptus.cognotik.webui.servlet.util.PathUtils
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Path.of
 
 @MultipartConfig(
   fileSizeThreshold = 1024 * 1024 * 2,  // 2MB
@@ -48,7 +49,7 @@ abstract class FileServlet : HttpServlet() {
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Received GET request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
       if (file != null && FileAccessControl.isHidden(dir, file)) {
@@ -111,7 +112,7 @@ abstract class FileServlet : HttpServlet() {
   override fun doHead(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Received HEAD request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
       if (file != null && FileAccessControl.isHidden(dir, file)) {
@@ -209,7 +210,7 @@ abstract class FileServlet : HttpServlet() {
         denyAnonymous(response, "upload to ${request.requestURI}")
         return
       }
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       val targetDir = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
       if (targetDir != null && FileAccessControl.isHidden(dir, targetDir)) {
@@ -244,7 +245,7 @@ abstract class FileServlet : HttpServlet() {
         }
         return
       }
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       if (dir == null) {
         log.warn("Base directory is null for PUT request")
@@ -271,7 +272,7 @@ abstract class FileServlet : HttpServlet() {
         denyAnonymous(response, "DELETE of ${request.requestURI}")
         return
       }
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       if (dir == null) {
         response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -393,7 +394,7 @@ abstract class FileServlet : HttpServlet() {
   }
 
   private fun serveDirectoryListing(
-    file: File?, request: HttpServletRequest, response: HttpServletResponse, pathSegments: List<String>
+    file: File?, request: HttpServletRequest, response: HttpServletResponse, pathSegments: Path
   ) {
     response.contentType = "text/html"
     response.characterEncoding = "UTF-8"

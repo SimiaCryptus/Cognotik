@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
 import com.simiacryptus.cognotik.webui.servlet.handler.FsException
-import com.simiacryptus.cognotik.webui.servlet.util.PathUtils.parsePath
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -21,6 +20,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.net.URLEncoder
+import java.nio.file.Path.of
 
 @MultipartConfig(
   fileSizeThreshold = 1024 * 1024 * 2, // 2MB
@@ -168,12 +168,12 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
     return try {
       val pathInfo = request.pathInfo ?: request.servletPath
       log.debug("getDir called with pathInfo: $pathInfo")
-      val pathSegments = parsePath(pathInfo ?: "/")
-      if (pathSegments.isEmpty()) {
+      val pathSegments = of(pathInfo ?: "/").normalize()
+      if (pathSegments.toList().isEmpty()) {
         log.warn("Empty path segments for pathInfo: $pathInfo")
         throw RuntimeException("Invalid path: $pathInfo")
       }
-      val session = Session(pathSegments.first())
+      val session = Session(pathSegments.first().toString())
       log.debug("Resolved session: ${session.sessionId}")
       val cookie = request.getCookie()
       val user = ApplicationServices.authenticationManager.getUser(cookie)
@@ -293,15 +293,15 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   private fun handleGitApiGet(request: HttpServletRequest, response: HttpServletResponse, pathInfo: String) {
     log.info("handleGitApiGet: pathInfo=$pathInfo")
     try {
-      val pathSegments = parsePath(pathInfo)
-      if (pathSegments.isEmpty()) {
+      val pathSegments = of(pathInfo).normalize()
+      if (pathSegments.toList().isEmpty()) {
         log.warn("Empty path segments for git API GET: $pathInfo")
         response.status = HttpServletResponse.SC_BAD_REQUEST
         response.contentType = "application/json"
         response.writer.write("""{"error": "Invalid path"}""")
         return
       }
-      val session = Session(pathSegments.first())
+      val session = Session(pathSegments.toList().first().toString())
       log.debug("Git API GET session: ${session.sessionId}")
       val user = UserProviderImpl().authenticate(request, response) ?: run {
         log.warn("Authentication failed for git API GET on session ${session.sessionId}")
@@ -311,15 +311,15 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       onSession(session, user)
       val sessionDir = dataStorage.getUserDir(user, session)
       // Extract the git API action from the path
-      val gitApiIndex = pathSegments.indexOf(".git")
-      if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.size) {
-        log.warn("Invalid git API path structure: $pathInfo (gitApiIndex=$gitApiIndex, segments=${pathSegments.size})")
+      val gitApiIndex = pathSegments.toList().map { it.toString() }.indexOf(".git")
+      if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.toList().size) {
+        log.warn("Invalid git API path structure: $pathInfo (gitApiIndex=$gitApiIndex, segments=${pathSegments.toList().size})")
         response.status = HttpServletResponse.SC_BAD_REQUEST
         response.contentType = "application/json"
         response.writer.write("""{"error": "Invalid git API path"}""")
         return
       }
-      val action = pathSegments[gitApiIndex + 2] // .git/api/<action>
+      val action = pathSegments.toList().map { it.toString() }[gitApiIndex + 2] // .git/api/<action>
       log.info("Git API GET action: $action for session ${session.sessionId}, user ${user.email}")
       when (action) {
         "status" -> gitStatus(sessionDir, response)
@@ -352,15 +352,15 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   private fun handleGitApiPost(request: HttpServletRequest, response: HttpServletResponse, pathInfo: String) {
     log.info("handleGitApiPost: pathInfo=$pathInfo")
     try {
-      val pathSegments = parsePath(pathInfo)
-      if (pathSegments.isEmpty()) {
+      val pathSegments = of(pathInfo).normalize()
+      if (pathSegments.toList().isEmpty()) {
         log.warn("Empty path segments for git API POST: $pathInfo")
         response.status = HttpServletResponse.SC_BAD_REQUEST
         response.contentType = "application/json"
         response.writer.write("""{"error": "Invalid path"}""")
         return
       }
-      val session = Session(pathSegments.first())
+      val session = Session(pathSegments.toList().first().toString())
       log.debug("Git API POST session: ${session.sessionId}")
       val user = UserProviderImpl().authenticate(request, response) ?: run {
         log.warn("Authentication failed for git API POST on session ${session.sessionId}")
@@ -369,15 +369,15 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       log.debug("Git API POST authenticated user: ${user.email}")
       onSession(session, user)
       val sessionDir = dataStorage.getUserDir(user, session)
-      val gitApiIndex = pathSegments.indexOf(".git")
-      if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.size) {
-        log.warn("Invalid git API path structure: $pathInfo (gitApiIndex=$gitApiIndex, segments=${pathSegments.size})")
+      val gitApiIndex = pathSegments.toList().map { it.toString() }.indexOf(".git")
+      if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.toList().size) {
+        log.warn("Invalid git API path structure: $pathInfo (gitApiIndex=$gitApiIndex, segments=${pathSegments.toList().size})")
         response.status = HttpServletResponse.SC_BAD_REQUEST
         response.contentType = "application/json"
         response.writer.write("""{"error": "Invalid git API path"}""")
         return
       }
-      val action = pathSegments[gitApiIndex + 2]
+      val action = pathSegments.toList().map { it.toString() }[gitApiIndex + 2]
       log.info("Git API POST action: $action for session ${session.sessionId}, user ${user.email}")
       when (action) {
         "init" -> gitInit(sessionDir, response)
@@ -907,12 +907,12 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val pathInfo = request.pathInfo ?: request.servletPath
       log.debug("listContents: pathInfo=$pathInfo")
-      val pathSegments = parsePath(pathInfo ?: "/")
-      if (pathSegments.isEmpty()) {
+      val pathSegments = of(pathInfo ?: "/").normalize()
+      if (pathSegments.toList().isEmpty()) {
         log.warn("listContents: empty path segments for pathInfo: $pathInfo")
         throw RuntimeException("Invalid path: $pathInfo")
       }
-      val session = Session(pathSegments.first())
+      val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie(AuthenticationInterface.AUTH_COOKIE)
       val user = ApplicationServices.authenticationManager.getUser(cookie)
       if (user == null && !session.isGlobal()) {
@@ -957,12 +957,12 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   protected fun isAuthenticatedForSession(request: HttpServletRequest, response: HttpServletResponse): Boolean {
     return try {
       val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
-      val pathSegments = parsePath(pathInfo)
-      if (pathSegments.isEmpty()) {
+      val pathSegments = of(pathInfo).normalize()
+      if (pathSegments.toList().isEmpty()) {
         // Let downstream handle invalid paths
         return true
       }
-      val session = Session(pathSegments.first())
+      val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie()
       val user = ApplicationServices.authenticationManager.getUser(cookie)
       if (user == null && !session.isGlobal()) {
