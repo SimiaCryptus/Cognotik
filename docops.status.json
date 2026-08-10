@@ -1,12 +1,19 @@
 {
-  "lastUpdated" : "2026-08-10T17:55:13.847952731Z",
+  "lastUpdated" : "2026-08-10T20:11:50.939131834Z",
   "tasks" : {
-    "code_research/kotlin-best-practices.summary.md" : {
-      "target" : "code_research/kotlin-best-practices.summary.md",
+    "code-utils2/coder/queries/intellij-doc/research.md" : {
+      "target" : "code-utils2/coder/queries/intellij-doc/research.md",
       "status" : "COMPLETED",
-      "sessionId" : "U-20260810-j2UORuLA",
-      "startedAt" : "2026-08-10T17:55:01.669617614Z",
-      "completedAt" : "2026-08-10T17:55:13.847952731Z"
+      "sessionId" : "U-20260810-iwCeiC20",
+      "startedAt" : "2026-08-10T20:03:06.140918730Z",
+      "completedAt" : "2026-08-10T20:04:41.003185979Z"
+    },
+    "code-utils2/coder/queries/intellij-doc/summary.md" : {
+      "target" : "code-utils2/coder/queries/intellij-doc/summary.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260810-PUoH49l9",
+      "startedAt" : "2026-08-10T20:11:37.789133234Z",
+      "completedAt" : "2026-08-10T20:11:50.939131834Z"
     }
   }
 }
