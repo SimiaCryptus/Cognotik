@@ -6,10 +6,11 @@ build/
 # Android
 .gradle/
 .idea/
-/.doc-processor-cache/
-/.kotlin/
-/.intellijPlatform/
+.doc-processor-cache/
+.kotlin/
+.intellijPlatform/
 *.db
 .data/
+.logs/
 
 

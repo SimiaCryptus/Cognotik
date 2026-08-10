@@ -118,7 +118,7 @@ open class WaterfallMode(
         }
         // Save plan to file for PrePlanned mode
         try {
-          val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile()
+          val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile().apply { parentFile.mkdirs() }
           planFile.writeText(JsonUtil.toJson(plan))
           task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
         } catch (e: Exception) {
