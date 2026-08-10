@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Code Research</title>
+      <style>
+          :root {
+              --bg: #0f1115;
+              --panel: #171a21;
+              --panel-2: #1e222b;
+              --border: #2a2f3a;
+              --fg: #e6e9ef;
+              --muted: #9aa4b2;
+              --accent: #4f8cff;
+              --accent-2: #7c5cff;
+              --ok: #3ecf8e;
+              --warn: #f5a524;
+              --err: #f4636e;
+              --radius: 10px;
+          }
+
+          * { box-sizing: border-box; }
+
+          html, body {
+              margin: 0;
+              padding: 0;
+              background: var(--bg);
+              color: var(--fg);
+              font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          }
+
+          a { color: var(--accent); }
+
+          h1, h2, h3 { margin: 0 0 .5rem; line-height: 1.25; }
+
+          .wrap {
+              max-width: 1400px;
+              margin: 0 auto;
+              padding: 1rem 1.25rem 4rem;
+          }
+
+          .layout {
+              display: grid;
+              grid-template-columns: 280px minmax(0, 1fr);
+              gap: 1rem;
+              align-items: start;
+          }
+
+          @media (max-width: 980px) {
+              .layout { grid-template-columns: minmax(0, 1fr); }
+          }
+
+          .panel {
+              background: var(--panel);
+              border: 1px solid var(--border);
+              border-radius: var(--radius);
+              padding: 1rem;
+              margin-bottom: 1rem;
+          }
+
+          .panel > h2 {
+              font-size: .95rem;
+              text-transform: uppercase;
+              letter-spacing: .06em;
+              color: var(--muted);
+          }
+
+          label {
+              display: block;
+              font-size: .8rem;
+              color: var(--muted);
+              margin: .6rem 0 .25rem;
+          }
+
+          input[type="text"], textarea, select {
+              width: 100%;
+              background: var(--panel-2);
+              color: var(--fg);
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: .55rem .65rem;
+              font: inherit;
+          }
+
+          textarea {
+              min-height: 160px;
+              resize: vertical;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+              font-size: 13px;
+          }
+
+          input:focus, textarea:focus, select:focus {
+              outline: none;
+              border-color: var(--accent);
+          }
+
+          button {
+              background: var(--panel-2);
+              color: var(--fg);
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: .5rem .85rem;
+              font: inherit;
+              cursor: pointer;
+          }
+
+          button:hover:not(:disabled) { border-color: var(--accent); }
+
+          button:disabled { opacity: .5; cursor: not-allowed; }
+
+          button.primary {
+              background: linear-gradient(180deg, var(--accent), #3f76e0);
+              border-color: transparent;
+              color: #fff;
+              font-weight: 600;
+          }
+
+          button.danger:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+
+          .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+
+          .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .75rem; }
+
+          .muted { color: var(--muted); }
+
+          .small { font-size: .8rem; }
+
+          .banner {
+              border-radius: var(--radius);
+              padding: .7rem .9rem;
+              margin-bottom: 1rem;
+              border: 1px solid var(--border);
+              background: var(--panel-2);
+          }
+
+          .banner.error { border-color: var(--err); color: #ffd7da; background: #2a1417; }
+
+          .banner.warn { border-color: var(--warn); color: #ffe6bf; background: #2a2113; }
+
+          .hidden { display: none !important; }
+
+          /* steps */
+          .steps { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .35rem; }
+
+          .steps li {
+              display: flex;
+              gap: .6rem;
+              align-items: center;
+              padding: .4rem .55rem;
+              border-radius: 8px;
+              background: var(--panel-2);
+              border: 1px solid transparent;
+          }
+
+          .steps li .dot {
+              width: 10px; height: 10px; border-radius: 50%;
+              background: var(--border); flex: 0 0 auto;
+          }
+
+          .steps li[data-state="running"] { border-color: var(--accent); }
+          .steps li[data-state="running"] .dot { background: var(--accent); animation: pulse 1s infinite; }
+          .steps li[data-state="done"] .dot { background: var(--ok); }
+          .steps li[data-state="error"] { border-color: var(--err); }
+          .steps li[data-state="error"] .dot { background: var(--err); }
+          .steps li[data-state="skipped"] { opacity: .5; }
+
+          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+          .steps li .state { margin-left: auto; font-size: .75rem; color: var(--muted); }
+          .steps li .step-run {
+              padding: .05rem .45rem;
+              font-size: .75rem;
+              line-height: 1.4;
+              background: transparent;
+              color: var(--muted);
+              flex: 0 0 auto;
+          }
+          .steps li .step-run:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
+          .banner.info { border-color: var(--border); color: var(--muted); background: var(--panel-2); }
+
+
+          /* log */
+          #log {
+              max-height: 180px;
+              overflow: auto;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+              font-size: 12px;
+              background: #0b0d12;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: .5rem .6rem;
+              margin-top: .6rem;
+          }
+
+          #log .l-error { color: var(--err); }
+          #log .l-ok { color: var(--ok); }
+          #log .l-warn { color: var(--warn); }
+          #log time { color: var(--muted); margin-right: .5rem; }
+
+          /* tabs */
+          .tabs { display: flex; gap: .25rem; border-bottom: 1px solid var(--border); margin-bottom: .9rem; flex-wrap: wrap; }
+
+          .tabs button {
+              border: none;
+              border-bottom: 2px solid transparent;
+              border-radius: 8px 8px 0 0;
+              background: transparent;
+              color: var(--muted);
+          }
+
+          .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+          .tabpanel[hidden] { display: none; }
+
+          .doc {
+              background: var(--panel-2);
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: 1rem 1.15rem;
+              overflow: auto;
+              max-height: 70vh;
+          }
+
+          .doc pre {
+              background: #0b0d12;
+              padding: .75rem;
+              border-radius: 8px;
+              overflow: auto;
+          }
+
+          .doc code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+          /* raw (unrendered) document view */
+          .doc pre.raw {
+              white-space: pre-wrap;
+              overflow-wrap: anywhere;
+              margin: 0;
+          }
+          .view-toolbar { margin-bottom: .6rem; }
+          .view-toolbar button[aria-pressed="true"] {
+              border-color: var(--accent);
+              color: #fff;
+          }
+
+
+          .doc table { border-collapse: collapse; }
+
+          .doc th, .doc td { border: 1px solid var(--border); padding: .35rem .55rem; }
+
+          /* history */
+          #history { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .3rem; max-height: 45vh; overflow: auto; }
+
+          #history li button {
+              width: 100%;
+              text-align: left;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+          }
+
+          #history li button[aria-current="true"] { border-color: var(--accent); color: #fff; }
+
+          /* followups */
+          .followups { display: grid; gap: .75rem; }
+
+          .card {
+              background: var(--panel-2);
+              border: 1px solid var(--border);
+              border-left-width: 4px;
+              border-radius: 8px;
+              padding: .8rem .95rem;
+          }
+
+          .card[data-priority="critical"] { border-left-color: var(--err); }
+          .card[data-priority="high"] { border-left-color: var(--warn); }
+          .card[data-priority="medium"] { border-left-color: var(--accent); }
+          .card[data-priority="low"] { border-left-color: var(--border); }
+
+          .card h3 { font-size: 1rem; margin-bottom: .35rem; }
+
+          .badges { display: flex; gap: .35rem; flex-wrap: wrap; margin: .35rem 0; }
+
+          .badge {
+              font-size: .7rem;
+              text-transform: uppercase;
+              letter-spacing: .05em;
+              padding: .12rem .45rem;
+              border-radius: 999px;
+              border: 1px solid var(--border);
+              color: var(--muted);
+          }
+
+          .badge.p-critical { color: var(--err); border-color: var(--err); }
+          .badge.p-high { color: var(--warn); border-color: var(--warn); }
+          .badge.p-medium { color: var(--accent); border-color: var(--accent); }
+          .badge.type { color: var(--accent-2); border-color: var(--accent-2); }
+
+          .files { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .4rem; }
+
+          .files code {
+              background: #0b0d12;
+              border: 1px solid var(--border);
+              border-radius: 6px;
+              padding: .1rem .35rem;
+              font-size: 12px;
+          }
+
+          details summary { cursor: pointer; color: var(--muted); }
+      </style>
+  </head>
+  <body>
+
+  <div class="wrap">
+      <div id="session-banner" class="banner warn hidden"></div>
+
+      <div class="layout">
+          <!-- ───────────────────────── sidebar ───────────────────────── -->
+          <aside>
+              <section class="panel">
+                  <h2>Session</h2>
+                  <div class="small muted" id="ctx-info">detecting…</div>
+              </section>
+
+              <section class="panel">
+                  <h2>History</h2>
+                  <div class="row">
+                      <button id="refresh-history" class="small">Refresh</button>
+                      <button id="new-research" class="small">New</button>
+                  </div>
+                  <ul id="history"></ul>
+                  <div id="history-empty" class="small muted" style="margin-top:.5rem">No research documents yet.</div>
+              </section>
+
+              <section class="panel">
+                  <h2>Settings</h2>
+                  <label for="work-dir">Working directory</label>
+                  <input id="work-dir" type="text" value="research" spellcheck="false">
+                  <label for="ops-dir">Ops directory</label>
+                  <input id="ops-dir" type="text" value="code_research" spellcheck="false">
+
+                  <details style="margin-top:.75rem">
+                      <summary>Models</summary>
+                      <label for="smart-model">Smart model</label>
+                      <select id="smart-model"></select>
+                      <label for="fast-model">Fast model</label>
+                      <select id="fast-model"></select>
+                      <label for="image-model">Image model</label>
+                      <select id="image-model"></select>
+                      <div class="small muted" style="margin-top:.4rem">
+                          Leave blank to use server defaults.
+                      </div>
+                  </details>
+              </section>
+          </aside>
+
+          <!-- ───────────────────────── main ───────────────────────── -->
+          <main>
+              <section class="panel">
+                  <h2>Research Query</h2>
+                  <div class="grid-3">
+                      <div>
+                          <label for="doc-name">Document name</label>
+                          <input id="doc-name" type="text" placeholder="auto-generated from query" spellcheck="false">
+                      </div>
+                      <div>
+                          <label for="opt-summary">Options</label>
+                          <div class="row" style="padding-top:.35rem">
+                              <label class="row small" style="margin:0;gap:.35rem">
+                                  <input id="opt-summary" type="checkbox" checked style="width:auto"> Summarize
+                              </label>
+                              <label class="row small" style="margin:0;gap:.35rem">
+                                  <input id="opt-followups" type="checkbox" checked style="width:auto"> Follow-ups
+                              </label>
+                          </div>
+                      </div>
+                  </div>
+
+                  <label for="query">Query</label>
+                  <textarea id="query" spellcheck="false"
+                            placeholder="Describe what you want researched about the codebase…"></textarea>
+
+                  <div class="row" style="margin-top:.75rem">
+                      <button id="run" class="primary" title="Run every enabled stage in order">Run All Steps</button>
+                      <button id="save-query">Save Query</button>
+                      <button id="summarize-only">Summarize Existing</button>
+                      <button id="followups-only">Generate Follow-ups</button>
+             <button id="process-followups">Process Follow-ups</button>
+                      <button id="delete-doc" class="danger" style="margin-left:auto">Delete</button>
+                  </div>
+
+                  <ul class="steps" id="steps">
+                      <li data-step="query" data-state="idle">
+                          <span class="dot"></span><span>Save query</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="query" title="Run this step only">▶ run</button>
+                      </li>
+                      <li data-step="research" data-state="idle">
+                          <span class="dot"></span><span>Research (SubPlan)</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="research" title="Run this step only">▶ run</button>
+                      </li>
+                      <li data-step="summary" data-state="idle">
+                          <span class="dot"></span><span>Summary</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="summary" title="Run this step only">▶ run</button>
+                      </li>
+                      <li data-step="followup" data-state="idle">
+                          <span class="dot"></span><span>Follow-up plan</span>
+                          <span class="state"></span>
+                          <button class="step-run" data-run="followup" title="Run this step only">▶ run</button>
+                      </li>
+                 <li data-step="followup-exec" data-state="idle">
+                     <span class="dot"></span><span>Process follow-ups (SubPlan)</span>
+                     <span class="state"></span>
+                     <button class="step-run" data-run="followup-exec" title="Run this step only">▶ run</button>
+                 </li>
+                  </ul>
+
+                  <div id="log" aria-live="polite"></div>
+              </section>
+
+              <section class="panel">
+                  <div class="tabs" role="tablist">
+                      <button role="tab" data-tab="research" aria-selected="true">Research</button>
+                      <button role="tab" data-tab="summary" aria-selected="false">Summary</button>
+                      <button role="tab" data-tab="followups" aria-selected="false">Follow-ups</button>
+             <button role="tab" data-tab="patches" aria-selected="false">Patches</button>
+                      <button role="tab" data-tab="raw" aria-selected="false">Raw JSON</button>
+                  </div>
+
+                  <div class="tabpanel" data-tab="research">
+                      <div class="row view-toolbar">
+                          <button class="small view-toggle" data-view="research" aria-pressed="false"
+                                  title="Toggle between rendered markdown and the raw source">View raw</button>
+                          <button class="small view-copy" data-view="research">Copy source</button>
+                      </div>
+                      <div class="doc" id="view-research"><p class="muted">Nothing loaded yet.</p></div>
+                  </div>
+                  <div class="tabpanel" data-tab="summary" hidden>
+                      <div class="row view-toolbar">
+                          <button class="small view-toggle" data-view="summary" aria-pressed="false"
+                                  title="Toggle between rendered markdown and the raw source">View raw</button>
+                          <button class="small view-copy" data-view="summary">Copy source</button>
+                      </div>
+                      <div class="doc" id="view-summary"><p class="muted">No summary yet.</p></div>
+                  </div>
+                  <div class="tabpanel" data-tab="followups" hidden>
+                      <div id="followup-meta" class="small muted" style="margin-bottom:.75rem"></div>
+                      <div class="followups" id="view-followups">
+                          <p class="muted">No follow-up plan yet.</p>
+                      </div>
+                  </div>
+             <div class="tabpanel" data-tab="patches" hidden>
+                 <div class="row view-toolbar">
+                     <button class="small view-toggle" data-view="patches" aria-pressed="false"
+                             title="Toggle between rendered markdown and the raw source">View raw</button>
+                     <button class="small view-copy" data-view="patches">Copy source</button>
+                 </div>
+                 <div class="doc" id="view-patches"><p class="muted">No follow-up patches yet.</p></div>
+             </div>
+                  <div class="tabpanel" data-tab="raw" hidden>
+                      <div class="row view-toolbar">
+                          <button class="small view-copy" data-view="raw">Copy JSON</button>
+                      </div>
+                      <div class="doc"><pre><code id="view-raw">{}</code></pre></div>
+                  </div>
+              </section>
+          </main>
+      </div>
+  </div>
+
+  <!-- Local copy of marked — required for markdown rendering. Must load before the module. -->
+  <script src="/lib/marked.min.js"></script>
+  <script type="module">
+      import {runDocOp, waitForTask, createStatusPoller} from '/app/docops.js';
+      import {readFile, writeFile, listFiles, deleteFile} from '/app/fileIO.js';
+      import {
+          loadApiProviders,
+          populateModelDropdowns,
+          saveModelSelections,
+          loadModelSelections
+      } from '/app/models.js';
+
+      /* ───────────────────────── constants & state ───────────────────────── */
+
+      const STORAGE_PREFIX = 'codeResearch';
+      const MODEL_KEYS = ['smartModel', 'fastModel', 'imageModel'];
+      const OPS = {
+          process: 'process_query.op.md',
+          summary: 'summarize_research.op.md',
+     followup: 'research_followup.op.md',
+     followupExec: 'process_followup.op.md'
+      };
+      const TASK_TIMEOUT_MS = 30 * 60 * 1000;
+
+      const state = {
+          ctx: null,
+          basePath: null,
+          sessionId: null,
+          slug: null,
+          busy: false,
+          poller: null,
+          plan: null,
+          standalone: false
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      /* ───────────────────────── small helpers ───────────────────────── */
+
+      function escapeHtml(s) {
+          return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+              '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+          })[c]);
+      }
+
+      function renderMarkdown(md) {
+          const text = String(md ?? '');
+          try {
+              if (window.marked) {
+                  return typeof window.marked.parse === 'function'
+                      ? window.marked.parse(text)
+                      : window.marked(text);
+              }
+          } catch (e) {
+              console.warn('markdown render failed', e);
+          }
+          return '<pre>' + escapeHtml(text) + '</pre>';
+      }
+
+      function slugify(text, fallback) {
+          const base = String(text || '')
+              .split('\n')[0]
+              .toLowerCase()
+              .replace(/[`*#>_\[\]()]/g, '')
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .slice(0, 60);
+          return base || fallback || ('research-' + Date.now());
+      }
+
+      function log(message, level) {
+          const line = document.createElement('div');
+          if (level) line.className = 'l-' + level;
+          const t = document.createElement('time');
+          t.textContent = new Date().toLocaleTimeString();
+          line.appendChild(t);
+          line.appendChild(document.createTextNode(message));
+          const box = $('log');
+          box.appendChild(line);
+          box.scrollTop = box.scrollHeight;
+      }
+
+      function setStep(step, stateName, detail) {
+          const li = document.querySelector('.steps li[data-step="' + step + '"]');
+          if (!li) return;
+          li.dataset.state = stateName;
+          li.querySelector('.state').textContent = detail || '';
+      }
+
+      function resetSteps() {
+     ['query', 'research', 'summary', 'followup', 'followup-exec'].forEach((s) => setStep(s, 'idle', ''));
+      }
+
+      function setBusy(busy) {
+          state.busy = busy;
+     ['run', 'save-query', 'summarize-only', 'followups-only', 'process-followups', 'delete-doc', 'new-research']
+              .forEach((id) => { const el = $(id); if (el) el.disabled = busy; });
+          document.querySelectorAll('.step-run').forEach((b) => { b.disabled = busy; });
+      }
+
+      /* ───────────────────────── path helpers ───────────────────────── */
+
+      const workDir = () => $('work-dir').value.trim().replace(/^\/+|\/+$/g, '');
+      const opsDir = () => $('ops-dir').value.trim().replace(/^\/+|\/+$/g, '');
+
+      function join(dir, name) {
+          return dir ? dir + '/' + name : name;
+      }
+
+      const paths = (slug) => ({
+          query: join(workDir(), slug + '.query.md'),
+          research: join(workDir(), slug + '.research.md'),
+          summary: join(workDir(), slug + '.summary.md'),
+     followup: join(workDir(), slug + '.followup.json'),
+     followupDoc: join(workDir(), slug + '.followup.md')
+      });
+
+      const opPath = (key) => join(opsDir(), OPS[key]);
+      /**
+       * When the page is not opened through a session URL we simply run against the
+       * directory the document itself is served from.
+       *
+       *   http://host/files/root/code_research/index.html
+       *     → basePath: "/files/root"     (files are addressed relative to this)
+       *     → appDir:   "code_research"   (default work/ops directory)
+       */
+      function inferContextFromLocation() {
+          const segments = location.pathname.split('/').filter(Boolean);
+          // Drop the document itself (last segment carrying a file extension).
+          if (segments.length && /\.[a-z0-9]+$/i.test(segments[segments.length - 1])) segments.pop();
+          const appDir = segments.length ? segments[segments.length - 1] : '';
+          const base = ('/' + segments.slice(0, -1).join('/')).replace(/\/{2,}/g, '/');
+          return {basePath: base, appDir};
+      }
+
+      function selectedModels() {
+          const models = {};
+          MODEL_KEYS.forEach((key) => {
+              const value = $(key.replace(/([A-Z])/g, '-$1').toLowerCase()).value;
+              if (value) models[key] = value;
+          });
+          return models;
+      }
+
+      /* ───────────────────────── docops driver ───────────────────────── */
+
+      async function runOp(opKey, targetPath, step) {
+          setStep(step, 'running', 'starting…');
+          log('Running ' + opPath(opKey) + ' → ' + targetPath);
+
+          let taskId = null;
+          try {
+              taskId = await runDocOp(state.sessionId || null, opPath(opKey), targetPath, selectedModels());
+          } catch (e) {
+              log('Could not start doc op: ' + (e && e.message ? e.message : e), 'error');
+              throw e;
+          }
+          if (!taskId) {
+              log('No task id returned for ' + targetPath + ' — cannot link to monitor.', 'warn');
+          } else {
+              log('Task ' + taskId + ' started.');
+          }
+
+          const task = await waitForTask(state.basePath, targetPath, TASK_TIMEOUT_MS, (target, info) => {
+              setStep(step, 'running', info.status || 'running');
+          });
+
+          setStep(step, 'done', 'completed');
+          log('Completed ' + targetPath, 'ok');
+          return task;
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+      /* ───────────────────────── pipeline stages ───────────────────────── */
+
+      function ensureSlug(quiet) {
+          const typed = $('doc-name').value.trim();
+          const queryText = $('query').value.trim();
+          const slug = typed
+              ? slugify(typed)
+              : (state.slug || (queryText ? slugify(queryText) : ''));
+          if (!slug) {
+              if (!quiet) log('Enter a query or a document name first.', 'warn');
+              return null;
+          }
+          $('doc-name').value = slug;
+          state.slug = slug;
+          return slug;
+      }
+
+      function requireBase() {
+          if (state.basePath) return true;
+          log('No base path could be resolved — cannot read or write files.', 'error');
+          return false;
+      }
+
+      /** Makes sure `<slug>.research.md` exists before we can act on it. */
+      async function ensureResearchFile(p) {
+          if ((await readFile(state.basePath, p.research)) !== null) return true;
+          log('Missing ' + p.research + ' — run the research step first.', 'error');
+          return false;
+      }
+/** Makes sure `<slug>.followup.json` exists before we can act on it. */
+async function ensureFollowupFile(p) {
+     if ((await readFile(state.basePath, p.followup)) !== null) return true;
+     log('Missing ' + p.followup + ' — generate the follow-up plan first.', 'error');
+     return false;
+}
+
+      async function stageSaveQuery() {
+          const queryText = $('query').value.trim();
+          if (!queryText) {
+              log('Enter a query first.', 'warn');
+              setStep('query', 'error', 'empty');
+              $('query').focus();
+              return null;
+          }
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+
+          setStep('query', 'running', 'saving…');
+          await writeFile(state.basePath, p.query, queryText.endsWith('\n') ? queryText : queryText + '\n');
+          setStep('query', 'done', p.query);
+          log('Saved ' + p.query, 'ok');
+          await refreshHistory();
+          return slug;
+      }
+
+      async function stageResearch() {
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+
+          // Running this step on its own should still persist the current query text.
+          if ((await readFile(state.basePath, p.query)) === null && !(await stageSaveQuery())) return null;
+
+          await runOp('process', p.research, 'research');
+
+          const response = await readFile(state.basePath, p.research);
+          if (response === null) throw new Error('Research output missing: ' + p.research);
+
+          showMarkdown('view-research', response);
+          activateTab('research');
+          await refreshHistory();
+          return response;
+      }
+
+      async function stageSummary() {
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+          if (!(await ensureResearchFile(p))) return null;
+          await runOp('summary', p.summary, 'summary');
+          return loadSummary(slug);
+      }
+
+      async function stageFollowup() {
+          const slug = ensureSlug();
+          if (!slug) return null;
+          const p = paths(slug);
+          if (!(await ensureResearchFile(p))) return null;
+          await runOp('followup', p.followup, 'followup');
+          return loadFollowups(slug);
+      }
+async function stageFollowupExec() {
+     const slug = ensureSlug();
+     if (!slug) return null;
+     const p = paths(slug);
+     if (!(await ensureFollowupFile(p))) return null;
+     await runOp('followupExec', p.followupDoc, 'followup-exec');
+     const patches = await readFile(state.basePath, p.followupDoc);
+     showMarkdown('view-patches', patches);
+     activateTab('patches');
+     return patches;
+}
+
+
+      const STAGES = {
+          query: {step: 'query', run: stageSaveQuery},
+          research: {step: 'research', run: stageResearch},
+          summary: {step: 'summary', run: stageSummary},
+     followup: {step: 'followup', run: stageFollowup},
+     'followup-exec': {step: 'followup-exec', run: stageFollowupExec}
+      };
+
+      /** Runs a single stage in isolation (used by the ▶ buttons and the toolbar). */
+      async function runStage(name) {
+          const stage = STAGES[name];
+          if (!stage || state.busy || !requireBase()) return;
+          setBusy(true);
+          startPoller();
+          try {
+              await stage.run();
+          } catch (err) {
+              setStep(stage.step, 'error', 'failed');
+              log(err && err.message ? err.message : String(err), 'error');
+          } finally {
+              stopPoller();
+              setBusy(false);
+          }
+      }
+
+      async function runPipeline() {
+          if (state.busy || !requireBase()) return;
+          if (!$('query').value.trim()) {
+              log('Enter a query first.', 'warn');
+              $('query').focus();
+              return;
+          }
+
+          resetSteps();
+          setBusy(true);
+          startPoller();
+
+          try {
+              if (!(await stageSaveQuery())) return;
+              await stageResearch();
+
+              if ($('opt-summary').checked) await stageSummary();
+              else setStep('summary', 'skipped', 'skipped');
+
+             if ($('opt-followups').checked) {
+                 const plan = await stageFollowup();
+                 if (plan) await stageFollowupExec();
+             } else {
+                 setStep('followup', 'skipped', 'skipped');
+                 setStep('followup-exec', 'skipped', 'skipped');
+             }
+
+              log('Pipeline finished for "' + state.slug + '".', 'ok');
+              await refreshHistory();
+          } catch (err) {
+              log(err && err.message ? err.message : String(err), 'error');
+              ['query', 'research', 'summary', 'followup'].forEach((s) => {
+                  const li = document.querySelector('.steps li[data-step="' + s + '"]');
+                  if (li && li.dataset.state === 'running') setStep(s, 'error', 'failed');
+              });
+          } finally {
+              stopPoller();
+              setBusy(false);
+          }
+      }
+
+      /* ───────────────────────── status poller ───────────────────────── */
+
+      function startPoller() {
+          if (state.poller || !state.basePath) return;
+          state.poller = createStatusPoller(state.basePath, (target, info) => {
+              if (!info || !info.status) return;
+              const p = state.slug ? paths(state.slug) : null;
+              if (!p) return;
+              if (target.endsWith(p.research)) setStep('research', mapState(info.status), info.status);
+              else if (target.endsWith(p.summary)) setStep('summary', mapState(info.status), info.status);
+              else if (target.endsWith(p.followup)) setStep('followup', mapState(info.status), info.status);
+             else if (target.endsWith(p.followupDoc)) setStep('followup-exec', mapState(info.status), info.status);
+          }, 3000);
+          state.poller.start();
+      }
+
+      function stopPoller() {
+          if (state.poller) {
+              state.poller.stop();
+              state.poller = null;
+          }
+      }
+
+      function mapState(status) {
+          const s = String(status).toUpperCase();
+          if (s === 'COMPLETED') return 'done';
+          if (s === 'ERROR' || s === 'FAILED') return 'error';
+          return 'running';
+      }
+
+      /* ───────────────────────── rendering ───────────────────────── */
+
+      /** Markdown documents that support a rendered ⇄ raw toggle. */
+const DOC_VIEWS = {research: 'view-research', summary: 'view-summary', patches: 'view-patches'};
+const docSource = {research: null, summary: null, patches: null};
+const docRawMode = {research: false, summary: false, patches: false};
+
+      function renderDoc(name) {
+          const el = $(DOC_VIEWS[name]);
+          if (!el) return;
+          const text = docSource[name];
+
+          if (text === null || text === undefined || text === '') {
+              el.innerHTML = '<p class="muted">Nothing to display.</p>';
+          } else if (docRawMode[name]) {
+              el.innerHTML = '<pre class="raw"><code>' + escapeHtml(text) + '</code></pre>';
+          } else {
+              el.innerHTML = renderMarkdown(text);
+          }
+
+          const btn = document.querySelector('.view-toggle[data-view="' + name + '"]');
+          if (btn) {
+              btn.textContent = docRawMode[name] ? 'View rendered' : 'View raw';
+              btn.setAttribute('aria-pressed', String(docRawMode[name]));
+          }
+      }
+
+      /** Returns the untouched source behind a view (used by the copy buttons). */
+      function viewSource(name) {
+          if (name === 'raw') return $('view-raw').textContent || '';
+          return docSource[name] || '';
+      }
+
+      function showMarkdown(elementId, markdown) {
+          const name = Object.keys(DOC_VIEWS).find((k) => DOC_VIEWS[k] === elementId);
+          if (!name) {
+              $(elementId).innerHTML = markdown
+                  ? renderMarkdown(markdown)
+                  : '<p class="muted">Nothing to display.</p>';
+              return;
+          }
+          docSource[name] = (markdown === undefined ? null : markdown);
+          renderDoc(name);
+      }
+
+      function activateTab(name) {
+          document.querySelectorAll('.tabs button').forEach((b) => {
+              b.setAttribute('aria-selected', String(b.dataset.tab === name));
+          });
+          document.querySelectorAll('.tabpanel').forEach((p) => {
+              p.hidden = p.dataset.tab !== name;
+          });
+      }
+
+      function stripFences(text) {
+          const trimmed = String(text || '').trim();
+          const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+          return match ? match[1] : trimmed;
+      }
+
+      function renderFollowups(plan) {
+          state.plan = plan;
+          const container = $('view-followups');
+          const meta = $('followup-meta');
+          container.innerHTML = '';
+
+          if (!plan || !Array.isArray(plan.tasks) || plan.tasks.length === 0) {
+              meta.textContent = '';
+              container.innerHTML = '<p class="muted">No follow-up tasks were identified.</p>';
+              return;
+          }
+
+          meta.innerHTML =
+              '<strong>' + escapeHtml(plan.summary || '') + '</strong>' +
+              '<br>source: <code>' + escapeHtml(plan.source_research_file || '—') + '</code>' +
+              (plan.generated_at ? ' · generated ' + escapeHtml(plan.generated_at) : '') +
+              ' · ' + plan.tasks.length + ' task(s)';
+
+          const order = {critical: 0, high: 1, medium: 2, low: 3};
+          const tasks = plan.tasks.slice().sort((a, b) =>
+              (order[a.priority] ?? 2) - (order[b.priority] ?? 2));
+
+          tasks.forEach((task, index) => {
+              const priority = task.priority || 'medium';
+              const type = task.task_type || 'FileModification';
+              const card = document.createElement('article');
+              card.className = 'card';
+              card.dataset.priority = priority;
+
+              const files = (list, label) => (Array.isArray(list) && list.length)
+                  ? '<div class="files"><span class="small muted">' + label + ':</span>' +
+                    list.map((f) => '<code>' + escapeHtml(f) + '</code>').join('') + '</div>'
+                  : '';
+
+              card.innerHTML =
+                  '<h3>' + (index + 1) + '. ' + escapeHtml(task.title || '(untitled)') + '</h3>' +
+                  '<div class="badges">' +
+                  '<span class="badge p-' + escapeHtml(priority) + '">' + escapeHtml(priority) + '</span>' +
+                  '<span class="badge type">' + escapeHtml(type) + '</span>' +
+                  (task.id ? '<span class="badge">#' + escapeHtml(task.id) + '</span>' : '') +
+                  (Array.isArray(task.tags) ? task.tags.map((t) =>
+                      '<span class="badge">' + escapeHtml(t) + '</span>').join('') : '') +
+                  (Array.isArray(task.depends_on) && task.depends_on.length
+                      ? '<span class="badge">after: ' + escapeHtml(task.depends_on.join(', ')) + '</span>' : '') +
+                  '</div>' +
+                  '<div class="small">' + renderMarkdown(task.description || '') + '</div>' +
+                  files(task.target_files, 'targets') +
+                  files(task.related_files, 'context') +
+                  (task.notes ? '<details style="margin-top:.4rem"><summary>Notes</summary>' +
+                      '<div class="small">' + renderMarkdown(task.notes) + '</div></details>' : '');
+
+              const actions = document.createElement('div');
+              actions.className = 'row';
+              actions.style.marginTop = '.55rem';
+
+              const copyBtn = document.createElement('button');
+              copyBtn.className = 'small';
+              copyBtn.textContent = 'Copy description';
+              copyBtn.addEventListener('click', () => copyText(task.description || '', copyBtn));
+
+              const jsonBtn = document.createElement('button');
+              jsonBtn.className = 'small';
+              jsonBtn.textContent = 'Copy JSON';
+              jsonBtn.addEventListener('click', () => copyText(JSON.stringify(task, null, 2), jsonBtn));
+
+              const queueBtn = document.createElement('button');
+              queueBtn.className = 'small';
+              queueBtn.textContent = 'Research this';
+              queueBtn.title = 'Load this follow-up as a new research query';
+              queueBtn.addEventListener('click', () => {
+                  $('doc-name').value = slugify(task.title, 'followup');
+                  $('query').value =
+                      '# ' + (task.title || 'Follow-up') + '\n\n' + (task.description || '') +
+                      (Array.isArray(task.target_files) && task.target_files.length
+                          ? '\n\nTarget files:\n' + task.target_files.map((f) => '- ' + f).join('\n') : '') +
+                      (Array.isArray(task.related_files) && task.related_files.length
+                          ? '\n\nRelated files:\n' + task.related_files.map((f) => '- ' + f).join('\n') : '');
+                  window.scrollTo({top: 0, behavior: 'smooth'});
+                  $('query').focus();
+              });
+
+              actions.append(copyBtn, jsonBtn, queueBtn);
+              card.appendChild(actions);
+              container.appendChild(card);
+          });
+      }
+
+      async function copyText(text, button) {
+          try {
+              await navigator.clipboard.writeText(text);
+              const original = button.textContent;
+              button.textContent = 'Copied ✓';
+              setTimeout(() => { button.textContent = original; }, 1200);
+          } catch (e) {
+              log('Clipboard unavailable: ' + e.message, 'warn');
+          }
+      }
+
+      /* ───────────────────────── loading documents ───────────────────────── */
+
+      async function loadSummary(slug) {
+          const text = await readFile(state.basePath, paths(slug).summary);
+          showMarkdown('view-summary', text);
+          return text;
+      }
+
+      async function loadFollowups(slug) {
+          const raw = await readFile(state.basePath, paths(slug).followup);
+          $('view-raw').textContent = raw === null ? '(no follow-up file)' : raw;
+          if (raw === null) {
+              renderFollowups(null);
+              return null;
+          }
+          try {
+              const plan = JSON.parse(stripFences(raw));
+              renderFollowups(plan);
+              return plan;
+          } catch (e) {
+              log('Follow-up JSON is not parseable: ' + e.message, 'error');
+              $('view-followups').innerHTML =
+                  '<p class="muted">Invalid JSON — see the <em>Raw JSON</em> tab.</p>';
+              return null;
+          }
+      }
+
+      async function loadDocument(slug) {
+          state.slug = slug;
+          $('doc-name').value = slug;
+          resetSteps();
+          markHistorySelection(slug);
+          const p = paths(slug);
+
+          const query = await readFile(state.basePath, p.query);
+          if (query !== null) {
+              $('query').value = query;
+              setStep('query', 'done', p.query);
+          }
+
+          const research = await readFile(state.basePath, p.research);
+          showMarkdown('view-research', research);
+          if (research !== null) setStep('research', 'done', 'loaded');
+
+          const summary = await loadSummary(slug);
+          if (summary !== null) setStep('summary', 'done', 'loaded');
+
+          const plan = await loadFollowups(slug);
+          if (plan) setStep('followup', 'done', 'loaded');
+         const patches = await readFile(state.basePath, p.followupDoc);
+         showMarkdown('view-patches', patches);
+         if (patches !== null) setStep('followup-exec', 'done', 'loaded');
+
+
+          activateTab('research');
+          log('Loaded "' + slug + '".');
+      }
+
+      /* ───────────────────────── history ───────────────────────── */
+
+      function markHistorySelection(slug) {
+          document.querySelectorAll('#history button').forEach((b) => {
+              b.setAttribute('aria-current', String(b.dataset.slug === slug));
+          });
+      }
+
+      async function refreshHistory() {
+          const list = $('history');
+          list.innerHTML = '';
+          const entries = await listFiles(state.basePath, workDir());
+          const slugs = new Set();
+          entries.forEach((entry) => {
+              const name = entry && entry.name ? entry.name : '';
+              const match = name.match(/^(.*)\.(query|research)\.md$/);
+              if (match) slugs.add(match[1]);
+          });
+
+          const sorted = Array.from(slugs).sort();
+          $('history-empty').classList.toggle('hidden', sorted.length > 0);
+
+          sorted.forEach((slug) => {
+              const li = document.createElement('li');
+              const btn = document.createElement('button');
+              btn.className = 'small';
+              btn.textContent = slug;
+              btn.title = slug;
+              btn.dataset.slug = slug;
+              btn.addEventListener('click', () => loadDocument(slug));
+              li.appendChild(btn);
+              list.appendChild(li);
+          });
+          markHistorySelection(state.slug);
+      }
+
+      async function deleteCurrent() {
+          if (!state.slug) return;
+          if (!window.confirm('Delete all files for "' + state.slug + '"?')) return;
+          const p = paths(state.slug);
+          for (const key of Object.keys(p)) {
+              try {
+                  await deleteFile(state.basePath, p[key]);
+              } catch (e) {
+                  log('Could not delete ' + p[key] + ': ' + e.message, 'warn');
+              }
+          }
+          log('Deleted "' + state.slug + '".', 'ok');
+          newDocument();
+          await refreshHistory();
+      }
+
+      function newDocument() {
+          state.slug = null;
+          state.plan = null;
+          $('doc-name').value = '';
+          $('query').value = '';
+          resetSteps();
+          showMarkdown('view-research', '');
+          showMarkdown('view-summary', '');
+         showMarkdown('view-patches', '');
+          renderFollowups(null);
+          $('view-raw').textContent = '{}';
+          markHistorySelection(null);
+          activateTab('research');
+      }
+
+      /* ───────────────────────── bootstrap ───────────────────────── */
+
+      function restoreSettings() {
+          const restored = {workDir: false, opsDir: false};
+          try {
+              const dir = localStorage.getItem(STORAGE_PREFIX + '_workDir');
+              if (dir) { $('work-dir').value = dir; restored.workDir = true; }
+              const ops = localStorage.getItem(STORAGE_PREFIX + '_opsDir');
+              if (ops) { $('ops-dir').value = ops; restored.opsDir = true; }
+          } catch (e) { /* storage may be unavailable */ }
+          return restored;
+      }
+      /** In direct-file mode the folder containing this page is the sensible default. */
+      function applyInferredDirs(appDir, restored) {
+          if (!appDir) return;
+          if (!restored.workDir) $('work-dir').value = appDir;
+          if (!restored.opsDir) $('ops-dir').value = appDir;
+      }
+
+      function persistSettings() {
+          try {
+              localStorage.setItem(STORAGE_PREFIX + '_workDir', workDir());
+              localStorage.setItem(STORAGE_PREFIX + '_opsDir', opsDir());
+          } catch (e) { /* ignore */ }
+      }
+
+      async function initModels() {
+          const selects = {
+              smartModel: $('smart-model'),
+              fastModel: $('fast-model'),
+              imageModel: $('image-model')
+          };
+          const available = await loadApiProviders();
+
+          // Keep indexes aligned: filter keys and elements together.
+          const presentKeys = MODEL_KEYS.filter((k) => selects[k]);
+          const selectArray = presentKeys.map((k) => selects[k]);
+          const savedAll = loadModelSelections(STORAGE_PREFIX, MODEL_KEYS);
+          const savedByKey = Object.fromEntries(presentKeys.map((k) => [k, savedAll[k]]));
+
+          populateModelDropdowns(available, selectArray, savedByKey);
+
+          presentKeys.forEach((key) => {
+              selects[key].addEventListener('change', () => {
+                  const current = {};
+                  presentKeys.forEach((k) => { current[k] = selects[k].value; });
+                  try {
+                      saveModelSelections(STORAGE_PREFIX, current);
+                  } catch (e) {
+                      log('Could not persist model selection: ' + e.message, 'warn');
+                  }
+              });
+          });
+      }
+
+      function wireEvents() {
+          $('run').addEventListener('click', runPipeline);
+          $('save-query').addEventListener('click', () => runStage('query'));
+          $('summarize-only').addEventListener('click', () => runStage('summary'));
+          $('followups-only').addEventListener('click', () => runStage('followup'));
+         $('process-followups').addEventListener('click', () => runStage('followup-exec'));
+          $('delete-doc').addEventListener('click', deleteCurrent);
+          $('new-research').addEventListener('click', newDocument);
+          $('refresh-history').addEventListener('click', refreshHistory);
+          document.querySelectorAll('.step-run').forEach((b) =>
+              b.addEventListener('click', () => runStage(b.dataset.run)));
+
+
+          ['work-dir', 'ops-dir'].forEach((id) =>
+              $(id).addEventListener('change', () => {
+                  persistSettings();
+                  refreshHistory();
+              }));
+
+          document.querySelectorAll('.tabs button').forEach((b) =>
+              b.addEventListener('click', () => activateTab(b.dataset.tab)));
+          document.querySelectorAll('.view-toggle').forEach((b) =>
+              b.addEventListener('click', () => {
+                  const name = b.dataset.view;
+                  docRawMode[name] = !docRawMode[name];
+                  renderDoc(name);
+              }));
+          document.querySelectorAll('.view-copy').forEach((b) =>
+              b.addEventListener('click', () => copyText(viewSource(b.dataset.view), b)));
+
+
+          $('query').addEventListener('keydown', (e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runPipeline();
+          });
+
+          window.addEventListener('beforeunload', stopPoller);
+      }
+
+      async function init() {
+          const restored = restoreSettings();
+          wireEvents();
+
+          state.ctx = {};
+          state.sessionId = state.ctx.sessionId || null;
+          state.basePath = state.ctx.basePath || null;
+
+          // No session in the URL is a perfectly normal way to run: serve the page from a
+          // file browser and address everything relative to the document's own directory.
+          if (!state.basePath) {
+              const inferred = inferContextFromLocation();
+              state.basePath = inferred.basePath;
+              state.standalone = true;
+              applyInferredDirs(inferred.appDir, restored);
+              log('Direct file mode — base "' + state.basePath + '", working directory "' + workDir() + '".');
+          }
+
+          $('ctx-info').innerHTML =
+              (state.sessionId
+                  ? 'session <code>' + escapeHtml(state.sessionId) + '</code><br>'
+                  : 'mode <code>direct files</code><br>') +
+              'base <code>' + escapeHtml(state.basePath || '(unresolved)') + '</code>';
+
+          const banner = $('session-banner');
+          if (!state.basePath) {
+              banner.classList.remove('warn');
+              banner.classList.add('error');
+              banner.textContent =
+                  'Could not determine a base path from this URL — file reads and writes are disabled.';
+              banner.classList.remove('hidden');
+              setBusy(true);
+              $('new-research').disabled = false;
+              $('refresh-history').disabled = true;
+              return;
+          }
+
+          if (!state.sessionId) {
+              banner.classList.remove('warn');
+              banner.classList.add('info');
+              banner.innerHTML =
+                  'Direct file mode — documents are read and written under <code>' +
+                  escapeHtml(state.basePath) + '/' + escapeHtml(workDir()) + '/</code>.';
+              banner.classList.remove('hidden');
+          }
+
+          await initModels();
+          await refreshHistory();
+          log('Ready. Ctrl/Cmd+Enter runs the whole pipeline; each step can also be run on its own.');
+      }
+
+      init().catch((err) => {
+          console.error(err);
+          log('Initialization failed: ' + err.message, 'error');
+      });
+  </script>
+  </body>
+  </html>
