@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.cli
 
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.availableModels
 import com.simiacryptus.cognotik.cli.CliSupport.bootstrapPlatform
@@ -24,6 +25,7 @@ import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
+import org.eclipse.jetty.webapp.WebAppContext
 import java.io.File
 
 /**
@@ -95,11 +97,6 @@ object FileServerCli {
   /** @see LIB_PREFIX */
   const val APP_PREFIX = "/app"
 
-  /**
-   * Immutable snapshot of how the running server was configured. [start] publishes it so
-   * the homepage and the settings API can describe the mount without every flag having to
-   * be threaded through yet another constructor.
-   */
   data class ServerInfo(
     val servedDir: String = "",
     val host: String = "",
@@ -117,26 +114,15 @@ object FileServerCli {
   @Volatile
   var serverInfo: ServerInfo = ServerInfo()
 
-  /**
-   * Re-binds every toolchain that caches a model handle. Called after the web UI changes
-   * the selection; cheap and safe when nothing is installed.
-   */
-  fun notifyModelsChanged() {
-    runCatching { ServerTaskActions.refreshModels() }
-    runCatching { ModifyFilesActions.refreshModels() }
-  }
-
-  /**
-   * Some UI builds address sessions as `{host}/proxy/?session=...` while the servers
-   * in this module serve them from the context root (`{host}/?session=...`). Both are
-   * supported: everything under this prefix is forwarded to the equivalent root path.
-   */
   const val PROXY_PREFIX = "/proxy"
 
-  /** Servers that already carry the [PROXY_PREFIX] alias (weakly held, so no leaks). */
-  private val proxyAliasedServers: MutableSet<Server> =
+
+  val sessionProxyServer: SessionProxyServer by lazy { SessionProxyServer() }
+
+  /** Contexts that already carry the session-proxy servlets (weakly held). */
+  private val proxiedContexts: MutableSet<ServletContextHandler> =
     java.util.Collections.synchronizedSet(
-      java.util.Collections.newSetFromMap(java.util.WeakHashMap<Server, Boolean>())
+      java.util.Collections.newSetFromMap(java.util.WeakHashMap<ServletContextHandler, Boolean>())
     )
 
 
@@ -148,58 +134,29 @@ object FileServerCli {
       response.sendRedirect("${request.contextPath}$target")
     }
   }
+   /** Servlets registered after start-up must be started/initialised explicitly. */
+   private fun startNewHolders(context: ServletContextHandler) {
+     if (!context.isStarted) return
+     context.servletHandler.servlets.forEach { holder ->
+       if (!holder.isStarted) runCatching { holder.start() }
+     }
+     runCatching { context.servletHandler.initialize() }
+   }
 
-  /**
-   * Serves `{PROXY_PREFIX}/rest/of/path?query` exactly like `/rest/of/path?query` by
-   * forwarding internally. Forwarding (rather than redirecting) is deliberate: a page
-   * loaded from `/proxy/` resolves its relative resources against `/proxy/...`, and
-   * those requests land here too and reach the very same servlets.
-   */
-  class ProxyAliasServlet(private val prefix: String = PROXY_PREFIX) : HttpServlet() {
-    override fun service(request: HttpServletRequest, response: HttpServletResponse) {
-      val contextPath = request.contextPath ?: ""
-      var path = (request.requestURI ?: "/").removePrefix(contextPath)
-      /* Tolerate (accidentally) repeated prefixes, and never forward to ourselves. */
-      while (path == prefix || path.startsWith("$prefix/")) path = path.removePrefix(prefix)
-      if (!path.startsWith("/")) path = "/$path"
-      val query = request.queryString
-      val target = if (query.isNullOrEmpty()) path else "$path?$query"
-      val dispatcher = request.getRequestDispatcher(target)
-      if (dispatcher == null) {
-        response.sendError(HttpServletResponse.SC_NOT_FOUND)
-        return
-      }
-      dispatcher.forward(request, response)
-    }
-  }
-
-  /**
-   * Adds the [PROXY_PREFIX] alias to [context]. Safe to call on an already started
-   * context (the chat server is created lazily, long after it was started).
-   */
-  fun installProxyAlias(context: ServletContextHandler) {
-    val holder = ServletHolder("proxy-alias", ProxyAliasServlet())
-    context.addServlet(holder, "$PROXY_PREFIX/*")
-    context.addServlet(holder, PROXY_PREFIX)
-    if (context.isStarted && !holder.isStarted) holder.start()
-  }
-
-  /** Idempotent, best-effort variant that finds the servlet context of [server]. */
-  fun installProxyAlias(server: Server) {
-    if (!proxyAliasedServers.add(server)) return
-    try {
-      val context = server.getChildHandlerByClass(ServletContextHandler::class.java) as? ServletContextHandler
-      if (context == null) {
-        System.err.println("warning: no servlet context found; $PROXY_PREFIX alias not installed")
-        return
-      }
-      installProxyAlias(context)
+  fun installSessionProxy(context: ServletContextHandler): Boolean {
+    if (context !is WebAppContext) return false
+    if (!proxiedContexts.add(context)) return true
+    return try {
+      sessionProxyServer.configure(context)
+      /* configure() usually runs long after the context started: start the new holders. */
+       startNewHolders(context)
+      true
     } catch (e: Exception) {
-      proxyAliasedServers.remove(server)
-      System.err.println("warning: could not install $PROXY_PREFIX alias: ${e.message}")
+      proxiedContexts.remove(context)
+      System.err.println("warning: could not install session proxy: ${e.message}")
+      false
     }
   }
-
 
   private fun usage(): String = """
                 Usage: FileServerCli [options] [directory]
@@ -422,8 +379,6 @@ object FileServerCli {
           root = taskRoot,
           chatUri = {
             val appServer = CognotikAppServer.getServer(host, chatPort)
-            /* The chat server is created on demand; alias it the first time we see it. */
-            installProxyAlias(appServer.server)
             appServer.server.uri
           },
           readOnly = readOnly,
@@ -651,14 +606,21 @@ object FileServerCli {
     val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
     context.addServlet(redirect, "")
     context.addServlet(redirect, FILES_PREFIX)
-    /* Accept the UI's "/proxy/..." session URLs as aliases of the context root. */
-    installProxyAlias(context)
-    proxyAliasedServers.add(server)
+     /* /proxy/... == /... on this server too (only the alias applies to a plain context). */
+    installSessionProxy(context)
 
 
     server.handler = context
     server.stopAtShutdown = true
     server.start()
+    /*
+     * Identify this process as the owner of the sessions it creates: SessionProxyServer
+     * records a worker id per session, and it is only meaningful once the port is bound
+     * (port 0 means "pick a free one").
+     */
+    val boundPort = (server.connectors.first() as ServerConnector).localPort
+    val ownerHost = if (host == "0.0.0.0" || host == "::" || host.isBlank()) "localhost" else host
+    SessionProxyServer.OWNER_ID = "$ownerHost:$boundPort"
     return server
   }
 
