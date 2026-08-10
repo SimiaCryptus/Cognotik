@@ -1,0 +1,19 @@
+{
+    "cognitiveSettings" : {
+      "variables" : { },
+      "type" : "Waterfall"
+    },
+    "taskSettings" : {
+      "FileModification_FileModification" : {
+        "task_type" : "FileModification",
+        "name" : "FileModification",
+        "verbose" : false
+      }
+    },
+    "purpose" : "Fan a phase plan out into one BuildPlan JSON document per phase.",
+    "summaryPrompt" : "Create a comprehensive summary of the sub-planning results below.\n\nOriginal Goal: {goal}\n\nThe summary should:\n- List every task plan file that was written\n- Highlight key decisions and accomplishments\n- Identify any issues or blockers encountered\n- Provide actionable next steps if applicable\n- Be concise but complete\n\nUse markdown formatting with headers and bullet points.",
+    "name" : "SubPlan",
+    "task_type" : "SubPlan",
+    "verbose" : false,
+    "cognitiveMode" : "Waterfall"
+  }
