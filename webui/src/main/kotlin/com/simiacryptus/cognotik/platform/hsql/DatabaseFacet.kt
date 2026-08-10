@@ -976,6 +976,12 @@ class DatabaseFacet(
       }
     }
 
+    fun isInitialized() : Boolean {
+      return synchronized(serverLock) {
+        embeddedServer != null
+      }
+    }
+
     /**
      * Terminate all active database connections, stop the shared embedded H2 server,
      * and clear all cached connection state, registered database tracking, and schema initialization flags.

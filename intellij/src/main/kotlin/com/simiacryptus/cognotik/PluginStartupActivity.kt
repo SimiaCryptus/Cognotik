@@ -53,7 +53,7 @@ class PluginStartupActivity : ProjectActivity {
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         //DatabaseFacet.resetAll()
         val extFile = project.getExternalConfigurationDir()?.toFile()
-        DatabaseFacet.root = (extFile ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
+        if(!DatabaseFacet.isInitialized()) DatabaseFacet.root = (extFile ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
         //DatabaseFacet.root = (project.basePath?.let { File(it) } ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
