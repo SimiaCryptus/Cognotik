@@ -262,7 +262,7 @@ open class UnifiedHarness(
 
 
       override fun newSession(user: User, session: Session): SocketManager {
-        if (serverless) { 
+        if (serverless) {
           log.info("Starting serverless task session for ${taskType.name} with session ID: $session", RuntimeException("Stack"))
           val socketManager = ServerlessSocketManager(
             session = session,
