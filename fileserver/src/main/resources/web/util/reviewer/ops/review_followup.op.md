@@ -1,15 +1,16 @@
 ---
-transforms: (.*)research.md -> $1followup.json
+transforms: (.*)packages.json -> $1followup.json
 folder: ../../..
 related:
-  - ./followup_schema.ts
+  - ./analysis_schema.ts
+  - ../../coder/ops/followup_schema.ts
 ---
 
-Analyze the following research document and identify concrete, actionable
-follow-up tasks that should be implemented as docops operations. Follow-up
-tasks should primarily be expressed as a series of `FileModification` tasks
-(one per concrete file-level change), unless a task clearly requires a
-different docops task type.
+Analyze the package-level review findings below and identify concrete,
+actionable follow-up tasks that should be implemented as docops
+operations. Follow-up tasks should primarily be expressed as a series of
+`FileModification` tasks (one per concrete file-level change), unless a
+task clearly requires a different docops task type.
 
 For each follow-up item, provide:
 
@@ -18,7 +19,8 @@ For each follow-up item, provide:
   task description for automated execution
 - the `target_files` that should be created or modified
 - any `related_files` needed for context
-- an optional `priority` (`low`, `medium`, `high`, `critical`)
+- an optional `priority` (`low`, `medium`, `high`, `critical`), informed by
+  the `severity`/`overall_severity` of the findings it addresses
 - an optional `task_type` (default to `FileModification` when omitted)
 
 Output a single JSON document that strictly conforms to the `FollowupPlan`

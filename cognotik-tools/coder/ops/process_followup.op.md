@@ -4,7 +4,7 @@ transforms:
    - (.*)summary.md -> $1followup.md
 task_type: SubPlan
 task_config_json: followup.task.json
-folder: ../../..
+folder: ../..
 ---
 
 Execute the tasks specifies in the `followup.json`

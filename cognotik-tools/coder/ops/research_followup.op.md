@@ -1,6 +1,6 @@
 ---
 transforms: (.*)research.md -> $1followup.json
-folder: ../../..
+folder: ../..
 related:
   - ./followup_schema.ts
 ---

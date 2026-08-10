@@ -2,5 +2,5 @@
 transforms: (.*)query.md -> $1research.md
 task_type: SubPlan
 task_config_json: research.task.json
-folder: ../../..
+folder: ../..
 ---
