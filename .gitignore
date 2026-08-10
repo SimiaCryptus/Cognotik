@@ -12,4 +12,4 @@ build/
 *.db
 .data/
 .logs/
-#cognotik-tools/
+cognotik-tools/
