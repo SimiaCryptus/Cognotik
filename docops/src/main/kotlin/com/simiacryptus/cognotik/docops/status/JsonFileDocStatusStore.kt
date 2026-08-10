@@ -45,7 +45,7 @@ class JsonFileDocStatusStore(
       error = error,
     )
     writeLocked(DocOpsStatus(lastUpdated = now, tasks = current.tasks + (targetKey to updated)))
-    log.info("Updated status for target '$targetKey' to $status${error?.let { " with error: $it" } ?: ""}")
+    log.info("Updated status for target $targetKey' (session $sessionId) to $status${error?.let { " with error: $it" } ?: ""}")
     updated
   }
 

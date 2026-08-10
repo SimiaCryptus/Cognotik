@@ -63,7 +63,7 @@ open class AdaptivePlanningMode(
     log.debug("Handling user message: $userMessage")
     if (!isRunning) {
       isRunning = true
-      log.debug("Starting new auto plan chat session")
+      log.debug("Starting new auto plan chat session (synchronous; blocks until completion)")
       startAutoPlanChat(task, userMessage, transcriptStream)
     } else {
       log.debug("Injecting user message into ongoing chat")
@@ -79,7 +79,13 @@ open class AdaptivePlanningMode(
 
     val continueLoop = true
     val tabbedDisplay = TabbedDisplay(task)
-    task.ui.pool.execute {
+    /*
+     * Run the planning loop synchronously on the calling thread.
+     * handleUserMessage() must not return until the session is complete, and running inline
+     * (rather than submitting to task.ui.pool) also avoids holding a pool thread while this
+     * loop blocks on the futures of the sub-tasks it submits to that same pool.
+     */
+    run {
       val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
       try {
         log.debug("Starting main execution loop")
@@ -254,6 +260,8 @@ open class AdaptivePlanningMode(
         task.error(e)
         log.error("Error in startAutoPlanChat", e)
         writeToTranscript("Error in Auto Plan Chat: ${e.message}\n\n")
+        /* Now that this call is synchronous, surface failures to the caller. */
+        if (e is Error) throw e
       } finally {
         log.debug("Finalizing auto plan chat")
         isRunning = false
@@ -327,8 +335,9 @@ open class AdaptivePlanningMode(
           }
           .joinToString("\n\n"))
       orchestrationConfig.workingDir?.let { root ->
-        append(                "\nAvailable files:\n\n" + FileSelectionUtils.getAvailableFiles(Path(root))
-          .joinToString("\n") { "      - $it" })
+        append(
+          "\nAvailable files:\n\n" + FileSelectionUtils.getAvailableFiles(Path(root))
+            .joinToString("\n") { "      - $it" })
       }
       append("\nChoose the most suitable task types and provide details of how they should be executed.")
       val namedConfigs = orchestrationConfig.taskSettings.values.filter { it.name != null }
