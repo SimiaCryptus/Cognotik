@@ -444,26 +444,27 @@
 }
 
 .fs-image img {
-     max-width: 100%;
-     border-radius: var(--fs-radius-md);
-     box-shadow: var(--fs-shadow-2);
-     transform-origin: center top;
-     transition: transform var(--fs-motion) var(--fs-ease-out);
+    max-width: 100%;
+    border-radius: var(--fs-radius-md);
+    box-shadow: var(--fs-shadow-2);
+    transform-origin: center top;
+    transition: transform var(--fs-motion) var(--fs-ease-out);
     /* Checkerboard so transparent PNGs read correctly in both themes. */
-    background-image:
-            linear-gradient(45deg, var(--fs-bg-sunken) 25%, transparent 25%),
-            linear-gradient(-45deg, var(--fs-bg-sunken) 25%, transparent 25%),
-            linear-gradient(45deg, transparent 75%, var(--fs-bg-sunken) 75%),
-            linear-gradient(-45deg, transparent 75%, var(--fs-bg-sunken) 75%);
+    background-image: linear-gradient(45deg, var(--fs-bg-sunken) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--fs-bg-sunken) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--fs-bg-sunken) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--fs-bg-sunken) 75%);
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
+
 .fs-image__zoom {
     padding-inline: var(--fs-space-3);
     color: var(--fs-fg-subtle);
     font-size: var(--fs-text-xs);
     font-variant-numeric: tabular-nums;
 }
+
 .fs-image__caption {
     color: var(--fs-fg-subtle);
     font-size: var(--fs-text-xs);
@@ -1264,10 +1265,12 @@ dialog.fs-modal::backdrop {
     border: 0;
     background: #ffffff;
 }
+
 .fs-preview__status {
     color: var(--fs-fg-subtle);
     font-size: var(--fs-text-xs);
 }
+
 /* -------------------------------------------------------- markdown preview */
 .fs-markdown {
     flex: 1;
@@ -1278,38 +1281,47 @@ dialog.fs-modal::backdrop {
     line-height: 1.65;
     font-size: var(--fs-text-md);
 }
+
 .fs-markdown:focus-visible {
     outline: 2px solid var(--fs-focus-ring);
     outline-offset: -3px;
 }
+
 .fs-markdown__body {
     max-width: 84ch;
     margin-inline: auto;
 }
+
 .fs-markdown__body > * + * {
     margin-block-start: var(--fs-space-4);
 }
+
 .fs-markdown h1, .fs-markdown h2, .fs-markdown h3,
 .fs-markdown h4, .fs-markdown h5, .fs-markdown h6 {
     margin-block-start: var(--fs-space-6);
     letter-spacing: var(--fs-tracking-tight);
 }
+
 .fs-markdown h1, .fs-markdown h2 {
     padding-block-end: var(--fs-space-2);
     border-block-end: 1px solid var(--fs-hairline);
 }
+
 .fs-markdown a {
     text-decoration: underline;
 }
+
 .fs-markdown img {
     max-width: 100%;
     border-radius: var(--fs-radius);
 }
+
 .fs-markdown code {
     padding: 1px 4px;
     background: var(--fs-bg-sunken);
     border-radius: var(--fs-radius-xs);
 }
+
 .fs-markdown pre {
     padding: var(--fs-space-4);
     overflow: auto;
@@ -1317,10 +1329,12 @@ dialog.fs-modal::backdrop {
     border: 1px solid var(--fs-hairline);
     border-radius: var(--fs-radius-md);
 }
+
 .fs-markdown pre code {
     padding: 0;
     background: transparent;
 }
+
 .fs-markdown blockquote {
     padding: var(--fs-space-1) var(--fs-space-4);
     border-inline-start: 3px solid var(--fs-accent);
@@ -1328,69 +1342,84 @@ dialog.fs-modal::backdrop {
     border-radius: 0 var(--fs-radius) var(--fs-radius) 0;
     color: var(--fs-fg-muted);
 }
+
 .fs-markdown hr {
     border: 0;
     border-block-start: 1px solid var(--fs-hairline);
 }
+
 .fs-markdown table {
     border-collapse: collapse;
     width: 100%;
 }
+
 .fs-markdown th, .fs-markdown td {
     padding: var(--fs-space-2) var(--fs-space-3);
     border: 1px solid var(--fs-border);
     text-align: start;
 }
+
 .fs-markdown thead th {
     background: var(--fs-bg-sunken);
 }
+
 .fs-markdown :is(ul, ol) {
     padding-inline-start: var(--fs-space-6);
 }
+
 .fs-markdown li + li {
     margin-block-start: var(--fs-space-2);
 }
+
 /* ------------------------------------------------- mermaid & math (markdown) */
 .fs-markdown .fs-mermaid {
-     display: flex;
-     justify-content: center;
-     padding: var(--fs-space-4);
-     overflow-x: auto;
-     background: var(--fs-bg-sunken);
-     border: 1px solid var(--fs-hairline);
-     border-radius: var(--fs-radius-md);
+    display: flex;
+    justify-content: center;
+    padding: var(--fs-space-4);
+    overflow-x: auto;
+    background: var(--fs-bg-sunken);
+    border: 1px solid var(--fs-hairline);
+    border-radius: var(--fs-radius-md);
 }
+
 .fs-markdown .fs-mermaid svg {
-     max-width: 100%;
-     height: auto;
+    max-width: 100%;
+    height: auto;
 }
+
 /* A diagram that failed to parse keeps its source, flagged rather than hidden. */
 .fs-markdown pre.fs-mermaid__error {
-     border-color: color-mix(in oklab, var(--fs-danger) 45%, var(--fs-border));
-     background: var(--fs-danger-soft);
+    border-color: color-mix(in oklab, var(--fs-danger) 45%, var(--fs-border));
+    background: var(--fs-danger-soft);
 }
+
 /* Until MathJax replaces it, raw TeX should read as code, not as a mistake. */
 .fs-math {
-     font-family: var(--fs-font-mono);
+    font-family: var(--fs-font-mono);
 }
+
 .fs-math--display {
-     display: block;
-     margin-block: var(--fs-space-4);
-     overflow-x: auto;
-     overflow-y: hidden;
-     text-align: center;
+    display: block;
+    margin-block: var(--fs-space-4);
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-align: center;
 }
+
 .fs-markdown mjx-container {
-     max-width: 100%;
-     overflow-x: auto;
-     overflow-y: hidden;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
+
 .fs-markdown mjx-container[display="true"] {
-     margin-block: var(--fs-space-4) !important;
+    margin-block: var(--fs-space-4) !important;
 }
+
 .fs-markdown mjx-container svg {
-     vertical-align: middle;
+    vertical-align: middle;
 }
+
 /* ----------------------------------------------------------- table preview */
 .fs-table-wrap {
     flex: 1;
@@ -1398,15 +1427,18 @@ dialog.fs-modal::backdrop {
     overflow: auto;
     background: var(--fs-bg);
 }
+
 .fs-table-wrap:focus-visible {
     outline: 2px solid var(--fs-focus-ring);
     outline-offset: -3px;
 }
+
 table.fs-table {
     border-collapse: collapse;
     font-family: var(--fs-font-mono);
     font-size: var(--fs-text-xs);
 }
+
 .fs-table th, .fs-table td {
     max-width: 48ch;
     padding: 2px var(--fs-space-3);
@@ -1416,6 +1448,7 @@ table.fs-table {
     text-overflow: ellipsis;
     text-align: start;
 }
+
 .fs-table thead th {
     position: sticky;
     top: 0;
@@ -1423,16 +1456,20 @@ table.fs-table {
     background: var(--fs-bg-sunken);
     font-weight: 650;
 }
+
 .fs-table tbody tr:nth-child(even) {
     background: color-mix(in oklab, var(--fs-fg) 3%, transparent);
 }
+
 .fs-table tbody tr:hover {
     background: var(--fs-hover);
 }
+
 .fs-table td.num {
     text-align: end;
     font-variant-numeric: tabular-nums;
 }
+
 /* ------------------------------------------------- docops session index */
 .fs-docops {
     flex: 1;
@@ -1441,10 +1478,12 @@ table.fs-table {
     padding: var(--fs-space-5) clamp(var(--fs-space-4), 4vw, var(--fs-space-7));
     background: var(--fs-bg);
 }
+
 .fs-docops:focus-visible {
     outline: 2px solid var(--fs-focus-ring);
     outline-offset: -3px;
 }
+
 .fs-docops__summary {
     max-width: 96ch;
     margin-inline: auto;
@@ -1453,12 +1492,14 @@ table.fs-table {
     font-size: var(--fs-text-xs);
     font-variant-numeric: tabular-nums;
 }
+
 .fs-docops__list {
     display: grid;
     gap: var(--fs-space-2);
     max-width: 96ch;
     margin-inline: auto;
 }
+
 .fs-docops__row {
     display: flex;
     align-items: center;
@@ -1470,10 +1511,12 @@ table.fs-table {
     transition: border-color var(--fs-motion-fast) var(--fs-ease),
     background-color var(--fs-motion-fast) var(--fs-ease);
 }
+
 .fs-docops__row:hover {
     border-color: var(--fs-border-strong);
     background: var(--fs-bg-overlay);
 }
+
 .fs-docops__status {
     flex: 0 0 auto;
     min-width: 9ch;
@@ -1487,27 +1530,32 @@ table.fs-table {
     text-transform: uppercase;
     text-align: center;
 }
+
 .fs-docops__status[data-status="RUNNING"],
 .fs-docops__status[data-status="IN_PROGRESS"],
 .fs-docops__status[data-status="STARTED"] {
     background: var(--fs-accent-soft);
     color: var(--fs-accent);
 }
+
 .fs-docops__status[data-status="COMPLETED"],
 .fs-docops__status[data-status="DONE"] {
     background: var(--fs-ok-soft);
     color: var(--fs-ok);
 }
+
 .fs-docops__status[data-status="FAILED"],
 .fs-docops__status[data-status="ERROR"],
 .fs-docops__status[data-status="CANCELLED"] {
     background: var(--fs-danger-soft);
     color: var(--fs-danger);
 }
+
 .fs-docops__main {
     flex: 1;
     min-width: 0;
 }
+
 .fs-docops__target {
     max-width: 100%;
     padding: 0;
@@ -1521,11 +1569,13 @@ table.fs-table {
     white-space: nowrap;
     display: block;
 }
+
 .fs-docops__target:hover {
     color: var(--fs-accent-strong);
     background: none;
     text-decoration: underline;
 }
+
 .fs-docops__meta {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1534,12 +1584,14 @@ table.fs-table {
     font-family: var(--fs-font-mono);
     font-size: var(--fs-text-xs);
 }
+
 .fs-docops__actions {
     display: flex;
     flex: 0 0 auto;
     gap: var(--fs-space-2);
     align-items: center;
 }
+
 .fs-docops__actions button,
 .fs-docops__actions a {
     padding: 2px var(--fs-space-3);
@@ -1549,20 +1601,24 @@ table.fs-table {
     font-weight: 600;
     text-decoration: none;
 }
+
 .fs-docops__actions button:hover,
 .fs-docops__actions a:hover {
     color: var(--fs-accent);
     background: var(--fs-accent-soft);
 }
+
 .fs-docops__actions .fs-docops__open {
     color: var(--fs-fg-on-accent);
     background: var(--fs-accent);
     box-shadow: var(--fs-shadow-1);
 }
+
 .fs-docops__actions .fs-docops__open:hover {
     color: var(--fs-fg-on-accent);
     background: var(--fs-accent-strong);
 }
+
 .fs-docops__empty {
     max-width: 96ch;
     margin-inline: auto;
@@ -1571,87 +1627,116 @@ table.fs-table {
     font-style: italic;
     text-align: center;
 }
+
 /* ------------------------------------------------------- touch & small screens
   * Hit targets, hover-only affordances and overlay geometry. Written against
   * the *pointer*, not the viewport, so a touch laptop benefits too — and with
   * max()/min() so the density tokens keep their say.
   * ------------------------------------------------------------------------- */
 @media (hover: none) {
-     /* Nothing ever hovers: a close button that only appears on hover is a
-        close button that does not exist. */
-     .fs-tab__close,
-     .fs-terminal__tab .fs-tab__close {
-         opacity: 1;
-     }
+    /* Nothing ever hovers: a close button that only appears on hover is a
+       close button that does not exist. */
+    .fs-tab__close,
+    .fs-terminal__tab .fs-tab__close {
+        opacity: 1;
+    }
 }
+
 @media (pointer: coarse) {
-     button,
-     [role="menuitem"],
-     [role="tab"],
-     [role="treeitem"] {
-         /* Kills the 300 ms double-tap-zoom delay; dblclick still fires. */
-         touch-action: manipulation;
-     }
-     .fs-tree__row {
-         height: max(var(--fs-row-h), 34px);
-         line-height: max(var(--fs-row-h), 34px);
-         gap: var(--fs-space-3);
-     }
-     .fs-activity button {
-         width: max(var(--fs-rail-size), 40px);
-         height: max(var(--fs-rail-size), 40px);
-         font-size: 17px;
-     }
-     .fs-explorer__toolbar button,
-     .fs-terminal__toolbar button {
-         width: 34px;
-         height: 34px;
-     }
-     .fs-explorer__filter {
-         height: 34px;
-     }
-     .fs-tab {
-         min-height: max(var(--fs-tab-h), 40px);
-         padding-inline: var(--fs-space-4) var(--fs-space-3);
-     }
-     .fs-tab__close {
-         width: 26px;
-         height: 26px;
-     }
-     .fs-menu [role="menuitem"],
-     .fs-quickpick__item {
-         padding-block: var(--fs-space-3);
-     }
-     .fs-menubar button {
-         padding-block: var(--fs-space-2);
-     }
+    button,
+    [role="menuitem"],
+    [role="tab"],
+    [role="treeitem"] {
+        /* Kills the 300 ms double-tap-zoom delay; dblclick still fires. */
+        touch-action: manipulation;
+    }
+
+    .fs-tree__row {
+        height: max(var(--fs-row-h), 34px);
+        line-height: max(var(--fs-row-h), 34px);
+        gap: var(--fs-space-3);
+    }
+
+    .fs-activity button {
+        width: max(var(--fs-rail-size), 40px);
+        height: max(var(--fs-rail-size), 40px);
+        font-size: 17px;
+    }
+
+    .fs-explorer__toolbar button,
+    .fs-terminal__toolbar button {
+        width: 34px;
+        height: 34px;
+    }
+
+    .fs-explorer__filter {
+        height: 34px;
+    }
+
+    .fs-tab {
+        min-height: max(var(--fs-tab-h), 40px);
+        padding-inline: var(--fs-space-4) var(--fs-space-3);
+    }
+
+    .fs-tab__close {
+        width: 26px;
+        height: 26px;
+    }
+
+    .fs-menu [role="menuitem"],
+    .fs-quickpick__item {
+        padding-block: var(--fs-space-3);
+    }
+
+    .fs-menubar button {
+        padding-block: var(--fs-space-2);
+    }
 }
+
 @media (max-width: 620px) {
-     .fs-toasts {
-         inset-inline: var(--fs-space-3);
-         max-width: none;
-     }
-     .fs-quickpick {
-         margin-top: 4vh;
-         width: 96vw;
-     }
-     .fs-quickpick__list {
-         max-height: 62vh;
-     }
-     .fs-menu {
-         max-width: calc(100vw - var(--fs-space-5));
-     }
-     dialog.fs-modal {
-         min-width: 0;
-         width: calc(100vw - var(--fs-space-5));
-         padding: var(--fs-space-5);
-     }
-     .fs-tab {
-         max-width: 170px;
-     }
-     .fs-preview__toolbar,
-     .fs-chat__toolbar {
-         overflow-x: auto;
-         scrollbar-width: none;
-     }
+    .fs-toasts {
+        inset-inline: var(--fs-space-3);
+        max-width: none;
+    }
+
+    .fs-quickpick {
+        margin-top: 4vh;
+        width: 96vw;
+    }
+
+    .fs-quickpick__list {
+        max-height: 62vh;
+    }
+
+    .fs-menu {
+        max-width: calc(100vw - var(--fs-space-5));
+    }
+
+    dialog.fs-modal {
+        min-width: 0;
+        width: calc(100vw - var(--fs-space-5));
+        padding: var(--fs-space-5);
+    }
+
+    .fs-tab {
+        max-width: 170px;
+    }
+
+    .fs-preview__toolbar,
+    .fs-chat__toolbar {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+}
+
+/* The wordmark is an <a> (navigates up one level) but must still read as
+       branding: no link colour, no underline until hover/focus. */
+.fs-header__title {
+    color: inherit;
+    text-decoration: none;
+}
+
+.fs-header__title:hover,
+.fs-header__title:focus-visible {
+    text-decoration: underline;
 }

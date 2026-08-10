@@ -128,7 +128,13 @@ export class AppShell extends Component {
         });
 
         this.header.append(
-            h('span', {class: 'fs-header__title', text: 'Files'}),
+            /* The wordmark doubles as "up one level": a plain <a> so it keeps
+               middle-click / open-in-new-tab and works without JS. */
+            h('a', {
+                class: 'fs-header__title', text: 'Cognotik',
+                href: '..', rel: 'noopener', title: 'Cognotik — up one level',
+                'aria-label': 'Cognotik — up one level',
+            }),
             this.menuBar.mount(h('div')),
             h('span', {class: 'fs-header__spacer'}),
             theme, classic,
