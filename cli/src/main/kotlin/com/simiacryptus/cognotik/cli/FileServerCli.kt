@@ -104,14 +104,14 @@ object FileServerCli {
     val execPermissive: Boolean = false,
     val tasksEnabled: Boolean = false,
     val modifyEnabled: Boolean = false,
+    /** Where the gateway page ('/') sends the browser, e.g. `/home/`. */
+    val landingPath: String = "",
   )
 
   @Volatile
   var serverInfo: ServerInfo = ServerInfo()
 
   const val PROXY_PREFIX = "/proxy"
-
-
 
 
   /** Contexts that already carry the session-proxy servlets (weakly held). */
@@ -159,6 +159,39 @@ object FileServerCli {
     runCatching { context.servletHandler.initialize() }
   }
 
+  /**
+   * Gateway for the context root. `/` is not a mount of its own: it is an alias for the
+   * landing page ([ServerInfo.landingPath], the homepage by default), because the
+   * homepage is the only page that explains the mount and lets the user pick models.
+   *
+   * `/?session=ID` is sent to [PROXY_PREFIX] instead, so the two documented spellings
+   * of a session URL ('/' and '/proxy/') keep behaving identically.
+   *
+   * It is mapped both on the exact root spec (`""`) and on the default spec (`"/"`), so
+   * it replaces Jetty's `Default404Servlet`; every other mount is a more specific spec
+   * and therefore still wins. Paths other than the root are answered with 404 - the
+   * gateway is an alias for '/', not a wildcard redirect.
+   */
+  private class RootGatewayServlet : HttpServlet() {
+    override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+      val path = req.requestURI.removePrefix(req.contextPath).ifEmpty { "/" }
+      val query = req.queryString?.takeIf { it.isNotBlank() }?.let { "?$it" } ?: ""
+      if (!req.getParameter("session").isNullOrBlank()) {
+        resp.sendRedirect("$PROXY_PREFIX/$query")
+        return
+      }
+      if (path != "/") {
+        /* Reached via the default mapping: nothing else claimed this path. */
+        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No such resource: $path")
+        return
+      }
+      /* Never redirect to '/' itself: that would loop through this very servlet. */
+      val target = serverInfo.landingPath.takeIf { it.isNotBlank() && it != "/" } ?: "$HOME_PREFIX/"
+      resp.setHeader("Cache-Control", "no-store")
+      resp.sendRedirect(target + query)
+    }
+  }
+
 
   private fun usage(): String = """
                 Usage: FileServerCli [options] [directory]
@@ -172,8 +205,10 @@ object FileServerCli {
                        --secure       Shorthand for --read-only --no-terminal --no-exec --no-tasks --no-modify
                       --shell <cmd>  Shell for new terminals (default: auto-detect)
                       --no-ui        Do not serve the SPA at all
-                      --no-home      Do not serve the homepage / settings UI (/home/)
                       --files        Make the classic listing the landing page
+                     ('/' is only a gateway: it never serves the workspace, it redirects
+                      to the landing page - /home/ by default - and '/?session=ID' is
+                      forwarded to /proxy/.)
                       --help         Show this message
 
                 Task actions (DocOps / AutoFix), enabled by default:
@@ -250,6 +285,8 @@ object FileServerCli {
     var modifyEnabled = true
     var lineNumbers = false
     var chatPort = 8061
+    /* null = "whatever is enabled", see landingPathFor(). */
+    var landing: String? = null
 
     var i = 0
     while (i < args.size) {
@@ -299,8 +336,18 @@ object FileServerCli {
         "--fix-cmd" -> fixCommand = args.getOrNull(++i) ?: fail("Missing value for $arg")
 
         "--no-ui" -> uiEnabled = false
+        "--ui" -> {
+          uiEnabled = true
+          landing = "ui"
+        }
+
         "--no-home" -> homeEnabled = false
-        "--home" -> homeEnabled = true
+        "--home" -> {
+          homeEnabled = true
+          landing = "home"
+        }
+
+        "--files" -> landing = "files"
         "--help" -> {
           println(usage())
           return
@@ -409,13 +456,13 @@ object FileServerCli {
     val server = start(
       baseDir, host, port, gitEnabled, readOnly, uiEnabled,
       terminalEnabled, execPermissive, shell, tasksEnabled, fixCommand,
-      modifyEnabled, lineNumbers, homeEnabled
+      modifyEnabled, lineNumbers, homeEnabled, landing
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
 
     println("Serving ${baseDir.absolutePath}")
-    println("  ->  http://$displayHost:$boundPort/")
+    println("  ->  http://$displayHost:$boundPort/ (redirects to ${serverInfo.landingPath})")
     if (homeEnabled) {
       println("  Home      -> http://$displayHost:$boundPort$HOME_PREFIX/ (overview: links, config, endpoints)")
       println("  Settings  -> http://$displayHost:$boundPort$HOME_PREFIX/settings.html (models & API keys)")
@@ -493,6 +540,7 @@ object FileServerCli {
     modifyEnabled: Boolean = false,
     lineNumbers: Boolean = false,
     homeEnabled: Boolean = true,
+    landing: String? = null,
   ): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
@@ -523,6 +571,7 @@ object FileServerCli {
       execPermissive = execPermissive,
       tasksEnabled = showTasks,
       modifyEnabled = showModify,
+      landingPath = landingPathFor(landing, homeEnabled, uiEnabled),
     )
     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks)
     else SimpleFileServlet(
@@ -589,6 +638,15 @@ object FileServerCli {
       register(context, ServletHolder("provider-api", ApiProviderServlet()), "/apiProviders")
       register(context, ServletHolder("keys-api", ApiKeyServlet()), "/apiKeys")
     }
+    /*
+     * Registered last and on the default mapping: every mount above uses a more specific
+     * path spec and keeps winning, while '/' (and anything unmatched) is answered by the
+     * gateway instead of Jetty's Default404Servlet. Both specs share one holder so the
+     * exact root ("") and the default ("/") resolve to the same instance.
+     */
+    val gatewayHolder = ServletHolder("root-gateway", RootGatewayServlet())
+    addServletSafely(context, gatewayHolder, "")
+    addServletSafely(context, gatewayHolder, "/")
 
 
 
@@ -604,6 +662,20 @@ object FileServerCli {
     val ownerHost = if (host == "0.0.0.0" || host == "::" || host.isBlank()) "localhost" else host
     SessionProxyServer.OWNER_ID = "$ownerHost:$boundPort"
     return server
+  }
+
+  /**
+   * Resolves the landing page. An explicit `--files` / `--ui` / `--home` wins; otherwise
+   * the most informative page that is actually mounted is used, so the gateway can never
+   * redirect to a disabled mount.
+   */
+  private fun landingPathFor(landing: String?, homeEnabled: Boolean, uiEnabled: Boolean): String = when {
+    landing == "files" -> "$FILES_PREFIX/$ROOT_SEGMENT/"
+    landing == "ui" && uiEnabled -> "$UI_PREFIX/"
+    landing == "home" && homeEnabled -> "$HOME_PREFIX/"
+    homeEnabled -> "$HOME_PREFIX/"
+    uiEnabled -> "$UI_PREFIX/"
+    else -> "$FILES_PREFIX/$ROOT_SEGMENT/"
   }
 
   private fun register(
