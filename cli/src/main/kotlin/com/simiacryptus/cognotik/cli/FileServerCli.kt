@@ -25,7 +25,8 @@ import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.webapp.WebAppContext
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
+import org.slf4j.LoggerFactory
 import java.io.File
 
 /**
@@ -86,12 +87,6 @@ object FileServerCli {
   /** Mount point of the resource-based homepage ([StaticResourceServlet]). */
   const val HOME_PREFIX = "/home"
 
-  /**
-   * Shared web assets served straight from the classpath, independent of the served
-   * directory and of every feature flag: `web/lib` is published at [LIB_PREFIX] and
-   * `web/app` at [APP_PREFIX]. Pages (homepage, IDE view, generated listings) may link
-   * to `/lib/...` and `/app/...` without knowing how the mount was configured.
-   */
   const val LIB_PREFIX = "/lib"
 
   /** @see LIB_PREFIX */
@@ -117,7 +112,7 @@ object FileServerCli {
   const val PROXY_PREFIX = "/proxy"
 
 
-  val sessionProxyServer: SessionProxyServer by lazy { SessionProxyServer() }
+
 
   /** Contexts that already carry the session-proxy servlets (weakly held). */
   private val proxiedContexts: MutableSet<ServletContextHandler> =
@@ -125,38 +120,45 @@ object FileServerCli {
       java.util.Collections.newSetFromMap(java.util.WeakHashMap<ServletContextHandler, Boolean>())
     )
 
+  /** Contexts that already had websocket support installed (weakly held). */
+  private val webSocketContexts: MutableSet<ServletContextHandler> =
+    java.util.Collections.synchronizedSet(
+      java.util.Collections.newSetFromMap(java.util.WeakHashMap<ServletContextHandler, Boolean>())
+    )
 
-  /** First path segment consumed by [FileServlet] (normally a session id). */
-
-  /** Sends browsers landing on "/" (or "/files") to the served directory listing. */
-  class RootRedirectServlet(private val target: String = "$FILES_PREFIX/$ROOT_SEGMENT/") : HttpServlet() {
-    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-      response.sendRedirect("${request.contextPath}$target")
-    }
-  }
-   /** Servlets registered after start-up must be started/initialised explicitly. */
-   private fun startNewHolders(context: ServletContextHandler) {
-     if (!context.isStarted) return
-     context.servletHandler.servlets.forEach { holder ->
-       if (!holder.isStarted) runCatching { holder.start() }
-     }
-     runCatching { context.servletHandler.initialize() }
-   }
-
-  fun installSessionProxy(context: ServletContextHandler): Boolean {
-    if (context !is WebAppContext) return false
-    if (!proxiedContexts.add(context)) return true
+  /**
+   * Embedded Jetty does not run `ServletContainerInitializer`s, so a plain
+   * [ServletContextHandler] has no `WebSocketComponents`. Any `JettyWebSocketServlet`
+   * (the session proxy installs one) then fails its `init()` with
+   * `IllegalStateException: WebSocketComponents has not been created` while the server
+   * is starting. Running the initializer here is the embedded equivalent of the
+   * container's automatic discovery; it must happen *before* the context starts and is
+   * idempotent per context.
+   *
+   * @return true when the context can host websocket servlets.
+   */
+  fun ensureWebSocketSupport(context: ServletContextHandler): Boolean {
+    if (!webSocketContexts.add(context)) return true
     return try {
-      sessionProxyServer.configure(context)
-      /* configure() usually runs long after the context started: start the new holders. */
-       startNewHolders(context)
+      JettyWebSocketServletContainerInitializer.configure(context, null)
       true
-    } catch (e: Exception) {
-      proxiedContexts.remove(context)
-      System.err.println("warning: could not install session proxy: ${e.message}")
+    } catch (e: Throwable) {
+      webSocketContexts.remove(context)
+      log.warn("Could not enable websocket support on ${context.contextPath}: ${e.message}")
+      System.err.println("warning: could not enable websocket support: ${e.message}")
       false
     }
   }
+
+  /** Servlets registered after start-up must be started/initialised explicitly. */
+  private fun startNewHolders(context: ServletContextHandler) {
+    if (!context.isStarted) return
+    context.servletHandler.servlets.forEach { holder ->
+      if (!holder.isStarted) runCatching { holder.start() }
+    }
+    runCatching { context.servletHandler.initialize() }
+  }
+
 
   private fun usage(): String = """
                 Usage: FileServerCli [options] [directory]
@@ -231,9 +233,7 @@ object FileServerCli {
     var gitEnabled = true
     var readOnly = false
     var uiEnabled = true
-    var uiDefault = false
     var homeEnabled = true
-    var filesDefault = false
     var terminalEnabled = true
     var execPermissive = true
     var shell: List<String> = emptyList()
@@ -242,8 +242,8 @@ object FileServerCli {
     var taskRootArg: String? = null
     var smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL")
     var fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL")
-    var imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL")
-    var audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL")
+    val imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL")
+    val audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL")
     var taskTimeout = 30L
     var taskMonitor = false
     var fixCommand = ""
@@ -299,10 +299,8 @@ object FileServerCli {
         "--fix-cmd" -> fixCommand = args.getOrNull(++i) ?: fail("Missing value for $arg")
 
         "--no-ui" -> uiEnabled = false
-        "--ui" -> uiDefault = true
         "--no-home" -> homeEnabled = false
         "--home" -> homeEnabled = true
-        "--files" -> filesDefault = true
         "--help" -> {
           println(usage())
           return
@@ -326,7 +324,7 @@ object FileServerCli {
 
     available = availableModels(cliUser)
     /* The pair is runtime state now: the web UI may replace it at any time. */
-    ModelSelection.install(user = { FileServerCli.user }, smart = smartModel, fast = fastModel)
+    ModelSelection.install(user = { user }, smart = smartModel, fast = fastModel)
     ModelSelectionActions.install()
     models = try {
       CliSupport.resolveModels(
@@ -374,11 +372,11 @@ object FileServerCli {
      * (CognotikAppServer) is only started by the first successful modify request.
      */
     if (modifyEnabled) {
+      val appServer = CognotikAppServer.getServer(host, chatPort)
       ModifyFilesActions.install(
         ModifyFilesActions.Config(
           root = taskRoot,
           chatUri = {
-            val appServer = CognotikAppServer.getServer(host, chatPort)
             appServer.server.uri
           },
           readOnly = readOnly,
@@ -394,14 +392,14 @@ object FileServerCli {
       if (modifyEnabled) ModifyFilesActions.refreshModels()
       models = try {
         CliSupport.resolveModels(
-          user = FileServerCli.user,
+          user = user,
           smartModel = ModelSelection.smart,
           fastModel = ModelSelection.fast,
           imageModel = imageModel,
           audioModel = audioModel,
           quiet = true,
         )
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         models
       }
       println("Models -> ${ModelSelection.summary()}")
@@ -409,9 +407,9 @@ object FileServerCli {
 
 
     val server = start(
-      baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
+      baseDir, host, port, gitEnabled, readOnly, uiEnabled,
       terminalEnabled, execPermissive, shell, tasksEnabled, fixCommand,
-      modifyEnabled, lineNumbers, homeEnabled, filesDefault
+      modifyEnabled, lineNumbers, homeEnabled
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
@@ -471,7 +469,7 @@ object FileServerCli {
       println("\nShutting down...")
       try {
         server.stop()
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         // best effort
       }
     })
@@ -480,13 +478,6 @@ object FileServerCli {
     server.join()
   }
 
-  /**
-   * Starts an embedded server for [baseDir]. Exposed for tests/embedding;
-   * the caller owns stopping the returned [Server].
-   *
-   * Note: [tasksEnabled] only controls the *UI affordances*; the FS API operations
-   * themselves are registered by [ServerTaskActions.install].
-   */
   fun start(
     baseDir: File,
     host: String = "127.0.0.1",
@@ -494,7 +485,6 @@ object FileServerCli {
     gitEnabled: Boolean = true,
     readOnly: Boolean = false,
     uiEnabled: Boolean = true,
-    uiDefault: Boolean = false,
     terminalEnabled: Boolean = true,
     execPermissive: Boolean = true,
     shell: List<String> = emptyList(),
@@ -503,7 +493,6 @@ object FileServerCli {
     modifyEnabled: Boolean = false,
     lineNumbers: Boolean = false,
     homeEnabled: Boolean = true,
-    filesDefault: Boolean = false,
   ): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
@@ -516,10 +505,12 @@ object FileServerCli {
       contextPath = "/"
       resourceBase = baseDir.absolutePath
     }
+    ensureWebSocketSupport(context)
+
 
     val showTasks = tasksEnabled && ServerTaskActions.isEnabled
     val showModify = modifyEnabled && !readOnly && ModifyFilesActions.isEnabled
-    /* Publish the effective configuration for the homepage / settings API. */
+
     serverInfo = ServerInfo(
       servedDir = baseDir.absolutePath,
       host = host,
@@ -550,10 +541,11 @@ object FileServerCli {
         1024 * 1024 * 2
       )
     )
-    context.addServlet(fileHolder, "$FILES_PREFIX/*")
+    addServletSafely(context, fileHolder, "$FILES_PREFIX/*")
 
     /* ZIP downloads: session = directory name, resolved against the parent dir. */
-    context.addServlet(
+    addServletSafely(
+      context,
       ServletHolder("zip", StaticZipServlet(baseDir.parentFile?.absolutePath ?: baseDir.absolutePath)),
       "/zip"
     )
@@ -567,13 +559,13 @@ object FileServerCli {
       docopsHolder.registration.setMultipartConfig(
         MultipartConfigElement(System.getProperty("java.io.tmpdir"))
       )
-      context.addServlet(docopsHolder, "$DOCOPS_PREFIX/*")
-      context.addServlet(docopsHolder, DOCOPS_PREFIX)
+      addServletSafely(context, docopsHolder, "$DOCOPS_PREFIX/*")
+      addServletSafely(context, docopsHolder, DOCOPS_PREFIX)
     }
 
 
     if (uiEnabled) {
-      context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
+      addServletSafely(context, ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
     }
     /*
      * Shared classpath assets, always mounted: /lib -> web/lib, /app -> web/app.
@@ -598,16 +590,6 @@ object FileServerCli {
       register(context, ServletHolder("keys-api", ApiKeyServlet()), "/apiKeys")
     }
 
-    val landing = when {
-      uiEnabled && uiDefault -> "$UI_PREFIX/"
-      homeEnabled && !filesDefault -> "$HOME_PREFIX/"
-      else -> "$FILES_PREFIX/$ROOT_SEGMENT/"
-    }
-    val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
-    context.addServlet(redirect, "")
-    context.addServlet(redirect, FILES_PREFIX)
-     /* /proxy/... == /... on this server too (only the alias applies to a plain context). */
-    installSessionProxy(context)
 
 
     server.handler = context
@@ -629,8 +611,38 @@ object FileServerCli {
     homeHolder: ServletHolder,
     prefix: String
   ) {
-    context.addServlet(homeHolder, "$prefix/*")
-    context.addServlet(homeHolder, prefix)
+    addServletSafely(context, homeHolder, "$prefix/*")
+    addServletSafely(context, homeHolder, prefix)
   }
 
+  /** True when [pathSpec] is already claimed by a servlet mapping in [context]. */
+  private fun isMapped(context: ServletContextHandler, pathSpec: String): Boolean =
+    context.servletHandler.servletMappings?.any { mapping ->
+      mapping.pathSpecs?.any { it == pathSpec } == true
+    } == true
+
+  /**
+   * Adds [holder] at [pathSpec] unless something (e.g. the session proxy) already
+   * mapped that spec. Jetty throws `IllegalStateException: Multiple servlets map to
+   * path ...` at start-up for duplicates, which is a fatal error at a point where the
+   * offending registration is long gone; first-registration-wins is both deterministic
+   * and debuggable.
+   *
+   * @return true when the servlet was actually registered.
+   */
+  private fun addServletSafely(
+    context: ServletContextHandler,
+    holder: ServletHolder,
+    pathSpec: String
+  ): Boolean {
+    if (isMapped(context, pathSpec)) {
+      log.info("Skipping servlet '{}' at {}: path already mapped", holder.name, pathSpec)
+      return false
+    }
+    context.addServlet(holder, pathSpec)
+    return true
+  }
+
+
+  val log = LoggerFactory.getLogger(FileServerCli::class.java)
 }

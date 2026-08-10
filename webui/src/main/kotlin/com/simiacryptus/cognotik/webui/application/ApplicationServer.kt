@@ -24,8 +24,8 @@ import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
+import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -221,7 +221,7 @@ abstract class ApplicationServer(
     return settingsFile
   }
 
-  override fun configure(webAppContext: WebAppContext) {
+  override fun configure(webAppContext: ServletContextHandler) {
     logger.info("Configuring web application context for: {}", applicationName)
     super.configure(webAppContext)
     logger.debug("Adding servlets for application: {}", applicationName)

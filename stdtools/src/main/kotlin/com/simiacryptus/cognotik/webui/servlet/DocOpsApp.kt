@@ -9,8 +9,8 @@ import com.simiacryptus.cognotik.platform.model.asPatch
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
@@ -118,7 +118,7 @@ open class DocOpsApp(
   }
 
 
-  override fun configure(webAppContext: WebAppContext) {
+  override fun configure(webAppContext: ServletContextHandler) {
     super.configure(webAppContext)
     webAppContext.addServlet(
        ServletHolder("redirect", RouterServlet(dataStorage, applicationName)), "/*"
