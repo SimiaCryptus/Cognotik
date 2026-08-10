@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
 import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
+import com.simiacryptus.cognotik.webui.servlet.action.ExtractUtilsFsAction
 
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
@@ -104,6 +105,8 @@ object FileServerCli {
     val execPermissive: Boolean = false,
     val tasksEnabled: Boolean = false,
     val modifyEnabled: Boolean = false,
+    /** True when POST /.fsapi/v1/extract-utils is available. */
+    val extractUtilsEnabled: Boolean = false,
     /** Where the gateway page ('/') sends the browser, e.g. `/home/`. */
     val landingPath: String = "",
   )
@@ -250,6 +253,14 @@ object FileServerCli {
                    Session URLs are served both from the context root and from /proxy/,
                    i.e. http://host:port/?session=ID and http://host:port/proxy/?session=ID
                    are equivalent (on this server and on the chat server).
+                 Bundled tooling (web/util), enabled by default:
+                       --no-extract-utils Do not expose the extract-utils operation
+                       --util-dir <dir>   Default target directory (default cognotik-tools)
+                   POST {mount}/.fsapi/v1/extract-utils[?dir=<dir>][&overwrite=false]
+                     -> { "dir": "...", "count": N, "files": [...] }
+                   Copies the classpath toolkit into the workspace; '?dir=' is resolved
+                   against the task root and may not escape it. Refused with EROFS on a
+                   read-only mount.
 
 
                 By default this is a PERMISSIVE LOCAL server: interactive terminals and
@@ -285,6 +296,8 @@ object FileServerCli {
     var modifyEnabled = true
     var lineNumbers = false
     var chatPort = 8061
+    var extractUtilsEnabled = true
+    var utilDir = ExtractUtilsFsAction.DEFAULT_DIR
     /* null = "whatever is enabled", see landingPathFor(). */
     var landing: String? = null
 
@@ -315,12 +328,16 @@ object FileServerCli {
           execPermissive = false
           tasksEnabled = false
           modifyEnabled = false
+          extractUtilsEnabled = false
         }
 
         "--no-tasks" -> tasksEnabled = false
         "--tasks" -> tasksEnabled = true
         "--no-modify" -> modifyEnabled = false
         "--modify" -> modifyEnabled = true
+        "--no-extract-utils" -> extractUtilsEnabled = false
+        "--extract-utils" -> extractUtilsEnabled = true
+        "--util-dir" -> utilDir = args.getOrNull(++i) ?: fail("Missing value for $arg")
         "--line-numbers" -> lineNumbers = true
         "--chat-port" -> chatPort = args.getOrNull(++i)?.toIntOrNull()
           ?: fail("Missing or invalid value for $arg")
@@ -393,7 +410,8 @@ object FileServerCli {
     }
     val taskRoot = (taskRootArg?.let { File(it) } ?: baseDir).canonicalFile
     if (readOnly) modifyEnabled = false
-    if ((tasksEnabled || modifyEnabled) && !taskRoot.isDirectory) {
+    if (readOnly) extractUtilsEnabled = false
+    if ((tasksEnabled || modifyEnabled || extractUtilsEnabled) && !taskRoot.isDirectory) {
       fail("Task root is not a directory: ${taskRoot.absolutePath}")
     }
 
@@ -430,6 +448,19 @@ object FileServerCli {
           smartModel = smartModel,
           fastModel = fastModel,
           showLineNumbers = lineNumbers,
+        )
+      )
+    }
+    /*
+     * Extraction only reads the classpath and writes under the task root, so there is
+     * nothing to bootstrap and no model to resolve: registering it is free.
+     */
+    if (extractUtilsEnabled) {
+      ExtractUtilsFsAction.install(
+        ExtractUtilsFsAction.Config(
+          root = { taskRoot },
+          readOnly = readOnly,
+          defaultDir = utilDir,
         )
       )
     }
@@ -505,6 +536,12 @@ object FileServerCli {
     } else {
       println("  Modify    -> disabled${if (readOnly) " (read-only mount)" else ""}")
     }
+    if (extractUtilsEnabled) {
+      println("  Tools     -> extract-utils enabled (default dir ${File(taskRoot, utilDir).absolutePath})")
+      println("               POST $apiBase/${ExtractUtilsFsAction.EXTRACT_OP}?dir=$utilDir")
+    } else {
+      println("  Tools     -> extract-utils disabled${if (readOnly) " (read-only mount)" else ""}")
+    }
     if (!readOnly && (terminalEnabled || execPermissive || tasksEnabled) &&
       host != "127.0.0.1" && host != "localhost"
     ) {
@@ -571,6 +608,7 @@ object FileServerCli {
       execPermissive = execPermissive,
       tasksEnabled = showTasks,
       modifyEnabled = showModify,
+      extractUtilsEnabled = ExtractUtilsFsAction.isEnabled && !readOnly,
       landingPath = landingPathFor(landing, homeEnabled, uiEnabled),
     )
     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks)

@@ -13,10 +13,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.InputStream
-import java.net.*
 import java.util.*
-import java.util.jar.JarFile
 
 /**
  *
@@ -65,9 +62,8 @@ open class DocOpsApp(
   override fun <T : Any> initSettings(session: Session, user: User): T = Settings() as T
 
   fun extractResources(resourcePath: String, targetDir: File): Boolean {
-    val resourceUrl = classLoader.getResource(resourcePath)
-      ?: return extractResourcesFromClassLoaderUrls(resourcePath, targetDir)
-    return extractFromUrl(resourceUrl, resourcePath, targetDir)
+    /* Single implementation, shared with the FS API 'extract-utils' action. */
+    return ResourceExtractor.extract(resourcePath, targetDir, classLoader).isNotEmpty()
   }
 
   override fun newSession(user: User, session: Session): SocketManager {
@@ -94,6 +90,9 @@ open class DocOpsApp(
       ).asPatch()
     )
     val extractUtil = extractResources("web/util", sessionRoot)
+    if (!extractUtil) {
+      throw IllegalStateException("Resource not found: web/util (classLoader=${classLoader.javaClass.name})")
+    }
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
@@ -125,189 +124,18 @@ open class DocOpsApp(
     )
   }
 
-  private fun extractFromUrl(resourceUrl: URL, resourcePath: String, targetDir: File): Boolean {
-    val decodedUrl = URLDecoder.decode(resourceUrl.toString(), "UTF-8")
-    if (decodedUrl.startsWith("jar:")) {
-      val jarConnection = resourceUrl.openConnection() as JarURLConnection
-      val jarFile = jarConnection.jarFile
-      val entries = jarFile.entries()
-      var found = false
-      while (entries.hasMoreElements()) {
-        val entry = entries.nextElement()
-        if (entry.name.startsWith(resourcePath) && !entry.isDirectory) {
-          val relativePath = entry.name.substring(resourcePath.length)
-          val targetFile = File(targetDir, relativePath)
-          targetFile.parentFile?.mkdirs()
-          jarFile.getInputStream(entry).use { input ->
-            copyWithLineEndingNormalization(input, targetFile)
-          }
-          found = true
-        }
-      }
-      return found
-    } else {
-      // Handle non-jar resources (e.g., during development)
-      val resourceDir = File(resourceUrl.toURI())
-      var found = false
-      resourceDir.walkTopDown().forEach { file ->
-        if (file.isFile) {
-          val relativePath = file.relativeTo(resourceDir).path
-          val targetFile = File(targetDir, relativePath)
-          targetFile.parentFile?.mkdirs()
-          copyFileWithLineEndingNormalization(file, targetFile)
-          found = true
-        }
-      }
-      return found
-    }
-  }
 
-  /**
-   * Fallback: scan all URLs in the classloader hierarchy for JARs containing the resource path.
-   * This handles URLClassLoader instances where getResource() returns null for directory entries.
-   */
-  private fun extractResourcesFromClassLoaderUrls(resourcePath: String, targetDir: File): Boolean {
-    val urls = collectClassLoaderUrls(classLoader)
-    if (urls.isEmpty()) return false
-    var found = false
-    for (url in urls) {
-      val decodedUrl = URLDecoder.decode(url.toString(), "UTF-8")
-      if (decodedUrl.endsWith(".jar") || decodedUrl.endsWith(".jar!/")) {
-        try {
-          val jarPath = if (decodedUrl.startsWith("file:")) {
-            File(URI(url.toString().removeSuffix("!/"))).toPath()
-          } else {
-            File(decodedUrl.removePrefix("file:").removeSuffix("!/")).toPath()
-          }
-          val jarFile = JarFile(jarPath.toFile())
-          val entries = jarFile.entries()
-          while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-           if (entry.name.startsWith(resourcePath) && !entry.isDirectory && !containsDemoFolder(entry.name)) {
-              val relativePath = entry.name.substring(resourcePath.length)
-              if (relativePath.isNotEmpty()) {
-                val targetFile = File(targetDir, relativePath)
-                targetFile.parentFile?.mkdirs()
-                jarFile.getInputStream(entry).use { input ->
-                 copyWithLineEndingNormalization(input, targetFile)
-                }
-                found = true
-              }
-            }
-          }
-          // Don't close jarFile here if we found entries - but we should close after iteration
-          if (found) {
-            jarFile.close()
-            break
-          }
-          jarFile.close()
-        } catch (e: Exception) {
-          LoggerFactory.getLogger(DocOpsApp::class.java)
-            .debug("Failed to scan JAR {}: {}", decodedUrl, e.message)
-        }
-      } else {
-        // Filesystem directory
-        try {
-          val dir = File(URI(url.toString()))
-          val resourceDir = File(dir, resourcePath)
-          if (resourceDir.isDirectory) {
-            resourceDir.walkTopDown().forEach { file ->
-             if (file.isFile && !containsDemoFolder(file.relativeTo(resourceDir).path)) {
-                val relativePath = file.relativeTo(resourceDir).path
-                val targetFile = File(targetDir, relativePath)
-                targetFile.parentFile?.mkdirs()
-               copyFileWithLineEndingNormalization(file, targetFile)
-                found = true
-              }
-            }
-            if (found) break
-          }
-        } catch (e: Exception) {
-          LoggerFactory.getLogger(DocOpsApp::class.java)
-            .debug("Failed to scan directory {}: {}", decodedUrl, e.message)
-        }
-      }
-    }
-    return found
-  }
 
-  private fun collectClassLoaderUrls(cl: ClassLoader?): List<URL> {
-    val urls = mutableListOf<URL>()
-    var current = cl
-    while (current != null) {
-      if (current is URLClassLoader) {
-        urls.addAll(current.urLs)
-      }
-      current = current.parent
-    }
-    return urls
-  }
-  /**
-   * Returns true if the given path contains a folder segment named 'demo'.
-   */
-  private fun containsDemoFolder(path: String): Boolean {
-    return path.replace('\\', '/').split('/').any { it.equals("demo", ignoreCase = false) }
-  }
 
   companion object {
     val log = LoggerFactory.getLogger(DocOpsApp::class.java)
     var OVERWRITE: Boolean = false
 
-    private val TEXT_EXTENSIONS = setOf(
-      "txt", "md", "html", "htm", "css", "js", "json", "xml", "yaml", "yml",
-      "csv", "tsv", "svg", "sh", "bat", "cmd", "ps1", "py", "rb", "pl",
-      "java", "kt", "kts", "groovy", "scala", "c", "cpp", "h", "hpp",
-      "ts", "tsx", "jsx", "vue", "scss", "sass", "less", "sql", "graphql",
-      "properties", "cfg", "conf", "ini", "toml", "env", "gitignore",
-      "dockerfile", "makefile", "gradle", "sbt", "rs", "go", "swift",
-      "r", "lua", "php", "asp", "jsp", "erb", "ejs", "hbs", "mustache",
-      "log", "tex", "rst", "adoc", "asciidoc", "mjs", "cjs"
-    )
+    /** Kept for source compatibility; the implementation lives in [ResourceExtractor]. */
 
     fun copyFileWithLineEndingNormalization(source: File, targetFile: File) {
-      if (isTextFile(targetFile.name)) {
-        val content = source.readText(Charsets.UTF_8)
-        val normalized = content.replace("\r\n", "\n")
-        targetFile.writeText(normalized, Charsets.UTF_8)
-      } else {
-        source.copyTo(targetFile, overwrite = true)
-      }
-      setExecutableIfShellScript(targetFile)
-    }
-    private fun isTextFile(fileName: String): Boolean {
-      val ext = fileName.substringAfterLast('.', "").lowercase()
-      val baseName = fileName.substringAfterLast('/').substringAfterLast('\\').lowercase()
-      return ext in TEXT_EXTENSIONS || baseName in setOf(
-        "dockerfile", "makefile", "gemfile", "rakefile", "vagrantfile",
-        "license", "readme", "changelog", "authors", "contributors"
-      )
-    }
-    private fun copyWithLineEndingNormalization(input: InputStream, targetFile: File) {
-      if (isTextFile(targetFile.name)) {
-        val content = input.readBytes().toString(Charsets.UTF_8)
-        val normalized = content.replace("\r\n", "\n")
-        targetFile.writeText(normalized, Charsets.UTF_8)
-      } else {
-        targetFile.outputStream().use { output ->
-          input.copyTo(output)
-        }
-      }
-      setExecutableIfShellScript(targetFile)
-    }
 
-    /**
-     * Sets the executable bit on shell script files (*.sh) so they can be run directly.
-     */
-    private fun setExecutableIfShellScript(file: File) {
-      if (file.name.endsWith(".sh", ignoreCase = true)) {
-        try {
-          if (!file.setExecutable(true, false)) {
-            log.warn("Failed to set executable bit on shell script: ${file.absolutePath}")
-          }
-        } catch (e: Exception) {
-          log.warn("Exception setting executable bit on ${file.absolutePath}: ${e.message}", e)
-        }
-      }
+      ResourceExtractor.copyFileWithLineEndingNormalization(source, targetFile)
     }
   }
 }
