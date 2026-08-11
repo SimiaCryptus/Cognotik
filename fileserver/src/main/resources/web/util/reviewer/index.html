@@ -256,6 +256,39 @@
           }
 
           .tree li button.tree-del:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+         /* checkbox trees (target selection) */
+         .subtabs { margin-bottom: .5rem; }
+         .subtabpanel[hidden] { display: none; }
+         .checktree {
+             max-height: 38vh;
+             overflow: auto;
+             border: 1px solid var(--border);
+             border-radius: 8px;
+             background: var(--panel-2);
+             padding: .4rem .5rem;
+             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+             font-size: 12px;
+             margin-top: .4rem;
+         }
+         .checktree-children {
+             margin-left: .85rem;
+             padding-left: .5rem;
+             border-left: 1px dotted var(--border);
+         }
+         .checktree details > summary { cursor: pointer; color: var(--fg); padding: .1rem 0; }
+         .checktree summary input, .checkrow input { width: auto; margin-right: .35rem; vertical-align: middle; }
+         .checkrow {
+             display: block;
+             padding: .1rem 0;
+             cursor: pointer;
+             color: var(--fg);
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+         }
+         .checkrow:hover { color: var(--accent); }
+         .sel-info { margin-top: .45rem; }
+
 
           /* findings / tasks */
           .followups { display: grid; gap: .75rem; }
@@ -358,6 +391,25 @@
                   <h2>Session</h2>
                   <div class="small muted" id="ctx-info">detecting…</div>
               </section>
+             <section class="panel">
+                 <h2>Sources</h2>
+                 <label for="extensions">Reviewed file extensions (kept in sync with the ops)</label>
+                 <input id="extensions" type="text" value="kt,js" spellcheck="false">
+                 <label for="scan-depth">Max directory depth (blank = 64, 0 = unlimited)</label>
+                 <input id="scan-depth" type="text" value="64" spellcheck="false"
+                        title="How many folder levels the file/review/task listings descend. 0 removes the limit (a hard cap still guards against symlink loops).">
+                 <div class="row" style="margin-top:.5rem">
+                     <button id="scan-sources" class="small"
+                             title="List every candidate target of the doc-ops under the analysis root">Scan</button>
+                     <button id="detect-extensions" class="small"
+                             title="Pick the most common source extensions found under the analysis root">Auto-detect</button>
+                     <button id="sync-ops" class="small"
+                             title="Rewrite the extension group inside ops/process_files.op.md and ops/process_packages.op.md">Sync ops</button>
+                 </div>
+                 <div class="small muted" id="scan-info" style="margin-top:.4rem">not scanned yet</div>
+                 <div class="banner warn small hidden" id="scan-warning" style="margin-top:.5rem"></div>
+             </section>
+
 
               <section class="panel">
                   <h2>Review Documents</h2>
@@ -422,9 +474,39 @@
                   <h2>Pipeline</h2>
                   <div class="grid-2">
                       <div>
-                          <label for="targets">Files to review (one per line, relative to the project root)</label>
-                          <textarea id="targets" class="short" spellcheck="false"
-                                    placeholder="src/main/kotlin/com/example/Foo.kt&#10;webapp/src/app.js"></textarea>
+                         <div class="tabs subtabs" role="tablist">
+                             <button role="tab" data-subtab="files" aria-selected="true">Files to review</button>
+                             <button role="tab" data-subtab="packages" aria-selected="false">Packages to review</button>
+                             <button role="tab" data-subtab="manual" aria-selected="false">Manual list</button>
+                         </div>
+
+                         <div class="subtabpanel" data-subtab="files">
+                             <div class="row">
+                                 <button id="files-all" class="small">All</button>
+                                 <button id="files-none" class="small">None</button>
+                                 <button id="files-from-reviews" class="small"
+                                         title="Select the files that already have a review document">From reviews</button>
+                             </div>
+                             <div class="checktree" id="file-tree"></div>
+                         </div>
+
+                         <div class="subtabpanel" data-subtab="packages" hidden>
+                             <div class="row">
+                                 <button id="packages-all" class="small">All</button>
+                                 <button id="packages-none" class="small">None</button>
+                                 <button id="packages-from-files" class="small"
+                                         title="Select the packages containing the selected files">From files</button>
+                             </div>
+                             <div class="checktree" id="package-tree"></div>
+                         </div>
+
+                         <div class="subtabpanel" data-subtab="manual" hidden>
+                             <label for="targets">Extra files (one per line, relative to the analysis root)</label>
+                             <textarea id="targets" class="short" spellcheck="false"
+                                       placeholder="src/main/kotlin/com/example/Foo.kt&#10;webapp/src/app.js"></textarea>
+                         </div>
+
+                         <div class="small muted sel-info" id="selection-info"></div>
                       </div>
                       <div>
                           <label for="opt-packages">Stages included in “Run All Steps”</label>
@@ -556,6 +638,19 @@
           tasksMulti: 'plan_followup_multi.op.md',
           tasksSingle: 'plan_followup_single.op.md'
       };
+     /** Ops whose transforms embed the reviewed file extensions. */
+     const OP_KEYS_WITH_EXT = ['files', 'packages'];
+     const DEFAULT_EXTS = ['kt', 'js'];
+     /** Folder names never scanned for review candidates. */
+     const SCAN_SKIP = new Set(['node_modules', 'build', 'out', 'dist', 'target', 'bin',
+         '.gradle', '.idea', 'venv', '__pycache__', 'coverage']);
+     /** Extensions the auto-detector never proposes (docs, data, binaries…). */
+     const EXT_SKIP = new Set(['json', 'md', 'txt', 'lock', 'log', 'class', 'jar', 'zip', 'gz',
+         'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'pdf', 'woff', 'woff2', 'ttf', 'map']);
+     /** Recursion depth used when the "Max depth" field is blank. */
+     const DEFAULT_MAX_DEPTH = 64;
+     /** Absolute guard against symlink loops — applies even in "unlimited" (0) mode. */
+     const HARD_DEPTH_CAP = 512;
       const TASK_TIMEOUT_MS = 30 * 60 * 1000;
       /**
        * The ops in `ops/` declare `folder: ../../..`, i.e. the analysis root is two levels
@@ -577,6 +672,16 @@
           reviews: [],
           planPaths: [],
           plans: [],
+         allFiles: [],
+         sourceFiles: [],
+         packages: [],
+         selectedFiles: new Set(),
+         selectedPackages: new Set(),
+         /** Folders whose contents were not listed because the depth limit was hit. */
+         truncated: new Set(),
+         truncatedReported: 0,
+         openDirs: new Set(),
+         openPkgs: new Set(),
           currentReview: null,
           taskStatus: {},
           standalone: false
@@ -647,9 +752,11 @@
           state.busy = busy;
           ['run-all', 'save-focus', 'reload-focus', 'delete-focus', 'run-files-btn', 'run-packages-btn',
               'run-tasks-multi-btn', 'run-tasks-single-btn', 'refresh-reviews', 'refresh-plans', 'load-plans',
-              'reviews-to-targets', 'run-ready-tasks', 'run-all-tasks', 'reset-task-status']
+             'reviews-to-targets', 'run-ready-tasks', 'run-all-tasks', 'reset-task-status',
+             'scan-sources', 'detect-extensions', 'sync-ops', 'files-all', 'files-none',
+             'files-from-reviews', 'packages-all', 'packages-none', 'packages-from-files']
               .forEach((id) => { const el = $(id); if (el) el.disabled = busy; });
-          document.querySelectorAll('.step-run, .step-del, .task-run, .task-mark, .tree-del')
+         document.querySelectorAll('.step-run, .step-del, .task-run, .task-mark, .tree-del, .checktree input')
               .forEach((b) => { b.disabled = busy; });
       }
 
@@ -664,6 +771,53 @@
       const tasksFile = () => cleanPath($('tasks-file').value) || 'tasks.json';
       const opsDir = () => cleanPath($('ops-dir').value) || 'ops';
       const tmpDir = () => cleanPath($('tmp-dir').value) || 'tmp';
+     const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+     /** Reviewed file extensions, normalised (`.KT, js` → `['kt','js']`). */
+     const extensions = () => {
+         const list = String(($('extensions') || {}).value || '')
+             .split(/[\s,|]+/).map((s) => s.replace(/^\.+/, '').trim().toLowerCase()).filter(Boolean);
+         return list.length ? Array.from(new Set(list)) : DEFAULT_EXTS.slice();
+     };
+     const extPattern = () => new RegExp('\\.(?:' + extensions().map(escapeRe).join('|') + ')$', 'i');
+     /* ── recursion depth (configurable, never silently truncating) ── */
+     /** Configured depth: blank → DEFAULT_MAX_DEPTH, 0/negative → unlimited. */
+     function maxDepth() {
+         const el = $('scan-depth');
+         const raw = el ? String(el.value || '').trim() : '';
+         if (!raw) return DEFAULT_MAX_DEPTH;
+         const n = Number(raw);
+         if (!isFinite(n)) return DEFAULT_MAX_DEPTH;
+         return n <= 0 ? Infinity : Math.floor(n);
+     }
+     /** Depth actually applied to the recursion (unlimited is still hard-capped). */
+     const effectiveDepth = () => Math.min(maxDepth(), HARD_DEPTH_CAP);
+     const depthLabel = () =>
+         (maxDepth() === Infinity ? 'unlimited, hard cap ' + HARD_DEPTH_CAP : String(maxDepth()));
+     const resetTruncated = () => { state.truncated = new Set(); state.truncatedReported = 0; };
+     const noteTruncated = (dir) => state.truncated.add(stripLead(dir) || '(root)');
+     /**
+      * Surfaces an incomplete listing: warning banner + scan summary + (once per change) log.
+      * Returns true when the last listing was cut short by the depth limit.
+      */
+     function reportTruncation(context) {
+         const el = $('scan-warning');
+         const list = Array.from(state.truncated);
+         if (!list.length) {
+             if (el) { el.textContent = ''; el.classList.add('hidden'); }
+             state.truncatedReported = 0;
+             return false;
+         }
+         const msg = 'Listing incomplete — the depth limit (' + depthLabel() + ') stopped the scan in ' +
+             list.length + ' folder(s), e.g. ' + list.slice(0, 3).join(', ') +
+             (list.length > 3 ? ', …' : '') + '. Raise “Max depth” (0 = unlimited) and scan again.';
+         if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+         if (list.length !== state.truncatedReported) {
+             state.truncatedReported = list.length;
+             log((context ? context + ' — ' : '') + msg, 'warn');
+         }
+         return true;
+     }
+
 
       function join(dir, name) {
           if (!dir) return stripLead(name);
@@ -703,8 +857,10 @@
      function computeRootBase() {
          const base = String(state.basePath || '').replace(/\/+$/, '');
          if (!base) return base;
+         if (base === '/') return '';
          const segs = base.split('/');
-         return segs.slice(0, Math.max(1, segs.length - ROOT_HOPS)).join('/') || '/';
+         const kept = segs.slice(0, Math.max(1, segs.length - ROOT_HOPS)).join('/');
+         return kept.replace(/\/+$/, '');
      }
      const rootBase = () => state.rootBasePath || (state.rootBasePath = computeRootBase());
      /* File IO, split by which root the path is relative to. */
@@ -754,17 +910,28 @@
       /** Package rollups are named after a folder, so their basename carries no source extension. */
       const isPackageReview = (reviewPath) => !/\.[a-z0-9]+\.json$/i.test(basename(reviewPath));
 
-      const targetList = () => $('targets').value
-          .split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
 
-      function packageList() {
-          const seen = new Set();
-          targetList().forEach((t) => {
-              const d = dirname(t);
-              if (d) seen.add(d);
-          });
-          return Array.from(seen).sort();
-      }
+     const manualTargets = () => $('targets').value
+         .split(/[\n,]+/).map((s) => stripLead(s.trim())).filter(Boolean);
+
+     /** Files ticked in the tree, plus anything typed into the manual list. */
+     function targetList() {
+         const seen = new Set();
+         state.selectedFiles.forEach((p) => seen.add(p));
+         manualTargets().forEach((p) => seen.add(p));
+         return Array.from(seen).sort();
+     }
+
+     /** Explicitly ticked packages, else the folders implied by the selected files. */
+     function packageList() {
+         if (state.selectedPackages.size) return Array.from(state.selectedPackages).sort();
+         const seen = new Set();
+         targetList().forEach((t) => {
+             const d = dirname(t);
+             if (d) seen.add(d);
+         });
+         return Array.from(seen).sort();
+     }
 
       /* ───────────────────────── docops driver ───────────────────────── */
 
@@ -807,6 +974,23 @@
           if (entry.type) return /^dir/i.test(String(entry.type));
           return !/\.[a-z0-9]+$/i.test(entryName(entry));
       }
+     /**
+      * Safe wrapper around `listFiles`.
+      *
+      * `listFiles(base, '')` builds `<base>//_files.json` — the doubled slash makes the
+      * server answer 400. When the directory is empty (the analysis-root scan) the request
+      * is therefore expressed as "last segment of the base, relative to its parent".
+      */
+     async function listDir(base, dir) {
+         const b = String(base || '').replace(/\/+$/, '');
+         const d = stripLead(String(dir || '')).replace(/\/+$/, '');
+         if (d) return (await listFiles(b, d)) || [];
+         const i = b.lastIndexOf('/');
+         const tail = i >= 0 ? b.slice(i + 1) : '';
+         if (tail) return (await listFiles(b.slice(0, i), tail)) || [];
+         return (await listFiles(b, '')) || [];
+     }
+
 
      /**
       * Recursively lists files (not folders) under `dir`, relative to `base`.
@@ -814,10 +998,14 @@
       */
      async function listTree(base, dir, depth) {
           const level = depth || 0;
-         if (!base || level > 8) return [];
+         if (!base) return [];
+         if (level > effectiveDepth()) {
+             noteTruncated(dir);
+             return [];
+         }
           let entries = [];
           try {
-             entries = (await listFiles(base, dir)) || [];
+             entries = await listDir(base, dir);
           } catch (e) {
               return [];
           }
@@ -835,14 +1023,358 @@
       const jsonOnly = (paths) => paths.filter((p) => /\.json$/i.test(p)).sort();
 
       async function reviewPaths() {
-         return jsonOnly(await listTree(rootBase(), reviewDir()));
+         const paths = jsonOnly(await listTree(rootBase(), reviewDir()));
+         reportTruncation('Review scan');
+         return paths;
       }
 
       async function taskPlanPaths() {
          const nested = jsonOnly(await listTree(rootBase(), tasksDir()));
+         reportTruncation('Task plan scan');
          const root = (await readRoot(tasksFile())) !== null ? [tasksFile()] : [];
           return root.concat(nested);
       }
+     /* ───────────── source scan, extensions & selection trees ───────────── */
+     /** This document's folder relative to the analysis root (e.g. `code-utils/reviewer`). */
+     const docRelToRoot = () => {
+         const segs = docRoot().split('/').filter(Boolean);
+         return segs.slice(Math.max(0, segs.length - ROOT_HOPS)).join('/');
+     };
+     /** Analysis-root-relative paths that must never be offered as review targets. */
+     function scanSkipPaths() {
+         const self = docRelToRoot();
+         return new Set([reviewDir(), tasksDir(), tasksFile(),
+             join(self, tmpDir()), join(self, opsDir())].filter(Boolean));
+     }
+     /** Recursive file listing of the analysis root, minus build output and generated docs. */
+     async function listSourceTree(base, dir, depth, skip) {
+         const level = depth || 0;
+         if (!base) return [];
+         if (level > effectiveDepth()) {
+             noteTruncated(dir);
+             return [];
+         }
+         let entries = [];
+         try {
+             entries = await listDir(base, dir);
+         } catch (e) {
+             return [];
+         }
+         const out = [];
+         for (const entry of entries) {
+             const name = entryName(entry);
+             if (!name || name.startsWith('.') || SCAN_SKIP.has(name)) continue;
+             const path = join(dir, name);
+             if (skip && skip.has(path)) continue;
+             if (looksLikeFolder(entry)) out.push(...(await listSourceTree(base, path, level + 1, skip)));
+             else out.push(path);
+         }
+         return out;
+     }
+     /**
+      * Lists the *candidate targets of the doc-ops* — every file under the analysis root
+      * matching the configured extensions. The file/package trees and the package stage are
+      * driven from this, never from `review/`, which does not exist before the first run.
+      */
+     async function scanSources(force) {
+         if (!state.basePath) return [];
+         if (force || !state.allFiles.length) {
+             $('scan-info').textContent = 'scanning…';
+             resetTruncated();
+             state.allFiles = await listSourceTree(rootBase(), '', 0, scanSkipPaths());
+             log('Scanned ' + state.allFiles.length + ' file(s) under the analysis root (max depth ' +
+                 depthLabel() + ').');
+             reportTruncation('Source scan');
+         }
+         applyExtensionFilter();
+         return state.sourceFiles;
+     }
+     /** Re-derives the candidate files/packages from the cached listing + extension list. */
+     function applyExtensionFilter() {
+         const re = extPattern();
+         state.sourceFiles = state.allFiles.filter((p) => re.test(p)).sort();
+         state.packages = Array.from(new Set(state.sourceFiles.map(dirname).filter(Boolean))).sort();
+         const files = new Set(state.sourceFiles);
+         const pkgs = new Set(state.packages);
+         state.selectedFiles = new Set(Array.from(state.selectedFiles).filter((p) => files.has(p)));
+         state.selectedPackages = new Set(Array.from(state.selectedPackages).filter((p) => pkgs.has(p)));
+         if (!state.openDirs.size) {
+             state.sourceFiles.forEach((p) => { const i = p.indexOf('/'); if (i > 0) state.openDirs.add(p.slice(0, i)); });
+         }
+         if (!state.openPkgs.size) {
+             state.packages.forEach((p) => { const i = p.indexOf('/'); if (i > 0) state.openPkgs.add(p.slice(0, i)); });
+         }
+         $('scan-info').textContent = state.allFiles.length + ' file(s) scanned · ' +
+             state.sourceFiles.length + ' match .' + extensions().join(', .') + ' · ' +
+             state.packages.length + ' package(s) · depth ' + depthLabel() +
+             (state.truncated.size ? ' · ⚠ truncated in ' + state.truncated.size + ' folder(s)' : '');
+         renderFileTree();
+         renderPackageTree();
+         persistSettings();
+     }
+     /** Picks the dominant source extensions from the scan and pushes them into the ops. */
+     async function autoDetectExtensions() {
+         await scanSources(true);
+         const counts = new Map();
+         state.allFiles.forEach((p) => {
+             const m = /\.([a-z0-9_]+)$/i.exec(basename(p));
+             if (!m) return;
+             const ext = m[1].toLowerCase();
+             if (EXT_SKIP.has(ext)) return;
+             counts.set(ext, (counts.get(ext) || 0) + 1);
+         });
+         const ranked = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+         if (!ranked.length) {
+             log('Auto-detect found no source extensions under the analysis root.', 'warn');
+             return [];
+         }
+         const cutoff = Math.max(2, Math.round(ranked[0][1] * 0.05));
+         const picked = ranked.filter((e, i) => i < 6 && e[1] >= cutoff).map((e) => e[0]);
+         $('extensions').value = picked.join(',');
+         log('Detected extensions: ' + picked.join(', ') +
+             ' (' + ranked.slice(0, 6).map((e) => e[0] + '×' + e[1]).join(', ') + ')', 'ok');
+         await syncOpsExtensions();
+         applyExtensionFilter();
+         return picked;
+     }
+     const EXT_GROUP_TEST = /\(\?:[^)]*\)/;
+     const EXT_GROUP_ALL = /\(\?:[^)]*\)/g;
+     /** Front-matter written when an op file is missing or carries no extension group. */
+     const OP_TEMPLATES = {
+         files: (g) => ['---', 'transforms:',
+             '  - ../../../(.*\\.' + g + ') -> ../../../review/$1.json',
+             'related:', '  - ../focus.md', '  - analysis_schema.ts', '---', '', ''].join('\n'),
+         packages: (g) => ['---', 'transforms:',
+             '  - ../../../(.*)/[^/]+\\.' + g + ' -> ../../../review/$1.json',
+             'related:', '  - ../focus.md', '  - analysis_schema.ts', '---', '', ''].join('\n')
+     };
+     /** Rewrites the `(?:kt|js)` group inside the ops' transforms so they match the UI. */
+     async function syncOpsExtensions(quiet) {
+         const exts = extensions();
+         const group = '(?:' + exts.join('|') + ')';
+         let changed = 0;
+         for (const key of OP_KEYS_WITH_EXT) {
+             const path = opPath(key);
+             let text = null;
+             try { text = await readDoc(path); } catch (e) { text = null; }
+             const next = (text && EXT_GROUP_TEST.test(text))
+                 ? text.replace(EXT_GROUP_ALL, group)
+                 : OP_TEMPLATES[key](group);
+             if (text === next) continue;
+             try {
+                 await writeDoc(path, next);
+                 changed++;
+                 log('Updated ' + path + ' → ' + group, 'ok');
+             } catch (e) {
+                 log('Could not update ' + path + ': ' + msgOf(e), 'error');
+             }
+         }
+         if (!changed && !quiet) log('Ops already match .' + exts.join(', .') + '.');
+         return changed;
+     }
+     /** Reads the extension group back out of the ops so the UI starts in sync with them. */
+     async function detectExtensionsFromOps() {
+         for (const key of OP_KEYS_WITH_EXT) {
+             let text = null;
+             try { text = await readDoc(opPath(key)); } catch (e) { text = null; }
+             const m = text && /\(\?:([^)]*)\)/.exec(text);
+             const list = m ? m[1].split('|').map((s) => s.trim()).filter(Boolean) : [];
+             if (list.length) {
+                 $('extensions').value = list.join(',');
+                 log('Extensions taken from ' + opPath(key) + ': ' + list.join(', '));
+                 return list;
+             }
+         }
+         return extensions();
+     }
+     /* ── tree construction ── */
+     function buildFileTree(paths) {
+         const root = {name: '', path: '', dirs: new Map(), files: []};
+         paths.forEach((p) => {
+             const clean = stripLead(p);
+             const segs = clean.split('/');
+             const file = segs.pop();
+             let node = root, acc = '';
+             segs.forEach((s) => {
+                 acc = acc ? acc + '/' + s : s;
+                 if (!node.dirs.has(s)) node.dirs.set(s, {name: s, path: acc, dirs: new Map(), files: []});
+                 node = node.dirs.get(s);
+             });
+             node.files.push({name: file, path: clean});
+         });
+         return root;
+     }
+     function collectFiles(node, out) {
+         const acc = out || [];
+         node.files.forEach((f) => acc.push(f.path));
+         node.dirs.forEach((d) => collectFiles(d, acc));
+         return acc;
+     }
+     function buildDirTree(paths) {
+         const root = {name: '', path: '', dirs: new Map(), pkg: false};
+         paths.forEach((p) => {
+             let node = root, acc = '';
+             stripLead(p).split('/').filter(Boolean).forEach((s) => {
+                 acc = acc ? acc + '/' + s : s;
+                 if (!node.dirs.has(s)) node.dirs.set(s, {name: s, path: acc, dirs: new Map(), pkg: false});
+                 node = node.dirs.get(s);
+             });
+             node.pkg = true;
+         });
+         return root;
+     }
+     function collectPackages(node, out) {
+         const acc = out || [];
+         if (node.pkg && node.path) acc.push(node.path);
+         node.dirs.forEach((d) => collectPackages(d, acc));
+         return acc;
+     }
+     function checkbox(checked, indeterminate, onChange) {
+         const cb = document.createElement('input');
+         cb.type = 'checkbox';
+         cb.checked = !!checked;
+         cb.indeterminate = !!indeterminate;
+         cb.disabled = state.busy;
+         cb.addEventListener('click', (e) => e.stopPropagation());
+         cb.addEventListener('change', () => onChange(cb.checked));
+         return cb;
+     }
+     function renderFileTree() {
+         const host = $('file-tree');
+         if (!host) return;
+         host.innerHTML = '';
+         if (!state.sourceFiles.length) {
+             host.innerHTML = '<p class="small muted">No candidate files — press “Scan” and check ' +
+                 'the extension list in the Sources panel.</p>';
+         } else {
+             host.appendChild(fileTreeChildren(buildFileTree(state.sourceFiles), 0));
+         }
+         updateSelectionInfo();
+     }
+     function fileTreeChildren(node, depth) {
+         const wrap = document.createElement('div');
+         if (depth) wrap.className = 'checktree-children';
+         node.dirs.forEach((dir) => {
+             const below = collectFiles(dir);
+             const chosen = below.filter((f) => state.selectedFiles.has(f)).length;
+             const det = document.createElement('details');
+             det.open = state.openDirs.has(dir.path);
+             det.addEventListener('toggle', () => {
+                 if (det.open) state.openDirs.add(dir.path); else state.openDirs.delete(dir.path);
+             });
+             const sum = document.createElement('summary');
+             sum.title = dir.path;
+             sum.appendChild(checkbox(below.length > 0 && chosen === below.length,
+                 chosen > 0 && chosen < below.length, (on) => {
+                     below.forEach((f) => on ? state.selectedFiles.add(f) : state.selectedFiles.delete(f));
+                     persistSettings();
+                     renderFileTree();
+                 }));
+             sum.appendChild(document.createTextNode(dir.name + '/'));
+             const count = document.createElement('span');
+             count.className = 'small muted';
+             count.textContent = ' ' + chosen + '/' + below.length;
+             sum.appendChild(count);
+             det.appendChild(sum);
+             det.appendChild(fileTreeChildren(dir, depth + 1));
+             wrap.appendChild(det);
+         });
+         node.files.forEach((f) => {
+             const row = document.createElement('label');
+             row.className = 'checkrow';
+             row.title = f.path;
+             row.appendChild(checkbox(state.selectedFiles.has(f.path), false, (on) => {
+                 if (on) state.selectedFiles.add(f.path); else state.selectedFiles.delete(f.path);
+                 persistSettings();
+                 renderFileTree();
+             }));
+             row.appendChild(document.createTextNode(f.name));
+             wrap.appendChild(row);
+         });
+         return wrap;
+     }
+     function renderPackageTree() {
+         const host = $('package-tree');
+         if (!host) return;
+         host.innerHTML = '';
+         if (!state.packages.length) {
+             host.innerHTML = '<p class="small muted">No packages — press “Scan” first.</p>';
+         } else {
+             host.appendChild(packageTreeChildren(buildDirTree(state.packages), 0));
+         }
+         updateSelectionInfo();
+     }
+     function packageTreeChildren(node, depth) {
+         const wrap = document.createElement('div');
+         if (depth) wrap.className = 'checktree-children';
+         node.dirs.forEach((dir) => {
+             const below = collectPackages(dir);
+             const chosen = below.filter((p) => state.selectedPackages.has(p)).length;
+             const cb = checkbox(below.length > 0 && chosen === below.length,
+                 chosen > 0 && chosen < below.length, (on) => {
+                     below.forEach((p) => on ? state.selectedPackages.add(p) : state.selectedPackages.delete(p));
+                     persistSettings();
+                     renderPackageTree();
+                 });
+             const name = document.createElement('span');
+             name.textContent = dir.name + '/';
+             if (!dir.pkg) name.className = 'muted';
+             if (dir.dirs.size) {
+                 const det = document.createElement('details');
+                 det.open = state.openPkgs.has(dir.path);
+                 det.addEventListener('toggle', () => {
+                     if (det.open) state.openPkgs.add(dir.path); else state.openPkgs.delete(dir.path);
+                 });
+                 const sum = document.createElement('summary');
+                 sum.title = dir.path;
+                 sum.append(cb, name);
+                 det.appendChild(sum);
+                 det.appendChild(packageTreeChildren(dir, depth + 1));
+                 wrap.appendChild(det);
+             } else {
+                 const row = document.createElement('label');
+                 row.className = 'checkrow';
+                 row.title = dir.path;
+                 row.append(cb, name);
+                 wrap.appendChild(row);
+             }
+         });
+         return wrap;
+     }
+     function updateSelectionInfo() {
+         const el = $('selection-info');
+         if (!el) return;
+         el.textContent = targetList().length + ' file(s) · ' + packageList().length + ' package(s) selected';
+     }
+     function selectAllFiles(on) {
+         state.selectedFiles = on ? new Set(state.sourceFiles) : new Set();
+         persistSettings();
+         renderFileTree();
+     }
+     function selectAllPackages(on) {
+         state.selectedPackages = on ? new Set(state.packages) : new Set();
+         persistSettings();
+         renderPackageTree();
+     }
+     function packagesFromFiles() {
+         state.selectedPackages = new Set(targetList().map(dirname).filter(Boolean));
+         persistSettings();
+         renderPackageTree();
+         log('Selected ' + state.selectedPackages.size + ' package(s) from the file selection.');
+     }
+     function filesFromReviews() {
+         const reviewed = new Set(state.reviews.filter((p) => !isPackageReview(p)).map(sourceFromReview));
+         state.selectedFiles = new Set(state.sourceFiles.filter((p) => reviewed.has(p)));
+         persistSettings();
+         renderFileTree();
+         log('Selected ' + state.selectedFiles.size + ' already-reviewed file(s).');
+     }
+     function activateSubTab(name) {
+         document.querySelectorAll('.subtabs button').forEach((b) =>
+             b.setAttribute('aria-selected', String(b.dataset.subtab === name)));
+         document.querySelectorAll('.subtabpanel').forEach((p) => { p.hidden = p.dataset.subtab !== name; });
+     }
+
 
       /* ───────────────────────── focus query ───────────────────────── */
 
@@ -930,7 +1462,7 @@
           const sources = targetList();
           if (!sources.length) {
               setStep('files', 'error', 'no targets');
-              log('List the source files to review in the target list first.', 'warn');
+             log('Tick at least one file in the "Files to review" tree (or add one to the manual list).', 'warn');
               return null;
           }
           const count = await runOverTargets('files', 'files', sources.map(reviewTargetFor), 'review(s)');
@@ -940,9 +1472,15 @@
 
       async function stagePackages() {
           if (!(await ensureFocus())) return null;
-         // Prefer the folders implied by the target list: `review/` is usually still missing
-         // (or empty) before the file stage has run, so listing it first is pointless noise.
+         // Packages come from the selection trees; when nothing is ticked they are derived
+         // from the doc-op's own candidate set (the scanned source files). `review/` is only
+         // consulted last — it does not exist before the file stage has run, so probing it
+         // first is what used to produce the bogus "no packages" result.
           let dirs = packageList();
+         if (!dirs.length) {
+             await scanSources();
+             dirs = state.packages.slice();
+         }
           if (!dirs.length) {
               // fall back to the folders implied by the existing per-file reviews
               const seen = new Set();
@@ -952,8 +1490,8 @@
           }
           if (!dirs.length) {
               setStep('packages', 'error', 'no packages');
-             log('No package folders could be derived — list files in the target box (paths relative ' +
-                 'to the analysis root) or run "Analyze Files" first.', 'warn');
+             log('No package folders could be derived — press "Scan" in the Sources panel and check ' +
+                 'the extension list, or tick packages in the "Packages to review" tree.', 'error');
               return null;
           }
           const count = await runOverTargets('packages', 'packages',
@@ -1357,8 +1895,11 @@
               log('No per-file reviews to derive targets from.', 'warn');
               return;
           }
-          $('targets').value = sources.join('\n');
+         const known = new Set(state.sourceFiles);
+         state.selectedFiles = new Set(sources.filter((p) => known.has(p)));
+         $('targets').value = sources.filter((p) => !known.has(p)).join('\n');
           persistSettings();
+         renderFileTree();
           log('Filled the target list with ' + sources.length + ' file(s).');
       }
 
@@ -1775,13 +2316,24 @@
           try {
               const targets = localStorage.getItem(STORAGE_PREFIX + '_targets');
               if (targets) $('targets').value = targets;
+             const exts = localStorage.getItem(STORAGE_PREFIX + '_exts');
+             if (exts) $('extensions').value = exts;
+             const depth = localStorage.getItem(STORAGE_PREFIX + '_depth');
+             if (depth !== null) $('scan-depth').value = depth;
+             state.selectedFiles = new Set(JSON.parse(localStorage.getItem(STORAGE_PREFIX + '_selFiles') || '[]'));
+             state.selectedPackages = new Set(JSON.parse(localStorage.getItem(STORAGE_PREFIX + '_selPkgs') || '[]'));
           } catch (e) { /* storage may be unavailable */ }
       }
 
       function persistSettings() {
           try {
               localStorage.setItem(STORAGE_PREFIX + '_targets', $('targets').value);
+             localStorage.setItem(STORAGE_PREFIX + '_exts', $('extensions').value);
+             localStorage.setItem(STORAGE_PREFIX + '_depth', $('scan-depth').value);
+             localStorage.setItem(STORAGE_PREFIX + '_selFiles', JSON.stringify(Array.from(state.selectedFiles)));
+             localStorage.setItem(STORAGE_PREFIX + '_selPkgs', JSON.stringify(Array.from(state.selectedPackages)));
           } catch (e) { /* ignore */ }
+         updateSelectionInfo();
       }
 
       function wireEvents() {
@@ -1804,16 +2356,41 @@
           $('run-ready-tasks').addEventListener('click', () => runTaskBatch(true, false));
           $('run-all-tasks').addEventListener('click', () => runTaskBatch(false, false));
           $('reset-task-status').addEventListener('click', resetTaskStatuses);
+         $('scan-sources').addEventListener('click', () => scanSources(true));
+         $('detect-extensions').addEventListener('click', autoDetectExtensions);
+         $('sync-ops').addEventListener('click', () => syncOpsExtensions());
+         $('extensions').addEventListener('change', async () => {
+             applyExtensionFilter();
+             await syncOpsExtensions(true);
+         });
+         $('scan-depth').addEventListener('change', async () => {
+             resetTruncated();
+             persistSettings();
+             log('Max directory depth set to ' + depthLabel() + ' — rescanning.');
+             await scanSources(true);
+             await refreshReviews();
+             await refreshPlans();
+         });
+         $('files-all').addEventListener('click', () => selectAllFiles(true));
+         $('files-none').addEventListener('click', () => selectAllFiles(false));
+         $('files-from-reviews').addEventListener('click', filesFromReviews);
+         $('packages-all').addEventListener('click', () => selectAllPackages(true));
+         $('packages-none').addEventListener('click', () => selectAllPackages(false));
+         $('packages-from-files').addEventListener('click', packagesFromFiles);
+         document.querySelectorAll('.subtabs button').forEach((b) =>
+             b.addEventListener('click', () => activateSubTab(b.dataset.subtab)));
+
 
           document.querySelectorAll('.step-run').forEach((b) =>
               b.addEventListener('click', () => runStage(b.dataset.run)));
           document.querySelectorAll('.step-del').forEach((b) =>
               b.addEventListener('click', () => deleteStepArtifact(b.dataset.del)));
 
-          $('targets').addEventListener('change', persistSettings);
+         $('targets').addEventListener('input', persistSettings);
           ['review-dir', 'tasks-dir', 'tasks-file', 'ops-dir', 'tmp-dir', 'focus-file'].forEach((id) =>
               $(id).addEventListener('change', async () => {
                   $('focus-path').textContent = focusFile();
+                 await scanSources(true);
                   await refreshReviews();
                   await refreshPlans();
               }));
@@ -1896,10 +2473,13 @@
           }
 
           await loadFocus();
+         await detectExtensionsFromOps();
+         await scanSources(true);
           await refreshReviews();
           await refreshPlans();
           renderTasks();
           activateTab('review');
+         activateSubTab('files');
           log('Ready. Ctrl/Cmd+Enter runs the whole pipeline; each step can also be run on its own.');
       }
 
