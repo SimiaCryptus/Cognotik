@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.application
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server
@@ -45,22 +45,31 @@ class CognotikAppServer(
   var context: WebAppContext? = null
     private set
 
-  private fun newWebAppContext(server: ChatServer, path: String): WebAppContext {
+  private fun newWebAppContext(server: ChatServer, vararg paths: String): WebAppContext {
+    require(paths.isNotEmpty()) { "At least one path must be provided" }
+    val normalizedPaths = paths.map { if (it.startsWith("/")) it else "/$it" }.distinct()
+    val primaryPath = normalizedPaths.first()
     return try {
-      log.debug("Creating new WebAppContext for path: $path")
+      log.debug("Creating new WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
       require(this.context == null) { "WebAppContext has already been initialized" }
       val context = WebAppContext()
       this.context = context
       JettyWebSocketServletContainerInitializer.configure(context, null)
       context.baseResource = server.baseResource
       context.classLoader = CognotikAppServer::class.java.classLoader
-      context.contextPath = path
+      context.contextPath = primaryPath
       context.welcomeFiles = arrayOf("index.html")
+
+      if (normalizedPaths.size > 1) {
+        val aliases = normalizedPaths.drop(1)
+        context.setAttribute("cognotik.contextPathAliases", aliases)
+        log.debug("Registered context path aliases: ${aliases.joinToString(", ")}")
+      }
       server.configure(context)
-      log.info("Successfully created WebAppContext for path: $path")
+      log.info("Successfully created WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
       context
     } catch (e: Exception) {
-      log.error("Failed to create WebAppContext for path: $path", e)
+      log.error("Failed to create WebAppContext for paths: ${normalizedPaths.joinToString(", ")}", e)
       throw e
     }
   }

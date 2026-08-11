@@ -1,107 +1,65 @@
-# Interactive Stories
+# 📖 Interactive Stories
 
-Craft branching, choose-your-own-adventure narratives with AI-generated prose,
-illustrations and narration.
+> **Transform your story ideas into immersive, branching adventures with AI-powered narration, illustrations, and music!**
 
-## Files
+Welcome to **Interactive Stories**, an AI-driven "Choose Your Own Adventure" reader and story generator. Whether you want to explore a rain-soaked cyberpunk mystery, escape an enchanted labyrinth, or sail space winds in search of galactic treasures, Interactive Stories brings your imagination to life—complete with dynamic narrative paths, bespoke visual illustrations, spoken audio narration, and read-along text highlighting.
 
-```
-interactive-stories/
-├── app.html   # single entry point
-├── app.js     # single ES-module entry point
-├── style.css  # all styling (design-token based)
-├── ops/       # DocOp definitions
-└── README.md
-```
+---
 
-## Pipeline
+## ✨ Key Features
 
-| Step | Badge              | Input                        | Op                          | Output                  |
-|------|--------------------|------------------------------|-----------------------------|-------------------------|
-| 1    | `badge-idea`       | user text                    | — (direct write)            | `story_idea.md`         |
-| 2    | `badge-tree`       | `story_idea.md`              | `ops/initial_node.md`       | `story/0.md`            |
-| 3    | `badge-node`       | parent node + chosen letter  | `ops/choice.md`             | `story/<path><a\|b\|c>.md` |
-| 3a   | —                  | `story/0.md`                 | `ops/initial_image.md`      | `story/0.png`           |
-| 3b   | —                  | `story/<path>.md`            | `ops/choice_image.md`       | `story/<path>.png`      |
-| 3c   | —                  | `story/0.md`                 | `ops/initial_audio.md`      | `story/0.wav`           |
-| 3d   | —                  | `story/<path>.md`            | `ops/choice_audio.md`       | `story/<path>.wav`      |
-| 4    | `badge-stylesheet` | `stylesheet_instructions.md` | `ops/update_stylesheet.md`  | `style.css`             |
+- 🧠 **Endless Branching Narratives**  
+  Start with a simple prompt or premise, and watch the story unfold. Every decision you make crafts a new, unique branch in your adventure tree.
 
-### Node naming
+- 🖼️ **AI-Generated Story Illustrations**  
+  Bring key story moments to life visually! Generate striking custom artwork for any scene or enable automatic generation as you explore.
 
-Story nodes live in `story/` and are named by their choice path:
+- 🎙️ **Narrated Audio & Ambient Sound**  
+  Listen to your adventure as audio narration and music ambiance are generated for each chapter.
 
-* `0`   — the root node
-* `0a`  — after choosing **A** at the root
-* `0ab` — after choosing **B** at `0a`
+- 🔊 **Read Aloud with Synchronized Highlighting**  
+  Listen using built-in browser voice narration while watching the text highlight sentence-by-sentence in real time—perfect for relaxing or following along.
 
-Illustrations and narration for a node share its id with a `.png` / `.wav`
-extension. A node with no parsable `A/B/C` list is treated as an **end state**
-and renders the "The story has reached its end" panel instead of choice buttons.
+- ⛶ **Immersive Reader Mode**  
+  Distraction-free reading at the push of a button. Focus entirely on the story and visuals with cinema-style immersive viewing.
 
-### Template variables
+- 🎨 **On-Demand Visual Styling**  
+  Want a neon-glowing cyberpunk vibe, a classic parchment look, or larger buttons for mobile? Tell the style assistant how you want the app to look, and watch the theme transform!
 
-`ops/choice.md`, `ops/choice_image.md` and `ops/choice_audio.md` receive:
+---
 
-* `CHOICE` — the lowercase branch letter (`a`, `b`, `c`)
-* `CHOICE_LABEL` — the uppercase branch letter (narrative op only)
+## 🚀 How to Use Interactive Stories
 
-## Op files
+### 1. Pitch Your Premise
+In the **Story Idea** section, enter a short prompt describing your setting, characters, or main conflict.  
+> *Example: "A weary space farer discovers a glowing, abandoned station orbiting a forgotten star..."*
 
-| File                        | Purpose                                                        |
-|-----------------------------|----------------------------------------------------------------|
-| `ops/initial_node.md`       | Turn `story_idea.md` into the opening scene plus three choices. |
-| `ops/choice.md`             | Continue the story along the `CHOICE` branch of the parent node.|
-| `ops/initial_image.md`      | Illustrate the root node.                                       |
-| `ops/choice_image.md`       | Illustrate the `CHOICE` branch node.                            |
-| `ops/initial_audio.md`      | Narrate the root node to `story/0.wav`.                         |
-| `ops/choice_audio.md`       | Narrate the `CHOICE` branch node.                               |
-| `ops/update_stylesheet.md`  | Rewrite `style.css` from `stylesheet_instructions.md`.          |
+Click **💾 Save Idea**, then hit **✨ Begin Story**!
 
-## Local preferences (`localStorage`)
+### 2. Read & Explore
+Once your opening chapter is generated, read through the text and inspect the choices presented at the bottom:
+- Click **Choice A**, **Choice B**, or **Choice C** to forge ahead down a new path.
+- Look at the **Story Tree** on the left or top to revisit previously explored branches or jump back to key decision points anytime.
 
-All keys are namespaced `interactiveStories.*`:
+### 3. Generate Media & Read Along
+- **Read Aloud:** Click the **🔊 Read Aloud** button to hear the chapter spoken aloud with real-time text highlighting. Turn on **Auto-read on load** so new scenes start reading automatically!
+- **Generate Image:** Click **🖼 Generate Image** to create a fresh illustration for the current node.
+- **Generate Audio:** Click **🎙 Generate Audio** to produce rich, atmospheric spoken narration and background audio.
 
-* `autoRead`, `autoImage`, `autoAudio`, `highlightReadalong` — toolbar toggles
-* `voice` — selected browser TTS voice URI
-* model selections via `saveModelSelections()` / `loadModelSelections()`
+### 4. Dive Into Immersive Mode
+Press **F** on your keyboard or click the fullscreen icon (**⛶**) on the current node card to hide clutter and enjoy a full-screen storybook experience. Press **Esc** or click **✕** when you're ready to return.
 
-No story content is ever stored in `localStorage`; the filesystem is the source
-of truth and badges are restored from `docops.status.json` on load.
+### 5. Customize the Visual Theme
+Scroll down to **🎨 Update Stylesheet**, type a description of the design or look you want (e.g., *"Use a dark, starry night background with glowing teal highlights and rounded cards"*), and click **🖌 Update Stylesheet**. Reload the page to enjoy your personalized design!
 
-## Read-aloud
+---
 
-Two independent mechanisms:
+## 🛠️ Helpful Tips & Shortcuts
 
-1. **Browser TTS** (`speechSynthesis`) with sentence-level read-along
-   highlighting. Falls back to a timer-driven highlight when the browser or
-   voice does not emit `boundary` events.
-2. **Generated narration** (`story/<id>.wav`) which takes precedence over TTS
-   when present and auto-read is enabled.
+- **Keyboard Shortcut (`F`):** Toggle Immersive Reader mode instantly when viewing a story chapter.
+- **Auto-Image / Auto-Audio:** Enable these checkboxes in the chapter toolbar if you want new images and audio generated automatically whenever you unlock a new choice!
+- **AI Model Customization:** Advanced users can expand the **🤖 AI Models** section to select specific AI models for storytelling, speed, artwork generation, or voice audio.
 
-Both respect browser autoplay policy: playback is deferred until the first user
-gesture, and the Read Aloud button shows "Click to Read" while deferred.
+---
 
-## Keyboard
-
-| Key      | Action                                     |
-|----------|--------------------------------------------|
-| `F`      | Toggle immersive mode (when not in a field) |
-| `Escape` | Exit immersive mode / dismiss confirmation  |
-
-## Conformance
-
-| Axis           | Status | Note |
-|----------------|:------:|------|
-| 3-file layout  |   ✅   |      |
-| Modern JS      |   ✅   |      |
-| Menubar        |   ✅   | `initMenu({ appName: 'Interactive Stories' })` |
-| No dup. chrome |   ✅   | Usage/Git/Sessions/Download owned by the menubar |
-| Viewport       |   ✅   |      |
-| Mobile         |   ✅   | Verified at 360 / 768 / 1280 px |
-
-### Outstanding
-
-* The end-state panel is still injected with `innerHTML` from a static template
-  literal. It contains no model- or user-supplied data, but should move to a
-  `<template>` element when `app.html` is next touched.
+*Happy storytelling! Where will your adventure take you today?*

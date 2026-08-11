@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.webui.chat
+package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
@@ -11,10 +11,9 @@ import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toContentList
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.OutputStream
+import java.util.UUID
 
 /**
  * A ChatSocketManager that features:
@@ -22,31 +21,31 @@ import java.io.OutputStream
  * 2. Query elevation from fast model to smart model for complex queries
  */
 open class SmartChatSocketManager(
-    session: Session,
-    useExpansionSyntax: Boolean = true,
-    smartModel: ChatInterface,
-    fastModel: ChatInterface,
-    userInterfacePrompt: String = "",
-    override val systemPrompt: String,
-    temperature: Double = 0.3,
-    applicationClass: Class<out ChatServer>,
-    storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
-    override val fastTopicParsing: Boolean = true,
-    retriable: Boolean = true,
-    budget: Double,
-    /**
+  session: Session,
+  useExpansionSyntax: Boolean = true,
+  smartModel: ChatInterface,
+  fastModel: ChatInterface,
+  userInterfacePrompt: String = "",
+  override val systemPrompt: String,
+  temperature: Double = 0.3,
+  applicationClass: Class<out ChatServer>,
+  storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  override val fastTopicParsing: Boolean = true,
+  retriable: Boolean = true,
+  budget: Double,
+  /**
    * Maximum number of tokens in conversation history before summarization is triggered
    */
   private val maxHistoryTokens: Int = 4000,
-    /**
+  /**
    * Target number of tokens after summarization
    */
   private val targetSummaryTokens: Int = 1000,
-    /**
+  /**
    * Number of recent messages to preserve without summarization
    */
   private val preserveRecentMessages: Int = 4,
-    owner: User,
+  owner: User,
   ) : ChatSocketManager(
   session = session,
   useExpansionSyntax = useExpansionSyntax,
@@ -122,7 +121,7 @@ open class SmartChatSocketManager(
           choice.message?.image_data?.let {
             val imageMimeType = choice.message?.image_mime_type ?: "image/png"
             val (link, file) = task.createFile(
-              java.util.UUID.randomUUID().toString() + when (imageMimeType) {
+              UUID.randomUUID().toString() + when (imageMimeType) {
                 "image/png" -> ".png"
                 "image/jpeg", "image/jpg" -> ".jpg"
                 "image/gif" -> ".gif"

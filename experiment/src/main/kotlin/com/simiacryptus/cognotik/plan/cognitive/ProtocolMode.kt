@@ -11,11 +11,14 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import kotlin.io.path.Path
 
@@ -34,20 +37,19 @@ open class ProtocolMode(
   private var isRunning = false
   private val history = mutableListOf<String>()
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     if (!isRunning) {
       isRunning = true
-      startProtocolSession(task, userMessage)
+       startProtocolSession(task, userMessage, transcriptStream)
     } else {
       task.echo("User: $userMessage".renderMarkdown(true))
       history.add("User Message: $userMessage")
     }
   }
 
-  private fun startProtocolSession(task: SessionTask, userMessage: String) {
+   private fun startProtocolSession(task: SessionTask, userMessage: String, transcript: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     task.echo(userMessage.renderMarkdown(true))
-    val transcript = task.transcript()
     fun writeToTranscript(content: String) {
       transcript?.write(content.toByteArray())
       transcript?.flush()
@@ -215,7 +217,7 @@ open class ProtocolMode(
         task.error(e)
       } finally {
         isRunning = false
-        transcript?.close()
+         transcript?.flush()
       }
     }
   }

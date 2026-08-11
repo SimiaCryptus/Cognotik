@@ -1,6 +1,5 @@
-package com.simiacryptus.util
+package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.TypeDescriberTestBase
 import com.simiacryptus.cognotik.describe.JsonDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import org.intellij.lang.annotations.Language

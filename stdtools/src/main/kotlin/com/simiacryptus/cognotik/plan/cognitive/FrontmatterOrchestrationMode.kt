@@ -9,12 +9,14 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.*
@@ -107,30 +109,28 @@ open class FrontmatterOrchestrationMode(
   )
 
   private val log = LoggerFactory.getLogger(FrontmatterOrchestrationMode::class.java)
-  private var transcriptStream: FileOutputStream? = null
 
   override fun initialize(task: SessionTask) {
     log.debug("Initializing FrontmatterOrchestrationMode")
-    transcriptStream = task.transcript()
   }
 
   override fun contextData(): List<String> = emptyList()
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     try {
       log.debug("Handling user message: $userMessage")
       transcriptStream?.let { stream ->
         stream.write("\n## User Message\n\n$userMessage\n\n".toByteArray())
         stream.flush()
       }
-      execute(userMessage, task)
+       execute(userMessage, task, transcriptStream)
     } catch (e: Throwable) {
       log.error("Error in handleUserMessage", e)
       task.error(e)
     }
   }
 
-  private fun execute(userMessage: String, task: SessionTask) {
+   private fun execute(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     try {
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
         ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
@@ -170,7 +170,7 @@ open class FrontmatterOrchestrationMode(
         stream.flush()
       }
     } finally {
-      transcriptStream?.close()
+       transcriptStream?.flush()
     }
   }
 

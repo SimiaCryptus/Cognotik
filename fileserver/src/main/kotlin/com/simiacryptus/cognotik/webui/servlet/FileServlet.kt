@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
 
 import com.simiacryptus.cognotik.webui.servlet.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
@@ -15,13 +16,14 @@ import com.simiacryptus.cognotik.webui.servlet.render.git.GitHtml
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitScripts
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitStyles
 import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
-import com.simiacryptus.cognotik.webui.servlet.util.PathUtils
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Path.of
 
 @MultipartConfig(
   fileSizeThreshold = 1024 * 1024 * 2,  // 2MB
@@ -47,7 +49,7 @@ abstract class FileServlet : HttpServlet() {
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Received GET request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
       if (file != null && FileAccessControl.isHidden(dir, file)) {
@@ -69,7 +71,7 @@ abstract class FileServlet : HttpServlet() {
         file != null && file.isFile && editParam != null && editParam != "false" -> {
           serveEditor(file, dir, response)
         }
-        
+
         file != null && file.isFile -> {
           FileRequestHandler.serveFile(file, request, response)
         }
@@ -110,7 +112,7 @@ abstract class FileServlet : HttpServlet() {
   override fun doHead(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Received HEAD request for path: ${request.pathInfo ?: request.servletPath}")
     try {
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
       if (file != null && FileAccessControl.isHidden(dir, file)) {
@@ -208,7 +210,7 @@ abstract class FileServlet : HttpServlet() {
         denyAnonymous(response, "upload to ${request.requestURI}")
         return
       }
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       val targetDir = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
       if (targetDir != null && FileAccessControl.isHidden(dir, targetDir)) {
@@ -234,10 +236,16 @@ abstract class FileServlet : HttpServlet() {
     try {
       val user = getUser(request, response)
       if (!isWriteAllowed(user, request)) {
-        denyAnonymous(response, "PUT to ${request.requestURI}")
+        if(null == user) {
+          denyAnonymous(response, "PUT to ${request.requestURI}")
+        } else {
+          log.warn("Refusing PUT for user ${user.id}: insufficient permissions")
+          response.status = HttpServletResponse.SC_FORBIDDEN
+          response.writer.write("Insufficient permissions for user ${user.id}")
+        }
         return
       }
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       if (dir == null) {
         log.warn("Base directory is null for PUT request")
@@ -264,7 +272,7 @@ abstract class FileServlet : HttpServlet() {
         denyAnonymous(response, "DELETE of ${request.requestURI}")
         return
       }
-      val pathSegments = PathUtils.parsePath(request.pathInfo ?: request.servletPath ?: "/")
+      val pathSegments = of(request.pathInfo ?: request.servletPath ?: "/").normalize()
       val dir = getDir(request, response)
       if (dir == null) {
         response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -386,7 +394,7 @@ abstract class FileServlet : HttpServlet() {
   }
 
   private fun serveDirectoryListing(
-    file: File?, request: HttpServletRequest, response: HttpServletResponse, pathSegments: List<String>
+    file: File?, request: HttpServletRequest, response: HttpServletResponse, pathSegments: Path
   ) {
     response.contentType = "text/html"
     response.characterEncoding = "UTF-8"
@@ -755,14 +763,14 @@ abstract class FileServlet : HttpServlet() {
       object : com.simiacryptus.cognotik.platform.web.UserProvider {
         override fun authenticate(
           request: HttpServletRequest,
-          response: HttpServletResponse?
-        ): User? {
-          return null
-        }
+          response: AbstractHttpServletResponse?
+        ) = null
       }
-    var isWriteAllowed = fun(user: User?, request: HttpServletRequest) = when {
-      user == null -> false
-      else -> true
+    var isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
+      return when {
+        user == null -> false
+        else -> true
+      }
     }
 
     fun getUser(request: HttpServletRequest, response: HttpServletResponse?): User? {

@@ -19,17 +19,19 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.Retryable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -162,58 +164,58 @@ class AnalyzeProblemAction : AnAction() {
             task: SessionTask, socketManager: SocketManager
         ) {
             try {
-                Retryable(task) {
-                    val task = socketManager.newTask(cancelable = false, root = false)
-                    val plan = ParsedAgent(
-                        resultClass = ParsedErrors::class.java,
-                        prompt = """
+              Retryable(task) {
+                val task = socketManager.newTask(cancelable = false, root = false)
+                val plan = ParsedAgent(
+                  resultClass = ParsedErrors::class.java,
+                  prompt = """
                         You are a helpful AI that helps people with coding.
                         Given the response of a test failure, identify one or more distinct errors.
                         For each error:
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartChatClient,
-                        parsingModel = AppSettingsState.instance.fastChatClient,
-                    ).answer(listOf(problemInfo))
+                  model = AppSettingsState.instance.smartChatClient,
+                  parsingModel = AppSettingsState.instance.fastChatClient,
+                ).answer(listOf(problemInfo))
 
-                  val map = mapOf(
-                    "Text" to plan.text.renderMarkdown(true),
-                    "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
-                      true
-                    ),
+                val map = mapOf(
+                  "Text" to plan.text.renderMarkdown(true),
+                  "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
+                    true
+                  ),
+                )
+                task.add(
+                  TabbedDisplay.displayMapInTabs(
+                    map,
+                    null,
+                    map.entries.map { it.value.length + it.key.length }.sum() > 10000
                   )
-                  task.add(
-                    TabbedDisplay.displayMapInTabs(
-                      map,
-                      null,
-                      map.entries.map { it.value.length + it.key.length }.sum() > 10000
-                    )
-                    )
+                )
 
-                    plan.obj.errors?.forEach { error ->
-                        Retryable(task) {
-                            val task = socketManager.newTask(cancelable = false, root = false)
-                            val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
-                            val summary = filesToFix.joinToString("\n\n") { filePath ->
-                                val file = gitRoot?.toFile?.resolve(filePath)
-                                if (file?.exists() == true) {
-                                    """
+                plan.obj.errors?.forEach { error ->
+                  Retryable(task) {
+                    val task = socketManager.newTask(cancelable = false, root = false)
+                    val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
+                    val summary = filesToFix.joinToString("\n\n") { filePath ->
+                      val file = gitRoot?.toFile?.resolve(filePath)
+                      if (file?.exists() == true) {
+                        """
                                     # $filePath
                                     $tripleTilde${filePath.split('.').lastOrNull()}
                                     ${file.readText()}
                                     $tripleTilde
                                     """.trimIndent()
-                                } else {
-                                    "# $filePath\nFile not found"
-                                }
-                            }
-                            task.add(generateAndAddResponse(task, error, summary, socketManager))
-                            task.placeholder
-                        }
+                      } else {
+                        "# $filePath\nFile not found"
+                      }
                     }
+                    task.add(generateAndAddResponse(task, error, summary, socketManager))
                     task.placeholder
+                  }
                 }
+                task.placeholder
+              }
             } catch (e: Exception) {
                 task.error(e)
             }

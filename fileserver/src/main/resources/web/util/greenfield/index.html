@@ -1,0 +1,780 @@
+<!doctype html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Greenfield Implementer</title>
+  <style>
+    :root{
+      --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+      --fg:#d7dbe3; --muted:#828a9a; --accent:#5aa9e6; --ok:#4caf7d;
+      --warn:#d8a657; --err:#e06c75; --run:#7aa2f7;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--fg);
+      font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    header{display:flex;gap:12px;align-items:center;padding:10px 16px;
+      background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+    header h1{font-size:16px;margin:0;letter-spacing:.02em}
+    .spacer{flex:1}
+    button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+      border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px}
+    button:hover{border-color:var(--accent);color:#fff}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    button.primary{background:#1d3a55;border-color:#2f6690}
+    button.icon{padding:2px 7px;font-size:12px}
+    main{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 45px)}
+    aside{background:var(--panel);border-right:1px solid var(--line);padding:12px;overflow:auto}
+    aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+      color:var(--muted);margin:16px 0 6px}
+    aside h2:first-child{margin-top:0}
+    aside ul{list-style:none;margin:0;padding:0}
+    aside li{display:flex;align-items:center;gap:6px;padding:3px 0;font-family:var(--mono);font-size:12px}
+    aside li a{color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    aside li a:hover{color:var(--accent)}
+    aside li.missing a{color:var(--muted);font-style:italic}
+    dl.session{margin:0;font-family:var(--mono);font-size:11px}
+    dl.session dt{color:var(--muted);margin-top:6px}
+    dl.session dd{margin:0;word-break:break-all}
+    section#content{padding:16px;overflow:auto}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+      padding:12px;margin-bottom:14px}
+    .card > h3{margin:0 0 8px;font-size:13px}
+    textarea{width:100%;min-height:110px;background:var(--bg);color:var(--fg);
+      border:1px solid var(--line);border-radius:6px;padding:8px;font-family:var(--mono);font-size:13px;resize:vertical}
+    ol.steps{list-style:none;margin:0 0 14px;padding:0;
+      border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+    ol.steps li{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--line)}
+    ol.steps li:first-child{border-top:none}
+    ol.steps li.impl{background:#191419}
+    .step-n{width:20px;color:var(--muted);font-family:var(--mono)}
+    .step-t{flex:1}
+    .step-t small{display:block;color:var(--muted);font-family:var(--mono);font-size:11px}
+    .badge{font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:10px;
+      border:1px solid var(--line);color:var(--muted)}
+    .badge.RUNNING{color:var(--run);border-color:var(--run)}
+    .badge.DONE{color:var(--ok);border-color:var(--ok)}
+    .badge.ERROR{color:var(--err);border-color:var(--err)}
+    .badge.STALE{color:var(--warn);border-color:var(--warn)}
+    nav.tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+    nav.tabs button{border:none;border-bottom:2px solid transparent;border-radius:0;background:none}
+    nav.tabs button.active{color:#fff;border-bottom-color:var(--accent)}
+    .panel{display:none}.panel.active{display:block}
+    .obj{display:grid;gap:2px}
+    .row{display:grid;grid-template-columns:150px 1fr;gap:8px;align-items:start;
+      padding:2px 0;border-top:1px solid #23262e}
+    .row:first-child{border-top:none}
+    .key{color:var(--muted);font-family:var(--mono);font-size:12px}
+    ul.list{margin:0;padding-left:16px}
+    pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;
+      padding:10px;overflow:auto;font-family:var(--mono);font-size:12px;margin:0}
+    #log{height:340px;overflow:auto;white-space:pre-wrap}
+    .task{border:1px solid var(--line);border-radius:8px;background:var(--panel);
+      padding:10px;margin-bottom:10px}
+    .task .top{display:flex;gap:8px;align-items:center}
+    .task .top b{flex:1}
+    .chip{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:9px;
+      border:1px solid var(--line);color:var(--muted)}
+    .chip.critical,.chip.high{color:var(--err);border-color:var(--err)}
+    .chip.medium{color:var(--warn);border-color:var(--warn)}
+    .chip.unmet{color:var(--warn);border-color:var(--warn)}
+    .task p{margin:6px 0;color:#b9c0cc;white-space:pre-wrap}
+    .files{font-family:var(--mono);font-size:11px;color:var(--muted)}
+    dialog{background:var(--panel);color:var(--fg);border:1px solid var(--line);
+      border-radius:10px;max-width:min(900px,92vw);width:900px}
+    dialog pre{max-height:60vh}
+    .muted{color:var(--muted)}
+  </style>
+  </head>
+  <body>
+  <header>
+    <h1>🌱 Greenfield Implementer</h1>
+    <span id="rootInfo" class="muted"></span>
+    <div class="spacer"></div>
+    <button id="runAll" class="primary">▶ Run All Steps <span class="muted">(plan only)</span></button>
+    <button id="refresh">⟳ Refresh</button>
+  </header>
+
+  <main>
+    <aside>
+      <h2>Plan Documents</h2><ul id="planDocs"></ul>
+      <h2>Task Plans</h2><ul id="taskDocs"></ul>
+      <h2>Session</h2><dl class="session" id="session"></dl>
+    </aside>
+
+    <section id="content">
+      <div class="card">
+        <h3>Idea <span class="muted" id="ideaState"></span></h3>
+        <textarea id="idea" placeholder="One paragraph describing the product to build…"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <button id="saveIdea">💾 Save Idea</button>
+          <span class="muted">Ctrl/⌘+Enter runs the planning pipeline</span>
+        </div>
+      </div>
+
+      <ol class="steps" id="steps"></ol>
+
+      <nav class="tabs" id="tabs">
+        <button data-tab="plan" class="active">Plan</button>
+        <button data-tab="tasks">Tasks</button>
+        <button data-tab="files">Files</button>
+        <button data-tab="raw">Raw JSON</button>
+        <button data-tab="log">Log</button>
+      </nav>
+      <div class="panel active" id="panel-plan"></div>
+      <div class="panel" id="panel-tasks"></div>
+      <div class="panel" id="panel-files"></div>
+      <div class="panel" id="panel-raw"><pre id="raw"></pre></div>
+      <div class="panel" id="panel-log"><pre id="log"></pre></div>
+    </section>
+  </main>
+
+  <dialog id="opDialog">
+    <h3 style="margin:12px 12px 6px" id="opTitle">Generated doc-op</h3>
+    <pre id="opText" style="margin:0 12px"></pre>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button id="opCopy">📋 Copy op file</button>
+      <button id="opClose">Close</button>
+    </div>
+  </dialog>
+
+  <script type="module">
+  /* =====================================================================
+   * Path model — the single constant, exactly as in reviewer/index.html.
+   *   greenfield/ -> code-utils/ -> repo root
+   * ===================================================================== */
+  const ROOT_HOPS     = 2;
+  const TMP_DIR       = 'tmp';
+  const STATUS_FILE   = 'docops.status.json';
+  const LS_TASKS      = 'greenfield_tasks';
+  const LS_IDEA       = 'greenfield_idea';
+
+  const DOC_ROOT      = new URL('./', window.location.href);       // .../greenfield/
+  const ANALYSIS_ROOT = new URL('../'.repeat(ROOT_HOPS), DOC_ROOT);// repo root
+  /* temp ops live in greenfield/tmp/, so depth 1 + ROOT_HOPS */
+  const TMP_UP        = '../'.repeat(1 + ROOT_HOPS);               // ../../../
+  const TMP_FOLDER    = TMP_UP.replace(/\/$/, '');                 // ../../..
+
+  /* =====================================================================
+   * Server contract (see README.md). All paths are relative to the doc root.
+   *   GET  <path>                     -> file contents (plain static serve)
+   *   POST api/write   {path,content} -> 200
+   *   POST api/delete  {path}         -> 200
+   *   POST api/run     {op}           -> {taskId}
+   *   GET  api/list?prefix=plan       -> {files:[...]}   (optional)
+   *   GET  docops.status.json         -> {tasks:[{id,state,progress,message}]}
+   * ===================================================================== */
+  const api = {
+    url(p){ return new URL(p, DOC_ROOT).href; },
+    async read(p){
+      try{
+        const r = await fetch(this.url(p) + (p.includes('?') ? '&' : '?') + '_=' + Date.now());
+        if(!r.ok) return null;
+        return await r.text();
+      }catch(e){ return null; }
+    },
+    async readJson(p){
+      const t = await this.read(p);
+      if(t == null) return null;
+      try{ return JSON.parse(t); }
+      catch(e){ log(`! ${p} is not valid JSON: ${e.message}`); return null; }
+    },
+    async post(endpoint, body){
+      const r = await fetch(this.url(endpoint), {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      if(!r.ok) throw new Error(`${endpoint} -> ${r.status} ${r.statusText}`);
+      try{ return await r.json(); }catch(e){ return {}; }
+    },
+    write(path, content){ return this.post('api/write', {path, content}); },
+    remove(path){ return this.post('api/delete', {path}); },
+    run(op){ return this.post('api/run', {op}); },
+    async list(prefix){
+      try{
+        const r = await fetch(this.url('api/list?prefix=' + encodeURIComponent(prefix)));
+        if(!r.ok) return null;
+        const j = await r.json();
+        return Array.isArray(j) ? j : (j.files || null);
+      }catch(e){ return null; }
+    },
+    status(){ return this.readJson(STATUS_FILE); }
+  };
+
+  /* =====================================================================
+   * Steps
+   * ===================================================================== */
+  const STEPS = [
+    { id:'feature',      n:1, title:'Feature spec',   op:'ops/plan_feature.op.md',
+      out:['plan/feature.json'], phase:'plan' },
+    { id:'stack',        n:2, title:'Tech stack',     op:'ops/plan_stack.op.md',
+      out:['plan/stack.json'], phase:'plan' },
+    { id:'architecture', n:3, title:'Architecture',   op:'ops/plan_architecture.op.md',
+      out:['plan/architecture.json'], phase:'plan' },
+    { id:'phases',       n:4, title:'Phases / WBS',   op:'ops/plan_phases.op.md',
+      out:['plan/phases.json'], phase:'plan' },
+    { id:'tasks',        n:5, title:'Task breakdown', op:'ops/plan_tasks.op.md',
+      out:['tasks/'], phase:'plan', custom:runTaskBreakdown },
+    { id:'scaffold',     n:6, title:'Scaffold',       op:'ops/impl_scaffold.op.md',
+      out:['tmp/scaffold.md'], phase:'impl' },
+    { id:'code',         n:7, title:'Code',           op:'ops/impl_task.op.md',
+      out:[], phase:'impl', custom:runAllBuildTasks },
+    { id:'tests',        n:8, title:'Tests',          op:'ops/impl_tests.op.md',
+      out:['tmp/tests.md'], phase:'impl' },
+    { id:'docs',         n:9, title:'Docs',           op:'ops/impl_docs.op.md',
+      out:['tmp/docs.md'], phase:'impl' },
+  ];
+
+  /** Everything a step is allowed to delete — nothing implicit. */
+  const STEP_ARTIFACTS = {
+    feature:      ['plan/feature.json'],
+    stack:        ['plan/stack.json'],
+    architecture: ['plan/architecture.json'],
+    phases:       ['plan/phases.json'],
+    tasks:        ['tmp/plan_tasks.md'],   // + tasks/*.json, resolved at delete time
+    scaffold:     ['tmp/scaffold.md'],
+    code:         [],                      // + tmp/*.op.md, resolved at delete time
+    tests:        ['tmp/tests.md'],
+    docs:         ['tmp/docs.md'],
+  };
+
+  const PLAN_DOCS = ['plan/feature.json','plan/stack.json','plan/architecture.json','plan/phases.json'];
+
+  /* =====================================================================
+   * State
+   * ===================================================================== */
+  const state = {
+    plans: {},        // path -> parsed json
+    taskPlans: {},    // path -> BuildPlan
+    steps: {},        // stepId -> {status, taskId, progress}
+    statusIndex: {},  // taskId -> status entry
+    taskRuns: loadJson(LS_TASKS, {}), // "<plan>#<taskId>" -> {status,taskId,op,at}
+    savedIdea: '',
+  };
+
+  function loadJson(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
+  function saveTaskRuns(){ localStorage.setItem(LS_TASKS, JSON.stringify(state.taskRuns)); }
+
+  /* =====================================================================
+   * Tiny DOM helpers
+   * ===================================================================== */
+  const $  = s => document.querySelector(s);
+  const el = (t, c, txt) => { const e = document.createElement(t); if(c) e.className = c;
+                              if(txt != null) e.textContent = txt; return e; };
+  function log(msg){
+    const line = `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+    const pre = $('#log'); pre.textContent += line; pre.scrollTop = pre.scrollHeight;
+  }
+
+  /* =====================================================================
+   * Idea
+   * ===================================================================== */
+  async function loadIdea(){
+    const disk = await api.read('idea.md');
+    state.savedIdea = disk ?? '';
+    const draft = localStorage.getItem(LS_IDEA);
+    $('#idea').value = (draft != null && draft !== '') ? draft : state.savedIdea;
+    markIdeaState();
+  }
+  function markIdeaState(){
+    const dirty = $('#idea').value !== state.savedIdea;
+    $('#ideaState').textContent = dirty ? '— unsaved changes' : '— saved';
+  }
+  async function saveIdea(){
+    const text = $('#idea').value;
+    if(text === state.savedIdea) return;
+    await api.write('idea.md', text);
+    state.savedIdea = text;
+    localStorage.removeItem(LS_IDEA);
+    markIdeaState();
+    log('✓ idea.md saved');
+  }
+  /** Every stage calls this first: the idea on disk is the pipeline's seed. */
+  async function ensureIdea(){ await saveIdea(); }
+
+  /* =====================================================================
+   * Task running / status
+   * ===================================================================== */
+  function setStep(id, patch){
+    state.steps[id] = Object.assign({}, state.steps[id], patch);
+    renderSteps();
+  }
+
+  function statusOf(taskId){
+    return state.statusIndex[taskId] || null;
+  }
+
+  async function pollStatus(){
+    const s = await api.status();
+    if(!s) return;
+    const idx = {};
+    const list = Array.isArray(s) ? s : (s.tasks || s.entries || []);
+    if(Array.isArray(list)){
+      for(const t of list){ if(t && (t.id || t.taskId)) idx[t.id || t.taskId] = t; }
+    }else if(s && typeof s === 'object'){
+      for(const [k,v] of Object.entries(s)) if(v && typeof v === 'object') idx[k] = v;
+    }
+    state.statusIndex = idx;
+    renderSteps();
+    renderTasks();
+  }
+
+  function normState(entry){
+    const raw = String(entry && (entry.state || entry.status) || '').toUpperCase();
+    if(/(DONE|COMPLETE|SUCCESS|FINISHED)/.test(raw)) return 'DONE';
+    if(/(ERROR|FAIL)/.test(raw)) return 'ERROR';
+    if(/(RUN|PROGRESS|ACTIVE|PENDING|QUEUE)/.test(raw)) return 'RUNNING';
+    return raw || 'RUNNING';
+  }
+  function progressOf(entry){
+    if(!entry) return '';
+    const p = entry.progress || {};
+    const done = p.done ?? p.completed ?? entry.completed;
+    const total = p.total ?? entry.total;
+    return (done != null && total != null) ? `${done}/${total} · ` : '';
+  }
+
+  async function waitForTask(taskId, label){
+    if(!taskId) return 'DONE';
+    for(;;){
+      await pollStatus();
+      const entry = statusOf(taskId);
+      const st = entry ? normState(entry) : 'RUNNING';
+      if(st === 'DONE'){ log(`✓ ${label} complete`); return 'DONE'; }
+      if(st === 'ERROR'){ log(`✗ ${label} failed: ${entry.message || 'see server log'}`); return 'ERROR'; }
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+
+  async function runOp(opPath, label){
+    log(`▶ ${label} (${opPath})`);
+    let res;
+    try{ res = await api.run(opPath); }
+    catch(e){ log(`✗ ${label}: ${e.message}`); throw e; }
+    const taskId = res && (res.taskId || res.id || res.task_id);
+    if(!taskId){ log(`… ${label}: no task id returned, assuming synchronous`); return {taskId:null, status:'DONE'}; }
+    const status = await waitForTask(taskId, label);
+    return {taskId, status};
+  }
+
+  /* =====================================================================
+   * Steps: run / delete
+   * ===================================================================== */
+  async function runStep(step){
+    await ensureIdea();
+    setStep(step.id, {status:'RUNNING', taskId:null});
+    try{
+      if(step.custom){ await step.custom(step); }
+      else{
+        const {taskId, status} = await runOp(step.op, `${step.n}. ${step.title}`);
+        setStep(step.id, {status, taskId});
+      }
+    }catch(e){
+      setStep(step.id, {status:'ERROR'});
+      throw e;
+    }finally{
+      await refresh();
+    }
+  }
+
+  /** Stage 5: one temp doc-op per phase, so plans stay small and re-runnable. */
+  async function runTaskBreakdown(step){
+    const phases = state.plans['plan/phases.json'];
+    if(!phases || !Array.isArray(phases.phases)){
+      log('! plan/phases.json missing — falling back to the whole-plan op');
+      const r = await runOp(step.op, '5. Task breakdown');
+      setStep(step.id, r); return;
+    }
+    for(const phase of phases.phases){
+      const opPath = `${TMP_DIR}/plan-${slug(phase.id)}.op.md`;
+      await api.write(opPath, phaseOpContent(phase));
+      const {status} = await runOp(opPath, `5. Tasks · ${phase.id}`);
+      if(status === 'ERROR'){ setStep(step.id, {status:'ERROR'}); return; }
+    }
+    setStep(step.id, {status:'DONE'});
+  }
+
+  /** Stage 7: run every build task in every plan, in dependency order. */
+  async function runAllBuildTasks(step){
+    const entries = Object.entries(state.taskPlans);
+    if(!entries.length){ log('! no task plans under tasks/ — run step 5 first'); setStep(step.id,{status:'ERROR'}); return; }
+    for(const [path, plan] of entries){
+      for(const task of orderTasks(plan.tasks || [])){
+        const st = await runBuildTask(path, task);
+        if(st === 'ERROR'){ setStep(step.id, {status:'ERROR'}); return; }
+      }
+    }
+    setStep(step.id, {status:'DONE'});
+  }
+
+  async function deleteStep(step){
+    const paths = [...(STEP_ARTIFACTS[step.id] || [])];
+    if(step.id === 'tasks') paths.push(...Object.keys(state.taskPlans));
+    if(step.id === 'code')  paths.push(...Object.values(state.taskRuns).map(r => r.op).filter(Boolean));
+    if(!paths.length){ log(`… nothing to delete for ${step.title}`); return; }
+    if(!confirm(`Delete:\n${paths.join('\n')}`)) return;
+    for(const p of paths){
+      try{ await api.remove(p); log(`🗑 ${p}`); }
+      catch(e){ log(`! could not delete ${p}: ${e.message}`); }
+    }
+    setStep(step.id, {status:null, taskId:null});
+    if(step.id === 'code'){
+      for(const k of Object.keys(state.taskRuns)) delete state.taskRuns[k];
+      saveTaskRuns();
+    }
+    await refresh();
+  }
+
+  async function runAllSteps(){
+    // Plan stages 1–5 only. Implementation stages never run implicitly.
+    for(const step of STEPS.filter(s => s.phase === 'plan')){
+      await runStep(step);
+      if((state.steps[step.id] || {}).status === 'ERROR'){ log('■ halted'); return; }
+    }
+    log('■ planning pipeline complete');
+  }
+
+  /* =====================================================================
+   * Doc-op synthesis
+   * ===================================================================== */
+  const slug = s => String(s).replace(/[^A-Za-z0-9_.-]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase();
+
+  function phaseOpContent(phase){
+    return [
+      '---',
+      `specifies: ../tasks/${phase.id}.json`,
+      `folder: ${TMP_FOLDER}`,
+      'related:',
+      '  - ../ops/task_schema.ts',
+      '  - ../ops/plan_schema.ts',
+      '  - ../plan/feature.json',
+      '  - ../plan/stack.json',
+      '  - ../plan/architecture.json',
+      '  - ../plan/phases.json',
+      '  - ../idea.md',
+      '---',
+      '',
+      `Produce the BuildPlan for phase "${phase.id}" — ${phase.title}`,
+      '',
+      `Goal: ${phase.goal || ''}`,
+      '',
+      'Deliverables:',
+      ...(phase.deliverables || []).map(d => `  - ${d}`),
+      '',
+      'Exit criteria:',
+      ...(phase.exit_criteria || []).map(d => `  - ${d}`),
+      '',
+      'Emit a single JSON document conforming strictly to the `BuildPlan`',
+      'interface in `ops/task_schema.ts`. Task `target_files` are relative to',
+      `\`${TMP_FOLDER}\`, primary file first. No commentary, no markdown fences.`,
+      ''
+    ].join('\n');
+  }
+
+  function taskOpPath(planPath, task){
+    return `${TMP_DIR}/${slug(planPath.replace(/^tasks\//,'').replace(/\.json$/,''))}-${slug(task.id)}.op.md`;
+  }
+
+  /**
+   * target_files[0] -> `specifies:`; remaining targets plus related_files ->
+   * `related:`. The `../` prefix is temp-dir depth + ROOT_HOPS.
+   */
+  function taskOpContent(task){
+    const targets = task.target_files || [];
+    const primary = targets[0];
+    const related = [...targets.slice(1), ...(task.related_files || [])];
+    const fm = ['---', `specifies: ${TMP_UP}${primary}`, `task_type: ${task.task_type || 'FileModification'}`];
+    if(related.length){
+      fm.push('related:');
+      for(const r of related) fm.push(`  - ${TMP_UP}${r}`);
+    }
+    fm.push(`folder: ${TMP_FOLDER}`, '---', '');
+    return `${fm.join('\n')}${task.title}\n\n${task.description}\n${task.notes ? `\nNotes: ${task.notes}\n` : ''}`;
+  }
+
+  async function runBuildTask(planPath, task){
+    if(!(task.target_files || []).length){
+      log(`! task ${task.id} has no target_files — skipped`); return 'ERROR';
+    }
+    await ensureIdea();
+    const key = `${planPath}#${task.id}`;
+    const opPath = taskOpPath(planPath, task);
+    state.taskRuns[key] = {status:'RUNNING', op:opPath, at:Date.now()};
+    saveTaskRuns(); renderTasks();
+    try{
+      await api.write(opPath, taskOpContent(task));
+      const {taskId, status} = await runOp(opPath, `task ${task.id}`);
+      state.taskRuns[key] = {status, taskId, op:opPath, at:Date.now()};
+      saveTaskRuns(); renderTasks();
+      return status;
+    }catch(e){
+      state.taskRuns[key] = {status:'ERROR', op:opPath, at:Date.now()};
+      saveTaskRuns(); renderTasks();
+      return 'ERROR';
+    }
+  }
+
+  /* =====================================================================
+   * Ordering — priority first, then stabilised against depends_on.
+   * Cycles are appended, never dropped. Deps stay advisory.
+   * ===================================================================== */
+  const PRIO = {critical:0, high:1, medium:2, low:3};
+  function orderTasks(tasks){
+    const byPrio = [...tasks].sort((a,b) =>
+      (PRIO[a.priority || 'medium'] ?? 2) - (PRIO[b.priority || 'medium'] ?? 2));
+    const byId = new Map(byPrio.map(t => [t.id, t]));
+    const out = [], done = new Set(), visiting = new Set();
+    const visit = t => {
+      if(!t || done.has(t.id) || visiting.has(t.id)) return;
+      visiting.add(t.id);
+      for(const d of (t.depends_on || [])) visit(byId.get(d));
+      visiting.delete(t.id);
+      if(!done.has(t.id)){ done.add(t.id); out.push(t); }
+    };
+    byPrio.forEach(visit);
+    return out;
+  }
+
+  /* =====================================================================
+   * Discovery
+   * ===================================================================== */
+  async function refresh(){
+    state.plans = {};
+    for(const p of PLAN_DOCS){
+      const j = await api.readJson(p);
+      if(j) state.plans[p] = j;
+    }
+    // Task plans: try the listing API, fall back to phase ids.
+    let taskPaths = await api.list('tasks');
+    if(!taskPaths){
+      const phases = state.plans['plan/phases.json'];
+      taskPaths = (phases && phases.phases || []).map(p => `tasks/${p.id}.json`);
+    }
+    state.taskPlans = {};
+    for(const p of taskPaths.filter(p => /\.json$/.test(p))){
+      const j = await api.readJson(p);
+      if(j) state.taskPlans[p] = j;
+    }
+    // Derive step status from what exists on disk.
+    for(const step of STEPS){
+      const cur = state.steps[step.id] || {};
+      if(cur.status === 'RUNNING') continue;
+      let present = step.out.length > 0;
+      for(const o of step.out){
+        if(o.endsWith('/')) present = present && Object.keys(state.taskPlans).length > 0;
+        else present = present && (o.endsWith('.json') ? !!state.plans[o] : (await api.read(o)) != null);
+      }
+      if(step.id === 'code'){
+        const runs = Object.values(state.taskRuns);
+        present = runs.length > 0 && runs.every(r => r.status === 'DONE');
+      }
+      state.steps[step.id] = Object.assign({}, cur, {status: present ? 'DONE' : cur.status || null});
+    }
+    renderAll();
+  }
+
+  /* =====================================================================
+   * Rendering
+   * ===================================================================== */
+  function renderAll(){ renderSteps(); renderSidebar(); renderPlan(); renderTasks(); renderFiles(); renderRaw(); }
+
+  function renderSteps(){
+    const ol = $('#steps'); ol.innerHTML = '';
+    for(const step of STEPS){
+      const li = el('li', step.phase === 'impl' ? 'impl' : '');
+      li.append(el('span','step-n', String(step.n)));
+      const t = el('div','step-t'); t.append(document.createTextNode(step.title));
+      t.append(el('small', null, step.op));
+      li.append(t);
+
+      const st = state.steps[step.id] || {};
+      const entry = st.taskId ? statusOf(st.taskId) : null;
+      const label = entry ? `${progressOf(entry)}${normState(entry)}` : (st.status || '—');
+      li.append(el('span', `badge ${(entry ? normState(entry) : st.status) || ''}`, label));
+
+      const run = el('button','icon','▶'); run.title = 'Run this step';
+      run.onclick = () => runStep(step).catch(e => log(`✗ ${e.message}`));
+      const del = el('button','icon','🗑'); del.title = 'Delete this step\u2019s output';
+      del.onclick = () => deleteStep(step);
+      li.append(run, del);
+      ol.append(li);
+    }
+  }
+
+  function renderSidebar(){
+    const mk = (ul, paths, store) => {
+      ul.innerHTML = '';
+      if(!paths.length) ul.append(el('li','missing', '(none yet)'));
+      for(const p of paths){
+        const li = el('li', store[p] ? '' : 'missing');
+        const a = el('a', null, p); a.href = api.url(p); a.target = '_blank';
+        li.append(a);
+        if(store[p]){
+          const d = el('button','icon','🗑'); d.title = 'Delete';
+          d.onclick = async () => { await api.remove(p); log(`🗑 ${p}`); await refresh(); };
+          li.append(d);
+        }
+        ul.append(li);
+      }
+    };
+    mk($('#planDocs'), PLAN_DOCS, state.plans);
+    mk($('#taskDocs'), Object.keys(state.taskPlans), state.taskPlans);
+
+    const dl = $('#session'); dl.innerHTML = '';
+    const stack = state.plans['plan/stack.json'] || {};
+    const rows = {
+      'base':          window.location.href,
+      'doc root':      DOC_ROOT.href,
+      'analysis root': ANALYSIS_ROOT.href,
+      'target root':   stack.target_root || '. (analysis root)',
+      'status':        api.url(STATUS_FILE),
+      'op folder:':    TMP_FOLDER,
+      'ROOT_HOPS':     String(ROOT_HOPS),
+    };
+    for(const [k,v] of Object.entries(rows)){ dl.append(el('dt',null,k)); dl.append(el('dd',null,v)); }
+    $('#rootInfo').textContent = `→ ${ANALYSIS_ROOT.pathname}`;
+  }
+
+  function renderValue(v){
+    if(v == null) return el('span','muted','—');
+    if(Array.isArray(v)){
+      if(!v.length) return el('span','muted','[]');
+      const ul = el('ul','list');
+      for(const x of v){ const li = el('li'); li.append(renderValue(x)); ul.append(li); }
+      return ul;
+    }
+    if(typeof v === 'object'){
+      const d = el('div','obj');
+      for(const [k,val] of Object.entries(v)){
+        const row = el('div','row');
+        row.append(el('span','key',k));
+        const c = el('div'); c.append(renderValue(val)); row.append(c);
+        d.append(row);
+      }
+      return d;
+    }
+    return el('span', null, String(v));
+  }
+
+  function renderPlan(){
+    const host = $('#panel-plan'); host.innerHTML = '';
+    if(!Object.keys(state.plans).length){
+      host.append(el('p','muted','No planning documents yet — save an idea and run the steps above.'));
+      return;
+    }
+    for(const p of PLAN_DOCS){
+      const doc = state.plans[p]; if(!doc) continue;
+      const card = el('div','card');
+      card.append(el('h3', null, p));
+      card.append(renderValue(doc));
+      host.append(card);
+    }
+  }
+
+  function renderTasks(){
+    const host = $('#panel-tasks'); host.innerHTML = '';
+    const entries = Object.entries(state.taskPlans);
+    if(!entries.length){ host.append(el('p','muted','No task plans yet — run step 5.')); return; }
+
+    for(const [path, plan] of entries){
+      const card = el('div','card');
+      const head = el('h3', null, `${path} — ${plan.phase_title || plan.phase_id || ''}`);
+      card.append(head);
+      if(plan.summary) card.append(el('p','muted', plan.summary));
+
+      const ordered = orderTasks(plan.tasks || []);
+      const ids = new Set(ordered.map(t => t.id));
+      for(const task of ordered){
+        const box = el('div','task');
+        const top = el('div','top');
+        top.append(el('b', null, `${task.id} · ${task.title}`));
+        top.append(el('span', `chip ${task.priority || 'medium'}`, task.priority || 'medium'));
+        top.append(el('span','chip', task.task_type || 'FileModification'));
+
+        for(const d of (task.depends_on || [])){
+          const met = (state.taskRuns[`${path}#${d}`] || {}).status === 'DONE';
+          top.append(el('span', `chip${met ? '' : ' unmet'}`, `⇠ ${d}${ids.has(d) ? '' : ' (?)'}`));
+        }
+
+        const run = state.taskRuns[`${path}#${task.id}`] || {};
+        const entry = run.taskId ? statusOf(run.taskId) : null;
+        top.append(el('span', `badge ${(entry ? normState(entry) : run.status) || ''}`,
+                      entry ? `${progressOf(entry)}${normState(entry)}` : (run.status || '—')));
+
+        const b1 = el('button','icon','▶'); b1.title = 'Run this task';
+        b1.onclick = () => runBuildTask(path, task);
+        const b2 = el('button','icon','📋'); b2.title = 'Copy op file';
+        b2.onclick = () => showOp(taskOpPath(path, task), taskOpContent(task));
+        top.append(b1, b2);
+        box.append(top);
+
+        box.append(el('p', null, task.description));
+        box.append(el('div','files', `→ ${(task.target_files || []).join(', ')}`));
+        if((task.related_files || []).length)
+          box.append(el('div','files', `↳ ${(task.related_files).join(', ')}`));
+        if(run.op) box.append(el('div','files', `op: ${run.op}`));
+        card.append(box);
+      }
+      host.append(card);
+    }
+  }
+
+  function renderFiles(){
+    const host = $('#panel-files'); host.innerHTML = '';
+    const files = new Set();
+    for(const plan of Object.values(state.taskPlans))
+      for(const t of (plan.tasks || [])) for(const f of (t.target_files || [])) files.add(f);
+    const arch = state.plans['plan/architecture.json'];
+    if(arch) for(const c of (arch.components || [])) for(const f of (c.files || [])) files.add(f);
+    if(!files.size){ host.append(el('p','muted','No target files planned yet.')); return; }
+
+    const card = el('div','card');
+    card.append(el('h3', null, `Planned files (${files.size}) — relative to ${TMP_FOLDER}`));
+    const ul = el('ul','list');
+    for(const f of [...files].sort()) ul.append(el('li', 'files', f));
+    card.append(ul);
+    host.append(card);
+  }
+
+  function renderRaw(){
+    $('#raw').textContent = JSON.stringify({plans:state.plans, taskPlans:state.taskPlans}, null, 2);
+  }
+
+  function showOp(path, content){
+    $('#opTitle').textContent = path;
+    $('#opText').textContent = content;
+    $('#opDialog').showModal();
+    $('#opCopy').onclick = () => navigator.clipboard.writeText(content).then(() => log(`📋 copied ${path}`));
+  }
+
+  /* =====================================================================
+   * Wiring
+   * ===================================================================== */
+  $('#saveIdea').onclick = () => saveIdea().catch(e => log(`✗ ${e.message}`));
+  $('#idea').addEventListener('input', () => {
+    localStorage.setItem(LS_IDEA, $('#idea').value); markIdeaState();
+  });
+  $('#idea').addEventListener('keydown', e => {
+    if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ e.preventDefault(); runAllSteps(); }
+  });
+  $('#runAll').onclick = () => runAllSteps().catch(e => log(`✗ ${e.message}`));
+  $('#refresh').onclick = () => refresh();
+  $('#opClose').onclick = () => $('#opDialog').close();
+  for(const b of document.querySelectorAll('#tabs button')){
+    b.onclick = () => {
+      document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+      document.querySelectorAll('.panel').forEach(p =>
+        p.classList.toggle('active', p.id === `panel-${b.dataset.tab}`));
+    };
+  }
+
+  await loadIdea();
+  await refresh();
+  await pollStatus();
+  setInterval(pollStatus, 3000);
+  log('greenfield ready');
+  </script>
+  </body>
+  </html>

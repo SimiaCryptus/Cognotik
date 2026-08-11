@@ -1,0 +1,169 @@
+package com.simiacryptus.cognotik.webui.servlet.action
+
+    import com.simiacryptus.cognotik.webui.servlet.ResourceExtractor
+    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
+    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
+    import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+    import java.io.File
+    import java.util.concurrent.atomic.AtomicBoolean
+
+    /**
+     * Extracts the bundled browser toolkit (`web/util` on the classpath - the very tree
+     * [com.simiacryptus.cognotik.webui.servlet.DocOpsApp] drops into every session) into
+     * the workspace, so a plain file mount can host the same DocOps/utility pages:
+     *
+     * ```
+     * POST {mount}/.fsapi/v1/extract-utils                    -> ./cognotik-tools
+     * POST {mount}/.fsapi/v1/extract-utils?dir=tools/cognotik
+     * POST {mount}/.fsapi/v1/extract-utils?overwrite=false    -> keep local edits
+     *   -> { "dir": "cognotik-tools", "resource": "web/util", "count": 42, "files": [...] }
+     * ```
+     *
+     * Design notes (mirrors [ModifyFilesFsAction]):
+     *
+     *  1. **Read-only mounts are refused** with `EROFS`: this writes files.
+     *  2. **The target is configurable but jailed**: `?dir=` is resolved against the
+     *     action root and canonicalised, so it can never escape the mount. The default is
+     *     [DEFAULT_DIR] (`cognotik-tools`) and is itself configurable per server.
+     *  3. **Idempotent**: extraction rewrites the tree by default (`overwrite=true`),
+     *     which is what "give me the current toolkit" means; pass `overwrite=false` to
+     *     keep files that already exist.
+     *  4. **One extractor**: the walk/copy lives in [ResourceExtractor] and is shared with
+     *     the DocOps session bootstrap, so the two can never drift apart.
+     */
+    object ExtractUtilsFsAction {
+
+      const val EXTRACT_OP = "extract-utils"
+
+      /** Default target directory, relative to the action root. */
+      const val DEFAULT_DIR = "cognotik-tools"
+
+      data class Config(
+        /** Project root for the request (served dir, `--task-root`, or session dir). */
+        val root: (FsActionContext) -> File,
+        val readOnly: Boolean = false,
+        /** Default value of `?dir=`; must stay inside the root. */
+        val defaultDir: String = DEFAULT_DIR,
+        /** Classpath resource tree to extract. */
+        val resourcePath: String = ResourceExtractor.UTIL_RESOURCE_PATH,
+        /** Where to read the resources from (never the workspace). */
+        val classLoader: ClassLoader = ExtractUtilsFsAction::class.java.classLoader,
+      )
+
+      @Volatile
+      private var config: Config? = null
+      private val installed = AtomicBoolean(false)
+
+      val isEnabled: Boolean get() = config != null
+
+      /** Mount point last configured, for help text / status pages. */
+      val defaultDir: String get() = config?.defaultDir ?: DEFAULT_DIR
+
+      /** Idempotent: registers the action once, and (re)installs the configuration. */
+      @Synchronized
+      fun install(cfg: Config) {
+        config = cfg
+        if (!installed.compareAndSet(false, true)) return
+        FsAction.register(
+          FsAction(
+            op = EXTRACT_OP,
+            method = "POST",
+            description = "Extract the bundled ${cfg.resourcePath} toolkit into the workspace",
+            parameters = listOf(
+              ActionParam(
+                "dir", required = false, label = "Target directory",
+                description = "workspace-relative target (default ${cfg.defaultDir})"
+              ),
+              ActionParam(
+                "overwrite", required = false, label = "Overwrite existing files",
+                description = "replace files that already exist (default true)"
+              ),
+            ),
+            mutating = true,
+            ui = ActionUi(
+              title = "Extract Tools…", icon = "🧰", category = "Cognotik",
+              menus = listOf(
+                ActionMenu("main/tools", "7_run", 40),
+                ActionMenu("explorer/context", "7_run", 40),
+              ),
+              selection = ActionSelection(min = 0, kinds = listOf("dir")),
+            ),
+          ) { ctx -> handleExtract(ctx) },
+          replace = true,
+        )
+      }
+
+      private fun handleExtract(ctx: FsActionContext) {
+        val cfg = config
+          ?: return FsJson.fail(ctx.resp, FsErrorCode.ENOSYS, EXTRACT_OP, "extract-utils is not enabled")
+        if (cfg.readOnly || ctx.config.readOnly) {
+          return FsJson.fail(
+            ctx.resp, FsErrorCode.EROFS, EXTRACT_OP,
+            "this mount is read-only; extraction is refused"
+          )
+        }
+        val root = cfg.root(ctx).canonicalFile
+        val requested = ctx.req.getParameter("dir")?.trim()?.takeIf { it.isNotBlank() } ?: cfg.defaultDir
+        val overwrite = ctx.req.getParameter("overwrite")
+          ?.let { !(it == "0" || it.equals("false", ignoreCase = true)) }
+          ?: true
+
+        val target = try {
+          resolve(root, requested)
+        } catch (e: FsException) {
+          return FsErrors.write(ctx.resp, e)
+        }
+        if (target.exists() && !target.isDirectory) {
+          return FsJson.fail(ctx.resp, FsErrorCode.EINVAL, EXTRACT_OP, "not a directory: $requested")
+        }
+
+        val written = try {
+          ResourceExtractor.extract(
+            resourcePath = cfg.resourcePath,
+            targetDir = target,
+            classLoader = cfg.classLoader,
+            overwrite = overwrite,
+            skipDemoFolders = true,
+          )
+        } catch (e: Exception) {
+          return FsJson.fail(
+            ctx.resp, FsErrorCode.EINVAL, EXTRACT_OP,
+            "extraction failed: ${e.message ?: e.javaClass.simpleName}"
+          )
+        }
+        if (written.isEmpty() && !target.isDirectory) {
+          return FsJson.fail(
+            ctx.resp, FsErrorCode.ENOENT, EXTRACT_OP,
+            "resource not found on the classpath: ${cfg.resourcePath}"
+          )
+        }
+
+        val dirRel = relative(root, target)
+        val files = written.map { relative(root, it) }.sorted()
+        println("extract-utils: ${cfg.resourcePath} -> ${target.absolutePath} (${files.size} file(s))")
+
+        val sb = StringBuilder("{")
+        sb.append("\"dir\":\"").append(FsJson.esc(dirRel)).append("\",")
+        sb.append("\"resource\":\"").append(FsJson.esc(cfg.resourcePath)).append("\",")
+        sb.append("\"overwrite\":").append(overwrite).append(",")
+        sb.append("\"count\":").append(files.size).append(",")
+        sb.append("\"files\":[")
+        sb.append(files.joinToString(",") { "\"" + FsJson.esc(it) + "\"" })
+        sb.append("]}")
+        FsJson.write(ctx.resp, 200, sb.toString())
+      }
+
+      /** Canonicalise and jail to [root] - same contract as the modify selection. */
+      private fun resolve(root: File, dir: String): File {
+        val target = File(root, dir.removePrefix("/")).canonicalFile
+        if (target != root && !target.toPath().startsWith(root.toPath())) {
+          throw FsException(FsErrorCode.EACCES, EXTRACT_OP, dir, "path escapes the served root")
+        }
+        return target
+      }
+
+      private fun relative(root: File, file: File): String =
+        file.canonicalFile.toPath().let { path ->
+          runCatching { root.toPath().relativize(path).toString() }.getOrDefault(path.toString())
+        }.replace(File.separatorChar, '/')
+    }

@@ -352,7 +352,10 @@ calc
     ;
 
 calcSum
-    : calcProduct (Space ws ( Plus | Minus) ws Space ws calcProduct)*
+     // Spaces around '+'/'-' are required by the spec, but sub-values such as
+     // var()/env()/nested calc() already consume the trailing whitespace via their
+     // own 'ws', so the separator is expressed as plain 'ws' here.
+     : calcProduct (ws ( Plus | Minus) ws calcProduct)*
     ;
 
 calcProduct
@@ -364,6 +367,9 @@ calcValue
     | dimension ws
     | unknownDimension ws
     | percentage ws
+     | var_
+     | calc
+     | function_ // env(), min(), max(), clamp(), attr(), ...
     | '(' ws calcSum ')' ws
     ;
 

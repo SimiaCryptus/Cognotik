@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.status.DocStatusStore
 import com.simiacryptus.cognotik.docops.status.TaskStatus
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.Collections
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
@@ -115,19 +116,17 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     sessions: MutableList<S> = mutableListOf(),
   ) {
     val targetKey = targetKeyOf(planned)
-    val effectiveRoot = planned.task.data.root
-    val needsRebase = try {
-      effectiveRoot.canonicalPath != config.root.canonicalPath
-    } catch (e: Exception) {
-      log.warn("Failed to compare roots: ${effectiveRoot.absolutePath} vs ${config.root.absolutePath}", e)
-      false
-    }
-    val task = if (needsRebase) {
-      log.info("Rebasing task into target folder: ${effectiveRoot.absolutePath}")
-      planned.task.rebase(config.root, effectiveRoot)
-    } else planned.task
-    val rebased = planned.copy(task = task)
-    val workingDir = task.data.main_file?.parentFile ?: config.root
+     val task = planned.task
+     /*
+      * The task's own root (the `folder:` override, otherwise the workspace root) is the single
+      * source of truth for path resolution: it is handed to the host as the working directory
+      * *and* used by ExecutionConfigFactory to relativize every path in the execution config.
+      * TaskBuilder already stored it in `data.root`, so there is nothing to rebase here.
+      */
+     val workingDir = task.data.root
+     if (!isSameFile(workingDir, config.root)) {
+       log.info("Task '$targetKey' runs with root override: ${workingDir.absolutePath}")
+     }
 
     ctx.reset()
     if (cancelFlag.get()) {
@@ -135,17 +134,17 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
       status.set(targetKey, TaskStatus.CANCELLED)
       throw CancellationException("Execution cancelled")
     }
-    applyPreparation(rebased)
+       applyPreparation(planned)
     status.set(targetKey, TaskStatus.RUNNING)
     try {
       ctx.execute(
         DocTaskRequest(
           taskKind = task.taskType,
           message = task.message(),
-          executionConfig = configFactory.build(rebased, ctx),
+           executionConfig = configFactory.build(planned, ctx),
           typeConfig = task.typeConfig,
           patchProcessor = task.patchProcessor,
-          workingDir = workingDir,
+           workingDir = workingDir,
           timeoutMinutes = config.taskTimeoutMinutes,
         ),
         object : DocTaskCallbacks<S> {
@@ -189,6 +188,13 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     log.info("Deleting target file before processing: ${target.absolutePath}")
     if (!target.delete()) log.warn("Failed to delete target file: ${target.absolutePath}")
   }
+   private fun isSameFile(a: File, b: File): Boolean = try {
+     a.canonicalPath == b.canonicalPath
+   } catch (e: Exception) {
+     log.warn("Failed to compare paths: ${a.absolutePath} vs ${b.absolutePath}", e)
+     a.absolutePath == b.absolutePath
+   }
+
 
   companion object {
     private val log = LoggerFactory.getLogger(DocTaskRunner::class.java)

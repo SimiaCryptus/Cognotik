@@ -1,43 +1,57 @@
-# Comic Serial Generator
+# 📚 Comic Serial Generator
 
-Turns a single article / story idea into an ongoing comic book series, then compiles
-every episode into one self-contained HTML comicbook.
+> **Turn your ideas into an ongoing visual comic series — one episode at a time!**
 
-## Files
+Welcome to the **Comic Serial Generator**, the ultimate creative tool for storytellers, article creators, educators, and comic enthusiasts. Whether you have a short story concept, a blog post, or a grand sci-fi narrative, this application breathes visual life into your text by automatically transforming it into an illustrated, multi-episode comic book series.
 
-```
-comic-serial/
-├── app.html   # entry point (Idea / Pipeline / Series / Models tabs)
-├── app.js     # ES module, imports everything shared from /app/
-├── style.css  # tokens + all styling
-├── ops/       # DocOp definitions
-└── README.md
-```
+---
 
-## Pipeline
+## ✨ Why You'll Love Comic Serial Generator
 
-| Step | Op                    | Input(s)                       | Output           |
-|------|-----------------------|--------------------------------|------------------|
-| 1    | `ops/comic_op.md`     | `idea.md`                      | `comic_1.md`     |
-| 2+   | `ops/sequel_op.md`    | `idea.md`, `comic_<n-1>.md`    | `comic_<n>.md`   |
-| 3    | `ops/html_book_op.md` | all `comic_*.md` / `comic_*.html` | `comicbook.html` |
+* 💡 **From Text to Panels in Seconds:** Simply write or paste your story idea, article, or narrative seed. The AI takes care of scriptwriting, panel formatting, and artwork creation.
+* ♾️ **Endless Sequential Storytelling:** Generate episode after episode! Each new sequel picks up where the previous one left off while staying true to your core story premise.
+* ⚡ **Batch Episode Generation:** Want to build an entire mini-series all at once? Fire off batch generation to produce multiple episodes in a single click.
+* 📕 **Self-Contained Comicbook Viewer:** Compile all your generated episodes into a sleek, standalone HTML comicbook with beautiful artwork layout and captions.
+* 🎨 **Tailored AI Models:** Fine-tune your creative direction by choosing specialized AI models for creative story writing, image artwork, and speedy parsing.
 
-* **Idea** — `idea.md` auto-saves 800 ms after typing stops, and on explicit Save.
-* **Pipeline** — step 1, sequels, batch generation (first comic + N sequels + book).
-* **Series** — accordion of every episode, rendered HTML preferred over markdown.
-* **Models** — optional per-op overrides for smart / fast / image models.
+---
 
-Episode count is derived from the filesystem (`comic_<n>.md` or `comic_<n>.html`),
-never from local state. Badges are restored from `docops.status.json` on load.
+## 🚀 How It Works
 
-## Conformance
+Creating your comic series is as easy as 1-2-3-4:
 
-Usage, Sessions, Git and Download UI are provided by the shared menubar
-(`initMenu()`); this app only renders **inline** per-step session links via
-`updateSessionLinks(target, info, getProxyUrl, containerId)`.
+### 1. 💡 Set Your Idea
+Head over to the **Idea** tab and type or paste your story summary, background article, or narrative pitch. 
+> *Example: "A lone astronaut discovers an ancient alien library on Europa. Each book she opens reveals a chapter of Earth's forgotten history — but reading them slowly rewrites her own memories…"*
 
-| 3-file | Modern JS | Menubar | No dup. chrome | Viewport | Mobile |
-|:------:|:---------:|:-------:|:--------------:|:--------:|:------:|
-|   ✅   |    ✅     |   ✅    |       ✅       |    ✅    |   ✅   |
+Your changes automatically save as you write!
 
-No outstanding items.
+### 2. 🎨 Generate Episode #1
+Switch to the **Pipeline** tab and click **Generate Comic #1**. The AI establishes the world, art style, main characters, and opening conflict. You can inspect the visual results right inside the built-in reader.
+
+### 3. 📖 Continue the Adventure (Sequels)
+Keep the narrative moving! Click **Generate Next Episode** whenever you're ready for the next chapter. Each episode automatically advances the plot and builds on previous story events. Need a full run fast? Use the **Batch Generation** tool to churn out up to 20 episodes sequentially.
+
+### 4. 📕 Compile Your HTML Comicbook
+When you're ready to share or read your complete run, click **Generate HTML Book**. This compiles every generated episode into a beautifully formatted digital comic book that you can open in any modern browser tab.
+
+---
+
+## 📖 Features Overview
+
+* **💡 Idea Tab:** Your dynamic creative hub where the foundational concept lives.
+* **⚙️ Pipeline Tab:** Your step-by-step control center to trigger Episode #1, generate ongoing sequels, run batch generations, or build the compiled HTML comicbook.
+* **📖 Series Tab:** An organized library view of all generated episodes. Easily expand individual episodes to review their panels or quickly compile the complete book.
+* **🤖 Models Tab:** Customize the AI powerhouses driving your comic creation — select specialized models for smart creative writing, rapid processing, and panel illustration.
+
+---
+
+## 💡 Tips for Great Comics
+
+1. **Start with strong world-building:** A clear setup with distinct characters and settings yields vivid comic panels.
+2. **Let sequels surprise you:** Each sequel logically builds on the previous episode, creating organic plot twists over time.
+3. **Use the Interactive Reader:** Use the built-in comic preview toolbar to adjust height or switch to full-screen mode for immersive reading.
+
+---
+
+*Happy visual storytelling!* 🎨✨

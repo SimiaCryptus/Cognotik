@@ -39,6 +39,16 @@ object FileServerCli {
   private const val FILES_PREFIX = "/files"
   const val UI_PREFIX = "/ui"
 
+  /**
+   * Shared web assets served straight from the classpath, independent of the served
+   * directory and of every feature flag: `web/lib` is published at [LIB_PREFIX] and
+   * `web/app` at [APP_PREFIX].
+   */
+  const val LIB_PREFIX = "/lib"
+
+  /** @see LIB_PREFIX */
+  const val APP_PREFIX = "/app"
+
   /** Sends browsers landing on "/" (or "/files") to the served directory listing. */
   class RootRedirectServlet(private val target: String = "$FILES_PREFIX/$ROOT_SEGMENT/") : HttpServlet() {
     override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -161,6 +171,7 @@ object FileServerCli {
     println("  ->  http://$displayHost:$boundPort/")
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
+    println("  Assets    -> http://$displayHost:$boundPort$LIB_PREFIX/ (classpath web/lib), $APP_PREFIX/ (classpath web/app)")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
     println(
       "  Mode      -> ${if (readOnly) "read-only" else "read-write"}" +
@@ -239,6 +250,14 @@ object FileServerCli {
     if (uiEnabled) {
       context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
     }
+    /*
+     * Shared classpath assets, always mounted: /lib -> web/lib, /app -> web/app.
+     * Read from the classpath (never from the workspace), so they stay available on
+     * read-only, --no-ui and --secure mounts alike.
+     */
+    register(context, ServletHolder("web-lib", WebUiServlet("web/lib")), LIB_PREFIX)
+    register(context, ServletHolder("web-app", WebUiServlet("web/app")), APP_PREFIX)
+
 
     val landing = if (uiEnabled && uiDefault) "$UI_PREFIX/" else "$FILES_PREFIX/$ROOT_SEGMENT/"
     val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
@@ -256,5 +275,14 @@ object FileServerCli {
     System.err.println()
     System.err.println(usage())
     kotlin.system.exitProcess(2)
+  }
+
+  private fun register(
+    context: ServletContextHandler,
+    homeHolder: ServletHolder,
+    prefix: String
+  ) {
+    context.addServlet(homeHolder, "$prefix/*")
+    context.addServlet(homeHolder, prefix)
   }
 }

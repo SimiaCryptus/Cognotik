@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -61,10 +61,10 @@ open class CouncilMode(
   val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     if (!isRunning) {
       isRunning = true
-      startCouncilChat(task, userMessage)
+       startCouncilChat(task, userMessage, transcriptStream)
     } else {
       task.echo(renderMarkdown("User: $userMessage", ui = task.ui))
       currentUserMessage.set(userMessage)
@@ -73,10 +73,10 @@ open class CouncilMode(
 
   override fun contextData(): List<String> = emptyList()
 
-  private fun startCouncilChat(task: SessionTask, userMessage: String) {
+   private fun startCouncilChat(task: SessionTask, userMessage: String, transcriptStream: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     task.echo(renderMarkdown(userMessage, ui = task.ui))
-    transcriptStream = task.transcript()
+     this.transcriptStream = transcriptStream
 
     val continueLoop = true
     val tabbedDisplay = TabbedDisplay(task)
@@ -281,8 +281,7 @@ ${JsonUtil.toJson(taskConfig)}
       } finally {
         isRunning = false
         transcriptStream?.flush()
-        transcriptStream?.close()
-        transcriptStream = null
+         this.transcriptStream = null
         task.complete()
       }
     }

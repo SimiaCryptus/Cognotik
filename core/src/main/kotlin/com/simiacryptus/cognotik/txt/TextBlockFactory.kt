@@ -1,4 +1,4 @@
-﻿package com.simiacryptus.cognotik.util
+﻿package com.simiacryptus.cognotik.txt
 
 interface TextBlockFactory<T : TextBlock?> {
   fun fromString(text: String?): T

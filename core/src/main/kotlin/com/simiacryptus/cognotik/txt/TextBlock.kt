@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.txt
 
 interface TextBlock {
   companion object {

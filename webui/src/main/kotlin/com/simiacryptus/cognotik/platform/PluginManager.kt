@@ -1,11 +1,5 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.CognotikPlugin
-import com.simiacryptus.cognotik.platform.PluginAlreadyLoadedException
-import com.simiacryptus.cognotik.platform.PluginLoadException
-import com.simiacryptus.cognotik.platform.PluginManagerInterface
-import com.simiacryptus.cognotik.platform.PluginNotFoundException
-import com.simiacryptus.cognotik.platform.PluginUnloadException
 import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -17,11 +11,12 @@ import java.net.URLClassLoader
 import java.util.ServiceLoader
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.iterator
 
 /**
  * Manages loading and initialization of plugin JARs.
  *
- * Plugins are discovered via [java.util.ServiceLoader] using the
+ * Plugins are discovered via [ServiceLoader] using the
  * [CognotikPlugin] service interface. Each plugin JAR should contain
  * a file `META-INF/services/com.simiacryptus.cognotik.util.CognotikPlugin`
  * listing the fully-qualified class names of its plugin implementations.
@@ -178,7 +173,7 @@ class PluginManager(
 
   /**
    * Routed through the event bus so that [onChange] subscribers (registered via
-   * the [com.simiacryptus.cognotik.platform.EventBus] contract) are notified too.
+   * the [EventBus] contract) are notified too.
    */
 
   fun triggerChange() {

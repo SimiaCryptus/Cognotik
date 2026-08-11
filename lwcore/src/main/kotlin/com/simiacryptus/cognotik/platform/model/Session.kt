@@ -1,9 +1,7 @@
 package com.simiacryptus.cognotik.platform.model
 
-import java.nio.ByteBuffer
 import java.security.SecureRandom
 import java.time.LocalDate
-import java.util.Base64
 
 open class Session(
   val sessionId: String
@@ -68,6 +66,12 @@ open class Session(
 
     fun validateSessionId(session: Session) {
       session.validateSessionId()
+    }
+    fun String.validateSessionId() = try {
+      Session(this).validateSessionId()
+      true
+    } catch (e: IllegalArgumentException) {
+      false
     }
 
     /** @return true if [sessionID] is syntactically valid. */

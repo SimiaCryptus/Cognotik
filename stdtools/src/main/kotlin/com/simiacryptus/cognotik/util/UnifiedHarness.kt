@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.chat.ChatInterface
@@ -262,12 +263,14 @@ open class UnifiedHarness(
 
       override fun newSession(user: User, session: Session): SocketManager {
         if (serverless) {
+          log.info("Starting serverless task session for ${taskType.name} with session ID: $session", RuntimeException("Stack"))
           val socketManager = ServerlessSocketManager(
             session = session,
             messageEvents = null,
             owner = user,
             clazz = this.javaClass
           )
+          SessionProxyServer.agents[session] = socketManager
           startSession(
             session,
             user,

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.cli
 
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.availableModels
 import com.simiacryptus.cognotik.cli.CliSupport.bootstrapPlatform
@@ -12,6 +13,10 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.StaticZipServlet
 import com.simiacryptus.cognotik.webui.servlet.WebUiServlet
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
+import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
+import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
+import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
+import com.simiacryptus.cognotik.webui.servlet.action.ExtractUtilsFsAction
 
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
@@ -21,8 +26,9 @@ import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
+import org.slf4j.LoggerFactory
 import java.io.File
-import kotlin.system.exitProcess
 
 /**
  * Minimal foreground file server, and the reference example of a **permissive
@@ -67,82 +73,125 @@ object FileServerCli {
   var user: User = CliSupport.defaultUser()
   var available: Map<String, ChatModel> = emptyMap()
   var models: CliSupport.Models? = null
-   /**
-    * The DocOps servlet installed by [ServerTaskActions.install]. It is mounted at
-    * [DOCOPS_PREFIX] and is the same instance the `.fsapi/v1/docops` action drives,
-    * so there is a single DocOps implementation in the server.
-    */
-   @Volatile
-   var docProcessorServlet: CliDocProcessorServlet? = null
-   /** Mount point of [docProcessorServlet]. */
-   const val DOCOPS_PREFIX = "/docops"
+
   /**
-   * Some UI builds address sessions as `{host}/proxy/?session=...` while the servers
-   * in this module serve them from the context root (`{host}/?session=...`). Both are
-   * supported: everything under this prefix is forwarded to the equivalent root path.
+   * The DocOps servlet installed by [ServerTaskActions.install]. It is mounted at
+   * [DOCOPS_PREFIX] and is the same instance the `.fsapi/v1/docops` action drives,
+   * so there is a single DocOps implementation in the server.
    */
+  @Volatile
+  var docProcessorServlet: CliDocProcessorServlet? = null
+
+  /** Mount point of [docProcessorServlet]. */
+  const val DOCOPS_PREFIX = "/docops"
+
+  /** Mount point of the resource-based homepage ([StaticResourceServlet]). */
+  const val HOME_PREFIX = "/home"
+
+  const val LIB_PREFIX = "/lib"
+
+  /** @see LIB_PREFIX */
+  const val APP_PREFIX = "/app"
+
+  data class ServerInfo(
+    val servedDir: String = "",
+    val host: String = "",
+    val port: Int = 0,
+    val gitEnabled: Boolean = false,
+    val readOnly: Boolean = false,
+    val uiEnabled: Boolean = false,
+    val homeEnabled: Boolean = false,
+    val terminalEnabled: Boolean = false,
+    val execPermissive: Boolean = false,
+    val tasksEnabled: Boolean = false,
+    val modifyEnabled: Boolean = false,
+    /** True when POST /.fsapi/v1/extract-utils is available. */
+    val extractUtilsEnabled: Boolean = false,
+    /** Where the gateway page ('/') sends the browser, e.g. `/home/`. */
+    val landingPath: String = "",
+  )
+
+  @Volatile
+  var serverInfo: ServerInfo = ServerInfo()
+
   const val PROXY_PREFIX = "/proxy"
-  /** Servers that already carry the [PROXY_PREFIX] alias (weakly held, so no leaks). */
-  private val proxyAliasedServers: MutableSet<Server> =
+
+
+  /** Contexts that already carry the session-proxy servlets (weakly held). */
+  private val proxiedContexts: MutableSet<ServletContextHandler> =
     java.util.Collections.synchronizedSet(
-      java.util.Collections.newSetFromMap(java.util.WeakHashMap<Server, Boolean>())
+      java.util.Collections.newSetFromMap(java.util.WeakHashMap<ServletContextHandler, Boolean>())
     )
 
+  /** Contexts that already had websocket support installed (weakly held). */
+  private val webSocketContexts: MutableSet<ServletContextHandler> =
+    java.util.Collections.synchronizedSet(
+      java.util.Collections.newSetFromMap(java.util.WeakHashMap<ServletContextHandler, Boolean>())
+    )
 
-  /** First path segment consumed by [FileServlet] (normally a session id). */
-
-  /** Sends browsers landing on "/" (or "/files") to the served directory listing. */
-  class RootRedirectServlet(private val target: String = "$FILES_PREFIX/$ROOT_SEGMENT/") : HttpServlet() {
-    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-      response.sendRedirect("${request.contextPath}$target")
+  /**
+   * Embedded Jetty does not run `ServletContainerInitializer`s, so a plain
+   * [ServletContextHandler] has no `WebSocketComponents`. Any `JettyWebSocketServlet`
+   * (the session proxy installs one) then fails its `init()` with
+   * `IllegalStateException: WebSocketComponents has not been created` while the server
+   * is starting. Running the initializer here is the embedded equivalent of the
+   * container's automatic discovery; it must happen *before* the context starts and is
+   * idempotent per context.
+   *
+   * @return true when the context can host websocket servlets.
+   */
+  fun ensureWebSocketSupport(context: ServletContextHandler): Boolean {
+    if (!webSocketContexts.add(context)) return true
+    return try {
+      JettyWebSocketServletContainerInitializer.configure(context, null)
+      true
+    } catch (e: Throwable) {
+      webSocketContexts.remove(context)
+      log.warn("Could not enable websocket support on ${context.contextPath}: ${e.message}")
+      System.err.println("warning: could not enable websocket support: ${e.message}")
+      false
     }
   }
-  /**
-   * Serves `{PROXY_PREFIX}/rest/of/path?query` exactly like `/rest/of/path?query` by
-   * forwarding internally. Forwarding (rather than redirecting) is deliberate: a page
-   * loaded from `/proxy/` resolves its relative resources against `/proxy/...`, and
-   * those requests land here too and reach the very same servlets.
-   */
-  class ProxyAliasServlet(private val prefix: String = PROXY_PREFIX) : HttpServlet() {
-    override fun service(request: HttpServletRequest, response: HttpServletResponse) {
-      val contextPath = request.contextPath ?: ""
-      var path = (request.requestURI ?: "/").removePrefix(contextPath)
-      /* Tolerate (accidentally) repeated prefixes, and never forward to ourselves. */
-      while (path == prefix || path.startsWith("$prefix/")) path = path.removePrefix(prefix)
-      if (!path.startsWith("/")) path = "/$path"
-      val query = request.queryString
-      val target = if (query.isNullOrEmpty()) path else "$path?$query"
-      val dispatcher = request.getRequestDispatcher(target)
-      if (dispatcher == null) {
-        response.sendError(HttpServletResponse.SC_NOT_FOUND)
-        return
-      }
-      dispatcher.forward(request, response)
+
+  /** Servlets registered after start-up must be started/initialised explicitly. */
+  private fun startNewHolders(context: ServletContextHandler) {
+    if (!context.isStarted) return
+    context.servletHandler.servlets.forEach { holder ->
+      if (!holder.isStarted) runCatching { holder.start() }
     }
+    runCatching { context.servletHandler.initialize() }
   }
+
   /**
-   * Adds the [PROXY_PREFIX] alias to [context]. Safe to call on an already started
-   * context (the chat server is created lazily, long after it was started).
+   * Gateway for the context root. `/` is not a mount of its own: it is an alias for the
+   * landing page ([ServerInfo.landingPath], the homepage by default), because the
+   * homepage is the only page that explains the mount and lets the user pick models.
+   *
+   * `/?session=ID` is sent to [PROXY_PREFIX] instead, so the two documented spellings
+   * of a session URL ('/' and '/proxy/') keep behaving identically.
+   *
+   * It is mapped both on the exact root spec (`""`) and on the default spec (`"/"`), so
+   * it replaces Jetty's `Default404Servlet`; every other mount is a more specific spec
+   * and therefore still wins. Paths other than the root are answered with 404 - the
+   * gateway is an alias for '/', not a wildcard redirect.
    */
-  fun installProxyAlias(context: ServletContextHandler) {
-    val holder = ServletHolder("proxy-alias", ProxyAliasServlet())
-    context.addServlet(holder, "$PROXY_PREFIX/*")
-    context.addServlet(holder, PROXY_PREFIX)
-    if (context.isStarted && !holder.isStarted) holder.start()
-  }
-  /** Idempotent, best-effort variant that finds the servlet context of [server]. */
-  fun installProxyAlias(server: Server) {
-    if (!proxyAliasedServers.add(server)) return
-    try {
-      val context = server.getChildHandlerByClass(ServletContextHandler::class.java) as? ServletContextHandler
-      if (context == null) {
-        System.err.println("warning: no servlet context found; $PROXY_PREFIX alias not installed")
+  private class RootGatewayServlet : HttpServlet() {
+    override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+      val path = req.requestURI.removePrefix(req.contextPath).ifEmpty { "/" }
+      val query = req.queryString?.takeIf { it.isNotBlank() }?.let { "?$it" } ?: ""
+      if (!req.getParameter("session").isNullOrBlank()) {
+        resp.sendRedirect("$PROXY_PREFIX/$query")
         return
       }
-      installProxyAlias(context)
-    } catch (e: Exception) {
-      proxyAliasedServers.remove(server)
-      System.err.println("warning: could not install $PROXY_PREFIX alias: ${e.message}")
+      if (path != "/") {
+        /* Reached via the default mapping: nothing else claimed this path. */
+        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No such resource: $path")
+        return
+      }
+      /* Never redirect to '/' itself: that would loop through this very servlet. */
+      val target = serverInfo.landingPath.takeIf { it.isNotBlank() && it != "/" } ?: "$HOME_PREFIX/"
+      resp.setHeader("Cache-Control", "no-store")
+      resp.sendRedirect(target + query)
     }
   }
 
@@ -158,8 +207,11 @@ object FileServerCli {
                       --no-terminal  Disable interactive terminal sessions
                        --secure       Shorthand for --read-only --no-terminal --no-exec --no-tasks --no-modify
                       --shell <cmd>  Shell for new terminals (default: auto-detect)
-                      --ui           Make the IDE-style SPA (/ui/) the landing page
                       --no-ui        Do not serve the SPA at all
+                      --files        Make the classic listing the landing page
+                     ('/' is only a gateway: it never serves the workspace, it redirects
+                      to the landing page - /home/ by default - and '/?session=ID' is
+                      forwarded to /proxy/.)
                       --help         Show this message
 
                 Task actions (DocOps / AutoFix), enabled by default:
@@ -201,6 +253,14 @@ object FileServerCli {
                    Session URLs are served both from the context root and from /proxy/,
                    i.e. http://host:port/?session=ID and http://host:port/proxy/?session=ID
                    are equivalent (on this server and on the chat server).
+                 Bundled tooling (web/util), enabled by default:
+                       --no-extract-utils Do not expose the extract-utils operation
+                       --util-dir <dir>   Default target directory (default cognotik-tools)
+                   POST {mount}/.fsapi/v1/extract-utils[?dir=<dir>][&overwrite=false]
+                     -> { "dir": "...", "count": N, "files": [...] }
+                   Copies the classpath toolkit into the workspace; '?dir=' is resolved
+                   against the task root and may not escape it. Refused with EROFS on a
+                   read-only mount.
 
 
                 By default this is a PERMISSIVE LOCAL server: interactive terminals and
@@ -219,7 +279,7 @@ object FileServerCli {
     var gitEnabled = true
     var readOnly = false
     var uiEnabled = true
-    var uiDefault = false
+    var homeEnabled = true
     var terminalEnabled = true
     var execPermissive = true
     var shell: List<String> = emptyList()
@@ -228,14 +288,18 @@ object FileServerCli {
     var taskRootArg: String? = null
     var smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL")
     var fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL")
-    var imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL")
-    var audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL")
+    val imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL")
+    val audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL")
     var taskTimeout = 30L
     var taskMonitor = false
     var fixCommand = ""
     var modifyEnabled = true
     var lineNumbers = false
     var chatPort = 8061
+    var extractUtilsEnabled = true
+    var utilDir = ExtractUtilsFsAction.DEFAULT_DIR
+    /* null = "whatever is enabled", see landingPathFor(). */
+    var landing: String? = null
 
     var i = 0
     while (i < args.size) {
@@ -264,12 +328,16 @@ object FileServerCli {
           execPermissive = false
           tasksEnabled = false
           modifyEnabled = false
+          extractUtilsEnabled = false
         }
 
         "--no-tasks" -> tasksEnabled = false
         "--tasks" -> tasksEnabled = true
         "--no-modify" -> modifyEnabled = false
         "--modify" -> modifyEnabled = true
+        "--no-extract-utils" -> extractUtilsEnabled = false
+        "--extract-utils" -> extractUtilsEnabled = true
+        "--util-dir" -> utilDir = args.getOrNull(++i) ?: fail("Missing value for $arg")
         "--line-numbers" -> lineNumbers = true
         "--chat-port" -> chatPort = args.getOrNull(++i)?.toIntOrNull()
           ?: fail("Missing or invalid value for $arg")
@@ -285,7 +353,18 @@ object FileServerCli {
         "--fix-cmd" -> fixCommand = args.getOrNull(++i) ?: fail("Missing value for $arg")
 
         "--no-ui" -> uiEnabled = false
-        "--ui" -> uiDefault = true
+        "--ui" -> {
+          uiEnabled = true
+          landing = "ui"
+        }
+
+        "--no-home" -> homeEnabled = false
+        "--home" -> {
+          homeEnabled = true
+          landing = "home"
+        }
+
+        "--files" -> landing = "files"
         "--help" -> {
           println(usage())
           return
@@ -309,7 +388,7 @@ object FileServerCli {
 
     available = availableModels(cliUser)
     /* The pair is runtime state now: the web UI may replace it at any time. */
-    ModelSelection.install(user = { FileServerCli.user }, smart = smartModel, fast = fastModel)
+    ModelSelection.install(user = { user }, smart = smartModel, fast = fastModel)
     ModelSelectionActions.install()
     models = try {
       CliSupport.resolveModels(
@@ -331,7 +410,8 @@ object FileServerCli {
     }
     val taskRoot = (taskRootArg?.let { File(it) } ?: baseDir).canonicalFile
     if (readOnly) modifyEnabled = false
-    if ((tasksEnabled || modifyEnabled) && !taskRoot.isDirectory) {
+    if (readOnly) extractUtilsEnabled = false
+    if ((tasksEnabled || modifyEnabled || extractUtilsEnabled) && !taskRoot.isDirectory) {
       fail("Task root is not a directory: ${taskRoot.absolutePath}")
     }
 
@@ -357,13 +437,11 @@ object FileServerCli {
      * (CognotikAppServer) is only started by the first successful modify request.
      */
     if (modifyEnabled) {
+      val appServer = CognotikAppServer.getServer(host, chatPort)
       ModifyFilesActions.install(
         ModifyFilesActions.Config(
           root = taskRoot,
           chatUri = {
-            val appServer = CognotikAppServer.getServer(host, chatPort)
-            /* The chat server is created on demand; alias it the first time we see it. */
-            installProxyAlias(appServer.server)
             appServer.server.uri
           },
           readOnly = readOnly,
@@ -373,20 +451,33 @@ object FileServerCli {
         )
       )
     }
+    /*
+     * Extraction only reads the classpath and writes under the task root, so there is
+     * nothing to bootstrap and no model to resolve: registering it is free.
+     */
+    if (extractUtilsEnabled) {
+      ExtractUtilsFsAction.install(
+        ExtractUtilsFsAction.Config(
+          root = { taskRoot },
+          readOnly = readOnly,
+          defaultDir = utilDir,
+        )
+      )
+    }
     /* One selection, every toolchain: re-bind whatever is installed when it changes. */
     ModelSelection.onChange {
       if (tasksEnabled) ServerTaskActions.refreshModels()
       if (modifyEnabled) ModifyFilesActions.refreshModels()
       models = try {
         CliSupport.resolveModels(
-          user = FileServerCli.user,
+          user = user,
           smartModel = ModelSelection.smart,
           fastModel = ModelSelection.fast,
           imageModel = imageModel,
           audioModel = audioModel,
           quiet = true,
         )
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         models
       }
       println("Models -> ${ModelSelection.summary()}")
@@ -394,17 +485,24 @@ object FileServerCli {
 
 
     val server = start(
-      baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
+      baseDir, host, port, gitEnabled, readOnly, uiEnabled,
       terminalEnabled, execPermissive, shell, tasksEnabled, fixCommand,
-      modifyEnabled, lineNumbers
+      modifyEnabled, lineNumbers, homeEnabled, landing
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
 
     println("Serving ${baseDir.absolutePath}")
-    println("  ->  http://$displayHost:$boundPort/")
+    println("  ->  http://$displayHost:$boundPort/ (redirects to ${serverInfo.landingPath})")
+    if (homeEnabled) {
+      println("  Home      -> http://$displayHost:$boundPort$HOME_PREFIX/ (overview: links, config, endpoints)")
+      println("  Settings  -> http://$displayHost:$boundPort$HOME_PREFIX/settings.html (models & API keys)")
+      println("               GET      http://$displayHost:$boundPort/serverInfo")
+      println("               GET/POST http://$displayHost:$boundPort/apiKeys")
+    }
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
+    println("  Assets    -> http://$displayHost:$boundPort$LIB_PREFIX/ (classpath web/lib), $APP_PREFIX/ (classpath web/app)")
     println("  Alias     -> http://$displayHost:$boundPort$PROXY_PREFIX/ (same as /, for ?session=... URLs)")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
     println(
@@ -418,7 +516,7 @@ object FileServerCli {
     if (tasksEnabled) {
       println("  Tasks     -> docops/autofix enabled (root ${taskRoot.absolutePath})")
       println("               POST $apiBase/docops?command=plan")
-       println("               POST http://$displayHost:$boundPort$DOCOPS_PREFIX?doc=<file>  (DocProcessorServlet)")
+      println("               POST http://$displayHost:$boundPort$DOCOPS_PREFIX?doc=<file>  (DocProcessorServlet)")
       println("               POST $apiBase/autofix?cmd=<command>")
       println("               GET  $apiBase/tasks")
       if (readOnly) println("               (read-only mount: 'docops run' and 'autofix' answer EROFS)")
@@ -438,6 +536,12 @@ object FileServerCli {
     } else {
       println("  Modify    -> disabled${if (readOnly) " (read-only mount)" else ""}")
     }
+    if (extractUtilsEnabled) {
+      println("  Tools     -> extract-utils enabled (default dir ${File(taskRoot, utilDir).absolutePath})")
+      println("               POST $apiBase/${ExtractUtilsFsAction.EXTRACT_OP}?dir=$utilDir")
+    } else {
+      println("  Tools     -> extract-utils disabled${if (readOnly) " (read-only mount)" else ""}")
+    }
     if (!readOnly && (terminalEnabled || execPermissive || tasksEnabled) &&
       host != "127.0.0.1" && host != "localhost"
     ) {
@@ -449,7 +553,7 @@ object FileServerCli {
       println("\nShutting down...")
       try {
         server.stop()
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         // best effort
       }
     })
@@ -458,13 +562,6 @@ object FileServerCli {
     server.join()
   }
 
-  /**
-   * Starts an embedded server for [baseDir]. Exposed for tests/embedding;
-   * the caller owns stopping the returned [Server].
-   *
-   * Note: [tasksEnabled] only controls the *UI affordances*; the FS API operations
-   * themselves are registered by [ServerTaskActions.install].
-   */
   fun start(
     baseDir: File,
     host: String = "127.0.0.1",
@@ -472,7 +569,6 @@ object FileServerCli {
     gitEnabled: Boolean = true,
     readOnly: Boolean = false,
     uiEnabled: Boolean = true,
-    uiDefault: Boolean = false,
     terminalEnabled: Boolean = true,
     execPermissive: Boolean = true,
     shell: List<String> = emptyList(),
@@ -480,6 +576,8 @@ object FileServerCli {
     defaultFixCommand: String = "",
     modifyEnabled: Boolean = false,
     lineNumbers: Boolean = false,
+    homeEnabled: Boolean = true,
+    landing: String? = null,
   ): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
@@ -492,9 +590,27 @@ object FileServerCli {
       contextPath = "/"
       resourceBase = baseDir.absolutePath
     }
+    ensureWebSocketSupport(context)
+
 
     val showTasks = tasksEnabled && ServerTaskActions.isEnabled
     val showModify = modifyEnabled && !readOnly && ModifyFilesActions.isEnabled
+
+    serverInfo = ServerInfo(
+      servedDir = baseDir.absolutePath,
+      host = host,
+      port = port,
+      gitEnabled = gitEnabled,
+      readOnly = readOnly,
+      uiEnabled = uiEnabled,
+      homeEnabled = homeEnabled,
+      terminalEnabled = terminalEnabled && !readOnly,
+      execPermissive = execPermissive,
+      tasksEnabled = showTasks,
+      modifyEnabled = showModify,
+      extractUtilsEnabled = ExtractUtilsFsAction.isEnabled && !readOnly,
+      landingPath = landingPathFor(landing, homeEnabled, uiEnabled),
+    )
     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks)
     else SimpleFileServlet(
       baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled,
@@ -512,45 +628,131 @@ object FileServerCli {
         1024 * 1024 * 2
       )
     )
-    context.addServlet(fileHolder, "$FILES_PREFIX/*")
+    addServletSafely(context, fileHolder, "$FILES_PREFIX/*")
 
     /* ZIP downloads: session = directory name, resolved against the parent dir. */
-    context.addServlet(
+    addServletSafely(
+      context,
       ServletHolder("zip", StaticZipServlet(baseDir.parentFile?.absolutePath ?: baseDir.absolutePath)),
       "/zip"
     )
-     /*
-      * The DocOps engine, exposed as itself. This is the same instance the FS API
-      * 'docops' action invokes (see ServerTaskActions.install), so the HTTP endpoint
-      * and the action can never drift apart.
-      */
-     docProcessorServlet?.let { servlet ->
-       val docopsHolder = ServletHolder("docops", servlet)
-       docopsHolder.registration.setMultipartConfig(
-         MultipartConfigElement(System.getProperty("java.io.tmpdir"))
-       )
-       context.addServlet(docopsHolder, "$DOCOPS_PREFIX/*")
-       context.addServlet(docopsHolder, DOCOPS_PREFIX)
-     }
+    /*
+     * The DocOps engine, exposed as itself. This is the same instance the FS API
+     * 'docops' action invokes (see ServerTaskActions.install), so the HTTP endpoint
+     * and the action can never drift apart.
+     */
+    docProcessorServlet?.let { servlet ->
+      val docopsHolder = ServletHolder("docops", servlet)
+      docopsHolder.registration.setMultipartConfig(
+        MultipartConfigElement(System.getProperty("java.io.tmpdir"))
+      )
+      addServletSafely(context, docopsHolder, "$DOCOPS_PREFIX/*")
+      addServletSafely(context, docopsHolder, DOCOPS_PREFIX)
+    }
 
 
     if (uiEnabled) {
-      context.addServlet(ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
+      addServletSafely(context, ServletHolder("webui", WebUiServlet()), "$UI_PREFIX/*")
     }
+    /*
+     * Shared classpath assets, always mounted: /lib -> web/lib, /app -> web/app.
+     * They are read from the classpath (never from the workspace), so they are safe on
+     * read-only, --no-ui and --secure mounts alike.
+     */
+    register(context, ServletHolder("web-lib", WebUiServlet("web/lib")), LIB_PREFIX)
+    register(context, ServletHolder("web-app", WebUiServlet("web/app")), APP_PREFIX)
 
-    val landing = if (uiEnabled && uiDefault) "$UI_PREFIX/" else "$FILES_PREFIX/$ROOT_SEGMENT/"
-    val redirect = ServletHolder("redirect", RootRedirectServlet(landing))
-    context.addServlet(redirect, "")
-    context.addServlet(redirect, FILES_PREFIX)
-    /* Accept the UI's "/proxy/..." session URLs as aliases of the context root. */
-    installProxyAlias(context)
-    proxyAliasedServers.add(server)
+
+    /*
+     * The homepage is classpath-served (never from the workspace) and is the default
+     * landing page: it is the only place that explains the mount and lets the user pick
+     * models. --ui and --files move the landing page without unmounting anything.
+     */
+    if (homeEnabled) {
+      register(context, ServletHolder("home", StaticResourceServlet()), this@FileServerCli.HOME_PREFIX)
+      /* The overview page is a pure client of this: never let the two drift apart. */
+      register(context, ServletHolder("server-info", ServerInfoServlet()), "/serverInfo")
+      register(context, ServletHolder("settings-api", UserSettingsServlet()), "/userSettings")
+      register(context, ServletHolder("provider-api", ApiProviderServlet()), "/apiProviders")
+      register(context, ServletHolder("keys-api", ApiKeyServlet()), "/apiKeys")
+    }
+    /*
+     * Registered last and on the default mapping: every mount above uses a more specific
+     * path spec and keeps winning, while '/' (and anything unmatched) is answered by the
+     * gateway instead of Jetty's Default404Servlet. Both specs share one holder so the
+     * exact root ("") and the default ("/") resolve to the same instance.
+     */
+    val gatewayHolder = ServletHolder("root-gateway", RootGatewayServlet())
+    addServletSafely(context, gatewayHolder, "")
+    addServletSafely(context, gatewayHolder, "/")
+
 
 
     server.handler = context
     server.stopAtShutdown = true
     server.start()
+    /*
+     * Identify this process as the owner of the sessions it creates: SessionProxyServer
+     * records a worker id per session, and it is only meaningful once the port is bound
+     * (port 0 means "pick a free one").
+     */
+    val boundPort = (server.connectors.first() as ServerConnector).localPort
+    val ownerHost = if (host == "0.0.0.0" || host == "::" || host.isBlank()) "localhost" else host
+    SessionProxyServer.OWNER_ID = "$ownerHost:$boundPort"
     return server
   }
 
+  /**
+   * Resolves the landing page. An explicit `--files` / `--ui` / `--home` wins; otherwise
+   * the most informative page that is actually mounted is used, so the gateway can never
+   * redirect to a disabled mount.
+   */
+  private fun landingPathFor(landing: String?, homeEnabled: Boolean, uiEnabled: Boolean): String = when {
+    landing == "files" -> "$FILES_PREFIX/$ROOT_SEGMENT/"
+    landing == "ui" && uiEnabled -> "$UI_PREFIX/"
+    landing == "home" && homeEnabled -> "$HOME_PREFIX/"
+    homeEnabled -> "$HOME_PREFIX/"
+    uiEnabled -> "$UI_PREFIX/"
+    else -> "$FILES_PREFIX/$ROOT_SEGMENT/"
+  }
+
+  private fun register(
+    context: ServletContextHandler,
+    homeHolder: ServletHolder,
+    prefix: String
+  ) {
+    addServletSafely(context, homeHolder, "$prefix/*")
+    addServletSafely(context, homeHolder, prefix)
+  }
+
+  /** True when [pathSpec] is already claimed by a servlet mapping in [context]. */
+  private fun isMapped(context: ServletContextHandler, pathSpec: String): Boolean =
+    context.servletHandler.servletMappings?.any { mapping ->
+      mapping.pathSpecs?.any { it == pathSpec } == true
+    } == true
+
+  /**
+   * Adds [holder] at [pathSpec] unless something (e.g. the session proxy) already
+   * mapped that spec. Jetty throws `IllegalStateException: Multiple servlets map to
+   * path ...` at start-up for duplicates, which is a fatal error at a point where the
+   * offending registration is long gone; first-registration-wins is both deterministic
+   * and debuggable.
+   *
+   * @return true when the servlet was actually registered.
+   */
+  private fun addServletSafely(
+    context: ServletContextHandler,
+    holder: ServletHolder,
+    pathSpec: String
+  ): Boolean {
+    if (isMapped(context, pathSpec)) {
+      log.info("Skipping servlet '{}' at {}: path already mapped", holder.name, pathSpec)
+      return false
+    }
+    context.addServlet(holder, pathSpec)
+    return true
+  }
+
+
+  val log = LoggerFactory.getLogger(FileServerCli::class.java)
 }

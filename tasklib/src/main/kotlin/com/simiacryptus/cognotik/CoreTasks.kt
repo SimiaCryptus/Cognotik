@@ -50,6 +50,8 @@ object CoreTasks : CognotikPlugin {
     TaskType.registerTaskType(CrawlerAgentTask.CrawlerAgent)
     TaskType.registerTaskType(DialecticalReasoningTask.DialecticalReasoning)
     TaskType.registerTaskType(FileModificationTask.FileModification)
+    TaskType.registerTaskType(FileSearchTask.FileSearch)
+    TaskType.registerTaskType(FileReviewTask.FileReview)
     TaskType.registerTaskType(IllustrateDocumentTask.IllustrateDocument)
     TaskType.registerTaskType(ImageGenerationTask.GenerateImage)
     TaskType.registerTaskType(GameTheoryTask.GameTheory)

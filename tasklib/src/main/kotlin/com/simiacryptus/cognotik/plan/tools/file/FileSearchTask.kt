@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.data
+package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -9,11 +9,12 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.LoggerFactory.getLogger
+import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.util.regex.Pattern
@@ -165,7 +166,7 @@ FileSearch - Search for patterns in files and provide results with context
       .flatMap { filePattern ->
         val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
         FileSelectionUtils.filteredWalk(root.toFile()) { path ->
-          matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+          matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isIgnored(path.toPath())
         }.map { it.toPath() }.flatMap { path ->
           try {
             val fileContentLines = if (currentConfig.extractContent && !isTextFile(path.toFile())) {
@@ -252,7 +253,7 @@ FileSearch - Search for patterns in files and provide results with context
       }
   }
 
-  private fun isTextFile(file: java.io.File): Boolean {
+  private fun isTextFile(file: File): Boolean {
     val textExtensions = setOf(
       "txt",
       "md",

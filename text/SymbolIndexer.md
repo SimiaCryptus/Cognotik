@@ -7,7 +7,7 @@
 **validation diagnostics** as JSON sidecar files plus one whole-project manifest.
 
 Referenced names are additionally matched **lexically** (never semantically) against the qualified names of every
-indexed file by [`SymbolResolver`](SymbolResolver.kt), and the outcome is stored as `resolutions` / `unresolvedNames`.
+indexed file by [`SymbolResolver`](SymbolResolver.kt), and the outcome is stored as `referencesTo` / `unresolvedNames`.
 Ambiguous names are ranked by **file-path distance** and, by default, only the nearest candidate is kept — see
 [Reference resolution](#12-reference-resolution-lexical).
 Two kinds of noise are suppressed by default: references that only resolve **inside their own file** are hidden
@@ -214,7 +214,7 @@ All JSON is produced by `SymbolIndexer.mapper`:
 | `referenceCount`  | `integer`                | Total references found **before** truncation                                                                 |
 | `references`      | `array<SymbolReference>` | Empty/omitted when `includeReferenceDetails = false`; otherwise capped at `maxReferencesPerFile`             |
 | `referencedNames` | `array<string>`          | Distinct `references[].name`, sorted ascending — always populated when `includeReferences = true`            |
-| `resolutions`     | `array<Resolution>`      | One entry per *resolved* referenced name, sorted ascending by `name`; empty when `resolveReferences = false` |
+| `referencesTo`     | `array<Resolution>`      | One entry per *resolved* referenced name, sorted ascending by `name`; empty when `resolveReferences = false` |
 | `unresolvedNames` | `array<string>`          | Distinct referenced names that matched no `qualifiedNames` anywhere, sorted ascending                        |
 | `errors`          | `array<ValidationError>` | Empty/omitted when `includeValidationErrors = false` or the file is clean                                    |
 
@@ -694,7 +694,7 @@ class Greeter(private val name: String) {
 
 Note the omitted `errors` array (`NON_EMPTY`) and that `referenceCount` (3) exceeds
 `referencedNames.size` (2). `String` is unresolved because no indexed file *declares* it, and
-`name` produces **no** `resolutions` entry at all: its only declaration (`Greeter.name`) lives in
+`name` produces **no** `referencesTo` entry at all: its only declaration (`Greeter.name`) lives in
 this very file, so it is hidden (`excludeSelfFileResolutions`).
 
 ### `.data/project.json`
@@ -773,7 +773,7 @@ Consequences / caveats:
 * A cached record is reused **even if the configuration changed**. After toggling
   `includeReferences`, `includeReferenceDetails`, `includeValidationErrors` or
   `maxReferencesPerFile`, run with `--no-incremental` (or `--clean`) so records are regenerated consistently.
-* Resolution is *not* cached: `index()` recomputes `resolutions` / `unresolvedNames` for every record (cached or freshly
+* Resolution is *not* cached: `index()` recomputes `referencesTo` / `unresolvedNames` for every record (cached or freshly
   parsed) after the whole tree has been crawled, so a changed `maxResolutionTargets` takes effect without a full
   re-parse.
 * Upgrading a `GrammarValidator` also requires a non-incremental run to take effect.
@@ -784,7 +784,7 @@ Consequences / caveats:
 ## 8. Size and performance considerations
 
 * The manifest stores a **slim** copy of every `FileRecord` (no `symbols`, no
-  `references`), but keeps `qualifiedNames`, `referencedNames` and `resolutions`. With `includeDetailsInManifest = true`
+  `references`), but keeps `qualifiedNames`, `referencedNames` and `referencesTo`. With `includeDetailsInManifest = true`
   its size is roughly the sum of all sidecars and can reach hundreds of MB on large repos. Mitigations: leave it`false`,
   set
   `includeReferenceDetails = false` (keeps `referenceCount` + `referencedNames`), lower
@@ -836,7 +836,7 @@ is not a directory.
 | `SymbolIndexer.mapper`                        | Shared, pre-configured Jackson `ObjectMapper` (reuse it for reads)   |
 | `SymbolIndexer.index(File)` *(static)*        | One-liner with default config                                        |
 | `SymbolIndexer.main(Array<String>)`           | CLI entry point                                                      |
-| `SymbolResolver.resolve(Manifest)`            | Recompute `resolutions` of an existing manifest (sidecars untouched) |
+| `SymbolResolver.resolve(Manifest)`            | Recompute `referencesTo` of an existing manifest (sidecars untouched) |
 | `SymbolResolver.buildIndex(List<FileRecord>)` | Suffix → declarations table, reusable across `resolve` calls         |
 | `SymbolResolver.pathDistance(from, to)`       | Directory-traversal distance between two root-relative paths         |
 | `FileRecord.withoutAmbiguousResolutions()`    | Report-friendly copy with `ambiguous` resolutions removed            |
@@ -860,7 +860,7 @@ is not a directory.
 * **Path distance is textual.** It is computed from root-relative `/`-separated paths, so symlinks, generated-source
   mirrors and multi-module layouts can make "nearest" surprising.
 * **`indexFile()` resolves against one file only** — the file's own symbols. Because same-file
-  candidates are hidden by default, its `resolutions` list is normally *empty* and every referenced
+  candidates are hidden by default, its `referencesTo` list is normally *empty* and every referenced
   name that is not declared elsewhere lands in `unresolvedNames`. Use `index()` for project-wide
   resolution (or `excludeSelfFileResolutions = false` if you really want self references).
 * **Reports lose information on purpose.** `project.json` / `package.json` drop ambiguous
@@ -921,7 +921,7 @@ A reference that resolves to a declaration of **its own file** tells you nothing
 * candidates with `path == record.path` are dropped, so `targets` never points back at the referencing file;
 * `candidateCount` / `ambiguous` describe the **remaining** (cross-file) candidates only;
 * when *every* candidate was same-file the name is **hidden entirely** — it appears neither in
-  `resolutions` nor in `unresolvedNames` (that is why
+  `referencesTo` nor in `unresolvedNames` (that is why
   `resolutions.size + unresolvedNames.size` can be smaller than `referencedNames.size`);
 * `distance` is therefore `0` only for a *sibling* file in the same directory, never for the file itself.
 Pass `--self-refs` / `excludeSelfFileResolutions = false` to restore the old behaviour.

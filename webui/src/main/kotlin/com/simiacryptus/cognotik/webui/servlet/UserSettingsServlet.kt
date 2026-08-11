@@ -107,6 +107,7 @@ class UserSettingsServlet : HttpServlet() {
       apis = reconstructedApis,
       collectSessionData = settings.collectSessionData,
       passwordHash = settings.passwordHash,
+      internalToken = settings.internalToken,
       smartModel = settings.smartModel,
       fastModel = settings.fastModel
     )

@@ -173,17 +173,17 @@ class LoginServlet : HttpServlet() {
         fun decryptSessionToken(token: String): SessionEnvelope? {
             return try {
                 if (token.isBlank()) {
-                    log.debug("decryptSessionToken called with blank token")
+                    log.warn("decryptSessionToken called with blank token")
                     return null
                 }
                 val combined = try {
                     Base64.getUrlDecoder().decode(token)
                 } catch (e: IllegalArgumentException) {
-                    log.debug("Session token is not valid URL-safe Base64: {}", e.message)
+                    log.warn("Session token is not valid URL-safe Base64: {}", e.message)
                     return null
                 }
                 if (combined.size < GCM_IV_LENGTH + 1) {
-                    log.debug("Session token too short: {} bytes (minimum {})", combined.size, GCM_IV_LENGTH + 1)
+                    log.warn("Session token too short: {} bytes (minimum {})", combined.size, GCM_IV_LENGTH + 1)
                     return null
                 }
                 val iv = combined.copyOfRange(0, GCM_IV_LENGTH)
@@ -193,7 +193,7 @@ class LoginServlet : HttpServlet() {
                 val plaintext = cipher.doFinal(ciphertext)
                 val json = gson.fromJson(String(plaintext, Charsets.UTF_8), JsonObject::class.java)
                 if (json == null) {
-                    log.debug("Decrypted session token did not parse to JSON object")
+                    log.warn("Decrypted session token did not parse to JSON object")
                     return null
                 }
                 SessionEnvelope(
@@ -204,13 +204,13 @@ class LoginServlet : HttpServlet() {
                     nonce = json.get("nonce").asLong
                 )
             } catch (e: javax.crypto.AEADBadTagException) {
-                log.debug("Session token failed authentication (bad tag): {}", e.message)
+                log.warn("Session token failed authentication (bad tag): {}", e.message)
                 null
             } catch (e: NullPointerException) {
-                log.debug("Session token JSON missing required fields: {}", e.message)
+                log.warn("Session token JSON missing required fields: {}", e.message)
                 null
             } catch (e: Exception) {
-                log.debug("Failed to decrypt session token: {} ({})", e.message, e.javaClass.simpleName)
+                log.warn("Failed to decrypt session token: {} ({})", e.message, e.javaClass.simpleName)
                 null
             }
         }

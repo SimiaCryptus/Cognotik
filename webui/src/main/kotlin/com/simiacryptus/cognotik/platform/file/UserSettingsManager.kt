@@ -42,7 +42,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
     log.debug("Updating user settings for user: {}", user)
     val file = File(userConfigDirectory, "$user.json")
     if (file.exists()) {
-      log.info("Updating existing user settings for user: {} at file: {}", user, file)
+      log.warn("Updating existing user settings for user: {} at file: {}", user, file)
       val prevJson = fromJson<UserSettings>(file.readText(), UserSettings::class.java)
       val mergedJson = settings.copy(
         passwordHash = settings.passwordHash?.ifBlank { null } ?: prevJson.passwordHash

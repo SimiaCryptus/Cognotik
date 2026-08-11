@@ -149,6 +149,17 @@ grammar ECMAScript;
 
         return next;
     }
+    /**
+     * Returns {@code true} iff a hashbang (shebang) line may be matched at
+     * the current position, i.e. only as the very first token of the very
+     * first line of the input (`#!/usr/bin/env node`).
+     *
+     * @return {@code true} iff a hashbang line may start here.
+     */
+    private boolean isHashBangPossible() {
+        return this.lastToken == null && this.getLine() == 1;
+    }
+
 
     /**
      * Returns {@code true} iff the lexer can match a regex literal.
@@ -174,6 +185,7 @@ grammar ECMAScript;
             case DecimalLiteral:
             case HexIntegerLiteral:
             case StringLiteral:
+            case TemplateStringLiteral:
             case PlusPlus:
             case MinusMinus:
                 // After any of the tokens above, no regex literal can follow.
@@ -201,9 +213,13 @@ sourceElements
 /// SourceElement :
 ///     Statement
 ///     FunctionDeclaration
+///     ImportDeclaration
+///     ExportDeclaration
 sourceElement
-    : {_input.LA(1) != Function}? statement
+    : importDeclaration
+    | exportDeclaration
     | functionDeclaration
+    | {_input.LA(1) != Function}? statement
     ;
 
 /// Statement :
@@ -226,6 +242,7 @@ statement
     : block
     | variableStatement
     | emptyStatement_
+     | classDeclaration
     | {_input.LA(1) != OpenBrace}? expressionStatement
     | ifStatement
     | iterationStatement
@@ -256,7 +273,14 @@ statementList
 /// VariableStatement :
 ///     var VariableDeclarationList ;
 variableStatement
-    : Var variableDeclarationList eos
+    : varModifier variableDeclarationList eos
+    ;
+/// VarModifier :
+///     var | let | const                                     (ES2015)
+varModifier
+    : Var
+    | Let
+    | Const
     ;
 
 /// VariableDeclarationList :
@@ -269,7 +293,15 @@ variableDeclarationList
 /// VariableDeclaration :
 ///     Identifier Initialiser?
 variableDeclaration
-    : Identifier initialiser?
+    : assignable initialiser?
+    ;
+/// Binding target: plain identifier or a destructuring pattern.
+/// (array/object literals are reused as patterns, as in the reference
+///  ANTLR JavaScript grammar)
+assignable
+    : Identifier
+    | arrayLiteral
+    | objectLiteral
     ;
 
 /// Initialiser :
@@ -308,9 +340,9 @@ iterationStatement
     : Do statement While '(' expressionSequence ')' eos                                                 # DoStatement
     | While '(' expressionSequence ')' statement                                                        # WhileStatement
     | For '(' expressionSequence? ';' expressionSequence? ';' expressionSequence? ')' statement         # ForStatement
-    | For '(' Var variableDeclarationList ';' expressionSequence? ';' expressionSequence? ')' statement # ForVarStatement
-    | For '(' singleExpression In expressionSequence ')' statement                                      # ForInStatement
-    | For '(' Var variableDeclaration In expressionSequence ')' statement                               # ForVarInStatement
+    | For '(' varModifier variableDeclarationList ';' expressionSequence? ';' expressionSequence? ')' statement # ForVarStatement
+    | For '(' singleExpression (In | of) expressionSequence ')' statement                               # ForInStatement
+    | For '(' varModifier variableDeclaration (In | of) expressionSequence ')' statement                # ForVarInStatement
     ;
 
 /// ContinueStatement :
@@ -397,7 +429,7 @@ tryStatement
 /// Catch :
 ///     catch ( Identifier ) Block
 catchProduction
-    : Catch '(' Identifier ')' block
+    : Catch ('(' assignable ')')? block
     ;
 
 /// Finally :
@@ -415,14 +447,21 @@ debuggerStatement
 /// FunctionDeclaration :
 ///     function Identifier ( FormalParameterList? ) { FunctionBody }
 functionDeclaration
-    : Function Identifier '(' formalParameterList? ')' '{' functionBody '}'
+    : async? Function Identifier '(' formalParameterList? ')' '{' functionBody '}'
     ;
 
 /// FormalParameterList :
 ///     Identifier
 ///     FormalParameterList , Identifier
 formalParameterList
-    : Identifier (',' Identifier)*
+    : formalParameterArg (',' formalParameterArg)* (',' lastFormalParameterArg)? ','?
+    | lastFormalParameterArg
+    ;
+formalParameterArg
+    : assignable ('=' singleExpression)?
+    ;
+lastFormalParameterArg
+    : '...' Identifier
     ;
 
 /// FunctionBody :
@@ -430,6 +469,128 @@ formalParameterList
 functionBody
     : sourceElements?
     ;
+/// ClassDeclaration :                                       (ES2015)
+///     class BindingIdentifier ClassTail
+classDeclaration
+     : Class Identifier classTail
+     ;
+/// ClassExpression :                                        (ES2015)
+///     class BindingIdentifier? ClassTail
+classExpression
+     : Class Identifier? classTail
+     ;
+/// ClassTail :
+///     ClassHeritage? { ClassBody? }
+classTail
+     : (Extends singleExpression)? '{' classElement* '}'
+     ;
+/// ClassElement :
+///     static? MethodDefinition
+///     static? FieldDefinition ;
+///     ;
+classElement
+     : SemiColon
+     | classModifier? methodDefinition
+     | classModifier? fieldDefinition eos
+     ;
+/// `static` is a FutureReservedWord token in strict mode, but a plain
+/// Identifier in sloppy mode, so accept both spellings here.
+classModifier
+     : Static
+     | {_input.LT(1).getText().equals("static")}? Identifier
+     ;
+/// MethodDefinition :
+///     PropertyName ( FormalParameterList? ) { FunctionBody }
+///     get PropertyName ( ) { FunctionBody }
+///     set PropertyName ( PropertySetParameterList ) { FunctionBody }
+///     async? *? PropertyName ( FormalParameterList? ) { FunctionBody }
+methodDefinition
+     : getter '(' ')' '{' functionBody '}'                                        # ClassGetter
+     | setter '(' propertySetParameterList ')' '{' functionBody '}'               # ClassSetter
+     | async? '*'? classElementName '(' formalParameterList? ')' '{' functionBody '}' # ClassMethod
+     ;
+/// FieldDefinition :                                        (ES2022)
+///     ClassElementName Initialiser?
+fieldDefinition
+     : classElementName initialiser?
+     ;
+classElementName
+     : propertyName
+     | PrivateIdentifier
+     | '[' singleExpression ']'
+     ;
+
+/// ImportDeclaration :
+///     import StringLiteral ;
+///     import ImportClause FromClause ;
+importDeclaration
+    : Import StringLiteral eos
+    | Import importClause fromClause eos
+    ;
+importClause
+    : importedBinding
+    | nameSpaceImport
+    | namedImports
+    | importedBinding ',' nameSpaceImport
+    | importedBinding ',' namedImports
+    ;
+fromClause
+    : from StringLiteral
+    ;
+nameSpaceImport
+    : '*' as importedBinding
+    ;
+namedImports
+    : '{' (importSpecifier (',' importSpecifier)* ','?)? '}'
+    ;
+importSpecifier
+    : (identifierName | StringLiteral) (as Identifier)?
+    ;
+importedBinding
+    : Identifier
+    ;
+from
+    : {_input.LT(1).getText().equals("from")}? Identifier
+    ;
+as
+    : {_input.LT(1).getText().equals("as")}? Identifier
+    ;
+/// ES2015+ contextual keywords: still plain Identifiers to the lexer,
+/// so existing code that uses them as names keeps working.
+of
+    : {_input.LT(1).getText().equals("of")}? Identifier
+    ;
+async
+    : {_input.LT(1).getText().equals("async")}? Identifier
+    ;
+await
+    : {_input.LT(1).getText().equals("await")}? Identifier
+    ;
+/// ExportDeclaration :
+///     export * FromClause ;
+///     export * as Identifier FromClause ;
+///     export ExportClause FromClause ;
+///     export ExportClause ;
+///     export VariableStatement
+///     export FunctionDeclaration
+///     export default Expression ;
+exportDeclaration
+    : Export '*' fromClause eos                                        # ExportAll
+    | Export '*' as Identifier fromClause eos                          # ExportAllAs
+    | Export exportClause fromClause eos                               # ExportNamedFrom
+    | Export exportClause eos                                          # ExportNamed
+    | Export variableStatement                                         # ExportVariable
+    | Export functionDeclaration                                       # ExportFunction
+     | Export classDeclaration                                          # ExportClass
+     | Export Default (functionDeclaration | classDeclaration | singleExpression) eos # ExportDefault
+    ;
+exportClause
+    : '{' (exportSpecifier (',' exportSpecifier)* ','?)? '}'
+    ;
+exportSpecifier
+    : (identifierName | StringLiteral) (as (identifierName | StringLiteral))?
+    ;
+
 
 /// ArrayLiteral :
 ///     [ Elision? ]
@@ -440,10 +601,21 @@ arrayLiteral
     ;
 
 /// ElementList :
-///     Elision? AssignmentExpression
-///     ElementList , Elision? AssignmentExpression
+///     Elision? ArrayElement
+///     ElementList , Elision? ArrayElement
 elementList
-    : elision? singleExpression (',' elision? singleExpression)*
+     : elision? arrayElement (',' elision? arrayElement)*
+     ;
+
+/// ArrayElement :                                           (ES2015)
+///     SpreadElement
+///     AssignmentExpression
+///
+/// `...expr` is a spread element in an array literal, and the rest
+/// element when the array literal is reused as a destructuring
+/// pattern (see the `assignable` rule).
+arrayElement
+     : '...'? singleExpression
     ;
 
 /// Elision :
@@ -475,8 +647,12 @@ propertyNameAndValueList
 ///     set PropertyName ( PropertySetParameterList ) { FunctionBody }
 propertyAssignment
     : propertyName ':' singleExpression                            # PropertyExpressionAssignment
+    | '[' singleExpression ']' ':' singleExpression                # ComputedPropertyExpressionAssignment
     | getter '(' ')' '{' functionBody '}'                          # PropertyGetter
     | setter '(' propertySetParameterList ')' '{' functionBody '}' # PropertySetter
+    | async? propertyName '(' formalParameterList? ')' '{' functionBody '}' # PropertyMethod
+     | Identifier ('=' singleExpression)?                           # PropertyShorthand
+    | '...' singleExpression                                       # PropertySpread
     ;
 
 /// PropertyName :
@@ -506,7 +682,10 @@ arguments
 ///     AssignmentExpression
 ///     ArgumentList , AssignmentExpression
 argumentList
-    : singleExpression (',' singleExpression)*
+    : argument (',' argument)* ','?
+    ;
+argument
+    : '...'? singleExpression
     ;
 
 /// Expression :
@@ -629,22 +808,32 @@ expressionSequence
     ;
 
 singleExpression
-    : Function Identifier? '(' formalParameterList? ')' '{' functionBody '}' # FunctionExpression
+    : async? Function Identifier? '(' formalParameterList? ')' '{' functionBody '}' # FunctionExpression
+     | classExpression                                                        # ClassExpr
+    | arrowFunction                                                          # ArrowFunctionExpression
     | singleExpression '[' expressionSequence ']'                            # MemberIndexExpression
-    | singleExpression '.' identifierName                                    # MemberDotExpression
+    | singleExpression '.' (identifierName | PrivateIdentifier)              # MemberDotExpression
+    | singleExpression '?.' (identifierName | PrivateIdentifier)             # OptionalMemberDotExpression
+    | singleExpression '?.' '[' expressionSequence ']'                       # OptionalMemberIndexExpression
+    | singleExpression '?.' arguments                                        # OptionalCallExpression
     | singleExpression arguments                                             # ArgumentsExpression
+    | singleExpression TemplateStringLiteral                                 # TaggedTemplateExpression
     | New singleExpression arguments?                                        # NewExpression
+    | Import '(' singleExpression ')'                                        # ImportExpression
+    | Import '.' identifierName                                              # ImportMetaExpression
     | singleExpression {!here(LineTerminator)}? '++'                         # PostIncrementExpression
     | singleExpression {!here(LineTerminator)}? '--'                         # PostDecreaseExpression
     | Delete singleExpression                                                # DeleteExpression
     | Void singleExpression                                                  # VoidExpression
     | Typeof singleExpression                                                # TypeofExpression
+    | await singleExpression                                                 # AwaitExpression
     | '++' singleExpression                                                  # PreIncrementExpression
     | '--' singleExpression                                                  # PreDecreaseExpression
     | '+' singleExpression                                                   # UnaryPlusExpression
     | '-' singleExpression                                                   # UnaryMinusExpression
     | '~' singleExpression                                                   # BitNotExpression
     | '!' singleExpression                                                   # NotExpression
+     | <assoc = right> singleExpression '**' singleExpression                 # PowerExpression
     | singleExpression ('*' | '/' | '%') singleExpression                    # MultiplicativeExpression
     | singleExpression ( '+' | '-') singleExpression                         # AdditiveExpression
     | singleExpression ('<<' | '>>' | '>>>') singleExpression                # BitShiftExpression
@@ -657,16 +846,32 @@ singleExpression
     | singleExpression '|' singleExpression                                  # BitOrExpression
     | singleExpression '&&' singleExpression                                 # LogicalAndExpression
     | singleExpression '||' singleExpression                                 # LogicalOrExpression
+    | singleExpression '??' singleExpression                                 # NullishCoalescingExpression
     | singleExpression '?' singleExpression ':' singleExpression             # TernaryExpression
     | singleExpression '=' singleExpression                                  # AssignmentExpression
     | singleExpression assignmentOperator singleExpression                   # AssignmentOperatorExpression
     | This                                                                   # ThisExpression
+     | Super                                                                  # SuperExpression
     | Identifier                                                             # IdentifierExpression
     | literal                                                                # LiteralExpression
     | arrayLiteral                                                           # ArrayLiteralExpression
     | objectLiteral                                                          # ObjectLiteralExpression
     | '(' expressionSequence ')'                                             # ParenthesizedExpression
     ;
+/// ArrowFunction :                                            (ES2015)
+///     ArrowParameters => ConciseBody
+arrowFunction
+    : async? arrowFunctionParameters '=>' arrowFunctionBody
+    ;
+arrowFunctionParameters
+    : Identifier
+    | '(' formalParameterList? ')'
+    ;
+arrowFunctionBody
+    : '{' functionBody '}'
+    | singleExpression
+    ;
+
 
 /// AssignmentOperator : one of
 ///     *=	/=	%=	+=	-=	<<=	>>=	>>>=	&=	^=	|=
@@ -682,10 +887,14 @@ assignmentOperator
     | '&='
     | '^='
     | '|='
+     | '**='
+     | '&&='
+     | '||='
+     | '??='
     ;
 
 literal
-    : (NullLiteral | BooleanLiteral | StringLiteral | RegularExpressionLiteral)
+    : (NullLiteral | BooleanLiteral | StringLiteral | TemplateStringLiteral | RegularExpressionLiteral)
     | numericLiteral
     ;
 
@@ -772,6 +981,18 @@ eos
 eof
     : EOF
     ;
+/// HashbangComment ::                                        (ES2023)
+///     #! SingleLineCommentChars?
+///
+/// Only legal as the *first* token of the *first* line of a source file
+/// (`#!/usr/bin/env node`).  Sent to the HIDDEN channel so the parser
+/// never sees it, exactly like a `//` comment.
+/// NOTE: must be declared before every other lexer rule that could match
+/// a leading '#' (currently only `UnexpectedCharacter`).
+HashBangLine
+    : {isHashBangPossible()}? '#!' ~[\r\n\u2028\u2029]* -> channel(HIDDEN)
+    ;
+
 
 /// RegularExpressionLiteral ::
 ///     / RegularExpressionBody / RegularExpressionFlags
@@ -831,6 +1052,19 @@ Colon
 Dot
     : '.'
     ;
+Ellipsis
+    : '...'
+    ;
+QuestionMarkDot
+    : '?.'
+    ;
+NullishCoalesce
+    : '??'
+    ;
+Arrow
+    : '=>'
+    ;
+
 
 PlusPlus
     : '++'
@@ -859,6 +1093,10 @@ Not
 Multiply
     : '*'
     ;
+/// 12.6 Exponentiation Operator                             (ES2016)
+Power
+     : '**'
+     ;
 
 Divide
     : '/'
@@ -975,6 +1213,21 @@ BitXorAssign
 BitOrAssign
     : '|='
     ;
+/// 12.15 Logical / exponentiation assignment operators       (ES2016 / ES2021)
+/// These must exist as single tokens, otherwise `a ??= b` is lexed as
+/// `a ?? = b` and fails to parse.
+PowerAssign
+     : '**='
+     ;
+AndAssign
+     : '&&='
+     ;
+OrAssign
+     : '||='
+     ;
+NullishCoalesceAssign
+     : '??='
+     ;
 
 /// 7.8.1 Null Literals
 NullLiteral
@@ -988,19 +1241,20 @@ BooleanLiteral
     ;
 
 /// 7.8.3 Numeric Literals
+/// Numeric separators (`1_000`) are allowed between digits.  (ES2021)
 DecimalLiteral
-    : DecimalIntegerLiteral '.' DecimalDigit* ExponentPart?
-    | '.' DecimalDigit+ ExponentPart?
+     : DecimalIntegerLiteral '.' DecimalDigits? ExponentPart?
+     | '.' DecimalDigits ExponentPart?
     | DecimalIntegerLiteral ExponentPart?
     ;
 
 /// 7.8.3 Numeric Literals
 HexIntegerLiteral
-    : '0' [xX] HexDigit+
+     : '0' [xX] HexDigit ('_'? HexDigit)*
     ;
 
 OctalIntegerLiteral
-    : {!strictMode}? '0' OctalDigit+
+     : {!strictMode}? '0' OctalDigit ('_'? OctalDigit)*
     ;
 
 /// 7.6.1.1 Keywords
@@ -1179,12 +1433,42 @@ Yield
 Identifier
     : IdentifierStart IdentifierPart*
     ;
+/// PrivateIdentifier :                                       (ES2022)
+///     # IdentifierName
+/// Used for private class fields / methods: `#count`, `this.#count`.
+PrivateIdentifier
+    : '#' IdentifierStart IdentifierPart*
+    ;
+
 
 /// 7.8.4 String Literals
 StringLiteral
     : '"' DoubleStringCharacter* '"'
     | '\'' SingleStringCharacter* '\''
     ;
+/// ES2015 Template Literal — captured as a single token (substitutions are
+/// not parsed; this keeps the grammar free of lexer modes).
+/// Substitutions (`${ ... }`) are *scanned* (not parsed) so that nested
+/// template literals, quoted strings and nested braces inside a
+/// substitution do not prematurely terminate the token.
+TemplateStringLiteral
+     : '`' TemplateStringCharacter* '`'
+    ;
+fragment TemplateStringCharacter
+     : '\\' .                                    // escape sequence
+     | '${' TemplateSubstitutionCharacter* '}'   // substitution
+     | ~[\\`]                                    // any other char (incl. a lone '$')
+     ;
+/// Balanced scan of the inside of a `${ ... }` substitution.
+fragment TemplateSubstitutionCharacter
+     : '\\' .
+     | TemplateStringLiteral                     // nested `...` (recursive)
+     | '\'' SingleStringCharacter* '\''
+     | '"' DoubleStringCharacter* '"'
+     | '{' TemplateSubstitutionCharacter* '}'    // nested braces (objects, blocks)
+     | ~[\\`'"{}]
+     ;
+
 
 WhiteSpaces
     : [\t\u000B\u000C\u0020\u00A0]+ -> channel(HIDDEN)
@@ -1261,6 +1545,11 @@ fragment LineTerminatorSequence
 fragment DecimalDigit
     : [0-9]
     ;
+/// One or more decimal digits, optionally separated by single '_' characters.
+fragment DecimalDigits
+     : DecimalDigit ('_'? DecimalDigit)*
+     ;
+
 
 fragment HexDigit
     : [0-9a-fA-F]
@@ -1272,11 +1561,11 @@ fragment OctalDigit
 
 fragment DecimalIntegerLiteral
     : '0'
-    | [1-9] DecimalDigit*
+     | [1-9] ('_'? DecimalDigit)*
     ;
 
 fragment ExponentPart
-    : [eE] [+-]? DecimalDigit+
+     : [eE] [+-]? DecimalDigits
     ;
 
 fragment IdentifierStart

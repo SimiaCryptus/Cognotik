@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -700,7 +700,7 @@ Format as a clear table or structured list.
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
         when {
-          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isIgnored(it.toPath()) -> false
           matcher.matches(root.relativize(it.toPath())) -> true
           it.isDirectory -> true
           else -> false

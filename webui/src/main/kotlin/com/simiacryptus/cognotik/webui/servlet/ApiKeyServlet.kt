@@ -29,13 +29,11 @@ class ApiKeyServlet : HttpServlet() {
   )
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-
-
     response.contentType = "text/html"
     val user = UserProviderImpl().authenticate(request, response) ?: return response.sendError(
       HttpServletResponse.SC_UNAUTHORIZED
     )
-    val action = request.getParameter("action")
+    val action = request.getParameter("action") ?: ""
     val apiKey = request.getParameter("apiKey")
     val provider = request.getParameter("provider")
 
@@ -50,7 +48,6 @@ class ApiKeyServlet : HttpServlet() {
       }
 
       "delete" -> {
-
         val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
         if (record != null) {
           apiKeyRecords.remove(record)
@@ -77,7 +74,7 @@ class ApiKeyServlet : HttpServlet() {
       }
 
       "invite" -> {
-        val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey /*&& it.owner != user.email*/ }
+        val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
         if (record == null) {
           throw IllegalArgumentException("API Key record not found, or you do not have permission to access it, or you are the owner.")
         }
@@ -89,7 +86,6 @@ class ApiKeyServlet : HttpServlet() {
         response.writer.write(indexPage(request, response))
       }
     }
-
   }
 
   override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
@@ -98,39 +94,53 @@ class ApiKeyServlet : HttpServlet() {
     val mappedKey = request.getParameter("mappedKey")
     val budget = request.getParameter("budget")?.toDoubleOrNull()
     val comment = request.getParameter("comment")
-
     val welcomeMessage = request.getParameter("welcomeMessage")
+
     val user = UserProviderImpl().authenticate(request, response)
-    val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
 
     if (action == "acceptInvite") {
       if (apiKey.isNullOrEmpty()) {
         response.sendError(HttpServletResponse.SC_BAD_REQUEST, "API Key is missing")
-      } else if (user == null) {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User not found")
-      } else if (record == null) {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
-      } else {
-        response.sendRedirect("/")
+        return
       }
-    } else if (record != null && budget != null && user == null) {
+      if (user == null) {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not authenticated")
+        return
+      }
+      val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
+      if (record == null) {
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
+        return
+      }
+      response.sendRedirect("/")
+      return
+    }
 
+    // Require authentication and admin authorization for all record modification operations
+    if (user == null) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")
+      return
+    }
+
+    val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
+
+    if (record != null && budget != null) {
       apiKeyRecords.remove(record)
       apiKeyRecords.add(
         record.copy(
-          mappedKey = mappedKey.encrypt ?: record.mappedKey,
+          mappedKey = mappedKey?.encrypt ?: record.mappedKey,
           budget = budget,
-          comment = comment ?: ""
+          comment = comment ?: "",
+          welcomeMessage = welcomeMessage ?: record.welcomeMessage
         )
       )
       saveRecords()
-      response.sendRedirect("?action=edit&apiKey=$apiKey&editSuccess=true")
+      response.sendRedirect("?action=edit&apiKey=${URLEncoder.encode(apiKey, "UTF-8")}&editSuccess=true")
     } else if (apiKey != null && budget != null) {
-
       val newRecord = ApiKeyRecord(
-        owner = user?.email ?: "",
+        owner = user.email,
         apiKey = apiKey.encrypt,
-        mappedKey = mappedKey.encrypt,
+        mappedKey = mappedKey?.encrypt ?: "".encrypt,
         budget = budget,
         comment = comment ?: "",
         welcomeMessage = welcomeMessage ?: "Welcome to our service!"
@@ -145,10 +155,19 @@ class ApiKeyServlet : HttpServlet() {
           )
         }&creationSuccess=true"
       )
-
     } else {
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid input")
     }
+  }
+
+  private fun escapeHtml(input: Any?): String {
+    if (input == null) return ""
+    return input.toString()
+      .replace("&", "&amp;")
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("\"", "&quot;")
+      .replace("'", "&#x27;")
   }
 
   private fun indexPage(request: HttpServletRequest, response: HttpServletResponse): String {
@@ -169,7 +188,9 @@ class ApiKeyServlet : HttpServlet() {
               <div class='records'>
                   ${
       apiKeyRecords.filter { it.owner == user.email }.joinToString("\n") { record ->
-        "<div class='record'><a href='?action=edit&apiKey=${record.apiKey}'>${record.apiKey}</a></div>"
+        val safeKey = escapeHtml(record.apiKey)
+        val encodedKey = URLEncoder.encode(record.apiKey.decrypt, "UTF-8")
+        "<div class='record'><a href='?action=edit&apiKey=$encodedKey'>$safeKey</a></div>"
       }
     }
               </div>
@@ -180,7 +201,8 @@ class ApiKeyServlet : HttpServlet() {
   }
 
   private fun serveInviteConfirmationPage(resp: HttpServletResponse, record: ApiKeyRecord, user: User) {
-
+    val safeWelcome = escapeHtml(record.welcomeMessage)
+    val safeApiKey = escapeHtml(record.apiKey)
     resp.writer.write(
       """
     <html>
@@ -189,10 +211,10 @@ class ApiKeyServlet : HttpServlet() {
     </head>
     <body>
     <h1>Accept API Key Invitation</h1>
-    <h2>${record.welcomeMessage}</h2>
-    <p>You have been invited to use the API Key: ${record.apiKey}</p>
+    <h2>$safeWelcome</h2>
+    <p>You have been invited to use the API Key: $safeApiKey</p>
     <form action='/apiKeys/' method="post">
-        <input type="hidden" name="apiKey" value="${record.apiKey}">
+        <input type="hidden" name="apiKey" value="$safeApiKey">
         <input type="hidden" name="action" value="acceptInvite">
         <input type="submit" value="Accept Invite">
     </form>
@@ -203,11 +225,17 @@ class ApiKeyServlet : HttpServlet() {
   }
 
   private fun serveEditPage(response: HttpServletResponse, record: ApiKeyRecord) {
+    val safeApiKey = escapeHtml(record.apiKey)
+    val safeMappedKey = escapeHtml(record.mappedKey)
+    val safeComment = escapeHtml(record.comment)
+    val safeWelcome = escapeHtml(record.welcomeMessage)
+    val encodedApiKey = URLEncoder.encode(record.apiKey.decrypt, "UTF-8")
+
     response.writer.write(
       """
       <html>
       <head>
-          <title>Edit API Key Record: ${record.apiKey}</title>
+          <title>Edit API Key Record: $safeApiKey</title>
           <style>
               body {
                   font-family: Arial, sans-serif;
@@ -255,24 +283,24 @@ class ApiKeyServlet : HttpServlet() {
           </style>
       </head>
       <body>
-      <h1>Edit API Key Record: ${record.apiKey}</h1>
+      <h1>Edit API Key Record: $safeApiKey</h1>
       <form action="edit" method="post">
-          <input type="hidden" name="apiKey" value="${record.apiKey}">
+          <input type="hidden" name="apiKey" value="$safeApiKey">
           <label for="mappedKey">Mapped Key:</label>
-          <input type="text" id="mappedKey" name="mappedKey" value="${record.mappedKey}" style="width: 100%;">
+          <input type="text" id="mappedKey" name="mappedKey" value="$safeMappedKey" style="width: 100%;">
           <label for="budget">Budget:</label>
           <input type="text" id="budget" name="budget" value="${record.budget}">
           <label for="comment">Description:</label>
-          <textarea id="comment" name="comment">${record.comment}</textarea>
+          <textarea id="comment" name="comment">$safeComment</textarea>
           <label for="welcomeMessage">Welcome Message:</label>
-          <textarea id="welcomeMessage" name="welcomeMessage">${record.welcomeMessage}</textarea>
+          <textarea id="welcomeMessage" name="welcomeMessage">$safeWelcome</textarea>
           <input type="submit" value="Submit">
       </form>
        <!-- Invite Link -->
        <div class="invite-link">
            <h2>Invite Link</h2>
            <p>Share this link to invite others to use this API Key:</p>
-           <a href="?action=invite&apiKey=${URLEncoder.encode(record.apiKey.decrypt, "UTF-8")}">Invite Link</a>
+           <a href="?action=invite&apiKey=$encodedApiKey">Invite Link</a>
        </div>
       </body>
       </html>

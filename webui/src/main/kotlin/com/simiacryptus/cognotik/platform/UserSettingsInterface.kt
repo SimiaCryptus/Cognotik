@@ -41,6 +41,7 @@ data class UserSettings(
   val apis: MutableList<ApiData> = mutableListOf(),
   val collectSessionData: Boolean = false,
   val passwordHash: String? = null,
+  val internalToken: String? = null,
   val smartModel: String? = null,
   val fastModel: String? = null,
 )

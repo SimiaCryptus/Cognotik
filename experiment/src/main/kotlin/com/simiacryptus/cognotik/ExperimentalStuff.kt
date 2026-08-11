@@ -5,12 +5,14 @@ import com.simiacryptus.cognotik.autofix.SingleFixTask
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
 import com.simiacryptus.cognotik.plan.tools.images.GenerateQRImageTask
 import com.simiacryptus.cognotik.plan.tools.images.ImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
 import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
+import com.simiacryptus.cognotik.plan.tools.run.LanguageServerTask
 import com.simiacryptus.cognotik.platform.CognotikPlugin
 
 @Suppress("unused") class ExperimentalStuff : CognotikPlugin {
@@ -21,7 +23,7 @@ import com.simiacryptus.cognotik.platform.CognotikPlugin
 
         // --- Data & File Task Types ---
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileAppendTask.FileAppend)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileSearchTask.FileSearch)
+        TaskType.registerTaskType(FileSearchTask.FileSearch)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DecisionTreeTask.DecisionTree)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.EntropyReductionTreeTask.EntropyReductionTree)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.JdbcSessionTask.JdbcSession)
@@ -89,7 +91,7 @@ import com.simiacryptus.cognotik.platform.CognotikPlugin
 
         // --- Code & Execution Task Types ---
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask.CommandSession)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServer)
+        TaskType.registerTaskType(LanguageServerTask.LanguageServer)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.run.RunCodeTask.RunCode)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.run.RunToolTask.RunTool)
         TaskType.registerTaskType(SingleFixTask.SingleFix)

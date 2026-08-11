@@ -1,19 +1,19 @@
 {
-  "lastUpdated" : "2026-08-01T00:24:36.025473771Z",
+  "lastUpdated" : "2026-08-10T20:11:50.939131834Z",
   "tasks" : {
-    "cli/demo/jokes.md" : {
-      "target" : "cli/demo/jokes.md",
+    "code-utils2/coder/queries/intellij-doc/research.md" : {
+      "target" : "code-utils2/coder/queries/intellij-doc/research.md",
       "status" : "COMPLETED",
-      "sessionId" : "U-20260730-MevOjb0s",
-      "startedAt" : "2026-07-30T16:49:37.089828436Z",
-      "completedAt" : "2026-07-30T16:50:14.543461483Z"
+      "sessionId" : "U-20260810-iwCeiC20",
+      "startedAt" : "2026-08-10T20:03:06.140918730Z",
+      "completedAt" : "2026-08-10T20:04:41.003185979Z"
     },
-    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt" : {
-      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt",
+    "code-utils2/coder/queries/intellij-doc/summary.md" : {
+      "target" : "code-utils2/coder/queries/intellij-doc/summary.md",
       "status" : "COMPLETED",
-      "sessionId" : "U-20260731-Y7w825x2",
-      "startedAt" : "2026-08-01T00:22:11.904591623Z",
-      "completedAt" : "2026-08-01T00:24:36.025473771Z"
+      "sessionId" : "U-20260810-PUoH49l9",
+      "startedAt" : "2026-08-10T20:11:37.789133234Z",
+      "completedAt" : "2026-08-10T20:11:50.939131834Z"
     }
   }
 }

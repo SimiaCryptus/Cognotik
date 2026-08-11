@@ -1007,9 +1007,5 @@ class UsageDB : UsageInterface {
         ),
       )
     }
-
-    val tracked_users = mutableSetOf(
-      "acharneski@gmail.com",
-    )
   }
 }

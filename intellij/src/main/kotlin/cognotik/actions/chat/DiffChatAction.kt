@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer

@@ -264,7 +264,7 @@ is just `"Execute task."` and the host is expected to supply the files from `exe
 | `update_mode`      | string | Per-doc [update mode](#update-modes) (case-insensitive). Falls back to `DocOpsConfig.updateMode` if unknown.                       |
 | `task_type`        | string | Resolved via `DocTaskKindResolver.byName`; falls back to `.default`.                                                               |
 | `task_config_json` | string | Path (relative to the doc) to a JSON file merged over the derived execution config.                                                |
-| `folder`           | string | Overrides the effective task root. **Must resolve to a path at or under `config.root`**, otherwise planning fails for that target. |
+| `folder`           | string | Overrides the effective task root. **Must resolve to a path at or under `config.root`**, otherwise planning fails for that target. This root is also the working directory given to the host, and *every* path in the execution config (including the target named in the task description) is resolved against it. |
 | `prompt`           | string | When exactly one doc contributes to a target, this replaces the generated task description preamble.                               |
 
 When several documents contribute to the same target, policies pick a winner in this order:
@@ -396,21 +396,28 @@ The result is an immutable `WorkPlan<K>`:
 queue it opens **one** `DocExecutionContext` (`use`d, so `close()`
 always runs) and for each task:
 
-1. Rebase the task if `folder:` moved the effective root.
+1. Determine the working directory: the task's own root (`folder:` override, otherwise `config.root`).
 2. `ctx.reset()`.
 3. Check the cancel flag → `CANCELLED` + `CancellationException`.
 4. Apply `TargetPreparation` (delete the target if requested).
 5. Mark `RUNNING`, build the execution config via `ExecutionConfigFactory`, call `ctx.execute`.
+**Path handling contract.** The working directory computed in step 1 is the single base for all path
+resolution: it is passed as `DocTaskRequest.workingDir` *and* used by `ExecutionConfigFactory` to
+relativize/absolutize every path it emits. A doc such as
+`code_research/process_query.op.md` with `folder: ..` therefore produces
+`Output file: code_research/test.query-response.md` — not `test.query-response.md` — so the agent
+writes into `code_research/` instead of the parent directory.
+
 
 `ExecutionConfigFactory` produces the JSON-compatible `executionConfig`:
 
 * for `isFileTask` / `isTemplateTask` kinds, **declaratively** — `task_type`, the serialized
   `ModificationTaskConfig`, an `.erb` `template_file` for template kinds, plus
   `task_config_json` overrides;
-* otherwise by delegating to `ctx.inferTaskConfig(...)` with a synthesized history (task type, description, output
-  files, fenced related-file contents, the task message), then merging overrides;
-* finally normalizing `related_files` to `List<String>` and setting `task_description` to the description plus the first
-  doc's body.
+* otherwise by delegating to `ctx.inferTaskConfig(...)` with a synthesized history (task type, description, the output
+   file **relative to the working directory**, fenced related-file contents, the task message), then merging overrides;
+* finally normalizing `related_files` to canonical **absolute** `List<String>` paths (unambiguous however the host
+   resolves them) and setting `task_description` to the description plus the first doc's body.
 
 Callbacks (`DocTaskCallbacks<S>`) are how the host reports progress. `onSessionStarted` may throw
 `CancellationException` to abort — the runner honours it and marks the rest of the queue

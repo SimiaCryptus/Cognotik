@@ -14,12 +14,15 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,18 +47,18 @@ open class WaterfallMode(
 
 
   private val log = getLogger(WaterfallMode::class.java)
-  private var transcriptStream: FileOutputStream? = null
+   private var transcriptStream: OutputStream? = null
 
   override fun initialize(task: SessionTask) {
     log.debug("Initializing PlanAheadMode")
-    transcriptStream = task.transcript()
   }
 
   override fun contextData(): List<String> = emptyList()
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     try {
       log.debug("Handling user message: $userMessage")
+       if (transcriptStream != null) this.transcriptStream = transcriptStream
       transcriptStream?.let { stream ->
         stream.write("\n## User Message\n\n$userMessage\n\n".toByteArray())
         stream.flush()
@@ -76,7 +79,7 @@ open class WaterfallMode(
         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
           ?: task.ui.dataStorage.getUserDir(user, session).toPath()
           ?: File(".").toPath(),
-        transcriptStream = transcriptStream
+         transcriptStream = transcriptStream as? FileOutputStream
       )
 
 
@@ -115,7 +118,7 @@ open class WaterfallMode(
         }
         // Save plan to file for PrePlanned mode
         try {
-          val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile()
+          val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile().apply { parentFile.mkdirs() }
           planFile.writeText(JsonUtil.toJson(plan))
           task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
         } catch (e: Exception) {
@@ -142,7 +145,7 @@ open class WaterfallMode(
         stream.flush()
       }
     } finally {
-      transcriptStream?.close()
+       transcriptStream?.flush()
     }
   }
 

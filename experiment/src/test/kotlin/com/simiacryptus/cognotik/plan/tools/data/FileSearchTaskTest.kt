@@ -1,14 +1,16 @@
-package com.simiacryptus.cognotik.plan.tools.file
+package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.data.FileSearchTask
-import com.simiacryptus.cognotik.plan.tools.data.FileSearchTask.SearchTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Timeout
+import java.util.concurrent.TimeUnit
 
 @Suppress("unused")
 object FileSearchTaskTest {
@@ -19,9 +21,9 @@ object FileSearchTaskTest {
     UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
   }
 
-  @org.junit.jupiter.api.Tag("Integration")
+  @Tag("Integration")
   //@org.junit.jupiter.api.Test
-  @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
+  @Timeout(10, unit = TimeUnit.MINUTES)
   fun test() {
     TaskHarness(
       taskType = FileSearchTask.FileSearch,
@@ -44,9 +46,9 @@ object FileSearchTaskTest {
     ).run()
   }
 
-  @org.junit.jupiter.api.Tag("Integration")
+  @Tag("Integration")
   //@org.junit.jupiter.api.Test
-  @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
+  @Timeout(10, unit = TimeUnit.MINUTES)
   fun testRegex() {
     TaskHarness(
       taskType = FileSearchTask.FileSearch,

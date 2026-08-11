@@ -1,7 +1,5 @@
-package com.simiacryptus.diff
+package com.simiacryptus.cognotik.text.patch
 
-import com.simiacryptus.cognotik.text.patch.PatchProcessor
-import com.simiacryptus.cognotik.text.patch.fromJson
 import org.junit.jupiter.api.Assertions
 
 data class PatchTestCase(

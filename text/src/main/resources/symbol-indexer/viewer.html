@@ -727,6 +727,7 @@
         <option value="files">Files</option>
         <option value="packages">Packages</option>
         <option value="symbols">Symbols</option>
+        <option value="related">Related files</option>
     </select>
     <select id="dir" title="Edge direction to expand">
         <option value="both">dependencies + dependants</option>
@@ -792,7 +793,7 @@
                 <span><i style="background:var(--in)"></i>dependant</span>
                 <span><i style="background:var(--both)"></i>both</span>
             </div>
-             <span class="muted">drag = move &middot; wheel = zoom &middot; click = select &middot; dbl-click = focus &middot; click empty space / Esc = clear selection</span>
+             <span class="muted">drag = move &middot; wheel = zoom &middot; click = select &middot; dbl-click = focus &middot; click empty space / Esc = clear selection &middot; 1/2/3/4 = files/packages/symbols/related</span>
         </div>
     </section>
 
@@ -801,12 +802,14 @@
             <button data-tab="paneInfo" class="on">Info</button>
             <button data-tab="paneSymbols">Symbols</button>
             <button data-tab="paneRefs">Refs</button>
+            <button data-tab="paneRelated">Related</button>
             <button data-tab="paneCode">Code</button>
         </div>
         <div id="tabBody">
             <div id="paneInfo" class="tabPane on"></div>
             <div id="paneSymbols" class="tabPane"></div>
             <div id="paneRefs" class="tabPane"></div>
+            <div id="paneRelated" class="tabPane"></div>
             <div id="paneCode" class="tabPane">
                 <div class="codeBar">
                     <span id="codeTitle" class="muted">no selection</span>
@@ -830,7 +833,7 @@
              <code>viewer.html?root=/repo</code> or <code>viewer.html?root=../..</code>
              (defaults to <code>..</code>, i.e. the parent of the folder this page is served from).
             The viewer fetches <code>&lt;root&gt;/.data/project.json</code> and the per-file
-            <code>&lt;dir&gt;/.data/&lt;file&gt;.json</code> sidecars over HTTP, so serve the tree with a static
+            <code>&lt;root&gt;/.data/&lt;path&gt;.json</code> sidecars over HTTP, so serve the tree with a static
             web server (<code>python3 -m http.server</code>) and keep the paths reachable.
         </div>
         <div class="hint">You can also drag &amp; drop a <code>project.json</code> / <code>package.json</code> onto this
@@ -912,6 +915,8 @@
         fileIn: new Map(),
         pkgOut: new Map(),
         pkgIn: new Map(),
+        relOut: new Map(),     // path -> Map(otherPath -> related edge)  (TF-IDF neighbours)
+        relIn: new Map(),
         declByQN: new Map(),   // qualifiedName -> [path]
         failures: new Map(),   // path -> error
         sidecars: new Map(),   // path -> Promise<FileRecord>
@@ -942,13 +947,55 @@
     }
 
     function sidecarUrl(path) {
-        const d = dirOf(path);
-        return u((d ? d + "/" : "") + ".data/" + baseOf(path) + ".json");
+        return u(".data/" + path + ".json");
     }
 
     function packageManifestUrl(folder) {
-        return u((folder ? folder + "/" : "") + ".data/package.json");
+        return u(".data/" + (folder ? folder + "/" : "") + "package.json");
     }
+    /* ---- report-relative paths -------------------------------------------
+       Every report stores its paths relative to what it describes:
+         <dir>/.data/<file>.json -> relative to <dir>
+         <dir>/.data/package.json-> relative to <dir>   (== manifest.folder)
+         .data/project.json      -> relative to the root (folder === "")
+       The viewer works with crawl-root relative paths internally.            */
+    function joinPath(base, rel) {
+        if (rel == null) return rel;
+        let r = String(rel).replace(/\\/g, "/");
+        if (/^([a-zA-Z]:)?\//.test(r)) return r;               // absolute: leave alone
+        const segs = String(base || "").split("/").filter(s => s && s !== ".");
+        for (const s of r.split("/")) {
+            if (!s || s === ".") continue;
+            if (s === "..") segs.pop(); else segs.push(s);
+        }
+        return segs.join("/");
+    }
+    /** copy of a FileRecord with every embedded path made crawl-root relative */
+    function absRecord(rec, base) {
+        if (!rec) return rec;
+        if (!base) return rec;
+        const out = Object.assign({}, rec, {path: joinPath(base, rec.path || "")});
+        if (rec.referencesTo) out.referencesTo = rec.referencesTo.map(r => Object.assign({}, r, {
+            targets: (r.targets || []).map(t => Object.assign({}, t, {path: joinPath(base, t.path)}))
+        }));
+        if (rec.relatedFiles) out.relatedFiles = rec.relatedFiles.map(
+            r => Object.assign({}, r, {path: joinPath(base, r.path)}));
+        return out;
+    }
+    /** cosine/TF-IDF score of a RelatedFile entry (tolerates alternative field names) */
+    function relScore(r) {
+        if (!r) return 0;
+        const v = (typeof r.score === "number") ? r.score
+            : (typeof r.similarity === "number") ? r.similarity : 0;
+        return v;
+    }
+    /** a shared token may be a plain string or an object ({token|name|text, idf}) */
+    function tokenText(t) {
+        if (t == null) return "";
+        if (typeof t === "string") return t;
+        return String(t.token || t.name || t.text || t.value || "");
+    }
+
 
     async function fetchJSON(url) {
         const r = await fetch(url, {cache: "no-cache"});
@@ -983,14 +1030,19 @@
         state.fileIn.clear();
         state.pkgOut.clear();
         state.pkgIn.clear();
+        state.relOut.clear();
+        state.relIn.clear();
         state.failures.clear();
         state.symInfo.clear();
         state.sidecars.clear();
 
-        for (const f of (m.failures || [])) state.failures.set(f.path, f.error || "failed");
+        // paths inside a report are relative to the folder it describes
+        const base = normRoot(m.folder || "");
+        for (const f of (m.failures || [])) state.failures.set(joinPath(base, f.path), f.error || "failed");
 
-        for (const rec of (m.files || [])) {
-            if (!rec || !rec.path) continue;
+        for (const rec0 of (m.files || [])) {
+            if (!rec0 || !rec0.path) continue;
+            const rec = absRecord(rec0, base);
             state.files.set(rec.path, rec);
             for (const qn of (rec.qualifiedNames || [])) {
                 let a = state.declByQN.get(qn);
@@ -1017,16 +1069,16 @@
                 f.files.push(rec.path);
                 f.symbolCount += rec.symbolCount || 0;
                 f.referenceCount += rec.referenceCount || 0;
-                f.resolved += (rec.resolutions || []).length;
+                f.resolved += (rec.referencesTo || []).length;
                 f.unresolved += (rec.unresolvedNames || []).length;
                 if (state.failures.has(rec.path)) f.failures++;
                 if (!cur) break;
                 cur = dirOf(cur);
             }
         }
-        // edges from lexical resolutions
+        // edges from lexical referencesTo
         for (const rec of state.files.values()) {
-            for (const res of (rec.resolutions || [])) {
+            for (const res of (rec.referencesTo || [])) {
                 for (const t of (res.targets || [])) {
                     if (!t || !t.path || t.path === rec.path) continue;
                     addEdge(state.fileOut, state.fileIn, rec.path, t.path, res, t);
@@ -1035,6 +1087,29 @@
                 }
             }
         }
+        // TF-IDF "related files" links (RelatedFileAnalyzer); stored in both directions
+        for (const rec of state.files.values())
+            for (const r of (rec.relatedFiles || [])) {
+                if (!r || !r.path || r.path === rec.path) continue;
+                addRelated(rec.path, r.path, r);
+            }
+    }
+    function addRelated(from, to, rel) {
+        let om = state.relOut.get(from);
+        if (!om) state.relOut.set(from, om = new Map());
+        let e = om.get(to);
+        if (!e) {
+            e = {from, to, names: new Map(), count: 0, ambiguous: false, score: 0, related: true};
+            om.set(to, e);
+            let im = state.relIn.get(to);
+            if (!im) state.relIn.set(to, im = new Map());
+            im.set(from, e);
+        }
+        e.score = Math.max(e.score, relScore(rel));
+        const toks = (rel.sharedTokens || []).map(tokenText).filter(Boolean);
+        for (const t of toks) e.names.set(t, 1);
+        e.count = Math.max(e.count, toks.length || 1);
+        return e;
     }
 
     function addEdge(outMap, inMap, from, to, res, target) {
@@ -1058,6 +1133,7 @@
 
     function adj(dirn) {
         if (state.mode === "packages") return dirn === "out" ? state.pkgOut : state.pkgIn;
+        if (state.mode === "related") return dirn === "out" ? state.relOut : state.relIn;
         return dirn === "out" ? state.fileOut : state.fileIn;
     }
 
@@ -1113,6 +1189,7 @@
         if (p) return p;
         busy(1);
         p = fetchJSON(sidecarUrl(path))
+            .then(rec => absRecord(rec, dirOf(path)))   // sidecar paths are relative to the file's folder
             .catch(() => state.files.get(path) || {path, symbols: []})
             .finally(() => busy(-1));
         state.sidecars.set(path, p);
@@ -1142,7 +1219,7 @@
         const slim = state.files.get(path) || rec;
         // name -> resolution (from the slim/manifest record, which is always resolved project-wide)
         const resByName = new Map();
-        for (const r of (slim.resolutions || rec.resolutions || [])) resByName.set(r.name, r);
+        for (const r of (slim.referencesTo || rec.referencesTo || [])) resByName.set(r.name, r);
         const refs = rec.references || [];
         const edges = [];   // {fromQN|null, name, toPath, toQN, ambiguous, line}
         if (refs.length) {
@@ -1185,13 +1262,13 @@
         return best;
     }
 
-    /** files whose manifest resolutions point at (path, qn) */
+    /** files whose manifest referencesTo point at (path, qn) */
     function callerFilesOf(path, qn) {
         const out = [];
         for (const rec of state.files.values()) {
             if (rec.path === path) continue;
             let hit = false;
-            for (const res of (rec.resolutions || [])) {
+            for (const res of (rec.referencesTo || [])) {
                 for (const t of (res.targets || [])) {
                     if (t.path === path && (!qn || t.qualifiedName === qn || !t.qualifiedName)) {
                         hit = true;
@@ -1236,10 +1313,11 @@
         const link = (a, b, dirn, names, meta) => {
             const key = a + "\u0000" + b;
             let l = links.get(key);
-            if (!l) links.set(key, l = {a, b, dirn, names: new Map(), count: 0, ambiguous: false});
+            if (!l) links.set(key, l = {a, b, dirn, names: new Map(), count: 0, ambiguous: false, score: 0});
             for (const [k, v] of (names || new Map())) l.names.set(k, (l.names.get(k) || 0) + v);
             l.count += (meta && meta.count) || 1;
             if (meta && meta.ambiguous) l.ambiguous = true;
+            if (meta && typeof meta.score === "number") l.score = Math.max(l.score, meta.score);
             return l;
         };
 
@@ -1255,7 +1333,7 @@
                         ? await symbolNeighbors(id, dirn)
                         : edgesOf(id, dirn).map(e => ({
                             id: (state.mode === "packages" ? pid : fid)(dirn === "out" ? e.to : e.from),
-                            names: e.names, count: e.count, ambiguous: e.ambiguous
+                            names: e.names, count: e.count, ambiguous: e.ambiguous, score: e.score
                         }));
                     for (const nb of neigh) {
                         const n = add(nb.id, d, dirn);
@@ -1303,7 +1381,7 @@
             const s = nodes.get(l.a), t = nodes.get(l.b);
             if (s && t) linkList.push({
                 source: s, target: t, dirn: l.dirn, names: l.names,
-                count: l.count, ambiguous: l.ambiguous
+                count: l.count, ambiguous: l.ambiguous, score: l.score
             });
         }
         state.graph = {nodes: list, links: linkList, byId: nodes, truncated};
@@ -1629,14 +1707,22 @@
         }
         const rec = state.files.get(p.path) || {};
         return head + "\n" + esc(rec.validator || "?") + " \u00b7 " + num(rec.symbolCount) + " symbols \u00b7 " +
-            num(rec.referenceCount) + " refs \u00b7 " + num((rec.resolutions || []).length) + " resolved \u00b7 " +
-            num((rec.unresolvedNames || []).length) + " unresolved" +
+            num(rec.referenceCount) + " refs \u00b7 " + num((rec.referencesTo || []).length) + " resolved \u00b7 " +
+            num((rec.unresolvedNames || []).length) + " unresolved \u00b7 " +
+            num((rec.relatedFiles || []).length) + " related" +
             (state.failures.has(p.path) ? "\nFAILED: " + esc(state.failures.get(p.path)) : "");
     }
 
     function linkTip(l) {
         const names = Array.from(l.names.entries()).sort((a, b) => b[1] - a[1]).slice(0, 24);
-        return "<b>" + esc(labelOf(l.source.id)) + " \u2192 " + esc(labelOf(l.target.id)) + "</b>\n" +
+        const head = "<b>" + esc(labelOf(l.source.id)) + " \u2192 " + esc(labelOf(l.target.id)) + "</b>\n";
+        if (state.mode === "related") {
+            return head + "similarity " + (l.score || 0).toFixed(3) + " \u00b7 " +
+                num(l.names.size) + " shared token" + (l.names.size === 1 ? "" : "s") + "\n" +
+                names.map(([k]) => "  " + esc(k)).join("\n") +
+                (l.names.size > names.length ? "\n  \u2026" : "");
+        }
+        return head +
             num(l.count) + " reference" + (l.count === 1 ? "" : "s") + (l.ambiguous ? " (ambiguous)" : "") + "\n" +
             names.map(([k, v]) => "  " + esc(k) + (v > 1 ? "  \u00d7" + v : "")).join("\n") +
             (l.names.size > names.length ? "\n  \u2026" : "");
@@ -1727,9 +1813,10 @@
         $("#mode").value = m;
         // re-map focus to the new granularity
         const p = parseId(state.focus || "");
+        const fileLike = (m === "files" || m === "related");
         if (m === "packages" && p.type !== "pkg") state.focus = pid(p.type === "none" ? "" : dirOf(p.path));
-        if (m === "files" && p.type !== "file" && p.path != null && state.files.has(p.path)) state.focus = fid(p.path);
-        if (m === "files" && p.type === "pkg") {
+        if (fileLike && p.type !== "file" && p.path != null && state.files.has(p.path)) state.focus = fid(p.path);
+        if (fileLike && p.type === "pkg") {
             const f = state.folders.get(p.path);
             if (f && f.direct.length) state.focus = fid(f.direct[0]);
         }
@@ -1855,6 +1942,7 @@
             "<span><b>" + num(m.referenceCount) + "</b> refs</span>" +
             "<span><b>" + num(m.resolvedNameCount) + "</b> resolved</span>" +
             "<span><b>" + num(m.unresolvedNameCount) + "</b> unresolved</span>" +
+            (m.relatedFileCount ? "<span><b>" + num(m.relatedFileCount) + "</b> related</span>" : "") +
             ((m.failures || []).length ? '<span class="err"><b>' + m.failures.length + "</b> failures</span>" : "") +
             (m.generatedAt ? '<span class="muted">' + esc(m.generatedAt) + "</span>" : "");
     }
@@ -1918,8 +2006,67 @@
         refs.innerHTML += '<div class="chips">' + Array.from(unres.entries())
             .sort((a, b) => b[1] - a[1]).slice(0, 400)
             .map(([n, c]) => '<span class="chip bad">' + esc(n) + (c > 1 ? " \u00d7" + c : "") + "</span>").join("") + "</div>";
+        renderPkgRelated(folder);
 
         setCodeTarget(null, null);
+    }
+    /** Related tab for a package: neighbouring packages ranked by TF-IDF file similarity. */
+    function renderPkgRelated(folder) {
+        const f = state.folders.get(folder) || {files: []};
+        const host = $("#paneRelated");
+        const inside = p => (folder ? (p === folder || p.indexOf(folder + "/") === 0) : true);
+        const agg = new Map();
+        for (const p of f.files)
+            for (const r of (((state.files.get(p) || {}).relatedFiles) || [])) {
+                if (!r || !r.path) continue;
+                const d = dirOf(r.path);
+                if (inside(d)) continue;
+                let a = agg.get(d);
+                if (!a) agg.set(d, a = {count: 0, score: 0, files: new Set()});
+                a.count++;
+                a.score = Math.max(a.score, relScore(r));
+                a.files.add(r.path);
+            }
+        host.innerHTML = sec("Related packages", agg.size);
+        if (!agg.size) host.innerHTML += '<div class="muted">no related packages recorded</div>';
+        for (const [d, a] of Array.from(agg.entries()).sort((x, y) => y[1].score - x[1].score))
+            host.appendChild(row('<span class="name">' + esc(d || "\u2039root\u203a") + "</span>" +
+                '<span class="chip">' + a.score.toFixed(3) + "</span>" +
+                '<span class="path">' + num(a.files.size) + " file(s) \u00b7 " + num(a.count) + " link(s)</span>",
+                () => setFocus(pid(d))));
+    }
+    /** Related tab for a file: neighbours from the report + the files that list it back. */
+    function renderFileRelated(path) {
+        const host = $("#paneRelated");
+        const rec = state.files.get(path) || {};
+        const list = (rec.relatedFiles || []).slice().sort((a, b) => relScore(b) - relScore(a));
+        host.innerHTML = sec("Related files (TF-IDF cosine)", list.length);
+        if (!list.length) host.innerHTML +=
+            '<div class="muted">no related files recorded (computeRelatedFiles = false?)</div>';
+        for (const r of list) {
+            host.appendChild(row('<span class="name">' + esc(baseOf(r.path)) + "</span>" +
+                '<span class="chip">' + relScore(r).toFixed(3) + "</span>" +
+                '<span class="path">' + esc(dirOf(r.path)) + "</span>",
+                () => setFocus(fid(r.path))));
+            const toks = (r.sharedTokens || []).map(tokenText).filter(Boolean);
+            if (toks.length) {
+                const chips = document.createElement("div");
+                chips.className = "chips";
+                chips.style.margin = "0 0 6px 20px";
+                chips.innerHTML = toks.slice(0, 24).map(t => '<span class="chip">' + esc(t) + "</span>").join("");
+                host.appendChild(chips);
+            }
+        }
+        const own = new Set(list.map(r => r.path));
+        const back = Array.from((state.relIn.get(path) || new Map()).values())
+            .filter(e => !own.has(e.from)).sort((a, b) => b.score - a.score);
+        host.innerHTML += sec("Listed as related by", back.length);
+        for (const e of back)
+            host.appendChild(row('<span class="name">' + esc(baseOf(e.from)) + "</span>" +
+                '<span class="chip">' + (e.score || 0).toFixed(3) + "</span>" +
+                '<span class="path">' + esc(dirOf(e.from)) + "</span>",
+                () => setFocus(fid(e.from))));
+        if (!back.length) host.innerHTML += '<div class="muted">\u2014</div>';
     }
 
     async function renderFileInfo(path, qn) {
@@ -1936,8 +2083,9 @@
             "<dt>modified</dt><dd>" + esc(rec.lastModified || "") + "</dd>" +
             "<dt>symbols</dt><dd>" + num(rec.symbolCount) + "</dd>" +
             "<dt>references</dt><dd>" + num(rec.referenceCount) + "</dd>" +
-            "<dt>resolved / unresolved</dt><dd>" + num((rec.resolutions || []).length) + " / " +
+            "<dt>resolved / unresolved</dt><dd>" + num((rec.referencesTo || []).length) + " / " +
             num((rec.unresolvedNames || []).length) + "</dd>" +
+            "<dt>related files</dt><dd>" + num((rec.relatedFiles || []).length) + "</dd>" +
             (rec.contentHash ? "<dt>sha-256</dt><dd>" + esc(rec.contentHash.slice(0, 16)) + "\u2026</dd>" : "") +
             "<dt>json</dt><dd><a target=\"_blank\" rel=\"noreferrer\" href=\"" + esc(sidecarUrl(path)) +
             '">sidecar</a> &middot; <a target="_blank" rel="noreferrer" href="' + esc(u(path)) + '">source</a></dd>' +
@@ -1970,7 +2118,7 @@
         /* ---- refs pane ---- */
         const refs = $("#paneRefs");
         refs.innerHTML = "";
-        const res = (rec.resolutions || []).slice().sort((a, b) => a.name.localeCompare(b.name));
+        const res = (rec.referencesTo || []).slice().sort((a, b) => a.name.localeCompare(b.name));
         refs.innerHTML += sec("Resolutions", res.length);
         const rHost = document.createElement("div");
         for (const r of res) {
@@ -1990,6 +2138,9 @@
             refs.innerHTML += '<div class="chips">' + rec.referencedNames.slice(0, 800)
                 .map(n => '<span class="chip">' + esc(n) + "</span>").join("") + "</div>";
         }
+        /* ---- related pane ---- */
+        renderFileRelated(path);
+
 
         /* ---- symbols pane (needs the sidecar) ---- */
         const symHost = $("#paneSymbols");
@@ -2310,6 +2461,8 @@
                 setMode("packages");
             } else if (e.key === "3") {
                 setMode("symbols");
+            } else if (e.key === "4") {
+                setMode("related");
             } else if (e.key === "[") {
                 $("#depth").value = clamp(state.depth - 1, 1, 6);
                 $("#depth").dispatchEvent(new Event("change"));
@@ -2382,7 +2535,8 @@
         searchIndex = null;
         renderStats();
         renderTree();
-        state.mode = ["files", "packages", "symbols"].indexOf(params.get("mode")) >= 0 ? params.get("mode") : "files";
+        state.mode = ["files", "packages", "symbols", "related"].indexOf(params.get("mode")) >= 0
+            ? params.get("mode") : "files";
         state.dir = ["out", "in", "both"].indexOf(params.get("dir")) >= 0 ? params.get("dir") : "both";
         state.depth = clamp(parseInt(params.get("depth") || "1", 10) || 1, 1, 6);
         state.maxNodes = clamp(parseInt(params.get("maxNodes") || "160", 10) || 160, 10, 2000);

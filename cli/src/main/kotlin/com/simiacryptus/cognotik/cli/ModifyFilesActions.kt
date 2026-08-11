@@ -19,8 +19,6 @@ package com.simiacryptus.cognotik.cli
      */
     object ModifyFilesActions {
 
-      const val MODIFY_OP = ModifyFilesFsAction.MODIFY_OP
-
       data class Config(
         /** Project root handed to the chat (defaults to the served directory). */
         val root: File,

@@ -975,5 +975,58 @@ class DatabaseFacet(
         )
       }
     }
+
+    fun isInitialized() : Boolean {
+      return synchronized(serverLock) {
+        embeddedServer != null
+      }
+    }
+
+    /**
+     * Terminate all active database connections, stop the shared embedded H2 server,
+     * and clear all cached connection state, registered database tracking, and schema initialization flags.
+     * Configuration settings (root directory, service URL, user credentials, etc.) remain intact.
+     */
+    fun resetAll() {
+      synchronized(serverLock) {
+        synchronized(connections) {
+          connections.values.forEach { conn ->
+            try {
+              if (!conn.isClosed) conn.close()
+            } catch (e: Exception) {
+              log.debug("Error closing connection during reset: ${e.message}", e)
+            }
+          }
+          connections.clear()
+
+          keepAliveConnections.values.forEach { conn ->
+            try {
+              if (!conn.isClosed) conn.close()
+            } catch (e: Exception) {
+              log.debug("Error closing keep-alive connection during reset: ${e.message}", e)
+            }
+          }
+          keepAliveConnections.clear()
+
+          embeddedServer?.let { server ->
+            try {
+              server.stop()
+              log.info("Shared embedded H2 server stopped during reset")
+            } catch (e: Exception) {
+              log.warn("Error stopping shared embedded H2 server during reset: ${e.message}", e)
+            }
+          }
+          embeddedServer = null
+          actualPort = -1
+
+          registeredDatabases.clear()
+          verifiedDatabases.clear()
+          schemasInitialized.clear()
+        }
+      }
+    }
+
+    fun reset() = resetAll()
+    fun killAllDatabases() = resetAll()
   }
 }

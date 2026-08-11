@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.webui.servlet.GiftedCreditsServlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
@@ -297,7 +297,18 @@ abstract class ApplicationDirectory(
 
   protected open fun newWebAppContext(path: String, server: ChatServer): WebAppContext {
     log.debug("Creating WebAppContext for ChatServer at path: $path")
-    var baseResource: Resource? = server.baseResource
+    val webAppContext = createPathContext(path, server.baseResource)
+    log.debug("Configuring ChatServer for WebAppContext at path: $path")
+    server.configure(webAppContext)
+    log.info("WebAppContext configured for path: $path with ChatServer")
+    return webAppContext
+  }
+
+  private fun createPathContext(
+    path: String,
+    resource: Resource?
+  ): WebAppContext {
+    var baseResource: Resource? = resource
     if (baseResource == null) {
       log.warn("No baseResource specified for ChatServer at path: $path, defaulting to root resource")
       baseResource = Resource.newClassPathResource("/")
@@ -309,9 +320,6 @@ abstract class ApplicationDirectory(
     }
     log.debug("Base resource determined for path $path: ${baseResource?.javaClass?.simpleName}")
     val webAppContext = newWebAppContext(path, baseResource, resourceBase = "application")
-    log.debug("Configuring ChatServer for WebAppContext at path: $path")
-    server.configure(webAppContext)
-    log.info("WebAppContext configured for path: $path with ChatServer")
     return webAppContext
   }
 

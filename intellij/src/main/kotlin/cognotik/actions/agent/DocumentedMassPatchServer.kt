@@ -8,6 +8,8 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -124,47 +126,47 @@ class DocumentedMassPatchServer(
                         }
                     } else {
                         Discussable(
-                            task = fileTask,
-                            userMessage = { userMessage },
-                            heading = renderMarkdown(userMessage),
-                            initialResponse = {
-                                mainActor.answer(toInput(it))
-                            },
-                            outputFn = { design: String ->
-                                """<div>${
-                                    renderMarkdown(design) {
-                                      DiffInstrumentor(
-                                        processor,
-                                        SessionRenderer(task),
-                                      ).instrument(
-                                        root = _root,
-                                        response = design,
-                                        handle = { newCodeMap: Map<Path, String> ->
-                                          newCodeMap.forEach { (path, newCode) ->
-                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                          }
-                                        },
-                                        shouldAutoApply = { it: Path -> autoApply },
-                                        defaultFile = path.toString(),
-                                        resolver = ::resolveToRelativePath,
-                                        prefilterFilename = ::prefilterFilename
-                                      )
+                          task = fileTask,
+                          userMessage = { userMessage },
+                          heading = renderMarkdown(userMessage),
+                          initialResponse = {
+                            mainActor.answer(toInput(it))
+                          },
+                          outputFn = { design: String ->
+                            """<div>${
+                              renderMarkdown(design) {
+                                DiffInstrumentor(
+                                  processor,
+                                  SessionRenderer(task),
+                                ).instrument(
+                                  root = _root,
+                                  response = design,
+                                  handle = { newCodeMap: Map<Path, String> ->
+                                    newCodeMap.forEach { (path, newCode) ->
+                                      fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                     }
-                                }</div>"""
-                            },
-                            reviseResponse = { userMessages ->
-                                mainActor.respond(
-                                    messages = userMessages.map {
-                                        ModelSchema.ChatMessage(
-                                            it.second,
-                                            it.first.toContentList()
-                                        )
-                                    }.toTypedArray(),
-                                    input = toInput(userMessage),
+                                  },
+                                  shouldAutoApply = { it: Path -> autoApply },
+                                  defaultFile = path.toString(),
+                                  resolver = ::resolveToRelativePath,
+                                  prefilterFilename = ::prefilterFilename
                                 )
-                            },
-                            atomicRef = AtomicReference(),
-                            semaphore = Semaphore(0),
+                              }
+                            }</div>"""
+                          },
+                          reviseResponse = { userMessages ->
+                            mainActor.respond(
+                              messages = userMessages.map {
+                                ModelSchema.ChatMessage(
+                                  it.second,
+                                  it.first.toContentList()
+                                )
+                              }.toTypedArray(),
+                              input = toInput(userMessage),
+                            )
+                          },
+                          atomicRef = AtomicReference(),
+                          semaphore = Semaphore(0),
                         ).call()
                     }
                     synchronized(status) { status.append("Completed processing ${path}<br/>") }

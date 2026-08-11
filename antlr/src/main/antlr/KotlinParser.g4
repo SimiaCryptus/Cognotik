@@ -25,7 +25,14 @@ kotlinFile
     ;
 
 script
-    : NL* preamble anysemi* (expression (anysemi+ expression?)*)? EOF
+     : NL* preamble anysemi* (scriptStatement (anysemi+ scriptStatement?)*)? EOF
+     ;
+
+// A script may contain both declarations (fun/class/object/val/typealias)
+// and plain statements/expressions at the top level.
+scriptStatement
+     : topLevelObject
+     | statement
     ;
 
 preamble
@@ -82,7 +89,7 @@ classParameters
     ;
 
 classParameter
-    : modifierList? (VAL | VAR)? simpleIdentifier COLON type (ASSIGNMENT expression)?
+     : modifierList? (VAL | VAR)? simpleIdentifier COLON type (ASSIGNMENT NL* expression)?
     ;
 
 delegationSpecifiers
@@ -104,20 +111,18 @@ explicitDelegation
     ;
 
 classBody
-    : LCURL NL* classMemberDeclaration* NL* RCURL
+    : LCURL anysemi* (classMemberDeclaration (anysemi+ classMemberDeclaration?)*)? anysemi* RCURL
     ;
 
 classMemberDeclaration
-    : (
-        classDeclaration
-        | functionDeclaration
-        | objectDeclaration
-        | companionObject
-        | propertyDeclaration
-        | anonymousInitializer
-        | secondaryConstructor
-        | typeAlias
-    ) anysemi+
+    : classDeclaration
+    | functionDeclaration
+    | objectDeclaration
+    | companionObject
+    | propertyDeclaration
+    | anonymousInitializer
+    | secondaryConstructor
+    | typeAlias
     ;
 
 anonymousInitializer
@@ -136,7 +141,7 @@ constructorDelegationCall
     ;
 
 enumClassBody
-    : LCURL NL* enumEntries? (NL* SEMICOLON NL* classMemberDeclaration*)? NL* RCURL
+    : LCURL anysemi* enumEntries? (anysemi* SEMICOLON anysemi* (classMemberDeclaration (anysemi+ classMemberDeclaration?)*)?)? anysemi* RCURL
     ;
 
 enumEntries
@@ -148,7 +153,7 @@ enumEntry
     ;
 
 functionDeclaration
-    : functionModifierList? FUN (NL* type NL* DOT)? (NL* typeParameters)? (NL* receiverType NL* DOT)? (
+     : functionModifierList? FUN (NL* typeParameters)? (NL* receiverType NL* DOT)? (
         NL* identifier
     )? NL* functionValueParameters (NL* COLON NL* type)? (NL* typeConstraints)? (NL* functionBody)?
     ;
@@ -158,15 +163,24 @@ functionValueParameters
     ;
 
 functionValueParameter
-    : modifierList? parameter (ASSIGNMENT expression)?
+     : modifierList? parameter (ASSIGNMENT NL* expression)?
     ;
 
 parameter
     : simpleIdentifier COLON type
     ;
+// An explicit receiver is only parsed when it cannot be mistaken for the (dotted)
+// function name: parenthesized types, nullable types, or types whose final segment
+// carries type arguments. A plain receiver such as `fun Foo.Bar.baz()` is absorbed
+// by `identifier` (its last segment is the function name), which avoids the greedy
+// `userType` dot-loop consuming the name and then demanding another '.'.
 
 receiverType
-    : typeModifierList? (parenthesizedType | nullableType | typeReference)
+     : typeModifierList? (parenthesizedType | nullableType | genericUserType)
+     ;
+
+genericUserType
+     : (simpleIdentifier (NL* typeArguments)? NL* DOT NL*)* simpleIdentifier NL* typeArguments
     ;
 
 functionBody
@@ -307,11 +321,18 @@ blockLevelExpression
     ;
 
 declaration
-    : labelDefinition* (classDeclaration | functionDeclaration | propertyDeclaration | typeAlias)
+     : labelDefinition* (
+         classDeclaration
+         | functionDeclaration
+         | objectDeclaration
+         | companionObject
+         | propertyDeclaration
+         | typeAlias
+     )
     ;
 
 expression
-    : disjunction (assignmentOperator disjunction)*
+     : disjunction (assignmentOperator NL* disjunction)*
     ;
 
 disjunction
@@ -521,8 +542,18 @@ controlStructureBody
     ;
 
 whenExpression
-    : WHEN NL* (LPAREN expression RPAREN)? NL* LCURL NL* (whenEntry NL*)* NL* RCURL
+     : WHEN NL* (LPAREN whenSubject RPAREN)? NL* LCURL NL* (whenEntry NL*)* NL* RCURL
     ;
+// Kotlin permits a subject *declaration*: `when (val x: T = expr) { ... }`.
+// This cannot be reduced to `expression`: a type annotation is only reachable
+// via the `:` typeOperation, whose RHS is a prefixUnaryExpression, so nullable
+// (`Any?`), function and parenthesized types are rejected there. Parse the
+// declaration form explicitly, before falling back to a plain expression.
+whenSubject
+     : annotations* VAL NL* variableDeclaration NL* ASSIGNMENT NL* expression
+     | expression
+     ;
+
 
 whenEntry
     : whenCondition (NL* COMMA NL* whenCondition)* NL* ARROW NL* controlStructureBody semi?

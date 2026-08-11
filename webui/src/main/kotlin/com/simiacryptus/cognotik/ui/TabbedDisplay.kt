@@ -1,9 +1,10 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.ui
 
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 open class TabbedDisplay(
   val task: SessionTask,
@@ -141,7 +142,7 @@ open class TabbedDisplay(
         tasks.forEach { (key, task) ->
           task.complete(map[key]!!)
         }
-      }, 200, java.util.concurrent.TimeUnit.MILLISECONDS)
+      }, 200, TimeUnit.MILLISECONDS)
       displayMapInTabs(tasks.mapValues { it.value.placeholder }, ui = ui, split = false)
     } else {
       """

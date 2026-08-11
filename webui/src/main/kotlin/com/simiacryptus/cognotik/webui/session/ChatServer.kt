@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.webui.chat
+package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.model.Session
@@ -6,11 +6,10 @@ import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.DefaultServlet
+import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.util.resource.Resource
-import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.JettyServerUpgradeRequest
 import org.eclipse.jetty.websocket.server.JettyWebSocketServlet
 import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
@@ -92,7 +91,7 @@ abstract class ChatServer(
   open val webSocketHandler : JettyWebSocketServlet by lazy { WebSocketHandler() }
   val defaultServlet by lazy { DefaultServlet() }
 
-  open fun configure(webAppContext: WebAppContext) {
+  open fun configure(webAppContext: ServletContextHandler) {
     trafficLog.info("Configuring web app context for ${javaClass.simpleName}")
     configure_home(webAppContext)
     configure_ws(webAppContext)
@@ -100,15 +99,15 @@ abstract class ChatServer(
     trafficLog.debug("Servlets registered: default(/), ws(/ws), newSession(/newSession)")
   }
 
-  protected open fun configure_home(webAppContext: WebAppContext) {
+  protected open fun configure_home(webAppContext: ServletContextHandler) {
     webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
   }
 
-  protected open fun configure_newSession(webAppContext: WebAppContext) {
+  protected open fun configure_newSession(webAppContext: ServletContextHandler) {
     webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
   }
 
-  protected open fun configure_ws(webAppContext: WebAppContext) {
+  protected open fun configure_ws(webAppContext: ServletContextHandler) {
     webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
   }
 

@@ -1,7 +1,6 @@
 ---
 transforms:
-  - (.*)/apps/(.*)/app\..* -> $1/apps/$2/background.png
-  - (.*)/apps/(.*)/PIPELINE\.md -> $1/apps/$2/background.png
+  - (.*)/apps/(.*)/README\.md -> $1/apps/$2/background.png
 task_type: GenerateImage
 ---
 

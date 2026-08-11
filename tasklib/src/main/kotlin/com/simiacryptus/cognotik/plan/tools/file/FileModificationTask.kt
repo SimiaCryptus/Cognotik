@@ -14,8 +14,8 @@ import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.Retryable.Companion.async
+import com.simiacryptus.cognotik.ui.Retryable
+import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask

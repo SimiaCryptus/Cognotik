@@ -15,12 +15,14 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.lang.Thread.sleep
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -54,7 +56,7 @@ open class PersonaChatMode(
   private val transcriptLock = Any()
   private val messages get() = messageMaps.computeIfAbsent(session) { ConcurrentLinkedQueue() }
   private val messageBuffer = ConcurrentLinkedQueue<String>()
-  private var transcriptStream: FileOutputStream? = null
+   private var transcriptStream: OutputStream? = null
   private var isProcessing = false
   private val reasoningState = AtomicReference<Any?>(null)
   private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
@@ -66,11 +68,11 @@ open class PersonaChatMode(
 
   override fun initialize(task: SessionTask) {
     log.debug("PersonaChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
-    transcriptStream = task.transcript()
   }
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
+     if (transcriptStream != null) this.transcriptStream = transcriptStream
     val parserChatter = orchestrationConfig.defaultFast.getChildClient(task)
     val defaultChat = orchestrationConfig.defaultSmart.getChildClient(task)
 

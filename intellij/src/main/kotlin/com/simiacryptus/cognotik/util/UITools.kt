@@ -24,6 +24,7 @@ import com.intellij.util.ui.FormBuilder
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.exceptions.ModerationException
+import com.simiacryptus.cognotik.txt.IndentedText
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import org.slf4j.LoggerFactory.getLogger
 import java.awt.BorderLayout

@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -204,7 +205,7 @@ class DiscussionTask(
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {
         when {
-          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          FileSelectionUtils.isIgnored(it.toPath()) -> false
           matcher.matches(root.relativize(it.toPath())) -> true
           it.isDirectory -> true
           else -> false

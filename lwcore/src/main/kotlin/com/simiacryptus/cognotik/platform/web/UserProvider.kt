@@ -13,6 +13,29 @@ import jakarta.servlet.http.HttpServletResponse
 interface UserProvider {
   fun authenticate(
     request: HttpServletRequest,
-    response: HttpServletResponse?
+    response: AbstractHttpServletResponse?
   ): User?
+
+  fun authenticate(
+    request: HttpServletRequest,
+    response: HttpServletResponse?
+  ): User? = authenticate(request, response?.let {
+    object : AbstractHttpServletResponse {
+      override fun setHeader(key: String, value: String) {
+        it.setHeader(key, value)
+      }
+
+      override var status: Int
+        get() = it.status
+        set(value) {
+          it.status = value
+        }
+    }
+  })
+}
+
+interface AbstractHttpServletResponse {
+  fun setHeader(key: String, value: String)
+
+  var status: Int
 }

@@ -6,11 +6,10 @@ build/
 # Android
 .gradle/
 .idea/
-/.doc-processor-cache/
-/.kotlin/
-/.intellijPlatform/
-.cognotik*
+.doc-processor-cache/
+.kotlin/
+.intellijPlatform/
 *.db
-.data
-
-
+.data/
+.logs/
+cognotik-tools/

@@ -5,6 +5,7 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
@@ -19,7 +20,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+import com.simiacryptus.cognotik.webui.session.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File

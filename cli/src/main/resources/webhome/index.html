@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Cognotik File Server</title>
+      <link rel="stylesheet" href="styles.css">
+      <link rel="stylesheet" href="home.css">
+  </head>
+  <body>
+  <header class="top-bar">
+      <div class="brand">
+          <span class="brand-mark" aria-hidden="true">◧</span>
+          <span class="brand-text">Cognotik <em>File Server</em></span>
+      </div>
+      <div class="spacer"></div>
+      <a class="button ghost" id="nav-settings" href="settings.html" title="Models &amp; API keys">⚙ Settings</a>
+      <button class="button ghost" id="reload-info" type="button" title="Re-read the server configuration">↻</button>
+  </header>
+
+  <main class="page">
+      <section class="hero">
+          <h1>Your workspace, served.</h1>
+          <p class="served-dir" id="served-dir">Reading server configuration…</p>
+          <p class="hero-blurb">
+              Cognotik File Server mounts one directory over HTTP and puts an agentic toolchain
+              on top of it: browse and edit files, open a terminal, run DocOps and AutoFix, or
+              ask a model to patch your code — all against the same workspace, with the rights of
+              the user that started the process.
+          </p>
+      </section>
+
+      <section class="home-grid" id="home-grid">
+          <a class="card" id="card-ui" href="../ui/">
+              <span class="card-icon" aria-hidden="true">🧭</span>
+              <span class="card-title">IDE view</span>
+              <span class="card-desc">
+                  The full single-page app: file tree, editor, terminal, Git and the Tools menu
+                  (DocOps, AutoFix, Select Models…).
+              </span>
+              <span class="card-path" id="path-ui">/ui/</span>
+              <span class="card-note" id="note-ui" hidden>Disabled with <code>--no-ui</code>.</span>
+          </a>
+
+          <a class="card" id="card-files" href="../files/root/">
+              <span class="card-icon" aria-hidden="true">🗂</span>
+              <span class="card-title">Classic listing</span>
+              <span class="card-desc">
+                  A plain directory listing with uploads, per-file <em>Modify</em>, per-document
+                  <em>Plan</em>/<em>Run</em> links and a live task panel.
+              </span>
+              <span class="card-path" id="path-files">/files/root/</span>
+          </a>
+
+          <a class="card" id="card-settings" href="settings.html">
+              <span class="card-icon" aria-hidden="true">⚙</span>
+              <span class="card-title">Settings</span>
+              <span class="card-desc">
+                  Pick the smart and fast models and manage provider API keys. One selection
+                  re-binds DocOps, AutoFix and the patch chat.
+              </span>
+              <span class="card-path">/home/settings.html</span>
+          </a>
+      </section>
+
+      <section class="panel">
+          <div class="panel-header">
+              <h2>Running configuration</h2>
+              <p>Reported live by the server — this page is only a client of <code>/serverInfo</code>.</p>
+          </div>
+          <div class="panel-body">
+              <dl class="config-grid" id="config-grid"></dl>
+          </div>
+      </section>
+
+      <section class="panel">
+          <div class="panel-header">
+              <h2>Capabilities</h2>
+              <p>
+                  This is a <strong>permissive local mount</strong> by default: terminals and
+                  unrestricted child processes are on, and it binds to loopback. Start it with
+                  <code>--secure</code> to turn everything below off.
+              </p>
+          </div>
+          <div class="panel-body">
+              <div class="chips" id="capability-chips"></div>
+              <p class="warn" id="exposure-warning" hidden>
+                  ⚠ Arbitrary code execution is enabled on a non-loopback interface. Anyone who can
+                  reach this port can run commands as you.
+              </p>
+          </div>
+      </section>
+
+      <section class="panel">
+          <div class="panel-header">
+              <h2>Endpoints</h2>
+              <p>Everything the UI does is scriptable; the pages here are just clients.</p>
+          </div>
+          <div class="panel-body">
+              <pre class="snippet" id="endpoint-snippet"></pre>
+          </div>
+      </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="home.js"></script>
+  </body>
+  </html>

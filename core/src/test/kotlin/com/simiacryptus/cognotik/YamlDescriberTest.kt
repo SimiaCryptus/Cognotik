@@ -1,6 +1,5 @@
-package com.simiacryptus.util
+package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.TypeDescriberTestBase
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.describe.YamlDescriber
 import org.junit.jupiter.api.Assertions

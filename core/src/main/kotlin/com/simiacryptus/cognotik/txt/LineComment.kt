@@ -1,4 +1,4 @@
-﻿package com.simiacryptus.cognotik.util
+﻿package com.simiacryptus.cognotik.txt
 
 import com.simiacryptus.cognotik.util.StringUtil.getWhitespacePrefix
 import com.simiacryptus.cognotik.util.StringUtil.stripPrefix

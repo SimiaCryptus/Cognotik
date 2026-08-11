@@ -112,7 +112,7 @@ class SubPlanTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newSystemFileStream(transcriptFile(taskType))
+    val transcript = task.newUserFileStream(transcriptFile())
 
     try {
       log.info("Starting SubPlanningTask. Goal: ${executionConfig?.planning_goal ?: "N/A"}")
@@ -170,7 +170,7 @@ class SubPlanTask(
           }
           log.debug("Executing sub-plan with ${contextMessages.size} context messages")
           planningGoal
-        }, task)
+        }, task, transcriptStream = transcript)
 
         // Collect results from the cognitive mode's context
         val results = cognitiveInstance.contextData()

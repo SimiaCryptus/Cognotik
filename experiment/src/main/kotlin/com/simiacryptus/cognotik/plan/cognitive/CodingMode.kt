@@ -15,15 +15,15 @@ import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.lang.reflect.Type
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -97,9 +97,9 @@ open class CodingMode(
     abstract fun call(executionConfig: Any, messages: String): String
   }
 
-  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
-    val transcript = task.transcript()
+     val transcript = transcriptStream
     try {
       transcript?.write("User: $userMessage\n".toByteArray())
       history.add(userMessage to ModelSchema.Role.user)
@@ -145,7 +145,7 @@ open class CodingMode(
   open fun output(
     executionResult: CodeAgent.ExecutionResult,
     tabs: TabbedDisplay,
-    transcript: FileOutputStream?,
+     transcript: OutputStream?,
     response: CodeAgent.CodeResult
   ) {
     val output = executionResult.resultOutput
