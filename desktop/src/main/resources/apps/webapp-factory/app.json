@@ -1,0 +1,17 @@
+{
+  "name": "WebApp Factory",
+  "icon": "🏗️",
+  "description": "Turn natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.",
+  "badge": null,
+  "badgeClass": "",
+  "type": "docops",
+  "path": "apps/webapp-factory",
+  "id": "app-webapp-factory",
+  "category": "Create",
+  "tags": [
+    "Devs"
+  ],
+  "videoUrl": "https://cognotik.com/tours/core/edit/webapp-factory.mp4",
+  "exampleSessions": {
+  }
+}

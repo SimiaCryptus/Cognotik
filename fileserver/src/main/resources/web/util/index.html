@@ -40,6 +40,11 @@
             h1, h2, h3 { margin: 0 0 .5rem; line-height: 1.25; }
 
             .wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+            /* Shared menubar mount — /app/menu.js injects its own styles into the head,
+               so this only reserves the slot and collapses when the module is absent. */
+            #menubar-mount:empty { display: none; }
+            body.has-menubar .wrap { padding-top: 1.5rem; }
+
 
             .muted { color: var(--muted); }
             .small { font-size: .8rem; }
@@ -306,7 +311,7 @@
             .notes ul { margin: .5rem 0 0 1.1rem; padding: 0; font-size: .85rem; color: var(--muted); }
             .notes li { margin: .2rem 0; }
 
-            .toast-host { position: fixed; right: 14px; bottom: 14px; display: grid; gap: .4rem; z-index: 30; }
+            .toast-host { position: fixed; right: 14px; bottom: 14px; display: grid; gap: .4rem; z-index: 900; }
 
             .toast {
                 background: var(--panel);
@@ -323,7 +328,8 @@
             .modal-host {
                 position: fixed;
                 inset: 0;
-                z-index: 40;
+                /* above the sticky menubar */
+                z-index: 1000;
                 display: grid;
                 place-items: center;
                 padding: 1.5rem;
@@ -385,6 +391,9 @@
         </style>
     </head>
     <body>
+    <!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
+    <div id="menubar-mount"></div>
+
 
     <div class="wrap">
         <header class="hero">
@@ -432,6 +441,12 @@
                 Doc-op paths and status locations are derived from the page URL, so keep a tool's
                 <code>folder:</code> front-matter and its <code>ROOT_HOPS</code> constant in sync if
                 you move it to a different depth.
+            </p>
+            <p class="small muted" style="margin:.5rem 0 0">
+                The bar at the top is the shared menubar from <code>/app/menu.js</code> (nav, filesystem
+                IDE link, git, sessions, usage). Pass overrides through <code>meta.menu</code> in
+                <code>apps.js</code> — e.g. <code>{ showGit: false, sessionsEndpoint: '/api/sessions?format=json' }</code>.
+                If the shared modules are not deployed the bar is simply omitted.
             </p>
         </section>
     </div>
@@ -524,6 +539,12 @@
             view: localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid',
             missing: new Set()   // entries that responded 404 to a HEAD probe
         };
+        /**
+         * Controller returned by initMenu(), or null when /app/menu.js could not be
+         * loaded. Declared here so the keydown handler can reference it safely.
+         */
+        let menu = null;
+
 
         function readHash() {
             const params = new URLSearchParams(location.hash.replace(/^#/, ''));
@@ -708,10 +729,11 @@
         }
         /* ───────────────────────── README viewer ───────────────────────── */
         /**
-         * READMEs are rendered in place. `/lib/marked.min.js` is fetched the first time a
-         * doc is opened and `/lib/purify.min.js` is used when it happens to be deployed.
-         * Neither is required: missing marked falls back to the raw text in a <pre>, and a
-         * failing fetch shows the error plus a "Raw ↗" escape hatch.
+         * READMEs are rendered in place. marked is fetched the first time a doc is opened,
+         * trying `/lib/marked.min.js` then the vendored `/app/marked.min.js`, and
+         * `/lib/purify.min.js` is used when it happens to be deployed. Neither is required:
+         * missing marked falls back to the raw text in a <pre>, and a failing fetch shows
+         * the error plus a "Raw ↗" escape hatch.
          */
         const scripts = {};
         function loadScript(src) {
@@ -726,9 +748,15 @@
             }
             return scripts[src];
         }
+        const MARKED_SOURCES = ['/lib/marked.min.js', '/app/marked.min.js'];
         async function ensureMarked() {
             if (window.marked) return window.marked;
-            await loadScript('/lib/marked.min.js');
+            for (const src of MARKED_SOURCES) {
+                try {
+                    await loadScript(src);
+                } catch (e) { /* try the next candidate */ }
+                if (window.marked) return window.marked;
+            }
             return window.marked || null;
         }
         async function ensurePurify() {
@@ -884,6 +912,12 @@
                 closeDocs();
                 return;
             }
+            if (e.key === 'Escape' && menu) {
+                // No-op when nothing is open, so this is safe to call unconditionally.
+                try {
+                    menu.close();
+                } catch (err) { /* ignore */ }
+            }
             const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
             if (e.key === '/' && !typing) {
                 e.preventDefault();
@@ -907,12 +941,42 @@
         });
 
         /* ───────────────────────── bootstrap ───────────────────────── */
+        /**
+         * The menubar is imported dynamically: this index must stay usable when the shared
+         * /app/ modules are not mounted (bare file server, offline copy, path prefix that
+         * has not been configured). Options come from `meta.menu` in apps.js so a catalog
+         * can hide panels or pin the sessions endpoint without touching this page.
+         */
+        async function initMenubar() {
+            const mount = $('menubar-mount');
+            try {
+                const {initMenu} = await import('/app/menu.js');
+                menu = initMenu({
+                    mount,
+                    appName: meta.title || 'Cognotik Dev Tools',
+                    extraLinks: meta.menuLinks || [],
+                    ...(meta.menu || {})
+                });
+                document.body.classList.add('has-menubar');
+                window.addEventListener('pagehide', () => {
+                    try {
+                        if (menu) menu.destroy();
+                    } catch (e) { /* ignore */ }
+                    menu = null;
+                }, {once: true});
+            } catch (e) {
+                console.warn('Menubar unavailable — continuing without it', e);
+                if (mount) mount.remove();
+            }
+        }
+
 
         readHash();
         $('q').value = state.q;
         renderHeader();
         render();
         probeEntries();
+        initMenubar();
 
         if (!tools.length) toast('apps.js registered no tools.', 'err');
     </script>

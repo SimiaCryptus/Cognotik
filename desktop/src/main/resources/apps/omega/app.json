@@ -1,0 +1,14 @@
+{
+  "name": "Omega App Factory",
+  "icon": "🔮",
+  "description": "Meta-application that designs and produces other DocOps applications from plain language descriptions.",
+  "badge": "Experimental",
+  "badgeClass": "accent",
+  "type": "docops",
+  "path": "apps/omega",
+  "id": "app-omega",
+  "category": "Imagine",
+  "tags": [
+    "Devs"
+  ]
+}
