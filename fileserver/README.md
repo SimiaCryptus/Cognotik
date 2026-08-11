@@ -14,6 +14,7 @@ directory listings, uploads, downloads, in-browser editing, Git integration, and
 - [Architecture Overview](#architecture-overview)
 - [Package Layout](#package-layout)
 - [Getting Started](#getting-started)
+- [Quickstart & Standalone IDE](#quickstart--standalone-ide)
     - [Minimal Example](#minimal-example)
     - [Registering the Servlet](#registering-the-servlet)
 - [Core Concepts](#core-concepts)
@@ -37,6 +38,28 @@ directory listings, uploads, downloads, in-browser editing, Git integration, and
 - [Customization Cookbook](#customization-cookbook)
 - [Dependencies](#dependencies)
 - [License](#license)
+
+---
+
+## Quickstart & Standalone IDE
+
+To launch the standalone web IDE in any workspace directory using the one-line shell runner script:
+
+```bash
+# Launch in current directory with default settings (http://localhost:8081)
+curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash
+
+# Pass custom CLI options and workspace target directory
+curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash -s -- --port 9090 /path/to/workspace
+```
+
+Or execute via Gradle within the project:
+
+```bash
+./gradlew :fileserver:fileserver -PserverArgs="--port 8081 /path/to/workspace"
+```
+
+The standalone server is powered by `com.simiacryptus.cognotik.webui.servlet.FileServerCli`. For complete CLI parameter reference, security lockdown flags (`--secure`, `--read-only`, `--no-terminal`, `--no-exec`), and detailed launcher documentation, see **[README-cli.md](README-cli.md)**.
 
 ---
 

@@ -23,6 +23,9 @@ applications to a full document-operations pipeline.
 ## 🚀 Quick Start
 
 ```bash
+# Option 1: Launch Standalone Web IDE instantly in any directory
+curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash
+# Option 2: Clone and build from source
 # Clone the repository
 git clone https://github.com/SimiaCryptus/Cognotik.git
 cd Cognotik
@@ -177,6 +180,18 @@ An IntelliJ-based plugin that integrates Cognotik capabilities into the IDE.
 - Code review and documentation generation
 - Refactoring suggestions
 
+### 8. Standalone Web IDE (fileserver)
+
+A lightweight, browser-accessible IDE and file workspace server for local or remote project interaction.
+
+**Key Features:**
+
+- **In-Browser Monaco Code Editor**: Full-featured code editor with syntax highlighting, dirty state tracking, and keyboard save (`Ctrl+S`)
+- **Web Terminal & Execution API**: Built-in web terminal (`/.fsapi/v1/terminal`) and process execution endpoints
+- **Git Repository Management**: Visual browser panel for Git operations including status, diffs, commits, and branch management
+- **Zero-Setup Quickstart**: Instant launcher script via `curl` for immediate execution in any directory
+- **Flexible Security Profiles**: Configurable flags including `--read-only`, `--no-terminal`, `--no-exec`, and hardened `--secure` mode
+
 ## Architecture
 
 The Cognotik platform follows a modular architecture:
@@ -231,6 +246,16 @@ Communication between components:
 2. Configure API keys:
     - Go to Settings/Preferences > Tools > Cognotik
     - Enter your API keys for the providers you want to use
+#### Standalone Web IDE
+1. Run instantly in any directory without local workspace setup:
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash
+   ```
+2. Pass custom options (port, target workspace path, security modes):
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash -s -- --port 9090 /path/to/workspace
+   ```
+
 
 ### Building from Source
 
@@ -285,6 +310,7 @@ cognotik/
 ├── desktop/            # Desktop application
 ├── webapp/             # Web application (React)
 ├── intellij/           # IntelliJ plugin
+├── fileserver/         # Standalone Web IDE server
 ├── gradle/             # Gradle configuration
 └── docs/               # Documentation
 ```
