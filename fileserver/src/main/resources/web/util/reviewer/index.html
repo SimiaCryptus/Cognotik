@@ -384,11 +384,11 @@
                   <h2>Settings</h2>
                   <label for="focus-file">Focus file</label>
                   <input id="focus-file" type="text" value="focus.md" spellcheck="false">
-                  <label for="review-dir">Review directory</label>
+                 <label for="review-dir">Review directory (relative to the analysis root)</label>
                   <input id="review-dir" type="text" value="review" spellcheck="false">
-                  <label for="tasks-dir">Tasks directory</label>
+                 <label for="tasks-dir">Tasks directory (relative to the analysis root)</label>
                   <input id="tasks-dir" type="text" value="tasks" spellcheck="false">
-                  <label for="tasks-file">Aggregate task plan</label>
+                 <label for="tasks-file">Aggregate task plan (relative to the analysis root)</label>
                   <input id="tasks-file" type="text" value="tasks.json" spellcheck="false">
                   <label for="ops-dir">Ops directory</label>
                   <input id="ops-dir" type="text" value="ops" spellcheck="false">
@@ -568,6 +568,7 @@
       const state = {
           ctx: null,
           basePath: null,
+         rootBasePath: null,
           docRoot: '',
           statusBase: null,
           sessionId: null,
@@ -694,6 +695,29 @@
       /** `../`-prefix walking from a directory inside this document up to the analysis root. */
       const rootPrefixFor = (dir) =>
           '../'.repeat((dir ? dir.split('/').filter(Boolean).length : 0) + ROOT_HOPS);
+     /**
+      * Base URL of the *analysis root* (the ops' `folder: ../../..`). `review/`, `tasks/`
+      * and `tasks.json` are produced ROOT_HOPS folders above this document, so every
+      * read/write/list/delete for them must use this base — never `state.basePath`.
+      */
+     function computeRootBase() {
+         const base = String(state.basePath || '').replace(/\/+$/, '');
+         if (!base) return base;
+         const segs = base.split('/');
+         return segs.slice(0, Math.max(1, segs.length - ROOT_HOPS)).join('/') || '/';
+     }
+     const rootBase = () => state.rootBasePath || (state.rootBasePath = computeRootBase());
+     /* File IO, split by which root the path is relative to. */
+     const readDoc = (p) => readFile(state.basePath, p);
+     const writeDoc = (p, text) => writeFile(state.basePath, p, text);
+     const deleteDoc = (p) => deleteFile(state.basePath, p);
+     const readRoot = (p) => readFile(rootBase(), p);
+     const deleteRoot = (p) => deleteFile(rootBase(), p);
+     /** True when a (server) path points at/inside the directory `dir`. */
+     function underDir(target, dir) {
+         const t = stripLead(target);
+         return t === dir || t.indexOf(dir + '/') === 0 || t.indexOf('/' + dir + '/') !== -1;
+     }
 
       /**
        * The doc-op runner writes `docops.status.json` into the *served root*, never next to
@@ -764,9 +788,13 @@
           return task;
       }
 
-      /** Runs an op that produces a document inside this project (review/**, tasks/**, …). */
-      const runDocTarget = (opKey, docPath, onProgress) =>
-          runOpFile(opPath(opKey), rootRel(docPath), onProgress);
+     /**
+      * Runs an op that produces a document under the *analysis root* (`review/**`,
+      * `tasks/**`, `tasks.json`) — these live ROOT_HOPS folders above this page, so the
+      * target must be resolved with `projRel`, not `rootRel`.
+      */
+     const runAnalysisTarget = (opKey, docPath, onProgress) =>
+         runOpFile(opPath(opKey), projRel(docPath), onProgress);
 
       /* ───────────────────────── directory listings ───────────────────────── */
 
@@ -780,13 +808,16 @@
           return !/\.[a-z0-9]+$/i.test(entryName(entry));
       }
 
-      /** Recursively lists files (not folders) under `dir`, relative to the base path. */
-      async function listTree(dir, depth) {
+     /**
+      * Recursively lists files (not folders) under `dir`, relative to `base`.
+      * A missing folder (e.g. `review/` before the first run) is reported as empty.
+      */
+     async function listTree(base, dir, depth) {
           const level = depth || 0;
-          if (level > 8) return [];
+         if (!base || level > 8) return [];
           let entries = [];
           try {
-              entries = (await listFiles(state.basePath, dir)) || [];
+             entries = (await listFiles(base, dir)) || [];
           } catch (e) {
               return [];
           }
@@ -795,7 +826,7 @@
               const name = entryName(entry);
               if (!name || name.startsWith('.')) continue;
               const path = join(dir, name);
-              if (looksLikeFolder(entry)) out.push(...(await listTree(path, level + 1)));
+             if (looksLikeFolder(entry)) out.push(...(await listTree(base, path, level + 1)));
               else out.push(path);
           }
           return out;
@@ -804,12 +835,12 @@
       const jsonOnly = (paths) => paths.filter((p) => /\.json$/i.test(p)).sort();
 
       async function reviewPaths() {
-          return jsonOnly(await listTree(reviewDir()));
+         return jsonOnly(await listTree(rootBase(), reviewDir()));
       }
 
       async function taskPlanPaths() {
-          const nested = jsonOnly(await listTree(tasksDir()));
-          const root = (await readFile(state.basePath, tasksFile())) !== null ? [tasksFile()] : [];
+         const nested = jsonOnly(await listTree(rootBase(), tasksDir()));
+         const root = (await readRoot(tasksFile())) !== null ? [tasksFile()] : [];
           return root.concat(nested);
       }
 
@@ -824,14 +855,14 @@
               return false;
           }
           setStep('focus', 'running', 'saving…');
-          await writeFile(state.basePath, focusFile(), text.endsWith('\n') ? text : text + '\n');
+         await writeDoc(focusFile(), text.endsWith('\n') ? text : text + '\n');
           setStep('focus', 'done', focusFile());
           log('Saved ' + focusFile(), 'ok');
           return true;
       }
 
       async function loadFocus() {
-          const text = await readFile(state.basePath, focusFile());
+         const text = await readDoc(focusFile());
           if (text === null) {
               setStep('focus', 'idle', '');
               log('No ' + focusFile() + ' present yet.', 'warn');
@@ -844,7 +875,7 @@
 
       /** The pipeline reads focus.md, so make sure the editor content has been persisted. */
       async function ensureFocus() {
-          const onDisk = await readFile(state.basePath, focusFile());
+         const onDisk = await readDoc(focusFile());
           const typed = $('focus').value.trim();
           if (onDisk !== null && (!typed || onDisk.trim() === typed)) return true;
           return saveFocus();
@@ -854,7 +885,7 @@
           if (state.busy || !requireBase()) return;
           if (!window.confirm('Delete ' + focusFile() + '?')) return;
           try {
-              await deleteFile(state.basePath, focusFile());
+             await deleteDoc(focusFile());
               $('focus').value = '';
               setStep('focus', 'idle', '');
               log('Deleted ' + focusFile(), 'ok');
@@ -881,7 +912,7 @@
           let done = 0;
           setStep(step, 'running', '0/' + docTargets.length);
           for (const target of docTargets) {
-              await runDocTarget(opKey, target,
+             await runAnalysisTarget(opKey, target,
                   (status) => setStep(step, 'running', (done + 1) + '/' + docTargets.length + ' · ' + status));
               done++;
               setStep(step, 'running', done + '/' + docTargets.length);
@@ -909,6 +940,8 @@
 
       async function stagePackages() {
           if (!(await ensureFocus())) return null;
+         // Prefer the folders implied by the target list: `review/` is usually still missing
+         // (or empty) before the file stage has run, so listing it first is pointless noise.
           let dirs = packageList();
           if (!dirs.length) {
               // fall back to the folders implied by the existing per-file reviews
@@ -919,7 +952,8 @@
           }
           if (!dirs.length) {
               setStep('packages', 'error', 'no packages');
-              log('No package folders could be derived — add targets or run the file stage first.', 'warn');
+             log('No package folders could be derived — list files in the target box (paths relative ' +
+                 'to the analysis root) or run "Analyze Files" first.', 'warn');
               return null;
           }
           const count = await runOverTargets('packages', 'packages',
@@ -942,7 +976,8 @@
 
       async function stageTasksSingle() {
           setStep('tasks-single', 'running', 'starting…');
-          await runDocTarget('tasksSingle', tasksFile(), (status) => setStep('tasks-single', 'running', status));
+         await runAnalysisTarget('tasksSingle', tasksFile(),
+             (status) => setStep('tasks-single', 'running', status));
           setStep('tasks-single', 'done', tasksFile());
           await refreshPlans();
           await loadPlans([tasksFile()]);
@@ -1025,11 +1060,23 @@
 
       /** Artifacts owned by each step, so a step can be cleared and re-run. */
       const STEP_ARTIFACTS = {
-          focus: {list: async () => [focusFile()]},
-          files: {list: reviewPaths, after: refreshReviews},
-          packages: {list: async () => (await reviewPaths()).filter(isPackageReview), after: refreshReviews},
-          'tasks-multi': {list: async () => jsonOnly(await listTree(tasksDir())), after: refreshPlans},
-          'tasks-single': {list: async () => [tasksFile()], after: refreshPlans}
+         focus: {base: () => state.basePath, list: async () => [focusFile()]},
+         files: {
+             base: rootBase,
+             list: async () => (await reviewPaths()).filter((p) => !isPackageReview(p)),
+             after: refreshReviews
+         },
+         packages: {
+             base: rootBase,
+             list: async () => (await reviewPaths()).filter(isPackageReview),
+             after: refreshReviews
+         },
+         'tasks-multi': {
+             base: rootBase,
+             list: async () => jsonOnly(await listTree(rootBase(), tasksDir())),
+             after: refreshPlans
+         },
+         'tasks-single': {base: rootBase, list: async () => [tasksFile()], after: refreshPlans}
       };
 
       async function deleteStepArtifact(step) {
@@ -1044,7 +1091,7 @@
               (paths.length > 12 ? '\n…' : '') + '\n\nThe step can be re-run afterwards.')) return;
           for (const path of paths) {
               try {
-                  await deleteFile(state.basePath, path);
+                 await deleteFile(spec.base ? spec.base() : state.basePath, path);
                   log('Deleted ' + path, 'ok');
               } catch (e) {
                   log('Could not delete ' + path + ': ' + msgOf(e), 'warn');
@@ -1062,11 +1109,12 @@
           state.poller = createStatusPoller(statusBase(), (target, info) => {
               if (!info || !info.status) return;
               const mapped = mapState(info.status);
-              if (target.endsWith('/' + tasksFile()) || target === tasksFile()) {
+             const t = stripLead(target);
+             if (t === tasksFile() || t.endsWith('/' + tasksFile())) {
                   setStep('tasks-single', mapped, info.status);
-              } else if (target.indexOf('/' + tasksDir() + '/') !== -1) {
+             } else if (underDir(target, tasksDir())) {
                   setStep('tasks-multi', mapped, info.status);
-              } else if (target.indexOf('/' + reviewDir() + '/') !== -1) {
+             } else if (underDir(target, reviewDir())) {
                   setStep('files', mapped, info.status);
               }
           }, 3000);
@@ -1278,7 +1326,7 @@
           if (state.busy || !requireBase()) return;
           if (!window.confirm('Delete ' + path + '?')) return;
           try {
-              await deleteFile(state.basePath, path);
+             await deleteRoot(path);
               log('Deleted ' + path, 'ok');
           } catch (e) {
               log('Could not delete ' + path + ': ' + msgOf(e), 'error');
@@ -1294,7 +1342,7 @@
       };
 
       async function openReview(path) {
-          const raw = await readFile(state.basePath, path);
+         const raw = await readRoot(path);
           state.currentReview = path;
           $('review-path').textContent = path;
           showJsonDoc('review', raw);
@@ -1415,7 +1463,7 @@
           const op = taskOpPath(entry.path, task);
           try {
               setTaskState(key, 'running', 'writing ' + op);
-              await writeFile(state.basePath, op, buildTaskOp(task));
+             await writeDoc(op, buildTaskOp(task));
               log('Wrote ' + op, 'ok');
               setTaskState(key, 'running', 'starting…');
               await runOpFile(op, projRel(targets[0]), (status) => setTaskState(key, 'running', status));
@@ -1508,7 +1556,7 @@
           const loaded = [];
           const rawParts = [];
           for (const path of wanted) {
-              const raw = await readFile(state.basePath, path);
+             const raw = await readRoot(path);
               if (raw === null) {
                   log('Missing task plan ' + path, 'warn');
                   continue;
@@ -1808,7 +1856,11 @@
               log('Doc-op paths are sent relative to "' + (docRoot() || '(server root)') + '".');
           }
           state.statusBase = computeStatusBase();
-          if (state.basePath) log('Doc-op status polled from "' + state.statusBase + '/docops.status.json".');
+         state.rootBasePath = computeRootBase();
+         if (state.basePath) {
+             log('Review/task documents live under "' + state.rootBasePath + '" (analysis root).');
+             log('Doc-op status polled from "' + state.statusBase + '/docops.status.json".');
+         }
 
           $('ctx-info').innerHTML =
               (state.sessionId
@@ -1817,6 +1869,7 @@
               'base <code>' + escapeHtml(state.basePath || '(unresolved)') + '</code><br>' +
               'doc-op root <code>' + escapeHtml(docRoot() || '(server root)') + '</code><br>' +
               'analysis root <code>' + escapeHtml(analysisRootRel() || '(server root)') + '</code><br>' +
+             'analysis base <code>' + escapeHtml(state.rootBasePath || '(unresolved)') + '</code><br>' +
               'status <code>' + escapeHtml((state.statusBase || '') + '/docops.status.json') + '</code>';
 
           const banner = $('session-banner');
@@ -1836,9 +1889,9 @@
               banner.innerHTML =
                   'Direct file mode — the focus query is written to <code>' +
                   escapeHtml(state.basePath) + '/' + escapeHtml(focusFile()) +
-                  '</code>, reviews land in <code>' + escapeHtml(reviewDir()) +
-                  '/</code> and task plans in <code>' + escapeHtml(tasksDir()) + '/</code> + <code>' +
-                  escapeHtml(tasksFile()) + '</code>.';
+                 '</code>, reviews land in <code>' + escapeHtml(rootBase() + '/' + reviewDir()) +
+                 '/</code> and task plans in <code>' + escapeHtml(rootBase() + '/' + tasksDir()) +
+                 '/</code> + <code>' + escapeHtml(rootBase() + '/' + tasksFile()) + '</code>.';
               banner.classList.remove('hidden');
           }
 
