@@ -321,9 +321,12 @@ Stack Trace:
   fun linkedTask(
     label: String,
     renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
-  ): SessionTask {
-    val task = newSession(appname = label).newTask()
-    add(renderFn(task.ui.linkToSession(label)))!!
+  ): SessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
+    val newSession = newSession(appname = label)
+    val task = newSession.newTask()
+    val linkToSession = task.ui.linkToSession(label)
+    val str = renderFn(linkToSession)
+    add(str)
     return task
   }
 

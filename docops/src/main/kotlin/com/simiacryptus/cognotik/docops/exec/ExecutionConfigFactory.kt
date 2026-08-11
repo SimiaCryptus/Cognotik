@@ -67,6 +67,13 @@ package com.simiacryptus.cognotik.docops.exec
         val config = base.jsonCast<MutableMap<String, Any>>()
         config["related_files"] = absolutePaths(config["related_files"], workingDir)
         config["task_description"] = describe(data)
+         log.info(
+           "Built execution config for ${data.main_file?.absolutePath ?: "<no main file>"}: " +
+               "task_type=${kind.name}, workingDir=${workingDir.absolutePath}, " +
+               "related_files=${(config["related_files"] as? List<*>)?.size ?: 0}, " +
+               "overrides=${overrides?.keys ?: emptySet<String>()}"
+         )
+         log.debug("Execution config keys: {}", config.keys)
         return config
       }
 

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.docops.resolve
 
+import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -24,7 +25,7 @@ class UrlResourceResolver(private val cache: UrlCache) : ResourceResolver {
  * to create them).
  */
 class FileResourceResolver(
-  private val lister: (File) -> List<File> = GlobExpander.defaultLister,
+  private val lister: (File) -> List<File> = { it: File -> it.listFilesRecursively() },
 ) : ResourceResolver {
 
   override fun handles(path: String) = !Urls.isUrl(path)

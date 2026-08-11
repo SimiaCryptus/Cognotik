@@ -8,9 +8,9 @@
  * focus query itself.
  *
  * Pipeline stages that produce documents conforming to these types:
-  *  - process_files.op.md     -> FileAnalysis    (review/<source-path>.json)
-  *  - process_packages.op.md  -> PackageAnalysis (review/<package-path>.json)
-  *  - plan_followup_*.op.md   -> FollowupPlan    (tasks/**.json, tasks.json —
+  *  - process_files.op.md     -> FileAnalysis    (.review/<source-path>.json)
+  *  - process_packages.op.md  -> PackageAnalysis (.review/<package-path>.json)
+  *  - plan_followup_*.op.md   -> FollowupPlan    (.tasks/**.json, tasks.json —
   *                               see followup_schema.ts)
   *
   * A single review document normally holds one `FileAnalysis` (per-file review)

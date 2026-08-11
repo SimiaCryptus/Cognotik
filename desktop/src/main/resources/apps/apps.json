@@ -121,6 +121,22 @@
     }
   },
   {
+    "name": "Empty Project",
+    "icon": "🏗️",
+    "description": "Turn natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "apps/empty-project",
+    "id": "app-empty-project",
+    "category": "Create",
+    "tags": [
+      "Devs"
+    ],
+    "exampleSessions": {
+    }
+  },
+  {
     "name": "Omega App Factory",
     "icon": "🔮",
     "description": "Meta-application that designs and produces other DocOps applications from plain language descriptions.",

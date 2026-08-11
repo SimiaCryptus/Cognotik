@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Launcher for the Cognotik AutoFix CLI.
+# Launcher for the Cognotik FileServer CLI.
 #
 # Usage:
-#   ./autofix.sh [--build] [--] [args passed to AutoFixCli...]
+#   ./fileserver.sh [--build] [--] [args passed to FileServerCli...]
 #
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar) before running.

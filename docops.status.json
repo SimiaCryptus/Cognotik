@@ -1,5 +1,5 @@
 {
-  "lastUpdated" : "2026-08-10T20:11:50.939131834Z",
+  "lastUpdated" : "2026-08-11T20:09:13.092694210Z",
   "tasks" : {
     "code-utils2/coder/queries/intellij-doc/research.md" : {
       "target" : "code-utils2/coder/queries/intellij-doc/research.md",
@@ -14,6 +14,48 @@
       "sessionId" : "U-20260810-PUoH49l9",
       "startedAt" : "2026-08-10T20:11:37.789133234Z",
       "completedAt" : "2026-08-10T20:11:50.939131834Z"
+    },
+    "cognotik-tools/coder/queries/fileserver/research.md" : {
+      "target" : "cognotik-tools/coder/queries/fileserver/research.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260811-NewTM3TT",
+      "startedAt" : "2026-08-11T19:48:03.899701988Z",
+      "completedAt" : "2026-08-11T19:49:21.752663850Z"
+    },
+    "cognotik-tools/coder/queries/fileserver/summary.md" : {
+      "target" : "cognotik-tools/coder/queries/fileserver/summary.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260811-rQbRevLJ",
+      "startedAt" : "2026-08-11T19:51:42.620289129Z",
+      "completedAt" : "2026-08-11T19:51:58.545162039Z"
+    },
+    "cognotik-tools/coder/queries/fileserver/followup.json" : {
+      "target" : "cognotik-tools/coder/queries/fileserver/followup.json",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260811-IFG5POP7",
+      "startedAt" : "2026-08-11T19:53:26.954595764Z",
+      "completedAt" : "2026-08-11T19:53:44.622596564Z"
+    },
+    "fileserver/README-cli.md" : {
+      "target" : "fileserver/README-cli.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260811-q2yAFPji",
+      "startedAt" : "2026-08-11T20:06:01.317745145Z",
+      "completedAt" : "2026-08-11T20:06:25.497807369Z"
+    },
+    "README.md" : {
+      "target" : "README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260811-mnHI78qe",
+      "startedAt" : "2026-08-11T20:07:24.405403406Z",
+      "completedAt" : "2026-08-11T20:07:40.744043421Z"
+    },
+    "fileserver/README.md" : {
+      "target" : "fileserver/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260811-venhBUqz",
+      "startedAt" : "2026-08-11T20:08:55.100080279Z",
+      "completedAt" : "2026-08-11T20:09:13.092694210Z"
     }
   }
 }

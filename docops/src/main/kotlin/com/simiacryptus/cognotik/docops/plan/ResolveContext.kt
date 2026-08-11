@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ResolveContext(
   val root: File,
   val resources: ResourceResolver,
-  private val rawLister: (File) -> List<File> = GlobExpander.defaultLister,
+  private val rawLister: (File) -> List<File>,
 ) {
 
   private val listings = ConcurrentHashMap<String, List<File>>()

@@ -8,13 +8,13 @@
    * file describes the *actionable* output derived from them.
    *
    * Pipeline stages that produce documents conforming to these types:
-   *  - plan_followup_multi.op.md  -> FollowupPlan (tasks/<review-path>.json,
-   *                                  one plan per `review/<review-path>.json`)
+   *  - plan_followup_multi.op.md  -> FollowupPlan (.tasks/<review-path>.json,
+   *                                  one plan per `.review/<review-path>.json`)
    *  - plan_followup_single.op.md -> FollowupPlan (tasks.json, one aggregate plan)
    *
    * Consumers:
    *  - process_followup.op.md — executes a plan through a `SubPlan` task.
-   *  - ../index.html — lists every task under `tasks.json` / `tasks/**.json` and
+   *  - ../index.html — lists every task under `tasks.json` / `.tasks/**.json` and
    *    executes them individually by generating a temporary doc-op file whose
    *    front-matter is derived from `target_files`, `related_files` and
    *    `task_type`.
@@ -114,12 +114,12 @@
   
   /**
    * Root structure of a task-plan document: either `tasks.json` (aggregate) or
-   * `tasks/<review-path>.json` (one plan per review document).
+   * `.tasks/<review-path>.json` (one plan per review document).
    */
   export interface FollowupPlan {
     /**
      * Path (relative to the project root) of the review document this plan was
-     * derived from, e.g. `cognotik-tools/reviewer/review/src/Foo.kt.json`.
+     * derived from, e.g. `cognotik-tools/reviewer/.review/src/Foo.kt.json`.
      * Omitted/replaced by `source_review_files` for aggregate plans.
      */
     source_analysis_file?: string;
@@ -177,7 +177,7 @@
   
   /**
    * JSON Schema (draft-07) representation of `FollowupPlan`, suitable for runtime
-   * validation (e.g. with ajv) of generated `tasks.json` / `tasks/**.json` files.
+   * validation (e.g. with ajv) of generated `tasks.json` / `.tasks/**.json` files.
    */
   export const FOLLOWUP_PLAN_JSON_SCHEMA = {
     $schema: "http://json-schema.org/draft-07/schema#",

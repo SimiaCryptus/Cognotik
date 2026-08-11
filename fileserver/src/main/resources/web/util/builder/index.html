@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Build System Builder</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --panel: #171a21;
+            --panel-2: #1e222b;
+            --border: #2a2f3a;
+            --fg: #e6e9ef;
+            --muted: #9aa4b2;
+            --accent: #4f8cff;
+            --accent-2: #7c5cff;
+            --ok: #3ecf8e;
+            --warn: #f5a524;
+            --err: #f4636e;
+            --radius: 10px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        a { color: var(--accent); }
+
+        h1, h2, h3, h4 { margin: 0 0 .5rem; line-height: 1.25; }
+
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+
+        .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
+
+        /* a selector list sitting directly beside the view it controls */
+        .split { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 1rem; align-items: start; }
+
+        .split-side {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .6rem .7rem;
+        }
+
+        .split-side h3 {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+            margin-bottom: .4rem;
+        }
+
+        @media (max-width: 980px) {
+            .split { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .panel > h2 {
+            font-size: .95rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+        }
+
+        label { display: block; font-size: .8rem; color: var(--muted); margin: .6rem 0 .25rem; }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: var(--panel-2);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .55rem .65rem;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+        }
+
+        textarea.short { min-height: 70px; }
+
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+
+        button {
+            background: var(--panel-2);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem .85rem;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        button:hover:not(:disabled) { border-color: var(--accent); }
+
+        button:disabled { opacity: .5; cursor: not-allowed; }
+
+        button.primary {
+            background: linear-gradient(180deg, var(--accent), #3f76e0);
+            border-color: transparent;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        button.danger:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+
+        .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem; }
+
+        .muted { color: var(--muted); }
+
+        .small { font-size: .8rem; }
+
+        .banner {
+            border-radius: var(--radius);
+            padding: .7rem .9rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+        }
+
+        .banner.error { border-color: var(--err); color: #ffd7da; background: #2a1417; }
+
+        .banner.warn { border-color: var(--warn); color: #ffe6bf; background: #2a2113; }
+
+        .banner.info { border-color: var(--border); color: var(--muted); background: var(--panel-2); }
+
+        .hidden { display: none !important; }
+
+        .sep { height: 1px; background: var(--border); margin: .8rem 0; }
+
+        /* steps */
+        .steps { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .35rem; }
+
+        .steps li {
+            display: flex;
+            gap: .6rem;
+            align-items: center;
+            padding: .4rem .55rem;
+            border-radius: 8px;
+            background: var(--panel-2);
+            border: 1px solid transparent;
+        }
+
+        .steps li.phase-head {
+            background: transparent;
+            color: var(--muted);
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            padding: .35rem .1rem 0;
+        }
+
+        .steps li .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--border); flex: 0 0 auto;
+        }
+
+        .steps li[data-state="running"] { border-color: var(--accent); }
+        .steps li[data-state="running"] .dot { background: var(--accent); animation: pulse 1s infinite; }
+        .steps li[data-state="done"] .dot { background: var(--ok); }
+        .steps li[data-state="error"] { border-color: var(--err); }
+        .steps li[data-state="error"] .dot { background: var(--err); }
+        .steps li[data-state="skipped"] { opacity: .5; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+        .steps li .state { margin-left: auto; font-size: .75rem; color: var(--muted); }
+
+        .steps li .step-run, .steps li .step-del {
+            padding: .05rem .45rem;
+            font-size: .75rem;
+            line-height: 1.4;
+            background: transparent;
+            color: var(--muted);
+            flex: 0 0 auto;
+        }
+
+        .steps li .step-run:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
+        .steps li .step-del:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+
+        /* log */
+        #log {
+            max-height: 200px;
+            overflow: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            background: #0b0d12;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem .6rem;
+            margin-top: .6rem;
+        }
+
+        #log .l-error { color: var(--err); }
+        #log .l-ok { color: var(--ok); }
+        #log .l-warn { color: var(--warn); }
+        #log time { color: var(--muted); margin-right: .5rem; }
+
+        /* tabs */
+        .tabs { display: flex; gap: .25rem; border-bottom: 1px solid var(--border); margin-bottom: .9rem; flex-wrap: wrap; }
+
+        .tabs button {
+            border: none;
+            border-bottom: 2px solid transparent;
+            border-radius: 8px 8px 0 0;
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+        .tabpanel[hidden] { display: none; }
+
+        .doc {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            overflow: auto;
+            max-height: 70vh;
+        }
+
+        .doc pre { background: #0b0d12; padding: .75rem; border-radius: 8px; overflow: auto; }
+
+        .doc code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+
+        .doc pre.raw { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+
+        .doc table { border-collapse: collapse; width: 100%; }
+
+        .doc th, .doc td { border: 1px solid var(--border); padding: .35rem .55rem; text-align: left; }
+
+        .view-toolbar { margin-bottom: .6rem; }
+
+        .view-toolbar button[aria-pressed="true"] { border-color: var(--accent); color: #fff; }
+
+        /* file trees */
+        .tree {
+            list-style: none;
+            margin: .5rem 0 0;
+            padding: 0;
+            display: grid;
+            gap: .3rem;
+            max-height: 55vh;
+            overflow: auto;
+        }
+
+        .tree li { display: flex; gap: .3rem; align-items: center; }
+
+        .tree li button.tree-open {
+            flex: 1 1 auto;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .8rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        .tree li button.tree-open[aria-current="true"] { border-color: var(--accent); color: #fff; }
+
+        .tree li button.tree-del {
+            padding: .05rem .4rem;
+            font-size: .75rem;
+            background: transparent;
+            color: var(--muted);
+            flex: 0 0 auto;
+        }
+
+        .tree li button.tree-del:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+
+        /* cards */
+        .cards { display: grid; gap: .75rem; }
+
+        .card {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-left-width: 4px;
+            border-left-color: var(--accent-2);
+            border-radius: 8px;
+            padding: .8rem .95rem;
+        }
+
+        .card h3 { font-size: 1rem; margin-bottom: .35rem; }
+
+        .badges { display: flex; gap: .35rem; flex-wrap: wrap; margin: .35rem 0; }
+
+        .badge {
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: .12rem .45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .badge.type { color: var(--accent-2); border-color: var(--accent-2); }
+        .badge.s-running { color: var(--accent); border-color: var(--accent); }
+        .badge.s-done { color: var(--ok); border-color: var(--ok); }
+        .badge.s-error { color: var(--err); border-color: var(--err); }
+
+        .card[data-status="running"] { box-shadow: inset 0 0 0 1px var(--accent); }
+        .card[data-status="done"] { border-color: rgba(62, 207, 142, .45); }
+        .card[data-status="error"] { border-color: rgba(244, 99, 110, .55); }
+
+        .task-detail { margin-top: .3rem; }
+
+        .op-path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; }
+
+        .files { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .4rem; }
+
+        .files code {
+            background: #0b0d12;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: .1rem .35rem;
+            font-size: 12px;
+        }
+
+        details summary { cursor: pointer; color: var(--muted); }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <div id="session-banner" class="banner warn hidden"></div>
+
+    <div class="layout">
+        <!-- ───────────────────────── session / settings ───────────────────────── -->
+        <aside>
+            <section class="panel">
+                <h2>Session</h2>
+                <div class="small muted" id="ctx-info">detecting…</div>
+            </section>
+
+            <section class="panel hidden">
+                <h2>Settings</h2>
+                <label for="research-file">Research document</label>
+                <input id="research-file" type="text" value="research.md" spellcheck="false">
+                <label for="script-file">Build script (analysis root)</label>
+                <input id="script-file" type="text" value="build.sh" spellcheck="false">
+                <label for="ops-dir">Ops directory</label>
+                <input id="ops-dir" type="text" value="ops" spellcheck="false">
+                <label for="tmp-dir">Temporary doc-op directory</label>
+                <input id="tmp-dir" type="text" value="tmp" spellcheck="false">
+                <div class="small muted" style="margin-top:.35rem">
+                    Doc-op paths and the status file location are derived automatically from this
+                    page's URL — no configuration required.
+                </div>
+            </section>
+        </aside>
+
+        <!-- ───────────────────────── main ───────────────────────── -->
+        <main>
+            <section class="panel">
+
+                <h2>Pipeline</h2>
+                <div class="grid-2">
+                    <div class="small muted">
+                        <strong>1 · Research</strong> runs a <code>SubPlan</code> over the whole repository and
+                        writes <code id="p-research">research.md</code>.
+                        <div class="sep"></div>
+                        <strong>2 · Draft</strong> turns that research into one environment-agnostic
+                        <code id="p-script">build.sh</code> at the analysis root.
+                        <div class="sep"></div>
+                        <strong>3 · Run</strong> executes the script per sub-command through
+                        <code>AutoFix</code>, one generated doc-op and one log per mode.
+                    </div>
+                    <div>
+                        <label for="modes">Build modes (sub-commands)</label>
+                        <input id="modes" type="text" value="setup, compile, test" spellcheck="false">
+                        <div class="row small" style="padding-top:.45rem;flex-direction:column;align-items:flex-start;gap:.3rem">
+                            <label class="row small" style="margin:0;gap:.35rem">
+                                <input id="opt-run" type="checkbox" checked style="width:auto"> Run modes in
+                                “Run Everything”
+                            </label>
+                            <label class="row small" style="margin:0;gap:.35rem">
+                                <input id="opt-continue" type="checkbox" style="width:auto"> Continue after a failing
+                                mode
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <label for="run-notes">Extra instructions appended to every generated run op (optional)</label>
+                <textarea id="run-notes" class="short" spellcheck="false"
+                          placeholder="e.g. assume no network access; never call sudo; keep the script POSIX sh compatible…"></textarea>
+
+                <div class="row" style="margin-top:.75rem">
+                    <button id="run-all" class="primary" title="Research → draft → run every mode">Run Everything</button>
+                    <button id="run-research-btn">1 · Research</button>
+                    <button id="run-draft-btn">2 · Draft build.sh</button>
+                    <button id="run-modes-btn">3 · Run all modes</button>
+                    <button id="run-plain-btn" title="Run ops/run_build.op.md unchanged → build.log.md">Run op as-is</button>
+                </div>
+
+                <ul class="steps" id="steps">
+                    <li class="phase-head">Design</li>
+                    <li data-step="research" data-state="idle">
+                        <span class="dot"></span><span>Research project → research.md</span>
+                        <span class="state"></span>
+                        <button class="step-run" data-run="research" title="Run this step only">▶ run</button>
+                        <button class="step-del" data-del="research" title="Delete this step's artifact">🗑 delete</button>
+                    </li>
+                    <li class="phase-head">Build system</li>
+                    <li data-step="draft" data-state="idle">
+                        <span class="dot"></span><span>Draft build script → build.sh</span>
+                        <span class="state"></span>
+                        <button class="step-run" data-run="draft" title="Run this step only">▶ run</button>
+                        <button class="step-del" data-del="draft" title="Delete the generated build script">🗑 delete</button>
+                    </li>
+                    <li data-step="run" data-state="idle">
+                        <span class="dot"></span><span>Run modes (AutoFix) → build.&lt;mode&gt;.log.md</span>
+                        <span class="state"></span>
+                        <button class="step-run" data-run="run" title="Run every mode in order">▶ run</button>
+                        <button class="step-del" data-del="run"
+                                title="Delete every run log and its temporary op">🗑 delete</button>
+                    </li>
+                </ul>
+
+                <div id="log" aria-live="polite"></div>
+            </section>
+
+            <section class="panel">
+                <div class="tabs" role="tablist">
+                    <button role="tab" data-tab="research" aria-selected="true">Research</button>
+                    <button role="tab" data-tab="script" aria-selected="false">build.sh</button>
+                    <button role="tab" data-tab="modes" aria-selected="false">Modes</button>
+                    <button role="tab" data-tab="logs" aria-selected="false">Logs</button>
+                </div>
+
+                <div class="tabpanel" data-tab="research">
+                    <div class="row view-toolbar">
+                        <button class="small view-toggle" data-view="research" aria-pressed="false"
+                                title="Toggle between rendered markdown and the raw source">View raw</button>
+                        <button class="small view-copy" data-view="research">Copy source</button>
+                        <button class="small" id="reload-research">Reload</button>
+                    </div>
+                    <div class="doc" id="view-research"><p class="muted">Nothing loaded yet.</p></div>
+                </div>
+
+                <div class="tabpanel" data-tab="script" hidden>
+                    <div class="row view-toolbar">
+                        <button class="small view-copy" data-view="script">Copy source</button>
+                        <button class="small" id="reload-script">Reload</button>
+                        <span class="small muted" id="script-path"></span>
+                    </div>
+                    <div class="doc" id="view-script"><p class="muted">No build script yet.</p></div>
+                </div>
+
+                <div class="tabpanel" data-tab="modes" hidden>
+                    <div class="row view-toolbar">
+                        <button id="run-ready-modes" class="small"
+                                title="Run every mode that has not completed yet">▶ Run pending modes</button>
+                        <button id="reset-mode-status" class="small"
+                                title="Forget the recorded run status of every mode">Reset statuses</button>
+                        <button id="clean-temp-ops" class="small danger"
+                                title="Delete the temporary per-mode doc-op files generated under tmp/">🗑 Clean temp ops</button>
+                        <span class="small muted" id="mode-progress"></span>
+                    </div>
+                    <div class="cards" id="view-modes"></div>
+                </div>
+
+                <div class="tabpanel" data-tab="logs" hidden>
+                    <div class="split">
+                        <div class="split-side">
+                            <h3>Run Logs</h3>
+                            <div class="row">
+                                <button id="refresh-logs" class="small">Refresh</button>
+                            </div>
+                            <ul class="tree" id="log-list"></ul>
+                            <div id="logs-empty" class="small muted" style="margin-top:.5rem">No run logs yet.</div>
+                        </div>
+                        <div>
+                            <div class="row view-toolbar">
+                                <button class="small view-toggle" data-view="logs" aria-pressed="false"
+                                        title="Toggle between rendered markdown and the raw source">View raw</button>
+                                <button class="small view-copy" data-view="logs">Copy source</button>
+                                <span class="small muted" id="log-path"></span>
+                            </div>
+                            <div class="doc" id="view-logs"><p class="muted">Pick a log from the list on the left.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Local copy of marked — required for markdown rendering. Must load before the module. -->
+<script src="/lib/marked.min.js"></script>
+<script type="module">
+    import {runDocOp, waitForTask, createStatusPoller} from '/app/docops.js';
+    import {readFile, writeFile, listFiles, deleteFile} from '/app/fileIO.js';
+
+    /* ───────────────────────── constants & state ───────────────────────── */
+
+    const STORAGE_PREFIX = 'builder';
+    const OPS = {
+        research: 'research_project.op.md',
+        draft: 'draft_build.op.md',
+        run: 'run_build.op.md'
+    };
+    const TASK_TIMEOUT_MS = 60 * 60 * 1000;
+    /**
+     * The ops in `ops/` declare `folder: ../../..`, i.e. the analysis root is two levels
+     * above this document's folder (`builder/` → `code-utils/` → repository root).
+     */
+    const ROOT_HOPS = 2;
+    const STATUS_LABEL = {idle: 'not run', running: 'running…', done: 'done', error: 'failed'};
+
+    /** Response-format contract copied from `ops/run_build.op.md` so generated ops match. */
+    const RESPONSE_FORMAT = [
+        'Response format:',
+        '* Response should use one or more code patches in diff format within ```diff code blocks',
+        '* Each diff should be preceded by a header that identifies the file being modified.',
+        '* Files can also be given in raw (non-diff) form',
+        '* For redundant clarity, each section should be preceded by `<<<FILE filename>>>` or',
+        '  `<<<DIFF filename>>>` and followed by `<<<END>>>` marker lines',
+        '* The diff format should use + for line additions, - for line deletions.',
+        '* The diff should include 2 lines of context before and after every change.',
+        '* Separate code blocks with a single blank line.',
+        '* The content inside the code blocks should be indented.'
+    ].join('\n');
+
+    const state = {
+        ctx: null,
+        basePath: null,
+        analysisBasePath: null,
+        docRoot: '',
+        statusBase: null,
+        sessionId: null,
+        busy: false,
+        poller: null,
+        logPaths: [],
+        currentLog: null,
+        modeStatus: {},
+        standalone: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const msgOf = (e) => (e && e.message ? e.message : String(e));
+
+    /* ───────────────────────── small helpers ───────────────────────── */
+
+    function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+    }
+
+    function renderMarkdown(md) {
+        const text = String(md ?? '');
+        try {
+            if (window.marked) {
+                return typeof window.marked.parse === 'function'
+                    ? window.marked.parse(text)
+                    : window.marked(text);
+            }
+        } catch (e) {
+            console.warn('markdown render failed', e);
+        }
+        return '<pre>' + escapeHtml(text) + '</pre>';
+    }
+
+    function slugify(text, fallback) {
+        const base = String(text || '')
+            .split('\n')[0]
+            .toLowerCase()
+            .replace(/[`*#>_\[\]()]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 60);
+        return base || fallback || ('mode-' + Date.now());
+    }
+
+    function log(message, level) {
+        const line = document.createElement('div');
+        if (level) line.className = 'l-' + level;
+        const t = document.createElement('time');
+        t.textContent = new Date().toLocaleTimeString();
+        line.appendChild(t);
+        line.appendChild(document.createTextNode(message));
+        const box = $('log');
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function setStep(step, stateName, detail) {
+        const li = document.querySelector('.steps li[data-step="' + step + '"]');
+        if (!li) return;
+        li.dataset.state = stateName;
+        li.querySelector('.state').textContent = detail || '';
+    }
+
+    const ALL_STEPS = ['research', 'draft', 'run'];
+    const resetSteps = (steps) => (steps || ALL_STEPS).forEach((s) => setStep(s, 'idle', ''));
+
+    function setBusy(busy) {
+        state.busy = busy;
+        ['run-all',
+            'run-research-btn', 'run-draft-btn', 'run-modes-btn', 'run-plain-btn',
+            'reload-research', 'reload-script', 'refresh-logs',
+            'run-ready-modes', 'reset-mode-status', 'clean-temp-ops']
+            .forEach((id) => {
+                const el = $(id);
+                if (el) el.disabled = busy;
+            });
+        document.querySelectorAll('.step-run, .step-del, .mode-run, .mode-mark, .tree-del')
+            .forEach((b) => {
+                b.disabled = busy;
+            });
+    }
+
+    /* ───────────────────────── path helpers ───────────────────────── */
+
+    const cleanPath = (v) => String(v || '').trim().replace(/^\/+|\/+$/g, '');
+    const stripLead = (p) => String(p || '').replace(/^\.?\/+/, '');
+
+    const researchFile = () => cleanPath($('research-file').value) || 'research.md';
+    const scriptFile = () => cleanPath($('script-file').value) || 'build.sh';
+    const opsDir = () => cleanPath($('ops-dir').value) || 'ops';
+    const tmpDir = () => cleanPath($('tmp-dir').value) || 'tmp';
+
+    function join(dir, name) {
+        if (!dir) return stripLead(name);
+        if (!name) return dir;
+        return dir + '/' + stripLead(name);
+    }
+
+    const basename = (p) => stripLead(p).split('/').pop();
+
+    /** Path of this document's folder as seen by the *server*. Detected from the URL. */
+    const docRoot = () => String(state.docRoot || '').trim().replace(/^\/+|\/+$/g, '');
+    /** Translates a document-relative path into a server-root-relative one. */
+    const rootRel = (p) => join(docRoot(), p);
+    /** Server-root-relative path of the analysis root (`folder:` of the ops). */
+    const analysisRootRel = () => {
+        const segs = docRoot().split('/').filter(Boolean);
+        return segs.slice(0, Math.max(0, segs.length - ROOT_HOPS)).join('/');
+    };
+    /** Translates an analysis-root-relative path (build.sh) into a server path. */
+    const projRel = (p) => join(analysisRootRel(), p);
+    /** `../`-prefix walking from a directory inside this document up to the analysis root. */
+    const rootPrefixFor = (dir) =>
+        '../'.repeat((dir ? dir.split('/').filter(Boolean).length : 0) + ROOT_HOPS);
+    /** `../`-prefix walking from a directory inside this document back to the doc root. */
+    const docPrefixFor = (dir) => '../'.repeat(dir ? dir.split('/').filter(Boolean).length : 0);
+
+    /**
+     * `build.sh` lives at the analysis root, outside this document's folder. Rather than
+     * sending `../../` traversal to the file API we address it through its own base path:
+     * `state.basePath` with the last `ROOT_HOPS` segments removed.
+     */
+    function computeAnalysisBase() {
+        const base = String(state.basePath || '').replace(/\/+$/, '');
+        if (!base) return base;
+        const segs = base.split('/').filter(Boolean);
+        return '/' + segs.slice(0, Math.max(0, segs.length - ROOT_HOPS)).join('/');
+    }
+
+    const analysisBase = () => state.analysisBasePath || computeAnalysisBase();
+
+    /**
+     * The doc-op runner writes `docops.status.json` into the *served root*, never next to
+     * this page — strip the document's own sub-directory from the base path.
+     */
+    function computeStatusBase() {
+        const base = String(state.basePath || '').replace(/\/+$/, '');
+        if (!base) return base;
+        const rel = docRoot();
+        if (!rel) return base || '/';
+        const suffix = '/' + rel;
+        return (base.endsWith(suffix) ? base.slice(0, -suffix.length) : base) || '/';
+    }
+
+    const statusBase = () => state.statusBase || computeStatusBase();
+
+    const opPath = (key) => join(opsDir(), OPS[key]);
+    /** `ops/run_build.op.md` targets `../build.log.md`; that plain log lives in the doc root. */
+    const plainLogPath = () => 'build.log.md';
+    const modeLogPath = (mode) => 'build.' + slugify(mode, 'mode') + '.log.md';
+    const modeOpPath = (mode) => join(tmpDir(), 'run-' + slugify(mode, 'mode') + '.op.md');
+
+    const modes = () => $('modes').value.split(/[,\n]+/)
+        .map((m) => m.trim()).filter(Boolean);
+
+    /* ───────────────────────── docops driver ───────────────────────── */
+
+    /** Runs a doc-op file against an already server-root-relative target path. */
+    async function runOpFile(opFilePath, targetArg, onProgress) {
+        const opArg = rootRel(opFilePath);
+        log('Running ' + opArg + ' → ' + targetArg);
+        let docTaskId = null;
+        try {
+            docTaskId = await runDocOp(state.sessionId || null, opArg, targetArg, {});
+        } catch (e) {
+            log('Could not start doc op: ' + msgOf(e), 'error');
+            throw e;
+        }
+        if (!docTaskId) log('No task id returned for ' + targetArg + ' — cannot link to monitor.', 'warn');
+        else log('Task ' + docTaskId + ' started.');
+        const task = await waitForTask(statusBase(), targetArg, TASK_TIMEOUT_MS, (target, info) => {
+            if (onProgress) onProgress(info.status || 'running');
+        });
+        log('Completed ' + targetArg, 'ok');
+        return task;
+    }
+
+    /* ───────────────────────── directory listings ───────────────────────── */
+
+    const entryName = (entry) => (entry && entry.name ? entry.name : '');
+
+    function looksLikeFolder(entry) {
+        if (!entry) return false;
+        if (typeof entry.isDirectory === 'boolean') return entry.isDirectory;
+        if (typeof entry.directory === 'boolean') return entry.directory;
+        if (entry.type) return /^dir/i.test(String(entry.type));
+        return !/\.[a-z0-9]+$/i.test(entryName(entry));
+    }
+
+    /** Non-recursive file listing of a directory, relative to the base path. */
+    async function listDir(base, dir) {
+        let entries = [];
+        try {
+            entries = (await listFiles(base, dir)) || [];
+        } catch (e) {
+            return [];
+        }
+        return entries
+            .filter((e) => entryName(e) && !entryName(e).startsWith('.') && !looksLikeFolder(e))
+            .map((e) => join(dir, entryName(e)));
+    }
+
+    /** Keeps only the paths that really exist (used when `api/list` is unavailable). */
+    async function existing(base, paths) {
+        const out = [];
+        for (const p of paths) {
+            try {
+                if ((await readFile(base, p)) !== null) out.push(p);
+            } catch (e) { /* treat as missing */
+            }
+        }
+        return out;
+    }
+
+    const LOG_RE = /^build\.(?:[a-z0-9._-]+\.)?log\.md$/i;
+
+    /**
+     * Run logs sit next to this page. Directory listing is optional: when it is not
+     * available the names are derived from the configured modes instead.
+     */
+    async function logFilePaths() {
+        const listed = (await listDir(state.basePath, '')).filter((p) => LOG_RE.test(basename(p)));
+        if (listed.length) return listed.sort();
+        return existing(state.basePath, [plainLogPath()].concat(modes().map(modeLogPath)));
+    }
+
+    /** Temporary per-mode doc-ops generated under `tmp/`. */
+    const generatedOps = async () =>
+        (await listDir(state.basePath, tmpDir())).filter((p) => /\.op\.md$/.test(p));
+
+
+
+
+
+
+    /* ───────────────────────── generated run ops ───────────────────────── */
+
+    /**
+     * Builds the temporary `AutoFix` doc-op that runs one sub-command of the build
+     * script and repairs whatever it turns up. It mirrors `ops/run_build.op.md` but
+     * targets a per-mode log so the modes stay independently re-runnable.
+     */
+    function buildModeOp(mode) {
+        const up = docPrefixFor(tmpDir());                       // tmp/ → doc root
+        const toRoot = rootPrefixFor(tmpDir());                  // tmp/ → analysis root
+        const folder = toRoot.replace(/\/+$/, '') || '.';
+        const notes = $('run-notes').value.trim();
+        const lines = ['---'];
+        lines.push('specifies: ' + up + modeLogPath(mode));
+        lines.push('task_type: AutoFix');
+        lines.push('related:');
+        lines.push('  - ' + toRoot + scriptFile());
+        lines.push('  - ' + up + researchFile());
+        lines.push('folder: ' + folder);
+        lines.push('---', '');
+        lines.push('Run `./' + scriptFile() + ' ' + mode + '` from the analysis root and make it succeed.', '');
+        lines.push('* Treat a non-zero exit status, an unhandled error message or a skipped step as a failure.');
+        lines.push('* Fix the cause, not the symptom: prefer correcting `' + scriptFile() +
+            '` or the project configuration over silencing output.');
+        lines.push('* Keep the script environment-agnostic (Ubuntu 22 is the baseline) and keep the');
+        lines.push('  other sub-commands working.');
+        lines.push('* Record what was executed, what failed and what was changed in the target document.', '');
+        if (notes) lines.push(notes, '');
+        lines.push(RESPONSE_FORMAT, '');
+        return lines.join('\n');
+    }
+
+    /* ───────────────────── mode status bookkeeping ───────────────────── */
+
+    const modeStatusKey = () => STORAGE_PREFIX + '_modes';
+
+    function persistModeStatus() {
+        try {
+            localStorage.setItem(modeStatusKey(), JSON.stringify(state.modeStatus));
+        } catch (e) { /* ignore */
+        }
+    }
+
+    function restoreModeStatus() {
+        try {
+            state.modeStatus = JSON.parse(localStorage.getItem(modeStatusKey()) || '{}') || {};
+        } catch (e) {
+            state.modeStatus = {};
+        }
+    }
+
+    const modeState = (mode) => state.modeStatus[mode] || {state: 'idle', detail: ''};
+
+    function setModeState(mode, name, detail) {
+        state.modeStatus[mode] = {state: name, detail: detail || '', at: Date.now()};
+        persistModeStatus();
+        renderModes();
+    }
+
+    function toggleModeDone(mode) {
+        if (modeState(mode).state === 'done') {
+            delete state.modeStatus[mode];
+            persistModeStatus();
+            renderModes();
+            log('Reset status of "' + mode + '".');
+        } else {
+            setModeState(mode, 'done', 'marked done manually');
+            log('Marked "' + mode + '" as done.', 'ok');
+        }
+    }
+
+    function resetModeStatuses() {
+        state.modeStatus = {};
+        persistModeStatus();
+        renderModes();
+        log('Cleared all mode statuses.');
+    }
+
+    /* ───────────────────────── pipeline stages ───────────────────────── */
+
+    function requireBase() {
+        if (state.basePath) return true;
+        log('No base path could be resolved — cannot read or write files.', 'error');
+        return false;
+    }
+
+    async function requireInput(step, base, path) {
+        if ((await readFile(base, path)) !== null) return true;
+        setStep(step, 'error', 'missing input');
+        log('Missing ' + path + ' — run the earlier stage first.', 'error');
+        return false;
+    }
+
+
+    async function stageResearch() {
+        setStep('research', 'running', 'starting…');
+        await runOpFile(opPath('research'), rootRel(researchFile()),
+            (status) => setStep('research', 'running', status));
+        setStep('research', 'done', researchFile());
+        await loadResearch();
+        activateTab('research');
+        return researchFile();
+    }
+
+    async function stageDraft() {
+        if (!(await requireInput('draft', state.basePath, researchFile()))) return null;
+        setStep('draft', 'running', 'starting…');
+        await runOpFile(opPath('draft'), projRel(scriptFile()),
+            (status) => setStep('draft', 'running', status));
+        setStep('draft', 'done', scriptFile());
+        await loadScript();
+        activateTab('script');
+        return scriptFile();
+    }
+
+    /** Runs `ops/run_build.op.md` unchanged — one combined `build.log.md`. */
+    async function stagePlainRun() {
+        if (!(await requireInput('run', analysisBase(), scriptFile()))) return null;
+        setStep('run', 'running', 'starting…');
+        await runOpFile(opPath('run'), rootRel(plainLogPath()),
+            (status) => setStep('run', 'running', status));
+        setStep('run', 'done', plainLogPath());
+        await refreshLogs();
+        await openLog(plainLogPath());
+        return plainLogPath();
+    }
+
+    /** Writes the temporary doc-op for one mode and executes it. */
+    async function executeMode(mode) {
+        const op = modeOpPath(mode);
+        try {
+            setModeState(mode, 'running', 'writing ' + op);
+            await writeFile(state.basePath, op, buildModeOp(mode));
+            log('Wrote ' + op, 'ok');
+            setModeState(mode, 'running', 'starting…');
+            await runOpFile(op, rootRel(modeLogPath(mode)),
+                (status) => setModeState(mode, 'running', status));
+            setModeState(mode, 'done', 'completed ' + new Date().toLocaleTimeString());
+            await refreshLogs();
+            return true;
+        } catch (e) {
+            setModeState(mode, 'error', msgOf(e));
+            log('Mode "' + mode + '" failed: ' + msgOf(e), 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Stage 3 fan-out: one generated doc-op per sub-command, so each mode is small and
+     * individually re-runnable. `inline` skips busy/poller bookkeeping (already held).
+     */
+    async function stageRunModes(onlyPending, inline) {
+        if (!(await requireInput('run', analysisBase(), scriptFile()))) return null;
+        const list = modes();
+        if (!list.length) {
+            setStep('run', 'error', 'no modes');
+            log('No build modes configured.', 'error');
+            return null;
+        }
+        const wanted = onlyPending ? list.filter((m) => modeState(m).state !== 'done') : list;
+        if (!wanted.length) {
+            setStep('run', 'done', 'nothing pending');
+            log('Every mode is already marked done.', 'warn');
+            return 0;
+        }
+        let done = 0;
+        setStep('run', 'running', '0/' + wanted.length);
+        for (const mode of wanted) {
+            const ok = await executeMode(mode);
+            done += ok ? 1 : 0;
+            setStep('run', ok ? 'running' : 'error', done + '/' + wanted.length +
+                (ok ? '' : ' · ' + mode + ' failed'));
+            if (!ok && !$('opt-continue').checked) {
+                log('Stopping after failure of "' + mode + '".', 'warn');
+                return done;
+            }
+        }
+        setStep('run', 'done', done + '/' + wanted.length + ' mode(s)');
+        return done;
+    }
+
+    async function runSingleMode(mode) {
+        if (state.busy || !requireBase()) return;
+        if (!(await requireInput('run', analysisBase(), scriptFile()))) return;
+        setBusy(true);
+        startPoller();
+        try {
+            await executeMode(mode);
+        } finally {
+            stopPoller();
+            setBusy(false);
+            renderModes();
+        }
+    }
+
+    const STAGES = {
+        research: {step: 'research', run: stageResearch},
+        draft: {step: 'draft', run: stageDraft},
+        run: {step: 'run', run: () => stageRunModes(false, true)},
+        'run-pending': {step: 'run', run: () => stageRunModes(true, true)},
+        'run-plain': {step: 'run', run: stagePlainRun}
+    };
+
+    /** Runs a single stage in isolation (used by the ▶ buttons and the toolbar). */
+    async function runStage(name) {
+        const stage = STAGES[name];
+        if (!stage || state.busy || !requireBase()) return;
+        setBusy(true);
+        startPoller();
+        try {
+            await stage.run();
+        } catch (err) {
+            setStep(stage.step, 'error', 'failed');
+            log(msgOf(err), 'error');
+        } finally {
+            stopPoller();
+            setBusy(false);
+            renderModes();
+        }
+    }
+
+    function markRunningAsFailed(steps) {
+        steps.forEach((s) => {
+            const li = document.querySelector('.steps li[data-step="' + s + '"]');
+            if (li && li.dataset.state === 'running') setStep(s, 'error', 'failed');
+        });
+    }
+
+    async function runEverything() {
+        if (state.busy || !requireBase()) return;
+        resetSteps();
+        setBusy(true);
+        startPoller();
+        try {
+            if (!(await stageResearch())) return;
+            if (!(await stageDraft())) return;
+
+            if ($('opt-run').checked) {
+                await stageRunModes(false, true);
+                activateTab('modes');
+            } else {
+                setStep('run', 'skipped', 'skipped');
+            }
+            log('Pipeline finished — review ' + scriptFile() + ' and the run logs.', 'ok');
+        } catch (err) {
+            log(msgOf(err), 'error');
+            markRunningAsFailed(ALL_STEPS);
+        } finally {
+            stopPoller();
+            setBusy(false);
+            renderModes();
+        }
+    }
+
+    /* ───────────────────────── artifact deletion ───────────────────────── */
+
+    /** Artifacts owned by each step, so a step can be cleared and re-run. */
+    const STEP_ARTIFACTS = {
+        research: {
+            list: async () => (await existing(state.basePath, [researchFile()]))
+                .map((p) => ({base: state.basePath, path: p})),
+            after: async () => showDoc('research', null)
+        },
+        draft: {
+            list: async () => (await existing(analysisBase(), [scriptFile()]))
+                .map((p) => ({base: analysisBase(), path: p})),
+            after: async () => showDoc('script', null)
+        },
+        run: {
+            list: async () => (await logFilePaths()).concat(await generatedOps())
+                .map((p) => ({base: state.basePath, path: p})),
+            after: refreshLogs
+        }
+    };
+
+    async function deleteStepArtifact(step) {
+        const spec = STEP_ARTIFACTS[step];
+        if (!spec || state.busy || !requireBase()) return;
+        const items = (await spec.list()) || [];
+        if (!items.length) {
+            log('Nothing to delete for step "' + step + '".', 'warn');
+            return;
+        }
+        const names = items.map((i) => i.path);
+        if (!window.confirm('Delete ' + items.length + ' file(s)?\n\n' + names.slice(0, 12).join('\n') +
+            (names.length > 12 ? '\n…' : '') + '\n\nThe step can be re-run afterwards.')) return;
+        for (const item of items) {
+            try {
+                await deleteFile(item.base, item.path);
+                log('Deleted ' + item.path, 'ok');
+            } catch (e) {
+                log('Could not delete ' + item.path + ': ' + msgOf(e), 'warn');
+            }
+        }
+        setStep(step, 'idle', '');
+        if (step === 'run') resetModeStatuses();
+        if (spec.after) await spec.after();
+    }
+
+    async function cleanTempOps() {
+        if (state.busy || !requireBase()) return;
+        const paths = await generatedOps();
+        if (!paths.length) {
+            log('No generated doc-ops under ' + tmpDir() + '/ to delete.', 'warn');
+            return;
+        }
+        if (!window.confirm('Delete ' + paths.length + ' generated doc-op file(s)?\n\n' +
+            paths.slice(0, 12).join('\n') + (paths.length > 12 ? '\n…' : '') +
+            '\n\nModes can be re-run afterwards; their status is unaffected.')) return;
+        for (const path of paths) {
+            try {
+                await deleteFile(state.basePath, path);
+                log('Deleted ' + path, 'ok');
+            } catch (e) {
+                log('Could not delete ' + path + ': ' + msgOf(e), 'warn');
+            }
+        }
+    }
+
+    /* ───────────────────────── status poller ───────────────────────── */
+
+    function pollerStep(target) {
+        const t = String(target || '');
+        if (t.endsWith('/' + researchFile()) || t.endsWith('/' + basename(researchFile()))) return 'research';
+        if (t.endsWith('/' + basename(scriptFile()))) return 'draft';
+        if (LOG_RE.test(basename(t))) return 'run';
+        return null;
+    }
+
+    function startPoller() {
+        if (state.poller || !state.basePath) return;
+        state.poller = createStatusPoller(statusBase(), (target, info) => {
+            if (!info || !info.status) return;
+            const step = pollerStep(target);
+            if (step) setStep(step, mapState(info.status), info.status);
+        }, 3000);
+        state.poller.start();
+    }
+
+    function stopPoller() {
+        if (state.poller) {
+            state.poller.stop();
+            state.poller = null;
+        }
+    }
+
+    function mapState(status) {
+        const s = String(status).toUpperCase();
+        if (s === 'COMPLETED') return 'done';
+        if (s === 'ERROR' || s === 'FAILED') return 'error';
+        return 'running';
+    }
+
+    /* ───────────────────────── document rendering ───────────────────────── */
+
+    /** Documents shown in a `.doc` container; `script` is never markdown-rendered. */
+    const DOC_VIEWS = {research: 'view-research', logs: 'view-logs', script: 'view-script'};
+    const docSource = {research: null, logs: null, script: null};
+    const docRawMode = {research: false, logs: false, script: true};
+
+    function renderDoc(name) {
+        const el = $(DOC_VIEWS[name]);
+        if (!el) return;
+        const text = docSource[name];
+
+        if (text === null || text === undefined || text === '') {
+            el.innerHTML = '<p class="muted">Nothing to display.</p>';
+        } else if (docRawMode[name]) {
+            el.innerHTML = '<pre class="raw"><code>' + escapeHtml(text) + '</code></pre>';
+        } else {
+            el.innerHTML = renderMarkdown(text);
+        }
+
+        const btn = document.querySelector('.view-toggle[data-view="' + name + '"]');
+        if (btn) {
+            btn.textContent = docRawMode[name] ? 'View rendered' : 'View raw';
+            btn.setAttribute('aria-pressed', String(docRawMode[name]));
+        }
+    }
+
+    function showDoc(name, text) {
+        docSource[name] = (text === undefined ? null : text);
+        renderDoc(name);
+    }
+
+    const viewSource = (name) => docSource[name] || '';
+
+    function activateTab(name) {
+        document.querySelectorAll('.tabs button').forEach((b) => {
+            b.setAttribute('aria-selected', String(b.dataset.tab === name));
+        });
+        document.querySelectorAll('.tabpanel').forEach((p) => {
+            p.hidden = p.dataset.tab !== name;
+        });
+    }
+
+    async function loadResearch(quiet) {
+        const text = await readFile(state.basePath, researchFile());
+        showDoc('research', text);
+        if (text !== null) setStep('research', 'done', 'loaded');
+        else if (!quiet) log('No ' + researchFile() + ' present yet.', 'warn');
+        return text;
+    }
+
+    async function loadScript(quiet) {
+        const text = await readFile(analysisBase(), scriptFile());
+        showDoc('script', text);
+        $('script-path').textContent = text === null ? '' : projRel(scriptFile());
+        if (text !== null) setStep('draft', 'done', 'loaded');
+        else if (!quiet) log('No ' + scriptFile() + ' at the analysis root yet.', 'warn');
+        return text;
+    }
+
+    /* ───────────────────────── logs sidebar ───────────────────────── */
+
+    function renderLogTree() {
+        const list = $('log-list');
+        list.innerHTML = '';
+        $('logs-empty').classList.toggle('hidden', state.logPaths.length > 0);
+        state.logPaths.forEach((path) => {
+            const li = document.createElement('li');
+            const open = document.createElement('button');
+            open.className = 'small tree-open';
+            open.textContent = path;
+            open.title = path;
+            open.setAttribute('aria-current', String(path === state.currentLog));
+            open.addEventListener('click', () => openLog(path));
+            const del = document.createElement('button');
+            del.className = 'small tree-del';
+            del.textContent = '🗑';
+            del.title = 'Delete ' + path;
+            del.disabled = state.busy;
+            del.addEventListener('click', () => deleteLog(path));
+            li.append(open, del);
+            list.appendChild(li);
+        });
+    }
+
+    async function refreshLogs() {
+        if (!state.basePath) return [];
+        state.logPaths = await logFilePaths();
+        if (state.logPaths.length) setStep('run', 'done', state.logPaths.length + ' log(s)');
+        renderLogTree();
+        return state.logPaths;
+    }
+
+    async function openLog(path) {
+        const raw = await readFile(state.basePath, path);
+        state.currentLog = path;
+        $('log-path').textContent = path;
+        showDoc('logs', raw);
+        renderLogTree();
+        activateTab('logs');
+    }
+
+    async function deleteLog(path) {
+        if (state.busy || !requireBase()) return;
+        if (!window.confirm('Delete ' + path + '?')) return;
+        try {
+            await deleteFile(state.basePath, path);
+            log('Deleted ' + path, 'ok');
+        } catch (e) {
+            log('Could not delete ' + path + ': ' + msgOf(e), 'error');
+        }
+        if (state.currentLog === path) {
+            state.currentLog = null;
+            $('log-path').textContent = '';
+            showDoc('logs', null);
+        }
+        await refreshLogs();
+    }
+
+    /* ───────────────────────── modes rendering ───────────────────────── */
+
+    function modeCard(mode, index) {
+        const status = modeState(mode);
+        const logPath = modeLogPath(mode);
+        const hasLog = state.logPaths.indexOf(logPath) !== -1;
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.dataset.status = status.state;
+
+        card.innerHTML =
+            '<h3>' + (index + 1) + '. <code>./' + escapeHtml(scriptFile()) + ' ' +
+            escapeHtml(mode) + '</code></h3>' +
+            '<div class="badges">' +
+            '<span class="badge type">AutoFix</span>' +
+            '<span class="badge s-' + escapeHtml(status.state) + '">' +
+            escapeHtml(STATUS_LABEL[status.state] || status.state) + '</span>' +
+            (hasLog ? '<span class="badge">log present</span>' : '') +
+            '</div>' +
+            (status.detail ? '<div class="small muted task-detail">' + escapeHtml(status.detail) + '</div>' : '') +
+            '<div class="files"><span class="small muted">log:</span><code>' + escapeHtml(logPath) + '</code></div>' +
+            '<div class="small muted task-detail">temp op: <span class="op-path">' +
+            escapeHtml(modeOpPath(mode)) + '</span></div>';
+
+        const actions = document.createElement('div');
+        actions.className = 'row';
+        actions.style.marginTop = '.55rem';
+
+        const runBtn = document.createElement('button');
+        runBtn.className = 'small mode-run';
+        runBtn.textContent = status.state === 'done' ? '▶ Re-run mode' : '▶ Run mode';
+        runBtn.disabled = state.busy;
+        runBtn.title = 'Write the temporary doc-op file and execute this sub-command';
+        runBtn.addEventListener('click', () => runSingleMode(mode));
+
+        const markBtn = document.createElement('button');
+        markBtn.className = 'small mode-mark';
+        markBtn.textContent = status.state === 'done' ? 'Reset status' : 'Mark done';
+        markBtn.disabled = state.busy;
+        markBtn.title = 'Adjust the recorded status without running anything';
+        markBtn.addEventListener('click', () => toggleModeDone(mode));
+
+        const logBtn = document.createElement('button');
+        logBtn.className = 'small';
+        logBtn.textContent = 'Open log';
+        logBtn.disabled = !hasLog;
+        logBtn.addEventListener('click', () => openLog(logPath));
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'small';
+        copyBtn.textContent = '📋 Copy op file';
+        copyBtn.title = 'Copy the doc-op markdown that would be written for this mode';
+        copyBtn.addEventListener('click', () => copyText(buildModeOp(mode), copyBtn));
+
+        const showBtn = document.createElement('button');
+        showBtn.className = 'small';
+        showBtn.textContent = 'Show op file';
+        showBtn.title = 'Display exactly what would be written to the temporary doc-op';
+        showBtn.addEventListener('click', () => {
+            docSource.logs = buildModeOp(mode);
+            docRawMode.logs = true;
+            $('log-path').textContent = modeOpPath(mode) + ' (preview)';
+            state.currentLog = null;
+            renderDoc('logs');
+            renderLogTree();
+            activateTab('logs');
+        });
+
+        actions.append(runBtn, markBtn, logBtn, copyBtn, showBtn);
+        card.appendChild(actions);
+        return card;
+    }
+
+    function renderModes() {
+        const container = $('view-modes');
+        const progress = $('mode-progress');
+        container.innerHTML = '';
+        const list = modes();
+        if (!list.length) {
+            container.innerHTML = '<p class="muted">No build modes configured.</p>';
+            if (progress) progress.textContent = '';
+            return;
+        }
+        list.forEach((mode, i) => container.appendChild(modeCard(mode, i)));
+        if (progress) {
+            const done = list.filter((m) => modeState(m).state === 'done').length;
+            const failed = list.filter((m) => modeState(m).state === 'error').length;
+            progress.textContent = done + ' / ' + list.length + ' completed' +
+                (failed ? ' · ' + failed + ' failed' : '');
+        }
+    }
+
+    async function copyText(text, button) {
+        try {
+            await navigator.clipboard.writeText(text);
+            const original = button.textContent;
+            button.textContent = 'Copied ✓';
+            setTimeout(() => {
+                button.textContent = original;
+            }, 1200);
+        } catch (e) {
+            log('Clipboard unavailable: ' + e.message, 'warn');
+        }
+    }
+
+    /* ───────────────────────── bootstrap ───────────────────────── */
+
+    const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
+    const ROOT_ALIASES = ['root'];
+
+    /**
+     * Without a session URL we address everything relative to the directory this page is
+     * served from — the `builder/` project folder, which holds `ops/`, the research
+     * document, the run logs and `tmp/`.
+     */
+    function inferContextFromLocation() {
+        const segments = location.pathname.split('/').filter(Boolean);
+        if (segments.length && /\.[a-z0-9]+$/i.test(segments[segments.length - 1])) segments.pop();
+        const base = ('/' + segments.join('/')).replace(/\/{2,}/g, '/');
+        const rel = segments.slice();
+        if (rel.length && MOUNT_SEGMENTS.indexOf(rel[0].toLowerCase()) !== -1) rel.shift();
+        if (rel.length && ROOT_ALIASES.indexOf(rel[0].toLowerCase()) !== -1) rel.shift();
+        return {basePath: base, docRoot: rel.join('/')};
+    }
+
+    function restoreDraft() {
+        try {
+            const saved = localStorage.getItem(STORAGE_PREFIX + '_modes_list');
+            if (saved) $('modes').value = saved;
+            const notes = localStorage.getItem(STORAGE_PREFIX + '_notes');
+            if (notes) $('run-notes').value = notes;
+        } catch (e) { /* storage may be unavailable */
+        }
+    }
+
+    function persistDraft() {
+        try {
+            localStorage.setItem(STORAGE_PREFIX + '_modes_list', $('modes').value);
+            localStorage.setItem(STORAGE_PREFIX + '_notes', $('run-notes').value);
+        } catch (e) { /* ignore */
+        }
+    }
+
+    function renderContext() {
+        $('ctx-info').innerHTML =
+            (state.sessionId
+                ? 'session <code>' + escapeHtml(state.sessionId) + '</code><br>'
+                : 'mode <code>direct files</code><br>') +
+            'base <code>' + escapeHtml(state.basePath || '(unresolved)') + '</code><br>' +
+            'doc-op root <code>' + escapeHtml(docRoot() || '(server root)') + '</code><br>' +
+            'analysis root <code>' + escapeHtml(analysisRootRel() || '(server root)') + '</code><br>' +
+            'analysis base <code>' + escapeHtml(analysisBase() || '(unresolved)') + '</code><br>' +
+            'build script <code>' + escapeHtml(projRel(scriptFile())) + '</code><br>' +
+            'status <code>' + escapeHtml((state.statusBase || '') + '/docops.status.json') + '</code>';
+    }
+
+    function wireEvents() {
+        $('run-all').addEventListener('click', runEverything);
+        $('run-research-btn').addEventListener('click', () => runStage('research'));
+        $('run-draft-btn').addEventListener('click', () => runStage('draft'));
+        $('run-modes-btn').addEventListener('click', () => runStage('run'));
+        $('run-plain-btn').addEventListener('click', () => runStage('run-plain'));
+        $('run-ready-modes').addEventListener('click', () => runStage('run-pending'));
+        $('reset-mode-status').addEventListener('click', resetModeStatuses);
+        $('clean-temp-ops').addEventListener('click', cleanTempOps);
+        $('reload-research').addEventListener('click', () => loadResearch());
+        $('reload-script').addEventListener('click', () => loadScript());
+        $('refresh-logs').addEventListener('click', refreshLogs);
+
+        document.querySelectorAll('.step-run').forEach((b) =>
+            b.addEventListener('click', () => runStage(b.dataset.run)));
+        document.querySelectorAll('.step-del').forEach((b) =>
+            b.addEventListener('click', () => deleteStepArtifact(b.dataset.del)));
+
+        $('run-notes').addEventListener('input', persistDraft);
+        $('modes').addEventListener('change', () => {
+            persistDraft();
+            renderModes();
+        });
+        ['research-file', 'script-file', 'ops-dir', 'tmp-dir'].forEach((id) =>
+            $(id).addEventListener('change', async () => {
+                $('p-research').textContent = researchFile();
+                $('p-script').textContent = scriptFile();
+                renderContext();
+                renderModes();
+                await refreshLogs();
+            }));
+
+        document.querySelectorAll('.tabs button').forEach((b) =>
+            b.addEventListener('click', () => activateTab(b.dataset.tab)));
+        document.querySelectorAll('.view-toggle').forEach((b) =>
+            b.addEventListener('click', () => {
+                const name = b.dataset.view;
+                docRawMode[name] = !docRawMode[name];
+                renderDoc(name);
+            }));
+        document.querySelectorAll('.view-copy').forEach((b) =>
+            b.addEventListener('click', () => copyText(viewSource(b.dataset.view), b)));
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runEverything();
+        });
+
+        window.addEventListener('beforeunload', stopPoller);
+    }
+
+    async function init() {
+        restoreDraft();
+        restoreModeStatus();
+        wireEvents();
+        $('p-research').textContent = researchFile();
+        $('p-script').textContent = scriptFile();
+
+        state.ctx = {};
+        state.sessionId = state.ctx.sessionId || null;
+        state.basePath = state.ctx.basePath || null;
+
+        if (!state.basePath) {
+            const inferred = inferContextFromLocation();
+            state.basePath = inferred.basePath;
+            state.standalone = true;
+            state.docRoot = inferred.docRoot || '';
+            log('Direct file mode — base "' + state.basePath + '".');
+            log('Doc-op paths are sent relative to "' + (docRoot() || '(server root)') + '".');
+        }
+        state.statusBase = computeStatusBase();
+        state.analysisBasePath = computeAnalysisBase();
+        if (state.basePath) {
+            log('Doc-op status polled from "' + state.statusBase + '/docops.status.json".');
+            log('Build script addressed as "' + state.analysisBasePath + '/' + scriptFile() + '".');
+        }
+
+        renderContext();
+
+        const banner = $('session-banner');
+        if (!state.basePath) {
+            banner.classList.remove('warn');
+            banner.classList.add('error');
+            banner.textContent =
+                'Could not determine a base path from this URL — file reads and writes are disabled.';
+            banner.classList.remove('hidden');
+            setBusy(true);
+            return;
+        }
+
+        if (!state.sessionId) {
+            banner.classList.remove('warn');
+            banner.classList.add('info');
+            banner.innerHTML =
+                'Direct file mode — research is written to <code>' +
+                escapeHtml(state.basePath) + '/' + escapeHtml(researchFile()) +
+                '</code>, the build script to <code>' + escapeHtml(projRel(scriptFile())) +
+                '</code> and generated doc-ops to <code>' + escapeHtml(tmpDir()) + '/</code>.';
+            banner.classList.remove('hidden');
+        }
+
+        await loadResearch(true);
+        await loadScript(true);
+        await refreshLogs();
+        renderModes();
+        activateTab('research');
+        log('Ready. Ctrl/Cmd+Enter runs research → draft → every build mode.');
+    }
+
+    init().catch((err) => {
+        console.error(err);
+        log('Initialization failed: ' + err.message, 'error');
+    });
+</script>
+</body>
+</html>

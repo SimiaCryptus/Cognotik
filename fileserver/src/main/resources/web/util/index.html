@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Cognotik Dev Tools</title>
+        <style>
+            :root {
+                --bg: #0f1115;
+                --panel: #171a21;
+                --panel-2: #1e222b;
+                --border: #2a2f3a;
+                --fg: #e6e9ef;
+                --muted: #9aa4b2;
+                --accent: #4f8cff;
+                --accent-2: #7c5cff;
+                --ok: #3ecf8e;
+                --warn: #f5a524;
+                --err: #f4636e;
+                --radius: 12px;
+            }
+
+            * { box-sizing: border-box; }
+
+            html, body {
+                margin: 0;
+                padding: 0;
+                background:
+                    radial-gradient(1200px 600px at 12% -10%, rgba(124, 92, 255, .18), transparent 60%),
+                    radial-gradient(900px 500px at 88% -20%, rgba(79, 140, 255, .16), transparent 60%),
+                    var(--bg);
+                background-attachment: fixed;
+                color: var(--fg);
+                font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+
+            a { color: var(--accent); text-decoration: none; }
+            a:hover { text-decoration: underline; }
+
+            h1, h2, h3 { margin: 0 0 .5rem; line-height: 1.25; }
+
+            .wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+            /* Shared menubar mount — /app/menu.js injects its own styles into the head,
+               so this only reserves the slot and collapses when the module is absent. */
+            #menubar-mount:empty { display: none; }
+            body.has-menubar .wrap { padding-top: 1.5rem; }
+
+
+            .muted { color: var(--muted); }
+            .small { font-size: .8rem; }
+            .hidden { display: none !important; }
+            .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+            /* ───────────── hero ───────────── */
+            .hero { margin-bottom: 1.5rem; }
+
+            .hero h1 {
+                font-size: 2rem;
+                letter-spacing: -.02em;
+                background: linear-gradient(90deg, var(--fg), var(--accent-2));
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+
+            .hero .tagline { font-size: 1rem; color: var(--muted); max-width: 70ch; }
+            .hero .blurb { margin: .75rem 0 0; max-width: 78ch; color: var(--muted); font-size: .875rem; }
+
+            /* ───────────── toolbar ───────────── */
+            .toolbar {
+                display: flex;
+                gap: .5rem;
+                align-items: center;
+                flex-wrap: wrap;
+                margin: 1.25rem 0 .75rem;
+            }
+
+            .search {
+                position: relative;
+                flex: 1 1 320px;
+                min-width: 220px;
+            }
+
+            .search input {
+                width: 100%;
+                background: var(--panel);
+                color: var(--fg);
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                padding: .6rem 2.4rem .6rem 2.2rem;
+                font: inherit;
+            }
+
+            .search input:focus { outline: none; border-color: var(--accent); }
+            .search .glyph { position: absolute; left: .8rem; top: .55rem; color: var(--muted); }
+            .search .kbd { position: absolute; right: .6rem; top: .5rem; }
+
+            .kbd {
+                border: 1px solid var(--border);
+                border-bottom-width: 2px;
+                border-radius: 5px;
+                padding: 0 .35rem;
+                font-size: .7rem;
+                color: var(--muted);
+                background: var(--panel-2);
+            }
+
+            button {
+                background: var(--panel-2);
+                color: var(--fg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: .45rem .8rem;
+                font: inherit;
+                cursor: pointer;
+            }
+
+            button:hover:not(:disabled) { border-color: var(--accent); }
+
+            .seg { display: flex; gap: 0; }
+            .seg button { border-radius: 0; }
+            .seg button:first-child { border-radius: 8px 0 0 8px; }
+            .seg button:last-child { border-radius: 0 8px 8px 0; margin-left: -1px; }
+            .seg button[aria-pressed="true"] { border-color: var(--accent); color: #fff; background: var(--panel); }
+
+            /* ───────────── chips ───────────── */
+            .chips { display: flex; gap: .4rem; flex-wrap: wrap; margin: .35rem 0; }
+
+            .chip {
+                border: 1px solid var(--border);
+                background: var(--panel);
+                color: var(--muted);
+                border-radius: 999px;
+                padding: .2rem .7rem;
+                font-size: .78rem;
+                cursor: pointer;
+                display: inline-flex;
+                gap: .35rem;
+                align-items: center;
+            }
+
+            .chip:hover { border-color: var(--accent); color: var(--fg); }
+
+            .chip[aria-pressed="true"] {
+                color: #fff;
+                border-color: var(--chip, var(--accent));
+                background: color-mix(in srgb, var(--chip, var(--accent)) 22%, transparent);
+            }
+
+            .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--chip, var(--accent)); }
+            .chip .count { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+            .filter-row { display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }
+            .filter-row > .label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+
+            .result-bar {
+                display: flex;
+                gap: .6rem;
+                align-items: center;
+                flex-wrap: wrap;
+                margin: .9rem 0 1rem;
+                padding-top: .8rem;
+                border-top: 1px solid var(--border);
+            }
+
+            /* ───────────── grid ───────────── */
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                gap: 1rem;
+            }
+
+            .grid.list { grid-template-columns: minmax(0, 1fr); }
+            .grid.list .desc, .grid.list details { display: none; }
+            .grid.list .card { padding: .75rem .95rem; }
+
+            .card {
+                position: relative;
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-top: 3px solid var(--cat, var(--accent));
+                border-radius: var(--radius);
+                padding: 1rem 1.1rem 1.1rem;
+                display: flex;
+                flex-direction: column;
+                gap: .5rem;
+                transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+            }
+
+            .card:hover {
+                transform: translateY(-2px);
+                border-color: color-mix(in srgb, var(--cat, var(--accent)) 55%, var(--border));
+                box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            }
+
+            .card[data-missing="true"] { opacity: .55; }
+
+            .card-top { display: flex; gap: .7rem; align-items: flex-start; }
+
+            .card .icon {
+                font-size: 1.5rem;
+                line-height: 1;
+                flex: 0 0 auto;
+                background: var(--panel-2);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: .4rem .5rem;
+            }
+
+            .card h3 { font-size: 1.05rem; margin: 0; }
+            .card h3 a { color: var(--fg); }
+            .card .tagline { color: var(--muted); font-size: .82rem; }
+            .card .desc { margin: 0; font-size: .85rem; }
+
+            .badges { display: flex; gap: .3rem; flex-wrap: wrap; margin-left: auto; }
+
+            .badge {
+                font-size: .68rem;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                padding: .1rem .45rem;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                color: var(--muted);
+                white-space: nowrap;
+            }
+
+            .badge.s-stable { color: var(--ok); border-color: var(--ok); }
+            .badge.s-beta { color: var(--warn); border-color: var(--warn); }
+            .badge.s-experimental { color: var(--accent-2); border-color: var(--accent-2); border-style: dashed; }
+            .badge.s-missing { color: var(--err); border-color: var(--err); }
+            .badge.recent { color: var(--accent); border-color: var(--accent); }
+
+            .tags { display: flex; gap: .3rem; flex-wrap: wrap; }
+
+            .tag {
+                font-size: .7rem;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: .05rem .4rem;
+                color: var(--muted);
+                background: var(--panel-2);
+                cursor: pointer;
+            }
+
+            .tag:hover { color: var(--fg); border-color: var(--accent); }
+            .tag[aria-pressed="true"] { color: #fff; border-color: var(--accent); }
+
+            details { border-top: 1px solid var(--border); padding-top: .5rem; }
+            details summary { cursor: pointer; color: var(--muted); font-size: .8rem; }
+            details ol, details ul { margin: .45rem 0 0 1.1rem; padding: 0; font-size: .8rem; }
+            details li { margin: .15rem 0; }
+            details code { font-size: 11.5px; }
+
+            code {
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                background: #0b0d12;
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                padding: .05rem .3rem;
+            }
+
+            .card-foot {
+                display: flex;
+                gap: .4rem;
+                align-items: center;
+                flex-wrap: wrap;
+                margin-top: auto;
+                padding-top: .6rem;
+            }
+
+            .btn {
+                display: inline-block;
+                border: 1px solid var(--border);
+                background: var(--panel-2);
+                color: var(--fg);
+                border-radius: 8px;
+                padding: .35rem .7rem;
+                font-size: .82rem;
+                cursor: pointer;
+            }
+
+            .btn:hover { border-color: var(--accent); text-decoration: none; }
+
+            .btn.primary {
+                background: linear-gradient(180deg, var(--cat, var(--accent)), color-mix(in srgb, var(--cat, var(--accent)) 70%, #000));
+                border-color: transparent;
+                color: #fff;
+                font-weight: 600;
+            }
+
+            .card-foot .path { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+
+            .empty {
+                border: 1px dashed var(--border);
+                border-radius: var(--radius);
+                padding: 2.5rem 1rem;
+                text-align: center;
+                color: var(--muted);
+            }
+
+            .notes {
+                margin-top: 2rem;
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1rem 1.15rem;
+            }
+
+            .notes h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+            .notes ul { margin: .5rem 0 0 1.1rem; padding: 0; font-size: .85rem; color: var(--muted); }
+            .notes li { margin: .2rem 0; }
+
+            .toast-host { position: fixed; right: 14px; bottom: 14px; display: grid; gap: .4rem; z-index: 900; }
+
+            .toast {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-left: 3px solid var(--ok);
+                border-radius: 8px;
+                padding: .5rem .8rem;
+                font-size: .82rem;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+            }
+
+            .toast.err { border-left-color: var(--err); }
+            /* ───────────── README modal ───────────── */
+            .modal-host {
+                position: fixed;
+                inset: 0;
+                /* above the sticky menubar */
+                z-index: 1000;
+                display: grid;
+                place-items: center;
+                padding: 1.5rem;
+            }
+            .modal-host.hidden { display: none !important; }
+            .modal-backdrop {
+                position: absolute;
+                inset: 0;
+                background: rgba(6, 8, 12, .72);
+                backdrop-filter: blur(2px);
+            }
+            .modal {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                width: min(900px, 100%);
+                max-height: min(84vh, 920px);
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-top: 3px solid var(--doc, var(--accent-2));
+                border-radius: var(--radius);
+                box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+                overflow: hidden;
+            }
+            .modal-head {
+                display: flex;
+                gap: .5rem;
+                align-items: center;
+                padding: .65rem .9rem;
+                border-bottom: 1px solid var(--border);
+            }
+            .modal-head h2 {
+                flex: 1 1 auto;
+                min-width: 0;
+                margin: 0;
+                font-size: .92rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .modal-body { overflow: auto; padding: 1rem 1.2rem 1.5rem; font-size: .88rem; }
+            .modal-body > :first-child { margin-top: 0; }
+            .modal-body h1 { font-size: 1.35rem; margin-top: 1.4rem; }
+            .modal-body h2 { font-size: 1.1rem; margin-top: 1.25rem; }
+            .modal-body h3 { font-size: .95rem; margin-top: 1rem; }
+            .modal-body img { max-width: 100%; }
+            .modal-body table { border-collapse: collapse; margin: .6rem 0; }
+            .modal-body th, .modal-body td { border: 1px solid var(--border); padding: .3rem .55rem; text-align: left; }
+            .modal-body blockquote { margin: .6rem 0; padding-left: .8rem; border-left: 3px solid var(--border); color: var(--muted); }
+            .modal-body pre {
+                background: #0b0d12;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: .7rem .85rem;
+                overflow: auto;
+                font-size: 12px;
+            }
+            .modal-body pre code { background: none; border: 0; padding: 0; }
+        </style>
+    </head>
+    <body>
+    <!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
+    <div id="menubar-mount"></div>
+
+
+    <div class="wrap">
+        <header class="hero">
+            <h1 id="title">Cognotik Dev Tools</h1>
+            <div class="tagline" id="tagline"></div>
+            <p class="blurb" id="blurb"></p>
+
+            <div class="toolbar">
+                <div class="search">
+                    <span class="glyph">🔎</span>
+                    <input id="q" type="search" spellcheck="false" autocomplete="off"
+                           placeholder="Search tools, tags, artifacts…">
+                    <span class="kbd">/</span>
+                </div>
+                <div class="seg" role="group" aria-label="Layout">
+                    <button id="view-grid" aria-pressed="true" title="Card grid">▦ Grid</button>
+                    <button id="view-list" aria-pressed="false" title="Compact list">☰ List</button>
+                </div>
+                <button id="clear" title="Clear every filter">Clear filters</button>
+            </div>
+
+            <div class="filter-row">
+                <span class="label">Category</span>
+                <div class="chips" id="category-chips"></div>
+            </div>
+            <div class="filter-row">
+                <span class="label">Tags</span>
+                <div class="chips" id="tag-chips"></div>
+            </div>
+        </header>
+
+        <div class="result-bar">
+            <span class="small muted" id="result-count"></span>
+            <span class="small muted" id="category-blurb"></span>
+        </div>
+
+        <main class="grid" id="grid" aria-live="polite"></main>
+        <div class="empty hidden" id="empty"></div>
+
+        <section class="notes">
+            <h2>House rules</h2>
+            <ul id="conventions"></ul>
+            <p class="small muted" style="margin:.7rem 0 0">
+                Every page here is served straight from this folder — no build step, no bundler.
+                Doc-op paths and status locations are derived from the page URL, so keep a tool's
+                <code>folder:</code> front-matter and its <code>ROOT_HOPS</code> constant in sync if
+                you move it to a different depth.
+            </p>
+            <p class="small muted" style="margin:.5rem 0 0">
+                The bar at the top is the shared menubar from <code>/app/menu.js</code> (nav, filesystem
+                IDE link, git, sessions, usage). Pass overrides through <code>meta.menu</code> in
+                <code>apps.js</code> — e.g. <code>{ showGit: false, sessionsEndpoint: '/api/sessions?format=json' }</code>.
+                If the shared modules are not deployed the bar is simply omitted.
+            </p>
+        </section>
+    </div>
+    <div class="modal-host hidden" id="doc-modal" role="dialog" aria-modal="true" aria-labelledby="doc-title">
+        <div class="modal-backdrop" data-close></div>
+        <div class="modal">
+            <header class="modal-head">
+                <h2 id="doc-title">README</h2>
+                <a class="btn" id="doc-raw" href="#" target="_blank" rel="noopener" title="Open the raw markdown">Raw ↗</a>
+                <button class="btn" id="doc-close" data-close aria-label="Close">✕</button>
+            </header>
+            <div class="modal-body" id="doc-body"></div>
+        </div>
+    </div>
+
+
+    <div class="toast-host" id="toasts"></div>
+
+    <script type="module">
+        /* ───────────────────────── catalog ───────────────────────── */
+
+        let catalog = {};
+        try {
+            catalog = await import('./apps.js');
+        } catch (e) {
+            console.error('Could not load apps.js', e);
+        }
+
+        const fallback = catalog.default || {};
+        const meta = catalog.meta || fallback.meta || {};
+        const categories = catalog.categories || fallback.categories || [];
+        const tools = (catalog.tools || fallback.tools || []).slice();
+
+        const catById = new Map(categories.map((c) => [c.id, c]));
+        const accentOf = (tool) => (catById.get(tool.category) || {}).accent || '#4f8cff';
+
+        /* ───────────────────────── helpers ───────────────────────── */
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+
+        function toast(message, kind) {
+            const el = document.createElement('div');
+            el.className = 'toast' + (kind ? ' ' + kind : '');
+            el.textContent = message;
+            $('toasts').appendChild(el);
+            setTimeout(() => {
+                el.style.transition = 'opacity .3s';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 320);
+            }, 2200);
+        }
+
+        const RECENT_KEY = 'codeUtils.recent';
+        const VIEW_KEY = 'codeUtils.view';
+
+        function recentMap() {
+            try {
+                return JSON.parse(localStorage.getItem(RECENT_KEY) || '{}') || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function markOpened(id) {
+            try {
+                const map = recentMap();
+                map[id] = Date.now();
+                localStorage.setItem(RECENT_KEY, JSON.stringify(map));
+            } catch (e) { /* private mode / quota */ }
+        }
+
+        function timeAgo(ts) {
+            const s = Math.max(0, (Date.now() - ts) / 1000);
+            if (s < 60) return 'just now';
+            const units = [['m', 60], ['h', 3600], ['d', 86400], ['w', 604800], ['mo', 2592000]];
+            let out = 'just now';
+            for (const [label, secs] of units) if (s >= secs) out = Math.floor(s / secs) + label + ' ago';
+            return out;
+        }
+
+        /* ───────────────────────── state ───────────────────────── */
+
+        const state = {
+            q: '',
+            category: 'all',
+            tags: new Set(),
+            view: localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid',
+            missing: new Set()   // entries that responded 404 to a HEAD probe
+        };
+        /**
+         * Controller returned by initMenu(), or null when /app/menu.js could not be
+         * loaded. Declared here so the keydown handler can reference it safely.
+         */
+        let menu = null;
+
+
+        function readHash() {
+            const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+            state.q = params.get('q') || '';
+            state.category = params.get('cat') || 'all';
+            state.tags = new Set((params.get('tags') || '').split(',').filter(Boolean));
+        }
+
+        function writeHash() {
+            const params = new URLSearchParams();
+            if (state.q) params.set('q', state.q);
+            if (state.category !== 'all') params.set('cat', state.category);
+            if (state.tags.size) params.set('tags', [...state.tags].join(','));
+            const hash = params.toString();
+            history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search);
+        }
+
+        /* ───────────────────────── filtering ───────────────────────── */
+
+        const haystack = (tool) => [
+            tool.id, tool.name, tool.tagline, tool.description, tool.entry, tool.docs,
+            (tool.tags || []).join(' '),
+            (tool.pipeline || []).join(' '),
+            (tool.artifacts || []).map((a) => a.path + ' ' + (a.note || '')).join(' '),
+            (tool.requires || []).join(' ')
+        ].join('\n').toLowerCase();
+
+        function matches(tool) {
+            if (state.category !== 'all' && tool.category !== state.category) return false;
+            for (const tag of state.tags) if (!(tool.tags || []).includes(tag)) return false;
+            const words = state.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+            if (!words.length) return true;
+            const hay = haystack(tool);
+            return words.every((w) => hay.includes(w));
+        }
+
+        function visible() {
+            const recent = recentMap();
+            return tools.filter(matches).sort((a, b) => {
+                const ra = recent[a.id] || 0, rb = recent[b.id] || 0;
+                if (ra !== rb) return rb - ra;                       // most recently opened first
+                return String(a.name).localeCompare(String(b.name));
+            });
+        }
+
+        /* ───────────────────────── rendering ───────────────────────── */
+
+        function renderHeader() {
+            document.title = meta.title || 'Cognotik Dev Tools';
+            $('title').textContent = meta.title || 'Cognotik Dev Tools';
+            $('tagline').textContent = meta.tagline || '';
+            $('blurb').textContent = meta.blurb || '';
+            $('conventions').innerHTML = (meta.conventions || [])
+                .map((c) => '<li>' + esc(c) + '</li>').join('');
+        }
+
+        function renderCategoryChips() {
+            const counts = new Map();
+            tools.forEach((t) => counts.set(t.category, (counts.get(t.category) || 0) + 1));
+            const chip = (id, name, accent, count, pressed) =>
+                '<button class="chip" data-cat="' + esc(id) + '" aria-pressed="' + pressed + '"' +
+                (accent ? ' style="--chip:' + esc(accent) + '"' : '') + '>' +
+                (accent ? '<span class="dot"></span>' : '') + esc(name) +
+                '<span class="count">' + count + '</span></button>';
+
+            $('category-chips').innerHTML =
+                chip('all', 'All', '#9aa4b2', tools.length, state.category === 'all') +
+                categories.map((c) =>
+                    chip(c.id, c.name, c.accent, counts.get(c.id) || 0, state.category === c.id)).join('');
+
+            const cat = catById.get(state.category);
+            $('category-blurb').textContent = cat ? cat.blurb : '';
+        }
+
+        function renderTagChips() {
+            const counts = new Map();
+            tools.forEach((t) => (t.tags || []).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1)));
+            const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+            $('tag-chips').innerHTML = sorted.map(([tag, n]) =>
+                '<button class="chip" data-tag="' + esc(tag) + '" aria-pressed="' +
+                state.tags.has(tag) + '">' + esc(tag) +
+                '<span class="count">' + n + '</span></button>').join('');
+        }
+
+        const listBlock = (title, items, tag) => (items && items.length)
+            ? '<div style="margin-top:.4rem"><div class="small muted">' + esc(title) + '</div><' + tag + '>' +
+            items.join('') + '</' + tag + '></div>'
+            : '';
+
+        function cardHtml(tool) {
+            const recent = recentMap()[tool.id];
+            const missing = state.missing.has(tool.id);
+            const details =
+                listBlock('Pipeline', (tool.pipeline || []).map((s) => '<li>' + esc(s) + '</li>'), 'ol') +
+                listBlock('Generates', (tool.artifacts || []).map((a) =>
+                    '<li><code>' + esc(a.path) + '</code>' +
+                    (a.note ? ' — ' + esc(a.note) : '') + '</li>'), 'ul') +
+                listBlock('Needs at runtime', (tool.requires || []).map((r) =>
+                    '<li><code>' + esc(r) + '</code></li>'), 'ul') +
+                listBlock('localStorage', (tool.storage || []).map((s) =>
+                    '<li><code>' + esc(s) + '</code></li>'), 'ul');
+
+            return '<article class="card" data-id="' + esc(tool.id) + '"' +
+                (missing ? ' data-missing="true"' : '') +
+                ' style="--cat:' + esc(accentOf(tool)) + '">' +
+                '<div class="card-top">' +
+                '<span class="icon">' + esc(tool.icon || '🔧') + '</span>' +
+                '<div style="min-width:0">' +
+                '<h3><a href="' + esc(tool.entry) + '" data-open="' + esc(tool.id) + '">' +
+                esc(tool.name) + '</a></h3>' +
+                '<div class="tagline">' + esc(tool.tagline || '') + '</div>' +
+                '</div>' +
+                '<div class="badges">' +
+                (tool.status ? '<span class="badge s-' + esc(tool.status) + '">' + esc(tool.status) + '</span>' : '') +
+                (missing ? '<span class="badge s-missing">not found</span>' : '') +
+                (recent ? '<span class="badge recent" title="Last opened">' + esc(timeAgo(recent)) + '</span>' : '') +
+                '</div></div>' +
+                (tool.description ? '<p class="desc">' + esc(tool.description) + '</p>' : '') +
+                '<div class="tags">' + (tool.tags || []).map((t) =>
+                    '<button class="tag" data-tag="' + esc(t) + '" aria-pressed="' +
+                    state.tags.has(t) + '">' + esc(t) + '</button>').join('') + '</div>' +
+                (details ? '<details><summary>Details</summary>' + details + '</details>' : '') +
+                '<div class="card-foot">' +
+                '<a class="btn primary" href="' + esc(tool.entry) + '" data-open="' + esc(tool.id) + '">Open ↗</a>' +
+                (tool.docs
+                    ? '<a class="btn" href="' + esc(tool.docs) + '" data-docs="' + esc(tool.id) +
+                      '" title="Render ' + esc(tool.docs) + ' in place">README</a>'
+                    : '') +
+                '<span class="path mono">' + esc(tool.entry) + '</span>' +
+                '</div></article>';
+        }
+
+        function render() {
+            renderCategoryChips();
+            renderTagChips();
+
+            const grid = $('grid');
+            grid.className = 'grid' + (state.view === 'list' ? ' list' : '');
+            $('view-grid').setAttribute('aria-pressed', String(state.view === 'grid'));
+            $('view-list').setAttribute('aria-pressed', String(state.view === 'list'));
+
+            const shown = visible();
+            grid.innerHTML = shown.map(cardHtml).join('');
+
+            const empty = $('empty');
+            empty.classList.toggle('hidden', shown.length > 0);
+            if (!shown.length) {
+                empty.innerHTML = tools.length
+                    ? 'Nothing matches the current filters. <button class="btn" id="empty-clear">Clear filters</button>'
+                    : 'No tools are registered — add one to <code>apps.js</code>.';
+                const btn = $('empty-clear');
+                if (btn) btn.addEventListener('click', clearFilters);
+            }
+
+            $('result-count').textContent = shown.length === tools.length
+                ? tools.length + ' tool' + (tools.length === 1 ? '' : 's')
+                : shown.length + ' of ' + tools.length + ' tools';
+
+            writeHash();
+        }
+
+        /* ───────────────────────── availability probe ───────────────────────── */
+
+        /**
+         * A card whose entry point 404s is dimmed rather than hidden: the catalog is the
+         * source of truth, a missing file is a deployment problem worth seeing.
+         * Unreachable probes (file://, offline) are treated as "unknown", never as missing.
+         */
+        async function probeEntries() {
+            let changed = false;
+            await Promise.all(tools.map(async (tool) => {
+                if (!tool.entry) return;
+                try {
+                    const res = await fetch(tool.entry, {method: 'HEAD', cache: 'no-store'});
+                    if (res.status === 404 || res.status === 410) {
+                        state.missing.add(tool.id);
+                        changed = true;
+                    }
+                } catch (e) { /* unknown — leave the card alone */ }
+            }));
+            if (changed) render();
+        }
+        /* ───────────────────────── README viewer ───────────────────────── */
+        /**
+         * READMEs are rendered in place. marked is fetched the first time a doc is opened,
+         * trying `/lib/marked.min.js` then the vendored `/app/marked.min.js`, and
+         * `/lib/purify.min.js` is used when it happens to be deployed. Neither is required:
+         * missing marked falls back to the raw text in a <pre>, and a failing fetch shows
+         * the error plus a "Raw ↗" escape hatch.
+         */
+        const scripts = {};
+        function loadScript(src) {
+            if (!scripts[src]) {
+                scripts[src] = new Promise((resolve, reject) => {
+                    const el = document.createElement('script');
+                    el.src = src;
+                    el.onload = resolve;
+                    el.onerror = () => reject(new Error('could not load ' + src));
+                    document.head.appendChild(el);
+                });
+            }
+            return scripts[src];
+        }
+        const MARKED_SOURCES = ['/lib/marked.min.js', '/app/marked.min.js'];
+        async function ensureMarked() {
+            if (window.marked) return window.marked;
+            for (const src of MARKED_SOURCES) {
+                try {
+                    await loadScript(src);
+                } catch (e) { /* try the next candidate */ }
+                if (window.marked) return window.marked;
+            }
+            return window.marked || null;
+        }
+        async function ensurePurify() {
+            if (window.DOMPurify) return window.DOMPurify;
+            try {
+                await loadScript('/lib/purify.min.js');
+            } catch (e) { /* optional — local docs are trusted content */ }
+            return window.DOMPurify || null;
+        }
+        /** Relative links inside a doc are relative to the doc, not to this page. */
+        function resolveRelative(root, docPath) {
+            const base = new URL(docPath, location.href);
+            root.querySelectorAll('[href], [src]').forEach((el) => {
+                const attr = el.hasAttribute('href') ? 'href' : 'src';
+                const raw = el.getAttribute(attr);
+                if (!raw || /^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(raw)) return;
+                const url = new URL(raw, base);
+                el.setAttribute(attr, url.pathname + url.search + url.hash);
+                if (attr !== 'href') return;
+                if (/\.md($|[?#])/i.test(url.pathname)) el.dataset.mdlink = url.pathname;
+                else { el.target = '_blank'; el.rel = 'noopener'; }
+            });
+        }
+        async function openDocs(tool, path) {
+            const docPath = path || (tool && tool.docs);
+            if (!docPath) return;
+            const host = $('doc-modal');
+            host.dataset.path = docPath;
+            host.dataset.tool = (tool && tool.id) || '';
+            host.style.setProperty('--doc', tool ? accentOf(tool) : 'var(--accent-2)');
+            $('doc-title').textContent = ((tool && tool.name) || 'Documentation') + ' · ' + docPath;
+            $('doc-raw').setAttribute('href', docPath);
+            $('doc-body').innerHTML = '<p class="muted small">Loading <code>' + esc(docPath) + '</code>…</p>';
+            $('doc-body').scrollTop = 0;
+            host.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            $('doc-close').focus();
+            let text;
+            try {
+                const res = await fetch(docPath, {cache: 'no-store'});
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                text = await res.text();
+            } catch (err) {
+                if (host.dataset.path !== docPath) return;
+                $('doc-body').innerHTML = '<p class="muted">Could not read <code>' + esc(docPath) +
+                    '</code> — ' + esc(err.message) + '.</p>';
+                toast('README unavailable: ' + err.message, 'err');
+                return;
+            }
+            if (host.classList.contains('hidden') || host.dataset.path !== docPath) return; // superseded
+            const marked = await ensureMarked().catch(() => null);
+            if (!marked) {
+                const pre = document.createElement('pre');
+                pre.textContent = text;
+                $('doc-body').replaceChildren(pre);
+                return;
+            }
+            const html = typeof marked.parse === 'function' ? marked.parse(text) : marked(text);
+            const purify = await ensurePurify();
+            if (host.dataset.path !== docPath) return;
+            $('doc-body').innerHTML = purify ? purify.sanitize(html) : html;
+            resolveRelative($('doc-body'), docPath);
+        }
+        function closeDocs() {
+            const host = $('doc-modal');
+            host.classList.add('hidden');
+            host.dataset.path = '';
+            $('doc-body').innerHTML = '';
+            document.body.style.overflow = '';
+        }
+
+
+        /* ───────────────────────── events ───────────────────────── */
+
+        function clearFilters() {
+            state.q = '';
+            state.category = 'all';
+            state.tags.clear();
+            $('q').value = '';
+            render();
+        }
+
+        function toggleTag(tag) {
+            if (state.tags.has(tag)) state.tags.delete(tag);
+            else state.tags.add(tag);
+            render();
+        }
+
+        let frame = 0;
+        $('q').addEventListener('input', (e) => {
+            state.q = e.target.value;
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(render);
+        });
+
+        $('category-chips').addEventListener('click', (e) => {
+            const chip = e.target.closest('[data-cat]');
+            if (!chip) return;
+            state.category = chip.dataset.cat;
+            render();
+        });
+
+        $('tag-chips').addEventListener('click', (e) => {
+            const chip = e.target.closest('[data-tag]');
+            if (chip) toggleTag(chip.dataset.tag);
+        });
+
+        $('grid').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (tag) {
+                e.preventDefault();
+                toggleTag(tag.dataset.tag);
+                return;
+            }
+            const docs = e.target.closest('[data-docs]');
+            if (docs && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+                e.preventDefault();
+                openDocs(tools.find((t) => t.id === docs.dataset.docs));
+                return;
+            }
+            const open = e.target.closest('[data-open]');
+            if (open) markOpened(open.dataset.open);
+        });
+
+        $('view-grid').addEventListener('click', () => {
+            state.view = 'grid';
+            localStorage.setItem(VIEW_KEY, 'grid');
+            render();
+        });
+        $('view-list').addEventListener('click', () => {
+            state.view = 'list';
+            localStorage.setItem(VIEW_KEY, 'list');
+            render();
+        });
+        $('clear').addEventListener('click', clearFilters);
+        $('doc-modal').addEventListener('click', (e) => {
+            if (e.target.closest('[data-close]')) {
+                closeDocs();
+                return;
+            }
+            const md = e.target.closest('[data-mdlink]');
+            if (md) {
+                e.preventDefault();
+                const id = $('doc-modal').dataset.tool;
+                openDocs(tools.find((t) => t.id === id) || null, md.dataset.mdlink);
+            }
+        });
+
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('doc-modal').classList.contains('hidden')) {
+                e.preventDefault();
+                closeDocs();
+                return;
+            }
+            if (e.key === 'Escape' && menu) {
+                // No-op when nothing is open, so this is safe to call unconditionally.
+                try {
+                    menu.close();
+                } catch (err) { /* ignore */ }
+            }
+            const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+            if (e.key === '/' && !typing) {
+                e.preventDefault();
+                $('q').focus();
+                $('q').select();
+            } else if (e.key === 'Escape' && typing) {
+                e.target.blur();
+            } else if (e.key === 'Enter' && e.target === $('q')) {
+                const first = $('grid').querySelector('.card [data-open]');
+                if (first) {
+                    markOpened(first.dataset.open);
+                    location.href = first.getAttribute('href');
+                }
+            }
+        });
+
+        window.addEventListener('hashchange', () => {
+            readHash();
+            $('q').value = state.q;
+            render();
+        });
+
+        /* ───────────────────────── bootstrap ───────────────────────── */
+        /**
+         * The menubar is imported dynamically: this index must stay usable when the shared
+         * /app/ modules are not mounted (bare file server, offline copy, path prefix that
+         * has not been configured). Options come from `meta.menu` in apps.js so a catalog
+         * can hide panels or pin the sessions endpoint without touching this page.
+         */
+        async function initMenubar() {
+            const mount = $('menubar-mount');
+            try {
+                const {initMenu} = await import('/app/menu.js');
+                menu = initMenu({
+                    mount,
+                    appName: meta.title || 'Cognotik Dev Tools',
+                    extraLinks: meta.menuLinks || [],
+                    ...(meta.menu || {})
+                });
+                document.body.classList.add('has-menubar');
+                window.addEventListener('pagehide', () => {
+                    try {
+                        if (menu) menu.destroy();
+                    } catch (e) { /* ignore */ }
+                    menu = null;
+                }, {once: true});
+            } catch (e) {
+                console.warn('Menubar unavailable — continuing without it', e);
+                if (mount) mount.remove();
+            }
+        }
+
+
+        readHash();
+        $('q').value = state.q;
+        renderHeader();
+        render();
+        probeEntries();
+        initMenubar();
+
+        if (!tools.length) toast('apps.js registered no tools.', 'err');
+    </script>
+    </body>
+    </html>

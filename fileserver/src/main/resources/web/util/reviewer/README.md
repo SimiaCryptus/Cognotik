@@ -19,21 +19,21 @@ reviewer/
 ├── focus.md                    # the current focus query — read by every stage
 ├── README.md
 ├── ops/                        # doc-op definitions (front-matter + instructions)
-│   ├── process_files.op.md         # source file  -> review/<path>.json
-│   ├── process_packages.op.md      # folder       -> review/<pkg>.json
-│   ├── plan_followup_multi.op.md   # review/**    -> tasks/**.json
-│   ├── plan_followup_single.op.md  # review/**    -> tasks.json
+│   ├── process_files.op.md         # source file  -> .review/<path>.json
+│   ├── process_packages.op.md      # folder       -> .review/<pkg>.json
+│   ├── plan_followup_multi.op.md   # .review/**    -> .tasks/**.json
+│   ├── plan_followup_single.op.md  # .review/**    -> tasks.json
 │   ├── process_followup.op.md      # tasks        -> SubPlan execution
 │   ├── followup.task.json          # SubPlan task settings
 │   ├── analysis_schema.ts          # FileAnalysis / PackageAnalysis schemas
 │   └── followup_schema.ts          # FollowupPlan / FollowupTask schemas
-├── review/                     # generated: per-file and per-package analyses
-├── tasks/                      # generated: one follow-up plan per review doc
+├── .review/                     # generated: per-file and per-package analyses
+├── .tasks/                      # generated: one follow-up plan per review doc
 ├── tasks.json                  # generated: aggregate follow-up plan
 └── tmp/                        # generated: temporary per-task doc-op files
 ```
 
-`review/`, `tasks/`, `tasks.json` and `tmp/` are all produced by the pipeline and
+`.review/`, `.tasks/`, `tasks.json` and `tmp/` are all produced by the pipeline and
 are safe to delete at any time (the UI has delete buttons for each stage).
 
 ---
@@ -46,7 +46,7 @@ are safe to delete at any time (the UI has delete buttons for each stage).
 * `/lib/marked.min.js` — local copy of [marked](https://marked.js.org) for
 markdown rendering (loaded **before** the module script)
 * `index.html` served from the `reviewer/` folder of the repository, so that the
-page can locate `focus.md`, `ops/`, `review/` and `tasks/` next to itself.
+page can locate `focus.md`, `ops/`, `.review/` and `.tasks/` next to itself.
 
 There is no build step, bundler, or npm install. Open the page and go.
 
@@ -59,7 +59,7 @@ configured by hand:
 
 | Root              | Meaning                                                                                                                                                                                                                 |
 |-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **doc root**      | The folder this page is served from (`.../reviewer`). All project artifacts (`focus.md`, `ops/`, `review/`, `tasks/`) are relative to it.                                                                               |
+| **doc root**      | The folder this page is served from (`.../reviewer`). All project artifacts (`focus.md`, `ops/`, `.review/`, `.tasks/`) are relative to it.                                                                               |
 | **analysis root** | Two levels above the doc root (`reviewer/` → `cognotik-tools/` → repo root). This matches the `folder: ../../..` declared by every op, and is the root that **target file paths** in reviews and tasks are relative to. |
 
 The hop count lives in one constant:
@@ -91,24 +91,24 @@ op, so it is the single source of truth for review intent.
 Every stage calls `ensureFocus()` first, so an unsaved edit in the textarea is
 persisted before the op runs.
 
-### 2. Analyze files → `review/**.json`
+### 2. Analyze files → `.review/**.json`
 
-Op: `ops/process_files.op.md` — `(.*) -> ../review/$1.json`
+Op: `ops/process_files.op.md` — `(.*) -> ../.review/$1.json`
 
 For each path in the **Files to review** box, one review document is produced:
 
 ```
 src/main/kotlin/com/example/Foo.kt
-  -> review/src/main/kotlin/com/example/Foo.kt.json
+  -> .review/src/main/kotlin/com/example/Foo.kt.json
 ```
 
 Each document is a `FileAnalysis`: a `file`, a `summary`, and a list of
 `findings` with `category`, `severity`, `message`, optional `location`,
 `suggested_fix`, `confidence` and `tags`.
 
-### 3. Summarize packages → `review/<pkg>.json`
+### 3. Summarize packages → `.review/<pkg>.json`
 
-Op: `ops/process_packages.op.md` — `(.*)/[^/]+.(?:kt|js) -> ../review/$1.json`
+Op: `ops/process_packages.op.md` — `(.*)/[^/]+.(?:kt|js) -> ../.review/$1.json`
 
 Rolls the per-file findings of a folder up into a `PackageAnalysis`: which files
 contributed, what patterns recur across them, and an `overall_severity`.
@@ -127,7 +127,7 @@ const isPackageReview = (p) => !/\.[a-z0-9]+\.json$/i.test(basename(p));
 Two flavours, both emitting a `FollowupPlan`:
 
 * **per review** — `ops/plan_followup_multi.op.md`,
-`../review/(.*).json -> ../tasks/$1.json`. One plan per review document,
+`../.review/(.*).json -> ../.tasks/$1.json`. One plan per review document,
 keeping tasks scoped and parallelizable.
 * **aggregate** — `ops/plan_followup_single.op.md`, `specifies: ../tasks.json`.
 One plan over everything, better for cross-cutting refactors.
@@ -186,10 +186,10 @@ Each step shows live progress (`3/12 · RUNNING`) driven by both the per-target
 
 ### Sidebar
 
-* **Review Documents** — every `review/**.json`; click to render, 🗑 to delete.
+* **Review Documents** — every `.review/**.json`; click to render, 🗑 to delete.
 **→ targets** refills the target list from the per-file reviews that exist,
 which is the fastest way to re-review the same set under a new focus query.
-* **Task Plans** — `tasks.json` plus every `tasks/**.json`. Click one to load it,
+* **Task Plans** — `tasks.json` plus every `.tasks/**.json`. Click one to load it,
 or **Load all** to pull in every plan at once.
 
 ### Review tab

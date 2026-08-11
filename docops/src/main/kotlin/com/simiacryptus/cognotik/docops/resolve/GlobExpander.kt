@@ -11,28 +11,29 @@ object GlobExpander {
 
   private val log = LoggerFactory.getLogger(GlobExpander::class.java)
 
-  /** Default recursive lister; injectable so [com.simiacryptus.cognotik.docops.plan.ResolveContext] can memoize. */
-  val defaultLister: (File) -> List<File> = { it.listFilesRecursively() }
-
   fun isGlobPattern(pattern: String): Boolean =
     pattern.contains("*") || pattern.contains("?") || pattern.contains("[")
 
   fun expandPatternOrLiteral(
     baseDir: File,
     pattern: String,
-    lister: (File) -> List<File> = defaultLister,
+    lister: (File) -> List<File> = { it: File -> it.listFilesRecursively() },
   ): List<File> = if (isGlobPattern(pattern)) {
     if (pattern.contains("**")) expandRecursiveGlob(baseDir, pattern, lister)
     else expandSimpleGlob(baseDir, pattern)
   } else {
-    listOf(
-      try {
-        baseDir.resolve(pattern).canonicalFile
-      } catch (e: Exception) {
-        log.warn("Failed to resolve literal path '$pattern'", e)
-        baseDir.resolve(pattern)
-      }
-    )
+    val resolved = try {
+      baseDir.resolve(pattern).canonicalFile
+    } catch (e: Exception) {
+      log.warn("Failed to canonicalize literal path '$pattern' against ${baseDir.absolutePath}", e)
+      baseDir.resolve(pattern)
+    }
+    if (resolved.exists()) {
+      log.info("Literal path '$pattern' -> ${resolved.absolutePath} (exists)")
+    } else {
+      log.info("Literal path '$pattern' -> ${resolved.absolutePath} (does not exist yet; kept as prospective target)")
+    }
+    listOf(resolved)
   }
 
   fun expandSimpleGlob(baseDir: File, pattern: String): List<File> {
@@ -45,17 +46,28 @@ object GlobExpander {
       return emptyList()
     }
     if (!directory.exists() || !directory.isDirectory) {
-      log.warn("Directory does not exist: ${directory.absolutePath}")
+      log.warn("Glob '$pattern' matched nothing: directory does not exist or is not a directory: ${directory.absolutePath}")
       return emptyList()
     }
     val matcher: PathMatcher = FileSystems.getDefault().getPathMatcher("glob:${patternFile.name}")
-    return directory.listFiles()?.filter { it.isFile && matcher.matches(it.toPath().fileName) } ?: emptyList()
+    val children = directory.listFiles()?.toList() ?: emptyList()
+    val matched = children.filter { it.isFile && matcher.matches(it.toPath().fileName) }
+    if (matched.isEmpty()) {
+      log.info(
+        "Glob '$pattern' matched 0 of ${children.size} entr(ies) in ${directory.absolutePath}" +
+            (if (children.isEmpty()) " (directory is empty)"
+            else "; name filter='${patternFile.name}', candidates: ${children.take(25).joinToString { it.name }}")
+      )
+    } else {
+      log.info("Glob '$pattern' matched ${matched.size} file(s) in ${directory.absolutePath}")
+    }
+    return matched
   }
 
   fun expandRecursiveGlob(
     baseDir: File,
     pattern: String,
-    lister: (File) -> List<File> = defaultLister,
+    lister: (File) -> List<File> = { it: File -> it.listFilesRecursively() },
   ): List<File> {
     val beforeGlob = pattern.substringBefore("**").removeSuffix("/").removeSuffix("\\")
     val resolvedBase = try {
@@ -65,7 +77,7 @@ object GlobExpander {
       return emptyList()
     }
     if (!resolvedBase.exists()) {
-      log.warn("Base directory does not exist: ${resolvedBase.absolutePath}")
+      log.warn("Recursive glob '$pattern' matched nothing: base directory does not exist: ${resolvedBase.absolutePath}")
       return emptyList()
     }
     val remainingPattern = pattern.substringAfter("**").removePrefix("/").removePrefix("\\")
@@ -78,6 +90,18 @@ object GlobExpander {
       }
     } else PathMatcher { true }
 
-    return lister(resolvedBase).filter { it.isFile && matcher.matches(it.toPath().fileName) }
+    val scanned = lister(resolvedBase)
+    val matched = scanned.filter { it.isFile && matcher.matches(it.toPath().fileName) }
+    if (matched.isEmpty()) {
+      log.info(
+        "Recursive glob '$pattern' matched 0 of ${scanned.size} file(s) under ${resolvedBase.absolutePath} " +
+            "(name filter='${remainingPattern.ifEmpty { "*" }}')"
+      )
+    } else {
+      log.info(
+        "Recursive glob '$pattern' matched ${matched.size} of ${scanned.size} file(s) under ${resolvedBase.absolutePath}"
+      )
+    }
+    return matched
   }
 }

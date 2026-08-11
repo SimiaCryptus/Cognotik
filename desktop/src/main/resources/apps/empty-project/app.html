@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏗️ Empty Project · Dev Tools</title>
+    <link rel="canonical" href="cognotik-tools/index.html">
+    <!-- Primary redirect: works even with scripting disabled. -->
+    <meta http-equiv="refresh" content="0; url=cognotik-tools/index.html">
+    <style>
+        :root {
+            --bg: #0f1115;
+            --panel: #171a21;
+            --panel-2: #1e222b;
+            --border: #2a2f3a;
+            --fg: #e6e9ef;
+            --muted: #9aa4b2;
+            --accent: #4f8cff;
+            --accent-2: #7c5cff;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            background: radial-gradient(1200px 600px at 12% -10%, rgba(124, 92, 255, .18), transparent 60%),
+            radial-gradient(900px 500px at 88% -20%, rgba(79, 140, 255, .16), transparent 60%),
+            var(--bg);
+            background-attachment: fixed;
+            color: var(--fg);
+            font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.25rem 4rem;
+        }
+
+        h1 {
+            margin: 0 0 .4rem;
+            font-size: 1.8rem;
+            letter-spacing: -.02em;
+            background: linear-gradient(90deg, var(--fg), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .small {
+            font-size: .82rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 1rem;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: .45rem .9rem;
+            font-size: .88rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(180deg, var(--accent), #2f63c9);
+        }
+
+        .btn:hover {
+            text-decoration: none;
+            border-color: var(--accent-2);
+        }
+
+        .fallback {
+            margin-top: 2rem;
+        }
+
+        .list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: .75rem;
+            margin: 1rem 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .list li {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--cat, var(--accent));
+            border-radius: var(--radius);
+            padding: .7rem .85rem;
+        }
+
+        .list .name {
+            display: flex;
+            gap: .5rem;
+            align-items: baseline;
+        }
+
+        .list .name a {
+            color: var(--fg);
+            font-weight: 600;
+        }
+
+        .list .tagline {
+            margin: .2rem 0 0;
+            font-size: .8rem;
+            color: var(--muted);
+        }
+
+        .list .path {
+            margin: .35rem 0 0;
+            font-size: 11.5px;
+            color: var(--muted);
+        }
+
+        .note {
+            margin-top: 2rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: .85rem 1rem;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            background: #0b0d12;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: .05rem .3rem;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Cognotik Dev Tools</h1>
+    <p class="muted" id="status">
+        Forwarding to <code>cognotik-tools/index.html</code>…
+    </p>
+    <a class="btn" id="go" href="cognotik-tools/index.html">Open Dev Tools ↗</a>
+
+    <!-- Only shown when the redirect does not take effect (blocked navigation, file://, etc.). -->
+    <section class="fallback hidden" id="fallback">
+        <h2 class="small muted" style="text-transform:uppercase;letter-spacing:.06em;margin:0">
+            Registered tools
+        </h2>
+        <ul class="list" id="tools"></ul>
+        <p class="small muted" id="fallback-note"></p>
+    </section>
+
+    <div class="note small muted">
+        This page is a shim: the real catalog lives in
+        <code>cognotik-tools/index.html</code> and is driven by <code>cognotik-tools/apps.js</code>.
+        Add or edit tools there — nothing needs to change here.
+    </div>
+</div>
+
+<script type="module">
+    const BASE = 'cognotik-tools/';
+    const TARGET = 'cognotik-tools/index.html';
+
+    /* Preserve ?query and #hash so shared filter/search links survive the hop. */
+    const url = new URL(TARGET, location.href);
+    if (location.search && !url.search) url.search = location.search;
+    if (location.hash) url.hash = location.hash;
+
+    const href = url.pathname + url.search + url.hash;
+    document.getElementById('go').setAttribute('href', href);
+
+    try {
+        location.replace(href);
+    } catch (e) { /* fall through to the inline replica below */
+    }
+
+    /* If we are still here shortly after the redirect, replicate the catalog inline. */
+    setTimeout(async () => {
+        const status = document.getElementById('status');
+        status.innerHTML = 'Automatic forwarding did not happen — use ' +
+            '<a href="' + href + '">Open Dev Tools</a>, or pick a tool directly:';
+
+        let catalog = {};
+        try {
+            catalog = await import('./cognotik-tools/apps.js');
+        } catch (e) {
+            document.getElementById('fallback-note').textContent =
+                'Could not read cognotik-tools/apps.js (' + e.message + ').';
+            document.getElementById('fallback').classList.remove('hidden');
+            return;
+        }
+
+        const fallback = catalog.default || {};
+        const categories = catalog.categories || fallback.categories || [];
+        const tools = (catalog.tools || fallback.tools || []).slice()
+            .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        const accentOf = (t) =>
+            (categories.find((c) => c.id === t.category) || {}).accent || '#4f8cff';
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+        const rel = (p) => esc(BASE + String(p || '').replace(/^\.?\//, ''));
+
+        document.getElementById('tools').innerHTML = tools.map((t) =>
+            '<li style="--cat:' + esc(accentOf(t)) + '">' +
+            '<div class="name"><span>' + esc(t.icon || '🔧') + '</span>' +
+            '<a href="' + rel(t.entry) + '">' + esc(t.name || t.id) + '</a></div>' +
+            (t.tagline ? '<p class="tagline">' + esc(t.tagline) + '</p>' : '') +
+            '<p class="path mono">' + rel(t.entry) + '</p>' +
+            '</li>').join('');
+
+        document.getElementById('fallback-note').textContent = tools.length
+            ? tools.length + ' tool' + (tools.length === 1 ? '' : 's') + ' from cognotik-tools/apps.js.'
+            : 'cognotik-tools/apps.js registered no tools.';
+        document.getElementById('fallback').classList.remove('hidden');
+    }, 700);
+</script>
+<noscript>
+    <div class="wrap">
+        <p class="muted">JavaScript is disabled — <a href="cognotik-tools/index.html">open the Dev Tools catalog</a>.
+        </p>
+    </div>
+</noscript>
+</body>
+</html>

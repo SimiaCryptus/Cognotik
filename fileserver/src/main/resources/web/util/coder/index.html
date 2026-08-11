@@ -692,12 +692,21 @@ const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
 
 
 
-    /** Runs an arbitrary doc-op file against a target, reporting progress through `onProgress`. */
-    async function runOpFile(opFilePath, targetPath, onProgress) {
+    /**
+     * Runs an arbitrary doc-op file against a target, reporting progress through `onProgress`.
+     *
+     * `opts.targetIsRootRelative` marks targets that are *already* expressed relative to
+     * the analysis root (the served root). Follow-up plans list their `target_files` that
+     * way, so prefixing them with this page's own sub-directory would point at a file
+     * that does not exist.
+     */
+    async function runOpFile(opFilePath, targetPath, onProgress, opts) {
         // File I/O is relative to state.basePath, the doc-op runner is relative to the
         // server root — translate only the arguments handed to /docops.
         const opArg = rootRel(opFilePath);
-        const targetArg = rootRel(targetPath);
+        const targetArg = (opts && opts.targetIsRootRelative)
+            ? String(targetPath || '').replace(/^\.?\/+/, '')
+            : rootRel(targetPath);
         log('Running ' + opArg + ' → ' + targetArg);
         let docTaskId = null;
         try {
@@ -729,14 +738,19 @@ const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
     const STATUS_LABEL = {idle: 'not run', running: 'running…', done: 'done', error: 'failed'};
     const followupId = (task) => task.id || slugify(task.title, 'task');
     /**
-     * The project now lives in `code-utils/coder`, so the analysis root sits one level
-     * above the project root: a directory `depth` levels inside the project needs
-     * `depth + ROOT_HOPS` hops to reach it (ops/ → `../..`, queries/<slug>/ → `../../..`).
+     * Generated follow-up doc-ops live next to the plan (`queries/<slug>/`), which is
+     * deeper than the hand-written ops in `ops/`, yet both have to reach the same
+     * analysis root (the served root). The number of hops is therefore derived from the
+     * page's own position below that root — `code-utils/coder` → 2 — instead of being
+     * hard-coded, so moving the project no longer breaks the generated paths.
+     *
+     *   ops/                  → ../../..            (1 + 2)
+     *   queries/<slug>/       → ../../../..         (2 + 2)
      */
-    const ROOT_HOPS = 1;
+    const docRootDepth = () => docRoot().split('/').filter(Boolean).length;
     const docDirDepth = () => (workDir() ? workDir().split('/').filter(Boolean).length : 0) + 1;
     /** Prefix walking from a document folder up to the analysis root. */
-    const rootPrefix = () => '../'.repeat(docDirDepth() + ROOT_HOPS);
+    const rootPrefix = () => '../'.repeat(docDirDepth() + docRootDepth());
     const rootDir = () => rootPrefix().replace(/\/+$/, '') || '.';
     /** Doc-op files live next to the document, so root-relative targets need a prefix. */
     function relFromDocDir(path) {
@@ -837,7 +851,9 @@ const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
             await writeFile(state.basePath, op, buildTaskOp(task));
             log('Wrote ' + op, 'ok');
             setTaskState(id, 'running', 'starting…');
-            await runOpFile(op, targets[0], (status) => setTaskState(id, 'running', status));
+            // Plan paths are analysis-root relative — hand them to /docops untouched.
+            await runOpFile(op, targets[0], (status) => setTaskState(id, 'running', status),
+                {targetIsRootRelative: true});
             setTaskState(id, 'done', 'completed ' + new Date().toLocaleTimeString());
             return true;
         } catch (e) {
