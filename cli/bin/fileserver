@@ -2,17 +2,26 @@
 #
 # Launcher for the Cognotik FileServer CLI.
 #
+# Works both from a source checkout (cli/bin/fileserver) and as a standalone
+# download anywhere on your machine (it will fetch a released fat jar).
+#
 # Usage:
-#   ./fileserver.sh [--build] [--] [args passed to FileServerCli...]
+#   ./fileserver [options] [--] [args passed to FileServerCli...]
 #
 # Options:
-#   --build      Force a rebuild (:cli:shadowJar) before running.
-#   --no-build   Never build, even if the jar is missing (fail instead).
+#   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
+#   --no-build   Never build or download; fail if no jar is available.
+#   --update     Re-download the release jar (standalone mode).
+#   --where      Print the jar/mode that would be used, then exit.
 #   -h, --help   Show this help.
 #
 # Environment:
-#   JAVA_HOME    If set, $JAVA_HOME/bin/java is used.
-#   JAVA_OPTS    Extra JVM options (word-split, e.g. "-Xmx2g -Dfoo=bar").
+#   JAVA_HOME         If set, $JAVA_HOME/bin/java is used.
+#   JAVA_OPTS         Extra JVM options (word-split, e.g. "-Xmx2g -Dfoo=bar").
+#   COGNOTIK_JAR      Path to an existing *-all.jar; skips discovery/build entirely.
+#   COGNOTIK_HOME     Cache dir for downloads (default: ${XDG_CACHE_HOME:-~/.cache}/cognotik).
+#   COGNOTIK_REPO     GitHub repo for releases (default: SimiaCryptus/Cognotik).
+#   COGNOTIK_VERSION  Release tag to download (default: latest).
 
 set -Eeuo pipefail
 
@@ -23,22 +32,49 @@ while [[ -L "$self" ]]; do
   [[ "$target" == /* ]] && self="$target" || self="$(dirname -- "$self")/$target"
 done
 SCRIPT_DIR="$(cd -- "$(dirname -- "$self")" && pwd -P)"
-PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
-LIBS_DIR="$SCRIPT_DIR/../build/libs"
-MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli"
 
-die() { printf 'fileserver: %s\n' "$*" >&2; exit 1; }
+# Walk up looking for a real checkout instead of assuming cli/bin/.
+find_project_root() {
+local dir="$SCRIPT_DIR"
+while :; do
+ if [[ -d "$dir/cli" ]] \
+    && { [[ -f "$dir/settings.gradle.kts" ]] || [[ -f "$dir/settings.gradle" ]]; }; then
+   printf '%s\n' "$dir"; return 0
+ fi
+ [[ "$dir" == "/" ]] && return 1
+ dir="$(dirname -- "$dir")"
+done
+}
+CACHE_DIR="${COGNOTIK_HOME:-${XDG_CACHE_HOME:-$HOME/.cache}/cognotik}/jars"
+PROJECT_ROOT=""
+if PROJECT_ROOT="$(find_project_root)"; then
+LIBS_DIR="$PROJECT_ROOT/cli/build/libs"
+else
+PROJECT_ROOT=""            # standalone: download a release jar instead
+LIBS_DIR="$CACHE_DIR"
+fi
+MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli"
+REPO="${COGNOTIK_REPO:-SimiaCryptus/Cognotik}"
+VERSION="${COGNOTIK_VERSION:-latest}"
+
+log() { printf 'fileserver: %s\n' "$*" >&2; }
+die() { log "$*"; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
 
 usage() {
-  sed -n '3,20p' "$self" | sed 's/^# \{0,1\}//'
+  awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print; next } else exit }' "$self"
 }
 
-# --- Parse our own options; stop at the first unknown arg -----------------------
+# --- Parse our own options; stop at the first unknown arg ----------------------
 build_mode=auto
+do_update=no
+show_where=no
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --build)    build_mode=force; shift ;;
     --no-build) build_mode=never; shift ;;
+    --update)   do_update=yes;    shift ;;
+    --where)    show_where=yes;   shift ;;
     -h|--help)  usage; exit 0 ;;
     --)         shift; break ;;
     *)          break ;;
@@ -49,28 +85,82 @@ done
 if [[ -n "${JAVA_HOME:-}" && -x "$JAVA_HOME/bin/java" ]]; then
   JAVA_BIN="$JAVA_HOME/bin/java"
 else
-  command -v java >/dev/null 2>&1 || die "no 'java' on PATH and JAVA_HOME is not usable"
+  have java || die "no 'java' on PATH and JAVA_HOME is not usable"
   JAVA_BIN="$(command -v java)"
 fi
 
-# --- Build ---------------------------------------------------------------------
+# --- Are we inside a Cognotik source checkout? ---------------------------------
+find_project_root() {
+  local dir="$SCRIPT_DIR"
+  while :; do
+    if [[ -d "$dir/cli" ]] \
+       && { [[ -f "$dir/settings.gradle.kts" ]] || [[ -f "$dir/settings.gradle" ]]; }; then
+      printf '%s\n' "$dir"; return 0
+    fi
+    [[ "$dir" == "/" ]] && return 1
+    dir="$(dirname -- "$dir")"
+  done
+}
+
+PROJECT_ROOT=""
+if PROJECT_ROOT="$(find_project_root)"; then
+  LIBS_DIR="$PROJECT_ROOT/cli/build/libs"
+else
+  PROJECT_ROOT=""
+  LIBS_DIR="$CACHE_DIR"
+fi
+
+# --- Build (source checkout only) ----------------------------------------------
 build() {
   local gradlew="$PROJECT_ROOT/gradlew"
   [[ -x "$gradlew" ]] || die "gradle wrapper not found or not executable: $gradlew"
-  printf 'fileserver: building :cli:shadowJar ...\n' >&2
-  ( cd -- "$PROJECT_ROOT" && "$gradlew" :cli:shadowJar ) \
-    || die "build failed"
+  log "building :cli:shadowJar ..."
+  ( cd -- "$PROJECT_ROOT" && "$gradlew" :cli:shadowJar ) || die "build failed"
 }
 
-# --- Resolve the newest shadow jar ---------------------------------------------
+# --- Download (standalone mode) ------------------------------------------------
+fetch_stdout() {
+  if have curl; then curl -fsSL --retry 3 -- "$1"
+  elif have wget; then wget -qO- -- "$1"
+  else die "need 'curl' or 'wget' to download the release jar"; fi
+}
+
+fetch_file() {
+  if have curl; then curl -fsSL --retry 3 -o "$2" -- "$1"
+  elif have wget; then wget -qO "$2" -- "$1"
+  else die "need 'curl' or 'wget' to download the release jar"; fi
+}
+
+download_jar() {
+  local api json url tmp
+  if [[ "$VERSION" == latest ]]; then
+    api="https://api.github.com/repos/$REPO/releases/latest"
+  else
+    api="https://api.github.com/repos/$REPO/releases/tags/$VERSION"
+  fi
+  log "resolving $VERSION release of $REPO ..."
+  json="$(fetch_stdout "$api")" || die "could not query $api"
+  url="$(printf '%s' "$json" \
+        | grep -o '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*"' \
+        | sed 's/.*"\(https[^"]*\)"$/\1/' \
+        | grep -E -- '-all\.jar$' | head -n1)" || true
+  [[ -n "$url" ]] || die "no *-all.jar asset in the $VERSION release of $REPO; clone the repo and use --build, or set COGNOTIK_JAR"
+  mkdir -p -- "$CACHE_DIR"
+  tmp="$(mktemp "$CACHE_DIR/.download.XXXXXX")"
+  log "downloading ${url##*/} -> $CACHE_DIR"
+  fetch_file "$url" "$tmp" || { rm -f -- "$tmp"; die "download failed: $url"; }
+  mv -f -- "$tmp" "$CACHE_DIR/${url##*/}"
+}
+
+# --- Resolve the newest shadow jar in a directory ------------------------------
 find_jar() {
+  local dir="$1"
   local -a jars=()
   shopt -s nullglob
   # Prefer the fat jar; ignore -sources/-javadoc artifacts.
-  jars=( "$LIBS_DIR"/*-all.jar )
+  jars=( "$dir"/*-all.jar )
   shopt -u nullglob
   (( ${#jars[@]} )) || return 1
-  # Newest by mtime.
   local newest="${jars[0]}" j
   for j in "${jars[@]}"; do
     [[ "$j" -nt "$newest" ]] && newest="$j"
@@ -78,14 +168,41 @@ find_jar() {
   printf '%s\n' "$newest"
 }
 
-[[ "$build_mode" == force ]] && build
+# --- Pick a jar ----------------------------------------------------------------
+JAR=""
+if [[ -n "${COGNOTIK_JAR:-}" ]]; then
+  [[ -f "$COGNOTIK_JAR" ]] || die "COGNOTIK_JAR does not exist: $COGNOTIK_JAR"
+  JAR="$COGNOTIK_JAR"
+  mode="explicit (COGNOTIK_JAR)"
+elif [[ -n "$PROJECT_ROOT" ]]; then
+  mode="source checkout ($PROJECT_ROOT)"
+  if [[ "$build_mode" == force ]]; then
+    build
+  fi
+  if ! JAR="$(find_jar "$LIBS_DIR")"; then
+    if [[ "$build_mode" == never ]]; then
+      die "no *-all.jar in $LIBS_DIR (and --no-build was given)"
+    fi
+    build
+    JAR="$(find_jar "$LIBS_DIR")" || die "build produced no *-all.jar in $LIBS_DIR"
+  fi
+else
+  mode="standalone (cache: $CACHE_DIR)"
+  if [[ "$build_mode" == force ]]; then
+    die "--build requires a Cognotik source checkout; this script is running standalone from $SCRIPT_DIR"
+  fi
+  if [[ "$do_update" == yes ]] || ! JAR="$(find_jar "$CACHE_DIR")"; then
+    if [[ "$build_mode" == never ]]; then
+      die "no *-all.jar in $CACHE_DIR (and --no-build was given)"
+    fi
+    download_jar
+    JAR="$(find_jar "$CACHE_DIR")" || die "download produced no *-all.jar in $CACHE_DIR"
+  fi
+fi
 
-if ! JAR="$(find_jar)"; then
-  case "$build_mode" in
-    never) die "no *-all.jar in $LIBS_DIR (and --no-build was given)" ;;
-    *)     build
-           JAR="$(find_jar)" || die "build produced no *-all.jar in $LIBS_DIR" ;;
-  esac
+if [[ "$show_where" == yes ]]; then
+  printf 'mode: %s\njar:  %s\njava: %s\n' "$mode" "$JAR" "$JAVA_BIN"
+  exit 0
 fi
 
 # --- Run -----------------------------------------------------------------------
