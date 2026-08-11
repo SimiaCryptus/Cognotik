@@ -667,4 +667,4 @@ class ServerlessSocketManager(
 }
 
 fun Session.linkToSession(label: String): String =
-  """<a href="#${this}" target="_blank" class="linked-task-link">${label}</a>"""
+  """<a href="?session=${this}" target="_blank" class="linked-task-link">${label}</a>"""

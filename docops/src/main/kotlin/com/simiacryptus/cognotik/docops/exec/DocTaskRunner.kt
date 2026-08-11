@@ -52,8 +52,20 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     val sessions: MutableList<S> = Collections.synchronizedList(mutableListOf())
     val queues = plan.queues.filter { !it.isEmpty }
     if (queues.isEmpty()) {
-      log.info("Nothing to execute (empty plan)")
+      log.warn(
+        "Nothing to execute (empty plan): skipped=${plan.skipped.size}, failed=${plan.failed.size}. " +
+            "No target matched any document declaration under ${config.root.absolutePath}."
+      )
+      plan.skipped.forEach { log.info("  skipped ${it.target}: ${it.reason}") }
+      plan.failed.forEach { log.warn("  failed ${it.target}: ${it.error.message ?: it.error.javaClass.simpleName}") }
       return emptyList()
+    }
+    log.info(
+      "Executing ${plan.tasks.size} task(s) in ${queues.size} queue(s); " +
+          "overallTimeout=${config.overallTimeoutMinutes}m, taskTimeout=${config.taskTimeoutMinutes}m"
+    )
+    queues.forEachIndexed { i, queue ->
+      log.info("  queue #$i (${queue.tasks.size} task(s)): ${queue.tasks.joinToString { targetKeyOf(it) }}")
     }
     val futures: Array<CompletableFuture<*>> = queues.map { queue ->
       scheduler.submit { runQueue(queue.tasks, cancelFlag, onNewSession, sessions) }
@@ -73,6 +85,7 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
       status.markAllRunningAs(TaskStatus.CANCELLED, "Interrupted")
       throw e
     }
+    log.info("DocOps run finished: ${sessions.size} session(s) started across ${queues.size} queue(s)")
     return sessions.toList()
   }
 
@@ -88,15 +101,23 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
         tasks.forEach { status.set(targetKeyOf(it), TaskStatus.CANCELLED) }
         return@use
       }
+      log.info("Starting queue of ${tasks.size} task(s): ${tasks.joinToString { targetKeyOf(it) }}")
       var index = 0
       try {
         while (index < tasks.size) {
+          log.info("Queue progress ${index + 1}/${tasks.size}: ${targetKeyOf(tasks[index])}")
           runOne(tasks[index], ctx, cancelFlag, onNewSession, sessions)
           index++
         }
+        log.info("Queue completed: ${tasks.size} task(s)")
       } catch (e: CancellationException) {
+        log.info("Queue cancelled at task ${index + 1}/${tasks.size}; cancelling ${tasks.size - index - 1} remaining task(s)")
         tasks.drop(index + 1).forEach { status.set(targetKeyOf(it), TaskStatus.CANCELLED) }
       } catch (e: Throwable) {
+        log.error(
+          "Queue aborted at task ${index + 1}/${tasks.size} (${tasks.getOrNull(index)?.let { targetKeyOf(it) }}); " +
+              "failing ${tasks.size - index - 1} remaining task(s)", e
+        )
         tasks.drop(index + 1).forEach {
           status.set(
             targetKeyOf(it),
@@ -127,6 +148,11 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
      if (!isSameFile(workingDir, config.root)) {
        log.info("Task '$targetKey' runs with root override: ${workingDir.absolutePath}")
      }
+    log.info(
+      "Preparing task '$targetKey': kind=${task.taskType.name}, workingDir=${workingDir.absolutePath}, " +
+          "mainFile=${task.data.main_file?.absolutePath}, relatedFiles=${task.data.related_files?.size ?: 0}, " +
+          "docFiles=${task.data.doc_files.joinToString { it.name }}"
+    )
 
     ctx.reset()
     if (cancelFlag.get()) {

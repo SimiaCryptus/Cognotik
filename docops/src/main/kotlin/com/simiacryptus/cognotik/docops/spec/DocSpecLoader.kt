@@ -26,7 +26,12 @@ class MarkdownDocSpecLoader(
       log.error("Failed to read file: ${file.absolutePath}", e)
       return null
     }
-    val (frontmatterText, bodyText) = FrontmatterParser.split(content) ?: return null
+    val (frontmatterText, bodyText) = FrontmatterParser.split(content) ?: run {
+      log.info(
+        "Not a doc-ops document (no leading '---' frontmatter block, or no closing '---'): ${file.absolutePath}"
+      )
+      return null
+    }
 
     val rawFrontmatter = FrontmatterParser.parse(frontmatterText)
     val templateVars = mergeVars(TemplateEngine.parseVars(rawFrontmatter))
@@ -55,7 +60,20 @@ class MarkdownDocSpecLoader(
       targetFolder = fm.folder,
       prompt = fm.prompt,
     )
-    return if (spec.hasTargets) spec else null
+    if (!spec.hasTargets) {
+      log.info(
+        "Skipping ${file.absolutePath}: frontmatter declares no targets. Parsed keys=${frontmatterMap.keys}; " +
+            "expected at least one of specifies:/transforms:/documents:/generates:/folder:"
+      )
+      return null
+    }
+    log.info(
+      "Parsed doc spec ${file.absolutePath}: specifies=${spec.specifies.size}, transforms=${spec.transforms.size}, " +
+          "documents=${spec.documents.size}, generates=${spec.generates.size}, folder=${spec.targetFolder}, " +
+          "related=${spec.related.size}" +
+          (if (templateVars.isEmpty()) "" else ", templateVars=${templateVars.keys}")
+    )
+    return spec
   }
 
   private fun mergeVars(declared: Map<String, String>): Map<String, String> {

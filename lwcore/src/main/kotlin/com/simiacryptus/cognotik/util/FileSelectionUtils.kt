@@ -12,67 +12,118 @@ private const val MAX_TEXT_SIZE = 1024 * 1024
 object FileSelectionUtils {
   val log = getLogger(FileSelectionUtils::class.java)
 
-  fun isLLMTextFile(file: File, treatDocumentsAsText: Boolean = false): Boolean {
-    return when {
-      !file.exists() -> false
-      file.isDirectory -> false
-      file.name.endsWith(".data") -> true
-      treatDocumentsAsText && file.isDocumentFile() -> true
-      file.length() > 100_000_000L -> false // 100MB limit
-      isGitignore(file.toPath()) -> false
-      isIgnored(file.toPath()) -> false
-      file.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> false
+  /* ==================================================================================
+   * Generalized filter entry points - everything below delegates to these.
+   * ================================================================================== */
 
-      isBinaryFile(file) -> false
+  fun matchesAny(path: Path, vararg filters: IgnoreFilter): Boolean = IgnoreFilter.matchesAny(path, *filters)
+  fun matchesAny(file: File, vararg filters: IgnoreFilter): Boolean = IgnoreFilter.matchesAny(file, *filters)
+  fun matchesNone(path: Path, vararg filters: IgnoreFilter): Boolean = IgnoreFilter.matchesNone(path, *filters)
+  fun matchesNone(file: File, vararg filters: IgnoreFilter): Boolean = IgnoreFilter.matchesNone(file, *filters)
 
-      else -> true
-    }
+  /* ---------- inlinable delegates for the legacy named predicates ---------- */
+
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun isIgnored(path: Path) = matchesAny(path, *IgnoreFilter.DEFAULT)
+
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun isLLMIgnored(path: Path) = matchesAny(path, *IgnoreFilter.LLM)
+
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun isGitignore(path: Path) = matchesAny(path, *IgnoreFilter.GIT)
+
+  /**
+   * Wraps a predicate so that document files are always accepted when
+   * [treatDocumentsAsText] is set (widening, never narrowing, the selection).
+   */
+  private fun documentAware(
+    treatDocumentsAsText: Boolean,
+    predicate: (File) -> Boolean
+  ): (File) -> Boolean = if (!treatDocumentsAsText) predicate else { file -> predicate(file) || file.isDocumentFile() }
+
+  /* ==================================================================================
+   * Text/binary classification
+   * ================================================================================== */
+
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun isLLMTextFile(file: File, treatDocumentsAsText: Boolean = false): Boolean =
+    isTextFile(file, treatDocumentsAsText, *IgnoreFilter.DEFAULT)
+
+  fun isTextFile(
+    file: File,
+    treatDocumentsAsText: Boolean = false,
+    vararg filters: IgnoreFilter
+  ): Boolean = when {
+    !file.exists() -> false
+    file.isDirectory -> false
+    file.name.endsWith(".data") -> true
+    treatDocumentsAsText && file.isDocumentFile() -> true
+    IgnoreFilter.OVERSIZE.matches(file) -> false
+    matchesAny(file, *filters) -> false
+    IgnoreFilter.BINARY_EXTENSION.matches(file) -> false
+    IgnoreFilter.BINARY_CONTENT.matches(file) -> false
+    else -> true
   }
 
-  fun getAvailableFiles(
+  /* ==================================================================================
+   * Listings / trees
+   * ================================================================================== */
+
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun getAvailableFiles(
     path: Path,
     treatDocumentsAsText: Boolean = false,
-  ): List<String> {
-    return try {
-      listOf(
-        filteredWalkAsciiTree(
-          path.toFile(),
-          20,
-          treatDocumentsAsText = treatDocumentsAsText,
-          render = { file: File ->
-            val name = file.name
-            val size: String? = if (file.isFile) {
-              val length = file.length()
-              when {
-                length < 1024 -> "$length B"
-                length < 1024 * 1024 -> String.format("%.2f KB", length / 1024.0)
-                length < 1024 * 1024 * 1024 -> String.format("%.2f MB", length / (1024.0 * 1024.0))
-                else -> String.format("%.2f GB", length / (1024.0 * 1024.0 * 1024.0))
-              }
-            } else {
-              null
-            }
-            if (size != null) "$name ($size)" else name
-          }
-        )
-      )
-    } catch (e: Exception) {
-      log.error("Error listing available files", e)
-      listOf("Error listing files: ${e.message}")
-    }
+  ): List<String> = availableFileTree(path, treatDocumentsAsText, *IgnoreFilter.DEFAULT)
+
+  fun availableFileTree(
+    path: Path,
+    treatDocumentsAsText: Boolean = false,
+    vararg filters: IgnoreFilter
+  ): List<String> = try {
+    listOf(
+      asciiTree(path.toFile(), 20, treatDocumentsAsText, { true }, ::renderNameAndSize, *filters)
+    )
+  } catch (e: Exception) {
+    log.error("Error listing available files", e)
+    listOf("Error listing files: ${e.message}")
   }
 
+  private fun renderNameAndSize(file: File): String {
+    val name = file.name
+    val size: String? = if (file.isFile) {
+      val length = file.length()
+      when {
+        length < 1024 -> "$length B"
+        length < 1024 * 1024 -> String.format("%.2f KB", length / 1024.0)
+        length < 1024 * 1024 * 1024 -> String.format("%.2f MB", length / (1024.0 * 1024.0))
+        else -> String.format("%.2f GB", length / (1024.0 * 1024.0 * 1024.0))
+      }
+    } else null
+    return if (size != null) "$name ($size)" else name
+  }
+
+  /** Legacy signature: the caller supplies the whole predicate. */
   fun filteredWalkAsciiTree(
     rootFile: File,
     maxFilesPerDir: Int = 20,
     treatDocumentsAsText: Boolean = false,
     filter: (File) -> Boolean = { !isIgnored(it.toPath()) },
     render: (File) -> String = { it.name }
+  ): String = asciiTree(rootFile, maxFilesPerDir, treatDocumentsAsText, filter, render)
+
+  /** Generalized tree renderer: [extraFilter] AND (none of [filters] match). */
+  fun asciiTree(
+    rootFile: File,
+    maxFilesPerDir: Int = 20,
+    treatDocumentsAsText: Boolean = false,
+    extraFilter: (File) -> Boolean = { true },
+    render: (File) -> String = { it.name },
+    vararg filters: IgnoreFilter
   ): String {
     val sb = StringBuilder()
-    val filterFn = if (treatDocumentsAsText) {
-      { file: File -> filter(file) && file.isDocumentFile() }
-    } else filter
+    val filterFn = documentAware(treatDocumentsAsText) { file ->
+      extraFilter(file) && matchesNone(file, *filters)
+    }
     if (!filterFn(rootFile)) {
       log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
       return "" // Root itself doesn't match, so empty tree
@@ -105,7 +156,6 @@ object FileSelectionUtils {
   ) {
     if (!filterFn(currentFile)) {
       // If the current file is filtered out, do not display it or its children.
-      // log.debug("Skipping in tree (sub): ${currentFile.absolutePath}") // Optional: for more verbose logging
       return
     }
     sb.append(parentContinuationPrefix)
@@ -122,23 +172,33 @@ object FileSelectionUtils {
       val childContinuationPrefix = parentContinuationPrefix + (if (isLastInSiblings) "    " else "│   ")
       entriesToConsider.forEachIndexed { index, child ->
         buildAsciiSubTree(
-          child, childContinuationPrefix, index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb
+          child, childContinuationPrefix, index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb, render
         )
       }
     }
   }
 
+  /** Legacy signature: the caller supplies the whole predicate. */
   fun filteredWalk(
     file: File,
     maxFilesPerDir: Int = 20,
     treatDocumentsAsText: Boolean = false,
     fn: (File) -> Boolean = { !isIgnored(it.toPath()) }
+  ): List<File> = walkFiltered(file, maxFilesPerDir, treatDocumentsAsText, fn)
+
+  /** Generalized walk: [extraFilter] AND (none of [filters] match). */
+  fun walkFiltered(
+    root: File,
+    maxFilesPerDir: Int = 20,
+    treatDocumentsAsText: Boolean = false,
+    extraFilter: (File) -> Boolean = { true },
+    vararg filters: IgnoreFilter
   ): List<File> {
-    val filterFn = if (treatDocumentsAsText) {
-      { f: File -> fn(f) || f.isDocumentFile() }
-    } else fn
+    val filterFn = documentAware(treatDocumentsAsText) { file ->
+      extraFilter(file) && matchesNone(file, *filters)
+    }
     val result = mutableListOf<File>()
-    filteredWalkInternal(file, maxFilesPerDir, filterFn, result)
+    filteredWalkInternal(root, maxFilesPerDir, filterFn, result)
     return result
   }
 
@@ -163,76 +223,91 @@ object FileSelectionUtils {
     }
   }
 
-  fun File.listFilesRecursively(): List<File> {
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun File.listFilesRecursively(): List<File> =
+    listFilesRecursivelyBy(*IgnoreFilter.RECURSIVE_LISTING)
+
+  /** Generalized recursive listing: entries matching any of [filters] are skipped (with their subtree). */
+  fun File.listFilesRecursivelyBy(vararg filters: IgnoreFilter): List<File> {
     val files = mutableListOf<File>()
-    listFilesRecursivelyInternal(this, files)
+    listFilesRecursivelyInternal(this, files, IgnoreFilter.accepting(*filters))
     return files
   }
 
-  private fun listFilesRecursivelyInternal(dir: File, files: MutableList<File>) {
+  private fun listFilesRecursivelyInternal(dir: File, files: MutableList<File>, accept: (File) -> Boolean) {
     val children = dir.listFiles() ?: return
     for (child in children) {
-      val name = child.name
-      if (name.startsWith(".") || name == "node_modules" || isGitignore(child.toPath())) {
-        continue
-      }
+      if (!accept(child)) continue
       files.add(child.absoluteFile)
       if (child.isDirectory) {
-        listFilesRecursivelyInternal(child, files)
+        listFilesRecursivelyInternal(child, files, accept)
       }
     }
   }
 
-  fun expandFileList(vararg data: File, treatDocumentsAsText: Boolean = false): Array<File> {
-    return data.flatMap {
-      if (!it.exists()) {
-        log.debug("File does not exist during expansion: ${it.absolutePath}")
-        return@flatMap emptyList<File>()
+  /* ==================================================================================
+   * Expansion
+   * ================================================================================== */
+
+  @Suppress("NOTHING_TO_INLINE")
+  inline fun expandFileList(vararg data: File, treatDocumentsAsText: Boolean = false): Array<File> =
+    expandFiles(data.toList(), treatDocumentsAsText, *IgnoreFilter.DEFAULT)
+
+  /** Generalized expansion: directories are recursed, anything matching [filters] is dropped. */
+  fun expandFiles(
+    files: Collection<File>,
+    treatDocumentsAsText: Boolean = false,
+    vararg filters: IgnoreFilter
+  ): Array<File> = files.flatMap { file ->
+    when {
+      !file.exists() -> {
+        log.debug("File does not exist during expansion: ${file.absolutePath}")
+        emptyList()
       }
-      (when {
-        it.name.endsWith(".data") -> arrayOf(it)
-        treatDocumentsAsText && it.isDocumentFile() -> arrayOf(it)
-        isGitignore(it.toPath()) -> {
-          log.debug("File ignored by gitignore: ${it.absolutePath}")
-          arrayOf()
-        }
 
-        isIgnored(it.toPath()) -> {
-          log.debug("File ignored by llmignore: ${it.absolutePath}")
-          arrayOf()
-        }
+      file.name.endsWith(".data") -> listOf(file)
+      treatDocumentsAsText && file.isDocumentFile() -> listOf(file)
 
-        it.length() > 100_000_000L -> {
-          log.debug("File too large (>100MB): ${it.absolutePath}")
-          arrayOf()
-        }
+      matchesAny(file, *filters) -> {
+        log.debug("File excluded by ignore filters: ${file.absolutePath}")
+        emptyList()
+      }
 
-        it.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> {
-          log.debug("File is a binary type: ${it.absolutePath}")
-          arrayOf()
-        }
+      IgnoreFilter.OVERSIZE.matches(file) -> {
+        log.debug("File too large (>100MB): ${file.absolutePath}")
+        emptyList()
+      }
 
-        isBinaryFile(it) -> {
-          log.debug("File is detected as binary: ${it.absolutePath}")
-          arrayOf()
-        }
+      IgnoreFilter.BINARY_EXTENSION.matches(file) -> {
+        log.debug("File is a binary type: ${file.absolutePath}")
+        emptyList()
+      }
 
-        it.isDirectory -> expandFileList(
-          *it.listFiles() ?: arrayOf(),
-          treatDocumentsAsText = treatDocumentsAsText
-        )
+      IgnoreFilter.BINARY_CONTENT.matches(file) -> {
+        log.debug("File is detected as binary: ${file.absolutePath}")
+        emptyList()
+      }
 
-        else -> arrayOf(it)
-      }).toList()
-    }.toTypedArray()
-  }
+      file.isDirectory -> expandFiles(
+        file.listFiles()?.toList() ?: emptyList(),
+        treatDocumentsAsText,
+        *filters
+      ).toList()
+
+      else -> listOf(file)
+    }
+  }.toTypedArray()
+
+  /* ==================================================================================
+   * Binary detection
+   * ================================================================================== */
 
   fun isBinaryFile(file: File): Boolean {
     if (!file.exists() || file.isDirectory || file.length() == 0L) {
       return false
     }
 
-    if (file.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS) {
+    if (file.extension.lowercase(Locale.getDefault()) in IgnoreFilter.BINARY_EXTENSIONS) {
       return true
     }
     // Small files that passed extension check are likely text
@@ -350,24 +425,9 @@ object FileSelectionUtils {
     }
   }
 
-  fun isIgnored(path: Path) = when {
-    path.toFile().name == ".llmignore" -> true
-    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.LLMIGNORE) -> true
-    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.GITIGNORE) -> true
-    else -> false
-  }
-
-  fun isLLMIgnored(path: Path) = when {
-    path.toFile().name == ".llmignore" -> true
-    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.LLMIGNORE) -> true
-    else -> false
-  }
-
-  fun isGitignore(path: Path) = when {
-    path.toFile().name == ".gitignore" -> true
-    IgnoreFileUtil.isIgnored(path, IgnoreFileUtil.GITIGNORE) -> true
-    else -> false
-  }
+  /* ==================================================================================
+   * Path resolution helpers (unchanged behavior)
+   * ================================================================================== */
 
   fun String.relativizeFrom(root: Path) = try {
     root.relativize(File(this).toPath()).toString()
@@ -437,28 +497,5 @@ object FileSelectionUtils {
       returnValue = backtickPattern.find(returnValue)?.groupValues?.get(1) ?: returnValue
     }
     return returnValue
-  }
-
-  private object FileExtensions {
-    val BINARY_EXTENSIONS = setOf(
-      // Archives
-      "jar", "zip", "tar", "gz", "7z", "rar", "bz2", "xz", "war", "ear",
-      // Compiled/Binary
-      "class", "exe", "dll", "so", "dylib", "bin", "dat", "o", "obj", "lib", "a",
-      // Images
-      "png", "jpg", "jpeg", "gif", "ico", "bmp", "tiff", "webp", "avif", "heic",
-      // Documents
-      "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf",
-      // Media
-      "mp3", "mp4", "avi", "mov", "wav", "flac", "mkv", "webm", "m4a", "aac", "ogg",
-      // 3D/CAD
-      "stl", "obj", "fbx", "blend", "max", "3ds", "dae",
-      // Fonts
-      "ttf", "otf", "woff", "woff2", "eot",
-      // Database
-      "db", "sqlite", "sqlite3", "mdb",
-      // Other
-      "pyc", "pyo", "pyd", "wasm"
-    )
   }
 }

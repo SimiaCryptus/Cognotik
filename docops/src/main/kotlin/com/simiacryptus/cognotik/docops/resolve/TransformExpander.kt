@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.docops.resolve
 import com.simiacryptus.cognotik.docops.model.DocSpec
 import com.simiacryptus.cognotik.docops.model.TransformMatch
 import com.simiacryptus.cognotik.docops.model.TransformSpec
+import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.regex.Matcher
@@ -14,11 +15,14 @@ object TransformExpander {
   private val log = LoggerFactory.getLogger(TransformExpander::class.java)
   private val BACKREF = Regex("""\$(\d+)([+-]\d+)?""")
 
-  fun compile(pattern: String): Pattern? = try {
-    Pattern.compile(pattern)
-  } catch (e: Exception) {
-    log.debug("Invalid regex pattern: $pattern", e)
-    null
+  fun compile(pattern: String): Pattern? {
+    try {
+      val compile = Pattern.compile(pattern)
+      return compile
+    } catch (e: Exception) {
+      log.warn("Invalid regex pattern: $pattern", e)
+      return null
+    }
   }
 
   /** Candidate path made relative to the doc's own directory, `\` normalized to `/`. */
@@ -42,11 +46,24 @@ object TransformExpander {
     root: File,
     transform: TransformSpec,
     spec: DocSpec,
-    lister: (File) -> List<File> = GlobExpander.defaultLister,
+    lister: (File) -> List<File> = { it: File -> it.listFilesRecursively() },
   ): List<TransformMatch> {
-    val sourceRegex = compile(transform.sourcePattern) ?: return emptyList()
-    return lister(root).filter { it.isFile }.mapNotNull { sourceFile ->
-      val relativePath = relativize(spec, sourceFile) ?: return@mapNotNull null
+    val sourceRegex = compile(transform.sourcePattern)
+    sourceRegex ?: run {
+      log.warn(
+        "Transform '${transform.sourcePattern} -> ${transform.destinationPattern}' in ${spec.docFile.name} " +
+            "ignored: the source pattern is not a valid regex"
+      )
+      return emptyList()
+    }
+    val candidates = lister(root).filter { it.isFile }
+    var outsideBaseDir = 0
+    val matches = candidates.mapNotNull { sourceFile ->
+      val relativePath = relativize(spec, sourceFile)
+      if (relativePath == null) {
+        outsideBaseDir++
+        return@mapNotNull null
+      }
       val matcher = sourceRegex.matcher(relativePath)
       if (!matcher.matches()) return@mapNotNull null
       TransformMatch(
@@ -55,6 +72,18 @@ object TransformExpander {
         spec = spec,
       )
     }
+    log.info(
+      "Transform '${transform.sourcePattern}' (${spec.docFile.name}) scanned ${candidates.size} file(s) under " +
+          "${root.absolutePath} -> ${matches.size} match(es)" +
+          (if (outsideBaseDir > 0) "; $outsideBaseDir file(s) were not relativizable against ${spec.baseDir.absolutePath}" else "")
+    )
+    if (matches.isEmpty() && candidates.isNotEmpty()) {
+      log.info(
+        "  hint: paths are matched relative to ${spec.baseDir.absolutePath}; example candidate relative paths: " +
+            candidates.take(10).mapNotNull { relativize(spec, it) }.joinToString()
+      )
+    }
+    return matches
   }
 
   /**

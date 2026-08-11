@@ -106,7 +106,7 @@ private fun writeSelfIgnore(dir: File) {
         ownerId = user.id
       ).asPatch()
     )
-    val extractUtil = extractResources("web/util", sessionRoot)
+    val extractUtil = extractResources("web/util", sessionRoot.resolve("cognotik-tools").apply { mkdirs() })
     if (!extractUtil) {
       throw IllegalStateException("Resource not found: web/util (classLoader=${classLoader.javaClass.name})")
     }

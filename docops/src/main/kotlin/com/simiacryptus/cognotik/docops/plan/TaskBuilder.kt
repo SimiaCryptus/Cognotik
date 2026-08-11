@@ -23,25 +23,48 @@ class TaskBuilder<K : DocTaskKind>(
     ctx: ResolveContext,
   ): BuildOutcome<K> {
     if (!target.isUnder(root)) {
-      log.warn("Target file is outside root: $target")
-      return BuildOutcome.Skipped(target, "outside root")
+      log.warn(
+        "Target is outside the workspace root and will be skipped: $target (root=${root.absolutePath}; " +
+            "declared by ${contributions.joinToString { it.spec.docFile.name }})"
+      )
+      return BuildOutcome.Skipped(target, "outside root ${root.absolutePath}")
     }
     return try {
       log.info(
         "Planning ${target.relativeToOrAbsolute(root)} from ${contributions.size} contribution(s): " +
             contributions.joinToString(", ") { "${it.spec.docFile.name}/${it.kind}" }
       )
-      val source = related.primarySource(contributions)
-        ?: return BuildOutcome.Skipped(target, "no primary source")
+      val source = related.primarySource(contributions) ?: run {
+        log.warn(
+          "No primary source file could be selected for $target; contributions=" +
+              contributions.joinToString { "${it.spec.docFile.name}/${it.kind}(sources=${it.sourceFiles.size})" }
+        )
+        return BuildOutcome.Skipped(target, "no primary source")
+      }
       val relatedFiles = related.relatedFiles(target.file, contributions, ctx)
+      log.info(
+        "  primary source: ${source.absolutePath}; ${relatedFiles.size} related file(s)" +
+            (if (relatedFiles.isEmpty()) " (no context files resolved!)"
+            else ": " + relatedFiles.take(20).joinToString { it.name })
+      )
+      relatedFiles.filter { !it.exists() }.takeIf { it.isNotEmpty() }?.let { missing ->
+        log.info("  ${missing.size} related file(s) do not exist yet: ${missing.joinToString { it.absolutePath }}")
+      }
       val updateMode = updateModePolicy.resolve(contributions)
       val preparation = updateMode.prepare(source, target.file, relatedFiles)
         ?: run {
-          log.debug("Update mode returned null for {}, skipping", target)
-          return BuildOutcome.Skipped(target, "update mode declined")
+          log.info(
+            "Update mode '$updateMode' declined $target (source=${source.absolutePath}, " +
+                "targetExists=${target.file.exists()}); skipping"
+          )
+          return BuildOutcome.Skipped(target, "update mode '$updateMode' declined")
         }
       val kind = taskKindPolicy.resolve(contributions)
       val effectiveRoot = rootPolicy.resolve(contributions)
+      log.info(
+        "  task kind=${kind.name}, updateMode=$updateMode, effectiveRoot=${effectiveRoot.absolutePath}, " +
+            "deleteTargetBeforeRun=${preparation.shouldDeleteTarget}"
+      )
 
       val task = ModificationTask(
         data = ModificationTaskConfig(

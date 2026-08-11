@@ -26,8 +26,8 @@ import com.simiacryptus.cognotik.docops.spec.MarkdownDocSpecLoader
 import com.simiacryptus.cognotik.docops.spec.TemplateEngine
 import com.simiacryptus.cognotik.docops.status.DocStatusStore
 import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
-import com.simiacryptus.cognotik.docops.status.NullDocStatusStore
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
+import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursivelyBy
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -92,20 +92,75 @@ class DocOps<K : DocTaskKind, S : Any>(
     )
 
   /** Every `*.md` / `*.markdown` file under [DocOpsConfig.docsFolder]. */
-  fun markdownFiles(): List<File> = config.docsFolder.listFilesRecursively()
-    .filter { it.isFile && it.extension.lowercase() in config.markdownExtensions }
-    .also { log.info("Found ${it.size} markdown file(s) in ${config.docsFolder.absolutePath}") }
 
-  fun load(files: Iterable<File>): List<DocSpec> = loader.loadAll(files)
+  fun markdownFiles(): List<File> {
+    val docsFolder = config.docsFolder
+    if (!docsFolder.exists()) {
+      log.warn("Docs folder does not exist: ${docsFolder.absolutePath} - no targets can be matched")
+      return emptyList()
+    }
+    val all = docsFolder.listFilesRecursivelyBy().filter { it.isFile }
+    val (markdown, other) = all.partition { it.extension.lowercase() in config.markdownExtensions }
+    log.info(
+      "Scanning ${docsFolder.absolutePath}: ${all.size} file(s) -> ${markdown.size} markdown file(s) " +
+          "(extensions=${config.markdownExtensions}); ignored ${other.size} non-markdown file(s)"
+    )
+    if (markdown.isEmpty()) {
+      log.warn("No markdown files found under ${docsFolder.absolutePath}; nothing can be planned.")
+    } else {
+      markdown.forEach { log.info("  doc candidate: ${it.absolutePath}") }
+    }
+    return markdown
+  }
 
-  fun newResolveContext(): ResolveContext = ResolveContext(config.root, resources)
+  fun load(files: Iterable<File>): List<DocSpec> {
+    val candidates = files.toList()
+    val specs = loader.loadAll(candidates)
+    log.info("Loaded ${specs.size} doc spec(s) from ${candidates.size} candidate file(s)")
+    if (specs.isEmpty() && candidates.isNotEmpty()) {
+      log.warn(
+        "None of the ${candidates.size} candidate file(s) declared any doc-ops targets " +
+            "(specifies:/transforms:/documents:/generates:/folder:) - see per-file messages above."
+      )
+    }
+    specs.forEach { spec ->
+      log.info(
+        "  spec ${spec.docFile.absolutePath}: baseDir=${spec.baseDir.absolutePath}, " +
+            "specifies=${spec.specifies}, " +
+            "transforms=${spec.transforms.map { "${it.sourcePattern} -> ${it.destinationPattern}" }}, " +
+            "documents=${spec.documents}, generates=${spec.generates.map { it.output }}, " +
+            "folder=${spec.targetFolder}, related=${spec.related}, taskType=${spec.taskType ?: "<default>"}"
+      )
+    }
+    return specs
+  }
+
+  fun newResolveContext(): ResolveContext = ResolveContext(
+    root = config.root,
+    resources = resources,
+    rawLister = { it: File -> it.listFilesRecursivelyBy() })
 
   /** Plan every document under `docsFolder` (or an explicit subset). Side-effect free. */
   fun plan(files: Iterable<File> = markdownFiles()): WorkPlan<K> = planSpecs(load(files))
 
   fun plan(vararg files: File): WorkPlan<K> = plan(files.toList())
 
-  fun planSpecs(specs: List<DocSpec>): WorkPlan<K> = planner.plan(specs, newResolveContext())
+  fun planSpecs(specs: List<DocSpec>): WorkPlan<K> {
+    log.info(
+      "Planning ${specs.size} doc spec(s); root=${config.root.absolutePath}, " +
+          "docsFolder=${config.docsFolder.absolutePath}, updateMode=${config.updateMode}"
+    )
+    val plan = planner.plan(specs, newResolveContext())
+    if (plan.isEmpty) {
+      log.warn(
+        "Plan is EMPTY: 0 task(s) from ${specs.size} spec(s) (skipped=${plan.skipped.size}, failed=${plan.failed.size}). " +
+            "Verify the declared patterns resolve to files under ${config.root.absolutePath}."
+      )
+      plan.skipped.forEach { log.warn("  skipped ${it.target}: ${it.reason}") }
+      plan.failed.forEach { log.warn("  failed ${it.target}: ${it.error.message ?: it.error.javaClass.simpleName}") }
+    }
+    return plan
+  }
 
   /** Seed the status file without executing anything. */
   fun initializeStatus(plan: WorkPlan<K>) = runner.initializeStatus(plan)
