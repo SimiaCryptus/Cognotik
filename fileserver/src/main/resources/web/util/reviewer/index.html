@@ -397,7 +397,7 @@
                  <input id="extensions" type="text" value="kt,js" spellcheck="false">
                  <label for="scan-depth">Max directory depth (blank = 64, 0 = unlimited)</label>
                  <input id="scan-depth" type="text" value="64" spellcheck="false"
-                        title="How many folder levels the file/review/task listings descend. 0 removes the limit (a hard cap still guards against symlink loops).">
+                        title="How many folder levels the file/.review/task listings descend. 0 removes the limit (a hard cap still guards against symlink loops).">
                  <div class="row" style="margin-top:.5rem">
                      <button id="scan-sources" class="small"
                              title="List every candidate target of the doc-ops under the analysis root">Scan</button>
@@ -437,9 +437,9 @@
                   <label for="focus-file">Focus file</label>
                   <input id="focus-file" type="text" value="focus.md" spellcheck="false">
                  <label for="review-dir">Review directory (relative to the analysis root)</label>
-                  <input id="review-dir" type="text" value="review" spellcheck="false">
+                  <input id="review-dir" type="text" value=".review" spellcheck="false">
                  <label for="tasks-dir">Tasks directory (relative to the analysis root)</label>
-                  <input id="tasks-dir" type="text" value="tasks" spellcheck="false">
+                  <input id="tasks-dir" type="text" value=".tasks" spellcheck="false">
                  <label for="tasks-file">Aggregate task plan (relative to the analysis root)</label>
                   <input id="tasks-file" type="text" value="tasks.json" spellcheck="false">
                   <label for="ops-dir">Ops directory</label>
@@ -541,21 +541,21 @@
                                   title="Delete this step's artifact so it can be re-run">🗑 delete</button>
                       </li>
                       <li data-step="files" data-state="idle">
-                          <span class="dot"></span><span>Analyze files → review/**.json</span>
+                          <span class="dot"></span><span>Analyze files → .review/**.json</span>
                           <span class="state"></span>
                           <button class="step-run" data-run="files" title="Run this step only">▶ run</button>
                           <button class="step-del" data-del="files"
                                   title="Delete every review document so the step can be re-run">🗑 delete</button>
                       </li>
                       <li data-step="packages" data-state="idle">
-                          <span class="dot"></span><span>Summarize packages → review/&lt;pkg&gt;.json</span>
+                          <span class="dot"></span><span>Summarize packages → .review/&lt;pkg&gt;.json</span>
                           <span class="state"></span>
                           <button class="step-run" data-run="packages" title="Run this step only">▶ run</button>
                           <button class="step-del" data-del="packages"
                                   title="Delete the package rollups so the step can be re-run">🗑 delete</button>
                       </li>
                       <li data-step="tasks-multi" data-state="idle">
-                          <span class="dot"></span><span>Plan follow-ups → tasks/**.json</span>
+                          <span class="dot"></span><span>Plan follow-ups → .tasks/**.json</span>
                           <span class="state"></span>
                           <button class="step-run" data-run="tasks-multi" title="Run this step only">▶ run</button>
                           <button class="step-del" data-del="tasks-multi"
@@ -766,8 +766,8 @@
       const stripLead = (p) => String(p || '').replace(/^\.?\/+/, '');
 
       const focusFile = () => cleanPath($('focus-file').value) || 'focus.md';
-      const reviewDir = () => cleanPath($('review-dir').value) || 'review';
-      const tasksDir = () => cleanPath($('tasks-dir').value) || 'tasks';
+      const reviewDir = () => cleanPath($('review-dir').value) || '.review';
+      const tasksDir = () => cleanPath($('tasks-dir').value) || '.tasks';
       const tasksFile = () => cleanPath($('tasks-file').value) || 'tasks.json';
       const opsDir = () => cleanPath($('ops-dir').value) || 'ops';
       const tmpDir = () => cleanPath($('tmp-dir').value) || 'tmp';
@@ -850,7 +850,7 @@
       const rootPrefixFor = (dir) =>
           '../'.repeat((dir ? dir.split('/').filter(Boolean).length : 0) + ROOT_HOPS);
      /**
-      * Base URL of the *analysis root* (the ops' `folder: ../../..`). `review/`, `tasks/`
+      * Base URL of the *analysis root* (the ops' `folder: ../../..`). `.review/`, `.tasks/`
       * and `tasks.json` are produced ROOT_HOPS folders above this document, so every
       * read/write/list/delete for them must use this base — never `state.basePath`.
       */
@@ -891,16 +891,16 @@
 
       const opPath = (key) => join(opsDir(), OPS[key]);
 
-      /** `src/Foo.kt` → `review/src/Foo.kt.json` (matches `(.*) -> ../review/$1.json`). */
+      /** `src/Foo.kt` → `.review/src/Foo.kt.json` (matches `(.*) -> ../.review/$1.json`). */
       const reviewTargetFor = (sourcePath) => join(reviewDir(), stripLead(sourcePath) + '.json');
-      /** `review/src/Foo.kt.json` → `tasks/src/Foo.kt.json` (`../review/(.*).json -> ../tasks/$1.json`). */
+      /** `.review/src/Foo.kt.json` → `.tasks/src/Foo.kt.json` (`../.review/(.*).json -> ../.tasks/$1.json`). */
       function taskTargetFor(reviewPath) {
           const rd = reviewDir();
           const clean = stripLead(reviewPath);
           const rel = clean.startsWith(rd + '/') ? clean.slice(rd.length + 1) : clean;
           return join(tasksDir(), rel);
       }
-      /** `review/src/Foo.kt.json` → `src/Foo.kt`. */
+      /** `.review/src/Foo.kt.json` → `src/Foo.kt`. */
       function sourceFromReview(reviewPath) {
           const rd = reviewDir();
           const clean = stripLead(reviewPath);
@@ -956,8 +956,8 @@
       }
 
      /**
-      * Runs an op that produces a document under the *analysis root* (`review/**`,
-      * `tasks/**`, `tasks.json`) — these live ROOT_HOPS folders above this page, so the
+      * Runs an op that produces a document under the *analysis root* (`.review/**`,
+      * `.tasks/**`, `tasks.json`) — these live ROOT_HOPS folders above this page, so the
       * target must be resolved with `projRel`, not `rootRel`.
       */
      const runAnalysisTarget = (opKey, docPath, onProgress) =>
@@ -994,7 +994,7 @@
 
      /**
       * Recursively lists files (not folders) under `dir`, relative to `base`.
-      * A missing folder (e.g. `review/` before the first run) is reported as empty.
+      * A missing folder (e.g. `.review/` before the first run) is reported as empty.
       */
      async function listTree(base, dir, depth) {
           const level = depth || 0;
@@ -1074,7 +1074,7 @@
      /**
       * Lists the *candidate targets of the doc-ops* — every file under the analysis root
       * matching the configured extensions. The file/package trees and the package stage are
-      * driven from this, never from `review/`, which does not exist before the first run.
+      * driven from this, never from `.review/`, which does not exist before the first run.
       */
      async function scanSources(force) {
          if (!state.basePath) return [];
@@ -1142,10 +1142,10 @@
      /** Front-matter written when an op file is missing or carries no extension group. */
      const OP_TEMPLATES = {
          files: (g) => ['---', 'transforms:',
-             '  - ../../../(.*\\.' + g + ') -> ../../../review/$1.json',
+             '  - ../../../(.*\\.' + g + ') -> ../../../.review/$1.json',
              'related:', '  - ../focus.md', '  - analysis_schema.ts', '---', '', ''].join('\n'),
          packages: (g) => ['---', 'transforms:',
-             '  - ../../../(.*)/[^/]+\\.' + g + ' -> ../../../review/$1.json',
+             '  - ../../../(.*)/[^/]+\\.' + g + ' -> ../../../.review/$1.json',
              'related:', '  - ../focus.md', '  - analysis_schema.ts', '---', '', ''].join('\n')
      };
      /** Rewrites the `(?:kt|js)` group inside the ops' transforms so they match the UI. */
@@ -1473,7 +1473,7 @@
       async function stagePackages() {
           if (!(await ensureFocus())) return null;
          // Packages come from the selection trees; when nothing is ticked they are derived
-         // from the doc-op's own candidate set (the scanned source files). `review/` is only
+         // from the doc-op's own candidate set (the scanned source files). `.review/` is only
          // consulted last — it does not exist before the file stage has run, so probing it
          // first is what used to produce the bogus "no packages" result.
           let dirs = packageList();
@@ -2300,7 +2300,7 @@
       /**
        * Without a session URL we address everything relative to the directory this page is
        * served from — the `reviewer/` project folder, which holds `focus.md`, `ops/`,
-       * `review/` and `tasks/`.
+       * `.review/` and `.tasks/`.
        */
       function inferContextFromLocation() {
           const segments = location.pathname.split('/').filter(Boolean);
