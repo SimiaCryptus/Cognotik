@@ -355,8 +355,6 @@
 
             <section class="panel hidden">
                 <h2>Settings</h2>
-                <label for="idea-file">Seed idea file</label>
-                <input id="idea-file" type="text" value="idea.md" spellcheck="false">
                 <label for="research-file">Research document</label>
                 <input id="research-file" type="text" value="research.md" spellcheck="false">
                 <label for="script-file">Build script (analysis root)</label>
@@ -375,21 +373,7 @@
         <!-- ───────────────────────── main ───────────────────────── -->
         <main>
             <section class="panel">
-                <h2>Seed Idea</h2>
-                <div class="small muted">
-                    Saved directly to <code id="idea-path">idea.md</code> — the research stage reads it from there.
-                </div>
-                <label for="idea">Idea</label>
-                <textarea id="idea" spellcheck="false"
-                          placeholder="What the build system has to do: which languages, which artifacts, which environments…"></textarea>
-                <div class="row" style="margin-top:.6rem">
-                    <button id="save-idea">Save Idea</button>
-                    <button id="reload-idea">Reload Idea</button>
-                    <button id="delete-idea" class="danger" style="margin-left:auto">Delete idea.md</button>
-                </div>
-            </section>
 
-            <section class="panel">
                 <h2>Pipeline</h2>
                 <div class="grid-2">
                     <div class="small muted">
@@ -432,12 +416,6 @@
 
                 <ul class="steps" id="steps">
                     <li class="phase-head">Design</li>
-                    <li data-step="idea" data-state="idle">
-                        <span class="dot"></span><span>Save seed idea (idea.md)</span>
-                        <span class="state"></span>
-                        <button class="step-run" data-run="idea" title="Run this step only">▶ run</button>
-                        <button class="step-del" data-del="idea" title="Delete this step's artifact">🗑 delete</button>
-                    </li>
                     <li data-step="research" data-state="idle">
                         <span class="dot"></span><span>Research project → research.md</span>
                         <span class="state"></span>
@@ -635,12 +613,12 @@
         li.querySelector('.state').textContent = detail || '';
     }
 
-    const ALL_STEPS = ['idea', 'research', 'draft', 'run'];
+    const ALL_STEPS = ['research', 'draft', 'run'];
     const resetSteps = (steps) => (steps || ALL_STEPS).forEach((s) => setStep(s, 'idle', ''));
 
     function setBusy(busy) {
         state.busy = busy;
-        ['run-all', 'save-idea', 'reload-idea', 'delete-idea',
+        ['run-all',
             'run-research-btn', 'run-draft-btn', 'run-modes-btn', 'run-plain-btn',
             'reload-research', 'reload-script', 'refresh-logs',
             'run-ready-modes', 'reset-mode-status', 'clean-temp-ops']
@@ -659,7 +637,6 @@
     const cleanPath = (v) => String(v || '').trim().replace(/^\/+|\/+$/g, '');
     const stripLead = (p) => String(p || '').replace(/^\.?\/+/, '');
 
-    const ideaFile = () => cleanPath($('idea-file').value) || 'idea.md';
     const researchFile = () => cleanPath($('research-file').value) || 'research.md';
     const scriptFile = () => cleanPath($('script-file').value) || 'build.sh';
     const opsDir = () => cleanPath($('ops-dir').value) || 'ops';
@@ -803,59 +780,10 @@
     const generatedOps = async () =>
         (await listDir(state.basePath, tmpDir())).filter((p) => /\.op\.md$/.test(p));
 
-    /* ───────────────────────── seed idea ───────────────────────── */
 
-    async function saveIdea() {
-        const text = $('idea').value.trim();
-        if (!text) {
-            log('Write the seed idea first.', 'warn');
-            setStep('idea', 'error', 'empty');
-            $('idea').focus();
-            return false;
-        }
-        setStep('idea', 'running', 'saving…');
-        await writeFile(state.basePath, ideaFile(), text.endsWith('\n') ? text : text + '\n');
-        setStep('idea', 'done', ideaFile());
-        try {
-            localStorage.removeItem(STORAGE_PREFIX + '_idea');
-        } catch (e) { /* ignore */
-        }
-        log('Saved ' + ideaFile(), 'ok');
-        return true;
-    }
 
-    async function loadIdea() {
-        const text = await readFile(state.basePath, ideaFile());
-        if (text === null) {
-            setStep('idea', 'idle', '');
-            log('No ' + ideaFile() + ' present yet.', 'warn');
-            return null;
-        }
-        $('idea').value = text;
-        setStep('idea', 'done', ideaFile());
-        return text;
-    }
 
-    /** The research stage reads idea.md, so persist the editor content first. */
-    async function ensureIdea() {
-        const onDisk = await readFile(state.basePath, ideaFile());
-        const typed = $('idea').value.trim();
-        if (onDisk !== null && (!typed || onDisk.trim() === typed)) return true;
-        return saveIdea();
-    }
 
-    async function deleteIdea() {
-        if (state.busy || !requireBase()) return;
-        if (!window.confirm('Delete ' + ideaFile() + '?')) return;
-        try {
-            await deleteFile(state.basePath, ideaFile());
-            $('idea').value = '';
-            setStep('idea', 'idle', '');
-            log('Deleted ' + ideaFile(), 'ok');
-        } catch (e) {
-            log('Could not delete ' + ideaFile() + ': ' + msgOf(e), 'error');
-        }
-    }
 
     /* ───────────────────────── generated run ops ───────────────────────── */
 
@@ -875,7 +803,6 @@
         lines.push('related:');
         lines.push('  - ' + toRoot + scriptFile());
         lines.push('  - ' + up + researchFile());
-        lines.push('  - ' + up + ideaFile());
         lines.push('folder: ' + folder);
         lines.push('---', '');
         lines.push('Run `./' + scriptFile() + ' ' + mode + '` from the analysis root and make it succeed.', '');
@@ -951,10 +878,8 @@
         return false;
     }
 
-    const stageIdea = async () => ((await saveIdea()) ? ideaFile() : null);
 
     async function stageResearch() {
-        if (!(await ensureIdea())) return null;
         setStep('research', 'running', 'starting…');
         await runOpFile(opPath('research'), rootRel(researchFile()),
             (status) => setStep('research', 'running', status));
@@ -1056,7 +981,6 @@
     }
 
     const STAGES = {
-        idea: {step: 'idea', run: stageIdea},
         research: {step: 'research', run: stageResearch},
         draft: {step: 'draft', run: stageDraft},
         run: {step: 'run', run: () => stageRunModes(false, true)},
@@ -1091,16 +1015,10 @@
 
     async function runEverything() {
         if (state.busy || !requireBase()) return;
-        if (!$('idea').value.trim()) {
-            log('Write the seed idea first.', 'warn');
-            $('idea').focus();
-            return;
-        }
         resetSteps();
         setBusy(true);
         startPoller();
         try {
-            if (!(await stageIdea())) return;
             if (!(await stageResearch())) return;
             if (!(await stageDraft())) return;
 
@@ -1125,12 +1043,6 @@
 
     /** Artifacts owned by each step, so a step can be cleared and re-run. */
     const STEP_ARTIFACTS = {
-        idea: {
-            list: async () => [{base: state.basePath, path: ideaFile()}],
-            after: async () => {
-                $('idea').value = '';
-            }
-        },
         research: {
             list: async () => (await existing(state.basePath, [researchFile()]))
                 .map((p) => ({base: state.basePath, path: p})),
@@ -1457,8 +1369,8 @@
 
     /**
      * Without a session URL we address everything relative to the directory this page is
-     * served from — the `builder/` project folder, which holds `idea.md`, `ops/`, the
-     * research document, the run logs and `tmp/`.
+     * served from — the `builder/` project folder, which holds `ops/`, the research
+     * document, the run logs and `tmp/`.
      */
     function inferContextFromLocation() {
         const segments = location.pathname.split('/').filter(Boolean);
@@ -1472,8 +1384,6 @@
 
     function restoreDraft() {
         try {
-            const draft = localStorage.getItem(STORAGE_PREFIX + '_idea');
-            if (draft) $('idea').value = draft;
             const saved = localStorage.getItem(STORAGE_PREFIX + '_modes_list');
             if (saved) $('modes').value = saved;
             const notes = localStorage.getItem(STORAGE_PREFIX + '_notes');
@@ -1484,7 +1394,6 @@
 
     function persistDraft() {
         try {
-            localStorage.setItem(STORAGE_PREFIX + '_idea', $('idea').value);
             localStorage.setItem(STORAGE_PREFIX + '_modes_list', $('modes').value);
             localStorage.setItem(STORAGE_PREFIX + '_notes', $('run-notes').value);
         } catch (e) { /* ignore */
@@ -1506,9 +1415,6 @@
 
     function wireEvents() {
         $('run-all').addEventListener('click', runEverything);
-        $('save-idea').addEventListener('click', () => runStage('idea'));
-        $('reload-idea').addEventListener('click', () => loadIdea());
-        $('delete-idea').addEventListener('click', deleteIdea);
         $('run-research-btn').addEventListener('click', () => runStage('research'));
         $('run-draft-btn').addEventListener('click', () => runStage('draft'));
         $('run-modes-btn').addEventListener('click', () => runStage('run'));
@@ -1525,14 +1431,13 @@
         document.querySelectorAll('.step-del').forEach((b) =>
             b.addEventListener('click', () => deleteStepArtifact(b.dataset.del)));
 
-        ['idea', 'run-notes'].forEach((id) => $(id).addEventListener('input', persistDraft));
+        $('run-notes').addEventListener('input', persistDraft);
         $('modes').addEventListener('change', () => {
             persistDraft();
             renderModes();
         });
-        ['idea-file', 'research-file', 'script-file', 'ops-dir', 'tmp-dir'].forEach((id) =>
+        ['research-file', 'script-file', 'ops-dir', 'tmp-dir'].forEach((id) =>
             $(id).addEventListener('change', async () => {
-                $('idea-path').textContent = ideaFile();
                 $('p-research').textContent = researchFile();
                 $('p-script').textContent = scriptFile();
                 renderContext();
@@ -1551,7 +1456,7 @@
         document.querySelectorAll('.view-copy').forEach((b) =>
             b.addEventListener('click', () => copyText(viewSource(b.dataset.view), b)));
 
-        $('idea').addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runEverything();
         });
 
@@ -1562,7 +1467,6 @@
         restoreDraft();
         restoreModeStatus();
         wireEvents();
-        $('idea-path').textContent = ideaFile();
         $('p-research').textContent = researchFile();
         $('p-script').textContent = scriptFile();
 
@@ -1602,16 +1506,13 @@
             banner.classList.remove('warn');
             banner.classList.add('info');
             banner.innerHTML =
-                'Direct file mode — the seed idea is written to <code>' +
-                escapeHtml(state.basePath) + '/' + escapeHtml(ideaFile()) +
-                '</code>, research to <code>' + escapeHtml(researchFile()) +
+                'Direct file mode — research is written to <code>' +
+                escapeHtml(state.basePath) + '/' + escapeHtml(researchFile()) +
                 '</code>, the build script to <code>' + escapeHtml(projRel(scriptFile())) +
                 '</code> and generated doc-ops to <code>' + escapeHtml(tmpDir()) + '/</code>.';
             banner.classList.remove('hidden');
         }
 
-        const idea = await loadIdea();
-        if (idea === null) restoreDraft();
         await loadResearch(true);
         await loadScript(true);
         await refreshLogs();
