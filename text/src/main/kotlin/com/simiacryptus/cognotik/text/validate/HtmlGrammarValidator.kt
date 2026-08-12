@@ -16,6 +16,7 @@ class HtmlGrammarValidator : AntlrGrammarValidator<HTMLLexer, HTMLParser>("HTML"
 
   /** HTML has no declarations worth reporting as public symbols. */
   override val symbolRules: Map<String, SymbolKind> get() = emptyMap()
+
   /** Markup contains tag/attribute names, not symbol references. */
   override fun extractSymbolReferences(
     code: String,

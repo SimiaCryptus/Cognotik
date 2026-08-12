@@ -40,7 +40,38 @@ class SecureString {
       File("/var/cognotik"),
       File(System.getProperty("user.home"), ".cognotik")
     ).toMutableList()
-    private val keyFile = (possibleKeyFiles.firstOrNull { it.resolve(".key").exists() } ?: possibleKeyFiles.first()).resolve(".key")
+
+    /**
+     * Resolves the key file lazily and defensively:
+     * 1. Prefer an existing, readable `.key` in any candidate directory.
+     * 2. Otherwise pick the first candidate directory we can actually create/write to.
+     * 3. Otherwise fall back to a temp directory.
+     */
+    private fun resolveKeyFile(): File {
+
+      possibleKeyFiles.map { it.resolve(".key") }
+        .firstOrNull { it.isFile && it.canRead() }
+        ?.let { return it }
+
+      for (dir in possibleKeyFiles) {
+        try {
+          if (!dir.exists()) dir.mkdirs()
+          if (dir.isDirectory && dir.canWrite()) return dir.resolve(".key")
+        } catch (e: Throwable) {
+          log.debug("Key directory unusable: ${dir.absolutePath}", e)
+        }
+      }
+
+      val fallback = File(System.getProperty("java.io.tmpdir"), "cognotik")
+      try {
+        fallback.mkdirs()
+      } catch (e: Throwable) {
+        log.debug("Unable to create fallback key directory: ${fallback.absolutePath}", e)
+      }
+      log.warn("No writable key directory found in $possibleKeyFiles; falling back to ${fallback.absolutePath}")
+      return fallback.resolve(".key")
+    }
+
     var key: SecretKey? = null
       get() {
         if (field == null) {
@@ -48,33 +79,48 @@ class SecureString {
         }
         return field
       }
-      set(value) {
-        field = value
-      }
 
-    private val _key: SecretKey by lazy {
-      if (keyFile.exists()) {
+    private val _key: SecretKey by lazy { loadOrCreateKey() }
+
+    private fun loadOrCreateKey(): SecretKey {
+      val keyFile = resolveKeyFile()
+      if (keyFile.isFile) {
         try {
           val keyBytes = keyFile.readBytes()
-          javax.crypto.spec.SecretKeySpec(keyBytes, "AES")
+          if (keyBytes.isNotEmpty()) return javax.crypto.spec.SecretKeySpec(keyBytes, "AES")
+          log.error("Encryption key file is empty, regenerating: ${keyFile.absolutePath}")
         } catch (e: Throwable) {
-          log.error("Error reading encryption key, regenerating", e)
-          val key = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
-            ?: throw RuntimeException("Unable to generate encryption key")
-          keyFile.writeBytes(key.encoded)
-          key
+          log.error("Error reading encryption key, regenerating: ${keyFile.absolutePath}", e)
         }
-      } else {
-        keyFile.parentFile.mkdirs()
-        val key = randomKey()
-        keyFile.writeBytes(key.encoded)
-        /* Or, as a shell script:
-        *    mkdir -p /var/cognotik
-        *    openssl rand -out /var/cognotik/.key 32
-        *
-        * */
-        key
       }
+      val key = randomKey()
+      try {
+        keyFile.parentFile?.mkdirs()
+        keyFile.writeBytes(key.encoded)
+
+
+
+        try {
+          keyFile.setReadable(false, false)
+          keyFile.setReadable(true, true)
+          keyFile.setWritable(false, false)
+          keyFile.setWritable(true, true)
+        } catch (e: Throwable) {
+          log.debug("Unable to restrict permissions on ${keyFile.absolutePath}", e)
+        }
+      } catch (e: Throwable) {
+
+        log.warn(
+          "Unable to persist encryption key to ${keyFile.absolutePath}; using an ephemeral in-memory key. " +
+              "Previously encrypted values will not be recoverable.", e
+        )
+      }
+      /* Or, as a shell script:
+      *    mkdir -p /var/cognotik
+      *    openssl rand -out /var/cognotik/.key 32
+      *
+      * */
+      return key
     }
 
     fun randomKey(): SecretKey = (KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
@@ -123,10 +169,15 @@ class SecureString {
           val bytes = Base64.getDecoder().decode(value.removePrefix(PREFIX))
           return SecureString(bytes)
         } catch (e: Throwable) {
-          // Ignore
+          log.warn("Malformed secure string payload; treating as plaintext", e)
         }
       }
-      return SecureString(encrypt(value))
+      return try {
+        SecureString(encrypt(value))
+      } catch (e: Throwable) {
+        log.error("Unable to encrypt value; storing empty SecureString", e)
+        SecureString(ByteArray(0))
+      }
     }
   }
 }

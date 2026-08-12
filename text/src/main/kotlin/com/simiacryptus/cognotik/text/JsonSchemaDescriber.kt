@@ -2,13 +2,10 @@ package com.simiacryptus.cognotik.text
 
 import java.io.File
 import java.math.BigInteger
-import kotlin.collections.get
-import kotlin.collections.iterator
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.text.iterator
 
 /**
  * CLI utility for loading JSON (data or JSON Schema) and printing a human-readable

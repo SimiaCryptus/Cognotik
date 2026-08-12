@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.text.ui
 
-import com.simiacryptus.cognotik.text.patch.PatchParser.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.text.patch.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import org.slf4j.LoggerFactory
@@ -227,19 +226,49 @@ class DiffInstrumentor(
     resolver: (Path, String) -> String?,
     log: PatchTrace
   ): String? {
-    val updirCount = filename.split("/").takeWhile { it == ".." }.size
-    val trimmedFilename = filename.split("/").dropWhile { it == ".." }.joinToString("/")
-    val currentDirRelPath =
-      root.toFile().absolutePath.split(File.separator).takeLast(updirCount).joinToString("/") + File.separator
-    if (trimmedFilename.startsWith(currentDirRelPath)) {
-      val stripped = trimmedFilename.removePrefix(currentDirRelPath)
-      log.debug(
-        "Stripping leading '../{}' from filename '{}' to resolve new file path: '{}'",
-        currentDirRelPath,
-        filename,
-        stripped
-      )
-      return resolveNewFilePath(root, stripped, resolver, log)
+    val normalizedFilename = filename.replace("\\", "/")
+    /*
+     * Absolute paths must be handled before anything else. They routinely appear when the
+     * model omits a filename and the (absolute) defaultFile is substituted. Treating them as
+     * root-relative duplicates the root prefix, e.g. <root>/<root>/active/foo.json.
+     */
+    val absoluteFilename = try {
+      Path.of(normalizedFilename).takeIf { it.isAbsolute }?.normalize()
+    } catch (e: Throwable) {
+      log.debug("Could not interpret filename '{}' as a path: {}", filename, e.message)
+      null
+    }
+    if (absoluteFilename != null) {
+      if (absoluteFilename.startsWith(root)) {
+        val relativePath = root.relativize(absoluteFilename).toString()
+        log.info(
+          "Filename '{}' is absolute and inside root '{}'; using relative path '{}'",
+          filename, root, relativePath
+        )
+        return relativePath
+      }
+      if (forceChildPaths) {
+        log.warn("Absolute new file path '{}' resolves outside root '{}', rejecting", filename, root)
+        return null
+      }
+      log.info("Filename '{}' is absolute and outside root '{}'; using it as-is", filename, root)
+      return absoluteFilename.toString()
+    }
+    val updirCount = normalizedFilename.split("/").takeWhile { it == ".." }.size
+    if (updirCount > 0) {
+      val trimmedFilename = normalizedFilename.split("/").dropWhile { it == ".." }.joinToString("/")
+      val currentDirRelPath =
+        root.toFile().absolutePath.split(File.separator).takeLast(updirCount).joinToString("/") + File.separator
+      if (trimmedFilename.startsWith(currentDirRelPath)) {
+        val stripped = trimmedFilename.removePrefix(currentDirRelPath)
+        log.debug(
+          "Stripping leading '../{}' from filename '{}' to resolve new file path: '{}'",
+          currentDirRelPath,
+          filename,
+          stripped
+        )
+        return resolveNewFilePath(root, stripped, resolver, log)
+      }
     }
 
     // First, check for overlap between filename components and root's trailing components.
@@ -319,6 +348,21 @@ class DiffInstrumentor(
     resolver: (Path, String) -> String?,
     log: PatchTrace
   ): String? {
+    // Strategy 0: Absolute paths under root are relativized first, otherwise resolution
+    // (and any later root.resolve) duplicates the root prefix.
+    val absoluteFilename = try {
+      Path.of(filename.replace("\\", "/")).takeIf { it.isAbsolute }?.normalize()
+    } catch (e: Throwable) {
+      null
+    }
+    if (absoluteFilename != null && absoluteFilename.startsWith(root)) {
+      val relativePath = root.relativize(absoluteFilename).toString()
+      log.debug(
+        "Filename '{}' is absolute and inside root '{}'; retrying resolution with '{}'",
+        filename, root, relativePath
+      )
+      return resolver(root, relativePath) ?: resolveWithBestEffort(root, relativePath, resolver, log)
+    }
     // Strategy 1: Direct resolution
     val direct = resolver(root, filename)
     if (direct != null) {
@@ -438,9 +482,9 @@ class DiffInstrumentor(
   ): String {
     /** Shadows the class logger: captures this call's messages for the Patch Data dump. */
     val log = PatchTrace("renderNewFile($filepath)", log, trace)
-    var code = code.trim().trimIndent()
+    var code = code.trimBlock()
     if (code.startsWith("```") && code.endsWith("```")) {
-      code = code.lines().drop(1).dropLast(1).joinToString("\n").trim().trimIndent()
+      code = code.lines().drop(1).dropLast(1).joinToString("\n").trimBlock()
     }
     log.debug("Rendering new file: path={}, lang={}, code length={}", filepath, lang, code.length)
     val codeBlock = "\n```${lang}\n${code.indent("  ")}\n```\n"
@@ -512,9 +556,13 @@ class DiffInstrumentor(
   ): String {
     /** Shadows the class logger: captures this call's messages for the Patch Data dump. */
     val log = PatchTrace("renderDiffBlock($filepath)", log, trace)
-    var diffVal = diffVal.trim().trimIndent()
+    /*
+     * NB: do NOT use trim() here - it strips the leading whitespace of the first line only,
+     * which both corrupts a leading context line (" foo") and defeats trimIndent().
+     */
+    var diffVal = diffVal.trimBlock()
     if (diffVal.startsWith("```") && diffVal.endsWith("```")) {
-      diffVal = diffVal.lines().drop(1).dropLast(1).joinToString("\n").trim().trimIndent()
+      diffVal = diffVal.lines().drop(1).dropLast(1).joinToString("\n").trimBlock()
     }
     log.debug(
       "Rendering diff block: filepath={}, relativePath={}, diff length={}",
@@ -676,3 +724,14 @@ class DiffInstrumentor(
 private fun String.indent(indent: String): String {
   return this.lines().joinToString("\n") { line -> indent + line }
 }
+/**
+* Removes surrounding blank lines and any *common* indent, but - unlike `trim().trimIndent()` -
+* never strips the leading whitespace of the first content line in isolation. This matters for
+* diff payloads, where a leading space marks a context line and must survive normalization.
+*/
+private fun String.trimBlock(): String = lines()
+  .dropWhile { it.isBlank() }
+  .dropLastWhile { it.isBlank() }
+  .joinToString("\n")
+  .trimIndent()
+  .trimEnd()

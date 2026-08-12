@@ -1,9 +1,6 @@
 package com.simiacryptus.cognotik.text
 
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.ReferenceKind
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.SymbolInfo
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.SymbolReference
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.TextRange
+import com.simiacryptus.cognotik.text.validate.GrammarValidator.*
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.Vocabulary

@@ -4,11 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.core.json.JsonReadFeature
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JavaType
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.MapperFeature
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -65,11 +61,11 @@ object JsonUtil {
           val module = com.fasterxml.jackson.databind.module.SimpleModule()
           module.addSerializer(
             Class.forName("groovy.lang.GString") as Class<Any>,
-            object : com.fasterxml.jackson.databind.JsonSerializer<Any>() {
+            object : JsonSerializer<Any>() {
               override fun serialize(
                 value: Any,
                 gen: com.fasterxml.jackson.core.JsonGenerator,
-                serializers: com.fasterxml.jackson.databind.SerializerProvider
+                serializers: SerializerProvider
               ) {
                 gen.writeString(value.toString())
               }
@@ -112,25 +108,24 @@ object JsonUtil {
   @JvmStatic
   fun <T : Any> merge(vararg values: T?): T {
     val objectMapper = objectMapper()
-   val nonNullValues = values.filterNotNull()
-   require(nonNullValues.isNotEmpty()) { "At least one non-null value is required for merge" }
-   val base = nonNullValues.first()
-   val jsonNode = objectMapper.valueToTree<JsonNode>(base)
-   nonNullValues.drop(1).forEach { value ->
+    val nonNullValues = values.filterNotNull()
+    require(nonNullValues.isNotEmpty()) { "At least one non-null value is required for merge" }
+    val base = nonNullValues.first()
+    val jsonNode = objectMapper.valueToTree<JsonNode>(base)
+    nonNullValues.drop(1).forEach { value ->
       val updateNode = objectMapper.valueToTree<JsonNode>(value)
-     updateNode.fields().forEach { (fieldName, fieldValue) ->
-       if (!fieldValue.isNull) {
-         (jsonNode as com.fasterxml.jackson.databind.node.ObjectNode).set<JsonNode>(fieldName, fieldValue)
-       }
-     }
+      updateNode.fields().forEach { (fieldName, fieldValue) ->
+        if (!fieldValue.isNull) {
+          (jsonNode as com.fasterxml.jackson.databind.node.ObjectNode).set<JsonNode>(fieldName, fieldValue)
+        }
+      }
     }
-   @Suppress("UNCHECKED_CAST")
-   return objectMapper.treeToValue(jsonNode, base.javaClass) as T
+    @Suppress("UNCHECKED_CAST")
+    return objectMapper.treeToValue(jsonNode, base.javaClass) as T
   }
 
   private val log = LoggerFactory.getLogger(JsonUtil::class.java)
 }
-
 
 
 fun <T : Any> T.copy(fn: T.() -> Unit): T {
