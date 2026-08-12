@@ -477,7 +477,7 @@ Do NOT generate the actual file contents. Generate specifications that describe 
       "Diagram" to ("```mermaid\n${buildSpecDiagram(planWithPrompt.plan)}\n```").renderMarkdown(),
       "JSON" to "```json\n${JsonUtil.toJson(planWithPrompt)}\n```".renderMarkdown()
     )
-    return TabbedDisplay.Companion.displayMapInTabs(map)
+    return TabbedDisplay.displayMapInTabs(map)
   }
 
   private fun renderSpecList(plan: SpecificationPlan): String {
@@ -539,7 +539,7 @@ Do NOT generate the actual file contents. Generate specifications that describe 
   val FrontmatterOrchestration = CognitiveModeType(
     "FrontmatterOrchestration",
     FrontmatterOrchestrationConfig::class.java,
-    inputCnt = FrontmatterOrchestrationMode.inputCnt
+    inputCnt = inputCnt
   )
 
   }

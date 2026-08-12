@@ -29,6 +29,7 @@ dependencies {
     compileOnly(project("$projectPrefix:core"))
     compileOnly(project("$projectPrefix:lwcore"))
     compileOnly(project("$projectPrefix:docops"))
+    compileOnly(project("$projectPrefix:stdtools"))
     compileOnly(project("$projectPrefix:webui"))
     compileOnly(project("$projectPrefix:tasklib"))
     testImplementation(project("$projectPrefix:core"))
