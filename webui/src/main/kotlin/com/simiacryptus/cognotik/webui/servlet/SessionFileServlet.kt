@@ -87,7 +87,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
           )
           return
         } else if (req.method.uppercase() == "POST") {
-          val sessionOwner = metadataDB.getSessionOwner(session)
+          val sessionOwner = metadataDB.getSessionOwner(session) ?: user.id
           if (sessionOwner != user.id) {
             log.debug("FS API request rejected (user ${user.email} is not owner of session $sessionId; ${sessionOwner} is.)")
             FsErrors.write(
