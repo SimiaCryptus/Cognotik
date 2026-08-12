@@ -1,0 +1,70 @@
+{
+  "apps": [
+    {
+      "slug": "anthropic",
+      "name": "Anthropic",
+      "shortDescription": "Claude chat models with thinking, prompt caching, and BYOK access.",
+      "file": "Anthropic.md"
+    },
+    {
+      "slug": "bedrock",
+      "name": "AWS Bedrock",
+      "shortDescription": "Chat access to Bedrock-hosted models like Claude, Llama, and Titan.",
+      "file": "Bedrock.md"
+    },
+    {
+      "slug": "deepseek",
+      "name": "DeepSeek",
+      "shortDescription": "High-context chat models with reasoning support and prompt caching.",
+      "file": "DeepSeek.md"
+    },
+    {
+      "slug": "elevenlabs",
+      "name": "ElevenLabs",
+      "shortDescription": "Text-to-speech, speech-to-text, and music generation models.",
+      "file": "ElevenLabs.md"
+    },
+    {
+      "slug": "gemini",
+      "name": "Gemini",
+      "shortDescription": "Google's Gemini models with vision, audio, thinking, and image generation.",
+      "file": "Gemini.md"
+    },
+    {
+      "slug": "groq",
+      "name": "Groq",
+      "shortDescription": "Ultra-low-latency inference for chat, transcription, and TTS models.",
+      "file": "Groq.md"
+    },
+    {
+      "slug": "mistral",
+      "name": "Mistral",
+      "shortDescription": "General, code, and reasoning chat models from lightweight to frontier scale.",
+      "file": "Mistral.md"
+    },
+    {
+      "slug": "modelslab",
+      "name": "ModelsLab",
+      "shortDescription": "Chat-completion API access using your own ModelsLab API key.",
+      "file": "ModelsLab.md"
+    },
+    {
+      "slug": "ollama",
+      "name": "Ollama",
+      "shortDescription": "Run local, self-hosted open-weight chat and embedding models.",
+      "file": "Ollama.md"
+    },
+    {
+      "slug": "openai",
+      "name": "OpenAI",
+      "shortDescription": "GPT-4, GPT-5, and O-series reasoning chat models (deprecated integration).",
+      "file": "OpenAI.md"
+    },
+    {
+      "slug": "perplexity",
+      "name": "Perplexity",
+      "shortDescription": "OpenAI-compatible chat completion API via Perplexity's Sonar models.",
+      "file": "Perplexity.md"
+    }
+  ]
+}

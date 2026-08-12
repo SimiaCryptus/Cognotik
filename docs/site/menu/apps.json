@@ -1,0 +1,58 @@
+{
+  "apps": [
+    {
+      "slug": "comic-serial",
+      "name": "Comic Serial Generator",
+      "shortDescription": "Turn your ideas into an ongoing visual comic series, one episode at a time.",
+      "file": "comic-serial.md"
+    },
+    {
+      "slug": "empty-project",
+      "name": "Empty Project",
+      "shortDescription": "A blank workspace pre-loaded with a catalog of ready-to-use Dev Tools.",
+      "file": "empty-project.md"
+    },
+    {
+      "slug": "hallucipedia",
+      "name": "Hallucipedia",
+      "shortDescription": "The encyclopedia that doesn't exist until you look at it.",
+      "file": "hallucipedia.md"
+    },
+    {
+      "slug": "interactive-stories",
+      "name": "Interactive Stories",
+      "shortDescription": "Turn a sentence of imagination into a branching adventure with audio and art.",
+      "file": "interactive-stories.md"
+    },
+    {
+      "slug": "omega",
+      "name": "Omega",
+      "shortDescription": "Describe an app idea in plain English and Omega builds the whole thing for you.",
+      "file": "omega.md"
+    },
+    {
+      "slug": "philosophical-calculator",
+      "name": "Philosophical Calculator",
+      "shortDescription": "Turn messy notes into polished articles refracted through rich analytical lenses.",
+      "file": "philosophical-calculator.md"
+    },
+    {
+      "slug": "quiz-wiz",
+      "name": "Quiz Wiz",
+      "shortDescription": "Turn any idea into a playable quiz game, no coding required.",
+      "file": "quiz-wiz.md"
+    },
+    {
+      "slug": "sys-wizard",
+      "name": "System Wizard",
+      "shortDescription": "Describe what you want your computer to do and the wizard writes the script.",
+      "file": "sys-wizard.md"
+    },
+    {
+      "slug": "webapp-factory",
+      "name": "Webapp Builder",
+      "shortDescription": "Describe the app you're dreaming of, and watch AI build it for you.",
+      "file": "webapp-factory.md"
+    }
+  ]
+}

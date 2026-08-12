@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "slug": "adaptive-planning",
+      "name": "Adaptive Planning Mode",
+      "shortDescription": "Continuously re-plans next steps based on what's already happened, ideal for open-ended problems.",
+      "file": "cognitive-mode/AdaptivePlanning.md"
+    },
+    {
+      "slug": "conversational",
+      "name": "Conversational Mode",
+      "shortDescription": "Ongoing chat-style collaboration with memory, topic tracking, and message expansion shorthand.",
+      "file": "cognitive-mode/Conversational.md"
+    },
+    {
+      "slug": "waterfall",
+      "name": "Waterfall Mode",
+      "shortDescription": "Builds a full task plan up front, lets you review it, then executes it start-to-finish.",
+      "file": "cognitive-mode/Waterfall.md"
+    }
+  ]
+}

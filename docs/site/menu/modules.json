@@ -1,0 +1,106 @@
+{
+  "apps": [
+    {
+      "slug": "cli",
+      "name": "DocOps CLI",
+      "shortDescription": "A minimal, dependency-light command-line front end for driving documentation generation.",
+      "file": "cli.md"
+    },
+    {
+      "slug": "core",
+      "name": "Core",
+      "shortDescription": "The foundation layer for building AI-powered applications on the JVM.",
+      "file": "core.md"
+    },
+    {
+      "slug": "desktop",
+      "name": "Desktop",
+      "shortDescription": "Ship Cognotik as a native, installable application — no browser tab, no terminal required.",
+      "file": "desktop.md"
+    },
+    {
+      "slug": "docops",
+      "name": "DocOps",
+      "shortDescription": "Document generation, parsing, and transformation for JVM applications.",
+      "file": "docops.md"
+    },
+    {
+      "slug": "experiment",
+      "name": "Experiment",
+      "shortDescription": "A JVM-native sandbox for document processing, browser automation, and scripting experiments.",
+      "file": "experiment.md"
+    },
+    {
+      "slug": "groovy",
+      "name": "Groovy",
+      "shortDescription": "Script your AI workflows with dynamic, JVM-native Groovy support.",
+      "file": "groovy.md"
+    },
+    {
+      "slug": "intellij",
+      "name": "IntelliJ Plugin",
+      "shortDescription": "Bring Cognotik's agentic AI coding assistant directly into your IntelliJ-based IDE.",
+      "file": "intellij.md"
+    },
+    {
+      "slug": "kotlin",
+      "name": "Kotlin Runtime",
+      "shortDescription": "Compile, execute, and sandbox Kotlin scripts on the fly as a first-class scripting engine.",
+      "file": "kotlin.md"
+    },
+    {
+      "slug": "lwcore",
+      "name": "Cognotik Core",
+      "shortDescription": "The foundation library for model actors, session state, storage, and patching.",
+      "file": "lwcore.md"
+    },
+    {
+      "slug": "providers",
+      "name": "Providers",
+      "shortDescription": "The connective tissue between Cognotik and the AI models, storage, and platform services.",
+      "file": "providers.md"
+    },
+    {
+      "slug": "scala",
+      "name": "Scala",
+      "shortDescription": "First-class Scala language support for Cognotik's JVM-based AI coding platform.",
+      "file": "scala.md"
+    },
+    {
+      "slug": "stdtools",
+      "name": "Standard Tools",
+      "shortDescription": "A batteries-included toolkit of production-ready agent capabilities.",
+      "file": "stdtools.md"
+    },
+    {
+      "slug": "tasklib",
+      "name": "Tasklib",
+      "shortDescription": "Turn a single high-level goal into a coordinated, dependency-aware set of AI-executed tasks.",
+      "file": "tasklib.md"
+    },
+    {
+      "slug": "text",
+      "name": "Cognotik Text",
+      "shortDescription": "Turn free-form LLM output into safe, validated file changes — deterministically.",
+      "file": "text.md"
+    },
+    {
+      "slug": "tool",
+      "name": "Tool",
+      "shortDescription": "Bring AI-powered code review, auto-fixing, and issue resolution into your CI/CD pipeline.",
+      "file": "tool.md"
+    },
+    {
+      "slug": "webapp-v2",
+      "name": "Webapp v2",
+      "shortDescription": "A dependency-light, framework-free chat UI that streams live HTML from your Cognotik server.",
+      "file": "webapp-v2.md"
+    },
+    {
+      "slug": "webui",
+      "name": "Webui",
+      "shortDescription": "Build interactive, AI-powered web applications with real-time chat and task orchestration.",
+      "file": "webui.md"
+    }
+  ]
+}

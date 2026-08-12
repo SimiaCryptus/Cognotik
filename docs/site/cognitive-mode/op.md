@@ -1,8 +1,8 @@
 ---
 transforms:
-  - ../../../(tasklib/.*)/(.*?)Mode.kt -> $1/$2.md
-  - ../../../(stdtools/.*)/(.*?)Mode.kt -> $1/$2.md
-  - ../../../(webui/.*)/(.*?)Mode.kt -> $1/$2.md
+  - ../../../(tasklib/.*)/(.*?)Mode.kt -> $2.md
+  - ../../../(stdtools/.*)/(.*?)Mode.kt -> $2.md
+  - ../../../(webui/.*)/(.*?)Mode.kt -> $2.md
 ---
 
 # Task: Cognitive Mode Feature Page

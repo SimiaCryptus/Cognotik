@@ -1,0 +1,232 @@
+{
+  "apps": [
+    {
+      "slug": "audio-generation",
+      "name": "GenerateAudio",
+      "shortDescription": "AI-driven audio synthesis for narration, voice-over, and sound effects.",
+      "file": "AudioGeneration.md"
+    },
+    {
+      "slug": "auto-fix",
+      "name": "AutoFix",
+      "shortDescription": "Run build/test commands and iteratively patch code until they pass.",
+      "file": "AutoFix.md"
+    },
+    {
+      "slug": "brainstorming",
+      "name": "Brainstorming",
+      "shortDescription": "Generate and independently analyze multiple solution options, then rank them.",
+      "file": "Brainstorming.md"
+    },
+    {
+      "slug": "coding",
+      "name": "CodingTask",
+      "shortDescription": "Generate, execute, and iteratively repair code with a Run/Retry UI loop.",
+      "file": "Coding.md"
+    },
+    {
+      "slug": "comic-book-generation",
+      "name": "ComicBookGeneration",
+      "shortDescription": "Generate a structured comic book script and visuals from a subject prompt.",
+      "file": "ComicBookGeneration.md"
+    },
+    {
+      "slug": "command-session",
+      "name": "CommandSession",
+      "shortDescription": "Spin up a persistent interactive terminal driven by a sequence of inputs.",
+      "file": "CommandSession.md"
+    },
+    {
+      "slug": "crawler-agent",
+      "name": "CrawlerAgent",
+      "shortDescription": "Search, fetch, and analyze the web with a persistent, resumable link database.",
+      "file": "CrawlerAgent.md"
+    },
+    {
+      "slug": "create-erb-template",
+      "name": "CreateErbTemplate",
+      "shortDescription": "Generate ERB-style templates with AI-assisted schema design.",
+      "file": "CreateErbTemplate.md"
+    },
+    {
+      "slug": "data-ingest",
+      "name": "DataIngest",
+      "shortDescription": "Iteratively parse unstructured logs into structured data using discovered regex.",
+      "file": "DataIngest.md"
+    },
+    {
+      "slug": "dialectical-reasoning",
+      "name": "DialecticalReasoning",
+      "shortDescription": "Resolve contradictions between opposing positions via structured synthesis.",
+      "file": "DialecticalReasoning.md"
+    },
+    {
+      "slug": "discussion",
+      "name": "Discussion",
+      "shortDescription": "Direct LLM Q&A with optional file context and no side effects.",
+      "file": "Discussion.md"
+    },
+    {
+      "slug": "file-modification",
+      "name": "FileModification",
+      "shortDescription": "Modify or create files with AI-assisted patch generation and diff review.",
+      "file": "FileModification.md"
+    },
+    {
+      "slug": "file-review",
+      "name": "FileReview",
+      "shortDescription": "Read files and report on requested details, without touching them.",
+      "file": "FileReview.md"
+    },
+    {
+      "slug": "file-search",
+      "name": "FileSearch",
+      "shortDescription": "Pattern-based search across project files with grouped, contextual results.",
+      "file": "FileSearch.md"
+    },
+    {
+      "slug": "finite-state-machine",
+      "name": "FiniteStateMachine",
+      "shortDescription": "Model concepts and processes using rigorous finite state machine analysis.",
+      "file": "FiniteStateMachine.md"
+    },
+    {
+      "slug": "game-theory",
+      "name": "GameTheory",
+      "shortDescription": "Analyze strategic interactions using Nash equilibria and Pareto optimality.",
+      "file": "GameTheory.md"
+    },
+    {
+      "slug": "generate-audio-files",
+      "name": "GenerateAudioFiles",
+      "shortDescription": "Render a spoken-word script into per-segment audio files with a manifest.",
+      "file": "GenerateAudioFiles.md"
+    },
+    {
+      "slug": "historical-figure-debate",
+      "name": "HistoricalFigureDebate",
+      "shortDescription": "Stage a multi-round, in-character debate between historical figures.",
+      "file": "HistoricalFigureDebate.md"
+    },
+    {
+      "slug": "illustrate-document",
+      "name": "IllustrateDocument",
+      "shortDescription": "Analyze a document and generate contextually relevant images to patch in.",
+      "file": "IllustrateDocument.md"
+    },
+    {
+      "slug": "image-generation",
+      "name": "GenerateImage",
+      "shortDescription": "Create high-quality images from text descriptions using AI models.",
+      "file": "ImageGeneration.md"
+    },
+    {
+      "slug": "iterative-file-modification",
+      "name": "IterativeFileModification",
+      "shortDescription": "Multi-phase file modification with planning and iterative implementation.",
+      "file": "IterativeFileModification.md"
+    },
+    {
+      "slug": "language-server",
+      "name": "LanguageServer",
+      "shortDescription": "Query code intelligence from real LSP implementations without mutating files.",
+      "file": "LanguageServer.md"
+    },
+    {
+      "slug": "mcp-tool",
+      "name": "MCPTool",
+      "shortDescription": "Execute tools from Model Context Protocol servers inside an orchestration plan.",
+      "file": "MCPTool.md"
+    },
+    {
+      "slug": "multi-perspective-analysis",
+      "name": "MultiPerspectiveAnalysis",
+      "shortDescription": "Analyze a subject from multiple independent viewpoints, then synthesize.",
+      "file": "MultiPerspectiveAnalysis.md"
+    },
+    {
+      "slug": "narrative-generation",
+      "name": "NarrativeGeneration",
+      "shortDescription": "Generate publication-ready narratives from a premise via outlining and scenes.",
+      "file": "NarrativeGeneration.md"
+    },
+    {
+      "slug": "persuasive-essay",
+      "name": "PersuasiveEssay",
+      "shortDescription": "Generate structured persuasive essays with rhetoric and optional illustrations.",
+      "file": "PersuasiveEssay.md"
+    },
+    {
+      "slug": "render-erb-template",
+      "name": "RenderErbTemplate",
+      "shortDescription": "Render ERB-style templates with dynamic data and write the result to a file.",
+      "file": "RenderErbTemplate.md"
+    },
+    {
+      "slug": "run-code",
+      "name": "RunCode",
+      "shortDescription": "Execute code snippets in an interactive runtime with optional auto-fix.",
+      "file": "RunCode.md"
+    },
+    {
+      "slug": "run-tool",
+      "name": "RunTool",
+      "shortDescription": "Execute external CLI tools with custom arguments under approval control.",
+      "file": "RunTool.md"
+    },
+    {
+      "slug": "selenium-fetch",
+      "name": "SeleniumFetch",
+      "shortDescription": "Headless-Chrome page capture: screenshot, DOM, console, and network logs.",
+      "file": "SeleniumFetch.md"
+    },
+    {
+      "slug": "single-fix",
+      "name": "SingleFix",
+      "shortDescription": "Analyze a log file and patch the errors it reveals in one deterministic pass.",
+      "file": "SingleFix.md"
+    },
+    {
+      "slug": "socratic-dialogue",
+      "name": "SocraticDialogue",
+      "shortDescription": "Explore ideas through structured Socratic questioning between two LLM agents.",
+      "file": "SocraticDialogue.md"
+    },
+    {
+      "slug": "sub-plan",
+      "name": "SubPlan",
+      "shortDescription": "Recursive planning task that spawns a nested session to solve a sub-goal.",
+      "file": "SubPlan.md"
+    },
+    {
+      "slug": "symbols-db-code",
+      "name": "SymbolsDbCode",
+      "shortDescription": "Execute code with predefined symbols wired to a project-wide symbol graph.",
+      "file": "SymbolsDbCode.md"
+    },
+    {
+      "slug": "technical-explanation",
+      "name": "TechnicalExplanation",
+      "shortDescription": "Turn a complex technical topic into an audience-calibrated explanation.",
+      "file": "TechnicalExplanation.md"
+    },
+    {
+      "slug": "tutorial-generation",
+      "name": "TutorialGeneration",
+      "shortDescription": "Generate complete, step-by-step tutorials for processes and projects.",
+      "file": "TutorialGeneration.md"
+    },
+    {
+      "slug": "unrunnable-protocol-dialog",
+      "name": "UnrunnableProtocolDialog",
+      "shortDescription": "Analyze concepts through dense pseudo-code frameworks with a built-in skeptic.",
+      "file": "UnrunnableProtocolDialog.md"
+    },
+    {
+      "slug": "write-html",
+      "name": "WriteHtml",
+      "shortDescription": "Generate complete, self-contained HTML pages with embedded CSS/JS and images.",
+      "file": "WriteHtml.md"
+    }
+  ]
+}
