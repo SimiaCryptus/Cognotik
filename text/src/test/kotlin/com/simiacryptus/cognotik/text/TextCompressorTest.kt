@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 
 class TextCompressorTest {
   companion object {
-      val log = LoggerFactory.getLogger(TextCompressorTest::class.java)
+    val log = LoggerFactory.getLogger(TextCompressorTest::class.java)
   }
 
   @Test

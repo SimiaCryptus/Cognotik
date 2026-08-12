@@ -11,16 +11,11 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.nio.file.FileVisitOption
-import java.nio.file.FileVisitResult
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.SimpleFileVisitor
+import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.security.MessageDigest
 import java.time.Instant
-import java.util.Collections
+import java.util.*
 import java.util.stream.Collectors
 
 /**
@@ -30,40 +25,40 @@ import java.util.stream.Collectors
  * Layout produced (with the default [Config.dataDirName] of `.data`):
  *
  * ```
-* package/foo.java              -> .data/package/foo.java.json
-* package/sub/bar.kt            -> .data/package/sub/bar.kt.json
-* package/.data/package.json    -> .data/package/package.json (rollup summary)
+ * package/foo.java              -> .data/package/foo.java.json
+ * package/sub/bar.kt            -> .data/package/sub/bar.kt.json
+ * package/.data/package.json    -> .data/package/package.json (rollup summary)
  * <root>/.data/project.json     -> manifest of every indexed file (slim: no symbol/reference detail)
  * <root>/.data/viewer.html      -> standalone HTML report viewer (reads project.json)
  * ```
  *
-  * **Every path stored in a report is relative to what that report describes**, so a report can be
-  * moved/served together with the code it documents:
-  *
-  * ```
-  * .data/package/foo.java.json   -> paths relative to package/      ("foo.java", "../util/Bar.java")
-  * .data/package/package.json    -> paths relative to package/      ("sub/bar.kt", "../other/Baz.kt")
-  * <root>/.data/project.json     -> paths relative to <root>        ("package/foo.java")
-  * ```
-  *
-  * This applies to [FileRecord.path], [SymbolResolver.Target.path],
-  * [RelatedFileAnalyzer.RelatedFile.path], [IncomingReference.path] and [Failure.path]. Internally
-  * (and in the [Manifest] returned by [index]) everything is crawl-root relative; use
-  * [relativeTo] / [resolvePath] / [rootRelative] to convert. [loadManifest] /
-  * [loadPackageManifest] convert back automatically.
-  *
+ * **Every path stored in a report is relative to what that report describes**, so a report can be
+ * moved/served together with the code it documents:
+ *
+ * ```
+ * .data/package/foo.java.json   -> paths relative to package/      ("foo.java", "../util/Bar.java")
+ * .data/package/package.json    -> paths relative to package/      ("sub/bar.kt", "../other/Baz.kt")
+ * <root>/.data/project.json     -> paths relative to <root>        ("package/foo.java")
+ * ```
+ *
+ * This applies to [FileRecord.path], [SymbolResolver.Target.path],
+ * [RelatedFileAnalyzer.RelatedFile.path], [IncomingReference.path] and [Failure.path]. Internally
+ * (and in the [Manifest] returned by [index]) everything is crawl-root relative; use
+ * [relativeTo] / [resolvePath] / [rootRelative] to convert. [loadManifest] /
+ * [loadPackageManifest] convert back automatically.
+ *
  * Referenced names are resolved lexically against every file's qualified names by
  * [SymbolResolver]; the result is stored in `resolutions` / `unresolvedNames` in both the
-* sidecars and the manifest. Resolution never crosses grammars: a reference is only matched
-* against declarations extracted by the same
-* [com.simiacryptus.cognotik.text.validate.GrammarValidator] (see [Config.sameGrammarResolutionOnly]),
-* so identically-named symbols in different languages are never linked.
+ * sidecars and the manifest. Resolution never crosses grammars: a reference is only matched
+ * against declarations extracted by the same
+ * [com.simiacryptus.cognotik.text.validate.GrammarValidator] (see [Config.sameGrammarResolutionOnly]),
+ * so identically-named symbols in different languages are never linked.
  *
-* [index] additionally inverts the resolution graph: every record gets a `referencesFrom` list
-* naming the **upstream** files that point at its declarations (see [IncomingReference] and
-* [Config.computeIncomingReferences]), so the sidecars/reports can be navigated in both
-* directions without re-scanning the project.
-*
+ * [index] additionally inverts the resolution graph: every record gets a `referencesFrom` list
+ * naming the **upstream** files that point at its declarations (see [IncomingReference] and
+ * [Config.computeIncomingReferences]), so the sidecars/reports can be navigated in both
+ * directions without re-scanning the project.
+ *
  * Every reported file also carries a `relatedFiles` list produced by [RelatedFileAnalyzer]:
  * a TF-IDF/cosine ranking over the grammatically-extracted declarations and references, so
  * files that share distinctive (high-IDF) names are linked to each other.
@@ -122,13 +117,13 @@ class SymbolIndexer(
      * declarations are same-file is hidden entirely (neither resolved nor unresolved).
      */
     val excludeSelfFileResolutions: Boolean = SymbolResolver.DEFAULT_EXCLUDE_SELF_FILE,
-     /**
-      * Only match references against declarations produced by the **same grammar** - i.e. by the
-      * same [com.simiacryptus.cognotik.text.validate.GrammarValidator]. A Java `Buffer` can then
-      * never resolve to a C++ or TypeScript `Buffer`. Names that only match in another language are
-      * reported as unresolved. Turn off to get language-agnostic (lexical-only) matching.
-      */
-     val sameGrammarResolutionOnly: Boolean = SymbolResolver.DEFAULT_SAME_GRAMMAR_ONLY,
+    /**
+     * Only match references against declarations produced by the **same grammar** - i.e. by the
+     * same [com.simiacryptus.cognotik.text.validate.GrammarValidator]. A Java `Buffer` can then
+     * never resolve to a C++ or TypeScript `Buffer`. Names that only match in another language are
+     * reported as unresolved. Turn off to get language-agnostic (lexical-only) matching.
+     */
+    val sameGrammarResolutionOnly: Boolean = SymbolResolver.DEFAULT_SAME_GRAMMAR_ONLY,
     /**
      * Populate [FileRecord.referencesFrom] - the reverse of [FileRecord.referencesTo] - by
      * inverting the project-wide resolution graph. Only meaningful for [index]; [indexFile]
@@ -237,6 +232,7 @@ class SymbolIndexer(
       )
     }
   }
+
   /**
    * One incoming edge of the resolution graph: the file [path] resolves [names] to declarations
    * of the record holding this entry. The mirror image of [SymbolResolver.Resolution].
@@ -326,7 +322,7 @@ class SymbolIndexer(
         parsed.map { it.second },
         config.maxResolutionTargets,
         config.excludeSelfFileResolutions,
-         config.sameGrammarResolutionOnly,
+        config.sameGrammarResolutionOnly,
       )
       else parsed.map { it.second }
     val related: List<FileRecord> =
@@ -373,12 +369,12 @@ class SymbolIndexer(
   fun indexFile(file: Path): FileRecord {
     val parsed = buildRecord(file)
     val record = if (config.resolveReferences)
-       SymbolResolver.resolve(
-         listOf(parsed),
-         config.maxResolutionTargets,
-         config.excludeSelfFileResolutions,
-         config.sameGrammarResolutionOnly,
-       ).first()
+      SymbolResolver.resolve(
+        listOf(parsed),
+        config.maxResolutionTargets,
+        config.excludeSelfFileResolutions,
+        config.sameGrammarResolutionOnly,
+      ).first()
     else parsed
     writeJson(dataFileFor(file), folderRelative(record, folderOf(record.path)))
     return record
@@ -411,7 +407,7 @@ class SymbolIndexer(
     }
     val errors = if (!config.includeValidationErrors) emptyList() else try {
       val validateGrammar = validator.validateGrammar(code.trim().sanitizeSource())
-      if(validateGrammar.isNotEmpty()) {
+      if (validateGrammar.isNotEmpty()) {
         log.debug("Validation errors for {}: {}", file, validateGrammar.joinToString("; ") { it.message })
       }
       validateGrammar
@@ -552,6 +548,7 @@ class SymbolIndexer(
     val filtered = if (config.hideAmbiguousInReports) record.withoutAmbiguousResolutions() else record
     return if (config.includeDetailsInManifest) filtered else filtered.slim()
   }
+
   /**
    * Invert the resolution graph: every record learns which other files reference its declarations.
    * Runs over the already-resolved [records] (crawl-root relative paths); self-references are
@@ -721,15 +718,19 @@ class SymbolIndexer(
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
     }
+
     /* ------------------------------------------------------------------ *
      *  report-relative path plumbing                                     *
      * ------------------------------------------------------------------ */
     private fun pathSegments(path: String): List<String> =
       path.replace('\\', '/').split('/').filter { it.isNotBlank() && it != "." }
+
     private fun isAbsoluteish(path: String) = path.startsWith("/") || path.contains(':')
+
     /** Folder part of a root-relative '/'-separated path (`""` for files directly in the root). */
     @JvmStatic
     fun folderOf(path: String): String = path.replace('\\', '/').substringBeforeLast('/', "")
+
     /**
      * [path] as seen from the folder [base] (both crawl-root relative, '/'-separated):
      * `relativeTo("a/b", "a/b/Foo.kt") == "Foo.kt"`, `relativeTo("a/b", "a/c/Bar.kt") == "../c/Bar.kt"`.
@@ -746,6 +747,7 @@ class SymbolIndexer(
       val up = List(from.size - common) { ".." }
       return (up + to.subList(common, to.size)).joinToString("/")
     }
+
     /** Inverse of [relativeTo]: `resolvePath("a/b", "../c/Bar.kt") == "a/c/Bar.kt"`. */
     @JvmStatic
     fun resolvePath(base: String, path: String): String {
@@ -758,6 +760,7 @@ class SymbolIndexer(
       }
       return segments.joinToString("/")
     }
+
     /** Report-local copy of [record]: every stored path becomes relative to the folder [base]. */
     @JvmStatic
     fun folderRelative(record: FileRecord, base: String): FileRecord =
@@ -769,9 +772,11 @@ class SymbolIndexer(
         referencesFrom = record.referencesFrom.map { it.copy(path = relativeTo(base, it.path)) },
         relatedFiles = record.relatedFiles.map { it.copy(path = relativeTo(base, it.path)) },
       )
+
     @JvmStatic
     fun folderRelative(failure: Failure, base: String): Failure =
       if (base.isBlank()) failure else failure.copy(path = relativeTo(base, failure.path))
+
     /** Undo [folderRelative] for a record stored in the report of folder [base]. */
     @JvmStatic
     fun rootRelative(record: FileRecord, base: String): FileRecord =
@@ -783,6 +788,7 @@ class SymbolIndexer(
         referencesFrom = record.referencesFrom.map { it.copy(path = resolvePath(base, it.path)) },
         relatedFiles = record.relatedFiles.map { it.copy(path = resolvePath(base, it.path)) },
       )
+
     /** Rewrite a loaded report's [Manifest.folder]-relative paths back to crawl-root relative ones. */
     @JvmStatic
     fun rootRelative(manifest: Manifest): Manifest {
@@ -802,8 +808,8 @@ class SymbolIndexer(
     /**
      * CLI: `SymbolIndexer <root> [--clean] [--no-incremental] [--sequential] [--no-errors]
      *      [--no-references] [--no-reference-details] [--no-resolve] [--manifest-details]
-      *      [--self-refs] [--cross-grammar] [--keep-ambiguous] [--no-package-manifests]
-      *      [--no-viewer] [--no-related] [--no-incoming]`
+     *      [--self-refs] [--cross-grammar] [--keep-ambiguous] [--no-package-manifests]
+     *      [--no-viewer] [--no-related] [--no-incoming]`
      */
     @JvmStatic
     fun main(args: Array<String>) {
@@ -821,7 +827,7 @@ class SymbolIndexer(
           includeReferenceDetails = "--no-reference-details" !in flags,
           resolveReferences = "--no-resolve" !in flags,
           excludeSelfFileResolutions = "--self-refs" !in flags,
-           sameGrammarResolutionOnly = "--cross-grammar" !in flags,
+          sameGrammarResolutionOnly = "--cross-grammar" !in flags,
           computeIncomingReferences = "--no-incoming" !in flags,
           hideAmbiguousInReports = "--keep-ambiguous" !in flags,
           includeDetailsInManifest = "--manifest-details" in flags,
@@ -843,54 +849,52 @@ class SymbolIndexer(
 }
 
 
+/**
+ * Characters that are invisible (or effectively invisible) and are never meaningful in source code,
+ * but which `String.trim()` will NOT remove because `Char.isWhitespace()` returns false for them.
+ * The classic offender is the UTF-8 BOM (U+FEFF, "ZERO WIDTH NO-BREAK SPACE") left at the head of a file.
+ */
+private val INVISIBLE_JUNK: Set<Char> = setOf(
+  '\uFEFF', // BOM / ZERO WIDTH NO-BREAK SPACE
+  '\uFFFE', // byte-swapped BOM (mis-decoded file)
+  '\uFFFD', // replacement char from a bad decode
+  '\u0000', // stray NUL
+  '\u200B', // zero width space
+  '\u200C', // zero width non-joiner
+  '\u200D', // zero width joiner
+  '\u2060', // word joiner
+  '\u00AD', // soft hyphen
+  '\u180E', // mongolian vowel separator
+  '\u200E', '\u200F', // LRM / RLM
+  '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', // bidi embedding/override (trojan-source)
+  '\u2066', '\u2067', '\u2068', '\u2069' // bidi isolates
+)
 
+/** Whitespace-ish characters that should be normalized to a plain space rather than deleted. */
+private val EXOTIC_SPACES: Set<Char> = setOf(
+  '\u00A0', // no-break space
+  '\u2007', // figure space
+  '\u202F', // narrow no-break space
+  '\u2028', '\u2029' // line/paragraph separator
+)
 
- /**
-  * Characters that are invisible (or effectively invisible) and are never meaningful in source code,
-  * but which `String.trim()` will NOT remove because `Char.isWhitespace()` returns false for them.
-  * The classic offender is the UTF-8 BOM (U+FEFF, "ZERO WIDTH NO-BREAK SPACE") left at the head of a file.
-  */
- private val INVISIBLE_JUNK: Set<Char> = setOf(
-   '\uFEFF', // BOM / ZERO WIDTH NO-BREAK SPACE
-   '\uFFFE', // byte-swapped BOM (mis-decoded file)
-   '\uFFFD', // replacement char from a bad decode
-   '\u0000', // stray NUL
-   '\u200B', // zero width space
-   '\u200C', // zero width non-joiner
-   '\u200D', // zero width joiner
-   '\u2060', // word joiner
-   '\u00AD', // soft hyphen
-   '\u180E', // mongolian vowel separator
-   '\u200E', '\u200F', // LRM / RLM
-   '\u202A', '\u202B', '\u202C', '\u202D', '\u202E', // bidi embedding/override (trojan-source)
-   '\u2066', '\u2067', '\u2068', '\u2069' // bidi isolates
- )
+private fun Char.isInvisibleJunk(): Boolean =
+  this in INVISIBLE_JUNK || Character.getType(this) == Character.FORMAT.toInt()
 
- /** Whitespace-ish characters that should be normalized to a plain space rather than deleted. */
- private val EXOTIC_SPACES: Set<Char> = setOf(
-   '\u00A0', // no-break space
-   '\u2007', // figure space
-   '\u202F', // narrow no-break space
-   '\u2028', '\u2029' // line/paragraph separator
- )
-
- private fun Char.isInvisibleJunk(): Boolean =
-   this in INVISIBLE_JUNK || Character.getType(this) == Character.FORMAT.toInt()
-
- /**
-  * Strips BOM/zero-width/bidi-control characters, normalizes exotic spaces, and trims.
-  * Safe to call on any source text before handing it to a parser/validator.
-  */
- fun String.sanitizeSource(): String {
-   if (isEmpty()) return this
-   val needsWork = any { it.isInvisibleJunk() || it in EXOTIC_SPACES }
-   val cleaned = if (!needsWork) this else buildString(length) {
-     for (c in this@sanitizeSource) when {
-       c.isInvisibleJunk() -> {} // drop
-       c == '\u2028' || c == '\u2029' -> append('\n')
-       c in EXOTIC_SPACES -> append(' ')
-       else -> append(c)
-     }
-   }
-   return cleaned.trim()
- }
+/**
+ * Strips BOM/zero-width/bidi-control characters, normalizes exotic spaces, and trims.
+ * Safe to call on any source text before handing it to a parser/validator.
+ */
+fun String.sanitizeSource(): String {
+  if (isEmpty()) return this
+  val needsWork = any { it.isInvisibleJunk() || it in EXOTIC_SPACES }
+  val cleaned = if (!needsWork) this else buildString(length) {
+    for (c in this@sanitizeSource) when {
+      c.isInvisibleJunk() -> {} // drop
+      c == '\u2028' || c == '\u2029' -> append('\n')
+      c in EXOTIC_SPACES -> append(' ')
+      else -> append(c)
+    }
+  }
+  return cleaned.trim()
+}

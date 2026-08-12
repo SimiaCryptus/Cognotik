@@ -40,14 +40,15 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
         registry.add(enumConstant.name to enumConstant)
       }
     }
-     /**
-      * Unregister a dynamic enum constant by name.
-      * Returns true if the constant was found and removed.
-      */
-     @JvmStatic
-     fun <T : DynamicEnum<T>> unregister(clazz: Class<T>, name: String): Boolean {
-       return getRegistry(clazz).removeAll { it.first == name }
-     }
+
+    /**
+     * Unregister a dynamic enum constant by name.
+     * Returns true if the constant was found and removed.
+     */
+    @JvmStatic
+    fun <T : DynamicEnum<T>> unregister(clazz: Class<T>, name: String): Boolean {
+      return getRegistry(clazz).removeAll { it.first == name }
+    }
   }
 
   override fun toString() = name

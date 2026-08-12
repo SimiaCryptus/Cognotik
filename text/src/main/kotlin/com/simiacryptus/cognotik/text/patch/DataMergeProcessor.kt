@@ -250,9 +250,7 @@ Here is the updated configuration:
       extensions = listOf("properties")
     );
 
-    companion object {
-
-    }
+    companion object
   }
 
   companion object {

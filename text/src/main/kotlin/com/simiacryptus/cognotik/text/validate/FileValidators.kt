@@ -30,14 +30,16 @@ object FileValidators {
   fun getValidator(filename: String?): GrammarValidator {
     return validatorProviders.firstNotNullOf { it(filename) }
   }
-   /**
-    * The validator dedicated to this file's language, or `null` when no language-specific
-    * validator matches (i.e. only the generic [ParenMatchingValidator] fallback would apply).
-    */
-   fun getLanguageValidator(filename: String?): GrammarValidator? =
-     validatorProviders.firstNotNullOfOrNull { it(filename) }?.takeUnless { it is ParenMatchingValidator }
-   /** True when a language-specific validator exists for [filename]. */
-   fun isSupported(filename: String?): Boolean = getLanguageValidator(filename) != null
+
+  /**
+   * The validator dedicated to this file's language, or `null` when no language-specific
+   * validator matches (i.e. only the generic [ParenMatchingValidator] fallback would apply).
+   */
+  fun getLanguageValidator(filename: String?): GrammarValidator? =
+    validatorProviders.firstNotNullOfOrNull { it(filename) }?.takeUnless { it is ParenMatchingValidator }
+
+  /** True when a language-specific validator exists for [filename]. */
+  fun isSupported(filename: String?): Boolean = getLanguageValidator(filename) != null
 
 
   /**
@@ -50,6 +52,7 @@ object FileValidators {
     log.warn("Error extracting symbols from $filename", e)
     emptyList()
   }
+
   /**
    * Convenience accessor: extract the (unresolved) symbol references of [code] using the
    * validator selected for [filename]. Returns an empty list on any failure.

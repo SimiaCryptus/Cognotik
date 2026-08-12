@@ -10,21 +10,22 @@ interface GrammarValidator {
    * fallback) simply return an empty list.
    */
   fun extractPublicSymbols(code: String): List<SymbolInfo> = emptyList()
-    /**
-     * Extract every *grammatical* reference to a symbol in [code].
-     *
-     * No resolution is attempted: the result simply records "here an identifier chain is used,
-     * and this is roughly how it is used". Only validators that actually understand the
-     * language can answer this, so the default is an empty list; every ANTLR-backed validator
-     * implements it by walking its parse tree (see [com.simiacryptus.cognotik.text.SymbolReferenceScanner]).
-     *
-     * @param symbols declarations of the same [code], used to attribute each reference to the
-     *   declaration that encloses it. Defaults to [extractPublicSymbols].
-     */
-    fun extractSymbolReferences(
-      code: String,
-      symbols: List<SymbolInfo> = extractPublicSymbols(code),
-    ): List<SymbolReference> = emptyList()
+
+  /**
+   * Extract every *grammatical* reference to a symbol in [code].
+   *
+   * No resolution is attempted: the result simply records "here an identifier chain is used,
+   * and this is roughly how it is used". Only validators that actually understand the
+   * language can answer this, so the default is an empty list; every ANTLR-backed validator
+   * implements it by walking its parse tree (see [com.simiacryptus.cognotik.text.SymbolReferenceScanner]).
+   *
+   * @param symbols declarations of the same [code], used to attribute each reference to the
+   *   declaration that encloses it. Defaults to [extractPublicSymbols].
+   */
+  fun extractSymbolReferences(
+    code: String,
+    symbols: List<SymbolInfo> = extractPublicSymbols(code),
+  ): List<SymbolReference> = emptyList()
 
 
   data class ValidationError(
@@ -59,27 +60,28 @@ interface GrammarValidator {
       return listOf(qualified) + children.flatMap { it.qualifiedNames(qualified) }
     }
   }
-    /**
-     * A use (not a declaration) of some name, as found by the grammar - unresolved by design.
-     *
-     * @param name the single identifier being referenced (`bar` of `foo.bar`)
-     * @param text the whole identifier chain as written, whitespace removed (`foo.bar`)
-     * @param kind best-effort classification of how the name is used
-     * @param range span of [name] itself (not of the whole chain)
-     * @param qualifier the dotted prefix inside the chain, or `null` for the head of the chain
-     * @param enclosingSymbol dotted name of the declaration containing this reference, if known
-     */
-    data class SymbolReference(
-      val name: String,
-      val text: String,
-      val kind: ReferenceKind,
-      val range: TextRange,
-      val qualifier: String? = null,
-      val enclosingSymbol: String? = null,
-    ) {
-      /** `foo.bar` for a qualified reference, otherwise just `bar`. */
-      val qualifiedName: String get() = if (qualifier.isNullOrEmpty()) name else "$qualifier.$name"
-    }
+
+  /**
+   * A use (not a declaration) of some name, as found by the grammar - unresolved by design.
+   *
+   * @param name the single identifier being referenced (`bar` of `foo.bar`)
+   * @param text the whole identifier chain as written, whitespace removed (`foo.bar`)
+   * @param kind best-effort classification of how the name is used
+   * @param range span of [name] itself (not of the whole chain)
+   * @param qualifier the dotted prefix inside the chain, or `null` for the head of the chain
+   * @param enclosingSymbol dotted name of the declaration containing this reference, if known
+   */
+  data class SymbolReference(
+    val name: String,
+    val text: String,
+    val kind: ReferenceKind,
+    val range: TextRange,
+    val qualifier: String? = null,
+    val enclosingSymbol: String? = null,
+  ) {
+    /** `foo.bar` for a qualified reference, otherwise just `bar`. */
+    val qualifiedName: String get() = if (qualifier.isNullOrEmpty()) name else "$qualifier.$name"
+  }
 
 
   /**
@@ -95,8 +97,11 @@ interface GrammarValidator {
     val endColumn: Int
   ) {
     val length: Int get() = (endOffset - startOffset).coerceAtLeast(0)
-    fun substringOf(code: String): String =
-      code.substring(startOffset.coerceIn(0, code.length), endOffset.coerceIn(startOffset, code.length))
+    fun substringOf(code: String): String {
+      val start = startOffset.coerceIn(0, code.length)
+      val end = endOffset.coerceIn(start, code.length)
+      return code.substring(start, end)
+    }
   }
 
   enum class SymbolKind {
@@ -118,21 +123,27 @@ interface GrammarValidator {
     RULE,
     OTHER,
   }
-    /** How an identifier appears to be used at its reference site. */
-    enum class ReferenceKind {
-      /** Part of an `import` / `use` / `require` / `package` directive. */
-      IMPORT,
-      /** Annotation or decorator usage (`@Foo`). */
-      ANNOTATION,
-      /** Used in a type position (`: Foo`, `new Foo`, `extends Foo`, generics, ...). */
-      TYPE,
-      /** Immediately followed by an argument list. */
-      CALL,
-      /** Non-head element of a qualified chain (`foo.bar` -> `bar`). */
-      MEMBER,
-      /** Anything else (plain value/identifier usage). */
-      IDENTIFIER,
-    }
+
+  /** How an identifier appears to be used at its reference site. */
+  enum class ReferenceKind {
+    /** Part of an `import` / `use` / `require` / `package` directive. */
+    IMPORT,
+
+    /** Annotation or decorator usage (`@Foo`). */
+    ANNOTATION,
+
+    /** Used in a type position (`: Foo`, `new Foo`, `extends Foo`, generics, ...). */
+    TYPE,
+
+    /** Immediately followed by an argument list. */
+    CALL,
+
+    /** Non-head element of a qualified chain (`foo.bar` -> `bar`). */
+    MEMBER,
+
+    /** Anything else (plain value/identifier usage). */
+    IDENTIFIER,
+  }
 
 
   enum class Severity {

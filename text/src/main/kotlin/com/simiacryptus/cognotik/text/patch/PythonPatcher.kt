@@ -76,7 +76,7 @@ class PythonPatcher : PatchProcessor {
 
     override fun hashCode(): Int {
       var result = index
-      result = 31 * result + (line?.hashCode() ?: 0)
+      result = 31 * result + line.hashCode()
       return result
     }
   }
@@ -117,7 +117,7 @@ class PythonPatcher : PatchProcessor {
     var patchLines = parsePatchLines(patch, sourceLines)
     log.debug("Parsed source lines: ${sourceLines.size}, initial patch lines: ${patchLines.size}")
     link(sourceLines, patchLines, LevenshteinDistance())
-    patchLines = patchLines.filter { it.line != null && normalizeLine(it.line!!).isNotEmpty() }
+    patchLines = patchLines.filter { it.line != null && normalizeLine(it.line).isNotEmpty() }
     log.debug("Filtered patch lines: ${patchLines.size}")
     val result = generatePatchedText(sourceLines, patchLines)
     val patchedText = result.joinToString("\n").trim()

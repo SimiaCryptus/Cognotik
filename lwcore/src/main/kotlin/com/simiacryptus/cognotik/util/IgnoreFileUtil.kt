@@ -186,10 +186,7 @@ object IgnoreFileUtil {
     }
 
     // Check ignore file in the resolved root directory
-    if (matchesIgnoreFile(currentDir, path, spec.ignoreFileName)) {
-      return true
-    }
-    return false
+    return matchesIgnoreFile(currentDir, path, spec.ignoreFileName)
   }
 
   /**

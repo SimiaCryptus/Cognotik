@@ -24,7 +24,10 @@ applications to a full document-operations pipeline.
 
 ```bash
 # Option 1: Launch Standalone Web IDE instantly in any directory
-curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash
+# (download the launcher script, then run it - do not pipe it into bash)
+curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
+chmod +x fileserver
+./fileserver
 # Option 2: Clone and build from source
 # Clone the repository
 git clone https://github.com/SimiaCryptus/Cognotik.git
@@ -189,7 +192,6 @@ A lightweight, browser-accessible IDE and file workspace server for local or rem
 - **In-Browser Monaco Code Editor**: Full-featured code editor with syntax highlighting, dirty state tracking, and keyboard save (`Ctrl+S`)
 - **Web Terminal & Execution API**: Built-in web terminal (`/.fsapi/v1/terminal`) and process execution endpoints
 - **Git Repository Management**: Visual browser panel for Git operations including status, diffs, commits, and branch management
-- **Zero-Setup Quickstart**: Instant launcher script via `curl` for immediate execution in any directory
 - **Flexible Security Profiles**: Configurable flags including `--read-only`, `--no-terminal`, `--no-exec`, and hardened `--secure` mode
 
 ## Architecture
@@ -247,14 +249,23 @@ Communication between components:
     - Go to Settings/Preferences > Tools > Cognotik
     - Enter your API keys for the providers you want to use
 #### Standalone Web IDE
-1. Run instantly in any directory without local workspace setup:
+1. Download the launcher script and make it executable (it is a standalone script, so save it to a file rather than piping it to `bash` or sourcing it):
    ```bash
-   curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash
+    curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
+    chmod +x fileserver
    ```
-2. Pass custom options (port, target workspace path, security modes):
+2. Run it in any directory without local workspace setup:
    ```bash
-   curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash -s -- --port 9090 /path/to/workspace
+    ./fileserver
    ```
+3. Pass custom options (port, target workspace path, security modes):
+    ```bash
+    ./fileserver --port 9090 /path/to/workspace
+    ```
+4. Optionally install it on your `PATH` for reuse:
+    ```bash
+    mkdir -p ~/.local/bin && mv fileserver ~/.local/bin/ && fileserver --help
+    ```
 
 
 ### Building from Source
@@ -412,3 +423,4 @@ See our [public roadmap](https://github.com/SimiaCryptus/Cognotik/projects) for 
    Made with ❤️ by the Cognotik Team<br/>
    <em>AI that shows its work.</em>
 </p>
+- **Zero-Setup Quickstart**: Self-contained launcher script - download it with `curl`, `chmod +x`, and run it in any directory

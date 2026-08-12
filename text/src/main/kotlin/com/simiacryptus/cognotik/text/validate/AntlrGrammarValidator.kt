@@ -1,22 +1,8 @@
 package com.simiacryptus.cognotik.text.validate
 
 import com.simiacryptus.cognotik.text.SymbolReferenceScanner
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.SymbolInfo
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.SymbolKind
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.SymbolReference
-import com.simiacryptus.cognotik.text.validate.GrammarValidator.TextRange
-import org.antlr.v4.runtime.BaseErrorListener
-import org.antlr.v4.runtime.CharStream
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.Lexer
-import org.antlr.v4.runtime.Parser
-import org.antlr.v4.runtime.ParserRuleContext
-import org.antlr.v4.runtime.RecognitionException
-import org.antlr.v4.runtime.Recognizer
-import org.antlr.v4.runtime.Token
-import org.antlr.v4.runtime.TokenStream
-import org.antlr.v4.runtime.Vocabulary
+import com.simiacryptus.cognotik.text.validate.GrammarValidator.*
+import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.slf4j.LoggerFactory.getLogger
@@ -129,7 +115,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
   /** Rule-name (lower case) to symbol kind mapping; override to tune per language. */
   protected open val symbolRules: Map<String, SymbolKind> get() = DEFAULT_SYMBOL_RULES
 
-  override fun validateGrammar(code: String): List<GrammarValidator.ValidationError> {
+  override fun validateGrammar(code: String): List<ValidationError> {
     return try {
       val errorCollector = ErrorCollector()
       val lexer = createLexer(CharStreams.fromString(code)).apply {
@@ -145,9 +131,9 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
     } catch (e: Throwable) {
       log.error("Error validating $languageName grammar", e)
       listOf(
-        GrammarValidator.ValidationError(
+        ValidationError(
           message = "Error validating $languageName grammar: ${e.message}",
-          severity = GrammarValidator.Severity.ERROR
+          severity = Severity.ERROR
         )
       )
     }
@@ -168,6 +154,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       emptyList()
     }
   }
+
   /**
    * Grammar-driven reference extraction: the source is parsed with the real grammar and the
    * resulting tree is walked by [com.simiacryptus.cognotik.text.SymbolReferenceScanner], so literals, comments and keywords
@@ -183,9 +170,11 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       emptyList()
     }
   }
+
   /** Reference-scanner tuning; override for language specific token/rule naming. */
   protected open val referenceOptions: SymbolReferenceScanner.Options
     get() = SymbolReferenceScanner.Options()
+
   /**
    * Parse [code] with all error listeners removed, relying on ANTLR's default error recovery so
    * that partial/invalid sources still yield a (possibly incomplete) tree.
@@ -408,7 +397,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
   ): Boolean = tokens.none { (it.text ?: "").lowercase() in NON_PUBLIC_MODIFIERS }
 
   protected class ErrorCollector : BaseErrorListener() {
-    val errors = mutableListOf<GrammarValidator.ValidationError>()
+    val errors = mutableListOf<ValidationError>()
     override fun syntaxError(
       recognizer: Recognizer<*, *>?,
       offendingSymbol: Any?,
@@ -418,11 +407,11 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       e: RecognitionException?
     ) {
       errors.add(
-        GrammarValidator.ValidationError(
+        ValidationError(
           message = msg ?: "Syntax error",
           line = line,
           column = charPositionInLine,
-          severity = GrammarValidator.Severity.ERROR
+          severity = Severity.ERROR
         )
       )
     }

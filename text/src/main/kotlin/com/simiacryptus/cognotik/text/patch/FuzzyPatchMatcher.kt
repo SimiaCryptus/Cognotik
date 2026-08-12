@@ -91,9 +91,9 @@ open class FuzzyPatchMatcher(
 
     shortDiff.forEach { line ->
       when (line.type) {
-        Companion.LineType.CONTEXT -> patch.append("  ${line.line}\n")
-        Companion.LineType.ADD -> patch.append("+ ${line.line}\n")
-        Companion.LineType.DELETE -> patch.append("- ${line.line}\n")
+        LineType.CONTEXT -> patch.append("  ${line.line}\n")
+        LineType.ADD -> patch.append("+ ${line.line}\n")
+        LineType.DELETE -> patch.append("- ${line.line}\n")
       }
     }
     return patch.toString().trimEnd()
@@ -166,10 +166,10 @@ open class FuzzyPatchMatcher(
     val toRemove = mutableListOf<Pair<Int, Int>>()
     var i = 0
     while (i < diff.size - 1) {
-      if (diff[i].type == Companion.LineType.DELETE) {
+      if (diff[i].type == LineType.DELETE) {
         var j = i + 1
-        while (j < diff.size && diff[j].type != Companion.LineType.CONTEXT) {
-          if (diff[j].type == Companion.LineType.ADD && diff[i].index != -1 && diff[j].index != -1 && normalizeLine(
+        while (j < diff.size && diff[j].type != LineType.CONTEXT) {
+          if (diff[j].type == LineType.ADD && diff[i].index != -1 && diff[j].index != -1 && normalizeLine(
               diff[i].line ?: ""
             ) == normalizeLine(diff[j].line ?: "")
           ) {
@@ -207,8 +207,8 @@ open class FuzzyPatchMatcher(
       for (j in i + 1 until matchedSourceLines.size) {
         val later = matchedSourceLines[j]
         if (later.matchingLine!!.index < current.matchingLine!!.index) {
-          current.type = Companion.LineType.DELETE
-          current.matchingLine!!.type = Companion.LineType.ADD
+          current.type = LineType.DELETE
+          current.matchingLine!!.type = LineType.ADD
           if (debug) log.debug("Marked moved line: Source[${current.index}] as DELETE, Patch[${current.matchingLine!!.index}] as ADD")
           break
         }
@@ -238,21 +238,21 @@ open class FuzzyPatchMatcher(
     while (newLine != null) {
       val sourceLine = newLine.matchingLine
       when {
-        sourceLine == null || newLine.type == Companion.LineType.ADD -> {
-          diff.add(LineRecord(newLine.index, newLine.line, type = Companion.LineType.ADD))
+        sourceLine == null || newLine.type == LineType.ADD -> {
+          diff.add(LineRecord(newLine.index, newLine.line, type = LineType.ADD))
           if (debug) log.debug("Added ADD line: ${newLine.line}")
         }
 
         else -> {
           var priorSourceLine = sourceLine.previousLine
           val lineBuffer = mutableListOf<LineRecord>()
-          while (priorSourceLine != null && (priorSourceLine.matchingLine == null || priorSourceLine.type == Companion.LineType.DELETE)) {
+          while (priorSourceLine != null && (priorSourceLine.matchingLine == null || priorSourceLine.type == LineType.DELETE)) {
 
-            lineBuffer.add(LineRecord(-1, priorSourceLine.line, type = Companion.LineType.DELETE))
+            lineBuffer.add(LineRecord(-1, priorSourceLine.line, type = LineType.DELETE))
             priorSourceLine = priorSourceLine.previousLine
           }
           diff.addAll(lineBuffer.reversed())
-          diff.add(LineRecord(newLine.index, newLine.line, type = Companion.LineType.CONTEXT))
+          diff.add(LineRecord(newLine.index, newLine.line, type = LineType.CONTEXT))
           if (debug) log.debug("Added CONTEXT line: ${sourceLine.line}")
         }
       }
@@ -280,11 +280,11 @@ open class FuzzyPatchMatcher(
     for (i in diff.indices) {
       val line = diff[i]
       when {
-        line.type != Companion.LineType.CONTEXT -> {
+        line.type != LineType.CONTEXT -> {
           if (contextSize * 2 < contextBuffer.size) {
             if (truncatedDiff.isNotEmpty()) {
               truncatedDiff.addAll(contextBuffer.take(contextSize))
-              truncatedDiff.add(LineRecord(-1, "...", type = Companion.LineType.CONTEXT))
+              truncatedDiff.add(LineRecord(-1, "...", type = LineType.CONTEXT))
             }
             truncatedDiff.addAll(contextBuffer.takeLast(contextSize))
           } else {
@@ -388,14 +388,14 @@ open class FuzzyPatchMatcher(
     while (sourceIndex < sourceLines.size - 1) {
       val codeLine = sourceLines[++sourceIndex]
       when {
-        codeLine.matchingLine?.type == Companion.LineType.DELETE -> {
+        codeLine.matchingLine?.type == LineType.DELETE -> {
           val patchLine = codeLine.matchingLine!!
           if (debug) log.debug("Deleting line: {}", codeLine)
 
           usedPatchLines.add(patchLine)
 
           var nextPatchLine = patchLine.nextLine
-          while (nextPatchLine != null && nextPatchLine.type == Companion.LineType.ADD && !usedPatchLines.contains(
+          while (nextPatchLine != null && nextPatchLine.type == LineType.ADD && !usedPatchLines.contains(
               nextPatchLine
             )
           ) {
@@ -434,7 +434,7 @@ open class FuzzyPatchMatcher(
     // Otherwise, the patch likely doesn't apply to this file
     val isSourceEmpty = sourceLines.isEmpty() || (sourceLines.size == 1 && sourceLines[0].line.isNullOrEmpty())
     if (lastMatchedPatchIndex >= 0 || isSourceEmpty) {
-      patchLines.filter { it.type == Companion.LineType.ADD && !usedPatchLines.contains(it) }.forEach { line ->
+      patchLines.filter { it.type == LineType.ADD && !usedPatchLines.contains(it) }.forEach { line ->
         if (debug) log.debug("Added patch line: {}", line)
         patchedText.add(line.line ?: "")
       }
@@ -462,7 +462,7 @@ open class FuzzyPatchMatcher(
     val buffer = mutableListOf<String>()
     var prevPatchLine = patchLine.previousLine
     while (null != prevPatchLine) {
-      if (prevPatchLine.type != Companion.LineType.ADD || usedPatchLines.contains(prevPatchLine)) {
+      if (prevPatchLine.type != LineType.ADD || usedPatchLines.contains(prevPatchLine)) {
         break
       }
 
@@ -502,7 +502,7 @@ open class FuzzyPatchMatcher(
 
       while (nextPatchLine != null && (normalizeLine(
           nextPatchLine.line ?: ""
-        ).isEmpty() || (nextPatchLine.matchingLine == null && nextPatchLine.type == Companion.LineType.CONTEXT))
+        ).isEmpty() || (nextPatchLine.matchingLine == null && nextPatchLine.type == LineType.CONTEXT))
       ) {
         if (++innerIterationCount > maxIterations) {
           log.error("Maximum iteration count exceeded in inner loop")
@@ -511,7 +511,7 @@ open class FuzzyPatchMatcher(
         nextPatchLine = nextPatchLine.nextLine
       }
       if (nextPatchLine == null) break
-      if (nextPatchLine.type != Companion.LineType.ADD) break
+      if (nextPatchLine.type != LineType.ADD) break
       if (usedPatchLines.contains(nextPatchLine)) break
       if (debug) log.debug("Added unmatched patch line: {}", nextPatchLine)
       patchedText.add(nextPatchLine.line ?: "")
@@ -544,7 +544,7 @@ open class FuzzyPatchMatcher(
 
     val patchLineMap = patchLines.filter {
       it.line != null && it.matchingLine == null && when (it.type) {
-        Companion.LineType.ADD -> false
+        LineType.ADD -> false
         else -> true
       }
     }.groupBy { normalizeLine(it.line!!) }
@@ -595,7 +595,7 @@ open class FuzzyPatchMatcher(
       for (sourceLine in sourceLines) {
         val patchLine = sourceLine.matchingLine ?: continue
         // Skip if we've already processed this line
-        if (patchLine.type == Companion.LineType.ADD) continue
+        if (patchLine.type == LineType.ADD) continue
         val pairKey = Pair(sourceLine.index, patchLine.index)
         if (!processedPairs.add(pairKey)) continue
 
@@ -747,9 +747,9 @@ open class FuzzyPatchMatcher(
             else -> content
           }
         }, type = when {
-          content.startsWith("+") && !content.startsWith("+++") -> Companion.LineType.ADD
-          content.startsWith("-") && !content.startsWith("---") -> Companion.LineType.DELETE
-          else -> Companion.LineType.CONTEXT
+          content.startsWith("+") && !content.startsWith("+++") -> LineType.ADD
+          content.startsWith("-") && !content.startsWith("---") -> LineType.DELETE
+          else -> LineType.CONTEXT
         }
       )
     }.filter { it.line != null }).toMutableList()
@@ -782,7 +782,7 @@ open class FuzzyPatchMatcher(
       }
       swapped = false
       for (i in 0 until patchLines.size - 1) {
-        if (patchLines[i].type == Companion.LineType.ADD && patchLines[i + 1].type == Companion.LineType.DELETE) {
+        if (patchLines[i].type == LineType.ADD && patchLines[i + 1].type == LineType.DELETE) {
           swapped = true
           val addLine: LineRecord = patchLines[i]
           val deleteLine: LineRecord = patchLines[i + 1]
@@ -830,7 +830,10 @@ open class FuzzyPatchMatcher(
         log.error("Circular reference detected in findPreviousValidLine")
         return null
       }
-      if ((skipAdd && current.type == Companion.LineType.ADD) || (skipEmpty && normalizeLine(current.line ?: "").isEmpty())) {
+      if ((skipAdd && current.type == LineType.ADD) || (skipEmpty && normalizeLine(
+          current.line ?: ""
+        ).isEmpty())
+      ) {
         current = current.previousLine
       } else {
         return current
@@ -858,7 +861,10 @@ open class FuzzyPatchMatcher(
         log.error("Circular reference detected in findNextValidLine")
         return null
       }
-      if ((skipAdd && current.type == Companion.LineType.ADD) || (skipEmpty && normalizeLine(current.line ?: "").isEmpty())) {
+      if ((skipAdd && current.type == LineType.ADD) || (skipEmpty && normalizeLine(
+          current.line ?: ""
+        ).isEmpty())
+      ) {
         current = current.nextLine
       } else {
         return current
@@ -1043,7 +1049,7 @@ open class FuzzyPatchMatcher(
       var previousLine: LineRecord? = null,
       var nextLine: LineRecord? = null,
       var matchingLine: LineRecord? = null,
-      var type: LineType = Companion.LineType.CONTEXT
+      var type: LineType = LineType.CONTEXT
     )
 
     /** Logger instance for the patch processor. */

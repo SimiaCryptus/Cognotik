@@ -40,9 +40,9 @@ validation, and security.
 ### Validation Framework
 
 * **`GrammarValidator`**: An interface for validating code syntax.
-  * **`KotlinGrammarValidator`**: Uses ANTLR to perform full syntax validation for Kotlin code.
-  * **`ParenMatchingValidator`**: A lightweight validator that checks for balanced braces, brackets, parentheses, and
-    quotes.
+    * **`KotlinGrammarValidator`**: Uses ANTLR to perform full syntax validation for Kotlin code.
+    * **`ParenMatchingValidator`**: A lightweight validator that checks for balanced braces, brackets, parentheses, and
+      quotes.
 * **`ValidatedObject`**: An interface that provides recursive field-level validation for data models, ensuring that
   nested objects also conform to their validation logic.
 
@@ -64,8 +64,8 @@ validation, and security.
 ### Miscellaneous Utilities
 
 * **`StringUtil`**: Common string manipulations like whitespace prefix/suffix detection and stripping.
-* **`StringSplitter`**: Splits text into parts based on weighted separators, attempting to find natural break points (
-  like sentences or spaces).
+* **`StringSplitter`**: Splits text into parts based on weighted separators, attempting to find natural break points
+  (like sentences or spaces).
 * **`EventDispatcher`**: A simple implementation of the Observer pattern for notifying listeners of events.
 * **`MultiExeption`**: A container for multiple throwables, useful when reporting errors from parallel operations.
 * **`Selenium`**: An interface defining basic browser automation capabilities.

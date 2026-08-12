@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.text.validate
 
-import kotlin.text.iterator
-
 /**
  * A grammar validator that checks for balanced parentheses, brackets, braces, and quotes
  */

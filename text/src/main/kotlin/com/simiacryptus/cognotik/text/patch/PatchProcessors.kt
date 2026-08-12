@@ -54,7 +54,7 @@ enum class PatchProcessors : PatchProcessor {
     override val matcher = FuzzyPatchMatcher()
   },
 
-  Python {;
+  Python {
     override val label = "Python"
     override val matcher = PythonPatcher()
   };

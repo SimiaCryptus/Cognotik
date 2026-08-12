@@ -68,6 +68,7 @@ interface PatchParser {
         return null
       }
     }
+
     fun Path.removeAllUpperDirectories(): Path =
       this.pathString.split("/").dropWhile { it == "." || it == ".." }.joinToString("/").let { Path.of(it) }
 
@@ -185,21 +186,21 @@ ${TRIPLE_TILDE}
   private fun parseExplicitMarkers(response: String, defaultFile: String?): List<ResponseSegment> {
     val segments = mutableListOf<ResponseSegment>()
     var lastEnd = 0
-     var lastExplicitFilename: String? = null
-     var lastExplicitBlockType: String? = null
+    var lastExplicitFilename: String? = null
+    var lastExplicitBlockType: String? = null
     for (match in EXPLICIT_BLOCK_PATTERN.findAll(response)) {
       // Add any preceding text as markdown
       if (match.range.first > lastEnd) {
         val preceding = response.substring(lastEnd, match.range.first).trim()
         if (preceding.isNotBlank()) {
-           // Check for chained code blocks between <<<END>>> and next <<<DIFF/FILE>>>
-           // These are continuation diffs for the previous file
-           val chainedSegments = parseChainedCodeBlocks(preceding, lastExplicitFilename, lastExplicitBlockType)
-           if (chainedSegments != null) {
-             segments.addAll(chainedSegments)
-           } else {
-             segments.add(ResponseSegment.Markdown(preceding))
-           }
+          // Check for chained code blocks between <<<END>>> and next <<<DIFF/FILE>>>
+          // These are continuation diffs for the previous file
+          val chainedSegments = parseChainedCodeBlocks(preceding, lastExplicitFilename, lastExplicitBlockType)
+          if (chainedSegments != null) {
+            segments.addAll(chainedSegments)
+          } else {
+            segments.add(ResponseSegment.Markdown(preceding))
+          }
         }
       }
       val blockType = match.groupValues[1].uppercase()
@@ -230,17 +231,17 @@ ${TRIPLE_TILDE}
               )
             )
           }
-           lastExplicitFilename = normalizedName
-           lastExplicitBlockType = blockType
+          lastExplicitFilename = normalizedName
+          lastExplicitBlockType = blockType
         } else {
           segments.add(ResponseSegment.Markdown(match.value))
-           lastExplicitFilename = null
-           lastExplicitBlockType = null
+          lastExplicitFilename = null
+          lastExplicitBlockType = null
         }
       } else {
         segments.add(ResponseSegment.Markdown(match.value))
-         lastExplicitFilename = null
-         lastExplicitBlockType = null
+        lastExplicitFilename = null
+        lastExplicitBlockType = null
       }
       lastEnd = match.range.last + 1
     }
@@ -248,69 +249,69 @@ ${TRIPLE_TILDE}
     if (lastEnd < response.length) {
       val trailing = response.substring(lastEnd).trim()
       if (trailing.isNotBlank()) {
-         // Check for chained code blocks after the last <<<END>>>
-         val chainedSegments = parseChainedCodeBlocks(trailing, lastExplicitFilename, lastExplicitBlockType)
-         if (chainedSegments != null) {
-           segments.addAll(chainedSegments)
-         } else {
-           segments.add(ResponseSegment.Markdown(trailing))
-         }
+        // Check for chained code blocks after the last <<<END>>>
+        val chainedSegments = parseChainedCodeBlocks(trailing, lastExplicitFilename, lastExplicitBlockType)
+        if (chainedSegments != null) {
+          segments.addAll(chainedSegments)
+        } else {
+          segments.add(ResponseSegment.Markdown(trailing))
+        }
       }
     }
     return segments
   }
 
-   /**
-    * Parses text that may contain chained code blocks (code fences followed by <<<END>>> markers)
-    * that should inherit the filename from a preceding explicit marker block.
-    * Returns null if the text doesn't look like chained code blocks.
-    */
-   private fun parseChainedCodeBlocks(
-     text: String,
-     inheritedFilename: String?,
-     inheritedBlockType: String?
-   ): List<ResponseSegment>? {
-     if (inheritedFilename == null) return null
-     // Pattern: optional whitespace/markdown, then one or more (```...``` <<<END>>>) sequences
-     val chainedBlockPattern = """```(\w*)\n(.*?)```\s*\n\s*<<<END>>>""".toRegex(RegexOption.DOT_MATCHES_ALL)
-     val matches = chainedBlockPattern.findAll(text).toList()
-     if (matches.isEmpty()) return null
-     // Verify that the non-matched content is only whitespace/blank lines
-     var remaining = text
-     for (match in matches) {
-       remaining = remaining.replace(match.value, "")
-     }
-     remaining = remaining.replace(END_MARKER_LINE_PATTERN, "").trim()
-     if (remaining.isNotBlank()) {
-       // There's significant non-code-block content; not a pure chain
-       return null
-     }
-     val segments = mutableListOf<ResponseSegment>()
-     for (match in matches) {
-       val lang = match.groupValues[1]
-       val code = match.groupValues[2]
-       val isDiff = (inheritedBlockType == "DIFF") || isDiffContent(lang, code)
-       if (isDiff) {
-         segments.add(
-           ResponseSegment.DiffBlock(
-             filename = inheritedFilename,
-             content = code.trimEnd(),
-             originalRange = IntRange.EMPTY
-           )
-         )
-       } else {
-         segments.add(
-           ResponseSegment.NewFileBlock(
-             filename = inheritedFilename,
-             language = lang,
-             content = code.trimIndent().trimEnd(),
-             originalRange = IntRange.EMPTY
-           )
-         )
-       }
-     }
-     return segments
-   }
+  /**
+   * Parses text that may contain chained code blocks (code fences followed by <<<END>>> markers)
+   * that should inherit the filename from a preceding explicit marker block.
+   * Returns null if the text doesn't look like chained code blocks.
+   */
+  private fun parseChainedCodeBlocks(
+    text: String,
+    inheritedFilename: String?,
+    inheritedBlockType: String?
+  ): List<ResponseSegment>? {
+    if (inheritedFilename == null) return null
+    // Pattern: optional whitespace/markdown, then one or more (```...``` <<<END>>>) sequences
+    val chainedBlockPattern = """```(\w*)\n(.*?)```\s*\n\s*<<<END>>>""".toRegex(RegexOption.DOT_MATCHES_ALL)
+    val matches = chainedBlockPattern.findAll(text).toList()
+    if (matches.isEmpty()) return null
+    // Verify that the non-matched content is only whitespace/blank lines
+    var remaining = text
+    for (match in matches) {
+      remaining = remaining.replace(match.value, "")
+    }
+    remaining = remaining.replace(END_MARKER_LINE_PATTERN, "").trim()
+    if (remaining.isNotBlank()) {
+      // There's significant non-code-block content; not a pure chain
+      return null
+    }
+    val segments = mutableListOf<ResponseSegment>()
+    for (match in matches) {
+      val lang = match.groupValues[1]
+      val code = match.groupValues[2]
+      val isDiff = (inheritedBlockType == "DIFF") || isDiffContent(lang, code)
+      if (isDiff) {
+        segments.add(
+          ResponseSegment.DiffBlock(
+            filename = inheritedFilename,
+            content = code.trimEnd(),
+            originalRange = IntRange.EMPTY
+          )
+        )
+      } else {
+        segments.add(
+          ResponseSegment.NewFileBlock(
+            filename = inheritedFilename,
+            language = lang,
+            content = code.trimIndent().trimEnd(),
+            originalRange = IntRange.EMPTY
+          )
+        )
+      }
+    }
+    return segments
+  }
 
   private data class CodeBlockMatch(
     val language: String, val code: String, val range: IntRange
@@ -637,6 +638,7 @@ ${TRIPLE_TILDE}
       }
     }.isEmpty()
   }
+
   private fun List<ResponseSegment>.maybeResolveFilenames(root: Path?): List<ResponseSegment> {
     if (root == null) return this
     return map { segment ->
