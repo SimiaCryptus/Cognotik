@@ -1,7 +1,7 @@
 ---
 transforms:
-  - ../../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/(.*?)Models\.kt -> $1.md
-  - ../../../providers/src/main/kotlin/com/simiacryptus/cognotik/providers/(.*?)Provider\.kt -> $1.md
+  - ../../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/(.*?)Models\.kt -> ../models/$1.md
+  - ../../../providers/src/main/kotlin/com/simiacryptus/cognotik/providers/(.*?)Provider\.kt -> ../models/$1.md
 ---
 
 # Task: Supported Model Provider Page

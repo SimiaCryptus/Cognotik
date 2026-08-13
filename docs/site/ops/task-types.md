@@ -1,7 +1,7 @@
 ---
 transforms:
-  - ../../../(tasklib/.*)/(.*?)Task.kt -> $2.md
-  - ../../../(webui/.*)/(.*?)Task.kt -> $2.md
+  - ../../../(tasklib/.*)/(.*?)Task.kt -> ../task-types/$2.md
+  - ../../../(webui/.*)/(.*?)Task.kt -> ../task-types/$2.md
 ---
 
 # Task: Task-Type Product Page

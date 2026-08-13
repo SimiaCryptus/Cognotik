@@ -1,6 +1,6 @@
 ---
 transforms:
-  - ../../../fileserver/src/main/resources/web/util/(.*)/README\.md -> $1.md
+  - ../../../fileserver/src/main/resources/web/util/(.*)/README\.md -> ../devtools/$1.md
 ---
 
 # Task: Dev Tool Feature Page

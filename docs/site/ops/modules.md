@@ -1,7 +1,7 @@
 ---
 transforms:
-- ../../../([^/]*)/build.gradle.kts -> $1.md
-- ../../../([^/]*)/README.md -> $1.md
+- ../../../([^/]*)/build.gradle.kts -> ../modules/$1.md
+- ../../../([^/]*)/README.md -> ../modules/$1.md
 ---
 
 # Task: Module Feature Page

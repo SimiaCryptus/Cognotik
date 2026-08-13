@@ -1,5 +1,5 @@
 ---
-transforms: ../([^/\.]+)/([^/]+).md -> $1.json
+transforms: ../([^/\.]+)/([^/]+).md -> ../menu/$1.json
 related:
   - menu_schema.ts
 ---

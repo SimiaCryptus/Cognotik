@@ -1,6 +1,6 @@
 ---
 transforms:
-  - ../../../desktop/src/main/resources/apps/(.*)/README\.md -> $1.md
+  - ../../../desktop/src/main/resources/apps/(.*)/README\.md -> ../apps/$1.md
 ---
 
 # Task: DocOps App Showcase Page
