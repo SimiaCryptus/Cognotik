@@ -1,6 +1,12 @@
 {
   "apps": [
     {
+       "slug": "tool",
+       "name": "Build Tool",
+       "shortDescription": "Wire Cognotik into your Gradle build and CI/CD pipeline for AI-powered code review and auto-fixing.",
+       "file": "tool.md"
+     },
+     {
       "slug": "cli",
       "name": "CLI",
       "shortDescription": "Run Cognotik from the terminal via the lightweight docops-driven fileserver script.",
