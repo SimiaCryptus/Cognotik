@@ -1,5 +1,5 @@
 {
-  "lastUpdated" : "2026-08-13T21:47:27.669315970Z",
+  "lastUpdated" : "2026-08-13T21:56:28.429103787Z",
   "tasks" : {
     "docs/site/menu/devtools.json" : {
       "target" : "docs/site/menu/devtools.json",
@@ -153,6 +153,13 @@
       "sessionId" : "U-20260813-NP5EM4bc",
       "startedAt" : "2026-08-13T21:47:23.073241117Z",
       "completedAt" : "2026-08-13T21:47:27.669315970Z"
+    },
+    "docs/site/ways-to-run/tool.md" : {
+      "target" : "docs/site/ways-to-run/tool.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-URZnCSEy",
+      "startedAt" : "2026-08-13T21:56:17.026736510Z",
+      "completedAt" : "2026-08-13T21:56:28.429103787Z"
     }
   }
 }

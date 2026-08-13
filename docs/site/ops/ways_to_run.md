@@ -6,6 +6,8 @@ transforms:
   - ../../../cli/bin/fileserver -> ../ways-to-run/cli.md
   - ../../../intellij/README.md -> ../ways-to-run/intellij.md
   - ../../../intellij/build.gradle.kts -> ../ways-to-run/intellij.md
+  - ../../../tool/README.md -> ../ways-to-run/tool.md
+  - ../../../tool/build.gradle.kts -> ../ways-to-run/tool.md
 ---
 
 # Task: "Ways to Run Cognotik" — Per-Surface Page
