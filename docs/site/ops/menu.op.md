@@ -6,15 +6,13 @@ related:
 
 # Task: Build the Apps Gallery Menu
 
-You are producing **`menu.json`**, the data file that drives the Cognotik website's App Gallery (card grid and
+You are producing **`menu.json`**, the data file that drives the Cognotik website's Documentation App (card grid and
 navigation menu). Rather than transforming a single document, this task **summarizes every app showcase page**
 in this directory into one compact list. The output must conform exactly to the `AppMenu` / `AppMenuEntry` shape defined in `menu_schema.ts`.
 
 ## Goal
 
-For every app that has a generated showcase page (`*.md` in this directory, excluding this file), produce one
-`AppMenuEntry` containing just enough information to render a gallery card and a nav link — without requiring the
-reader to open the full page first.
+For every markdown document, produce one `AppMenuEntry` containing just enough information to render a gallery card and a nav link — without requiring the reader to open the full page first.
 
 ## What to Read
 

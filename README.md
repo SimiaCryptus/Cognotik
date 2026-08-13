@@ -28,6 +28,7 @@ applications to a full document-operations pipeline.
 curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
 chmod +x fileserver
 ./fileserver
+
 # Option 2: Clone and build from source
 # Clone the repository
 git clone https://github.com/SimiaCryptus/Cognotik.git

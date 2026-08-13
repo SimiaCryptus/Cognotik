@@ -3,6 +3,12 @@
 A minimal, dependency-light front end for the `docops` engine. It exists to show the smallest correct way to drive
 `DocOps` from a terminal.
 
+```shell
+curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
+chmod +x fileserver
+./fileserver
+```
+
 ## Lifecycle
 
   ```
