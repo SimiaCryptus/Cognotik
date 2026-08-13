@@ -1,0 +1,45 @@
+# Task Types
+
+Reference documentation for every orchestrated task type available to Cognotik's planner — what each one does, how to configure it, and how it fits into an orchestration plan.
+
+- [AbstractTask](./Abstract.md) — Base infrastructure class for all orchestrated task types — not directly instantiable or user-selectable.
+- [AbstractFileTask](./AbstractFile.md) — File-context resolution base for all filesystem-aware tasks.
+- [GenerateAudio](./AudioGeneration.md) — AI-driven audio synthesis task — narration, voice-over, and sound-effect generation with reference-audio context.
+- [AutoFix Task](./AutoFix.md) — Execute build/test commands and iteratively patch code until they pass.
+- [Brainstorming](./Brainstorming.md) — Generate and independently analyze multiple solution options, then converge on a ranked recommendation.
+- [Coding Task](./Coding.md) — Generate, execute, and iteratively repair code from natural-language and chat context — with an in-UI Run/Retry loop.
+- [ComicBookGeneration](./ComicBookGeneration.md) — Generates a structured comic book script (page/row/frame) from a subject prompt, optionally rendering character reference sheets and per-row comic strip visuals via an image model.
+- [CommandSession](./CommandSession.md) — Spin up a persistent, stateful interactive terminal (bash, python, or any interactive process) and drive it with a sequence of stdin inputs — across multiple task calls, if given a `sessionId`.
+- [CrawlerAgent](./CrawlerAgent.md) — Search, fetch, and analyze the web — with a persistent, resumable link database.
+- [CreateErbTemplate](./CreateErbTemplate.md) — Generate ERB-style templates with AI-assisted schema design and multi-format output.
+- [DataIngest](./DataIngest.md) — Iteratively parse unstructured logs/text into structured data using LLM-discovered regex patterns.
+- [DialecticalReasoning](./DialecticalReasoning.md) — Resolve contradictions between two opposing positions through a structured thesis → antithesis → contradictions → iterative synthesis → final integration pipeline.
+- [Discussion](./Discussion.md) — Direct LLM Q&A with optional file context — no side effects, no file mutation.
+- [FileModification](./FileModification.md) — Modify existing files or create new files with AI-assisted patch generation and diff review.
+- [FileReview](./FileReview.md) — Read files and report on requested details — without touching them.
+- [FileSearch](./FileSearch.md) — Pattern-based search across project files with contextual, grouped results.
+- [FiniteStateMachine](./FiniteStateMachine.md) — Model concepts, systems, and processes using rigorous finite state machine analysis.
+- [GameTheory](./GameTheory.md) — Strategic-interaction analysis engine — Nash equilibria, dominant strategies, and Pareto optimality on demand.
+- [GenerateAudioFiles](./GenerateAudioFiles.md) — Render a spoken-word script into per-segment audio files plus a JSON manifest, with voice/silence directives and a two-phase script-generation option.
+- [HistoricalFigureDebate](./HistoricalFigureDebate.md) — Stage a multi-round, in-character debate between historical figures on any topic, with optional neutral moderator framing and a final impartial synthesis.
+- [IllustrateDocument](./IllustrateDocument.md) — Analyze a Markdown/HTML document and generate contextually-relevant images, then patch them into the source.
+- [GenerateImage](./ImageGeneration.md) — Create high-quality images from text descriptions using AI image generation models (e.g. DALL·E-class models).
+- [IterativeFileModification](./IterativeFileModification.md) — Multi-phase file modification with planning and iterative implementation.
+- [LanguageServer](./LanguageServer.md) — Query code intelligence directly from real Language Server Protocol implementations — definitions, references, hover, and diagnostics, with zero mutation of source files.
+- [MCPTool](./MCPTool.md) — Execute tools from Model Context Protocol (MCP) servers directly inside an orchestration plan.
+- [MultiPerspectiveAnalysis](./MultiPerspectiveAnalysis.md) — Analyze a subject from multiple independent viewpoints, then synthesize the results into a unified conclusion.
+- [NarrativeGeneration](./NarrativeGeneration.md) — Generate complete, publication-ready narratives from a subject/premise via multi-pass outlining and iterative scene writing.
+- [PersuasiveEssay](./PersuasiveEssay.md) — Generate compelling, structured persuasive essays with rhetorical arguments, counterarguments, and optional AI-generated illustrations.
+- [RenderErbTemplate](./RenderErbTemplate.md) — Render ERB-style templates with dynamic data
+- [RunCode](./RunCode.md) — Execute code snippets in an interactive runtime, with optional auto-fix and interactive review.
+- [RunTool](./RunTool.md) — Execute external CLI tools with custom arguments — compilers, linters, search utilities, or arbitrary scripts, run under human or auto-approved control.
+- [SeleniumFetch](./SeleniumFetch.md) — Headless-Chrome page capture: screenshot, DOM, console, and network log in one shot.
+- [SessionTask](./Session.md) — Real-time streaming UI primitive for session-scoped task output.
+- [SingleFix](./SingleFix.md) — Analyze a log file and patch the errors it reveals — no command execution, one deterministic pass.
+- [SocraticDialogue](./SocraticDialogue.md) — Explore ideas through structured, adversarial-collaborative Socratic questioning between two LLM agents.
+- [SubPlan](./SubPlan.md) — Recursive planning task that spawns a nested cognitive-mode session to solve a sub-goal, then aggregates and summarizes its results.
+- [SymbolsDbCode](./SymbolsDbCode.md) — Execute code snippets with predefined symbols, wired to a project-wide symbol graph.
+- [TechnicalExplanation](./TechnicalExplanation.md) — Turns a complex technical topic into an audience-calibrated, multi-section explanation — outline, sections, analogies, code examples, comparisons, and optional revision passes — assembled into one markdown document.
+- [TutorialGeneration](./TutorialGeneration.md) — Generate complete, step-by-step tutorials for processes and projects — outline, prerequisites, per-step instructions, troubleshooting, and next-steps, assembled into a publication-ready Markdown document.
+- [UnrunnableProtocolDialog](./UnrunnableProtocolDialog.md) — Analyze any concept through dense, pseudo-code "Unrunnable Protocol" frameworks — paired with a built-in skeptic that audits the framework for pattern worship before you believe it.
+- [WriteHtml](./WriteHtml.md) — Generate complete, self-contained HTML pages with embedded CSS/JS — and optional AI-generated imagery — in one orchestrated multi-step pipeline.

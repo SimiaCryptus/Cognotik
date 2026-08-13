@@ -1,10 +1,3 @@
----
-title: Anthropic Models
-related:
-  - https://docs.anthropic.com/en/docs/about-claude/models
-  - https://www.anthropic.com/pricing
----
-
 # Anthropic Models
 
 Claude models from Anthropic, available through Cognotik via Bring-Your-Own-Key (BYOK) chat access.
