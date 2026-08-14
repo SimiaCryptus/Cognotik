@@ -723,7 +723,6 @@ class LoginServlet : HttpServlet() {
             val user = User(
                 email = username,
                 name = username,
-                id = username,
             )
             val fileServices = try {
                 ApplicationServices.fileApplicationServices()
@@ -925,7 +924,6 @@ class LoginServlet : HttpServlet() {
             val user = User(
                 email = username,
                 name = username,
-                id = username
             )
             val fileServices = try {
                 ApplicationServices.fileApplicationServices()

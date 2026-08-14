@@ -83,13 +83,13 @@ open class DataStorage(
       return systemPaths[session]!!
     }
     Session.validateSessionId(session)
-    log.debug("Getting data directory for session: {}, user: {}", session, user?.email)
+    log.debug("Getting data directory for session: {}, user: {}", session, user?.id)
     val parts = session.sessionId.split("-")
     return when (parts.size) {
       3 -> {
         val root = when {
           parts[0] == "G" -> dataDir.resolve("global")
-          parts[0] == "U" -> dataDir.resolve("user-sessions/$user")
+          parts[0] == "U" -> dataDir.resolve("user-sessions/${user?.id}")
           else -> throw IllegalArgumentException("Invalid session ID: $session")
         }
         val dateDir = File(root, parts[1])

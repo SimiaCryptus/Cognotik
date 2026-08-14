@@ -1,5 +1,5 @@
 {
-  "lastUpdated" : "2026-08-13T22:00:33.216036989Z",
+  "lastUpdated" : "2026-08-14T20:01:14.256468483Z",
   "tasks" : {
     "docs/site/menu/devtools.json" : {
       "target" : "docs/site/menu/devtools.json",
@@ -160,6 +160,13 @@
       "sessionId" : "U-20260813-URZnCSEy",
       "startedAt" : "2026-08-13T21:56:17.026736510Z",
       "completedAt" : "2026-08-13T21:56:28.429103787Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260814-L9DGPRQl",
+      "startedAt" : "2026-08-14T20:00:53.086023983Z",
+      "completedAt" : "2026-08-14T20:01:14.256468483Z"
     }
   }
 }

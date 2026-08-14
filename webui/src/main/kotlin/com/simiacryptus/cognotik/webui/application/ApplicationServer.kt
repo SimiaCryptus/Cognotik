@@ -337,7 +337,6 @@ class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
       User(
         name = username,
         email = email,
-        id = email
       )
     }
     if (null != claimedUser) {

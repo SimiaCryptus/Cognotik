@@ -44,7 +44,6 @@ object ApplicationServicesConfig {
   //@JvmStatic
   @Volatile
   var defaultUser: User = User(
-    id = "1",
     email = "user@localhost"
   )
 

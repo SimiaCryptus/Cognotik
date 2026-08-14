@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.platform.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
+
 /**
  * Platform user identity.
  *
@@ -12,8 +13,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class User(
   @get:JsonProperty("email") val email: String,
   @get:JsonProperty("name") val name: String = email,
-  @get:JsonProperty("id") val id: String = email,
+
 ) {
+  @get:JsonIgnore
+  val id: String by lazy { email.hexHash().take(20) }
 
   /** Typed form of [id]. */
   @get:JsonIgnore
@@ -29,7 +32,7 @@ data class User(
    * Deliberately redacted: this value ends up in log lines.
    * Use [email] explicitly when the real address is required.
    */
-  override fun toString() = redactedEmail
+  override fun toString() = id
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -49,7 +52,6 @@ data class User(
       ReplaceWith("Principal.Anonymous")
     )
     val NULL: User = User(
-      id = "0",
       email = "null@localhost"
     )
 
@@ -62,3 +64,9 @@ data class User(
 
 }
 
+
+fun String.hexHash(): String {
+  val digest = java.security.MessageDigest.getInstance("SHA-256")
+  val hashBytes = digest.digest(this.toByteArray(Charsets.UTF_8))
+  return hashBytes.joinToString("") { "%02x".format(it) }
+}

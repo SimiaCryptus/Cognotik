@@ -295,7 +295,6 @@ package com.simiacryptus.cognotik.cli
             "unknown provider '$name'. Known providers: " + providers().joinToString(", ") { it.name })
 
       private fun defaultUser(email: String?): User = User(
-        id = "1",
         email = email
           ?: System.getenv("EMAIL")
           ?: System.getProperty("user.email")
