@@ -29,13 +29,7 @@ export const SECTIONS = [
         icon: '⚒',
         blurb: 'Agentic tooling bundled with every project.',
         dir: 'devtools',
-        // No JSON menu exists for this folder, so the pages are declared inline.
-        pages: [
-            {slug: 'builder', name: 'Builder', file: 'builder.md'},
-            {slug: 'coder', name: 'Coder', file: 'coder.md'},
-            {slug: 'greenfield', name: 'Greenfield', file: 'greenfield.md'},
-            {slug: 'reviewer', name: 'Reviewer', file: 'reviewer.md'}
-        ]
+        menu: '/docs/menu/devtools.json'
     },
     {
         id: 'models',

@@ -1,0 +1,28 @@
+{
+  "apps": [
+    {
+      "slug": "builder",
+      "name": "Builder",
+      "shortDescription": "Researches an unfamiliar repo and turns the answer into an executable build.sh.",
+      "file": "builder.md"
+    },
+    {
+      "slug": "coder",
+      "name": "Code Research",
+      "shortDescription": "Research, summarize, follow-up, and execute pipeline over a codebase.",
+      "file": "coder.md"
+    },
+    {
+      "slug": "greenfield",
+      "name": "Greenfield Implementer",
+      "shortDescription": "Takes a one-paragraph product idea to a working, tested, documented project skeleton.",
+      "file": "greenfield.md"
+    },
+    {
+      "slug": "reviewer",
+      "name": "Reviewer",
+      "shortDescription": "Schema-driven code review pipeline that turns AI findings into runnable follow-up tasks.",
+      "file": "reviewer.md"
+    }
+  ]
+}
