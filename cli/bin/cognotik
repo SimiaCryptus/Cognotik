@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 #
-# Launcher for the Cognotik FileServer CLI.
+# Launcher for Cognotik CLI tools (a "swiss army" launcher).
 #
-# Works both from a source checkout (cli/bin/fileserver) and as a standalone
+# Works both from a source checkout (cli/bin/cognotik) and as a standalone
 # download anywhere on your machine (it will fetch a released fat jar).
 #
 # Usage:
-#   ./fileserver [options] [--] [args passed to FileServerCli...]
+#   ./cognotik <action> [options] [--] [args passed to the selected CLI...]
+#
+# Actions:
+#   fileserver, fs   -> com.simiacryptus.cognotik.cli.FileServerCli
+#   keys             -> com.simiacryptus.cognotik.cli.ApiKeysCli
+#   docops           -> com.simiacryptus.cognotik.cli.DocOpsCli
+#   autofix          -> com.simiacryptus.cognotik.cli.AutoFixCli
 #
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
@@ -53,17 +59,30 @@ else
 PROJECT_ROOT=""            # standalone: download a release jar instead
 LIBS_DIR="$CACHE_DIR"
 fi
-MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli"
 REPO="${COGNOTIK_REPO:-SimiaCryptus/Cognotik}"
 VERSION="${COGNOTIK_VERSION:-latest}"
 
-log() { printf 'fileserver: %s\n' "$*" >&2; }
+log() { printf 'cognotik: %s\n' "$*" >&2; }
 die() { log "$*"; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 usage() {
   awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print; next } else exit }' "$self"
 }
+# --- Required action selects the main class -------------------------------------
+case "${1:-}" in
+   -h|--help) usage; exit 0 ;;
+esac
+[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix)"; }
+ACTION="$1"; shift
+case "$ACTION" in
+   fileserver|fs) MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli" ;;
+   keys)          MAIN_CLASS="com.simiacryptus.cognotik.cli.ApiKeysCli" ;;
+   docops)        MAIN_CLASS="com.simiacryptus.cognotik.cli.DocOpsCli" ;;
+   autofix)       MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli" ;;
+   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix)" ;;
+esac
+
 
 # --- Parse our own options; stop at the first unknown arg ----------------------
 build_mode=auto
