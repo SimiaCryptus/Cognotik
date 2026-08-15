@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatMessageModality
@@ -45,9 +46,9 @@ class XAIChatClient(
   override fun authorize(
     request: HttpRequest,
   ) {
-    request.addHeader("Content-Type", "application/json")
-    request.addHeader("Accept", "application/json")
-    request.addHeader("Authorization", "Bearer ${apiKey.decrypt}")
+    request.setHeader("Content-Type", "application/json")
+    request.setHeader("Accept", "application/json")
+    request.setHeader("Authorization", "Bearer ${apiKey.decrypt}")
   }
 
   override fun chat(
@@ -59,8 +60,9 @@ class XAIChatClient(
     validateChatRequest(chatRequest, model)
     return withPerformanceLogging {
       val sanitizedRequest = if (model.supportsTemperature) chatRequest else chatRequest.copy(temperature = 0.0)
-      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+      val rawJson = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(sanitizedRequest)
+      val json = sanitizeContentForXAI(rawJson)
       val rawResponse = post("${apiBase}/chat/completions", json)
       checkError(rawResponse)
       val response = JsonUtil.objectMapper().readValue(
@@ -73,6 +75,37 @@ class XAIChatClient(
       response
     }
   }
+
+  /**
+   * The xAI chat/completions endpoint expects OpenAI-style tagged content
+   * parts (e.g. {"type": "text", "text": "..."}). Our internal ChatRequest
+   * model may serialize text-only parts without an explicit "type" field
+   * (e.g. {"text": "..."}), which xAI's untagged-enum deserializer rejects
+   * with "data did not match any variant of untagged enum Content".
+   * This patches the outgoing JSON to add the missing discriminator.
+   */
+  private fun sanitizeContentForXAI(json: String): String {
+    val mapper = JsonUtil.objectMapper()
+    val root = mapper.readTree(json)
+    val messages = root.get("messages")
+    if (messages != null && messages.isArray) {
+      messages.forEach { message ->
+        val content = message.get("content")
+        if (content != null && content.isArray) {
+          content.forEach { part ->
+            if (part is ObjectNode && !part.has("type")) {
+              when {
+                part.has("text") -> part.put("type", "text")
+                part.has("image_url") -> part.put("type", "image_url")
+              }
+            }
+          }
+        }
+      }
+    }
+    return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root)
+  }
+
 
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
