@@ -39,6 +39,9 @@
             margin: 0 auto;
             padding: 1rem 1.25rem 4rem;
         }
+        /* Shared menubar mount */
+        #menubar-mount:empty { display: none; }
+        body.has-menubar .wrap { padding-top: 1.5rem; }
 
         .layout {
             display: grid;
@@ -335,6 +338,8 @@
     </style>
 </head>
 <body>
+<!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
+<div id="menubar-mount"></div>
 
 <div class="wrap">
     <div id="session-banner" class="banner warn hidden"></div>
@@ -521,6 +526,7 @@
         followupExec: 'process_followup.op.md'
     };
     const TASK_TIMEOUT_MS = 30 * 60 * 1000;
+    let menu = null;
 
     const state = {
         ctx: null,
@@ -1620,13 +1626,42 @@ const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
         $('query').addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runPipeline();
         });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menu) {
+                try {
+                    menu.close();
+                } catch (err) { /* ignore */ }
+            }
+        });
 
         window.addEventListener('beforeunload', stopPoller);
+    }
+
+    async function initMenubar() {
+        const mount = $('menubar-mount');
+        try {
+            const {initMenu} = await import('/app/menu.js');
+            menu = initMenu({
+                mount,
+                appName: 'Code Research'
+            });
+            document.body.classList.add('has-menubar');
+            window.addEventListener('pagehide', () => {
+                try {
+                    if (menu) menu.destroy();
+                } catch (e) { /* ignore */ }
+                menu = null;
+            }, {once: true});
+        } catch (e) {
+            console.warn('Menubar unavailable — continuing without it', e);
+            if (mount) mount.remove();
+        }
     }
 
     async function init() {
         restoreSettings();
         wireEvents();
+        initMenubar();
 
         state.ctx = {};
         state.sessionId = state.ctx.sessionId || null;
@@ -1665,15 +1700,6 @@ const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
             $('new-research').disabled = false;
             $('refresh-history').disabled = true;
             return;
-        }
-
-        if (!state.sessionId) {
-            banner.classList.remove('warn');
-            banner.classList.add('info');
-            banner.innerHTML =
-                'Direct file mode — documents are read and written under <code>' +
-                escapeHtml(state.basePath) + '/' + escapeHtml(workDir()) + '/</code>.';
-            banner.classList.remove('hidden');
         }
 
         await refreshHistory();

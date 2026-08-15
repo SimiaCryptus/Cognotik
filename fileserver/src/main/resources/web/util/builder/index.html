@@ -35,6 +35,10 @@
         h1, h2, h3, h4 { margin: 0 0 .5rem; line-height: 1.25; }
 
         .wrap { max-width: 1400px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+        /* Shared menubar mount — /app/menu.js injects its own styles into the head,
+           so this only reserves the slot and collapses when the module is absent. */
+        #menubar-mount:empty { display: none; }
+        body.has-menubar .wrap { padding-top: 1rem; }
 
         .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
 
@@ -341,6 +345,9 @@
     </style>
 </head>
 <body>
+<!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
+<div id="menubar-mount"></div>
+
 
 <div class="wrap">
     <div id="session-banner" class="banner warn hidden"></div>
@@ -348,7 +355,7 @@
     <div class="layout">
         <!-- ───────────────────────── session / settings ───────────────────────── -->
         <aside>
-            <section class="panel">
+            <section class="panel hidden">
                 <h2>Session</h2>
                 <div class="small muted" id="ctx-info">detecting…</div>
             </section>
@@ -557,6 +564,7 @@
         modeStatus: {},
         standalone: false
     };
+    let menu = null;
 
     const $ = (id) => document.getElementById(id);
     const msgOf = (e) => (e && e.message ? e.message : String(e));
@@ -1457,16 +1465,43 @@
             b.addEventListener('click', () => copyText(viewSource(b.dataset.view), b)));
 
         document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menu) {
+                try {
+                    menu.close();
+                } catch (err) { /* ignore */ }
+            }
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runEverything();
         });
 
         window.addEventListener('beforeunload', stopPoller);
     }
+    async function initMenubar() {
+        const mount = $('menubar-mount');
+        try {
+            const {initMenu} = await import('/app/menu.js');
+            menu = initMenu({
+                mount,
+                appName: 'Build System Builder'
+            });
+            document.body.classList.add('has-menubar');
+            window.addEventListener('pagehide', () => {
+                try {
+                    if (menu) menu.destroy();
+                } catch (e) { /* ignore */ }
+                menu = null;
+            }, {once: true});
+        } catch (e) {
+            console.warn('Menubar unavailable — continuing without it', e);
+            if (mount) mount.remove();
+        }
+    }
+
 
     async function init() {
         restoreDraft();
         restoreModeStatus();
         wireEvents();
+        initMenubar();
         $('p-research').textContent = researchFile();
         $('p-script').textContent = scriptFile();
 
@@ -1500,17 +1535,6 @@
             banner.classList.remove('hidden');
             setBusy(true);
             return;
-        }
-
-        if (!state.sessionId) {
-            banner.classList.remove('warn');
-            banner.classList.add('info');
-            banner.innerHTML =
-                'Direct file mode — research is written to <code>' +
-                escapeHtml(state.basePath) + '/' + escapeHtml(researchFile()) +
-                '</code>, the build script to <code>' + escapeHtml(projRel(scriptFile())) +
-                '</code> and generated doc-ops to <code>' + escapeHtml(tmpDir()) + '/</code>.';
-            banner.classList.remove('hidden');
         }
 
         await loadResearch(true);

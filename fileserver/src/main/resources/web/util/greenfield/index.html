@@ -46,6 +46,10 @@
             margin: 0 auto;
             padding: 1rem 1.25rem 4rem;
         }
+         /* Shared menubar mount — /app/menu.js injects its own styles into the head,
+            so this only reserves the slot and collapses when the module is absent. */
+         #menubar-mount:empty { display: none; }
+         body.has-menubar .wrap { padding-top: 1.5rem; }
 
         .layout {
             display: grid;
@@ -661,6 +665,8 @@
     </style>
 </head>
 <body>
+<!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
+<div id="menubar-mount"></div>
 
 <div class="wrap">
     <div id="session-banner" class="banner warn hidden"></div>
@@ -668,7 +674,7 @@
     <div class="layout">
         <!-- ───────────────────────── session / settings ───────────────────────── -->
         <aside>
-            <section class="panel">
+            <section class="panel hidden">
                 <h2>Session</h2>
                 <div class="small muted" id="ctx-info">detecting…</div>
             </section>
@@ -911,6 +917,7 @@
     const ROOT_HOPS = 2;
     const PRIORITY_ORDER = {critical: 0, high: 1, medium: 2, low: 3};
     const STATUS_LABEL = {idle: 'not run', running: 'running…', done: 'done', error: 'failed'};
+     let menu = null;
 
     const state = {
         ctx: null,
@@ -2216,6 +2223,27 @@
         } catch (e) { /* ignore */
         }
     }
+     async function initMenubar() {
+         const mount = $('menubar-mount');
+         try {
+             const {initMenu} = await import('/app/menu.js');
+             menu = initMenu({
+                 mount,
+                 appName: 'Greenfield Implementer',
+                 extraLinks: []
+             });
+             document.body.classList.add('has-menubar');
+             window.addEventListener('pagehide', () => {
+                 try {
+                     if (menu) menu.destroy();
+                 } catch (e) { /* ignore */ }
+                 menu = null;
+             }, {once: true});
+         } catch (e) {
+             console.warn('Menubar unavailable — continuing without it', e);
+             if (mount) mount.remove();
+         }
+     }
 
     function renderContext() {
         $('ctx-info').innerHTML =
@@ -2279,6 +2307,13 @@
         $('idea').addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runPlanning();
         });
+         document.addEventListener('keydown', (e) => {
+             if (e.key === 'Escape' && menu) {
+                 try {
+                     menu.close();
+                 } catch (err) { /* ignore */ }
+             }
+         });
 
         window.addEventListener('beforeunload', stopPoller);
     }
@@ -2317,18 +2352,6 @@
             return;
         }
 
-        if (!state.sessionId) {
-            banner.classList.remove('warn');
-            banner.classList.add('info');
-            banner.innerHTML =
-                'Direct file mode — the seed idea is written to <code>' +
-                escapeHtml(state.basePath) + '/' + escapeHtml(ideaFile()) +
-                '</code>, planning artifacts land in <code>' + escapeHtml(planDir()) +
-                '/</code>, phase task plans in <code>' + escapeHtml(tasksDir()) +
-                '/</code> and generated doc-ops in <code>' + escapeHtml(tmpDir()) + '/</code>.';
-            banner.classList.remove('hidden');
-        }
-
         const idea = await loadIdea();
         if (idea === null) restoreDraft();
         await loadStack();
@@ -2338,6 +2361,7 @@
         renderTasks();
         activateTab('plan');
         log('Ready. Ctrl/Cmd+Enter runs the planning pipeline; build tasks are executed from the Tasks tab.');
+         initMenubar();
     }
 
     init().catch((err) => {
