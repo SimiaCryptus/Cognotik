@@ -34,6 +34,7 @@ dependencies {
     compileOnly(project("$projectPrefix:groovy"))
     implementation(project("$projectPrefix:groovy"))
     implementation(project("$projectPrefix:webui"))
+    implementation(project("$projectPrefix:platform-db"))
     implementation(project("$projectPrefix:tasklib"))
 //    testImplementation(project(":Cognotik:scala"))
 

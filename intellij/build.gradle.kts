@@ -56,6 +56,12 @@ dependencies {
         exclude(group = "com.google.api-client")
         exclude(group = "com.google.oauth-client")
     }
+    implementation(project("$projectPrefix:platform-db")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
 
     implementation(project("$projectPrefix:providers")) {
         exclude(group = "org.seleniumhq.selenium")

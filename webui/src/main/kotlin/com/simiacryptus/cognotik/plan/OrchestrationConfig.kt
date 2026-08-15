@@ -217,7 +217,7 @@ fun String.instance(user: User): ApiChatModel? {
   val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
   val chatModel = userSettings.apis
     .filter { it.provider != null && it.key != null }
-    .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider.base) }
+    .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider?.base!!) }
     .firstOrNull { it.modelId == this }
   val toApiChatModel = chatModel?.toApiChatModel(user)
   return toApiChatModel

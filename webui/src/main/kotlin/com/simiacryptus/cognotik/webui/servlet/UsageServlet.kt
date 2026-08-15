@@ -546,7 +546,7 @@ $headerCols
             val amountStr = "%+.4f".format(c.amount)
             val commentStr = c.comment?.let { escapeHtml(it) } ?: ""
             val metaStr = if (!c.metadata.isNullOrEmpty()) {
-                """<br/><span class="credit-meta">${escapeHtml(c.metadata.entries.joinToString(", ") { "${it.key}=${it.value}" })}</span>"""
+                """<br/><span class="credit-meta">${escapeHtml(c.metadata?.entries?.joinToString(", ") { "${it.key}=${it.value}" } ?: "")}</span>"""
             } else ""
             """
              <tr class="table-row">

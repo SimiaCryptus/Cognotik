@@ -65,6 +65,7 @@ dependencies {
     implementation(project("$projectPrefix:groovy"))
     implementation(project("$projectPrefix:kotlin"))
     implementation(project("$projectPrefix:webui"))
+    implementation(project("$projectPrefix:platform-db"))
     implementation(project("$projectPrefix:providers"))
     implementation(project("$projectPrefix:tasklib"))
     implementation(project("$projectPrefix:stdtools"))

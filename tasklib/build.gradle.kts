@@ -29,6 +29,7 @@ dependencies {
     implementation(project("$projectPrefix:docops"))
     compileOnly(project("$projectPrefix:webui"))
     implementation(project("$projectPrefix:webui"))
+    implementation(project("$projectPrefix:platform-db"))
     testImplementation(project("$projectPrefix:providers"))
     testImplementation(project("$projectPrefix:stdtools"))
 
