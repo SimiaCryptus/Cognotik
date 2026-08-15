@@ -25,9 +25,9 @@ applications to a full document-operations pipeline.
 ```bash
 # Option 1: Launch Standalone Web IDE instantly in any directory
 # (download the launcher script, then run it - do not pipe it into bash)
-curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
-chmod +x fileserver
-./fileserver
+curl -sSL -o cognotik https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/cognotik
+chmod +x cognotik
+./cognotik fileserver .
 
 # Option 2: Clone and build from source
 # Clone the repository
@@ -252,8 +252,8 @@ Communication between components:
 #### Standalone Web IDE
 1. Download the launcher script and make it executable (it is a standalone script, so save it to a file rather than piping it to `bash` or sourcing it):
    ```bash
-    curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
-    chmod +x fileserver
+    curl -sSL -o cognotik https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/cognotik
+    chmod +x cognotik
    ```
 2. Run it in any directory without local workspace setup:
    ```bash

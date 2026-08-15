@@ -7,12 +7,12 @@ straight from your terminal — great for scripting, CI, and anyone who'd rather
 
 1. Download the launcher script and make it executable:
    ```shell
-   curl -sSL -o fileserver https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver
-   chmod +x fileserver
+    curl -sSL -o cognotik https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/cognotik
+    chmod +x cognotik
    ```
 2. Run it:
    ```shell
-   ./fileserver
+   ./cognotik fileserver .
    ```
 3. Use the `docops` subcommands to drive the engine, for example:
    ```sh
