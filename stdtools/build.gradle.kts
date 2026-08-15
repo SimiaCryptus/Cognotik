@@ -26,6 +26,7 @@ dependencies {
     implementation(project("$projectPrefix:core"))
     implementation(project("$projectPrefix:fileserver"))
     implementation(project("$projectPrefix:lwcore"))
+    implementation(project("$projectPrefix:platform-model"))
     implementation(project("$projectPrefix:docops"))
     compileOnly(project("$projectPrefix:kotlin"))
     testImplementation(project("$projectPrefix:providers"))

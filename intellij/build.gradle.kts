@@ -32,6 +32,9 @@ dependencies {
     implementation(project("$projectPrefix:lwcore")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
+    implementation(project("$projectPrefix:platform-model")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
     implementation(project("$projectPrefix:docops")) {
         exclude(group = "com.fasterxml.jackson.core")
     }

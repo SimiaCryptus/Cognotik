@@ -23,6 +23,7 @@ dependencies {
   implementation(libs.hsqldb)
   implementation(project("$projectPrefix:text"))
   implementation(project("$projectPrefix:lwcore"))
+  implementation(project("$projectPrefix:platform-model"))
   implementation(libs.antlr.runtime)
   implementation(libs.commons.text)
 
