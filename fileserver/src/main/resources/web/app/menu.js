@@ -9,6 +9,8 @@
  *   • Sessions: currently running tasks and all known sessions, with navigation
  *   • Token usage summary + per-model breakdown
 *   • Available budget indicator + "Usage & Credits" (buy credits) dialog
+*   • Standardized model selection (smart/fast) persisted to user settings —
+*     disable per page with `initMenu({ showModels: false })`
  *
  * Usage:
  *   import { initMenu } from '/app/menu.js';
@@ -24,10 +26,25 @@ import {fetchDocopsStatus} from './docops.js';
 import {aggregateUsage, createUsageTableHtml, renderUsageSummary} from './usage.js';
 import {escapeHtml, showToast} from './ui.js';
 import {serverUrl, getConfig} from './config.js';
+import {
+     PREFERRED_MODEL_FIELDS,
+     loadApiProviders,
+     populateModelDropdowns,
+     loadPreferredModels,
+     applyPreferredModels,
+     bindPreferredModelSelects,
+     collectPreferredModels,
+     savePreferredModels
+} from './models.js';
 
 const STYLE_ID = 'cognotik-menu-style';
 const MENU_ID = 'cognotik-menu';
 const DEFAULT_BUDGET_REFRESH_MS = 60000;
+/** Human-friendly labels for the standard preferred-model fields. */
+const DEFAULT_MODEL_LABELS = {
+     smartModel: 'Smart Model',
+     fastModel: 'Fast Model'
+};
 
 const MENU_CSS = `
 .cog-menu { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: #1d2330; color: #e7ecf3; box-shadow: 0 1px 4px rgba(0,0,0,.35); z-index: 900; }
@@ -81,6 +98,12 @@ const MENU_CSS = `
 .cog-credits-head button { font: inherit; background: #2c3446; color: #e7ecf3; border: 1px solid #3c4760; border-radius: 5px; padding: .2rem .6rem; cursor: pointer; }
 .cog-credits-head button:hover { background: #38425a; }
 .cog-credits-dialog iframe { flex: 1 1 auto; width: 100%; border: none; background: #fff; }
+.cog-models-form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+.cog-model-field { display: flex; flex-direction: column; gap: .2rem; min-width: 220px; flex: 1 1 220px; }
+.cog-model-field label { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: #9fb0c8; }
+.cog-menu select { font: inherit; background: #2c3446; color: #e7ecf3; border: 1px solid #3c4760; border-radius: 5px; padding: .25rem .4rem; max-width: 340px; }
+.cog-menu select:disabled { opacity: .45; cursor: not-allowed; }
+.cog-menu select:focus { outline: 2px solid #4a90d9; outline-offset: 1px; }
 @media (max-width: 700px) { .cog-menu-grow { display: none; } }
 `;
 
@@ -307,6 +330,35 @@ function buildLinksHtml(ctx, opts) {
         `${l.active ? ' class="active"' : ''}>${escapeHtml(l.label)}</a>`
     ).join('');
 }
+/**
+  * Build the markup for the standardized model-selection panel.
+  * @param {Array<string>} fields - Preferred-model field names (e.g. `smartModel`)
+  * @param {Object} labels - Map of field name -> display label
+  * @returns {string}
+  */
+function buildModelsPanelHtml(fields, labels) {
+     const suffix = Math.random().toString(36).slice(2, 8);
+     return `
+             <section class="cog-menu-panel" data-panel="models" hidden>
+                 <div class="cog-panel-head">
+                     <strong>Models</strong>
+                     <div class="cog-panel-actions">
+                         <button type="button" data-models="refresh">Refresh</button>
+                     </div>
+                 </div>
+                 <div class="cog-models-form">
+                     ${fields.map(f => `
+                     <div class="cog-model-field">
+                         <label for="cog-model-${attr(f)}-${suffix}">${escapeHtml(labels[f] || f)}</label>
+                         <select id="cog-model-${attr(f)}-${suffix}" data-model-field="${attr(f)}" disabled>
+                             <option value="">Loading&hellip;</option>
+                         </select>
+                     </div>`).join('')}
+                 </div>
+                 <p class="cog-muted" data-models-status>Open to load models&hellip;</p>
+             </section>`;
+}
+
 
 /**
  * Initialize (or re-initialize) the menu bar.
@@ -321,6 +373,11 @@ function buildLinksHtml(ctx, opts) {
 * @param {string}  [options.usageUrl] - Page shown in the credits dialog (default `/usage/`)
 * @param {string}  [options.usageJsonUrl] - JSON endpoint for the budget amount
  * @param {boolean} [options.showIde=true]
+* @param {boolean} [options.showModels=true] - Show the standardized model selection panel
+* @param {Array<string>} [options.modelFields] - Preferred-model fields to expose
+*                        (default `['smartModel','fastModel']`)
+* @param {Object}  [options.modelLabels] - Override display labels per field
+* @param {Function}[options.onModelsChanged] - (models, savedOk) => void
  * @param {boolean} [options.sticky=true]
  * @param {string} [options.newSessionPath='new']
  * @param {Function} [options.getProxyUrl]
@@ -343,6 +400,10 @@ export function initMenu(options = {}) {
          usageUrl: null,
          usageJsonUrl: null,
         showIde: true,
+         showModels: true,
+         modelFields: null,
+         modelLabels: null,
+         onModelsChanged: null,
         sticky: true,
         newSessionPath: 'new',
         getProxyUrl: defaultGetProxyUrl,
@@ -353,6 +414,11 @@ export function initMenu(options = {}) {
 
     const ctx = getMenuContext();
     if (!opts.appName) opts.appName = ctx.appId || 'Cognotik';
+     const modelFields = (Array.isArray(opts.modelFields) && opts.modelFields.length
+         ? opts.modelFields
+         : PREFERRED_MODEL_FIELDS).filter(f => typeof f === 'string' && f);
+     const modelLabels = Object.assign({}, DEFAULT_MODEL_LABELS, opts.modelLabels || {});
+     if (!modelFields.length) opts.showModels = false;
 
     const existing = document.getElementById(MENU_ID);
     if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
@@ -371,6 +437,7 @@ export function initMenu(options = {}) {
                     ${opts.showGit ? `<button type="button" data-tab="git" aria-expanded="false"${ctx.basePath ? '' : ' disabled title="No session context"'}>Git</button>` : ''}
                     ${opts.showSessions ? '<button type="button" data-tab="sessions" aria-expanded="false">Sessions</button>' : ''}
                     ${opts.showUsage ? '<button type="button" data-tab="usage" aria-expanded="false">Usage</button>' : ''}
+                     ${opts.showModels ? '<button type="button" data-tab="models" aria-expanded="false" title="Preferred AI models">Models</button>' : ''}
                 </div>
             </div>
              <div class="cog-budget-banner" data-budget-banner role="alert" aria-live="polite" hidden></div>
@@ -414,7 +481,8 @@ export function initMenu(options = {}) {
                     <span><b>Cost</b><span data-usage="cost">&mdash;</span></span>
                 </div>
                 <div data-usage-table><p class="cog-muted">Open to load usage&hellip;</p></div>
-            </section>`;
+             </section>
+             ${opts.showModels ? buildModelsPanelHtml(modelFields, modelLabels) : ''}`;
 
     // Mount
     let mount = opts.mount;
@@ -425,7 +493,8 @@ export function initMenu(options = {}) {
     const panels = {
         git: nav.querySelector('[data-panel="git"]'),
         sessions: nav.querySelector('[data-panel="sessions"]'),
-        usage: nav.querySelector('[data-panel="usage"]')
+         usage: nav.querySelector('[data-panel="usage"]'),
+         models: nav.querySelector('[data-panel="models"]')
     };
     const tabs = Array.from(nav.querySelectorAll('[data-tab]'));
     const gitOut = nav.querySelector('[data-git-output]');
@@ -449,6 +518,7 @@ export function initMenu(options = {}) {
         if (name === 'git') refreshGit();
         if (name === 'sessions') refreshSessions();
         if (name === 'usage') refreshUsage();
+         if (name === 'models') refreshModels();
     }
 
     tabs.forEach(t => t.addEventListener('click', () => open(t.dataset.tab)));
@@ -771,9 +841,96 @@ export function initMenu(options = {}) {
         tableEl.innerHTML = createUsageTableHtml(models, totals);
         return {models, totals};
     }
+     // ---- Models ----------------------------------------------------------
+     let modelUnbind = null;
+     let modelsLoaded = false;
+     /** Map of preferred-model field -> its <select> element in the panel. */
+     function modelSelectMap() {
+         const map = {};
+         modelFields.forEach(f => {
+             const el = nav.querySelector(`[data-model-field="${f}"]`);
+             if (el) map[f] = el;
+         });
+         return map;
+     }
+     /**
+      * Current selection, e.g. `{smartModel: 'GPT4o', fastModel: 'GPT4oMini'}`.
+      * @returns {Object}
+      */
+     function getSelectedModels() {
+         return collectPreferredModels(modelSelectMap());
+     }
+     /**
+      * Apply (and persist) a set of models programmatically.
+      * @param {Object} models
+      * @param {boolean} [persist=true]
+      * @returns {Promise<Object>}
+      */
+     async function setModels(models = {}, persist = true) {
+         const map = modelSelectMap();
+         Object.entries(map).forEach(([field, sel]) => {
+             if (!Object.prototype.hasOwnProperty.call(models, field)) return;
+             const value = models[field] || '';
+             if (!value || Array.from(sel.options).some(o => o.value === value)) sel.value = value;
+         });
+         if (persist) await savePreferredModels(models);
+         return getSelectedModels();
+     }
+     /**
+      * Load providers + preferred models and (re)populate the dropdowns.
+      * @param {boolean} [force=false] Bypass caches
+      */
+     async function refreshModels(force = false) {
+         if (!opts.showModels) return null;
+         const statusEl = nav.querySelector('[data-models-status]');
+         let map = modelSelectMap();
+         const selects = Object.values(map);
+         if (!selects.length) return null;
+         if (modelsLoaded && !force) return getSelectedModels();
+         if (statusEl) statusEl.textContent = 'Loading models\u2026';
+         selects.forEach(s => s.disabled = true);
+         try {
+             const [available, preferred] = await Promise.all([
+                 loadApiProviders(),
+                 loadPreferredModels({force})
+             ]);
+             if (modelUnbind) {
+                 modelUnbind();
+                 modelUnbind = null;
+             }
+             populateModelDropdowns(available, selects);
+             map = modelSelectMap();
+             await applyPreferredModels(map, preferred);
+             const hasModels = Object.keys(available).some(p => (available[p] || []).length);
+             selects.forEach(s => s.disabled = !hasModels);
+             modelUnbind = bindPreferredModelSelects(map, (models, ok) => {
+                 showToast(ok ? 'Model preference saved' : 'Could not save model preference',
+                     ok ? 'success' : 'error');
+                 if (typeof opts.onModelsChanged === 'function') {
+                     try {
+                         opts.onModelsChanged(getSelectedModels(), ok);
+                     } catch (e) {
+                         console.warn('onModelsChanged handler failed:', e);
+                     }
+                 }
+             });
+             modelsLoaded = true;
+             if (statusEl) {
+                 statusEl.innerHTML = hasModels
+                     ? 'Selections are saved to your user settings and reused by all Cognotik apps.'
+                     : `No models available &mdash; <a href="${attr(serverUrl('/apiProviders/'))}" target="_blank">configure API keys</a> first.`;
+             }
+             return getSelectedModels();
+         } catch (e) {
+             selects.forEach(s => s.disabled = true);
+             if (statusEl) statusEl.textContent = 'Could not load models: ' + (e.message || String(e));
+             return null;
+         }
+     }
 
     nav.querySelector('[data-sessions="refresh"]')?.addEventListener('click', refreshSessions);
     nav.querySelector('[data-usage="refresh"]')?.addEventListener('click', refreshUsage);
+     nav.querySelector('[data-models="refresh"]')?.addEventListener('click', () => refreshModels(true));
      nav.querySelector('[data-budget-btn]')?.addEventListener('click', openCredits);
      if (opts.showBudget) {
          refreshBudget();
@@ -785,6 +942,10 @@ export function initMenu(options = {}) {
     function destroy() {
         document.removeEventListener('keydown', onKeydown);
         document.removeEventListener('click', onDocClick);
+          if (modelUnbind) {
+              modelUnbind();
+              modelUnbind = null;
+          }
          if (budgetTimer) {
              clearInterval(budgetTimer);
              budgetTimer = null;
@@ -804,12 +965,17 @@ export function initMenu(options = {}) {
          openCredits,
          closeCredits,
         refresh() {
-             return Promise.all([refreshGit(), refreshSessions(), refreshUsage(), refreshBudget()]);
+             return Promise.all([
+                 refreshGit(), refreshSessions(), refreshUsage(), refreshBudget(), refreshModels(true)
+             ]);
         },
         refreshGit,
         refreshSessions,
         refreshUsage,
          refreshBudget,
+          refreshModels,
+          getSelectedModels,
+          setModels,
         destroy
     };
 }
@@ -821,5 +987,6 @@ export const MenuUtils = {
     fetchSessionList,
      fetchRunningTasks,
      fetchBudget,
-     formatBudget
+      formatBudget,
+      DEFAULT_MODEL_LABELS
 };
