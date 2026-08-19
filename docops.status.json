@@ -1,0 +1,207 @@
+{
+  "lastUpdated" : "2026-08-15T19:49:00.944444751Z",
+  "tasks" : {
+    "docs/site/menu/devtools.json" : {
+      "target" : "docs/site/menu/devtools.json",
+      "status" : "FAILED",
+      "completedAt" : "2026-08-12T14:04:23.041994360Z",
+      "error" : "Task timed out after 30 minutes"
+    },
+    "docs/site/modules/docops.md" : {
+      "target" : "docs/site/modules/docops.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-mrBOs7N0",
+      "startedAt" : "2026-08-13T21:15:31.063549149Z",
+      "completedAt" : "2026-08-13T21:15:46.807964820Z"
+    },
+    "docs/site/patchers/DataMerge.md" : {
+      "target" : "docs/site/patchers/DataMerge.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-qV3WGkTn",
+      "startedAt" : "2026-08-13T21:17:54.842768002Z",
+      "completedAt" : "2026-08-13T21:18:11.787128866Z"
+    },
+    "docs/site/patchers/FullReplacement.md" : {
+      "target" : "docs/site/patchers/FullReplacement.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-E3oN8Tso",
+      "startedAt" : "2026-08-13T21:18:11.798284475Z",
+      "completedAt" : "2026-08-13T21:18:20.660109624Z"
+    },
+    "docs/site/patchers/FuzzyPatch.md" : {
+      "target" : "docs/site/patchers/FuzzyPatch.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-NwerRYLJ",
+      "startedAt" : "2026-08-13T21:18:20.671747Z",
+      "completedAt" : "2026-08-13T21:18:44.323591671Z"
+    },
+    "docs/site/patchers/PythonPatcher.md" : {
+      "target" : "docs/site/patchers/PythonPatcher.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-2xgpYjWy",
+      "startedAt" : "2026-08-13T21:18:44.337350886Z",
+      "completedAt" : "2026-08-13T21:19:01.720754769Z"
+    },
+    "docs/site/patchers/ThermodynamicPatch.md" : {
+      "target" : "docs/site/patchers/ThermodynamicPatch.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-DhkT7N0C",
+      "startedAt" : "2026-08-13T21:19:01.734223056Z",
+      "completedAt" : "2026-08-13T21:19:23.441187712Z"
+    },
+    "docs/site/menu/patchers.json" : {
+      "target" : "docs/site/menu/patchers.json",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-DHUQkLne",
+      "startedAt" : "2026-08-13T21:30:39.516873530Z",
+      "completedAt" : "2026-08-13T21:30:50.461442575Z"
+    },
+    "docs/site/ways-to-run/cli.md" : {
+      "target" : "docs/site/ways-to-run/cli.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-LcXzETSQ",
+      "startedAt" : "2026-08-13T21:37:44.817175155Z",
+      "completedAt" : "2026-08-13T21:37:54.739364644Z"
+    },
+    "docs/site/ways-to-run/desktop.md" : {
+      "target" : "docs/site/ways-to-run/desktop.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-FytpGxf1",
+      "startedAt" : "2026-08-13T21:37:54.747061110Z",
+      "completedAt" : "2026-08-13T21:38:02.462716752Z"
+    },
+    "docs/site/ways-to-run/intellij.md" : {
+      "target" : "docs/site/ways-to-run/intellij.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-Hfi1ROuj",
+      "startedAt" : "2026-08-13T21:38:02.470320379Z",
+      "completedAt" : "2026-08-13T21:38:09.224468581Z"
+    },
+    "docs/site/menu/ways-to-run.json" : {
+      "target" : "docs/site/menu/ways-to-run.json",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-CXqTCFHG",
+      "startedAt" : "2026-08-13T22:00:28.676628017Z",
+      "completedAt" : "2026-08-13T22:00:33.216036989Z"
+    },
+    "docs/site/js/config.js" : {
+      "target" : "docs/site/js/config.js",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-b6qmDC62",
+      "startedAt" : "2026-08-13T21:34:35.234304024Z",
+      "completedAt" : "2026-08-13T21:34:40.910547345Z"
+    },
+    "docs/site/apps/README.md" : {
+      "target" : "docs/site/apps/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-e1iH0XlC",
+      "startedAt" : "2026-08-13T21:45:16.175486835Z",
+      "completedAt" : "2026-08-13T21:45:22.892915468Z"
+    },
+    "docs/site/cognitive-mode/README.md" : {
+      "target" : "docs/site/cognitive-mode/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-Vu2Fiacw",
+      "startedAt" : "2026-08-13T21:45:22.900153450Z",
+      "completedAt" : "2026-08-13T21:45:30.346314095Z"
+    },
+    "docs/site/devtools/README.md" : {
+      "target" : "docs/site/devtools/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-oSUDNmXJ",
+      "startedAt" : "2026-08-13T21:45:30.353698711Z",
+      "completedAt" : "2026-08-13T21:45:37.292233801Z"
+    },
+    "docs/site/models/README.md" : {
+      "target" : "docs/site/models/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-dqBe4h4g",
+      "startedAt" : "2026-08-13T21:45:37.304001649Z",
+      "completedAt" : "2026-08-13T21:45:46.378991184Z"
+    },
+    "docs/site/modules/README.md" : {
+      "target" : "docs/site/modules/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-Q0dzT7S0",
+      "startedAt" : "2026-08-13T21:45:46.386935036Z",
+      "completedAt" : "2026-08-13T21:45:56.158177060Z"
+    },
+    "docs/site/patchers/README.md" : {
+      "target" : "docs/site/patchers/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-T95rchSt",
+      "startedAt" : "2026-08-13T21:45:56.168388285Z",
+      "completedAt" : "2026-08-13T21:46:04.474127502Z"
+    },
+    "docs/site/task-types/README.md" : {
+      "target" : "docs/site/task-types/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-u0fyDZMM",
+      "startedAt" : "2026-08-13T21:45:16.176791243Z",
+      "completedAt" : "2026-08-13T21:45:38.713426949Z"
+    },
+    "docs/site/ways-to-run/README.md" : {
+      "target" : "docs/site/ways-to-run/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-x8ZuJf6T",
+      "startedAt" : "2026-08-13T21:45:38.720791272Z",
+      "completedAt" : "2026-08-13T21:45:44.675216956Z"
+    },
+    "docs/site/README.md" : {
+      "target" : "docs/site/README.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-NP5EM4bc",
+      "startedAt" : "2026-08-13T21:47:23.073241117Z",
+      "completedAt" : "2026-08-13T21:47:27.669315970Z"
+    },
+    "docs/site/ways-to-run/tool.md" : {
+      "target" : "docs/site/ways-to-run/tool.md",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260813-URZnCSEy",
+      "startedAt" : "2026-08-13T21:56:17.026736510Z",
+      "completedAt" : "2026-08-13T21:56:28.429103787Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260814-L9DGPRQl",
+      "startedAt" : "2026-08-14T20:00:53.086023983Z",
+      "completedAt" : "2026-08-14T20:01:14.256468483Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/QwenModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/QwenModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260814-1xY5Wb6V",
+      "startedAt" : "2026-08-14T23:39:26.269254976Z",
+      "completedAt" : "2026-08-14T23:39:46.152300221Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/XAIModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/XAIModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260814-tYhSCWLx",
+      "startedAt" : "2026-08-14T23:39:26.266108724Z",
+      "completedAt" : "2026-08-14T23:39:49.593107113Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/DeepSeekModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/DeepSeekModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260814-6iABOGKz",
+      "startedAt" : "2026-08-14T23:48:26.314813457Z",
+      "completedAt" : "2026-08-14T23:48:38.091948390Z"
+    },
+    "tasklib/src/main/resources/apps/empty-project/background.png" : {
+      "target" : "tasklib/src/main/resources/apps/empty-project/background.png",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260815-uSoFjPCN",
+      "startedAt" : "2026-08-15T19:48:42.517989244Z",
+      "completedAt" : "2026-08-15T19:48:46.099639091Z"
+    },
+    "tasklib/src/main/resources/apps/empty-project/icon.png" : {
+      "target" : "tasklib/src/main/resources/apps/empty-project/icon.png",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260815-7cB1RmA5",
+      "startedAt" : "2026-08-15T19:48:57.917228913Z",
+      "completedAt" : "2026-08-15T19:49:00.944444751Z"
+    }
+  }
+}

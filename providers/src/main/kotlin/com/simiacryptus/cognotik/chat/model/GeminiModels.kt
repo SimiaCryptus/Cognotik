@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat.model
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
 
+
 /**
  * Catalog of Google Gemini models exposed through the Gemini Developer API.
  *
@@ -672,6 +673,32 @@ object GeminiModels {
     outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
+  // =========================================================
+  // Gemini 3.7 Flash - latest, most capable Flash model
+  // =========================================================
+  @JvmStatic
+  val GeminiFlash_37 = ChatModel(
+    name = "GeminiFlash_37",
+    modelId = "gemini-3.7-flash",
+    maxTotalTokens = 1048576,
+    maxOutTokens = 65536,
+    provider = CoreProviders.Gemini,
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to 0.00075,    // $0.75/1M through Dec 31, 2026
+      TokenTypes.Completion to 0.00375, // $3.75/1M (including thinking tokens)
+      TokenTypes.Thinking to 0.00375,
+      TokenTypes.Cached to 0.000075,   // $0.075/1M cached input
+    ),
+    supportsReasoning = true,
+    inputModalities = setOf(
+      ChatMessageModality.TEXT,
+      ChatMessageModality.IMAGE,
+      ChatMessageModality.AUDIO,
+      ChatMessageModality.VIDEO
+    ),
+    outputModalities = setOf(ChatMessageModality.TEXT)
+  )
+
   @JvmStatic
   val GeminiFlash_35 = ChatModel(
     name = "GeminiFlash_35",
@@ -752,6 +779,30 @@ object GeminiModels {
     ),
     outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.VIDEO)
   )
+
+  // =========================================================
+  // Gemini Omni Flash - stable release
+  // =========================================================
+  @JvmStatic
+  val GeminiOmniFlash = ChatModel(
+    name = "GeminiOmniFlash",
+    modelId = "gemini-omni-flash",
+    maxTotalTokens = 1048576,
+    maxOutTokens = 65536,
+    provider = CoreProviders.Gemini,
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to 0.0015,     // $1.50/1M text/image/video/audio input
+      TokenTypes.Completion to 0.009,  // $9.00/1M text output ($17.50/1M video output)
+    ),
+    inputModalities = setOf(
+      ChatMessageModality.TEXT,
+      ChatMessageModality.IMAGE,
+      ChatMessageModality.AUDIO,
+      ChatMessageModality.VIDEO
+    ),
+    outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.VIDEO)
+  )
+
 
   // =========================================================
   // Specialized / Tool & Agent models
@@ -927,11 +978,13 @@ object GeminiModels {
     "GeminiFlash_31_Live_Preview" to GeminiFlash_31_Live_Preview,
     "GeminiFlash_31_TTS_Preview" to GeminiFlash_31_TTS_Preview,
     // 3.5 / 3.6 models
+    "GeminiFlash_37" to GeminiFlash_37,
     "GeminiFlash_36" to GeminiFlash_36,
     "GeminiFlash_35" to GeminiFlash_35,
     "GeminiFlash_35_Lite" to GeminiFlash_35_Lite,
     "GeminiLiveTranslate_35_Preview" to GeminiLiveTranslate_35_Preview,
     "GeminiOmniFlash_Preview" to GeminiOmniFlash_Preview,
+    "GeminiOmniFlash" to GeminiOmniFlash,
     // Specialized models
     "GeminiRobotics_2_Preview" to GeminiRobotics_2_Preview,
     "GeminiRobotics_2_Streaming_Preview" to GeminiRobotics_2_Streaming_Preview,

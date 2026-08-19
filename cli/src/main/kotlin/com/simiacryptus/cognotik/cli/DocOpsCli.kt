@@ -245,7 +245,6 @@ object DocOpsCli {
    * orchestrator how to build chat clients from a model + user pair.
    */
   private fun defaultUser(): User = User(
-    id = "1",
     email = System.getenv("EMAIL")
       ?: System.getProperty("user.email")
       ?: "user@localhost"

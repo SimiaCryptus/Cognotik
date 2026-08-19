@@ -249,7 +249,7 @@ class ApiProviderServlet : HttpServlet() {
 
             models += try {
              (provider.getChatModels(
-               key = apiConfig.key,
+               key = apiConfig.key!!,
                baseUrl = apiConfig.apiBase
              ) ?: emptyList())
                .filter { !it.deprecated }
@@ -281,7 +281,7 @@ class ApiProviderServlet : HttpServlet() {
           if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
             val models = try {
              (provider.getChatModels(
-               key = apiConfig.key,
+               key = apiConfig.key!!,
                baseUrl = apiConfig.apiBase
              ) ?: emptyList())
                .filter { !it.deprecated }
@@ -310,7 +310,7 @@ class ApiProviderServlet : HttpServlet() {
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = try {
                   provider.getEmbeddingClient(
-                    key = apiConfig.key,
+                    key = apiConfig.key!!,
                     base = apiConfig.apiBase,
                     workPool = MoreExecutors.newDirectExecutorService(),
                     scheduledPool = MoreExecutors.listeningDecorator(

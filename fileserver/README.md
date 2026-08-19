@@ -47,10 +47,9 @@ To launch the standalone web IDE in any workspace directory using the one-line s
 
 ```bash
 # Launch in current directory with default settings (http://localhost:8081)
-curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash
-
-# Pass custom CLI options and workspace target directory
-curl -sSL https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/fileserver | bash -s -- --port 9090 /path/to/workspace
+curl -sSL -o cognotik https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/cli/bin/cognotik
+chmod +x cognotik
+./cognotik fileserver .
 ```
 
 Or execute via Gradle within the project:

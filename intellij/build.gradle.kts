@@ -32,6 +32,9 @@ dependencies {
     implementation(project("$projectPrefix:lwcore")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
+    implementation(project("$projectPrefix:platform-model")) {
+        exclude(group = "com.fasterxml.jackson.core")
+    }
     implementation(project("$projectPrefix:docops")) {
         exclude(group = "com.fasterxml.jackson.core")
     }
@@ -48,6 +51,12 @@ dependencies {
         exclude(group = "com.google.oauth-client")
     }
     implementation(project("$projectPrefix:webui")) {
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+    implementation(project("$projectPrefix:platform-db")) {
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
         exclude(group = "com.google.api-client")

@@ -1,10 +1,3 @@
----
-title: Groq Models
-related:
-  - https://console.groq.com/docs/models
-  - https://groq.com/pricing
----
-
 # Groq Models
 
 Groq provides ultra-low-latency inference for a range of open-weight chat models, safety/guard models, compound

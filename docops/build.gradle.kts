@@ -30,6 +30,9 @@ dependencies {
   implementation(project("$projectPrefix:lwcore")) {
     exclude(group = "org.jetbrains.kotlin")
   }
+  implementation(project("$projectPrefix:platform-model")) {
+    exclude(group = "org.jetbrains.kotlin")
+  }
   implementation(libs.antlr.runtime)
   implementation(libs.commons.text)
   implementation(libs.slf4j.api)

@@ -1,0 +1,28 @@
+{
+  "apps": [
+    {
+       "slug": "tool",
+       "name": "Build Tool",
+       "shortDescription": "Wire Cognotik into your Gradle build and CI/CD pipeline for AI-powered code review and auto-fixing.",
+       "file": "tool.md"
+     },
+     {
+      "slug": "cli",
+      "name": "CLI",
+      "shortDescription": "Run Cognotik from the terminal via the lightweight docops-driven fileserver script.",
+      "file": "cli.md"
+    },
+    {
+      "slug": "desktop",
+      "name": "Desktop",
+      "shortDescription": "A system tray-resident background service hosting Cognotik's web apps with auto-updates.",
+      "file": "desktop.md"
+    },
+    {
+      "slug": "intellij",
+      "name": "IntelliJ Plugin",
+      "shortDescription": "Bring Cognotik's agentic tools directly into IntelliJ IDEA and other JetBrains IDEs.",
+      "file": "intellij.md"
+    }
+  ]
+}

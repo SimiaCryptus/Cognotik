@@ -1,0 +1,34 @@
+{
+  "apps": [
+    {
+      "slug": "data-merge",
+      "name": "Data Merge",
+      "shortDescription": "Deep-merges structured data like JSON, YAML, XML, TOML, and Properties instead of diffing raw text.",
+      "file": "DataMerge.md"
+    },
+    {
+      "slug": "full-replacement",
+      "name": "Full Replacement",
+      "shortDescription": "Replaces an entire file's contents rather than computing or applying a diff.",
+      "file": "FullReplacement.md"
+    },
+    {
+      "slug": "fuzzy-patch",
+      "name": "Fuzzy Patch Matcher",
+      "shortDescription": "Matches and applies edits using Levenshtein-distance fuzzy line matching for imperfect context.",
+      "file": "FuzzyPatch.md"
+    },
+    {
+      "slug": "python-patcher",
+      "name": "Python Patcher",
+      "shortDescription": "Whitespace-aware diffing and patching tuned for indentation-sensitive languages like Python and YAML.",
+      "file": "PythonPatcher.md"
+    },
+    {
+      "slug": "thermodynamic-patch",
+      "name": "Thermodynamic Patch Matcher",
+      "shortDescription": "Aligns and applies patches by finding the lowest-energy line-matching configuration.",
+      "file": "ThermodynamicPatch.md"
+    }
+  ]
+}

@@ -41,7 +41,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun getName(model: ApiChatModel): String? {
-    return if (model.provider != null) model.provider.name else "null"
+    return if (model.provider != null) model.provider?.name else "null"
   }
 
   @JvmStatic
@@ -84,7 +84,7 @@ object CognotikUtils {
     return userSettings().apis.stream()
       .filter { apiData: ApiData? ->
         if (apiData!!.provider == null) return@filter false
-        apiData.provider.name == providerName
+        apiData.provider?.name == providerName
       }
       .findFirst().orElse(null)
   }

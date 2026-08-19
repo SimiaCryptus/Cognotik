@@ -24,6 +24,7 @@ dependencies {
 
     implementation(project("$projectPrefix:core"))
     implementation(project("$projectPrefix:lwcore"))
+    implementation(project("$projectPrefix:platform-model"))
     implementation(project("$projectPrefix:text"))
     implementation(project("$projectPrefix:docops"))
     implementation(libs.kotlinx.coroutines)

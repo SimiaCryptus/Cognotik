@@ -42,7 +42,7 @@ object CliSupport {
     ?: System.getProperty("user.email")
     ?: "user@localhost")
 
-  fun defaultUser(): User = User(id = "1", email = email)
+  fun defaultUser(): User = User(email = email)
 
   init {
     FileServlet.userResolver = object : com.simiacryptus.cognotik.platform.web.UserProvider {

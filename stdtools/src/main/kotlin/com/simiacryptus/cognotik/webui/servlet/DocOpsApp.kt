@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.google.common.net.UrlEscapers
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
@@ -124,6 +125,12 @@ private fun writeSelfIgnore(dir: File) {
     }
     try {
       GitOperationHandler.executeCommand(sessionRoot, "git", "init")
+      val userName = user.name.ifBlank { "DocOps User" }
+      val userEmail = user.email.ifBlank { null } ?: "${user.name.ifBlank { "docops" }.let{
+        UrlEscapers.urlPathSegmentEscaper().escape(it)
+      }}@cognotik.local"
+      GitOperationHandler.executeCommand(sessionRoot, "git", "config", "user.name", userName)
+      GitOperationHandler.executeCommand(sessionRoot, "git", "config", "user.email", userEmail)
       GitOperationHandler.executeCommand(sessionRoot, "git", "add", "-A", ".")
       GitOperationHandler.executeCommand(
         sessionRoot,

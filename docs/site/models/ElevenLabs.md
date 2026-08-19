@@ -1,10 +1,3 @@
----
-title: ElevenLabs Models
-related:
-  - https://elevenlabs.io/pricing/api
-  - https://elevenlabs.io/docs/overview/models
----
-
 # ElevenLabs Models
 
 ElevenLabs is primarily a text-to-speech (TTS), speech-to-text (STT), speech-to-speech, and generative audio
