@@ -272,6 +272,9 @@ interface UsageInterface {
       tokens.counts.forEach { (type, count) ->
         tokenCounts.computeIfAbsent(type) { AtomicLong() }.addAndGet(count)
       }
+      if(tokens.counts.isEmpty() && tokens.total_tokens > 0) {
+        tokenCounts.computeIfAbsent(TokenTypes.Prompt) { AtomicLong() }.addAndGet(tokens.total_tokens)
+      }
       this.cost.addAndGet(cost ?: 0.0)
     }
   }

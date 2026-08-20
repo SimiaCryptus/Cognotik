@@ -80,7 +80,7 @@ open class UnifiedHarness(
     }
     if (jettyServer == null) {
       appServer = CognotikAppServer(
-        localName = "localhost",
+        hostInterface = "localhost",
         port = port
       )
       jettyServer = appServer?.start()

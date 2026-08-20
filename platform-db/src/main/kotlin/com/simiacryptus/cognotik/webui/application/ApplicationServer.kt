@@ -3,14 +3,10 @@ package com.simiacryptus.cognotik.webui.application
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
-import com.simiacryptus.cognotik.platform.model.Principal
-import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
@@ -23,7 +19,6 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.slf4j.Logger
@@ -267,56 +262,6 @@ abstract class ApplicationServer(
 }
 
 private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
-
-fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = FilterHolder { request, response, chain ->
-  val requestPath = (request as HttpServletRequest).requestURI
-  val servletPath = request.servletPath
-  log.debug("Processing request: {}", requestPath)
-  val user = UserProviderImpl().authenticate(request, response as HttpServletResponse)
-  /*
-   * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
-   * redirecting its module/CSS requests to the login page would break the page load, while
-   * every byte of data it shows still goes through the authenticated FS API.
-   */
-  val anonymousOk = servletPath == "/fileIndex" || servletPath == "/ui" || servletPath.startsWith("/ui/")
-  val email = if (user == null && !anonymousOk) {
-    log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
-    response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-    val originalRequest = request.requestURL.toString()
-    val queryString = request.queryString
-    val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-    val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-    response.setHeader("Location", "/login/?target=$encodedTarget")
-    return@FilterHolder
-  } else {
-    val email = user?.email ?: "anonymous"
-    log.debug("Authenticated user: {} for request: {}", email, requestPath)
-    email
-  }
-  val canRead = authorizationManager.isAuthorized(
-    ResourceRef.of(applicationClass = applicationClass),
-    Principal.of(user = user),
-    operationType = OperationType.Read
-  )
-  log.debug(
-    "Authorization check result: {} for user: {} on path: {}",
-    canRead,
-    email,
-    requestPath
-  )
-  if (canRead) {
-    log.debug("Access granted for request: {}", requestPath)
-    chain?.doFilter(request, response)
-  } else {
-    log.warn(
-      "Access denied for user: {} on path: {}",
-      user?.email,
-      requestPath
-    )
-    response.writer?.write("Access Denied")
-    (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
-  }
-}
 
 fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
   cookies?.find { it.name == name }?.value.also { cookie ->
