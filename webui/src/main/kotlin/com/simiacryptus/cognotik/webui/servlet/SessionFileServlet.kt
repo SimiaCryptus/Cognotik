@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
@@ -16,9 +15,7 @@ import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 import java.net.URLEncoder
 import java.nio.file.Path.of
 
@@ -237,6 +234,14 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       throw RuntimeException("Failed to resolve directory: ${e.message}", e)
     }
   }
+  val git = object :  GitProvider(dataStorage) {
+    override fun onSession(
+      session: Session,
+      user: User?
+    ) {
+      this@SessionFileServlet.onSession(session, user)
+    }
+  }
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
@@ -245,7 +250,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       // Handle git API endpoints
       if (pathInfo.contains("/.git/api/")) {
         log.debug("Routing to git API GET handler for path: $pathInfo")
-        handleGitApiGet(request, response, pathInfo)
+        git.handleGitApiGet(request, response, pathInfo)
         return
       }
       // Pre-flight auth check: if getDir would redirect to login, honor that and stop
@@ -260,7 +265,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       if (!response.isCommitted) {
         response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
         response.contentType = "application/json"
-        response.writer.write("""{"error": "Request failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
+        response.writer.write("""{"error": "Request failed: ${git.escapeJson(e.message ?: "Unknown error")}"}""")
       }
     }
   }
@@ -272,7 +277,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       // Handle git API endpoints
       if (pathInfo.contains("/.git/api/")) {
         log.debug("Routing to git API POST handler for path: $pathInfo")
-        handleGitApiPost(request, response, pathInfo)
+        git.handleGitApiPost(request, response, pathInfo)
         return
       }
       if (!isAuthenticatedForSession(request, response)) {
@@ -285,615 +290,10 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       if (!response.isCommitted) {
         response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
         response.contentType = "application/json"
-        response.writer.write("""{"error": "Request failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
+        response.writer.write("""{"error": "Request failed: ${git.escapeJson(e.message ?: "Unknown error")}"}""")
       }
     }
   }
-
-  private fun handleGitApiGet(request: HttpServletRequest, response: HttpServletResponse, pathInfo: String) {
-    log.info("handleGitApiGet: pathInfo=$pathInfo")
-    try {
-      val pathSegments = of(pathInfo).normalize()
-      if (pathSegments.toList().isEmpty()) {
-        log.warn("Empty path segments for git API GET: $pathInfo")
-        response.status = HttpServletResponse.SC_BAD_REQUEST
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "Invalid path"}""")
-        return
-      }
-      val session = Session(pathSegments.toList().first().toString())
-      log.debug("Git API GET session: ${session.sessionId}")
-      val user = UserProviderImpl().authenticate(request, response) ?: run {
-        log.warn("Authentication failed for git API GET on session ${session.sessionId}")
-        throw IllegalStateException("Authentication failed")
-      }
-      log.debug("Git API GET authenticated user: ${user.email}")
-      onSession(session, user)
-      val sessionDir = dataStorage.getUserDir(user, session)
-      // Extract the git API action from the path
-      val gitApiIndex = pathSegments.toList().map { it.toString() }.indexOf(".git")
-      if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.toList().size) {
-        log.warn("Invalid git API path structure: $pathInfo (gitApiIndex=$gitApiIndex, segments=${pathSegments.toList().size})")
-        response.status = HttpServletResponse.SC_BAD_REQUEST
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "Invalid git API path"}""")
-        return
-      }
-      val action = pathSegments.toList().map { it.toString() }[gitApiIndex + 2] // .git/api/<action>
-      log.info("Git API GET action: $action for session ${session.sessionId}, user ${user.email}")
-      when (action) {
-        "status" -> gitStatus(sessionDir, response)
-        "branches" -> gitListBranches(sessionDir, response)
-        "log" -> gitLog(sessionDir, request, response)
-        else -> {
-          log.warn("Unknown git GET action: $action")
-          response.status = HttpServletResponse.SC_BAD_REQUEST
-          response.contentType = "application/json"
-          response.writer.write("""{"error": "Unknown git GET action: $action"}""")
-        }
-      }
-    } catch (e: IllegalStateException) {
-      log.warn("Git API GET authentication/state error: ${e.message}")
-      if (!response.isCommitted) {
-        response.status = HttpServletResponse.SC_UNAUTHORIZED
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "${escapeJson(e.message ?: "Authentication failed")}"}""")
-      }
-    } catch (e: Exception) {
-      log.error("Error handling git API GET request", e)
-      if (!response.isCommitted) {
-        response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "Git operation failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  private fun handleGitApiPost(request: HttpServletRequest, response: HttpServletResponse, pathInfo: String) {
-    log.info("handleGitApiPost: pathInfo=$pathInfo")
-    try {
-      val pathSegments = of(pathInfo).normalize()
-      if (pathSegments.toList().isEmpty()) {
-        log.warn("Empty path segments for git API POST: $pathInfo")
-        response.status = HttpServletResponse.SC_BAD_REQUEST
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "Invalid path"}""")
-        return
-      }
-      val session = Session(pathSegments.toList().first().toString())
-      log.debug("Git API POST session: ${session.sessionId}")
-      val user = UserProviderImpl().authenticate(request, response) ?: run {
-        log.warn("Authentication failed for git API POST on session ${session.sessionId}")
-        throw IllegalStateException("Authentication failed")
-      }
-      log.debug("Git API POST authenticated user: ${user.email}")
-      onSession(session, user)
-      val sessionDir = dataStorage.getUserDir(user, session)
-      val gitApiIndex = pathSegments.toList().map { it.toString() }.indexOf(".git")
-      if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.toList().size) {
-        log.warn("Invalid git API path structure: $pathInfo (gitApiIndex=$gitApiIndex, segments=${pathSegments.toList().size})")
-        response.status = HttpServletResponse.SC_BAD_REQUEST
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "Invalid git API path"}""")
-        return
-      }
-      val action = pathSegments.toList().map { it.toString() }[gitApiIndex + 2]
-      log.info("Git API POST action: $action for session ${session.sessionId}, user ${user.email}")
-      when (action) {
-        "init" -> gitInit(sessionDir, response)
-        "commit" -> {
-          val body = try {
-            request.reader.readText()
-          } catch (e: Exception) {
-            log.error("Failed to read request body for commit action", e)
-            ""
-          }
-          log.debug("Commit request body length: ${body.length}")
-          val message = parseJsonField(body, "message") ?: "Auto-commit"
-          gitCommit(sessionDir, message, response)
-        }
-
-        "checkout" -> {
-          val body = try {
-            request.reader.readText()
-          } catch (e: Exception) {
-            log.error("Failed to read request body for checkout action", e)
-            ""
-          }
-          log.debug("Checkout request body length: ${body.length}")
-          val branch = parseJsonField(body, "branch")
-          val create = parseJsonField(body, "create")?.toBoolean() ?: false
-          if (branch.isNullOrBlank()) {
-            log.warn("Checkout request missing branch name")
-            response.status = HttpServletResponse.SC_BAD_REQUEST
-            response.contentType = "application/json"
-            response.writer.write("""{"error": "Branch name is required"}""")
-            return
-          }
-          gitCheckout(sessionDir, branch, create, response)
-        }
-
-        else -> {
-          log.warn("Unknown git POST action: $action")
-          response.status = HttpServletResponse.SC_BAD_REQUEST
-          response.contentType = "application/json"
-          response.writer.write("""{"error": "Unknown git POST action: $action"}""")
-        }
-      }
-    } catch (e: IllegalStateException) {
-      log.warn("Git API POST authentication/state error: ${e.message}")
-      if (!response.isCommitted) {
-        response.status = HttpServletResponse.SC_UNAUTHORIZED
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "${escapeJson(e.message ?: "Authentication failed")}"}""")
-      }
-    } catch (e: Exception) {
-      log.error("Error handling git API POST request", e)
-      if (!response.isCommitted) {
-        response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        response.contentType = "application/json"
-        response.writer.write("""{"error": "Git operation failed: ${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * Initialize a git repository in the session directory.
-   */
-  private fun gitInit(sessionDir: File, resp: HttpServletResponse) {
-    log.info("Initializing git repository in: ${sessionDir.absolutePath}")
-    try {
-      if (!sessionDir.exists()) {
-        log.warn("Session directory does not exist, creating: ${sessionDir.absolutePath}")
-        if (!sessionDir.mkdirs()) {
-          log.error("Failed to create session directory: ${sessionDir.absolutePath}")
-          resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-          resp.contentType = "application/json"
-          resp.writer.write("""{"success": false, "error": "Failed to create session directory"}""")
-          return
-        }
-      }
-      val gitDir = File(sessionDir, ".git")
-      if (gitDir.exists()) {
-        log.info("Git repository already exists in: ${sessionDir.absolutePath}")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": true, "message": "Git repository already initialized", "path": "${
-            escapeJson(sessionDir.absolutePath)
-          }"}"""
-        )
-        return
-      }
-      val result = executeGitCommand(sessionDir, "git", "init")
-      if (result.exitCode == 0) {
-        log.info("Git init succeeded, creating initial commit")
-        // Perform an initial commit so the repo has a valid HEAD
-        executeGitCommand(sessionDir, "git", "add", "-A")
-        executeGitCommand(sessionDir, "git", "commit", "-m", "Initial commit", "--allow-empty")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": true, "message": "Git repository initialized", "output": "${escapeJson(result.output)}", "path": "${
-            escapeJson(sessionDir.absolutePath)
-          }"}"""
-        )
-      } else {
-        log.error("Git init failed with exit code ${result.exitCode}: ${result.error}")
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": false, "error": "${escapeJson(result.error)}", "output": "${
-            escapeJson(
-              result.output
-            )
-          }"}"""
-        )
-      }
-    } catch (e: Exception) {
-      log.error("Exception during gitInit for ${sessionDir.absolutePath}", e)
-      if (!resp.isCommitted) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * List all branches in the session's git repository.
-   */
-  private fun gitListBranches(sessionDir: File, resp: HttpServletResponse) {
-    log.info("Listing git branches in: ${sessionDir.absolutePath}")
-    try {
-      ensureGitRepo(sessionDir)
-      val result = executeGitCommand(sessionDir, "git", "branch", "-a", "--no-color")
-      if (result.exitCode == 0) {
-        val branches = result.output.lines()
-          .filter { it.isNotBlank() }
-          .map { line ->
-            val isCurrent = line.trimStart().startsWith("*")
-            val name = line.trimStart().removePrefix("* ").removePrefix("  ").trim()
-            """{"name": "${escapeJson(name)}", "current": $isCurrent}"""
-          }
-        log.debug("Found ${branches.size} branches in ${sessionDir.absolutePath}")
-        // Also get the current branch name
-        val currentBranchResult = executeGitCommand(sessionDir, "git", "rev-parse", "--abbrev-ref", "HEAD")
-        val currentBranch = currentBranchResult.output.trim()
-        log.debug("Current branch: $currentBranch")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": true, "currentBranch": "${escapeJson(currentBranch)}", "branches": [${
-            branches.joinToString(", ")
-          }]}"""
-        )
-      } else {
-        log.error("git branch failed with exit code ${result.exitCode}: ${result.error}")
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(result.error)}"}""")
-      }
-    } catch (e: Exception) {
-      log.error("Exception during gitListBranches for ${sessionDir.absolutePath}", e)
-      if (!resp.isCommitted) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * Checkout a branch in the session's git repository.
-   */
-  private fun gitCheckout(sessionDir: File, branch: String, create: Boolean, resp: HttpServletResponse) {
-    log.info("Checking out branch '$branch' (create=$create) in: ${sessionDir.absolutePath}")
-    try {
-      ensureGitRepo(sessionDir)
-      // Validate branch name
-      if (!isValidBranchName(branch)) {
-        log.warn("Invalid branch name rejected: '$branch'")
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "Invalid branch name: ${escapeJson(branch)}"}""")
-        return
-      }
-      val args = mutableListOf("git", "checkout")
-      if (create) {
-        args.add("-b")
-      }
-      args.add(branch)
-      val result = executeGitCommand(sessionDir, *args.toTypedArray())
-      if (result.exitCode == 0) {
-        log.info("Successfully checked out branch '$branch' in ${sessionDir.absolutePath}")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": true, "message": "Checked out branch '${escapeJson(branch)}'", "output": "${
-            escapeJson(result.output)
-          }"}"""
-        )
-      } else {
-        log.error("git checkout failed for branch '$branch' with exit code ${result.exitCode}: ${result.error}")
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": false, "error": "${escapeJson(result.error)}", "output": "${
-            escapeJson(
-              result.output
-            )
-          }"}"""
-        )
-      }
-    } catch (e: Exception) {
-      log.error("Exception during gitCheckout for branch '$branch' in ${sessionDir.absolutePath}", e)
-      if (!resp.isCommitted) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * Commit all changes in the session's git repository.
-   */
-  private fun gitCommit(sessionDir: File, message: String, resp: HttpServletResponse) {
-    log.info("Committing changes in: ${sessionDir.absolutePath} with message: $message")
-    try {
-      ensureGitRepo(sessionDir)
-      // Stage all changes
-      val addResult = executeGitCommand(sessionDir, "git", "add", "-A")
-      if (addResult.exitCode != 0) {
-        log.error("git add failed with exit code ${addResult.exitCode}: ${addResult.error}")
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "Failed to stage changes: ${escapeJson(addResult.error)}"}""")
-        return
-      }
-      // Check if there are changes to commit
-      val statusResult = executeGitCommand(sessionDir, "git", "status", "--porcelain")
-      if (statusResult.exitCode == 0 && statusResult.output.isBlank()) {
-        log.info("Nothing to commit in ${sessionDir.absolutePath}")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": true, "message": "Nothing to commit, working tree clean"}""")
-        return
-      }
-      log.debug("Staged changes detected, proceeding with commit")
-      val commitResult = executeGitCommand(
-        sessionDir, "git", "commit", "-m", message,
-        "--author=SessionFileServlet <noreply@localhost>"
-      )
-      if (commitResult.exitCode == 0) {
-        // Get the commit hash
-        val hashResult = executeGitCommand(sessionDir, "git", "rev-parse", "HEAD")
-        val commitHash = hashResult.output.trim()
-        log.info("Commit successful: $commitHash in ${sessionDir.absolutePath}")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": true, "message": "Changes committed", "commitHash": "${escapeJson(commitHash)}", "output": "${
-            escapeJson(commitResult.output)
-          }"}"""
-        )
-      } else {
-        log.error("git commit failed with exit code ${commitResult.exitCode}: ${commitResult.error}")
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write(
-          """{"success": false, "error": "${escapeJson(commitResult.error)}", "output": "${
-            escapeJson(commitResult.output)
-          }"}"""
-        )
-      }
-    } catch (e: Exception) {
-      log.error("Exception during gitCommit for ${sessionDir.absolutePath}", e)
-      if (!resp.isCommitted) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * Get the git status of the session directory.
-   */
-  private fun gitStatus(sessionDir: File, resp: HttpServletResponse) {
-    log.info("Getting git status for: ${sessionDir.absolutePath}")
-    try {
-      val gitDir = File(sessionDir, ".git")
-      if (!gitDir.exists()) {
-        log.debug("No git repository at ${sessionDir.absolutePath}")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": true, "initialized": false, "message": "Not a git repository"}""")
-        return
-      }
-      val result = executeGitCommand(sessionDir, "git", "status", "--porcelain")
-      val branchResult = executeGitCommand(sessionDir, "git", "rev-parse", "--abbrev-ref", "HEAD")
-      val currentBranch = branchResult.output.trim()
-      val changes = result.output.lines().filter { it.isNotBlank() }.mapNotNull { line ->
-        try {
-          if (line.length < 3) {
-            log.warn("Unexpectedly short status line: '$line'")
-            return@mapNotNull null
-          }
-          val status = line.substring(0, 2).trim()
-          val file = line.substring(3).trim()
-          """{"status": "${escapeJson(status)}", "file": "${escapeJson(file)}"}"""
-        } catch (e: Exception) {
-          log.warn("Failed to parse status line: '$line'", e)
-          null
-        }
-      }
-      log.debug("Git status: branch=$currentBranch, ${changes.size} changes")
-      resp.status = HttpServletResponse.SC_OK
-      resp.contentType = "application/json"
-      resp.writer.write(
-        """{"success": true, "initialized": true, "currentBranch": "${escapeJson(currentBranch)}", "clean": ${changes.isEmpty()}, "changes": [${
-          changes.joinToString(", ")
-        }]}"""
-      )
-    } catch (e: Exception) {
-      log.error("Exception during gitStatus for ${sessionDir.absolutePath}", e)
-      if (!resp.isCommitted) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * Get the git log for the session directory.
-   */
-  private fun gitLog(sessionDir: File, req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("Getting git log for: ${sessionDir.absolutePath}")
-    try {
-      ensureGitRepo(sessionDir)
-      val maxCount = req.getParameter("maxCount")?.toIntOrNull() ?: 20
-      log.debug("git log maxCount=$maxCount")
-      val result = executeGitCommand(
-        sessionDir, "git", "log",
-        "--format=%H%n%an%n%ae%n%aI%n%s",
-        "-n", maxCount.coerceIn(1, 100).toString()
-      )
-      if (result.exitCode == 0) {
-        val lines = result.output.lines().filter { it.isNotBlank() }
-        val commits = mutableListOf<String>()
-        var i = 0
-        while (i + 4 < lines.size) {
-          try {
-            val hash = lines[i]
-            val authorName = lines[i + 1]
-            val authorEmail = lines[i + 2]
-            val date = lines[i + 3]
-            val subject = lines[i + 4]
-            commits.add(
-              """{"hash": "${escapeJson(hash)}", "author": "${escapeJson(authorName)}", "email": "${
-                escapeJson(authorEmail)
-              }", "date": "${escapeJson(date)}", "message": "${escapeJson(subject)}"}"""
-            )
-          } catch (e: Exception) {
-            log.warn("Failed to parse commit at line $i", e)
-          }
-          i += 5
-        }
-        log.debug("Parsed ${commits.size} commits from git log")
-        resp.status = HttpServletResponse.SC_OK
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": true, "commits": [${commits.joinToString(", ")}]}""")
-      } else {
-        log.error("git log failed with exit code ${result.exitCode}: ${result.error}")
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(result.error)}"}""")
-      }
-    } catch (e: Exception) {
-      log.error("Exception during gitLog for ${sessionDir.absolutePath}", e)
-      if (!resp.isCommitted) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        resp.contentType = "application/json"
-        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
-      }
-    }
-  }
-
-  /**
-   * Ensure the session directory has a git repository initialized.
-   * If not, initialize one.
-   */
-  private fun ensureGitRepo(sessionDir: File) {
-    val gitDir = File(sessionDir, ".git")
-    if (!gitDir.exists()) {
-      log.info("Auto-initializing git repository in: ${sessionDir.absolutePath}")
-      try {
-        if (!sessionDir.exists()) {
-          log.warn("Session directory does not exist, creating: ${sessionDir.absolutePath}")
-          if (!sessionDir.mkdirs()) {
-            log.error("Failed to create session directory: ${sessionDir.absolutePath}")
-            throw RuntimeException("Failed to create session directory: ${sessionDir.absolutePath}")
-          }
-        }
-        val initResult = executeGitCommand(sessionDir, "git", "init")
-        if (initResult.exitCode != 0) {
-          log.error("Auto-init git failed: ${initResult.error}")
-          throw RuntimeException("git init failed: ${initResult.error}")
-        }
-        executeGitCommand(sessionDir, "git", "add", "-A")
-        executeGitCommand(sessionDir, "git", "commit", "-m", "Initial commit", "--allow-empty")
-        log.info("Auto-initialized git repository in ${sessionDir.absolutePath}")
-      } catch (e: Exception) {
-        log.error("Failed to auto-initialize git repository in ${sessionDir.absolutePath}", e)
-        throw e
-      }
-    } else {
-      log.debug("Git repository already exists at ${gitDir.absolutePath}")
-    }
-  }
-
-  private fun isValidBranchName(name: String): Boolean {
-    // Basic validation for git branch names
-    return name.isNotBlank() &&
-        !name.contains("..") &&
-        !name.contains("~") &&
-        !name.contains("^") &&
-        !name.contains(":") &&
-        !name.contains("\\") &&
-        !name.contains(" ") &&
-        !name.startsWith("-") &&
-        !name.endsWith(".lock") &&
-        !name.endsWith(".") &&
-        !name.contains("@{") &&
-        name.all { it.code >= 33 && it.code <= 126 }
-  }
-
-  private data class GitResult(val exitCode: Int, val output: String, val error: String)
-
-  private fun executeGitCommand(workingDir: File, vararg command: String): GitResult {
-    log.info("Executing git command: ${command.joinToString(" ")} in ${workingDir.absolutePath}")
-    val startTime = System.currentTimeMillis()
-    return try {
-      if (!workingDir.exists()) {
-        log.error("Working directory does not exist: ${workingDir.absolutePath}")
-        return GitResult(-1, "", "Working directory does not exist: ${workingDir.absolutePath}")
-      }
-      if (!workingDir.isDirectory) {
-        log.error("Working directory is not a directory: ${workingDir.absolutePath}")
-        return GitResult(-1, "", "Working directory is not a directory: ${workingDir.absolutePath}")
-      }
-      val processBuilder = ProcessBuilder(*command)
-        .directory(workingDir)
-        .redirectErrorStream(false)
-      // Set minimal git config for commits if not configured
-      processBuilder.environment()["GIT_AUTHOR_NAME"] = "SessionFileServlet"
-      processBuilder.environment()["GIT_AUTHOR_EMAIL"] = "noreply@localhost"
-      processBuilder.environment()["GIT_COMMITTER_NAME"] = "SessionFileServlet"
-      processBuilder.environment()["GIT_COMMITTER_EMAIL"] = "noreply@localhost"
-      val process = processBuilder.start()
-      val output = BufferedReader(InputStreamReader(process.inputStream)).readText()
-      val error = BufferedReader(InputStreamReader(process.errorStream)).readText()
-      val exitCode = process.waitFor()
-      val elapsed = System.currentTimeMillis() - startTime
-      if (exitCode != 0) {
-        log.warn("Git command exited with code $exitCode in ${elapsed}ms: ${command.joinToString(" ")} - stderr: $error")
-      } else {
-        log.debug("Git command completed successfully in ${elapsed}ms: ${command.joinToString(" ")}")
-      }
-      GitResult(exitCode, output, error)
-    } catch (e: InterruptedException) {
-      log.error("Git command interrupted: ${command.joinToString(" ")}", e)
-      Thread.currentThread().interrupt()
-      GitResult(-1, "", "Command interrupted: ${e.message}")
-    } catch (e: java.io.IOException) {
-      log.error("IO error executing git command (is git installed?): ${command.joinToString(" ")}", e)
-      GitResult(-1, "", "IO error: ${e.message}")
-    } catch (e: Exception) {
-      log.error("Failed to execute git command: ${command.joinToString(" ")}", e)
-      GitResult(-1, "", e.message ?: "Unknown error")
-    }
-  }
-
-  private fun escapeJson(value: String): String {
-    return value
-      .replace("\\", "\\\\")
-      .replace("\"", "\\\"")
-      .replace("\n", "\\n")
-      .replace("\r", "\\r")
-      .replace("\t", "\\t")
-  }
-
-  /**
-   * Simple JSON field parser for request bodies.
-   * Extracts the value of a given field from a JSON string.
-   */
-  private fun parseJsonField(json: String, field: String): String? {
-    return try {
-      if (json.isBlank()) {
-        log.debug("parseJsonField: empty JSON body for field '$field'")
-        return null
-      }
-      val pattern = """"$field"\s*:\s*"((?:[^"\\]|\\.)*)"""".toRegex()
-      val match = pattern.find(json)
-      if (match == null) {
-        log.debug("parseJsonField: field '$field' not found in JSON")
-        return null
-      }
-      match.groupValues[1]
-        .replace("\\\"", "\"")
-        .replace("\\\\", "\\")
-        .replace("\\n", "\n")
-        .replace("\\r", "\r")
-        .replace("\\t", "\t")
-    } catch (e: Exception) {
-      log.warn("Failed to parse JSON field '$field' from body", e)
-      null
-    }
-  }
-
 
   override fun listContents(
     file: File?,
@@ -986,3 +386,4 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
     }
   }
 }
+
