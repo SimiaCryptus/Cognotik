@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
@@ -13,7 +12,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.file.Path
 
-open class GitProvider(
+abstract class GitProvider(
   val dataStorage: StorageInterface
 ) {
   companion object {
@@ -35,7 +34,7 @@ open class GitProvider(
       }
       val session = Session(pathSegments.toList().first().toString())
       log.debug("Git API GET session: ${session.sessionId}")
-      val user = UserProviderImpl().authenticate(request, response) ?: run {
+      val user = authenticate(request, response) ?: run {
         log.warn("Authentication failed for git API GET on session ${session.sessionId}")
         throw IllegalStateException("Authentication failed")
       }
@@ -80,6 +79,11 @@ open class GitProvider(
       }
     }
   }
+
+  abstract fun authenticate(
+    request: jakarta.servlet.http.HttpServletRequest,
+    response: jakarta.servlet.http.HttpServletResponse
+  ): User?
 
 
   /**
@@ -249,7 +253,7 @@ open class GitProvider(
       }
       val session = Session(pathSegments.toList().first().toString())
       log.debug("Git API POST session: ${session.sessionId}")
-      val user = UserProviderImpl().authenticate(request, response) ?: run {
+      val user = authenticate(request, response) ?: run {
         log.warn("Authentication failed for git API POST on session ${session.sessionId}")
         throw IllegalStateException("Authentication failed")
       }

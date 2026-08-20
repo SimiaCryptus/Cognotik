@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
 import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
@@ -235,10 +236,10 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
     }
   }
   val git = object :  GitProvider(dataStorage) {
-    override fun onSession(
-      session: Session,
-      user: User?
-    ) {
+    override fun authenticate(request: HttpServletRequest, response: HttpServletResponse) =
+      UserProviderImpl().authenticate(request, response)
+
+    override fun onSession(session: Session, user: User?) {
       this@SessionFileServlet.onSession(session, user)
     }
   }
