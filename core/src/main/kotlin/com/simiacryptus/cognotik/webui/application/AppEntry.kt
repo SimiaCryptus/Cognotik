@@ -20,6 +20,7 @@ class AppEntry(
     val readme: String? = null,
     val hasBackground: Boolean = false,
     val hasIcon: Boolean = false,
+    val hasSocial: Boolean = false,
     val classLoader: ClassLoader = this.javaClass.classLoader,
     val videoUrl: String? = null,
     val exampleSessions: Map<String, String>? = null,

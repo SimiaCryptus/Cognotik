@@ -40,8 +40,6 @@ open class ResourceApps(
                 val readme = entry.path?.let { rp ->
                     loadReadme(rp)
                 }
-                 val hasBackground = entry.path?.let { rp -> resourceExists("${rp.trimEnd('/')}/background.png") } ?: false
-                 val hasIcon = entry.path?.let { rp -> resourceExists("${rp.trimEnd('/')}/icon.png") } ?: false
                 AppEntry.register(
                     AppEntry(
                         name = "app-" + entry.id?.removePrefix("app-"),
@@ -57,8 +55,9 @@ open class ResourceApps(
                         resource_path = entry.path,
                         cardClass = entry.cardClass,
                         readme = readme,
-                         hasBackground = hasBackground,
-                         hasIcon = hasIcon,
+                        hasBackground = resourceExists("${entry.path.trimEnd('/')}/background.png"),
+                        hasIcon = resourceExists("${entry.path.trimEnd('/')}/icon.png"),
+                        hasSocial = resourceExists("${entry.path.trimEnd('/')}/social.png"),
                         classLoader = classLoader,
                         category = entry.category,
                         tags = entry.tags,

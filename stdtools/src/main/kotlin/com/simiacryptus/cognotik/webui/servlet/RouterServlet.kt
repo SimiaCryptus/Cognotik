@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -13,189 +13,192 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 class RouterServlet(
-    val dataStorage: StorageInterface,
-    val appTitle: String
+  val dataStorage: StorageInterface,
+  val appTitle: String
 ) : HttpServlet() {
-    val appEntry: AppEntry = AppEntry.values().find { it.appId == appTitle } ?: throw IllegalStateException("AppEntry with name '$appTitle' not found")
-    val readme : String by lazy { appEntry.readme ?: throw IllegalStateException("AppEntry with name '$appTitle' not found or has no readme") }
+  val appEntry: AppEntry = AppEntry.values().find { it.appId == appTitle }
+    ?: throw IllegalStateException("AppEntry with name '$appTitle' not found")
+  val readme: String by lazy {
+    appEntry.readme ?: throw IllegalStateException("AppEntry with name '$appTitle' not found or has no readme")
+  }
 
-    override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-        when {
-            request.pathInfo == "/" -> renderGatewayPage(request, response)
+  override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    when {
+      request.pathInfo == "/" -> renderGatewayPage(request, response)
 
-            request.pathInfo == "/new" -> response.sendRedirect(
-                "${request.contextPath}/fileIndex/${
-                    request.getParameter(
-                        "sessionId"
-                    ) ?: Session.newUserID()
-                }/app.html"
-            )
+      request.pathInfo == "/new" -> response.sendRedirect(
+        "${request.contextPath}/fileIndex/${
+          request.getParameter(
+            "sessionId"
+          ) ?: Session.newUserID()
+        }/app.html"
+      )
 
-            request.pathInfo == "/global" -> response.sendRedirect(
-                "${request.contextPath}/fileIndex/${
-                    request.getParameter(
-                        "sessionId"
-                    ) ?: Session.newGlobalID()
-                }/app.html"
-            )
+      request.pathInfo == "/global" -> response.sendRedirect(
+        "${request.contextPath}/fileIndex/${
+          request.getParameter(
+            "sessionId"
+          ) ?: Session.newGlobalID()
+        }/app.html"
+      )
 
-            request.pathInfo.startsWith("/share/") -> share(
-                request,
-                response,
-                Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
-              UserProviderImpl().authenticate(request, response) ?: run {
-                response.sendError(
-                  HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
-                )
-                return
-              })
+      request.pathInfo.startsWith("/share/") -> share(
+        request,
+        response,
+        Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
+        UserProviderImpl().authenticate(request, response) ?: run {
+          response.sendError(
+            HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
+          )
+          return
+        })
 
-            else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
-        }
+      else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
     }
+  }
 
-    override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
-        when {
-            request.pathInfo?.startsWith("/share/") == true -> {
-                val session = Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: "")
-                val user = UserProviderImpl().authenticate(request, response) ?: run {
-                  response.sendError(
-                    HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
-                  )
-                  return
-                }
-                confirmShare(request, response, session, user)
-            }
-
-            else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
+  override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    when {
+      request.pathInfo?.startsWith("/share/") == true -> {
+        val session = Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: "")
+        val user = UserProviderImpl().authenticate(request, response) ?: run {
+          response.sendError(
+            HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
+          )
+          return
         }
+        confirmShare(request, response, session, user)
+      }
+
+      else -> response.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown path: ${request.pathInfo}")
     }
+  }
 
-    fun share(
-        request: HttpServletRequest, response: HttpServletResponse, session: Session, user: User
-    ) {
-        require(!session.isGlobal()) { "Cannot share a global session" }
-        val sessionRoot = dataStorage.getUserDir(user, session)
-        if (!sessionRoot.exists() || sessionRoot.list()?.isEmpty() == true) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
-            return
-        }
-        val globalSession = session.toGlobal()
-        val globalRoot = dataStorage.getUserDir(user, globalSession)
-        val isUpdate = globalRoot.exists() && (globalRoot.list()?.isNotEmpty() == true)
-        val filesToCopy = collectFilesToCopy(sessionRoot, globalRoot)
-        renderConfirmationPage(request, response, session, globalSession, filesToCopy, isUpdate)
+  fun share(
+    request: HttpServletRequest, response: HttpServletResponse, session: Session, user: User
+  ) {
+    require(!session.isGlobal()) { "Cannot share a global session" }
+    val sessionRoot = dataStorage.getUserDir(user, session)
+    if (!sessionRoot.exists() || sessionRoot.list()?.isEmpty() == true) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
+      return
     }
+    val globalSession = session.toGlobal()
+    val globalRoot = dataStorage.getUserDir(user, globalSession)
+    val isUpdate = globalRoot.exists() && (globalRoot.list()?.isNotEmpty() == true)
+    val filesToCopy = collectFilesToCopy(sessionRoot, globalRoot)
+    renderConfirmationPage(request, response, session, globalSession, filesToCopy, isUpdate)
+  }
 
-    fun confirmShare(
-        request: HttpServletRequest, response: HttpServletResponse, session: Session, user: User
-    ) {
-        require(!session.isGlobal()) { "Cannot share a global session" }
-        val confirmation = request.getParameter("confirm")
-        if (confirmation != "yes") {
-            response.sendRedirect("${request.contextPath}/fileIndex/${session.sessionId}/app.html")
-            return
-        }
-        val sessionRoot = dataStorage.getUserDir(user, session)
-        if (!sessionRoot.exists() || sessionRoot.list()?.isEmpty() == true) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
-            return
-        }
-        val globalSession = session.toGlobal()
-        val globalRoot = dataStorage.getUserDir(user, globalSession)
-        try {
-            val filesToCopy = collectFilesToCopy(sessionRoot, globalRoot)
-            filesToCopy.forEach { relativePath ->
-                val source = File(sessionRoot, relativePath)
-                val destination = File(globalRoot, relativePath)
-                destination.parentFile?.mkdirs()
-                DocOpsApp.copyFileWithLineEndingNormalization(source, destination)
-            }
-            response.sendRedirect("${request.contextPath}/fileIndex/${globalSession.sessionId}/app.html")
-        } catch (e: Exception) {
-            LoggerFactory.getLogger(DocOpsApp::class.java).error(
-                "Failed to share session ${session.sessionId} to global session ${globalSession.sessionId}: ${e.message}",
-                e
-            )
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to share session: ${e.message}")
-        }
+  fun confirmShare(
+    request: HttpServletRequest, response: HttpServletResponse, session: Session, user: User
+  ) {
+    require(!session.isGlobal()) { "Cannot share a global session" }
+    val confirmation = request.getParameter("confirm")
+    if (confirmation != "yes") {
+      response.sendRedirect("${request.contextPath}/fileIndex/${session.sessionId}/app.html")
+      return
     }
-
-    /**
-     * Collects relative paths of files that need to be copied from source to destination.
-     * Only files that don't exist in destination, or whose contents differ, are included.
-     */
-    fun collectFilesToCopy(source: File, destination: File): List<String> {
-        val result = mutableListOf<String>()
-        collectFilesToCopyRecursive(source, source, destination, "", result)
-        return result
+    val sessionRoot = dataStorage.getUserDir(user, session)
+    if (!sessionRoot.exists() || sessionRoot.list()?.isEmpty() == true) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, "Session is empty: ${session.sessionId}")
+      return
     }
-
-    private fun collectFilesToCopyRecursive(
-        baseDir: File, source: File, destination: File, relativePath: String, result: MutableList<String>
-    ) {
-        // Skip files/directories that are hidden according to FileAccessControl.
-        // Hidden files should never be shared publicly.
-        if (FileAccessControl.isHidden(baseDir, source)) {
-            return
-        }
-        if (source.isDirectory) {
-            source.listFiles()?.forEach { child ->
-                val childRelative = if (relativePath.isEmpty()) child.name else "$relativePath/${child.name}"
-                collectFilesToCopyRecursive(baseDir, child, File(destination, child.name), childRelative, result)
-            }
-        } else {
-            if (!destination.exists() || !filesContentEqual(source, destination)) {
-                result.add(relativePath)
-            }
-        }
+    val globalSession = session.toGlobal()
+    val globalRoot = dataStorage.getUserDir(user, globalSession)
+    try {
+      val filesToCopy = collectFilesToCopy(sessionRoot, globalRoot)
+      filesToCopy.forEach { relativePath ->
+        val source = File(sessionRoot, relativePath)
+        val destination = File(globalRoot, relativePath)
+        destination.parentFile?.mkdirs()
+        DocOpsApp.copyFileWithLineEndingNormalization(source, destination)
+      }
+      response.sendRedirect("${request.contextPath}/fileIndex/${globalSession.sessionId}/app.html")
+    } catch (e: Exception) {
+      LoggerFactory.getLogger(DocOpsApp::class.java).error(
+        "Failed to share session ${session.sessionId} to global session ${globalSession.sessionId}: ${e.message}",
+        e
+      )
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to share session: ${e.message}")
     }
+  }
 
-    private fun filesContentEqual(a: File, b: File): Boolean {
-        if (a.length() != b.length()) return false
-        return try {
-            a.readBytes().contentEquals(b.readBytes())
-        } catch (e: Exception) {
-            false
-        }
+  /**
+   * Collects relative paths of files that need to be copied from source to destination.
+   * Only files that don't exist in destination, or whose contents differ, are included.
+   */
+  fun collectFilesToCopy(source: File, destination: File): List<String> {
+    val result = mutableListOf<String>()
+    collectFilesToCopyRecursive(source, source, destination, "", result)
+    return result
+  }
+
+  private fun collectFilesToCopyRecursive(
+    baseDir: File, source: File, destination: File, relativePath: String, result: MutableList<String>
+  ) {
+    // Skip files/directories that are hidden according to FileAccessControl.
+    // Hidden files should never be shared publicly.
+    if (FileAccessControl.isHidden(baseDir, source)) {
+      return
     }
+    if (source.isDirectory) {
+      source.listFiles()?.forEach { child ->
+        val childRelative = if (relativePath.isEmpty()) child.name else "$relativePath/${child.name}"
+        collectFilesToCopyRecursive(baseDir, child, File(destination, child.name), childRelative, result)
+      }
+    } else {
+      if (!destination.exists() || !filesContentEqual(source, destination)) {
+        result.add(relativePath)
+      }
+    }
+  }
 
-    private fun renderConfirmationPage(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        session: Session,
-        globalSession: Session,
-        filesToCopy: List<String>,
-        isUpdate: Boolean
-    ) {
-        response.contentType = "text/html; charset=UTF-8"
-        response.status = HttpServletResponse.SC_OK
-        val actionUrl = "${request.contextPath}/share/${session.sessionId}"
-        val cancelUrl = "${request.contextPath}/fileIndex/${session.sessionId}/app.html"
-        val title = if (isUpdate) "Update Public Share" else "Share Session Publicly"
-        val warning = if (isUpdate) {
-            "You are about to <strong>update an existing public share</strong>. The files listed below will be copied to the public global session and will be <strong>visible to anyone</strong>."
-        } else {
-            "You are about to <strong>share this session publicly</strong>. The files listed below will be copied to a public global session and will be <strong>visible to anyone</strong>."
+  private fun filesContentEqual(a: File, b: File): Boolean {
+    if (a.length() != b.length()) return false
+    return try {
+      a.readBytes().contentEquals(b.readBytes())
+    } catch (e: Exception) {
+      false
+    }
+  }
+
+  private fun renderConfirmationPage(
+    request: HttpServletRequest,
+    response: HttpServletResponse,
+    session: Session,
+    globalSession: Session,
+    filesToCopy: List<String>,
+    isUpdate: Boolean
+  ) {
+    response.contentType = "text/html; charset=UTF-8"
+    response.status = HttpServletResponse.SC_OK
+    val actionUrl = "${request.contextPath}/share/${session.sessionId}"
+    val cancelUrl = "${request.contextPath}/fileIndex/${session.sessionId}/app.html"
+    val title = if (isUpdate) "Update Public Share" else "Share Session Publicly"
+    val warning = if (isUpdate) {
+      "You are about to <strong>update an existing public share</strong>. The files listed below will be copied to the public global session and will be <strong>visible to anyone</strong>."
+    } else {
+      "You are about to <strong>share this session publicly</strong>. The files listed below will be copied to a public global session and will be <strong>visible to anyone</strong>."
+    }
+    val fileListHtml = if (filesToCopy.isEmpty()) {
+      "<p><em>No files need to be copied. The public share is already up to date.</em></p>"
+    } else {
+      buildString {
+        append("<p><strong>${filesToCopy.size}</strong> file(s) will be copied:</p>")
+        append("<ul class=\"file-list\">")
+        filesToCopy.forEach { path ->
+          append("<li>").append(escapeHtml(path)).append("</li>")
         }
-        val fileListHtml = if (filesToCopy.isEmpty()) {
-            "<p><em>No files need to be copied. The public share is already up to date.</em></p>"
-        } else {
-            buildString {
-                append("<p><strong>${filesToCopy.size}</strong> file(s) will be copied:</p>")
-                append("<ul class=\"file-list\">")
-                filesToCopy.forEach { path ->
-                    append("<li>").append(escapeHtml(path)).append("</li>")
-                }
-                append("</ul>")
-            }
-        }
-        val confirmButton = if (filesToCopy.isEmpty()) {
-            "<button type=\"submit\" name=\"confirm\" value=\"yes\">Continue to Public Share</button>"
-        } else {
-            "<button type=\"submit\" name=\"confirm\" value=\"yes\" class=\"danger\">Yes, Share Publicly</button>"
-        }
-        val html = """
+        append("</ul>")
+      }
+    }
+    val confirmButton = if (filesToCopy.isEmpty()) {
+      "<button type=\"submit\" name=\"confirm\" value=\"yes\">Continue to Public Share</button>"
+    } else {
+      "<button type=\"submit\" name=\"confirm\" value=\"yes\" class=\"danger\">Yes, Share Publicly</button>"
+    }
+    val html = """
                 <!DOCTYPE html>
                 <html lang="en">
                 <head>
@@ -279,38 +282,67 @@ class RouterServlet(
                 </body>
                 </html>
             """.trimIndent()
-        response.writer.use { it.write(html) }
-    }
+    response.writer.use { it.write(html) }
+  }
 
-    private fun escapeHtml(s: String): String =
-        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
+  private fun escapeHtml(s: String): String =
+    s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
 
-    private fun renderGatewayPage(request: HttpServletRequest, response: HttpServletResponse) {
-        response.contentType = "text/html; charset=UTF-8"
-        response.status = HttpServletResponse.SC_OK
-        val newSessionUrl = "${request.contextPath}/new"
-        // Embed the readme content as a JSON-escaped JS string for safe inclusion in the page
-        val readmeJs = jsStringEscape(readme)
-        // Resolve display fields from AppEntry
-        val displayName = appEntry.displayName.ifBlank { appTitle }
-        val description = appEntry.description
-        val icon = appEntry.icon
-        val badge = appEntry.badge
-        val badgeClass = appEntry.badgeClass
-        val category = appEntry.category
-        val tags = appEntry.tags
-        val videoUrl = appEntry.videoUrl
-        val exampleSessions = appEntry.exampleSessions ?: emptyMap()
-        // Background and icon image URLs (served by a static resource handler based on appId)
-        val backgroundUrl =
-            if (appEntry.hasBackground) "/appDirectory/${appEntry.appId ?: appEntry.id}/background.png" else null
-         // Video landing page URL (SEO-friendly dedicated page)
-         val videoLandingUrl = if (!appEntry.videoUrl.isNullOrBlank())
-             "/video/${appEntry.appId ?: appEntry.id}"
-         else null
+  private fun renderGatewayPage(request: HttpServletRequest, response: HttpServletResponse) {
+    response.contentType = "text/html; charset=UTF-8"
+    response.status = HttpServletResponse.SC_OK
+    val newSessionUrl = "${request.contextPath}/new"
+    // NOTE: the readme is rendered server-side (as escaped text) so crawlers that do not
+    // execute JavaScript still index the page's primary content. It is injected after
+    // trimIndent() via the <!--README--> placeholder so the markdown indentation is preserved.
+    // Resolve display fields from AppEntry
+    val displayName = appEntry.displayName.ifBlank { appTitle }
+    val description = appEntry.description
+    val icon = appEntry.icon
+    val badge = appEntry.badge
+    val badgeClass = appEntry.badgeClass
+    val category = appEntry.category
+    val tags = appEntry.tags
+    val videoUrl = appEntry.videoUrl
+    val exampleSessions = appEntry.exampleSessions ?: emptyMap()
+    // Background and icon image URLs (served by a static resource handler based on appId)
+    val backgroundUrl =
+      if (appEntry.hasBackground) "/appDirectory/${appEntry.appId ?: appEntry.id}/background.png" else null
+    val socialUrl =
+      if (appEntry.hasSocial) "/appDirectory/${appEntry.appId ?: appEntry.id}/social.png" else null
+    val iconUrl = if (appEntry.hasIcon) "/appDirectory/${appEntry.appId ?: appEntry.id}/icon.png" else null
+    // Video landing page URL (SEO-friendly dedicated page)
+    val videoLandingUrl = if (!appEntry.videoUrl.isNullOrBlank())
+      "/video/${appEntry.appId ?: appEntry.id}"
+    else null
+    /* ---------------- SEO metadata ---------------- */
+    val siteName = "Cognotik"
+    val canonicalUrl = absoluteUrl(request, "${request.contextPath}/")
+    val metaDesc = metaDescriptionFor(displayName, description, readme)
+    // Keep the title under ~60-65 chars so it is not truncated in SERPs
+    val pageTitle = buildString {
+      append(displayName)
+      if (!category.isNullOrBlank()) append(" – ").append(category)
+      append(" | ").append(siteName)
+    }.let { if (it.length <= 65) it else "$displayName | $siteName" }
+    val keywords = (tags + listOfNotNull(category) + listOf(displayName, "AI agent", siteName))
+      .filter { it.isNotBlank() }.distinct().joinToString(", ")
+    val absSocialImage = (socialUrl ?: iconUrl ?: backgroundUrl)?.let { absoluteUrl(request, it) }
+    val absVideoUrl = videoUrl?.takeIf { it.isNotBlank() }?.let { absoluteUrl(request, it) }
+    val jsonLd = buildJsonLd(
+      request = request,
+      canonicalUrl = canonicalUrl,
+      displayName = displayName,
+      metaDesc = metaDesc,
+      category = category,
+      tags = tags,
+      imageUrl = absSocialImage,
+      videoUrl = absVideoUrl,
+      exampleSessions = exampleSessions
+    )
 
-        val backgroundCss = if (backgroundUrl != null) {
-            """
+    val backgroundCss = if (backgroundUrl != null) {
+      """
             .background-layer {
               position: fixed;
               top: 0; left: 0; right: 0; bottom: 0;
@@ -342,55 +374,61 @@ class RouterServlet(
             /* Make body transparent so background-layer is visible behind content */
             body { background: transparent !important; }
             """.trimIndent()
-        } else ""
+    } else ""
 
-        val backgroundHtml = if (backgroundUrl != null) {
-            """<div class="background-layer" aria-hidden="true"></div>"""
-        } else ""
+    val backgroundHtml = if (backgroundUrl != null) {
+      """<div class="background-layer" aria-hidden="true"></div>"""
+    } else ""
 
-        val iconHtml = """<span class="app-icon-emoji" aria-hidden="true">${escapeHtml(icon)}</span>"""
+    // Prefer a real image (indexable, gives an alt text) and fall back to the emoji glyph
+    val iconHtml = if (iconUrl != null) {
+      """<img class="app-icon" src="${escapeHtml(iconUrl)}" width="64" height="64"
+                     decoding="async" alt="${escapeHtml(displayName)} application icon">"""
+    } else {
+      """<span class="app-icon-emoji" role="img" aria-label="${escapeHtml(displayName)} icon">${escapeHtml(icon)}</span>"""
+    }
 
-        val badgeHtml = if (!badge.isNullOrBlank()) {
-            val cls = badgeClass?.let { " ${escapeHtml(it)}" } ?: ""
-            """<span class="app-badge$cls">${escapeHtml(badge)}</span>"""
-        } else ""
+    val badgeHtml = if (!badge.isNullOrBlank()) {
+      val cls = badgeClass?.let { " ${escapeHtml(it)}" } ?: ""
+      """<span class="app-badge$cls">${escapeHtml(badge)}</span>"""
+    } else ""
 
-        val categoryHtml = if (!category.isNullOrBlank()) {
-            """<span class="app-category">${escapeHtml(category)}</span>"""
-        } else ""
+    val categoryHtml = if (!category.isNullOrBlank()) {
+      """<span class="app-category">${escapeHtml(category)}</span>"""
+    } else ""
 
-        val tagsHtml = if (tags.isNotEmpty()) {
-            buildString {
-                append("""<div class="app-tags">""")
-                tags.forEach {
-                    append("""<span class="app-tag">""").append(escapeHtml(it)).append("</span>")
-                }
-                append("</div>")
-            }
-        } else ""
+    val tagsHtml = if (tags.isNotEmpty()) {
+      buildString {
+        append("""<div class="app-tags">""")
+        tags.forEach {
+          append("""<span class="app-tag">""").append(escapeHtml(it)).append("</span>")
+        }
+        append("</div>")
+      }
+    } else ""
 
-        val descriptionHtml = if (description.isNotBlank()) {
-            """<p class="app-description">${escapeHtml(description)}</p>"""
-        } else ""
+    val descriptionHtml = if (description.isNotBlank()) {
+      """<p class="app-description">${escapeHtml(description)}</p>"""
+    } else ""
 
-        val videoHtml = if (!videoUrl.isNullOrBlank()) {
-            // Support direct video files and YouTube/Vimeo embeds
-            if (videoUrl.contains("youtube.com") || videoUrl.contains("youtu.be") || videoUrl.contains("vimeo.com")) {
-                 val landingLink = if (videoLandingUrl != null)
-                     """<div class="app-video-footer"><a href="${escapeHtml(videoLandingUrl)}" class="video-landing-link">🔗 View dedicated video page</a></div>"""
-                 else ""
-                 """
+    val videoHtml = if (!videoUrl.isNullOrBlank()) {
+      // Support direct video files and YouTube/Vimeo embeds
+      if (videoUrl.contains("youtube.com") || videoUrl.contains("youtu.be") || videoUrl.contains("vimeo.com")) {
+        val landingLink = if (videoLandingUrl != null)
+          """<div class="app-video-footer"><a href="${escapeHtml(videoLandingUrl)}" class="video-landing-link">🔗 View dedicated video page</a></div>"""
+        else ""
+        """
                  <div class="app-video">
-                   <iframe src="${escapeHtml(videoUrl)}" frameborder="0" allowfullscreen
-                           title="${escapeHtml(displayName)} demo"></iframe>
+                   <iframe src="${escapeHtml(videoUrl)}" frameborder="0" allowfullscreen loading="lazy"
+                           title="${escapeHtml(displayName)} demo video"></iframe>
                  </div>
                  $landingLink
                  """.trimIndent()
-            } else {
-                 val landingLink = if (videoLandingUrl != null)
-                     """<div class="app-video-footer"><a href="${escapeHtml(videoLandingUrl)}" class="video-landing-link">🔗 View dedicated video page</a></div>"""
-                 else ""
-                 """
+      } else {
+        val landingLink = if (videoLandingUrl != null)
+          """<div class="app-video-footer"><a href="${escapeHtml(videoLandingUrl)}" class="video-landing-link">🔗 View dedicated video page</a></div>"""
+        else ""
+        """
                  <div class="app-video">
                    <video controls preload="metadata">
                      <source src="${escapeHtml(videoUrl)}">
@@ -399,30 +437,65 @@ class RouterServlet(
                  </div>
                  $landingLink
                  """.trimIndent()
-            }
-        } else ""
+      }
+    } else ""
 
-        val examplesHtml = if (exampleSessions.isNotEmpty()) {
-            buildString {
-                append("""<div class="app-examples"><h2>Example Sessions</h2><ul class="examples-list">""")
-                exampleSessions.forEach { (name, url) ->
-                    append("""<li><a href="""").append(escapeHtml(url)).append("""">""")
-                        .append(escapeHtml(name)).append("</a></li>")
-                }
-                append("</ul></div>")
-            }
-        } else ""
+    val examplesHtml = if (exampleSessions.isNotEmpty()) {
+      buildString {
+        append("""<section class="app-examples" aria-labelledby="examples-heading">""")
+        append("""<h2 id="examples-heading">${escapeHtml(displayName)} Example Sessions</h2>""")
+        append("""<ul class="examples-list">""")
+        exampleSessions.forEach { (name, url) ->
+          append("""<li><a href="""").append(escapeHtml(url)).append("""">""")
+            .append(escapeHtml(name)).append("</a></li>")
+        }
+        append("</ul></section>")
+      }
+    } else ""
 
-        val html = """
+    val html = """
              <!DOCTYPE html>
              <html lang="en">
              <head>
                <meta charset="UTF-8">
-               <title>${escapeHtml(displayName)}</title>
+               <meta name="viewport" content="width=device-width, initial-scale=1">
+               <title>${escapeHtml(pageTitle)}</title>
+               <meta name="description" content="${escapeHtml(metaDesc)}">
+               ${if (keywords.isNotBlank()) """<meta name="keywords" content="${escapeHtml(keywords)}">""" else ""}
+               <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+               <meta name="application-name" content="${escapeHtml(displayName)}">
+               <meta name="theme-color" content="#337ab7">
+               <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
+               ${if (iconUrl != null) """<link rel="icon" href="${escapeHtml(iconUrl)}">""" else ""}
+               <!-- Open Graph -->
+               <meta property="og:type" content="website">
+               <meta property="og:site_name" content="$siteName">
+               <meta property="og:locale" content="en_US">
+               <meta property="og:title" content="${escapeHtml(displayName)}">
+               <meta property="og:description" content="${escapeHtml(metaDesc)}">
+               <meta property="og:url" content="${escapeHtml(canonicalUrl)}">
+               ${
+      if (absSocialImage != null) """<meta property="og:image" content="${escapeHtml(absSocialImage)}">
+               <meta property="og:image:alt" content="${escapeHtml(displayName)} preview">""" else ""
+    }
+               ${if (absVideoUrl != null) """<meta property="og:video" content="${escapeHtml(absVideoUrl)}">""" else ""}
+               <!-- Twitter / X cards -->
+               <meta name="twitter:card" content="${if (absSocialImage != null) "summary_large_image" else "summary"}">
+               <meta name="twitter:title" content="${escapeHtml(displayName)}">
+               <meta name="twitter:description" content="${escapeHtml(metaDesc)}">
+               ${if (absSocialImage != null) """<meta name="twitter:image" content="${escapeHtml(absSocialImage)}">""" else ""}
+               <!-- Structured data -->
+               <script type="application/ld+json">$jsonLd</script>
                <script src="/modules/theme.js"></script>
-               <script src="/lib/marked.min.js"></script>
+               <script defer src="/lib/marked.min.js"></script>
                <link rel="stylesheet" href="/menubar.css">
-              ${if (videoLandingUrl != null) """<link rel="alternate" type="text/html" href="${escapeHtml(videoLandingUrl)}" title="${escapeHtml("$displayName Demo Video")}">""" else ""}
+              ${
+      if (videoLandingUrl != null) """<link rel="alternate" type="text/html" href="${
+        escapeHtml(
+          videoLandingUrl
+        )
+      }" title="${escapeHtml("$displayName Demo Video")}">""" else ""
+    }
                <style>
                  :root {
                    --bg: #ffffff;
@@ -533,6 +606,18 @@ class RouterServlet(
                               color: var(--link-fg); background: var(--btn-primary-bg); }
                  .actions a.secondary { background: var(--btn-secondary-bg); }
                  .readme { margin-top: 2em; }
+                 /* Server-rendered markdown source shown until marked.js enhances it */
+                 .readme-content.markdown-source { white-space: pre-wrap; font-family: monospace;
+                                                   font-size: 0.9em; word-wrap: break-word; }
+                 .breadcrumbs { font-size: 0.85em; margin-bottom: 1em; color: var(--muted); }
+                 .breadcrumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4em; padding: 0; margin: 0; }
+                 .breadcrumbs li + li::before { content: "/"; margin-right: 0.4em; color: var(--muted); }
+                 .breadcrumbs a, .page-footer a { color: var(--btn-primary-bg); text-decoration: none; }
+                 .breadcrumbs a:hover, .page-footer a:hover { text-decoration: underline; }
+                 .page-footer { margin: 3em 0 1em; padding-top: 1em;
+                                border-top: 1px solid var(--panel-border);
+                                font-size: 0.85em; color: var(--muted); }
+                 img { max-width: 100%; height: auto; }
                  /* Menubar styles */
                  .top-bar { display: flex; align-items: center; gap: 0.5em; padding: 0.5em 1em;
                             background: var(--top-bar-bg); border-bottom: 1px solid var(--top-bar-border);
@@ -554,8 +639,14 @@ class RouterServlet(
              <body>
                  $backgroundHtml
                 <div id="menubar-container"></div>
-                <div class="page-container">
-                  <div class="app-header">
+                <main class="page-container" id="main-content">
+                  <nav class="breadcrumbs" aria-label="Breadcrumb">
+                    <ol>
+                      <li><a href="/">Apps</a></li>
+                      <li aria-current="page">${escapeHtml(displayName)}</li>
+                    </ol>
+                  </nav>
+                  <header class="app-header">
                     $iconHtml
                     <div class="app-title-block">
                       <h1>${escapeHtml(displayName)}</h1>
@@ -564,18 +655,33 @@ class RouterServlet(
                         $categoryHtml
                       </div>
                     </div>
-                  </div>
+                  </header>
                   $descriptionHtml
                   $tagsHtml
                   $videoHtml
                   <div class="actions">
-                    <a href="${escapeHtml(newSessionUrl)}">Start New Session</a>
+                    <a href="${escapeHtml(newSessionUrl)}" rel="nofollow"
+                       title="Start a new ${escapeHtml(displayName)} session">Start New Session</a>
                   </div>
                   $examplesHtml
-                  <div class="readme" id="readme">
-                    <p><em>Loading documentation...</em></p>
-                  </div>
-                </div>
+                  <section class="readme" id="readme" aria-labelledby="readme-heading">
+                    <h2 id="readme-heading">${escapeHtml(displayName)} Documentation</h2>
+                    <div id="readme-content" class="readme-content markdown-source"><!--README--></div>
+                  </section>
+                  <footer class="page-footer">
+                    <nav aria-label="Footer">
+                      <a href="/">All apps</a> ·
+                      <a href="/about.html">About Cognotik</a>
+                      ${
+      if (videoLandingUrl != null) """· <a href="${escapeHtml(videoLandingUrl)}">${
+        escapeHtml(
+          displayName
+        )
+      } demo video</a>""" else ""
+    }
+                    </nav>
+                  </footer>
+                </main>
                 <!-- Sessions Modal -->
                 <div class="modal" id="sessions-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
                     <div class="modal-content" style="position:relative; background:var(--bg); margin:5vh auto; padding:1em; width:90%; max-width:1200px; height:85vh; display:flex; flex-direction:column; border-radius:6px;">
@@ -732,55 +838,156 @@ class RouterServlet(
                 </script>
                <script>
                  (function() {
-                   var readmeContent = "$readmeJs";
-                   var container = document.getElementById('readme');
-                   if (!readmeContent || readmeContent.length === 0) {
-                     container.innerHTML = '<p><em>No documentation available.</em></p>';
-                     return;
-                   }
-                   try {
-                     if (typeof marked !== 'undefined') {
-                       container.innerHTML = marked.parse(readmeContent);
-                     } else {
-                       container.innerText = readmeContent;
+                   // Progressive enhancement: the markdown source is already in the DOM
+                   // (server-rendered, crawler-visible); marked.js only prettifies it.
+                   function renderReadme() {
+                     var container = document.getElementById('readme-content');
+                     if (!container) return;
+                     var readmeContent = container.textContent || '';
+                     if (!readmeContent.trim()) {
+                       container.innerHTML = '<p><em>No documentation available.</em></p>';
+                       container.classList.remove('markdown-source');
+                       return;
                      }
-                   } catch (e) {
-                     container.innerText = readmeContent;
+                     try {
+                       if (typeof marked !== 'undefined') {
+                         container.innerHTML = marked.parse(readmeContent);
+                         container.classList.remove('markdown-source');
+                       }
+                     } catch (e) { /* keep the plain-text fallback */ }
+                   }
+                   if (document.readyState === 'loading') {
+                     document.addEventListener('DOMContentLoaded', renderReadme);
+                   } else {
+                     renderReadme();
                    }
                  })();
                </script>
              </body>
              </html>
          """.trimIndent()
-        response.writer.use { it.write(html) }
-    }
+      // Inject after trimIndent so the markdown's own indentation is preserved
+      .replace("<!--README-->", escapeHtml(readme))
+    response.writer.use { it.write(html) }
+  }
 
-    private fun jsStringEscape(s: String): String {
-        val sb = StringBuilder(s.length + 16)
-        for (c in s) {
-            when (c) {
-                '\\' -> sb.append("\\\\")
-                '"' -> sb.append("\\\"")
-                '\n' -> sb.append("\\n")
-                '\r' -> sb.append("\\r")
-                '\t' -> sb.append("\\t")
-                '\b' -> sb.append("\\b")
-                '\u000C' -> sb.append("\\f")
-                '<' -> sb.append("\\u003C")
-                '>' -> sb.append("\\u003E")
-                '&' -> sb.append("\\u0026")
-                '\u2028' -> sb.append("\\u2028")
-                '\u2029' -> sb.append("\\u2029")
-                else -> {
-                    if (c.code < 0x20) {
-                        sb.append(String.format("\\u%04x", c.code))
-                    } else {
-                        sb.append(c)
-                    }
-                }
-            }
+  private fun jsStringEscape(s: String): String {
+    val sb = StringBuilder(s.length + 16)
+    for (c in s) {
+      when (c) {
+        '\\' -> sb.append("\\\\")
+        '"' -> sb.append("\\\"")
+        '\n' -> sb.append("\\n")
+        '\r' -> sb.append("\\r")
+        '\t' -> sb.append("\\t")
+        '\b' -> sb.append("\\b")
+        '\u000C' -> sb.append("\\f")
+        '<' -> sb.append("\\u003C")
+        '>' -> sb.append("\\u003E")
+        '&' -> sb.append("\\u0026")
+        '\u2028' -> sb.append("\\u2028")
+        '\u2029' -> sb.append("\\u2029")
+        else -> {
+          if (c.code < 0x20) {
+            sb.append(String.format("\\u%04x", c.code))
+          } else {
+            sb.append(c)
+          }
         }
-        return sb.toString()
+      }
     }
+    return sb.toString()
+  }
+
+  /** Scheme + host (+ port) of the current request, honouring reverse-proxy headers. */
+  private fun baseUrl(request: HttpServletRequest): String {
+    val scheme = request.getHeader("X-Forwarded-Proto")?.substringBefore(',')?.trim()?.ifBlank { null }
+      ?: request.scheme
+    val host = request.getHeader("X-Forwarded-Host")?.substringBefore(',')?.trim()?.ifBlank { null }
+      ?: run {
+        val port = request.serverPort
+        val isDefault = (scheme == "http" && port == 80) || (scheme == "https" && port == 443)
+        if (isDefault) request.serverName else "${request.serverName}:$port"
+      }
+    return "$scheme://$host"
+  }
+
+  /** Turns a (possibly relative) path into an absolute URL for canonical/OG/JSON-LD usage. */
+  private fun absoluteUrl(request: HttpServletRequest, path: String): String = when {
+    path.startsWith("http://") || path.startsWith("https://") || path.startsWith("//") -> path
+    path.startsWith("/") -> baseUrl(request) + path
+    else -> baseUrl(request) + "/" + path
+  }
+
+  /**
+   * Builds a <=160 character meta description: the app description if present,
+   * otherwise the first meaningful prose line of the readme, stripped of markdown syntax.
+   */
+  private fun metaDescriptionFor(displayName: String, description: String, readme: String): String {
+    val raw = when {
+      description.isNotBlank() -> description
+      else -> readme.lineSequence()
+        .map { it.trim() }
+        .firstOrNull {
+          it.isNotEmpty() && !it.startsWith("#") && !it.startsWith("!") && !it.startsWith("|") &&
+              !it.startsWith("```") && !it.startsWith("---") && !it.startsWith("<")
+        } ?: ""
+    }
+      .replace(Regex("\\[([^]]*)]\\([^)]*\\)"), "$1")
+      .replace(Regex("[*_`>#]"), "")
+      .replace(Regex("\\s+"), " ")
+      .trim()
+    val text = raw.ifBlank { "$displayName - an AI-powered application on Cognotik." }
+    return if (text.length <= 160) text
+    else text.take(157).substringBeforeLast(' ').trimEnd(',', '.', ';', ':') + "..."
+  }
+
+  /** schema.org JSON-LD graph: SoftwareApplication + optional VideoObject + BreadcrumbList + ItemList. */
+  private fun buildJsonLd(
+    request: HttpServletRequest,
+    canonicalUrl: String,
+    displayName: String,
+    metaDesc: String,
+    category: String?,
+    tags: List<String>,
+    imageUrl: String?,
+    videoUrl: String?,
+    exampleSessions: Map<String, String>
+  ): String {
+    val root = baseUrl(request) + "/"
+    fun q(s: String) = "\"${jsStringEscape(s)}\""
+    return buildString {
+      append("""{"@context":"https://schema.org","@graph":[""")
+      append("""{"@type":"SoftwareApplication","@id":${q("$canonicalUrl#app")},""")
+      append(""""name":${q(displayName)},""")
+      append(""""description":${q(metaDesc)},""")
+      append(""""url":${q(canonicalUrl)},""")
+      append(""""applicationCategory":${q(category?.ifBlank { null } ?: "DeveloperApplication")},""")
+      append(""""operatingSystem":"Any (web browser)",""")
+      if (tags.isNotEmpty()) append(""""keywords":${q(tags.joinToString(", "))},""")
+      if (imageUrl != null) append(""""image":${q(imageUrl)},""")
+      append(""""offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},""")
+      append(""""isPartOf":{"@type":"WebSite","name":"Cognotik","url":${q(root)}}}""")
+      if (videoUrl != null) {
+        append(""",{"@type":"VideoObject","name":${q("$displayName demo")},""")
+        append(""""description":${q(metaDesc)},""")
+        if (imageUrl != null) append(""""thumbnailUrl":${q(imageUrl)},""")
+        append(""""embedUrl":${q(videoUrl)}}""")
+      }
+      append(""",{"@type":"BreadcrumbList","itemListElement":[""")
+      append("""{"@type":"ListItem","position":1,"name":"Apps","item":${q(root)}},""")
+      append("""{"@type":"ListItem","position":2,"name":${q(displayName)},"item":${q(canonicalUrl)}}]}""")
+      if (exampleSessions.isNotEmpty()) {
+        append(""",{"@type":"ItemList","name":${q("$displayName example sessions")},"itemListElement":[""")
+        exampleSessions.entries.forEachIndexed { i, (name, url) ->
+          if (i > 0) append(",")
+          append("""{"@type":"ListItem","position":${i + 1},"name":${q(name)},"url":${q(absoluteUrl(request, url))}}""")
+        }
+        append("]}")
+      }
+      append("]}")
+    }
+  }
+
 
 }
