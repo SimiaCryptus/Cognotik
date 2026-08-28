@@ -159,11 +159,11 @@ class SessionsServlet : HttpServlet() {
         // single bulk query. Children in the listing are leaf-style entries (we
         // don't recurse further into their descendants here), which matches the
         // non-recursive semantics of getSessionUsageSummaryBulk.
-        val childSessionIds: List<String> = visibleMetadata
+        val childSessionIds: List<Session> = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
-            .map { it.id.sessionId }
+            .map { it.id }
             .distinct()
-        val childUsagesById: Map<String, Map<String, ModelSchema.Usage>> = if (childSessionIds.isEmpty()) {
+        val childUsagesById: Map<Session, Map<String, ModelSchema.Usage>> = if (childSessionIds.isEmpty()) {
             emptyMap()
         } else {
             try {
@@ -176,7 +176,7 @@ class SessionsServlet : HttpServlet() {
         val childUsages: Map<Session, Map<String, ModelSchema.Usage>> = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
             .associate { childMeta ->
-                childMeta.id to (childUsagesById[childMeta.id.sessionId] ?: emptyMap())
+                (childMeta.id) to (childUsagesById[childMeta.id] ?: emptyMap())
             }
 
         // Sort

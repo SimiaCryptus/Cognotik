@@ -159,11 +159,11 @@ class SessionsServlet : HttpServlet() {
         // single bulk query. Children in the listing are leaf-style entries (we
         // don't recurse further into their descendants here), which matches the
         // non-recursive semantics of getSessionUsageSummaryBulk.
-        val childSessionIds: List<String> = visibleMetadata
+        val childSessionIds = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
-            .map { it.id.sessionId }
+            .map { it.id }
             .distinct()
-        val childUsagesById: Map<String, Map<String, ModelSchema.Usage>> = if (childSessionIds.isEmpty()) {
+        val childUsagesById = if (childSessionIds.isEmpty()) {
             emptyMap()
         } else {
             try {
@@ -173,10 +173,10 @@ class SessionsServlet : HttpServlet() {
                 emptyMap()
             }
         }
-        val childUsages: Map<Session, Map<String, ModelSchema.Usage>> = visibleMetadata
+        val childUsages = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
             .associate { childMeta ->
-                childMeta.id to (childUsagesById[childMeta.id.sessionId] ?: emptyMap())
+                childMeta.id to (childUsagesById[childMeta.id] ?: emptyMap())
             }
 
         // Sort
@@ -556,7 +556,7 @@ class SessionsServlet : HttpServlet() {
                                 }
                             }
                             append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
-                            append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")
+                            append("<td class=\"num\">").append(formatCost(u.cost)).append("</td>")
                             append("</tr>\n")
                         }
                         append("<tr class=\"total-row\">")
@@ -657,7 +657,7 @@ class SessionsServlet : HttpServlet() {
                                         }
                                     }
                                     append("<td class=\"num\">").append(formatNumber(u.total_tokens)).append("</td>")
-                                    append("<td class=\"num\">").append(formatCost(u.cost ?: 0.0)).append("</td>")
+                                    append("<td class=\"num\">").append(formatCost(u.cost)).append("</td>")
                                     append("</tr>\n")
                                 }
                                 append("</tbody></table>\n")

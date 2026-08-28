@@ -13,8 +13,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class User(
   @get:JsonProperty("email") val email: String,
   @get:JsonProperty("name") val name: String = email,
-  @get:JsonProperty("provider") val provider: String? = null,
+  //@get:JsonProperty("provider") val provider: String? = null,
 ) {
+  val provider: String = ""
   @get:JsonIgnore
   val id: String by lazy { (email+provider).hexHash().take(20) }
 

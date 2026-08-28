@@ -730,7 +730,7 @@ class LoginServlet : HttpServlet() {
       val user = User(
         email = username,
         name = username,
-        provider = methodName
+        //provider = methodName
       )
       val fileServices = try {
         ApplicationServices.fileApplicationServices()

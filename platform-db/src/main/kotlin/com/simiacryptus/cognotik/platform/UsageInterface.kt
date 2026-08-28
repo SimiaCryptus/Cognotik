@@ -64,8 +64,8 @@ interface UsageInterface {
    * @param sessionIds The set of session IDs to summarize
    * @return A map from session ID to its per-model usage summary
    */
-  fun getSessionUsageSummaryBulk(sessionIds: Collection<String>): Map<String, Map<String, ModelSchema.Usage>> {
-    return sessionIds.associateWith { getSessionUsageSummary(Session(it)) }
+  fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>): Map<Session, Map<String, ModelSchema.Usage>> {
+    return sessionIds.associateWith { getSessionUsageSummary(it) }
   }
 
   /**
@@ -77,26 +77,6 @@ interface UsageInterface {
     val totalCost: Double,
     val modelCount: Int,
   )
-
-  /**
-   * Bulk-fetch aggregated totals (token count + cost across all models) for
-   * multiple sessions in a single call. Designed for the sessions listing page
-   * where only summary numbers are displayed.
-   *
-   * The default implementation delegates to [getSessionUsageSummaryBulk].
-   */
-  fun getSessionUsageTotalsBulk(sessionIds: Collection<String>): Map<String, SessionUsageTotals> {
-    val raw = getSessionUsageSummaryBulk(sessionIds)
-    return raw.mapValues { (_, perModel) ->
-      var tokens = 0L
-      var cost = 0.0
-      for ((_, usage) in perModel) {
-        tokens += usage.total_tokens
-        cost += usage.cost
-      }
-      SessionUsageTotals(totalTokens = tokens, totalCost = cost, modelCount = perModel.size)
-    }
-  }
 
   /**
    * Records and increments usage statistics for a specific AI model invocation.
@@ -188,7 +168,7 @@ interface UsageInterface {
    * @return A list of [CreditEntry] records ordered by ascending datetime
    */
   fun getUserCredits(user: User, from: LocalDate, to: LocalDate): List<CreditEntry>
-  fun getUserBalance(userId: String): Double
+  fun getUserBalance(user: User): Double
 
   /**
    * Retrieves the individual usage rows for a session (and its descendant sessions).

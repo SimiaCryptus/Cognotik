@@ -369,9 +369,9 @@ class GiftedCreditsServlet : HttpServlet() {
             // Gift creation is now available to all authenticated users.
             // Show current balance so users know what they can afford.
             val currentBalance = try {
-                ApplicationServices.fileApplicationServices().usageDB.getUserBalance(user.id)
+                ApplicationServices.fileApplicationServices().usageDB.getUserBalance(user)
             } catch (e: Exception) {
-                log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
+                log.warn("Failed to retrieve balance for user={}: {}", user.email, e.message)
                 0.0
             }
             val createGiftSection = run {
@@ -1403,7 +1403,7 @@ class GiftedCreditsServlet : HttpServlet() {
                     <div class="details">
                         <p><strong>🎫 Gift ID:</strong> $giftId</p>
                         <p><strong>💰 Amount to be Credited:</strong> ${"%.2f".format(gift.amountGranted)}</p>
-                        <p><strong>👤 Claiming as:</strong> ${userinfo.email ?: userinfo.id}</p>
+                        <p><strong>👤 Claiming as:</strong> ${userinfo.email}</p>
                         <p><span class="theme-badge">🎨 ${theme.displayName}</span></p>
                     </div>
                     <p>Are you sure you want to claim this gift? This action cannot be undone.</p>
