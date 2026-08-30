@@ -235,7 +235,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       throw RuntimeException("Failed to resolve directory: ${e.message}", e)
     }
   }
-  val git = object :  GitProvider(dataStorage) {
+  override val git: GitProvider = object : GitProvider(dataStorage) {
     override fun authenticate(request: HttpServletRequest, response: HttpServletResponse) =
       UserProviderImpl().authenticate(request, response)
 
@@ -248,12 +248,6 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
     val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
     log.debug("doGet: pathInfo=$pathInfo, remoteAddr=${request.remoteAddr}")
     try {
-      // Handle git API endpoints
-      if (pathInfo.contains("/.git/api/")) {
-        log.debug("Routing to git API GET handler for path: $pathInfo")
-        git.handleGitApiGet(request, response, pathInfo)
-        return
-      }
       // Pre-flight auth check: if getDir would redirect to login, honor that and stop
       // before super.doGet attempts to call listContents (which would throw).
       if (!isAuthenticatedForSession(request, response)) {
@@ -275,12 +269,6 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
     val pathInfo = request.pathInfo ?: request.servletPath ?: "/"
     log.debug("doPost: pathInfo=$pathInfo, remoteAddr=${request.remoteAddr}")
     try {
-      // Handle git API endpoints
-      if (pathInfo.contains("/.git/api/")) {
-        log.debug("Routing to git API POST handler for path: $pathInfo")
-        git.handleGitApiPost(request, response, pathInfo)
-        return
-      }
       if (!isAuthenticatedForSession(request, response)) {
         log.debug("doPost: not authenticated, redirect already issued by isAuthenticatedForSession")
         return
@@ -387,4 +375,3 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
     }
   }
 }
-

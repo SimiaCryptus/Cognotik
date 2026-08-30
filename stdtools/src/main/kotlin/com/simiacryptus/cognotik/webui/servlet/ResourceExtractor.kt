@@ -41,13 +41,20 @@ package com.simiacryptus.cognotik.webui.servlet
         if (prefix.isEmpty()) return emptyList()
         targetDir.mkdirs()
         val written = mutableListOf<File>()
-        classLoader.getResource(prefix)?.let { url ->
+        val resource = classLoader.getResource(prefix)
+        resource?.let { url ->
           written += runCatching { extractFromUrl(url, prefix, targetDir, overwrite, skipDemoFolders) }
             .onFailure { log.debug("Failed to extract {} from {}: {}", prefix, url, it.message) }
             .getOrDefault(emptyList())
         }
         if (written.isEmpty()) {
           written += extractFromClassLoaderUrls(prefix, targetDir, classLoader, overwrite)
+        }
+        if (written.isEmpty()) {
+          require(extractFromUrl(resource!!, prefix, targetDir, overwrite, skipDemoFolders).isEmpty()) {
+            "Resource '$prefix' exists but could not be extracted; check the logs for details."
+          }
+          return emptyList()
         }
         return written
       }

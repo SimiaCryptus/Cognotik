@@ -18,6 +18,18 @@ abstract class GitProvider(
   companion object {
     val log = LoggerFactory.getLogger(GitProvider::class.java)
      private val VALID_RESET_MODES = setOf("soft", "mixed", "hard", "merge", "keep")
+     private val VALID_SUBMODULE_ACTIONS = setOf("add", "init", "update", "sync", "deinit", "status")
+     private val SEQUENCER_ACTIONS = setOf("continue", "abort", "quit", "skip")
+     private val STASH_ACTIONS = setOf("push", "save", "pop", "apply", "list", "drop", "clear", "show")
+     /** `submodule.<name>.<prop>` keys we surface from `.gitmodules`. */
+     private val SUBMODULE_CONFIG_REGEX = """^submodule\.(.+)\.(path|url|branch|update|ignore)$""".toRegex()
+     /** ` <sha1> <path> (<describe>)` as emitted by `git submodule status`. */
+     private val SUBMODULE_STATUS_REGEX =
+       """^([-+U ])?([0-9a-fA-F]{4,40})\s+(\S+)(?:\s+\((.*)\))?$""".toRegex()
+     /** https/http/git/ssh/file URLs, scp-style `user@host:path` and relative `../` URLs. */
+     private val SUBMODULE_URL_REGEX =
+       """^(?:(?:https?|git|ssh|file)://[^\s]+|[A-Za-z0-9._~+-]+@[A-Za-z0-9._-]+:[^\s]+|\.{1,2}/[^\s]+)$""".toRegex()
+     private val STASH_REF_REGEX = """^(?:stash@\{\d+\}|\d+)$""".toRegex()
   }
 
 
@@ -56,6 +68,12 @@ abstract class GitProvider(
         "status" -> gitStatus(sessionDir, response)
         "branches", "branch" -> gitListBranches(sessionDir, response)
         "log" -> gitLog(sessionDir, request, response)
+        "submodules", "submodule" -> gitListSubmodules(sessionDir, response)
+        "diff" -> gitDiff(sessionDir, request, response)
+        "show" -> gitShow(sessionDir, request, response)
+        "remotes", "remote" -> gitRemotes(sessionDir, response)
+        "tags", "tag" -> gitListTags(sessionDir, response)
+        "stashes", "stash" -> gitListStashes(sessionDir, response)
         else -> {
           log.warn("Unknown git GET action: $action")
           response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -215,6 +233,12 @@ abstract class GitProvider(
       processBuilder.environment()["GIT_AUTHOR_EMAIL"] = "noreply@localhost"
       processBuilder.environment()["GIT_COMMITTER_NAME"] = "SessionFileServlet"
       processBuilder.environment()["GIT_COMMITTER_EMAIL"] = "noreply@localhost"
+      /* Never block on an interactive editor / pager / credential prompt (submodule fetches!). */
+      processBuilder.environment()["GIT_EDITOR"] = "true"
+      processBuilder.environment()["GIT_SEQUENCE_EDITOR"] = "true"
+      processBuilder.environment()["GIT_PAGER"] = "cat"
+      processBuilder.environment()["GIT_TERMINAL_PROMPT"] = "0"
+      processBuilder.environment()["GIT_ASKPASS"] = "echo"
       val process = processBuilder.start()
       val output = BufferedReader(InputStreamReader(process.inputStream)).readText()
       val error = BufferedReader(InputStreamReader(process.errorStream)).readText()
@@ -362,6 +386,100 @@ abstract class GitProvider(
            val force = parseJsonBoolean(body, "force", false)
            val dryRun = parseJsonBoolean(body, "dryRun", parseJsonBoolean(body, "dry_run", false))
            gitClean(sessionDir, directories, ignored, force, dryRun, response)
+         }
+         "revert", "cherry-pick", "cherrypick", "cherry_pick" -> {
+           val command = if (action == "revert") "revert" else "cherry-pick"
+           val body = readBody(request, command)
+           val commits = parseJsonStringArray(body, "commits")
+             ?: parseJsonStringArray(body, "refs")
+             ?: listOfNotNull(
+               parseJsonField(body, "commit")
+                 ?: parseJsonField(body, "ref")
+                 ?: parseJsonField(body, "revision")
+                 ?: request.getParameter("commit")
+                 ?: request.getParameter("ref")
+             )
+           gitSequencer(
+             sessionDir = sessionDir,
+             command = command,
+             commits = commits,
+             noCommit = parseJsonBoolean(body, "noCommit", parseJsonBoolean(body, "no_commit", false)),
+             mainline = parseJsonInt(body, "mainline"),
+             recordOrigin = parseJsonBoolean(body, "recordOrigin", parseJsonBoolean(body, "x", false)),
+             sequence = parseJsonField(body, "sequence")
+               ?: parseJsonField(body, "operation")
+               ?: request.getParameter("sequence"),
+             resp = response
+           )
+         }
+         "merge" -> {
+           val body = readBody(request, "merge")
+           val ref = parseJsonField(body, "ref")
+             ?: parseJsonField(body, "branch")
+             ?: parseJsonField(body, "commit")
+             ?: request.getParameter("ref")
+           gitMerge(
+             sessionDir = sessionDir,
+             ref = ref,
+             noFastForward = parseJsonBoolean(body, "noFastForward", parseJsonBoolean(body, "no_ff", false)),
+             squash = parseJsonBoolean(body, "squash", false),
+             message = parseJsonField(body, "message"),
+             sequence = parseJsonField(body, "sequence")
+               ?: parseJsonField(body, "operation")
+               ?: request.getParameter("sequence"),
+             resp = response
+           )
+         }
+         "stash" -> {
+           val body = readBody(request, "stash")
+           val stashAction = parseJsonField(body, "action")
+             ?: parseJsonField(body, "operation")
+             ?: request.getParameter("action")
+             ?: "push"
+           gitStash(
+             sessionDir = sessionDir,
+             action = stashAction,
+             message = parseJsonField(body, "message"),
+             ref = parseJsonField(body, "ref") ?: parseJsonField(body, "stash") ?: request.getParameter("ref"),
+             includeUntracked = parseJsonBoolean(
+               body, "includeUntracked", parseJsonBoolean(body, "include_untracked", false)
+             ),
+             keepIndex = parseJsonBoolean(body, "keepIndex", parseJsonBoolean(body, "keep_index", false)),
+             resp = response
+           )
+         }
+         "tag" -> {
+           val body = readBody(request, "tag")
+           gitTag(
+             sessionDir = sessionDir,
+             name = parseJsonField(body, "tag") ?: parseJsonField(body, "name") ?: request.getParameter("tag"),
+             ref = parseJsonField(body, "ref") ?: parseJsonField(body, "commit") ?: request.getParameter("ref"),
+             message = parseJsonField(body, "message"),
+             force = parseJsonBoolean(body, "force", false),
+             delete = parseJsonBoolean(body, "delete", false),
+             resp = response
+           )
+         }
+         "submodule", "submodules" -> {
+           val body = readBody(request, "submodule")
+           val subAction = parseJsonField(body, "action")
+             ?: parseJsonField(body, "operation")
+             ?: request.getParameter("action")
+             ?: "update"
+           gitSubmodule(
+             sessionDir = sessionDir,
+             action = subAction,
+             path = parseJsonField(body, "path") ?: parseJsonField(body, "name") ?: request.getParameter("path"),
+             url = parseJsonField(body, "url")
+               ?: parseJsonField(body, "repository")
+               ?: request.getParameter("url"),
+             branch = parseJsonField(body, "branch"),
+             recursive = parseJsonBoolean(body, "recursive", false),
+             force = parseJsonBoolean(body, "force", false),
+             initSubmodules = parseJsonBoolean(body, "init", true),
+             remote = parseJsonBoolean(body, "remote", false),
+             resp = response
+           )
          }
 
 
@@ -738,6 +856,780 @@ abstract class GitProvider(
        }
      }
    }
+  /**
+   * List the submodules declared in `.gitmodules` and/or known to the index.
+   *
+   * Handles `GET .git/api/submodules`.
+   */
+  private fun gitListSubmodules(sessionDir: File, resp: HttpServletResponse) {
+    log.info("Listing git submodules in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val configured = linkedMapOf<String, MutableMap<String, String>>()
+      if (File(sessionDir, ".gitmodules").exists()) {
+        val configResult = executeGitCommand(sessionDir, "git", "config", "-f", ".gitmodules", "--list")
+        if (configResult.exitCode != 0) {
+          log.warn("Failed to read .gitmodules: ${configResult.error}")
+        }
+        configResult.output.lines().filter { it.isNotBlank() }.forEach { line ->
+          val idx = line.indexOf('=')
+          if (idx <= 0) return@forEach
+          val key = line.substring(0, idx).trim()
+          val value = line.substring(idx + 1).trim()
+          val match = SUBMODULE_CONFIG_REGEX.find(key) ?: return@forEach
+          val name = match.groupValues[1]
+          configured.getOrPut(name) { linkedMapOf("name" to name) }[match.groupValues[2]] = value
+        }
+      } else {
+        log.debug("No .gitmodules in ${sessionDir.absolutePath}")
+      }
+      val statusResult = executeGitCommand(sessionDir, "git", "submodule", "status")
+      /* path -> (state, sha, describe) */
+      val statusByPath = linkedMapOf<String, Triple<String, String, String>>()
+      if (statusResult.exitCode == 0) {
+        statusResult.output.lines().filter { it.isNotBlank() }.forEach { line ->
+          val m = SUBMODULE_STATUS_REGEX.find(line.trimEnd()) ?: run {
+            log.debug("Unparsed submodule status line: '$line'")
+            return@forEach
+          }
+          val state = when (m.groupValues[1]) {
+            "-" -> "uninitialized"
+            "+" -> "modified"
+            "U" -> "conflict"
+            else -> "initialized"
+          }
+          statusByPath[m.groupValues[3]] = Triple(state, m.groupValues[2], m.groupValues[4])
+        }
+      } else {
+        log.warn("git submodule status failed with exit code ${statusResult.exitCode}: ${statusResult.error}")
+      }
+      val paths = LinkedHashSet<String>()
+      configured.values.forEach { cfg -> cfg["path"]?.let { paths.add(it) } }
+      paths.addAll(statusByPath.keys)
+      val entries = paths.map { path ->
+        val cfg = configured.values.firstOrNull { it["path"] == path }
+        val status = statusByPath[path]
+        val initialized = File(sessionDir, path).let { dir -> File(dir, ".git").exists() }
+        """{"name": "${escapeJson(cfg?.get("name") ?: path)}", "path": "${escapeJson(path)}", "url": "${
+          escapeJson(cfg?.get("url") ?: "")
+        }", "branch": "${escapeJson(cfg?.get("branch") ?: "")}", "state": "${
+          escapeJson(status?.first ?: "unknown")
+        }", "sha": "${escapeJson(status?.second ?: "")}", "describe": "${
+          escapeJson(status?.third ?: "")
+        }", "initialized": $initialized}"""
+      }
+      log.debug("Found ${entries.size} submodules in ${sessionDir.absolutePath}")
+      resp.status = HttpServletResponse.SC_OK
+      resp.contentType = "application/json"
+      resp.writer.write(
+        """{"success": true, "count": ${entries.size}, "submodules": [${entries.joinToString(", ")}]}"""
+      )
+    } catch (e: Exception) {
+      log.error("Exception during gitListSubmodules for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * Perform a submodule operation.
+   *
+   * Handles `POST .git/api/submodule` with a body such as:
+   * `{"action": "add", "url": "https://host/repo.git", "path": "libs/repo", "branch": "main"}`
+   * `{"action": "update", "recursive": true, "init": true}`
+   *
+   * `action` must be one of add / init / update / sync / deinit / status.
+   */
+  private fun gitSubmodule(
+    sessionDir: File,
+    action: String,
+    path: String?,
+    url: String?,
+    branch: String?,
+    recursive: Boolean,
+    force: Boolean,
+    initSubmodules: Boolean,
+    remote: Boolean,
+    resp: HttpServletResponse
+  ) {
+    log.info(
+      "Submodule operation '$action' (path=$path, url=$url, branch=$branch, recursive=$recursive) in: ${sessionDir.absolutePath}"
+    )
+    try {
+      ensureGitRepo(sessionDir)
+      val normalizedAction = action.trim().trim('"', '\'').removePrefix("--").lowercase()
+      if (normalizedAction !in VALID_SUBMODULE_ACTIONS) {
+        log.warn("Invalid submodule action rejected: '$action'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "error": "Invalid submodule action: ${escapeJson(action)}. Expected one of ${
+            VALID_SUBMODULE_ACTIONS.joinToString("/")
+          }"}"""
+        )
+        return
+      }
+      if (!path.isNullOrBlank() && !isValidRelativePath(path)) {
+        log.warn("Invalid submodule path rejected: '$path'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid submodule path: ${escapeJson(path)}"}""")
+        return
+      }
+      if (!branch.isNullOrBlank() && !isValidBranchName(branch)) {
+        log.warn("Invalid submodule branch rejected: '$branch'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid branch name: ${escapeJson(branch)}"}""")
+        return
+      }
+      val args = mutableListOf("git", "submodule", normalizedAction)
+      when (normalizedAction) {
+        "add" -> {
+          if (url.isNullOrBlank() || !isValidRepositoryUrl(url)) {
+            log.warn("Invalid submodule url rejected: '$url'")
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.contentType = "application/json"
+            resp.writer.write(
+              """{"success": false, "error": "A valid repository url is required: ${escapeJson(url ?: "")}"}"""
+            )
+            return
+          }
+          if (path.isNullOrBlank()) {
+            log.warn("Submodule add request missing path")
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.contentType = "application/json"
+            resp.writer.write("""{"success": false, "error": "Submodule path is required"}""")
+            return
+          }
+          if (!branch.isNullOrBlank()) {
+            args.add("-b")
+            args.add(branch)
+          }
+          if (force) args.add("--force")
+          args.add("--")
+          args.add(url)
+          args.add(path)
+        }
+        "init" -> if (!path.isNullOrBlank()) {
+          args.add("--")
+          args.add(path)
+        }
+        "update" -> {
+          if (initSubmodules) args.add("--init")
+          if (recursive) args.add("--recursive")
+          if (remote) args.add("--remote")
+          if (force) args.add("--force")
+          if (!path.isNullOrBlank()) {
+            args.add("--")
+            args.add(path)
+          }
+        }
+        "sync" -> {
+          if (recursive) args.add("--recursive")
+          if (!path.isNullOrBlank()) {
+            args.add("--")
+            args.add(path)
+          }
+        }
+        "deinit" -> {
+          if (force) args.add("--force")
+          if (path.isNullOrBlank()) args.add("--all") else {
+            args.add("--")
+            args.add(path)
+          }
+        }
+        "status" -> {
+          if (recursive) args.add("--recursive")
+          if (!path.isNullOrBlank()) {
+            args.add("--")
+            args.add(path)
+          }
+        }
+      }
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      if (result.exitCode == 0) {
+        log.info("Submodule '$normalizedAction' succeeded in ${sessionDir.absolutePath}")
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "action": "${escapeJson(normalizedAction)}", "path": "${
+            escapeJson(path ?: "")
+          }", "url": "${escapeJson(url ?: "")}", "branch": "${escapeJson(branch ?: "")}", "output": "${
+            escapeJson(result.output + result.error)
+          }"}"""
+        )
+      } else {
+        log.error("git submodule $normalizedAction failed with exit code ${result.exitCode}: ${result.error}")
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "action": "${escapeJson(normalizedAction)}", "error": "${
+            escapeJson(result.error)
+          }", "output": "${escapeJson(result.output)}"}"""
+        )
+      }
+    } catch (e: Exception) {
+      log.error("Exception during gitSubmodule('$action') for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * Shared implementation for the sequencer commands `revert` and `cherry-pick`.
+   *
+   * Handles `POST .git/api/revert` / `POST .git/api/cherry-pick` with bodies such as:
+   * `{"commit": "e12c5cc"}`, `{"commits": ["a1b2c3", "d4e5f6"], "noCommit": true}`
+   * or `{"sequence": "abort"}` to continue/abort/quit/skip an in-progress sequence.
+   *
+   * Conflicts are reported with HTTP 409 and the list of unmerged paths.
+   */
+  private fun gitSequencer(
+    sessionDir: File,
+    command: String,
+    commits: List<String>,
+    noCommit: Boolean,
+    mainline: Int?,
+    recordOrigin: Boolean,
+    sequence: String?,
+    resp: HttpServletResponse
+  ) {
+    log.info(
+      "$command (commits=$commits, noCommit=$noCommit, mainline=$mainline, sequence=$sequence) in: ${sessionDir.absolutePath}"
+    )
+    try {
+      ensureGitRepo(sessionDir)
+      if (!sequence.isNullOrBlank()) {
+        val op = sequence.trim().trim('"', '\'').removePrefix("--").lowercase()
+        if (op !in SEQUENCER_ACTIONS) {
+          log.warn("Invalid $command sequence action rejected: '$sequence'")
+          resp.status = HttpServletResponse.SC_BAD_REQUEST
+          resp.contentType = "application/json"
+          resp.writer.write(
+            """{"success": false, "error": "Invalid sequence action: ${escapeJson(sequence)}. Expected one of ${
+              SEQUENCER_ACTIONS.joinToString("/")
+            }"}"""
+          )
+          return
+        }
+        val seqResult = executeGitCommand(sessionDir, "git", command, "--$op")
+        if (seqResult.exitCode != 0) {
+          log.error("git $command --$op failed: ${seqResult.error}")
+          resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+          resp.contentType = "application/json"
+          resp.writer.write(
+            """{"success": false, "operation": "$command", "sequence": "${escapeJson(op)}", "error": "${
+              escapeJson(seqResult.error)
+            }", "output": "${escapeJson(seqResult.output)}"}"""
+          )
+          return
+        }
+        val seqHead = executeGitCommand(sessionDir, "git", "rev-parse", "HEAD").output.trim()
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "operation": "$command", "sequence": "${escapeJson(op)}", "head": "${
+            escapeJson(seqHead)
+          }", "output": "${escapeJson(seqResult.output + seqResult.error)}"}"""
+        )
+        return
+      }
+      if (commits.isEmpty()) {
+        log.warn("$command request missing commit(s)")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "At least one commit is required"}""")
+        return
+      }
+      val invalid = commits.firstOrNull { !isValidRevision(it) }
+      if (invalid != null) {
+        log.warn("Invalid $command revision rejected: '$invalid'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid commit: ${escapeJson(invalid)}"}""")
+        return
+      }
+      if (mainline != null && mainline !in 1..16) {
+        log.warn("Invalid mainline parent rejected: $mainline")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid mainline parent: $mainline"}""")
+        return
+      }
+      val args = mutableListOf("git", command)
+      if (command == "revert") args.add("--no-edit")
+      if (noCommit) args.add("--no-commit")
+      if (mainline != null) {
+        args.add("-m")
+        args.add(mainline.toString())
+      }
+      if (command == "cherry-pick" && recordOrigin) args.add("-x")
+      args.addAll(commits)
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      if (result.exitCode == 0) {
+        val head = executeGitCommand(sessionDir, "git", "rev-parse", "HEAD").output.trim()
+        val currentBranch = executeGitCommand(sessionDir, "git", "rev-parse", "--abbrev-ref", "HEAD").output.trim()
+        log.info("$command succeeded (HEAD=$head) in ${sessionDir.absolutePath}")
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "operation": "$command", "commits": [${
+            commits.joinToString(", ") { """"${escapeJson(it)}"""" }
+          }], "noCommit": $noCommit, "head": "${escapeJson(head)}", "currentBranch": "${
+            escapeJson(currentBranch)
+          }", "output": "${escapeJson(result.output + result.error)}"}"""
+        )
+      } else {
+        val conflicts = conflictedFiles(sessionDir)
+        log.error("git $command failed with exit code ${result.exitCode} (${conflicts.size} conflicts): ${result.error}")
+        resp.status =
+          if (conflicts.isEmpty()) HttpServletResponse.SC_INTERNAL_SERVER_ERROR else HttpServletResponse.SC_CONFLICT
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "operation": "$command", "conflicts": [${
+            conflicts.joinToString(", ") { """"${escapeJson(it)}"""" }
+          }], "error": "${escapeJson(result.error)}", "output": "${escapeJson(result.output)}"}"""
+        )
+      }
+    } catch (e: Exception) {
+      log.error("Exception during git $command for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * Merge a ref into the current branch.
+   *
+   * Handles `POST .git/api/merge` with `{"ref": "feature", "noFastForward": true}`
+   * or `{"sequence": "abort"}`.
+   */
+  private fun gitMerge(
+    sessionDir: File,
+    ref: String?,
+    noFastForward: Boolean,
+    squash: Boolean,
+    message: String?,
+    sequence: String?,
+    resp: HttpServletResponse
+  ) {
+    log.info("Merging '$ref' (noFf=$noFastForward, squash=$squash, sequence=$sequence) in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      if (!sequence.isNullOrBlank()) {
+        val op = sequence.trim().trim('"', '\'').removePrefix("--").lowercase()
+        if (op !in SEQUENCER_ACTIONS) {
+          resp.status = HttpServletResponse.SC_BAD_REQUEST
+          resp.contentType = "application/json"
+          resp.writer.write("""{"success": false, "error": "Invalid merge action: ${escapeJson(sequence)}"}""")
+          return
+        }
+        val seqResult = executeGitCommand(sessionDir, "git", "merge", "--$op")
+        resp.status =
+          if (seqResult.exitCode == 0) HttpServletResponse.SC_OK else HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": ${seqResult.exitCode == 0}, "operation": "merge", "sequence": "${escapeJson(op)}", "error": "${
+            escapeJson(seqResult.error)
+          }", "output": "${escapeJson(seqResult.output)}"}"""
+        )
+        return
+      }
+      if (ref.isNullOrBlank() || !isValidRevision(ref)) {
+        log.warn("Invalid merge ref rejected: '$ref'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "A valid ref is required: ${escapeJson(ref ?: "")}"}""")
+        return
+      }
+      val args = mutableListOf("git", "merge", "--no-edit")
+      if (noFastForward) args.add("--no-ff")
+      if (squash) args.add("--squash")
+      if (!message.isNullOrBlank()) {
+        args.add("-m")
+        args.add(message)
+      }
+      args.add(ref)
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      if (result.exitCode == 0) {
+        val head = executeGitCommand(sessionDir, "git", "rev-parse", "HEAD").output.trim()
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "operation": "merge", "ref": "${escapeJson(ref)}", "head": "${
+            escapeJson(head)
+          }", "output": "${escapeJson(result.output + result.error)}"}"""
+        )
+      } else {
+        val conflicts = conflictedFiles(sessionDir)
+        log.error("git merge failed with exit code ${result.exitCode} (${conflicts.size} conflicts): ${result.error}")
+        resp.status =
+          if (conflicts.isEmpty()) HttpServletResponse.SC_INTERNAL_SERVER_ERROR else HttpServletResponse.SC_CONFLICT
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "operation": "merge", "conflicts": [${
+            conflicts.joinToString(", ") { """"${escapeJson(it)}"""" }
+          }], "error": "${escapeJson(result.error)}", "output": "${escapeJson(result.output)}"}"""
+        )
+      }
+    } catch (e: Exception) {
+      log.error("Exception during gitMerge for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * Stash operations.
+   *
+   * Handles `POST .git/api/stash` with `{"action": "push", "message": "wip", "includeUntracked": true}`.
+   */
+  private fun gitStash(
+    sessionDir: File,
+    action: String,
+    message: String?,
+    ref: String?,
+    includeUntracked: Boolean,
+    keepIndex: Boolean,
+    resp: HttpServletResponse
+  ) {
+    log.info("Stash operation '$action' (ref=$ref) in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val normalized = action.trim().trim('"', '\'').removePrefix("--").lowercase()
+      if (normalized !in STASH_ACTIONS) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "error": "Invalid stash action: ${escapeJson(action)}. Expected one of ${
+            STASH_ACTIONS.joinToString("/")
+          }"}"""
+        )
+        return
+      }
+      if (!ref.isNullOrBlank() && !isValidStashRef(ref)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid stash ref: ${escapeJson(ref)}"}""")
+        return
+      }
+      val stashRef = ref?.let { if (it.matches("""^\d+$""".toRegex())) "stash@{$it}" else it }
+      val args = mutableListOf("git", "stash")
+      when (normalized) {
+        "push", "save" -> {
+          args.add("push")
+          if (includeUntracked) args.add("--include-untracked")
+          if (keepIndex) args.add("--keep-index")
+          if (!message.isNullOrBlank()) {
+            args.add("-m")
+            args.add(message)
+          }
+        }
+        "pop", "apply", "drop", "show" -> {
+          args.add(normalized)
+          if (!stashRef.isNullOrBlank()) args.add(stashRef)
+        }
+        else -> args.add(normalized)
+      }
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      if (result.exitCode == 0) {
+        val stashes = executeGitCommand(sessionDir, "git", "stash", "list").output.lines()
+          .filter { it.isNotBlank() }
+          .map { """"${escapeJson(it.trim())}"""" }
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "action": "${escapeJson(normalized)}", "stashes": [${
+            stashes.joinToString(", ")
+          }], "output": "${escapeJson(result.output + result.error)}"}"""
+        )
+      } else {
+        val conflicts = conflictedFiles(sessionDir)
+        log.error("git stash $normalized failed with exit code ${result.exitCode}: ${result.error}")
+        resp.status =
+          if (conflicts.isEmpty()) HttpServletResponse.SC_INTERNAL_SERVER_ERROR else HttpServletResponse.SC_CONFLICT
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "action": "${escapeJson(normalized)}", "conflicts": [${
+            conflicts.joinToString(", ") { """"${escapeJson(it)}"""" }
+          }], "error": "${escapeJson(result.error)}", "output": "${escapeJson(result.output)}"}"""
+        )
+      }
+    } catch (e: Exception) {
+      log.error("Exception during gitStash for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * Create or delete a tag.
+   *
+   * Handles `POST .git/api/tag` with `{"tag": "v1", "ref": "HEAD", "message": "release"}`
+   * or `{"tag": "v1", "delete": true}`.
+   */
+  private fun gitTag(
+    sessionDir: File,
+    name: String?,
+    ref: String?,
+    message: String?,
+    force: Boolean,
+    delete: Boolean,
+    resp: HttpServletResponse
+  ) {
+    log.info("Tag operation '$name' (ref=$ref, delete=$delete) in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      if (name.isNullOrBlank() || !isValidBranchName(name)) {
+        log.warn("Invalid tag name rejected: '$name'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid tag name: ${escapeJson(name ?: "")}"}""")
+        return
+      }
+      if (!ref.isNullOrBlank() && !isValidRevision(ref)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid ref: ${escapeJson(ref)}"}""")
+        return
+      }
+      val args = mutableListOf("git", "tag")
+      if (delete) {
+        args.add("-d")
+        args.add(name)
+      } else {
+        if (force) args.add("-f")
+        if (!message.isNullOrBlank()) {
+          args.add("-a")
+          args.add("-m")
+          args.add(message)
+        }
+        args.add(name)
+        if (!ref.isNullOrBlank()) args.add(ref)
+      }
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      resp.status = if (result.exitCode == 0) HttpServletResponse.SC_OK else HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      resp.contentType = "application/json"
+      resp.writer.write(
+        """{"success": ${result.exitCode == 0}, "tag": "${escapeJson(name)}", "deleted": $delete, "error": "${
+          escapeJson(result.error)
+        }", "output": "${escapeJson(result.output)}"}"""
+      )
+    } catch (e: Exception) {
+      log.error("Exception during gitTag for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /** `GET .git/api/tags` */
+  private fun gitListTags(sessionDir: File, resp: HttpServletResponse) {
+    log.info("Listing git tags in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val result = executeGitCommand(sessionDir, "git", "tag", "--list", "--sort=-creatordate")
+      val tags = result.output.lines().filter { it.isNotBlank() }.map { """"${escapeJson(it.trim())}"""" }
+      resp.status = if (result.exitCode == 0) HttpServletResponse.SC_OK else HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      resp.contentType = "application/json"
+      resp.writer.write(
+        """{"success": ${result.exitCode == 0}, "count": ${tags.size}, "tags": [${tags.joinToString(", ")}], "error": "${
+          escapeJson(result.error)
+        }"}"""
+      )
+    } catch (e: Exception) {
+      log.error("Exception during gitListTags for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /** `GET .git/api/stashes` */
+  private fun gitListStashes(sessionDir: File, resp: HttpServletResponse) {
+    log.info("Listing git stashes in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val result = executeGitCommand(sessionDir, "git", "stash", "list")
+      val stashes = result.output.lines().filter { it.isNotBlank() }.mapIndexed { index, line ->
+        val idx = line.indexOf(':')
+        val ref = if (idx > 0) line.substring(0, idx).trim() else "stash@{$index}"
+        val description = if (idx > 0) line.substring(idx + 1).trim() else line.trim()
+        """{"ref": "${escapeJson(ref)}", "index": $index, "description": "${escapeJson(description)}"}"""
+      }
+      resp.status = if (result.exitCode == 0) HttpServletResponse.SC_OK else HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      resp.contentType = "application/json"
+      resp.writer.write(
+        """{"success": ${result.exitCode == 0}, "count": ${stashes.size}, "stashes": [${
+          stashes.joinToString(", ")
+        }], "error": "${escapeJson(result.error)}"}"""
+      )
+    } catch (e: Exception) {
+      log.error("Exception during gitListStashes for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /** `GET .git/api/remotes` */
+  private fun gitRemotes(sessionDir: File, resp: HttpServletResponse) {
+    log.info("Listing git remotes in: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val result = executeGitCommand(sessionDir, "git", "remote", "-v")
+      val fetch = linkedMapOf<String, String>()
+      val push = linkedMapOf<String, String>()
+      result.output.lines().filter { it.isNotBlank() }.forEach { line ->
+        val parts = line.trim().split(Regex("\\s+"))
+        if (parts.size < 2) return@forEach
+        val kind = parts.getOrNull(2)?.trim('(', ')') ?: "fetch"
+        if (kind == "push") push[parts[0]] = parts[1] else fetch[parts[0]] = parts[1]
+      }
+      val remotes = (fetch.keys + push.keys).distinct().map { name ->
+        """{"name": "${escapeJson(name)}", "fetch": "${escapeJson(fetch[name] ?: "")}", "push": "${
+          escapeJson(push[name] ?: fetch[name] ?: "")
+        }"}"""
+      }
+      resp.status = if (result.exitCode == 0) HttpServletResponse.SC_OK else HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      resp.contentType = "application/json"
+      resp.writer.write(
+        """{"success": ${result.exitCode == 0}, "count": ${remotes.size}, "remotes": [${
+          remotes.joinToString(", ")
+        }], "error": "${escapeJson(result.error)}"}"""
+      )
+    } catch (e: Exception) {
+      log.error("Exception during gitRemotes for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * `GET .git/api/diff?staged=true&from=<rev>&to=<rev>&path=<path>&nameOnly=true`
+   */
+  private fun gitDiff(sessionDir: File, req: HttpServletRequest, resp: HttpServletResponse) {
+    log.info("Getting git diff for: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val staged = req.getParameter("staged").toBoolean() || req.getParameter("cached").toBoolean()
+      val nameOnly = req.getParameter("nameOnly").toBoolean()
+      val from = req.getParameter("from") ?: req.getParameter("ref")
+      val to = req.getParameter("to")
+      val path = req.getParameter("path")
+      listOfNotNull(from, to).firstOrNull { it.isNotBlank() && !isValidRevision(it) }?.let { bad ->
+        log.warn("Invalid diff revision rejected: '$bad'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid revision: ${escapeJson(bad)}"}""")
+        return
+      }
+      if (!path.isNullOrBlank() && !isValidRelativePath(path)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid path: ${escapeJson(path)}"}""")
+        return
+      }
+      val args = mutableListOf("git", "diff", "--no-color")
+      if (staged) args.add("--cached")
+      if (nameOnly) args.add("--name-only")
+      if (!from.isNullOrBlank()) args.add(from)
+      if (!to.isNullOrBlank()) args.add(to)
+      if (!path.isNullOrBlank()) {
+        args.add("--")
+        args.add(path)
+      }
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      if (result.exitCode == 0) {
+        val files = if (nameOnly) result.output.lines().filter { it.isNotBlank() }
+          .map { """"${escapeJson(it.trim())}"""" } else emptyList()
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "staged": $staged, "nameOnly": $nameOnly, "files": [${
+            files.joinToString(", ")
+          }], "diff": "${escapeJson(result.output)}"}"""
+        )
+      } else {
+        log.error("git diff failed with exit code ${result.exitCode}: ${result.error}")
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(result.error)}"}""")
+      }
+    } catch (e: Exception) {
+      log.error("Exception during gitDiff for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+  /**
+   * `GET .git/api/show?ref=<rev>&path=<path>&stat=true`
+   */
+  private fun gitShow(sessionDir: File, req: HttpServletRequest, resp: HttpServletResponse) {
+    log.info("Getting git show for: ${sessionDir.absolutePath}")
+    try {
+      ensureGitRepo(sessionDir)
+      val ref = (req.getParameter("ref") ?: req.getParameter("commit") ?: "HEAD").trim()
+      val path = req.getParameter("path")
+      if (!isValidRevision(ref)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid revision: ${escapeJson(ref)}"}""")
+        return
+      }
+      if (!path.isNullOrBlank() && !isValidRelativePath(path)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid path: ${escapeJson(path)}"}""")
+        return
+      }
+      val args = mutableListOf("git", "show", "--no-color")
+      if (req.getParameter("stat").toBoolean()) args.add("--stat")
+      args.add(if (path.isNullOrBlank()) ref else "$ref:$path")
+      val result = executeGitCommand(sessionDir, *args.toTypedArray())
+      if (result.exitCode == 0) {
+        resp.status = HttpServletResponse.SC_OK
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": true, "ref": "${escapeJson(ref)}", "path": "${escapeJson(path ?: "")}", "content": "${
+            escapeJson(result.output)
+          }"}"""
+        )
+      } else {
+        log.error("git show failed with exit code ${result.exitCode}: ${result.error}")
+        resp.status = HttpServletResponse.SC_NOT_FOUND
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(result.error)}"}""")
+      }
+    } catch (e: Exception) {
+      log.error("Exception during gitShow for ${sessionDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    }
+  }
+
 
 
   /**
@@ -833,13 +1725,25 @@ abstract class GitProvider(
           null
         }
       }
-      log.debug("Git status: branch=$currentBranch, ${changes.size} changes")
+      /* Report any in-progress sequencer operation so the UI can offer continue/abort. */
+      val operation = when {
+        File(gitDir, "CHERRY_PICK_HEAD").exists() -> "cherry-pick"
+        File(gitDir, "REVERT_HEAD").exists() -> "revert"
+        File(gitDir, "MERGE_HEAD").exists() -> "merge"
+        File(gitDir, "rebase-merge").exists() || File(gitDir, "rebase-apply").exists() -> "rebase"
+        else -> ""
+      }
+      val conflicts = if (operation.isBlank()) emptyList() else conflictedFiles(sessionDir)
+      val hasSubmodules = File(sessionDir, ".gitmodules").exists()
+      log.debug("Git status: branch=$currentBranch, ${changes.size} changes, operation='$operation'")
       resp.status = HttpServletResponse.SC_OK
       resp.contentType = "application/json"
       resp.writer.write(
         """{"success": true, "initialized": true, "currentBranch": "${escapeJson(currentBranch)}", "clean": ${changes.isEmpty()}, "changes": [${
           changes.joinToString(", ")
-        }]}"""
+        }], "operation": "${escapeJson(operation)}", "conflicts": [${
+          conflicts.joinToString(", ") { """"${escapeJson(it)}"""" }
+        }], "hasSubmodules": $hasSubmodules}"""
       )
     } catch (e: Exception) {
       log.error("Exception during gitStatus for ${sessionDir.absolutePath}", e)
@@ -942,6 +1846,23 @@ abstract class GitProvider(
   open fun onSession(session: Session, user: User?) {
 
   }
+  /** Read a request body, never throwing (an unreadable body is treated as empty). */
+  private fun readBody(request: HttpServletRequest, action: String): String = try {
+    request.reader.readText()
+  } catch (e: Exception) {
+    log.error("Failed to read request body for $action action", e)
+    ""
+  }
+  /** Paths with unmerged (conflicted) entries in the index. */
+  private fun conflictedFiles(sessionDir: File): List<String> {
+    val result = executeGitCommand(sessionDir, "git", "diff", "--name-only", "--diff-filter=U")
+    if (result.exitCode != 0) {
+      log.debug("Failed to list conflicted files: ${result.error}")
+      return emptyList()
+    }
+    return result.output.lines().map { it.trim() }.filter { it.isNotBlank() }
+  }
+
 
   fun escapeJson(value: String): String {
     return value
@@ -998,6 +1919,36 @@ abstract class GitProvider(
       }
     }
   }
+  /**
+   * Parse a JSON array of strings (tolerating bare/unquoted elements), e.g.
+   * `{"commits": ["a1b2c3", 'd4e5f6', HEAD~1]}`. Returns null when absent/empty.
+   */
+  private fun parseJsonStringArray(json: String, field: String): List<String>? {
+    return try {
+      if (json.isBlank()) return null
+      val key = Regex.escape(field)
+      val array = """["']?$key["']?\s*:\s*\[([^\]]*)\]""".toRegex().find(json) ?: return null
+      val items = """"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([^,\s\[\]]+)""".toRegex()
+        .findAll(array.groupValues[1])
+        .mapNotNull { m ->
+          val value = when {
+            m.groups[1] != null -> unescapeJson(m.groupValues[1])
+            m.groups[2] != null -> unescapeJson(m.groupValues[2])
+            else -> m.groupValues[3].trim()
+          }
+          value.takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) }
+        }
+        .toList()
+      items.ifEmpty { null }
+    } catch (e: Exception) {
+      log.warn("Failed to parse JSON array field '$field' from body", e)
+      null
+    }
+  }
+  /** Parse an integer JSON field, tolerating quoted forms. */
+  private fun parseJsonInt(json: String, field: String): Int? =
+    parseJsonField(json, field)?.trim()?.trim('"', '\'')?.toIntOrNull()
+
 
   private fun unescapeJson(value: String): String = value
     .replace("\\\"", "\"")
@@ -1043,4 +1994,31 @@ abstract class GitProvider(
         rev.length <= 255 &&
         rev.all { it.code in 33..126 }
   }
+  /**
+   * Validation for a repository-relative path (submodule path, diff path, ...).
+   * Rejects absolute paths, parent traversal, option-looking values and control characters.
+   */
+  private fun isValidRelativePath(path: String): Boolean {
+    return path.isNotBlank() &&
+        !path.startsWith("-") &&
+        !path.startsWith("/") &&
+        !path.startsWith("\\") &&
+        !path.contains("..") &&
+        !Regex("^[A-Za-z]:").containsMatchIn(path) &&
+        path.length <= 1024 &&
+        path.none { it.code < 32 || it.code == 127 }
+  }
+  /**
+   * Conservative validation for a submodule repository URL: http(s)/git/ssh/file URLs,
+   * scp-style `user@host:path` and relative `../` URLs only.
+   */
+  private fun isValidRepositoryUrl(url: String): Boolean {
+    return url.isNotBlank() &&
+        !url.startsWith("-") &&
+        url.length <= 2048 &&
+        url.none { it.code < 32 || it.code == 127 } &&
+        SUBMODULE_URL_REGEX.matches(url)
+  }
+  /** `stash@{N}` or a bare stash index. */
+  private fun isValidStashRef(ref: String): Boolean = STASH_REF_REGEX.matches(ref.trim())
 }

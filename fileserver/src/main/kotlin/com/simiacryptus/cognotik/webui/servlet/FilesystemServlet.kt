@@ -46,6 +46,14 @@ import java.io.File
 abstract class FilesystemServlet : FileServlet() {
 
   /**
+   * Optional git API provider. When non-null, requests whose path contains
+   * `/.git/api/` are routed to [GitProvider.handleGitApiGet] /
+   * [GitProvider.handleGitApiPost] from [service], *before* FS API / classic
+   * routing is considered. Subclasses that expose the git UI/API should
+   * override this instead of intercepting `.git/api/` paths themselves.
+   */
+  open val git: GitProvider? = null
+  /**
    * The directory that FS API paths are resolved against — the Node-visible
    * filesystem root. Defaults to the same directory the HTML browser serves.
    */
@@ -70,6 +78,16 @@ abstract class FilesystemServlet : FileServlet() {
   open fun isFsApiEnabled(req: HttpServletRequest): Boolean = true
 
   override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+    val pathInfo = req.pathInfo ?: req.servletPath ?: "/"
+    val gitProvider = git
+    if (gitProvider != null && pathInfo.contains("/.git/api/")) {
+      when ((req.method ?: "GET").uppercase()) {
+        "GET" -> gitProvider.handleGitApiGet(req, resp, pathInfo)
+        "POST" -> gitProvider.handleGitApiPost(req, resp, pathInfo)
+        else -> super.service(req, resp)
+      }
+      return
+    }
     val route = FsApiRoute.parse(req.pathInfo ?: req.servletPath)
     if (route == null) {
       super.service(req, resp)
@@ -113,7 +131,11 @@ abstract class FilesystemServlet : FileServlet() {
     val GIT_SUBCOMMANDS: Set<String> = setOf(
       "init", "status", "log", "diff", "show", "branch", "checkout", "switch", "restore",
       "add", "commit", "reset", "clean", "rev-parse", "ls-files", "ls-tree", "describe",
-      "merge-base", "stash", "tag", "blame", "shortlog", "config"
+      "merge-base", "stash", "tag", "blame", "shortlog", "config",
+      /* sequencer / integration operations */
+      "revert", "cherry-pick", "merge", "rebase",
+      /* submodule support (network fetches are still bounded by GIT_TERMINAL_PROMPT=0) */
+      "submodule", "remote"
     )
   }
 }
