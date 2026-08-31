@@ -385,6 +385,15 @@ object DirectoryListingRenderer {
 |            opacity: 0.5;
 |            cursor: not-allowed;
 |        }
+|        .expand-zip-label {
+|            display: flex;
+|            align-items: center;
+|            gap: 0.4rem;
+|            font-size: 0.85rem;
+|            color: var(--text-muted);
+|            user-select: none;
+|            cursor: pointer;
+|        }
         $additionalStyles
     </style>
 |    <script src="/modules/theme.js"></script>
@@ -476,7 +485,9 @@ object DirectoryListingRenderer {
 |                });
 |                const text = await response.text();
 |                if (response.ok) {
-|                    showMessage('File uploaded successfully!', 'success');
+|                    let msg = 'File uploaded successfully!';
+|                    try { const j = JSON.parse(text); if (j && j.message) msg = j.message; } catch (e) { }
+|                    showMessage(msg, 'success');
 |                    fileInput.value = '';
 |                    const dropZoneText = document.querySelector('.drop-zone-text');
 |                    dropZoneText.innerHTML = 'Click to select, drag & drop, or paste (Ctrl+V) a file here';
@@ -563,9 +574,15 @@ object DirectoryListingRenderer {
 |                <form class="upload-form" onsubmit="uploadFile(event)" enctype="multipart/form-data">
 |                    <div id="drop-zone" class="drop-zone">
 |                        <div class="drop-zone-text">Click to select, drag & drop, or paste (Ctrl+V) a file here</div>
-|                        <div class="drop-zone-hint">Maximum file size: 50MB</div>
+|                        <div class="drop-zone-hint">Maximum file size: 50MB &middot; .zip archives are unpacked into this folder</div>
 |                    </div>
 |                    <input type="file" name="file" id="file-input" class="file-input" required style="display: none;">
+|                    <label class="expand-zip-label" title="Unpack uploaded .zip archives into this folder instead of storing them">
+|                        <input type="checkbox" id="expand-zip" checked
+|                               onchange="document.getElementById('expand-zip-input').value = this.checked ? 'true' : 'false';">
+|                        Expand ZIP archives on upload
+|                    </label>
+|                    <input type="hidden" name="expand" id="expand-zip-input" value="true">
 |                    <button type="submit" class="upload-button">Upload</button>
 |                </form>
 |                <div id="upload-message" class="upload-message"></div>

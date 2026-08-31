@@ -50,12 +50,6 @@ package com.simiacryptus.cognotik.webui.servlet
         if (written.isEmpty()) {
           written += extractFromClassLoaderUrls(prefix, targetDir, classLoader, overwrite)
         }
-        if (written.isEmpty()) {
-          require(extractFromUrl(resource!!, prefix, targetDir, overwrite, skipDemoFolders).isEmpty()) {
-            "Resource '$prefix' exists but could not be extracted; check the logs for details."
-          }
-          return emptyList()
-        }
         return written
       }
 

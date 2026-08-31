@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
 import com.simiacryptus.cognotik.webui.servlet.handler.FileRequestHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.FileUploadHandler
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
+import com.simiacryptus.cognotik.webui.servlet.handler.ZipUploadHandler
 import com.simiacryptus.cognotik.webui.servlet.render.DirectoryListingRenderer
 import com.simiacryptus.cognotik.webui.servlet.render.DirectoryPageModel
 import com.simiacryptus.cognotik.webui.servlet.render.MarkdownRenderer
@@ -219,6 +220,8 @@ abstract class FileServlet : HttpServlet() {
         response.writer.write("File not found")
         return
       }
+       /* ZIP archives are expanded in place (the inverse of the ZIP download). */
+       if (ZipUploadHandler.tryHandlePost(request, response, targetDir, dir)) return
       FileUploadHandler.handleUpload(request, response, targetDir, dir)
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in POST request: ${e.message}")
@@ -253,6 +256,8 @@ abstract class FileServlet : HttpServlet() {
         response.writer.write("Invalid base directory")
         return
       }
+       /* `PUT ...?expand=true` with a ZIP body unpacks into the addressed directory. */
+       if (ZipUploadHandler.tryHandlePut(request, response, dir, pathSegments)) return
       FileUploadHandler.handlePut(request, response, dir, pathSegments)
     } catch (e: IllegalArgumentException) {
       log.warn("Invalid path in PUT request: ${e.message}")
