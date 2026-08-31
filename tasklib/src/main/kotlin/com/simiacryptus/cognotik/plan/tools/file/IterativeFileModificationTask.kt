@@ -174,7 +174,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
             ?: false) && !orchestrationConfig.autoFix && index < plannedChanges.size - 1
         ) {
           val approvalSemaphore = Semaphore(0)
-          changeTab.add(acceptButtonFooter(changeTab.ui) {
+          changeTab.add(acceptButtonFooter(changeTab) {
             approvalSemaphore.release()
           })
           approvalSemaphore.acquire()
@@ -191,7 +191,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
       transcript?.flush()
 
       if (!orchestrationConfig.autoFix) {
-        task.add(acceptButtonFooter(task.ui) {
+        task.add(acceptButtonFooter(task) {
           task.complete()
           semaphore.release()
         })
@@ -378,7 +378,7 @@ $implementationResponse
 
     // Render with diff application links
     val autoFix = orchestrationConfig.autoFix
-    val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
+    val markdown = renderMarkdown(implementationResponse,) {
       DiffInstrumentor(
         orchestrationConfig.processor,
         SessionRenderer(task),

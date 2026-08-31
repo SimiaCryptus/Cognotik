@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -434,7 +435,7 @@ abstract class PatchApp(
       renderSummary()
 
       // Create a detached task for this iteration's output
-      val iterTask = task.ui.newTask(false)
+      val iterTask = task.newTask(false)
       iterationTasks[iteration] = iterTask
       renderIterationArea()
 
@@ -608,7 +609,7 @@ abstract class PatchApp(
   ): OutputResult {
     log.info("Starting iteration $iteration with settings: ${JsonUtil.toJson(settings)}")
     // Phase 1: Run the command
-    val commandTask = task.ui.newTask(false)
+    val commandTask = task.newTask(false)
     task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Command Output</div>")
     task.add(commandTask.placeholder)
     val outputResult = output(commandTask, settings)
@@ -623,7 +624,7 @@ abstract class PatchApp(
     // Phase 2: Parse errors
     val updateStatus = updateStatus ?: {}
     updateStatus("Parsing errors (Iteration $iteration)...")
-    val fixTask = task.ui.newTask(false)
+    val fixTask = task.newTask(false)
     task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Fix Details</div>")
     task.add(fixTask.placeholder)
     try {
@@ -712,7 +713,7 @@ abstract class PatchApp(
     filteredErrors.groupBy { it.message }
       .map { (msg, errors) ->
         log.info("Processing error group: $msg with ${errors.size} instances")
-        task.ui.pool.submit {
+        task.pool.submit {
           val subSession = task.linkedTask("Fix: ${msg?.take(50) ?: "Error"}...")
           val statusBuffer = subSession.add("Status: Initializing...")!!
           errors.forEach { error ->
@@ -725,14 +726,12 @@ abstract class PatchApp(
               renderMarkdown(
                 "```json\n${JsonUtil.toJson(error)}\n```",
                 tabs = false,
-                ui = subSession.ui
               )
             )
             subSession.verbose(
               renderMarkdown(
                 "[Extra Details] Error processed at: ${Instant.now()}",
                 tabs = false,
-                ui = subSession.ui
               )
             )
             statusBuffer.set("Status: Searching for relevant files...")
@@ -755,7 +754,6 @@ abstract class PatchApp(
                 renderMarkdown(
                   "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}",
                   tabs = false,
-                  ui = subSession.ui
                 )
               )
             }
@@ -957,7 +955,7 @@ abstract class PatchApp(
     task.verbose(
       renderMarkdown("Previous occurrences of this error:\n\n" + previousErrorOccurances.joinToString("\n") {
         "* " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it.timestamp)
-      } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.ui))
+      } + "\nNon-matching instances: ${others.size}", tabs = false,))
     task.verbose(
       renderMarkdown(
         "Files identified for modification:\n\n${
@@ -966,7 +964,7 @@ abstract class PatchApp(
               root.toPath().resolve(it).toFile().length()
             } bytes)"
           }
-        }", tabs = false, ui = task.ui))
+        }", tabs = false))
     log.info("Fix process completed for error: ${error.message}")
     task.complete("<div>${markdown.renderMarkdown()}</div>")
   }

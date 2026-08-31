@@ -116,7 +116,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     val logTab = tabs.newTask("Progress")
     val semaphore = Semaphore(0)
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         task.header("Starting Segmented Generation: $outputFile", level = 2)
         val configInfo = buildString {
@@ -431,7 +431,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
           task.safeComplete(completionMsg.renderMarkdown(), log)
           resultFn(completionMsg)
         } else {
-          val footer = acceptButtonFooter(task.ui) {
+          val footer = acceptButtonFooter(task) {
             task.complete()
             semaphore.release()
           }
@@ -457,7 +457,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     return task.linkTo(name)
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
 

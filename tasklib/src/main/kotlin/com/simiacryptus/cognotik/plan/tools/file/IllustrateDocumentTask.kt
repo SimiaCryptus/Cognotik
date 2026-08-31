@@ -128,7 +128,7 @@ class IllustrateDocumentTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    task.ui.pool.submit {
+    task.pool.submit {
       val executionConfig = this.executionConfig ?: return@submit
       val startTime = System.currentTimeMillis()
       val documentFile = listOf(executionConfig.main_file)?.firstOrNull()
@@ -170,7 +170,6 @@ class IllustrateDocumentTask(
         transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
         transcript?.write("## Work Details\n\n".toByteArray())
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
 
         // Read document content
@@ -254,7 +253,7 @@ class IllustrateDocumentTask(
           val semaphore = Semaphore(0)
           analysisTask.header("✋ Approval Required", level = 3)
           analysisTask.add("Please review the planned images above.".renderMarkdown())
-          analysisTask.add(ui.hrefLink("🚀 Proceed with Generation", "btn btn-primary") {
+          analysisTask.add(task.hrefLink("🚀 Proceed with Generation", "btn btn-primary") {
             semaphore.release()
           })
           semaphore.acquire()
@@ -550,7 +549,7 @@ class IllustrateDocumentTask(
         appendLine("Generate the patches now.")
       }
       val subTask = task.newTask().apply { add("Generating patches...") }
-      subTask.ui.pool.submit {
+      subTask.pool.submit {
         patchResult = integrateImagesWithRetry(patchResult, patchPrompt, chatChatter, subTask, documentFile, semaphore)
       }
       // Wait for completion
@@ -606,7 +605,7 @@ class IllustrateDocumentTask(
     val response = chatAgent.answer(listOf(patchPrompt))
     log.debug("Patch generation response: $response")
     if (orchestrationConfig.autoFix) {
-      subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
+      subTask.complete(MarkdownUtil.renderMarkdown(response, ) {
         DiffInstrumentor(
           orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
           SessionRenderer(subTask),
@@ -627,7 +626,7 @@ class IllustrateDocumentTask(
       })
       semaphore.release()
     } else {
-      subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
+      subTask.complete(MarkdownUtil.renderMarkdown(response,) {
         DiffInstrumentor(
           orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
           SessionRenderer(subTask),
@@ -643,7 +642,7 @@ class IllustrateDocumentTask(
           defaultFile = documentFile,
           resolver = ::resolveToRelativePath,
           prefilterFilename = ::prefilterFilename
-        ) + acceptButtonFooter(subTask.ui) {
+        ) + acceptButtonFooter(subTask) {
           subTask.complete()
           semaphore.release()
         }

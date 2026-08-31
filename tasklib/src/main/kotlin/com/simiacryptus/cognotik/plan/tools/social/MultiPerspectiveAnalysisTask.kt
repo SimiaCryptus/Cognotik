@@ -97,7 +97,7 @@ class MultiPerspectiveAnalysisTask(
         try {
 
 
-            task.ui.pool.submit {
+            task.pool.submit {
                 try {
                     val config = executionConfig ?: throw IllegalStateException("No configuration provided")
                     config.validate()?.let { throw IllegalArgumentException(it) }

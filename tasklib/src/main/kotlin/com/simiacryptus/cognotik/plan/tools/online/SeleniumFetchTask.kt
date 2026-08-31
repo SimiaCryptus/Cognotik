@@ -84,7 +84,7 @@ class SeleniumFetchTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    task.ui.pool.submit {
+    task.pool.submit {
       val executionConfig = this@SeleniumFetchTask.executionConfig ?: run {
         val msg = "CONFIGURATION ERROR: SeleniumFetchTask has no execution config"
         log.error(msg)

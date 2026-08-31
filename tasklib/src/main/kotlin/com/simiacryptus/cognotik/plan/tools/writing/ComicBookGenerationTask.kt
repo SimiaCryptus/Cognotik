@@ -214,7 +214,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       val dataDir = (getOutputFile(".md")?.let {
         if (it.endsWith(".md")) it.removeSuffix(".md") else null
       } ?: "comic").apply {
@@ -348,7 +348,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
         if (executionConfig?.generate_images == true) {
           if (!orchestrationConfig.autoFix) {
             val semaphore = Semaphore(0)
-            val footer = acceptButtonFooter(task.ui) {
+            val footer = acceptButtonFooter(task) {
               statusBuffer?.setLength(0)
               statusBuffer?.append("✅ Script Approved. Generating visuals...".renderMarkdown())
               overviewTask.update()

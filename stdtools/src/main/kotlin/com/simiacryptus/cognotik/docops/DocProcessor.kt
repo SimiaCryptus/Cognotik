@@ -232,7 +232,7 @@ class DocProcessor(
           .jsonCast(request.taskKind.taskType.executionConfigClass),
         parentSession = parentSession,
         onComplete = { _: String, task: SessionTask ->
-          callbacks.onCompleted(task.ui.sessionId.toString())
+          callbacks.onCompleted(task.sessionId.toString())
         },
         onError = { error: Throwable ->
           callbacks.onFailed(error)

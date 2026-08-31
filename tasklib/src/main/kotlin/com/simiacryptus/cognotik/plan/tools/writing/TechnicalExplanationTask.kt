@@ -358,7 +358,7 @@ class TechnicalExplanationTask(
     val transcript = task.newUserFileStream(transcriptFile())
     val resultBuilder = StringBuilder()
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val startTime = System.currentTimeMillis()
         val config = executionConfig ?: throw RuntimeException("No configuration provided")

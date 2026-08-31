@@ -193,7 +193,6 @@ class BrainstormingTask(
     log.info("Configuration: targetCount=$targetCount, categories=$categories, includeCreative=$includeCreative, analysisDepth=$analysisDepth")
     log.info("Input files: ${executionConfig.related_files?.joinToString(", ") ?: "none"}")
 
-    val ui = task.ui
     val transcript = task.newUserFileStream(transcriptFile().removeSuffix(".md")+".details.md")
     val transcript_detailed = task.newUserFileStream(transcriptFile())
     transcript?.write("# Brainstorming Session Transcript\n\n".toByteArray())
@@ -256,8 +255,8 @@ class BrainstormingTask(
         appendLine("---")
         appendLine()
       }
-      overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = ui))
-      val progressStatus = overviewTask.add(MarkdownUtil.renderMarkdown("🔄 *Generating options...*", ui = ui))
+      overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
+      val progressStatus = overviewTask.add(MarkdownUtil.renderMarkdown("🔄 *Generating options...*"))
       task.update()
 
       // Get input file content
@@ -265,7 +264,7 @@ class BrainstormingTask(
       if (inputFileContent.isNotBlank()) {
         log.debug("Found input file content: ${inputFileContent.length} characters")
         val inputFilesTask = tabs.newTask("Input Files")
-        inputFilesTask.add(MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
+        inputFilesTask.add(MarkdownUtil.renderMarkdown(inputFileContent))
         inputFilesTask.complete()
         task.update()
       }
@@ -281,7 +280,7 @@ class BrainstormingTask(
           appendLine()
           appendLine(priorContext.truncateForDisplay())
         }
-        contextTask.add(MarkdownUtil.renderMarkdown(contextContent, ui = ui))
+        contextTask.add(MarkdownUtil.renderMarkdown(contextContent))
         contextTask.complete()
         task.update()
       }
@@ -289,7 +288,7 @@ class BrainstormingTask(
       // Step 1: Generate options using ParsedActor for structured output
       log.info("Generating $targetCount options")
       val optionsTask = tabs.newTask("Generated Options")
-      optionsTask.add(MarkdownUtil.renderMarkdown("## Generated Options\n\n🔄 Brainstorming options...", ui = ui))
+      optionsTask.add(MarkdownUtil.renderMarkdown("## Generated Options\n\n🔄 Brainstorming options..."))
       task.update()
 
       val brainstormPrompt = buildBrainstormPrompt(
@@ -347,7 +346,7 @@ class BrainstormingTask(
               appendLine(option.description)
               appendLine()
             }
-          }, ui = ui
+          }
         )
       )
       optionsTask.complete()
@@ -357,8 +356,7 @@ class BrainstormingTask(
       progressStatus?.setLength(0)
       progressStatus?.append(
         MarkdownUtil.renderMarkdown(
-          "✅ Generated ${options.size} options\n\n🔄 *Analyzing each option...*",
-          ui = ui
+          "✅ Generated ${options.size} options\n\n🔄 *Analyzing each option...*"
         )
       )
       task.update()
@@ -377,7 +375,7 @@ class BrainstormingTask(
           appendLine()
           appendLine("🔄 Analyzing...")
         }
-        analysisTask.add(MarkdownUtil.renderMarkdown(analysisContent, ui = ui))
+        analysisTask.add(MarkdownUtil.renderMarkdown(analysisContent))
         task.update()
 
         val analysisPrompt = buildAnalysisPrompt(
@@ -447,7 +445,7 @@ class BrainstormingTask(
               appendLine("---")
               appendLine()
               appendLine("**Status:** ✅ Analysis complete")
-            }, ui = ui
+            }
           )
         )
         analysisTask.complete()
@@ -462,8 +460,7 @@ class BrainstormingTask(
               appendLine("✅ Analyzed $optionNumber/${options.size} options")
               appendLine()
               appendLine("🔄 *Analyzing next option...*")
-            },
-            ui = ui
+            }
           )
         )
         task.update()
@@ -474,8 +471,7 @@ class BrainstormingTask(
       val summaryTask = tabs.newTask("Summary & Recommendations")
       summaryTask.add(
         MarkdownUtil.renderMarkdown(
-          "## Summary & Recommendations\n\n🔄 Synthesizing findings...",
-          ui = ui
+          "## Summary & Recommendations\n\n🔄 Synthesizing findings..."
         )
       )
       progressStatus?.setLength(0)
@@ -486,8 +482,7 @@ class BrainstormingTask(
             appendLine("✅ Analyzed all ${options.size} options")
             appendLine()
             appendLine("🔄 *Synthesizing findings...*")
-          },
-          ui = ui
+          }
         )
       )
       task.update()
@@ -533,7 +528,7 @@ class BrainstormingTask(
             appendLine("✅ Analysis complete")
             appendLine()
             appendLine(summaryDisplay)
-          }, ui = ui
+          }
         )
       )
       summaryTask.complete()
@@ -635,8 +630,7 @@ class BrainstormingTask(
             appendLine(summaryResult.selection_reasoning.truncateForDisplay(300))
             appendLine()
             appendLine("**Total Time:** ${totalTime / 1000.0}s | **Options:** ${options.size}")
-          },
-          ui = ui
+          }
         )
       )
       overviewTask.complete()

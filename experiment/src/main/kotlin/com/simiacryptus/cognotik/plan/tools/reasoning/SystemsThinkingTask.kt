@@ -108,7 +108,6 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
 
     val api = defaultSmart ?: return
 
-    val ui = task.ui
     val tabs = TabbedDisplay(task)
 
     // Overview tab

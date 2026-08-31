@@ -5,14 +5,16 @@ import com.simiacryptus.cognotik.text.ui.DiffUIRenderer
 import com.simiacryptus.cognotik.text.ui.FileChangeSummary
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SessionRenderer(
   task: SessionTask,
+  private val socketManager: SocketManager = task.ui,
 ) : DiffUIRenderer {
 
-  private val socketManager = task.ui
+
 
   override fun renderSaveButton(
     filepath: Path,

@@ -133,7 +133,7 @@ open class FrontmatterOrchestrationMode(
    private fun execute(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
     try {
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
+        ?: task.dataStorage?.getUserDir(user, session)?.toPath()
         ?: File(".").toPath()
 
       val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")

@@ -123,7 +123,7 @@ open class ChatSocketManager(
             .forEach { chatMessages.remove(it) }
           val currentChatMessages = chatMessages()
           innerRun(task, expandedUserMessage, currentChatMessages, markdownTranscript)
-        }.async(task.ui, pool))
+        }.async(socket.ui, pool))
       }
     } catch (e: Exception) {
       log.info("Error in chat", e)

@@ -231,7 +231,7 @@ class LLMExperimentTask(
 
         // Submit all repetitions for this condition to thread pool
         val futures = (0 until repetitions).map { rep ->
-          task.ui.pool.submit {
+          task.pool.submit {
             val trialStartTime = System.currentTimeMillis()
 
             // Create agent with specific temperature

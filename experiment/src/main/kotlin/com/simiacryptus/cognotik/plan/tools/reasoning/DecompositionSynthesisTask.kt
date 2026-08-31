@@ -184,7 +184,7 @@ class DecompositionSynthesisTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info(
         "Starting DecompositionSynthesisTask with problem: ${
@@ -815,7 +815,7 @@ class DecompositionSynthesisTask(
         appendLine()
         appendLine("Dependencies have been adjusted to allow execution to proceed.")
         appendLine()
-      }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
+      }.let { MarkdownUtil.renderMarkdown(it) })
     }
 
     log.info("Solving ${sortedSubproblems.size} subproblems in dependency order")

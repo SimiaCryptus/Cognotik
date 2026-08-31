@@ -139,7 +139,7 @@ class CommandSessionTask(
 
     val resultBuffer = StringBuffer()
     val executeAction: (Boolean) -> Unit = { shouldComplete ->
-      task.ui.pool.submit {
+      task.pool.submit {
         task.header("Command Session Results")
         val initialText = buildString {
           appendLine("Command: `${executionConfig.command.joinToString(" ")}`")
@@ -260,11 +260,11 @@ class CommandSessionTask(
       }
       task.add(plan.renderMarkdown())
 
-      task.add(task.ui.hrefLink("Run Commands", "btn btn-primary") {
+      task.add(task.hrefLink("Run Commands", "btn btn-primary") {
         executeAction(false)
       })
 
-      task.add(acceptButtonFooter(task.ui) {
+      task.add(acceptButtonFooter(task) {
         task.complete()
         resultFn(resultBuffer.toString())
       })

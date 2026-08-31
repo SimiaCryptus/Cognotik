@@ -66,7 +66,7 @@ open class CouncilMode(
       isRunning = true
        startCouncilChat(task, userMessage, transcriptStream)
     } else {
-      task.echo(renderMarkdown("User: $userMessage", ui = task.ui))
+      task.echo(renderMarkdown("User: $userMessage"))
       currentUserMessage.set(userMessage)
     }
   }
@@ -75,21 +75,21 @@ open class CouncilMode(
 
    private fun startCouncilChat(task: SessionTask, userMessage: String, transcriptStream: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
-    task.echo(renderMarkdown(userMessage, ui = task.ui))
+    task.echo(renderMarkdown(userMessage))
      this.transcriptStream = transcriptStream
 
     val continueLoop = true
     val tabbedDisplay = TabbedDisplay(task)
-    task.ui.pool.execute {
+    task.pool.execute {
       try {
         task.complete()
-        val coordinator = task.ui.dataStorage?.let {
+        val coordinator = task.dataStorage?.let {
           TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
 
@@ -110,26 +110,25 @@ open class CouncilMode(
         while (iteration++ < maxIterations && continueLoop) {
           writeToTranscript("## Iteration $iteration\n\n")
           val iterationTask = tabbedDisplay.newTask("Iteration $iteration")
-          val ui = iterationTask.ui
           val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
 
           // Display Inputs
           iterationTabbedDisplay.newTask("Inputs").apply {
             val inputTabs = TabbedDisplay(this)
             inputTabs.newTask("Project Info").apply {
-              contextData().forEach { complete(renderMarkdown(it, tabs = false, ui = ui)) }
+              contextData().forEach { complete(renderMarkdown(it, tabs = false)) }
               complete()
             }
             formatEvalRecords().forEachIndexed { index, it ->
               inputTabs.newTask("Task ${index + 1}").apply {
-                complete(renderMarkdown(it, ui = ui))
+                complete(renderMarkdown(it))
               }
             }
             // Display Council States
             config.council.forEach { strategy ->
               inputTabs.newTask("${strategy.name} State").apply {
                 val state = reasoningStates[strategy.name]!!
-                complete(renderMarkdown(formatState(strategy, state), ui = ui))
+                complete(renderMarkdown(formatState(strategy, state)))
               }
             }
           }
@@ -137,7 +136,7 @@ open class CouncilMode(
           // Nominations
           val nominations = mutableListOf<Pair<String, AdaptivePlanningMode.TaskData>>()
           val nominationFutures = config.council.map { strategy ->
-            ui.pool.submit<List<Pair<String, AdaptivePlanningMode.TaskData>>> {
+            iterationTask.pool.submit<List<Pair<String, AdaptivePlanningMode.TaskData>>> {
               try {
                 val state = reasoningStates[strategy.name]!!
                 val tasks = getNominations(userMessage, strategy, state, iterationTask)
@@ -153,7 +152,7 @@ open class CouncilMode(
           nominations.addAll(nominationFutures.flatMap { it.get() })
 
           if (nominations.isEmpty()) {
-            iterationTask.add(renderMarkdown("No tasks nominated. Finishing Council Chat.", ui = ui))
+            iterationTask.add(renderMarkdown("No tasks nominated. Finishing Council Chat."))
             iterationTask.complete()
             break
           }
@@ -166,7 +165,7 @@ open class CouncilMode(
           }
 
           if (selectedTasks.isEmpty()) {
-            iterationTask.add(renderMarkdown("No tasks selected by vote. Finishing Council Chat.", ui = ui))
+            iterationTask.add(renderMarkdown("No tasks selected by vote. Finishing Council Chat."))
             iterationTask.complete()
             break
           }
@@ -178,21 +177,21 @@ open class CouncilMode(
             selectedTasks.forEachIndexed { index, taskData ->
               planHtml.append("${index + 1}. **${taskData.task.tasks?.firstOrNull()?.task_type ?: "Task"}**: ${taskData.task.tasks?.firstOrNull()?.task_description}\n")
             }
-            iterationTask.add(renderMarkdown(planHtml.toString(), ui = ui))
+            iterationTask.add(renderMarkdown(planHtml.toString()))
             val buttons = StringBuilder()
-            buttons.append(ui.hrefLink("Execute Plan", "btn btn-success mr-2") {
+            buttons.append(iterationTask.hrefLink("Execute Plan", "btn btn-success mr-2") {
               approved = true
               semaphore.release()
             })
             buttons.append(" ")
-            buttons.append(ui.hrefLink("Stop Council", "btn btn-danger") {
+            buttons.append(iterationTask.hrefLink("Stop Council", "btn btn-danger") {
               approved = false
               semaphore.release()
             })
             iterationTask.add(buttons.toString())
             semaphore.acquire()
             if (!approved) {
-              iterationTask.add(renderMarkdown("Council stopped by user.", ui = ui))
+              iterationTask.add(renderMarkdown("Council stopped by user."))
               iterationTask.complete()
               break
             }
@@ -207,7 +206,7 @@ open class CouncilMode(
             val taskExecutionTask = task.newTask()
             val taskConfig = currentTask.task.tasks?.firstOrNull()
             val taskDescription = taskConfig?.task_description ?: "No description provided."
-            taskExecutionTask.add(renderMarkdown("\n```json\n${taskConfig?.toJson()}\n```\n", ui = ui))
+            taskExecutionTask.add(renderMarkdown("\n```json\n${taskConfig?.toJson()}\n```\n"))
             writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
             taskExecutionTask.verbose(
               renderMarkdown(
@@ -217,12 +216,12 @@ Full TaskData JSON:
 ```json 
 ${JsonUtil.toJson(taskConfig)}
 ```
-""".trimIndent(), ui = ui
+""".trimIndent()
               )
             )
             iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
-            val future = ui.pool.submit<String> {
+            val future = iterationTask.pool.submit<String> {
               try {
                 if (coordinator != null) {
                   runTask(
@@ -353,7 +352,7 @@ ${JsonUtil.toJson(taskConfig)}
       ) + formatEvalRecords(),
     )
 
-    val executor = task.ui.pool ?: return null
+    val executor = task.pool ?: return null
     val processor = FixedConcurrencyProcessor(executor, 4)
     val expandedTasks = processTaskExpansionRecursive(answer.text, task, parsedActor, processor)
 

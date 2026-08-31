@@ -387,7 +387,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
     orchestrationConfig: OrchestrationConfig
   ) {
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       val gameConfig = executionConfig!!
       log.info("Starting GameNarrativeDesignTask for game: '${gameConfig?.game_title}'")

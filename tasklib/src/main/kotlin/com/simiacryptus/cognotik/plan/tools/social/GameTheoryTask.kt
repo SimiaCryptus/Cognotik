@@ -341,7 +341,7 @@ GameTheory - Analyze strategic interactions using game theory
     val api = defaultSmart
     val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
 
-    task.ui.pool.submit {
+    task.pool.submit {
       var transcript: OutputStream? = null
       try {
         transcript = task.newUserFileStream(transcriptFile())

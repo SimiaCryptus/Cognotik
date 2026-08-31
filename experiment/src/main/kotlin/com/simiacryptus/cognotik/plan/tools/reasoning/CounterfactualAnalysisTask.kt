@@ -97,7 +97,7 @@ class CounterfactualAnalysisTask(
 
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("Starting CounterfactualAnalysis task.")
 

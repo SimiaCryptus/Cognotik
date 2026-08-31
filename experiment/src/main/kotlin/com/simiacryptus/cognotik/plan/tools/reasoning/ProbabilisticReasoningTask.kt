@@ -214,7 +214,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
       )
       contextTask.complete()
     }
-    task.ui.pool.submit {
+    task.pool.submit {
 
       try {
         // Prior Probabilities tab
@@ -556,7 +556,7 @@ Consider both the strength of evidence and its reliability.
         )
         overviewTask.complete()
         // Best Practice: Use acceptButtonFooter for manual review
-        task.add(acceptButtonFooter(task.ui) {
+        task.add(acceptButtonFooter(task) {
           semaphore.release()
         })
         semaphore.acquire()

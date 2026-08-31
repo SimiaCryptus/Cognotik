@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
+import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -21,7 +22,7 @@ open class SessionTask(
   val messageID: String = Session.randomId(11),
   private var buffer: MutableList<StringBuilder> = mutableListOf(),
   private val spinner: String = SessionTask.spinner,
-  val ui: SocketManager
+  internal val ui: SocketManager
 ) {
 
   val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
@@ -324,7 +325,7 @@ Stack Trace:
   ): SessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
     val newSession = newSession(appname = label)
     val task = newSession.newTask()
-    val linkToSession = task.ui.linkToSession(label)
+    val linkToSession = task.linkToSession(label)
     val str = renderFn(linkToSession)
     add(str)
     return task
@@ -374,11 +375,18 @@ Stack Trace:
     }>$linkText</a>"""
   }
 
-  fun newTask(showSpinner: Boolean = true): SessionTask {
-    val newTask = ui.newTask(false)
+  fun newTask(showSpinner: Boolean = true, root: Boolean = false): SessionTask {
+    val newTask = ui.newTask(root = root)
     add(newTask.placeholder, showSpinner = showSpinner)
     return newTask
   }
+
+  fun textInput(handler: Consumer<String>): String = ui.textInput(handler)
+  val pool get() = ui.pool
+  val dataStorage: StorageInterface get() = ui.dataStorage
+  val sessionId: Session get() = ui.sessionId
+
+  fun linkToSession(label: String): String = sessionId.linkToSession(label)
 }
 
 val Throwable.stackTraceTxt: String
@@ -389,4 +397,4 @@ val Throwable.stackTraceTxt: String
     return sw.toString()
   }
 
-fun ChatInterface.getChildClient(task: SessionTask) = getChildClient(task.ui.sessionId).apply { logStreams += task.newLogStream() }
+fun ChatInterface.getChildClient(task: SessionTask) = getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }

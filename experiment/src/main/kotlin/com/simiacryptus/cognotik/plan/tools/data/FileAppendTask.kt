@@ -145,7 +145,7 @@ FileAppend - Append content to the end of an existing file
           proposedTab.complete()
           semaphore.release()
         } else {
-          val footer = acceptButtonFooter(task.ui) {
+          val footer = acceptButtonFooter(task) {
             appendAction()
             status?.setLength(0)
             status?.append("✅ **Appended successfully to `$targetPath`.**".renderMarkdown())
@@ -156,7 +156,7 @@ FileAppend - Append content to the end of an existing file
         }
 
         transcript?.flush()
-      }.async(task.ui))
+      }.async(task))
 
       semaphore.acquire()
       overviewTab.complete()

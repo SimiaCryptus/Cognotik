@@ -1145,7 +1145,7 @@ class CrawlerAgentTask(
       return false
     }
 
-    subTask.ui.pool.submit({
+    subTask.pool.submit({
       try {
         crawlPage(
           processedCount,

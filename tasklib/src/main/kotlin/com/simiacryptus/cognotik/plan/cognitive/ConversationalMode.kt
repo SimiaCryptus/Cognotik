@@ -99,7 +99,7 @@ open class ConversationalMode(
 
         task.echo(userMessage.renderMarkdown(true))
         writeToTranscript("## User\n\n$userMessage\n\n")
-        task.ui.pool.submit {
+        task.pool.submit {
             try {
                 while (!Thread.interrupted()) {
                     sleep(100) // Brief pause to allow batching of messages
@@ -284,9 +284,9 @@ open class ConversationalMode(
                 agent = TaskOrchestrator(
                     user = user,
                     session = session,
-                    dataStorage = ui.dataStorage!!,
+                    dataStorage = dataStorage,
                     root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                        ?: ui.dataStorage.getUserDir(user, session).toPath()
+                        ?: dataStorage.getUserDir(user, session).toPath()
                         ?: File(".").toPath()),
                 messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
                 task = this,
@@ -307,7 +307,7 @@ open class ConversationalMode(
      * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
      */
     private fun runAll(task: SessionTask, function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
-        val fixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, 4)
+        val fixedConcurrencyProcessor = FixedConcurrencyProcessor(task.pool, 4)
         function1s.map { function1 ->
             fixedConcurrencyProcessor.submit {
                 function1(target)

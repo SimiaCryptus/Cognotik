@@ -139,7 +139,7 @@ class ConstraintSatisfactionTask(
         )
       }
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           val tabbedDisplay = TabbedDisplay(task)
           tabbedDisplay.newTask("Problem Overview").add(
@@ -231,7 +231,7 @@ class ConstraintSatisfactionTask(
           if (orchestrationConfig.autoFix) {
             finalizeTask(task, answer, resultFn)
           } else {
-            val footer = acceptButtonFooter(task.ui) {
+            val footer = acceptButtonFooter(task) {
               finalizeTask(task, answer, resultFn)
             }
             task.add(footer.renderMarkdown())
@@ -389,7 +389,7 @@ Generate the constraint satisfaction solution now:
         """.trimIndent()
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Save Solution") {
       fn()
     }

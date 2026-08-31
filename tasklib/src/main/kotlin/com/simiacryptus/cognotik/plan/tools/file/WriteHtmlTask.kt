@@ -121,7 +121,6 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
     val transcriptWriter = transcriptStream?.bufferedWriter()
 
     val toInput = { it: String -> listOf(it) }
-    val ui = task.ui
     val api = defaultSmart.getChildClient(task)
 
     overviewTask.header("Creating HTML File: $htmlFile", level = 2)
@@ -129,7 +128,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
       MarkdownUtil.renderMarkdown(
         """
             **Status:** 🔄 Initializing generation process...
-        """.trimIndent(), ui = ui
+        """.trimIndent()
       )
     )
 
@@ -203,7 +202,7 @@ Provide the HTML structure within a code block:
       resultFn("ERROR: Failed to generate HTML structure")
       return
     }
-    htmlTask.add(MarkdownUtil.renderMarkdown("```html\n$htmlStructure\n```", ui = ui))
+    htmlTask.add(MarkdownUtil.renderMarkdown("```html\n$htmlStructure\n```"))
 
     // Step 1.5: Generate images if enabled
     val generatedImages = mutableListOf<Pair<String, String>>() // filename to description
@@ -265,7 +264,7 @@ Output format: PNG image
           generatedImages.add(filename to description)
           val imageLink = task.linkTo(filename)
           val markdown = "✅ Generated: [$filename]($imageLink)"
-          imageTask.add(MarkdownUtil.renderMarkdown(markdown, ui = ui))
+          imageTask.add(MarkdownUtil.renderMarkdown(markdown))
           imageTask.image(image!!)
 
           transcriptWriter?.write("**Generated Image:** $filename\n")
@@ -315,7 +314,7 @@ Provide only the JavaScript code within a code block:
     val jsResponse = chatAgent.answer(toInput(jsPrompt))
     transcriptWriter?.write("**Response:**\n$jsResponse\n\n")
     val jsCode = extractCodeFromResponse(jsResponse, "javascript", "js")
-    jsTask.add(MarkdownUtil.renderMarkdown("```javascript\n$jsCode\n```", ui = ui))
+    jsTask.add(MarkdownUtil.renderMarkdown("```javascript\n$jsCode\n```"))
 
     // Step 3: Generate CSS
     val cssPrompt = """
@@ -355,11 +354,11 @@ Provide only the CSS code within a code block:
     val cssResponse = chatAgent.answer(toInput(cssPrompt))
     transcriptWriter?.write("**Response:**\n$cssResponse\n\n")
     val cssCode = extractCodeFromResponse(cssResponse, "css")
-    cssTask.add(MarkdownUtil.renderMarkdown("```css\n$cssCode\n```", ui = ui))
+    cssTask.add(MarkdownUtil.renderMarkdown("```css\n$cssCode\n```"))
 
     // Step 4: Combine everything into a complete HTML file
     val htmlWithImages =
-      insertImageReferences(htmlStructure, generatedImages, chatAgent, toInput, transcriptWriter, htmlTask, ui)
+      insertImageReferences(htmlStructure, generatedImages, chatAgent, toInput, transcriptWriter, htmlTask)
     val completeHtml = combineHtmlComponents(htmlWithImages, cssCode, jsCode, generatedImages)
 
     if (completeHtml.isEmpty()) {
@@ -389,7 +388,7 @@ Provide only the CSS code within a code block:
             The file has been successfully written to the workspace.
         """.trimIndent()
 
-    overviewTask.add(MarkdownUtil.renderMarkdown(finalSummary, ui = ui))
+    overviewTask.add(MarkdownUtil.renderMarkdown(finalSummary))
     task.safeComplete("Successfully wrote $htmlFile", log)
     resultFn(finalSummary)
   }
@@ -499,7 +498,6 @@ ${generatedImages.joinToString("\n") { (filename, desc) -> "         - $filename
     toInput: (String) -> List<String>,
     transcriptWriter: java.io.BufferedWriter?,
     newTask: SessionTask,
-    ui: SocketManager
   ): String {
     if (generatedImages.isEmpty()) {
       return htmlStructure
@@ -549,18 +547,6 @@ Provide the complete updated HTML structure within a code block:
     }
   }
 
-
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
-    val acceptLink = ui.hrefLink("Accept and Write File") {
-      fn()
-    }
-    return """
-        |
-        |---
-        |
-        |$acceptLink
-        """.trimMargin()
-  }
 
   companion object {
       private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)

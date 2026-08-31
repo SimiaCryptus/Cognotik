@@ -18,8 +18,7 @@ object MarkdownUtil {
     rawMarkdown: String,
     options: MutableDataSet = defaultOptions(),
     tabs: Boolean = true,
-    ui: SocketManager? = null,
-  ) = renderMarkdown(rawMarkdown, options, tabs, ui) { it }
+  ) = renderMarkdown(rawMarkdown, options, tabs,) { it }
 
   fun renderMarkdown(
     rawMarkdown: String,

@@ -115,7 +115,7 @@ class TiledImageGenerationTask(
     val writeModel = orchestrationConfig.defaultImage.getChildClient(task)
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val transcript = task.newUserFileStream(transcriptFile())
       val tabs = TabbedDisplay(task)
       val logTab = tabs.newTask("Progress")
@@ -456,7 +456,7 @@ class TiledImageGenerationTask(
           task.safeComplete(completionMsg.renderMarkdown(), log)
           resultFn(completionMsg)
         } else {
-          val footer = acceptButtonFooter(task.ui) {
+          val footer = acceptButtonFooter(task) {
             task.safeComplete(completionMsg.renderMarkdown(), log)
             resultFn(completionMsg)
           }
@@ -482,7 +482,7 @@ class TiledImageGenerationTask(
     return task.linkTo(name)
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
 

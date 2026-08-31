@@ -16,7 +16,7 @@ open class TabbedDisplay(
 
   fun newTask(label: String = label(tabs.size)): SessionTask {
     log.debug("Creating new tab with label: $label")
-    val task = task.ui.newTask(false)
+    val task = task.newTask(false)
     this[label] = task.placeholder
     return task
   }

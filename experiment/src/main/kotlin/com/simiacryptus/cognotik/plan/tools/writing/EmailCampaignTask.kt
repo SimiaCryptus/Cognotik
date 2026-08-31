@@ -257,7 +257,7 @@ EmailCampaign - Generate multi-email marketing or outreach sequences.
 
 
     try {
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           val startTime = System.currentTimeMillis()
           log.info("Starting EmailCampaignTask for goal: '${executionConfig?.campaign_goal}'")

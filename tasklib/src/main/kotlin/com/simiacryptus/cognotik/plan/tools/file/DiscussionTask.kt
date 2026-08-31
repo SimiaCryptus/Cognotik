@@ -86,7 +86,7 @@ class DiscussionTask(
 
 
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("Starting DiscussionTask: ${executionConfig?.task_description ?: "Unnamed"}")
         task.add("### Initializing Discussion\nGathering context and preparing inquiry...".renderMarkdown())

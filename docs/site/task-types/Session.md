@@ -123,5 +123,5 @@ throw e
 underlying client:
 ```kotlin
 fun ChatInterface.getChildClient(task: SessionTask) =
-getChildClient(task.ui.sessionId).apply { logStreams += task.newLogStream() }
+getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }
 ```

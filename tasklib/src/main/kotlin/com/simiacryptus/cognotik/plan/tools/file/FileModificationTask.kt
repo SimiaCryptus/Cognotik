@@ -160,7 +160,7 @@ $codeResult
                 """.toByteArray()
         )
         val autoFix = orchestrationConfig.autoFix
-        val markdown = renderMarkdown(codeResult, ui = task.ui) {
+        val markdown = renderMarkdown(codeResult) {
           DiffInstrumentor(
             orchestrationConfig.processor,
             SessionRenderer(task),
@@ -192,13 +192,13 @@ $codeResult
         } else {
           task.add(markdown)
           // Best Practice: Use acceptButtonFooter for manual review
-          task.complete(acceptButtonFooter(task.ui) {
+          task.complete(acceptButtonFooter(task) {
             task.complete()
             semaphore.release()
           })
         }
         transcript?.flush()
-      }.async(task.ui))
+      }.async(task))
 
       semaphore.acquire()
 

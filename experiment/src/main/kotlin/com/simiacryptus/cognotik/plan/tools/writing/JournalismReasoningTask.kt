@@ -279,7 +279,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       val config = executionConfig ?: return@submit
       val storyTopic = config.story_topic

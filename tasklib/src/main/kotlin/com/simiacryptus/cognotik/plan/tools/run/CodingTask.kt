@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -30,7 +29,7 @@ open class CodingTask<T : CodeRuntime>(
   val dataStorage: StorageInterface,
   val session: Session,
   val user: User,
-  val ui: SocketManager,
+  val task: SessionTask,
   val codeRuntime: T,
   val symbols: Map<String, Any>,
   val temperature: Double = 0.1,
@@ -60,7 +59,7 @@ open class CodingTask<T : CodeRuntime>(
     val subTask = task.newTask()
     task.complete(subTask.placeholder)
     if (retryable) {
-      Retryable(ui.newTask(true), process = { innerTask: SessionTask ->
+      Retryable(task.newTask(true), process = { innerTask: SessionTask ->
         try {
           val statusSB = innerTask.add("Running...")
           displayCode(innerTask, codeRequest)
@@ -78,9 +77,9 @@ open class CodingTask<T : CodeRuntime>(
           innerTask.complete()
         }
         Unit
-      }.async(task.ui))
+      }.async(task))
     } else {
-      ui.pool.submit {
+      task.pool.submit {
         try {
           val statusSB = subTask.add("Running...")
           displayCode(subTask, codeRequest)
@@ -209,7 +208,7 @@ open class CodingTask<T : CodeRuntime>(
       formText.append(playButton(task, request, response, formText) { formHandle!! })
     }
     formText.append("\n</div>\n")
-    formText.append(ui.textInput { feedback ->
+    formText.append(task.textInput { feedback ->
       responseAction(task, "Revising...", formHandle, formText) {
         feedback(task, feedback, request, response)
       }
@@ -225,7 +224,7 @@ open class CodingTask<T : CodeRuntime>(
     response: CodeAgent.CodeResult,
     formText: StringBuilder,
     formHandle: () -> StringBuilder
-  ) = if (!canPlay) "" else ui.hrefLink("▶ Run", "href-link play-button") {
+  ) = if (!canPlay) "" else task.hrefLink("▶ Run", "href-link play-button") {
     responseAction(task, "Running...", formHandle(), formText) {
       execute(task, response, request)
     }
@@ -242,7 +241,7 @@ open class CodingTask<T : CodeRuntime>(
     } finally {
       header?.clear()
       var revertButton: StringBuilder? = null
-      val link = ui.hrefLink("↩", "href-link regen-button") {
+      val link = task.hrefLink("↩", "href-link regen-button") {
         revertButton?.clear()
         formHandle?.append(formText)
         task.update()

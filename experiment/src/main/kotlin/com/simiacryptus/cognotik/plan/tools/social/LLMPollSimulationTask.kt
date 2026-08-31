@@ -314,7 +314,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
 
       // Submit all surveys to thread pool
       val futures = respondents.map { respondent ->
-        task.ui.pool.submit {
+        task.pool.submit {
           try {
             val response = conductSurvey(respondent, questions, api, temperature)
             responses[respondent.id] = response

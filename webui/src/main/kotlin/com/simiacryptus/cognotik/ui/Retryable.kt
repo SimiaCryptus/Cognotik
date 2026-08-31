@@ -37,7 +37,7 @@ open class Retryable(
       renderButton(index, pair.first)
     }
   }${
-    task.ui.hrefLink(
+    task.hrefLink(
       "♻",
       """href-link""",
       null,
@@ -49,6 +49,16 @@ open class Retryable(
   companion object {
     fun ((SessionTask) -> Unit?).async(
       socketManager: SocketManager,
+      pool: ImmediateExecutorService = socketManager.pool
+    ): (StringBuilder) -> String = {
+      val task = socketManager.newTask(false)
+      pool.submit {
+        this(task)
+      }
+      task.placeholder
+    }
+    fun ((SessionTask) -> Unit?).async(
+      socketManager: SessionTask,
       pool: ImmediateExecutorService = socketManager.pool
     ): (StringBuilder) -> String = {
       val task = socketManager.newTask(false)

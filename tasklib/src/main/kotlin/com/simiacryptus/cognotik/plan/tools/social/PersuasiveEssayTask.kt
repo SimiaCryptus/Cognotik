@@ -207,7 +207,7 @@ class PersuasiveEssayTask(
   ) {
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}'")
       val transcript = task.newUserFileStream(transcriptFile())
@@ -1051,7 +1051,7 @@ Provide the complete revised essay.
           if (orchestrationConfig.autoFix) {
             resultFn(finalResult)
           } else {
-            val footer = acceptButtonFooter(task.ui) {
+            val footer = acceptButtonFooter(task) {
               resultFn(finalResult)
             }
             task.add(footer)

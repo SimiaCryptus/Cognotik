@@ -37,7 +37,7 @@ open class Retryable(
       renderButton(index, pair.first)
     }
   }${
-    task.ui.hrefLink(
+    task.hrefLink(
       "♻",
       """href-link""",
       null,

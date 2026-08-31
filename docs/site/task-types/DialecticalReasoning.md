@@ -88,7 +88,7 @@ See the field table above (`thesis`, `antithesis`, `context`, `synthesis_levels`
 
 **Initialization**
 * `validate()` on `DialecticalReasoningTaskExecutionConfigData` enforces: non-blank thesis/antithesis, thesis ≠ antithesis, length caps (5000/10000 chars), and clamps `synthesis_levels` into `[1, 5]`.
-* A `TabbedDisplay` and transcript file (`transcriptFile()`) are created; execution is dispatched onto `task.ui.pool`.
+* A `TabbedDisplay` and transcript file (`transcriptFile()`) are created; execution is dispatched onto `task.pool`.
 
 **Execution**
 1. Re-checks that `thesis`/`antithesis` are non-blank at runtime (defensive re-validation); on failure writes a "CONFIGURATION ERROR" to both UI and transcript and returns early.

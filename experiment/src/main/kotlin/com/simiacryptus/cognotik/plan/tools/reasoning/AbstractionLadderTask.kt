@@ -155,7 +155,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
           **Direction:** $direction | **Levels:** $levels | **Pattern Analysis:** ${if (identifyPatterns) "Enabled" else "Disabled"}
           
           Starting analysis...
-          """.trimIndent(), ui = task.ui
+          """.trimIndent()
         )
       )
     }
@@ -248,7 +248,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
           **Pattern Analysis:** ${if (identifyPatterns) "Included" else "Skipped"}
           
           See individual tabs for detailed results.
-          """.trimIndent(), ui = task.ui
+          """.trimIndent()
         )
       )
       overviewTask.complete()
@@ -284,7 +284,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
           ${e.message}
           ```
           Please check the logs for more details.
-          """.trimIndent(), ui = task.ui
+          """.trimIndent()
         )
       )
       resultFn("ERROR: ${e.message}")

@@ -261,7 +261,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
       val transcript = task.newUserFileStream(transcriptFile())

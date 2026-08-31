@@ -150,7 +150,7 @@ FunctorialMapping - Translate problems from one category to another
         temperature = 0.3,
         prompt = "You are a Category Theory expert."
       ).answer(listOf(categoryPrompt))
-      step1Task.add(MarkdownUtil.renderMarkdown(categories, ui = step1Task.ui))
+      step1Task.add(MarkdownUtil.renderMarkdown(categories))
       step1Task.complete()
       transcript.write("\n## Categories\n\n$categories\n".toByteArray())
 
@@ -177,7 +177,7 @@ FunctorialMapping - Translate problems from one category to another
         temperature = 0.4,
         prompt = "You are a Category Theory expert."
       ).answer(listOf(functorPrompt))
-      step2Task.add(MarkdownUtil.renderMarkdown(functor, ui = step2Task.ui))
+      step2Task.add(MarkdownUtil.renderMarkdown(functor))
       step2Task.complete()
       transcript.write("\n## Functor\n\n$functor\n".toByteArray())
 
@@ -204,7 +204,7 @@ FunctorialMapping - Translate problems from one category to another
         temperature = 0.3,
         prompt = "You are a Category Theory expert."
       ).answer(listOf(transportPrompt))
-      step3Task.add(MarkdownUtil.renderMarkdown(transportedProblem, ui = step3Task.ui))
+      step3Task.add(MarkdownUtil.renderMarkdown(transportedProblem))
       step3Task.complete()
       transcript.write("\n## Transported Problem\n\n$transportedProblem\n".toByteArray())
 
@@ -227,7 +227,7 @@ FunctorialMapping - Translate problems from one category to another
         temperature = 0.5,
         prompt = "You are an expert in the Target Domain."
       ).answer(listOf(solvePrompt))
-      step4Task.add(MarkdownUtil.renderMarkdown(targetSolution, ui = step4Task.ui))
+      step4Task.add(MarkdownUtil.renderMarkdown(targetSolution))
       step4Task.complete()
       transcript.write("\n## Target Solution\n\n$targetSolution\n".toByteArray())
 
@@ -258,7 +258,7 @@ FunctorialMapping - Translate problems from one category to another
         temperature = 0.3,
         prompt = "You are a Category Theory expert."
       ).answer(listOf(inversePrompt))
-      step5Task.add(MarkdownUtil.renderMarkdown(finalResult, ui = step5Task.ui))
+      step5Task.add(MarkdownUtil.renderMarkdown(finalResult))
       step5Task.complete()
       transcript.write("\n## Final Result\n\n$finalResult\n".toByteArray())
       transcript.close()

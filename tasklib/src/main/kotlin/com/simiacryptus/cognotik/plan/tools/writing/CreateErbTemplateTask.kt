@@ -277,7 +277,7 @@ $extractedTemplate
                 """.renderMarkdown()
         )
 
-        mainTask.complete(acceptButtonFooter(mainTask.ui) {
+        mainTask.complete(acceptButtonFooter(mainTask) {
           outputPath.toFile().parentFile?.mkdirs()
           outputPath.toFile().writeText(extractedTemplate)
           transcript?.write("\n**User approved: Template written to $outputFile**\n".toByteArray())

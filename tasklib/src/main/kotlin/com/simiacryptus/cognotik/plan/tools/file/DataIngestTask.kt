@@ -108,7 +108,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
       logTask.update()
     }
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("DataIngestTask started for patterns: ${executionConfig?.input_files}")
         transcript?.write("## Data Ingest Task Started\n".toByteArray())

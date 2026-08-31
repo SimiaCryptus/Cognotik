@@ -147,7 +147,7 @@ class EthicalReasoningTask(
     val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       val overviewTask = tabs.newTask("Overview")
       try {

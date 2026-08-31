@@ -87,7 +87,7 @@ class JdbcSessionTask(
 
     val executionConfig = this.executionConfig ?: throw IllegalStateException("Execution config is null")
     val execute: (Boolean) -> Unit = { shouldComplete ->
-      task.ui.pool.submit {
+      task.pool.submit {
         val transcript = task.newUserFileStream(transcriptFile())
 
         try {
@@ -191,11 +191,11 @@ class JdbcSessionTask(
       }
       task.add(plan.renderMarkdown())
 
-      task.add(task.ui.hrefLink("▶ Run SQL", "btn btn-primary") {
+      task.add(task.hrefLink("▶ Run SQL", "btn btn-primary") {
         execute(false)
       })
 
-      task.add(acceptButtonFooter(task.ui) {
+      task.add(acceptButtonFooter(task) {
         task.complete()
         resultFn(resultBuffer.toString())
       })

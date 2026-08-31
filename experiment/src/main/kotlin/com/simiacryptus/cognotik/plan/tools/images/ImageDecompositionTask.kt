@@ -163,7 +163,7 @@ class ImageDecompositionTask(
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Live Log")
 
-    task.ui.pool.submit {
+    task.pool.submit {
       log.info("Starting ImageDecompositionTask for $imagePath")
       try {
         task.add("## Starting Iterative Analysis\nProcessing image: `$imagePath`".renderMarkdown())
@@ -395,7 +395,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
               "- [Depth ${node.depth}] ${node.label} at (${node.bounds.x},${node.bounds.y}): ${node.description}$analysisText"
           }
 
-          tabs["Summary"] = MarkdownUtil.renderMarkdown(flatSummary, ui = task.ui)
+          tabs["Summary"] = MarkdownUtil.renderMarkdown(flatSummary)
         }
 
 
@@ -415,7 +415,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
           prompt = """Review the following hierarchical analysis of the image regions and answer the query: "$analysis_query" """.trimIndent()
         ).answer(listOf(rootNodes.toJson()))
 
-        tabs["Final Report"] = MarkdownUtil.renderMarkdown(finalResult, ui = task.ui)
+        tabs["Final Report"] = MarkdownUtil.renderMarkdown(finalResult)
         task.safeComplete("### Analysis Complete\nFound **${allNodes.size - 1}** regions.".renderMarkdown(), log)
         root.resolve("final_analysis_${WaterfallMode.Companion.now()}.md").toFile().writeText(finalResult)
 
@@ -466,7 +466,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
     return originalImage
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Analysis") { fn() }
   }
 

@@ -75,12 +75,12 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         return this
     }
 
-    protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
-        val footerTask = ui.newTask(false)
+    protected open fun acceptButtonFooter(task: SessionTask, fn: () -> Unit): String {
+        val footerTask = task.newTask(false)
         lateinit var textHandle: StringBuilder
         @Suppress("AssignedValueIsNeverRead")
         textHandle = footerTask.complete(
-            """<div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">""" + ui.hrefLink(
+            """<div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">""" + task.hrefLink(
                 "Accept Result",
                 classname = "href-link cmd-button"
             ) {

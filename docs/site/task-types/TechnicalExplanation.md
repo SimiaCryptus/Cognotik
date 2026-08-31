@@ -113,7 +113,7 @@
   - Loads prior orchestration context (`getPriorCode`) and related files (`getContextFiles`) and renders them into a
     "Reference Context" tab when non-empty.
 
-  **Execution** (all inside a submitted background task on `task.ui.pool`)
+  **Execution** (all inside a submitted background task on `task.pool`)
   1. **Phase 1 — Outline:** builds the outline prompt from templates + guidance strings, invokes `ParsedAgent` for a
      structured `ExplanationOutline`, validates it (separate `ValidationError` path on failure), renders it to the
      Outline tab and transcript.

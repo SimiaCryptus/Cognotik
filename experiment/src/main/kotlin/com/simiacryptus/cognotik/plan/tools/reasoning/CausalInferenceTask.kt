@@ -122,7 +122,7 @@ class CausalInferenceTask(
     val startTime = System.currentTimeMillis()
     val transcript = task.newUserFileStream(transcriptFile())
     try {
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           val observedEffect = executionConfig?.observed_effect
           if (observedEffect.isNullOrBlank()) {

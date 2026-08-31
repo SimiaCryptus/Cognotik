@@ -134,7 +134,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
       val response = chatAgent.answer(listOf(prompt))
 
       tabbedDisplay.newTask("Result").apply {
-        add(MarkdownUtil.renderMarkdown(response, ui = task.ui))
+        add(MarkdownUtil.renderMarkdown(response))
         transcriptStream?.write("\n\n## Analysis Result\n\n$response".toByteArray(StandardCharsets.UTF_8))
       }
 
@@ -146,7 +146,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
         task.safeComplete("Analysis complete. <a href='$link' target='_blank'>View Transcript</a>", log)
         resultFn(response)
       } else {
-        val acceptLink = task.ui.hrefLink("Accept Result", "btn btn-success") {
+        val acceptLink = task.hrefLink("Accept Result", "btn btn-success") {
           val (link, _) = task.createFile("invariant_analysis_transcript.md")
           task.complete("Analysis accepted. <a href='$link' target='_blank'>View Transcript</a>")
           resultFn(response)

@@ -72,7 +72,7 @@ class RunToolTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("Starting RunToolTask for tool: ${executionConfig?.tool}")
         val tabs = TabbedDisplay(task)
@@ -132,13 +132,13 @@ class RunToolTask(
 
           task.add("### Approval Required\nReview the command in the **Command** tab before running.".renderMarkdown())
 
-          task.add(task.ui.hrefLink("▶ Run Tool", "btn btn-primary") {
+          task.add(task.hrefLink("▶ Run Tool", "btn btn-primary") {
             try {
               val outputTask = tabs.newTask("Output")
               result = execute(outputTask)
               outputTask.complete()
 
-              task.add(acceptButtonFooter(task.ui) {
+              task.add(acceptButtonFooter(task) {
                 semaphore.release()
               })
             } catch (e: Exception) {

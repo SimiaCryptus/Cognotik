@@ -97,7 +97,7 @@ class DecisionTreeTask(
       executionTask.header("Building Decision Tree", level = 2)
       val statusBuffer = executionTask.add("Initializing...".renderMarkdown())
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           log.info("Starting DecisionTreeTask for ${config.data_file}")
           writeTranscriptHeader(transcript, config)

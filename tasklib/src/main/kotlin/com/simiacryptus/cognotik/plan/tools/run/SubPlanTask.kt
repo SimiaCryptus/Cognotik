@@ -181,7 +181,7 @@ class SubPlanTask(
       }
 
       if (orchestrationConfig.autoFix) {
-        task.ui.pool.submit {
+        task.pool.submit {
           try {
             val summary = runExecution()
             resultFn(summary)
@@ -192,11 +192,11 @@ class SubPlanTask(
         }
       } else {
         val semaphore = Semaphore(0)
-        task.complete(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true)) {
-          task.ui.pool.submit {
+        task.complete(task.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true)) {
+          task.pool.submit {
             try {
               val summary = runExecution()
-              task.complete(acceptButtonFooter(task.ui) {
+              task.complete(acceptButtonFooter(task) {
                 resultFn(summary)
                 semaphore.release()
                 task.complete()

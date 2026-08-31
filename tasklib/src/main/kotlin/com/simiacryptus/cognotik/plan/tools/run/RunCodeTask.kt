@@ -97,7 +97,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
       dataStorage = agent.dataStorage,
       session = agent.session,
       user = agent.user,
-      ui = task.ui,
+      task = task,
       codeRuntime = CodeRuntimes.getRuntime(
         runtimeType = runtime,
         params = mapOf(
@@ -172,7 +172,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
         if (super.canPlay) {
           buttonsHtml.append(super.playButton(task, request, response, formText) { formHandle!! })
         }
-        buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
+        buttonsHtml.append(task.hrefLink("Continue", "href-link play-button") {
           transcript?.write("## User Action: Continue\n".toByteArray())
           transcript?.flush()
           val finalOutput =
@@ -180,7 +180,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
           resultFn(finalOutput)
           semaphore.release()
         })
-        val feedbackHtml = ui.textInput(oneAtATime { feedback: String ->
+        val feedbackHtml = task.textInput(oneAtATime { feedback: String ->
           transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
           transcript?.flush()
           super.responseAction(task, "Revising...", formHandle, formText) {

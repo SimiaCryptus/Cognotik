@@ -110,7 +110,7 @@ generations per run.
   writes a `CONFIGURATION ERROR` to the task, logs it, and returns early via `resultFn`.
 - Bails out early (without full validation messaging) if `thesis` is null/blank at the top level.
 
-**Execution** (sequential phases inside `task.ui.pool.submit`)
+**Execution** (sequential phases inside `task.pool.submit`)
 1. **Cover image** (optional, `ImageProcessingAgent`) rendered into its own tab and saved as `00_cover_image.png`.
 2. **Overview** tab initialized as a running checklist.
 3. **Research context** gathered from `getPriorCode`, `getInputFileContent` (glob-resolved `related_files`), and

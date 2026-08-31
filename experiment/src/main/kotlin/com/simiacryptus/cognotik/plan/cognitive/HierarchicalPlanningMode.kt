@@ -75,7 +75,7 @@ open class HierarchicalPlanningMode(
   }
 
    override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
-    processor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
+    processor = FixedConcurrencyProcessor(task.pool, maxConcurrency)
     log.debug("Handling user message: $userMessage")
     if (isRunning.getAndSet(true)) {
       task.add("Goal-Oriented Mode is already running. Please wait for the current session to complete or stop it.".renderMarkdown())
@@ -101,7 +101,7 @@ open class HierarchicalPlanningMode(
 
 
     val stopLinkRef = AtomicReference<StringBuilder>()
-    val stopLink = task.add(task.ui.hrefLink("Stop Goal-Oriented Processing") {
+    val stopLink = task.add(task.hrefLink("Stop Goal-Oriented Processing") {
       log.info("Stop requested by user.")
       stopRequested.set(true)
       stopLinkRef.get()?.set("Stop signal sent. Waiting for current iteration to finish...")
@@ -139,10 +139,10 @@ open class HierarchicalPlanningMode(
     val coordinator = TaskOrchestrator(
       user = user,
       session = session,
-      dataStorage = task.ui.dataStorage
+      dataStorage = task.dataStorage
         ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
       root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getUserDir(
+        ?: task.dataStorage?.getUserDir(
           user,
           session
         )?.toPath() ?: File(".").toPath())
@@ -345,7 +345,7 @@ open class HierarchicalPlanningMode(
             subgoalsList.append(
               "- ${subgoal.description} (ID: ${
                 subgoal.id.let {
-                  goalTasks[subgoal.id]?.ui?.linkToSession(
+                  goalTasks[subgoal.id]?.linkToSession(
                     it
                   ) ?: it
                 }
@@ -357,7 +357,7 @@ open class HierarchicalPlanningMode(
             subgoalsList.append(
               "- ${subgoal.description} (ID: ${
                 subgoal.id.let {
-                  goalTasks[subgoal.id]?.ui?.linkToSession(
+                  goalTasks[subgoal.id]?.linkToSession(
                     it
                   ) ?: it
                 }
@@ -374,7 +374,7 @@ open class HierarchicalPlanningMode(
             tasksList.append(
               "- ${t.description} (ID: ${
                 t.id.let {
-                  goalTasks[t.id]?.ui?.linkToSession(
+                  goalTasks[t.id]?.linkToSession(
                     it
                   ) ?: it
                 }
@@ -422,28 +422,28 @@ open class HierarchicalPlanningMode(
         GoalStatus.SKIPPED -> "⏭️"
         null -> "❓"
       }
-      val goalLink = goalTasks[goal.id]?.ui?.linkToSession(goal.id) ?: goal.id
+      val goalLink = goalTasks[goal.id]?.linkToSession(goal.id) ?: goal.id
       goalsSummary.append("$statusEmoji **$goalLink**: ${goal.description}\n")
       if (goal.parentGoalId != null) {
         val parentGoal = goalTree[goal.parentGoalId]
-        val parentLink = goalTasks[goal.parentGoalId]?.ui?.linkToSession(goal.parentGoalId) ?: goal.parentGoalId
+        val parentLink = goalTasks[goal.parentGoalId]?.linkToSession(goal.parentGoalId) ?: goal.parentGoalId
         goalsSummary.append("  - Parent: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
       }
       if (!goal.subgoals.isNullOrEmpty()) {
         val subgoalLinks = goal.subgoals.joinToString(", ") { subgoalId ->
-          goalTasks[subgoalId.id]?.ui?.linkToSession(subgoalId.id) ?: subgoalId.id
+          goalTasks[subgoalId.id]?.linkToSession(subgoalId.id) ?: subgoalId.id
         }
         goalsSummary.append("  - Subgoals: $subgoalLinks\n")
       }
       if (!goal.tasks.isNullOrEmpty()) {
         val taskLinks = goal.tasks.joinToString(", ") { taskId ->
-          taskTasks[taskId.id]?.ui?.linkToSession(taskId.id) ?: taskId.id
+          taskTasks[taskId.id]?.linkToSession(taskId.id) ?: taskId.id
         }
         goalsSummary.append("  - Tasks: $taskLinks\n")
       }
       if (!goal.dependencies.isNullOrEmpty()) {
         val depLinks = goal.dependencies.joinToString(", ") { depId ->
-          goalTasks[depId]?.ui?.linkToSession(depId) ?: depId
+          goalTasks[depId]?.linkToSession(depId) ?: depId
         }
         goalsSummary.append("  - Dependencies: $depLinks\n")
       }
@@ -468,11 +468,11 @@ open class HierarchicalPlanningMode(
         TaskStatus.SKIPPED -> "⏭️"
         null -> "❓"
       }
-      val taskLink = taskTasks[task.id]?.ui?.linkToSession(task.id) ?: task.id
+      val taskLink = taskTasks[task.id]?.linkToSession(task.id) ?: task.id
       tasksSummary.append("$statusEmoji **$taskLink**: ${task.description}\n")
       if (task.parentGoalId != null) {
         val parentGoal = goalTree[task.parentGoalId]
-        val parentLink = goalTasks[task.parentGoalId]?.ui?.linkToSession(task.parentGoalId)
+        val parentLink = goalTasks[task.parentGoalId]?.linkToSession(task.parentGoalId)
         tasksSummary.append("  - Parent Goal: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
       }
       if (!task.dependencies.isNullOrEmpty()) {
@@ -480,10 +480,10 @@ open class HierarchicalPlanningMode(
           val depGoal = goalTree[depId]
           val depTask = taskMap[depId]
           when {
-            depGoal != null -> goalTasks[task.parentGoalId]?.ui?.linkToSession(depId)
+            depGoal != null -> goalTasks[task.parentGoalId]?.linkToSession(depId)
               ?: "Unknown ${depId}"
 
-            depTask != null -> taskTasks[depId]?.ui?.linkToSession(depId) ?: depId
+            depTask != null -> taskTasks[depId]?.linkToSession(depId) ?: depId
             else -> "Unknown ${depId}"
           }
         }
@@ -992,7 +992,7 @@ open class HierarchicalPlanningMode(
         if (goal.dependencies.isNullOrEmpty()) "" else "Deps: " + goal.dependencies.joinToString(", ") { "Goal $it" }
 
       nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let {
-        goalTasks[goal.id]?.ui?.linkToSession(
+        goalTasks[goal.id]?.linkToSession(
           it
         ) ?: it
       } + (if (depsString.isNotEmpty()) "   $depsString" else ""))
@@ -1013,7 +1013,7 @@ open class HierarchicalPlanningMode(
           }
         val text = "Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})"
         nodeSb.append(
-          "  - ${taskTasks[t.id]?.ui?.linkToSession(text) ?: text}" + "    " + when (string) {
+          "  - ${taskTasks[t.id]?.linkToSession(text) ?: text}" + "    " + when (string) {
             "" -> ""
             null -> ""
             else -> "Deps: $string"
@@ -1032,8 +1032,8 @@ open class HierarchicalPlanningMode(
   }
 
   private fun idToString(dep: String): CharSequence =
-    if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.ui?.linkToSession(dep) ?: dep}"
-    else "Task ${taskTasks.get(dep)?.ui?.linkToSession(dep) ?: dep}"
+    if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.linkToSession(dep) ?: dep}"
+    else "Task ${taskTasks.get(dep)?.linkToSession(dep) ?: dep}"
 
   private fun renderGoalTreeText(goals: List<Goal>): String {
 
@@ -1244,7 +1244,7 @@ open class HierarchicalPlanningMode(
   )
 
   private fun getStateFile(task: SessionTask) =
-    File(task.ui.dataStorage.getUserDir(user, session), "planning_state.json")
+    File(task.dataStorage.getUserDir(user, session), "planning_state.json")
 
   private fun saveState(task: SessionTask) {
     try {

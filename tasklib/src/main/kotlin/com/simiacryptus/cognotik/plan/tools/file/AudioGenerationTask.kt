@@ -92,7 +92,7 @@ class AudioGenerationTask(
             val previewTask = tabs.newTask("Preview")
             val promptTask = tabs.newTask("Prompt")
 
-            task.ui.pool.submit {
+            task.pool.submit {
                 try {
                     log.info("Starting audio generation for $audioOutputFile")
                     previewTask.header("Generating Audio: $audioOutputFile", level = 2)
@@ -178,7 +178,7 @@ class AudioGenerationTask(
                         saveAction()
                     } else {
                         previewTask.add("Audio generated. Click below to save to workspace.".renderMarkdown())
-                        previewTask.add(acceptButtonFooter(task.ui) {
+                        previewTask.add(acceptButtonFooter(task) {
                             saveAction()
                         })
                     }

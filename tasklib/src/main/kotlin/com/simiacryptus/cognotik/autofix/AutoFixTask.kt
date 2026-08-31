@@ -108,7 +108,7 @@ class AutoFixTask(
       val subTask = task.newTask()
 
       fun execute() {
-        subTask.ui.pool.submit {
+        subTask.pool.submit {
           val transcriptPath = transcriptFile()
           val transcript: FileOutputStream? = subTask.newUserFileStream(transcriptPath)
           val model = (typeConfig.model?.instance(orchestrationConfig.user) ?: defaultSmart).getChildClient(subTask)
@@ -164,7 +164,7 @@ class AutoFixTask(
                       transcript?.close()
                     } else {
                       subTask.add(
-                        subTask.ui.hrefLink("Accept & Continue", "btn btn-primary") {
+                        subTask.hrefLink("Accept & Continue", "btn btn-primary") {
                           resultFn("### Success\nUser accepted command execution results.")
                           semaphore.release()
                           subTask.complete()
@@ -182,7 +182,7 @@ class AutoFixTask(
                     }
                     transcript?.write("</div>\n\n".toByteArray())
                     subTask.add(
-                      subTask.ui.hrefLink("Ignore Error", "href-link cmd-button") {
+                      subTask.hrefLink("Ignore Error", "href-link cmd-button") {
                         resultFn("### Warning\nCommands failed with exit code $result, but error was ignored by user.")
                         semaphore.release()
                         subTask.complete()
@@ -213,7 +213,7 @@ class AutoFixTask(
       if (orchestrationConfig.autoFix) {
         execute()
       } else {
-        subTask.add(subTask.ui.hrefLink("▶ Run AutoFix", "btn btn-primary") {
+        subTask.add(subTask.hrefLink("▶ Run AutoFix", "btn btn-primary") {
           execute()
         }.renderMarkdown())
       }

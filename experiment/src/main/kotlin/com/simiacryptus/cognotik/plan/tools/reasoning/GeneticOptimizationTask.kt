@@ -193,7 +193,7 @@ class GeneticOptimizationTask(
     val smartApi = orchestrationConfig.defaultSmart.getChildClient(task)
     val fastApi = orchestrationConfig.defaultFast.getChildClient(task)
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val startTime = System.currentTimeMillis()
         log.info("Starting GeneticOptimizationTask. Goal: ${executionConfig?.optimization_goal}")

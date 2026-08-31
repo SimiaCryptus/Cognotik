@@ -1098,7 +1098,7 @@ class ScriptwritingTask(
         task.complete()
         resultFn(finalResult)
       } else {
-        task.add(acceptButtonFooter(task.ui) {
+        task.add(acceptButtonFooter(task) {
           semaphore.release()
         })
         semaphore.acquire()

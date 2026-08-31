@@ -358,11 +358,10 @@ class GameMechanicsDesignTask(
 
     val api = defaultSmart ?: return
 
-    val ui = task.ui
     val tabs = TabbedDisplay(task)
     val transcript = task.newUserFileStream(transcriptFile())
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val overviewTask = task.newTask()
       tabs["Overview"] = overviewTask.placeholder
 

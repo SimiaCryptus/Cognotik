@@ -89,7 +89,7 @@ class ReadDocumentsTask(
 
     val transcript = task.newUserFileStream(transcriptFile())
     try {
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           val tabs = TabbedDisplay(task)
           val analysisTask = tabs.newTask("Analysis")

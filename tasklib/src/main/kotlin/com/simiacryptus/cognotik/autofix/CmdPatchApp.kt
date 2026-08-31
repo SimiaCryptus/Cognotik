@@ -124,7 +124,7 @@ class CmdPatchApp(
           val cmdString = processBuilder.command().joinToString(" ")
           log.debug("Full command string: $cmdString")
           log.debug("Working directory: {}", cmdSettings.workingDirectory)
-          val task = task.ui.newTask(false).apply { tabs[cmdString] = placeholder }
+          val task = task.newTask(false).apply { tabs[cmdString] = placeholder }
           task.add("Working Directory: ${cmdSettings.workingDirectory}")
           task.add("Command: $cmdString")
           task.add("Model: $model / $fastModel")

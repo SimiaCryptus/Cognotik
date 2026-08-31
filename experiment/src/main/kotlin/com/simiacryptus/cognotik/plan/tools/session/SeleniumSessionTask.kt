@@ -191,7 +191,7 @@ class SeleniumSessionTask(
 
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       var selenium: Selenium? = null
       var transcript: FileOutputStream? = null
       try {
@@ -293,7 +293,7 @@ class SeleniumSessionTask(
             executionConfig.commands.forEach { append("* Execute: `$it`\n") }
           }
           task.add(proposal.renderMarkdown())
-          task.add(acceptButtonFooter(task.ui) {
+          task.add(acceptButtonFooter(task) {
             runLogic()
           })
         }

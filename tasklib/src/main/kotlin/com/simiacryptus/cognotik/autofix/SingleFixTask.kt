@@ -92,7 +92,7 @@ class SingleFixTask(
       val subTask = task.newTask()
 
       fun execute() {
-        subTask.ui.pool.submit {
+        subTask.pool.submit {
           val transcript = createTranscript(subTask)
           subTask.add(transcript.second.renderMarkdown())
           val model =
@@ -180,7 +180,7 @@ class SingleFixTask(
       if (orchestrationConfig.autoFix) {
         execute()
       } else {
-        subTask.add(subTask.ui.hrefLink("▶ Run SingleFix", "btn btn-primary") {
+        subTask.add(subTask.hrefLink("▶ Run SingleFix", "btn btn-primary") {
           execute()
         }.renderMarkdown())
       }

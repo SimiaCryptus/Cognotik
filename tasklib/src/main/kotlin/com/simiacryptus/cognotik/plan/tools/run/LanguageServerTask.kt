@@ -196,7 +196,7 @@ class LanguageServerTask(
       } else {
         val semaphore = Semaphore(0)
         task.add("Ready to run LSP action '$action' on '$filePath'.")
-        task.add(task.ui.hrefLink("Run LSP Action", "btn btn-primary") {
+        task.add(task.hrefLink("Run LSP Action", "btn btn-primary") {
           try {
             resultFn(executeLsp())
           } catch (e: Exception) {

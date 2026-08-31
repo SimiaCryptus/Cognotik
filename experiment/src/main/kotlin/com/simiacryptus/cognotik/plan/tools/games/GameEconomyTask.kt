@@ -503,7 +503,6 @@ GameEconomy - Design complete game economic systems with progression and monetiz
     }
     val transcript = task.newUserFileStream(transcriptFile())
 
-    val ui = task.ui
     val api = defaultSmart ?: return
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
@@ -511,7 +510,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
     // Overview tab
     val overviewTask = task.newTask()
     tabs["Overview"] = overviewTask.placeholder
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("Starting GameEconomy task for: $gameTitle")
         val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }

@@ -82,7 +82,7 @@ open class AdaptivePlanningMode(
     /*
      * Run the planning loop synchronously on the calling thread.
      * handleUserMessage() must not return until the session is complete, and running inline
-     * (rather than submitting to task.ui.pool) also avoids holding a pool thread while this
+     * (rather than submitting to task.pool) also avoids holding a pool thread while this
      * loop blocks on the futures of the sub-tasks it submits to that same pool.
      */
     run {
@@ -91,13 +91,13 @@ open class AdaptivePlanningMode(
         log.debug("Starting main execution loop")
         task.complete()
 
-        val coordinator = task.ui.dataStorage.let {
+        val coordinator = task.dataStorage.let {
           TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
         log.debug("Created plan coordinator")
@@ -122,7 +122,6 @@ open class AdaptivePlanningMode(
           writeToTranscript("## Iteration $iteration\n\n")
 
           val task = task.linkedTask("Iteration $iteration")
-          val ui = task.ui
           val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
           iterationTabbedDisplay.newTask("Inputs").apply {
@@ -189,7 +188,7 @@ open class AdaptivePlanningMode(
             )
             iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
-            val future = ui.pool.submit<String> {
+            val future = task.pool.submit<String> {
               try {
                 if (coordinator != null) {
                   runTask(
@@ -391,7 +390,7 @@ open class AdaptivePlanningMode(
       ).call()?.text
     }
 
-    val executor = task.ui.pool
+    val executor = task.pool
       ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
     val processor = FixedConcurrencyProcessor(executor, 4)
 

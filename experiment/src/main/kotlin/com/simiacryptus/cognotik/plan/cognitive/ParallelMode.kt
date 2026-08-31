@@ -63,7 +63,7 @@ open class ParallelMode(
       transcript?.write("User Message: $userMessage\n".toByteArray())
 
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
+        ?: task.dataStorage?.getUserDir(user, session)?.toPath()
         ?: File(".").toPath()
       val parser = createParserAgent(task)
       val plan = if (orchestrationConfig.autoFix) {
@@ -104,7 +104,7 @@ open class ParallelMode(
       task.header("Running ${combinations.size} tasks (Concurrency: ${plan.concurrency})", level = 3)
 
       val tabs = TabbedDisplay(task)
-      val processor = FixedConcurrencyProcessor(task.ui.pool, plan.concurrency)
+      val processor = FixedConcurrencyProcessor(task.pool, plan.concurrency)
 
       val futures = combinations.map { combination ->
         val label = combination.values.joinToString(",") { it.toString() }
@@ -125,7 +125,7 @@ open class ParallelMode(
             val coordinator = TaskOrchestrator(
               user = user,
               session = session,
-              dataStorage = task.ui.dataStorage!!,
+              dataStorage = task.dataStorage,
               root = root
             )
             val impl = orchestrationConfig.getImpl(chosenTask)

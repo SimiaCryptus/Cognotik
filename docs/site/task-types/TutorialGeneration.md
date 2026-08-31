@@ -95,7 +95,7 @@ Per-invocation fields from `TutorialGenerationTaskExecutionConfigData` (see tabl
 ### Lifecycle
 
 **Initialization**
-- `run()` submits work to `task.ui.pool` and opens a transcript file stream.
+- `run()` submits work to `task.pool` and opens a transcript file stream.
 - Guards against a missing `executionConfig`, calling `task.safeComplete` and returning early if absent.
 - Calls `executionConfig.validate()` — checks `goal` non-blank, `estimated_duration > 0`, `target_step_count` in `[3,20]`, `verbosity`/`skill_level` non-blank, plus field-level `ValidatedObject.validateFields`. On failure, emits a `ValidationError`, completes the task with an error message, and returns.
 - Re-checks `goal` is non-blank as a final guard before proceeding.

@@ -89,7 +89,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val transcript = task.newUserFileStream(transcriptFile())
       try {
         log.info("Starting FiniteStateMachineTask for concept: '$conceptToModel'")
@@ -104,7 +104,6 @@ FiniteStateMachine - Model concepts using finite state machine analysis
           return@submit
         }
 
-        task.ui
         val api = defaultSmart ?: throw IllegalStateException("No default chatter available")
         val executionConfig = this.executionConfig ?: throw IllegalStateException("Execution config is null")
         val domainContext = executionConfig.domain_context ?: "general domain"

@@ -55,16 +55,16 @@ open class ProtocolMode(
       transcript?.flush()
     }
 
-    task.ui.pool.execute {
+    task.pool.execute {
       try {
         task.complete()
-        val coordinator = task.ui.dataStorage?.let {
+        val coordinator = task.dataStorage?.let {
           TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         } ?: throw IllegalStateException("Coordinator could not be initialized")
 

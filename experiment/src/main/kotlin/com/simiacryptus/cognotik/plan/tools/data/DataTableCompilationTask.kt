@@ -370,7 +370,7 @@ class DataTableCompilationTask(
       } else {
         task.add("### Preview of Compiled Data".renderMarkdown())
         task.add(markdownTable.renderMarkdown())
-        task.add(task.ui.hrefLink("Save Table & Complete", "btn btn-primary") {
+        task.add(task.hrefLink("Save Table & Complete", "btn btn-primary") {
           finalizeAction()
         })
       }

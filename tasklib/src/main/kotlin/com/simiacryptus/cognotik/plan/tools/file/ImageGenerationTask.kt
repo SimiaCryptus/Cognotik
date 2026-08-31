@@ -91,7 +91,7 @@ class ImageGenerationTask(
       val previewTask = tabs.newTask("Preview")
       val promptTask = tabs.newTask("Prompt")
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           log.info("Starting image generation for $imageOutputFile")
           previewTask.header("Generating Image: $imageOutputFile", level = 2)
@@ -176,7 +176,7 @@ class ImageGenerationTask(
             saveAction()
           } else {
             previewTask.add("Image generated. Click below to save to workspace.".renderMarkdown())
-            previewTask.add(acceptButtonFooter(task.ui) {
+            previewTask.add(acceptButtonFooter(task) {
               saveAction()
             })
           }

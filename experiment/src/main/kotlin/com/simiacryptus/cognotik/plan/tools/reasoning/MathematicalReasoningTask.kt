@@ -293,7 +293,7 @@ class MathematicalReasoningTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val startTime = System.currentTimeMillis()
         log.info("MathematicalReasoningTask started. Problem: ${executionConfig?.problem_statement?.take(50)}...")

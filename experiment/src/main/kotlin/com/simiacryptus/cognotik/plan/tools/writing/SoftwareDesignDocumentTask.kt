@@ -260,7 +260,7 @@ class SoftwareDesignDocumentTask(
     val tabs = TabbedDisplay(task)
     val overviewTask = tabs.newTask("Overview")
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val transcript = task.newUserFileStream(transcriptFile())
       try {
         val api = orchestrationConfig.defaultSmart.getChildClient(task)

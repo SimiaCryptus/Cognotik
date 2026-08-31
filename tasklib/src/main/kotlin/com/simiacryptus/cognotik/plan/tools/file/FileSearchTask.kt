@@ -79,7 +79,7 @@ FileSearch - Search for patterns in files and provide results with context
 
 
     log.info("Starting FileSearchTask with pattern: ${executionConfig?.search_pattern}")
-    task.ui.pool.submit {
+    task.pool.submit {
       val transcript = task.newUserFileStream(transcriptFile())
       try {
         val searchResults = performSearch()

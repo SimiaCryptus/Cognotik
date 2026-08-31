@@ -162,7 +162,7 @@ class FileReviewTask(
         task.complete()
         semaphore.release()
         transcript?.flush()
-      }.async(task.ui))
+      }.async(task))
 
       semaphore.acquire()
 

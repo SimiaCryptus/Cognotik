@@ -104,7 +104,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
 
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         executionConfig?.validate()?.let { errorMessage ->
           val e = RuntimeException(errorMessage)
@@ -242,7 +242,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
           task.complete()
           resultFn(summary)
         } else {
-          task.add(summary.renderMarkdown() + acceptButtonFooter(task.ui) {
+          task.add(summary.renderMarkdown() + acceptButtonFooter(task) {
             task.complete()
             resultFn(summary)
           })
@@ -359,7 +359,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
     return tableData.toJson()
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept Table") {
       fn()
     }

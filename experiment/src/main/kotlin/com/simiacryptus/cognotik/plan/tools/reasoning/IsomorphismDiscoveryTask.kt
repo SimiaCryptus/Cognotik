@@ -140,7 +140,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
       val verify = executionConfig?.verify_operations ?: true
 
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           val startTime = System.currentTimeMillis()
           val tabs = TabbedDisplay(task)

@@ -133,7 +133,7 @@ class ChainOfThoughtTask(
     val maxSteps = executionConfig.reasoning_depth.coerceIn(1, 20)
     val validateSteps = executionConfig.validate_steps
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val startTime = System.currentTimeMillis()
         log.info("Starting ChainOfThoughtTask. Problem: ${executionConfig.problem_statement?.take(50)}...")

@@ -179,7 +179,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
           |```
           |${priorContext.truncateForDisplay()}
           |```
-          """.trimMargin(), ui = contextTask.ui
+          """.trimMargin()
         ), log
       )
     }
@@ -241,8 +241,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
                 |**Identify Gaps**: ${executionConfig?.identify_gaps ?: true}
                 |
                 |**Evaluate Confidence**: ${executionConfig?.evaluate_confidence ?: true}
-                """.trimMargin(),
-        ui = overviewTask.ui
+                """.trimMargin()
       )
     )
     transcript?.let { stream ->
@@ -288,7 +287,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         appendLine("\n### Logic & Completeness\n${analysis.logical_check}")
         appendLine("\n### Improvements\n${analysis.improvement_suggestions.joinToString("\n") { "- $it" }}")
       }
-      reflectionTask.add(MarkdownUtil.renderMarkdown(analysisMarkdown, ui = reflectionTask.ui))
+      reflectionTask.add(MarkdownUtil.renderMarkdown(analysisMarkdown))
       reflectionTask.safeComplete("✅ Reflection analysis complete", log)
 
       val summaryTask = tabbedDisplay.newTask("Summary")
@@ -310,15 +309,14 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
 
       summaryTask.header("Summary", level = 3)
-      summaryTask.add(MarkdownUtil.renderMarkdown(summary, ui = summaryTask.ui))
+      summaryTask.add(MarkdownUtil.renderMarkdown(summary))
       summaryTask.safeComplete(
         MarkdownUtil.renderMarkdown(
           """
                     |---
                     |
                     |**Meta-cognitive reflection completed successfully.**
-                    """.trimMargin(),
-          ui = summaryTask.ui
+                    """.trimMargin()
         ), log
       )
 
@@ -351,8 +349,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
           |```
           |
           |Please check the logs for more details.
-          """.trimMargin(),
-          ui = task.ui
+          """.trimMargin()
         )
       )
       resultFn("ERROR: ${e.message}")
