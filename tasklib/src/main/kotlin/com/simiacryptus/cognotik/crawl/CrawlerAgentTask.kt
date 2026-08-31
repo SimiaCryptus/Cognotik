@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.crawl.fetch.FetchStrategy
 import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy
 import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.crawl.seed.SeedMethod
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File

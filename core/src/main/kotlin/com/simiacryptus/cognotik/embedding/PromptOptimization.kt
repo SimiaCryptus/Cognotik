@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.embedding
 
 import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.Description
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.toContentList

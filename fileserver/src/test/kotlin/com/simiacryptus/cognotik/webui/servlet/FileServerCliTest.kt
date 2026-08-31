@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.fileserver.FileServerCli
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.junit.jupiter.api.AfterEach
@@ -14,7 +15,7 @@ import java.io.File
 import java.io.PrintStream
 
 /**
- * End-to-end tests for the embedded server wiring in [FileServerCli]:
+ * End-to-end tests for the embedded server wiring in [com.simiacryptus.cognotik.fileserver.FileServerCli]:
  * routing, redirects, the classic listing, HEAD semantics, the ZIP endpoint
  * and the read-only lockdown.
  */

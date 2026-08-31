@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.ui
 
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.util.*

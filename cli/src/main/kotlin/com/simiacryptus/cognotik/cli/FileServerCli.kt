@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.FILES_PREFIX
 import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.ROOT_SEGMENT
 import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.UI_PREFIX
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.servlet.StaticZipServlet
-import com.simiacryptus.cognotik.webui.servlet.WebUiServlet
+import com.simiacryptus.cognotik.fileserver.StaticZipServlet
+import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet

@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
+    import com.simiacryptus.cognotik.fileserver.action.FsActionContext
     import com.simiacryptus.cognotik.platform.ApplicationServices
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.webui.application.getCookie
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+    import com.simiacryptus.cognotik.fileserver.handler.FsApiRoute
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+    import com.simiacryptus.cognotik.fileserver.handler.FsException
     import java.io.File
 
     /**

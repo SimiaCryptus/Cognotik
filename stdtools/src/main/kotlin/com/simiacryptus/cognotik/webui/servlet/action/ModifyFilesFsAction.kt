@@ -2,6 +2,12 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.fileserver.action.ActionMenu
+import com.simiacryptus.cognotik.fileserver.action.ActionParam
+import com.simiacryptus.cognotik.fileserver.action.ActionSelection
+import com.simiacryptus.cognotik.fileserver.action.ActionUi
+import com.simiacryptus.cognotik.fileserver.action.FsAction
+import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.Session
@@ -20,11 +26,11 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
-import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+import com.simiacryptus.cognotik.fileserver.handler.FsException
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.io.File
 import java.io.OutputStream
 import java.net.URI

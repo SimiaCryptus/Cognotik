@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
@@ -34,7 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
  * ### User scoping
  * Both *availability* (API keys) and now *selection* are per-user, resolved from the
- * [FsActionContext] of the request being served: on a session-backed app server that
+ * [com.simiacryptus.cognotik.fileserver.action.FsActionContext] of the request being served: on a session-backed app server that
  * is the authenticated caller (see [SessionFsRoots.userOf]), on a local mount it is
  * the fixed owner. `null` means "no request in scope" (start-up, CLI) and falls back
  * to the default user.

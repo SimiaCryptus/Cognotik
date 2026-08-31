@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIP
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.fileserver.FileServerCli
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.junit.jupiter.api.AfterEach
@@ -10,9 +11,9 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 /**
- * Tests for the classpath asset mounts ([FileServerCli.LIB_PREFIX] /
- * [FileServerCli.APP_PREFIX]) and the SPA mount, which are served by
- * [WebUiServlet] independently of the served directory.
+ * Tests for the classpath asset mounts ([com.simiacryptus.cognotik.fileserver.FileServerCli.LIB_PREFIX] /
+ * [com.simiacryptus.cognotik.fileserver.FileServerCli.APP_PREFIX]) and the SPA mount, which are served by
+ * [com.simiacryptus.cognotik.fileserver.WebUiServlet] independently of the served directory.
  */
 class WebUiServletTest {
 

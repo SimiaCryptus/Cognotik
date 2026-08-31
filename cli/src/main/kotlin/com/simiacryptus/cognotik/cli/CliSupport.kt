@@ -16,8 +16,7 @@ import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
-import com.simiacryptus.cognotik.webui.servlet.FileServlet
-import jakarta.servlet.http.HttpServletRequest
+import com.simiacryptus.cognotik.fileserver.FileServlet
 import java.io.File
 import kotlin.system.exitProcess
 

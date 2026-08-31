@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.util.concurrent.Future
 
 data class ExecutionState(

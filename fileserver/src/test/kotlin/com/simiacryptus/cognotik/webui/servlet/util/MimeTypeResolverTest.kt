@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet.util
 
+import com.simiacryptus.cognotik.fileserver.util.MimeTypeResolver
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps
 
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.Description
 import org.apache.tinkerpop.gremlin.process.traversal.TextP
 import org.apache.tinkerpop.gremlin.structure.Direction
 import org.apache.tinkerpop.gremlin.structure.T

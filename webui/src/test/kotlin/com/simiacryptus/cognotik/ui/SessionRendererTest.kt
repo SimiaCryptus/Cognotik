@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.ui
 
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import io.mockk.every
 import io.mockk.mockk

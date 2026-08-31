@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.ui
 
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore

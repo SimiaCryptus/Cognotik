@@ -1,11 +1,12 @@
 package com.simiacryptus.cognotik.webui.session
 
 
+import com.simiacryptus.cognotik.Description
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.oneAtATime
@@ -307,7 +308,8 @@ Stack Trace:
     image: BufferedImage
   ) = add("""<img src="${saveFile("images/${Session.randomId(11)}.png", image.toPng())}" />""")
 
-  override fun newSession(session: Session, appname: String): SocketManager {
+  //  override
+  fun newSession(session: Session, appname: String): SocketManager {
     SessionProxyServer.setParentSession(session, ui.sessionId)
     val linkedManager = ui.createLinkedManager(session)
     SessionProxyServer.agents[session] = linkedManager
@@ -325,7 +327,7 @@ Stack Trace:
     label: String,
     renderFn: (String) -> String,
   ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
-    val newSession = newSession(appname = label)
+    val newSession = newSession(sessionId, appname = label)
     val task = newSession.newTask()
     val linkToSession = task.linkToSession(label)
     val str = renderFn(linkToSession)

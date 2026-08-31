@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.fileserver.FilesystemServlet
+import com.simiacryptus.cognotik.fileserver.GitProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
@@ -7,11 +9,11 @@ import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie
-import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
-import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
-import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+import com.simiacryptus.cognotik.fileserver.handler.FsApiConfig
+import com.simiacryptus.cognotik.fileserver.handler.FsApiRoute
+import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+import com.simiacryptus.cognotik.fileserver.handler.FsException
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -31,7 +33,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   }
 
   /**
-   * Path (relative to the servlet context) where [WebUiServlet] is mounted.
+   * Path (relative to the servlet context) where [com.simiacryptus.cognotik.fileserver.WebUiServlet] is mounted.
    * See `ApplicationServer.configure`.
    */
   open val webUiPath: String = "/ui"

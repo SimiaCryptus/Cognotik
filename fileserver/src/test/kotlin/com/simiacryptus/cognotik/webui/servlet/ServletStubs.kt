@@ -11,7 +11,7 @@ import java.lang.reflect.Proxy
  *
  * Unspecified methods return a benign default ("" for String, false/0 for
  * primitives, null otherwise). Attributes are backed by a real map so that
- * [FileServlet.getUser] caching can be observed.
+ * [com.simiacryptus.cognotik.fileserver.FileServlet.getUser] caching can be observed.
  */
 object ServletStubs {
 

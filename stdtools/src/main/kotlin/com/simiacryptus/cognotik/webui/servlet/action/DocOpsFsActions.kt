@@ -1,8 +1,15 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
+    import com.simiacryptus.cognotik.fileserver.action.ActionMenu
+    import com.simiacryptus.cognotik.fileserver.action.ActionOption
+    import com.simiacryptus.cognotik.fileserver.action.ActionParam
+    import com.simiacryptus.cognotik.fileserver.action.ActionSelection
+    import com.simiacryptus.cognotik.fileserver.action.ActionUi
+    import com.simiacryptus.cognotik.fileserver.action.FsAction
+    import com.simiacryptus.cognotik.fileserver.action.FsActionContext
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
     import java.io.File
     import java.util.concurrent.atomic.AtomicBoolean
 
@@ -20,7 +27,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
      * Ported out of the CLI file server so every server (session-backed app servers included)
      * gets the same operations. Two things are host-specific and therefore injected:
      *
-     *  - **the root/user**, resolved per request from [FsActionContext] (a fixed directory for
+     *  - **the root/user**, resolved per request from [com.simiacryptus.cognotik.fileserver.action.FsActionContext] (a fixed directory for
      *    a local mount, the session directory for a multi-user server);
      *  - **the endpoint**, which is always the installed [DocProcessorServlet] - possibly a
      *    swapped proxy - never a locally built `DocProcessor` (see [DocOpsServlets]).
@@ -86,7 +93,11 @@ package com.simiacryptus.cognotik.webui.servlet.action
                 description = "only \"run\" mutates the workspace; other values are API-only",
                 options = DOCOPS_COMMANDS
               ),
-              ActionParam("path", required = false, description = "document or folder, relative to the root (repeatable)"),
+              ActionParam(
+                "path",
+                required = false,
+                description = "document or folder, relative to the root (repeatable)"
+              ),
               ActionParam(
                 "mode", required = false, label = "Update mode",
                 default = ServerDocOps.DEFAULT_MODE,

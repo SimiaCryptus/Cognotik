@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.crawl.processing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.Description
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.session.getChildClient

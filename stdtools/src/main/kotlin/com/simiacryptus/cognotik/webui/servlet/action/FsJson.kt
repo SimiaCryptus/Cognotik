@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+    import com.simiacryptus.cognotik.fileserver.handler.FsException
     import jakarta.servlet.http.HttpServletResponse
 
     /**

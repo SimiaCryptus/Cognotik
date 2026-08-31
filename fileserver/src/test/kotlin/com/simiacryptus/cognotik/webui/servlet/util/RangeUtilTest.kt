@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet.util
 
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+import com.simiacryptus.cognotik.fileserver.util.RangeUtil
+import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+import com.simiacryptus.cognotik.fileserver.handler.FsException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows

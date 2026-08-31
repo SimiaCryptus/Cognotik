@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
-import com.simiacryptus.cognotik.webui.servlet.handler.FileAccessControl
+import com.simiacryptus.cognotik.fileserver.handler.FileAccessControl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

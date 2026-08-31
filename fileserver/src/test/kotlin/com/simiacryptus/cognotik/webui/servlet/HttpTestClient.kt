@@ -19,7 +19,7 @@ data class HttpResult(
 
 /**
  * Tiny blocking HTTP client. Redirects are never followed so that the
- * redirect wiring in [FileServerCli] can be asserted directly.
+ * redirect wiring in [com.simiacryptus.cognotik.fileserver.FileServerCli] can be asserted directly.
  */
 object HttpTestClient {
 

@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.docops.model.DocSpec
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.spec.TemplateEngine
 import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
-import com.simiacryptus.cognotik.docops.status.NullDocStatusStore
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -30,8 +29,7 @@ import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.asChatInterface
 import com.simiacryptus.cognotik.util.jsonCast
-import com.simiacryptus.cognotik.webui.session.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.CompletableFuture

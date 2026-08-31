@@ -1,5 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.fileserver.FileServerCli
+import com.simiacryptus.cognotik.fileserver.FilesystemServlet
+import com.simiacryptus.cognotik.fileserver.SimpleFileServlet
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -8,7 +11,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 /**
- * Unit tests for the pure functions of [SimpleFileServlet] / [FileServlet]:
+ * Unit tests for the pure functions of [com.simiacryptus.cognotik.fileserver.SimpleFileServlet] / [com.simiacryptus.cognotik.fileserver.FileServlet]:
  * capability advertisement, ZIP link building, toolbar rendering and the
  * FS API base path derivation.
  */

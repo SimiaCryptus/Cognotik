@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.fileserver.FileServerCli
+import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest
 import org.eclipse.jetty.server.Server
@@ -15,7 +17,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 /**
- * Write-path tests. [FileServlet.isWriteAllowed] is a process-wide hook, so
+ * Write-path tests. [com.simiacryptus.cognotik.fileserver.FileServlet.isWriteAllowed] is a process-wide hook, so
  * every test restores the original predicate in @AfterEach.
  */
 class FileServletWriteTest {
