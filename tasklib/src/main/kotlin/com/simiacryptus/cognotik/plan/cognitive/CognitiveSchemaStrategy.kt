@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 
 @JsonDeserialize(using = CognitiveSchemaStrategyDeserializer::class)
@@ -28,7 +28,7 @@ abstract class CognitiveSchemaStrategy(
     userMessage: String,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any
 
@@ -38,7 +38,7 @@ abstract class CognitiveSchemaStrategy(
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any
 
@@ -89,7 +89,7 @@ open class ProjectManagerStrategy(
     userMessage: String,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     return ParsedAgent(
@@ -144,7 +144,7 @@ open class ProjectManagerStrategy(
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     val state = currentState as AdaptivePlanningMode.ReasoningState
@@ -269,7 +269,7 @@ class ScientificMethodStrategy : CognitiveSchemaStrategy("Scientific Researcher"
     userMessage: String,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     return ParsedAgent(
@@ -305,7 +305,7 @@ class ScientificMethodStrategy : CognitiveSchemaStrategy("Scientific Researcher"
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     val state = currentState as ScientificState
@@ -353,7 +353,7 @@ class AgileDeveloperStrategy : CognitiveSchemaStrategy("Agile Developer", "Itera
     userMessage: String,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     return ParsedAgent(
@@ -384,7 +384,7 @@ class AgileDeveloperStrategy : CognitiveSchemaStrategy("Agile Developer", "Itera
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     val state = currentState as AgileState
@@ -443,7 +443,7 @@ class CriticalAuditorStrategy : CognitiveSchemaStrategy("Critical Auditor", "Sec
     userMessage: String,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     return ParsedAgent(
@@ -474,7 +474,7 @@ class CriticalAuditorStrategy : CognitiveSchemaStrategy("Critical Auditor", "Sec
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     val state = currentState as AuditState
@@ -526,7 +526,7 @@ class CreativeWriterStrategy : CognitiveSchemaStrategy("Creative Writer", "Narra
     userMessage: String,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     return ParsedAgent(
@@ -557,7 +557,7 @@ class CreativeWriterStrategy : CognitiveSchemaStrategy("Creative Writer", "Narra
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     val state = currentState as NarrativeState

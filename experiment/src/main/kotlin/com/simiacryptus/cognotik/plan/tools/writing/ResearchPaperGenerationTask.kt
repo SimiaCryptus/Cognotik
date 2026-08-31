@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
@@ -362,7 +362,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -1248,7 +1248,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
     }
   }
 
-  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Save Research Paper") {
       fn()
     }

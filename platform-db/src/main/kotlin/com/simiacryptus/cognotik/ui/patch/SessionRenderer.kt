@@ -4,17 +4,13 @@ import com.simiacryptus.cognotik.text.ui.ChangeType
 import com.simiacryptus.cognotik.text.ui.DiffUIRenderer
 import com.simiacryptus.cognotik.text.ui.FileChangeSummary
 import com.simiacryptus.cognotik.ui.set
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SessionRenderer(
-  task: SessionTask,
-  private val socketManager: SocketManager = task.ui,
+  val task: ISessionTask,
 ) : DiffUIRenderer {
-
-
 
   override fun renderSaveButton(
     filepath: Path,
@@ -23,7 +19,7 @@ class SessionRenderer(
     onSave: () -> Unit
   ): String {
     log.debug("Rendering save button for file: {}, lang: {}, code length: {}", filepath, lang, code.length)
-    val task = socketManager.newTask(root = false)
+    val task = task.newTask(root = false)
     lateinit var hrefLink: StringBuilder
     hrefLink = task.complete(task.hrefLink("Save File", classname = "href-link cmd-button") {
       try {
@@ -55,7 +51,7 @@ class SessionRenderer(
     lateinit var hrefLink: StringBuilder
     val isApplied = AtomicBoolean(false)
 
-    val task = socketManager.newTask(root = false)
+    val task = task.newTask(root = false)
     lateinit var revertHtml: String
     lateinit var applyHtml: String
     var forceHtml = ""
@@ -143,7 +139,7 @@ class SessionRenderer(
     val table = "| File | Change | Lines | Status |\n| --- | --- | --- | --- |\n$rows"
     val pendingCount = changes.count { !it.applied }
     if (onApplyAll == null || pendingCount == 0) return "\n\n### Change Summary\n\n$table\n\n"
-    val task = socketManager.newTask(root = false)
+    val task = task.newTask(root = false)
     lateinit var hrefLink: StringBuilder
     hrefLink = task.complete(task.hrefLink("Apply All ($pendingCount)", classname = "href-link cmd-button") {
       try {
@@ -165,7 +161,7 @@ class SessionRenderer(
     log.debug("Recording patch data with {} entries", data.size)
     return try {
       val relativePath = "patch/${java.util.UUID.randomUUID()}.json"
-      val file = socketManager.resolveSystemFile(relativePath)
+      val file = task.resolveSystemFile(relativePath)
       if (file == null) {
         log.warn("Could not resolve system file for patch recording: {}", relativePath)
         return ""
@@ -178,7 +174,7 @@ class SessionRenderer(
         """<details class="verbose"><summary>Trace (${traceLines.size})</summary><pre>${
           traceLines.joinToString("\n") { escapeHtml(it) }
         }</pre></details>"""
-      """<a href='fileIndex/${socketManager.sessionId}/$relativePath' target='_blank' class='verbose'>Patch Data</a>$traceHtml"""
+      """<a href='fileIndex/${task.sessionId}/$relativePath' target='_blank' class='verbose'>Patch Data</a>$traceHtml"""
     } catch (e: Throwable) {
       log.warn("Failed to record patch data: {}", e.message, e)
       "" // Silently fail for recording - it's non-critical

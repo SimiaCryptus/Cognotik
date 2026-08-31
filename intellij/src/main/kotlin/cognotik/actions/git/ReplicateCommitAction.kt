@@ -31,7 +31,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Files
@@ -207,7 +207,7 @@ class ReplicateCommitAction : BaseAction() {
 
   private fun PatchApp.run(
     ui: SocketManager,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     settings: Settings,
     userMessage: String = "",

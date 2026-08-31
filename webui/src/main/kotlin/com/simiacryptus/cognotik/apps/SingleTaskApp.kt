@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -109,7 +109,7 @@ ${taskConfig.toJson()}
     user: User
   ): OrchestrationConfig = initSettings(session, user)
 
-  protected open fun onTaskComplete(result: String, task: SessionTask) {}
+  protected open fun onTaskComplete(result: String, task: ISessionTask) {}
   protected open fun onTaskError(e: Throwable) {}
 
   protected open fun executeTask(

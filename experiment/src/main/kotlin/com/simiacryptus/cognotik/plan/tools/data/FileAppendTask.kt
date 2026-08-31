@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Semaphore
@@ -62,7 +62,7 @@ FileAppend - Append content to the end of an existing file
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -83,7 +83,7 @@ FileAppend - Append content to the end of an existing file
       val status = overviewTab.add("🔄 Preparing append operation...".renderMarkdown())
 
       transcript?.write("# File Append Task Transcript\n\n".toByteArray())
-      Retryable(task, process = { subTask: SessionTask ->
+      Retryable(task, process = { subTask: ISessionTask ->
         completionNotes.clear()
         val context = getInputFileContent(executionConfig?.related_files, root)
         if (context.isNotBlank()) {

@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.apache.commons.text.similarity.LevenshteinDistance
 import org.slf4j.Logger
@@ -97,7 +97,7 @@ class LLMExperimentTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -1289,7 +1289,7 @@ Be specific and reference the data provided.
   }
 
 
-  private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
+  private fun createTranscriptFile(task: ISessionTask): Pair<String, FileOutputStream?> {
     val transcriptFile = "llm_experiment_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()

@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -147,7 +147,7 @@ class ImageDecompositionTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -466,7 +466,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
     return originalImage
   }
 
-  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Analysis") { fn() }
   }
 

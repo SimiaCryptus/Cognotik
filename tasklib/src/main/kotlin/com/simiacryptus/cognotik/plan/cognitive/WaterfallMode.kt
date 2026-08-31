@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -49,13 +49,13 @@ open class WaterfallMode(
   private val log = getLogger(WaterfallMode::class.java)
    private var transcriptStream: OutputStream? = null
 
-  override fun initialize(task: SessionTask) {
+  override fun initialize(task: ISessionTask) {
     log.debug("Initializing PlanAheadMode")
   }
 
   override fun contextData(): List<String> = emptyList()
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     try {
       log.debug("Handling user message: $userMessage")
        if (transcriptStream != null) this.transcriptStream = transcriptStream
@@ -70,7 +70,7 @@ open class WaterfallMode(
     }
   }
 
-  private fun execute(userMessage: String, task: SessionTask) {
+  private fun execute(userMessage: String, task: ISessionTask) {
     try {
       val coordinator = TaskOrchestrator(
         user = user,
@@ -153,7 +153,7 @@ open class WaterfallMode(
     codeFiles: Map<Path, String>,
     files: Array<File>,
     root: Path,
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     orchestrationConfig: OrchestrationConfig,
     contextFn: () -> List<String> = { emptyList() },
@@ -245,7 +245,7 @@ open class WaterfallMode(
     orchestrationConfig: OrchestrationConfig,
     inStrings: List<String>,
     describer: TypeDescriber,
-    task: SessionTask
+    task: ISessionTask
   ): ParsedResponse<Map<String, TaskExecutionConfig>> {
     orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
     val planningActor = orchestrationConfig.planningActor(describer, task)
@@ -275,7 +275,7 @@ open class WaterfallMode(
     )
   }
 
-  private fun loadPrePlanned(userMessage: String, root: Path, task: SessionTask): TaskBreakdownWithPrompt {
+  private fun loadPrePlanned(userMessage: String, root: Path, task: ISessionTask): TaskBreakdownWithPrompt {
     val parsedConfig = parseConfig(userMessage, root.toString(), task)
     task.add("Loading plan from `${parsedConfig.planFile}` with variables: ${parsedConfig.variables}".renderMarkdown())
     val planFile = root.resolve(parsedConfig.planFile!!).toFile()
@@ -295,7 +295,7 @@ open class WaterfallMode(
     return planWrapper
   }
 
-  private fun parseConfig(message: String, root: String, task: SessionTask): WaterfallModeConfig {
+  private fun parseConfig(message: String, root: String, task: ISessionTask): WaterfallModeConfig {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     val describer = TaskContextYamlDescriber(orchestrationConfig)
     Tasks.initDescriber(orchestrationConfig, describer)

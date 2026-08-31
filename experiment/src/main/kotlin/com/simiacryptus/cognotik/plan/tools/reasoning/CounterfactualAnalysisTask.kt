@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -80,7 +80,7 @@ class CounterfactualAnalysisTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -254,7 +254,7 @@ class CounterfactualAnalysisTask(
     contextFiles: String,
     priorCode: String,
     api: ChatInterface,
-    tab: SessionTask,
+    tab: ISessionTask,
     transcript: FileOutputStream?
   ): String {
 
@@ -308,7 +308,7 @@ class CounterfactualAnalysisTask(
     contextFiles: String,
     priorCode: String,
     api: ChatInterface,
-    tab: SessionTask,
+    tab: ISessionTask,
     transcript: FileOutputStream?
   ): String {
     val scenarioComparisons = counterfactuals.zip(counterfactualAnalyses)

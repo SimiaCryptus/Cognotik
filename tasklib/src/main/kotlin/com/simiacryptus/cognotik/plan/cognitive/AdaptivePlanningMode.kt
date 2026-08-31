@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -59,7 +59,7 @@ open class AdaptivePlanningMode(
   private var isRunning = false
   private var transcriptStream: OutputStream? = null
   private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
-  override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+  override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     log.debug("Handling user message: $userMessage")
     if (!isRunning) {
       isRunning = true
@@ -72,7 +72,7 @@ open class AdaptivePlanningMode(
     }
   }
 
-  private fun startAutoPlanChat(task: SessionTask, userMessage: String, transcriptStream: OutputStream?) {
+  private fun startAutoPlanChat(task: ISessionTask, userMessage: String, transcriptStream: OutputStream?) {
     log.debug("Starting auto plan chat with initial message: $userMessage")
     task.echo(userMessage.renderMarkdown())
     this.transcriptStream = transcriptStream
@@ -284,7 +284,7 @@ open class AdaptivePlanningMode(
     coordinator: TaskOrchestrator,
     currentTask: TaskExecutionConfig,
     userMessage: String,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     val currentThinkingStatus =
@@ -309,7 +309,7 @@ open class AdaptivePlanningMode(
   private fun getNextTask(
     userMessage: String,
     reasoningState: Any,
-    task: SessionTask
+    task: ISessionTask
   ): List<TaskData>? {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     Tasks.initDescriber(orchestrationConfig, describer)
@@ -442,7 +442,7 @@ open class AdaptivePlanningMode(
    */
   private fun processTaskExpansionRecursive(
     currentText: String,
-    task: SessionTask,
+    task: ISessionTask,
     parsedActor: ParsedAgent<Tasks>,
     processor: FixedConcurrencyProcessor
   ): List<TaskData> {

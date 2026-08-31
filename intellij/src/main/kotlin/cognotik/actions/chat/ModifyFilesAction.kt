@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -171,7 +171,7 @@ open class ModifyFilesAction(
                 }
         }
 
-        override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
+        override fun renderResponse(response: String, task: ISessionTask) = renderMarkdown(response, tabs=true) { html ->
             DiffInstrumentor(
                 AppSettingsState.instance.processor,
                 SessionRenderer(task),
@@ -193,7 +193,7 @@ open class ModifyFilesAction(
         }
 
         override fun respond(
-            task: SessionTask,
+            task: ISessionTask,
             userMessage: String,
             currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?

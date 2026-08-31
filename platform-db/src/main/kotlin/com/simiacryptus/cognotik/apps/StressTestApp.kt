@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import kotlin.random.Random
 
@@ -33,7 +33,7 @@ class StressTestApp(
     createNestedTabs(task, ui, 3)
   }
 
-  private fun createNestedTabs(task: SessionTask, ui: SocketManager, depth: Int) {
+  private fun createNestedTabs(task: ISessionTask, ui: SocketManager, depth: Int) {
     if (depth <= 0) {
       createComplexDiagram(task)
       createAndUpdatePlaceholders(task, ui)
@@ -50,7 +50,7 @@ class StressTestApp(
     tabDisplay.update()
   }
 
-  private fun createComplexDiagram(task: SessionTask) {
+  private fun createComplexDiagram(task: ISessionTask) {
     val mermaidDiagram = """
             ```mermaid
             graph TD
@@ -64,7 +64,7 @@ class StressTestApp(
     task.add("## Complex Diagram\n$mermaidDiagram".renderMarkdown(true))
   }
 
-  private fun createAndUpdatePlaceholders(task: SessionTask, ui: SocketManager) {
+  private fun createAndUpdatePlaceholders(task: ISessionTask, ui: SocketManager) {
     val placeholders = (1..5).map { ui.newTask(false) }
 
     placeholders.forEach { placeholder ->

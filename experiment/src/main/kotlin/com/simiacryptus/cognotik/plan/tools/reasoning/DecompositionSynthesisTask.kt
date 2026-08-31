@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
@@ -180,7 +180,7 @@ class DecompositionSynthesisTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -792,7 +792,7 @@ class DecompositionSynthesisTask(
   private fun solveSubproblems(
     decomposition: ProblemDecomposition,
     context: String,
-    task: SessionTask,
+    task: ISessionTask,
     api: ChatInterface,
     progressCallback: (String, SubproblemSolution) -> Unit = { _, _ -> }
   ): List<SubproblemSolution> {

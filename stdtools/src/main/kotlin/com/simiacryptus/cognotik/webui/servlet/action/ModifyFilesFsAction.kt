@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
 import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
 import com.simiacryptus.cognotik.webui.servlet.handler.FsException
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import java.io.File
 import java.io.OutputStream
 import java.net.URI
@@ -376,7 +376,7 @@ object ModifyFilesFsAction {
         }
     }
 
-    override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs = true) { html ->
+    override fun renderResponse(response: String, task: ISessionTask) = renderMarkdown(response, tabs = true) { html ->
       DiffInstrumentor(
         patchProcessor,
         SessionRenderer(task),
@@ -397,7 +397,7 @@ object ModifyFilesFsAction {
     }
 
     override fun respond(
-      task: SessionTask,
+      task: ISessionTask,
       userMessage: String,
       currentChatMessages: List<ModelSchema.ChatMessage>,
       transcriptStream: OutputStream?

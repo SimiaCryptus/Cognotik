@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
@@ -80,7 +80,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -299,7 +299,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     inputFileContent: String,
     priorCode: String,
     api: ChatInterface,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val prompt = """
  Analyze the following concept by moving UP the abstraction ladder.
@@ -362,7 +362,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     inputFileContent: String,
     priorCode: String,
     api: ChatInterface,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val prompt = """
  Analyze the following concept by moving DOWN the abstraction ladder.
@@ -419,7 +419,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   }
 
   private fun generatePatternSummary(
-    concept: String, upwardAnalysis: String, downwardAnalysis: String, api: ChatInterface, task: SessionTask
+    concept: String, upwardAnalysis: String, downwardAnalysis: String, api: ChatInterface, task: ISessionTask
   ): String {
     val prompt = """
  Based on the abstraction ladder analysis, provide a comprehensive pattern summary and recommendations.
@@ -481,7 +481,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   }
 
 
-  private fun initializeDetailedOutput(task: SessionTask): FileOutputStream? {
+  private fun initializeDetailedOutput(task: ISessionTask): FileOutputStream? {
     return try {
       val (link, file) = Pair(
         task.linkTo("abstraction_ladder_analysis.md"),
@@ -502,7 +502,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   }
 
   private fun generateSummaryMessage(
-    task: SessionTask,
+    task: ISessionTask,
     duration: Long,
     concept: String,
     levels: Int,

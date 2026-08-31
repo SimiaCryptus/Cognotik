@@ -30,7 +30,7 @@ import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.asChatInterface
 import com.simiacryptus.cognotik.util.jsonCast
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -231,7 +231,7 @@ class DocProcessor(
         executionConfig = request.executionConfig
           .jsonCast(request.taskKind.taskType.executionConfigClass),
         parentSession = parentSession,
-        onComplete = { _: String, task: SessionTask ->
+        onComplete = { _: String, task: ISessionTask ->
           callbacks.onCompleted(task.sessionId.toString())
         },
         onError = { error: Throwable ->

@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.transcriptFilter
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -93,7 +93,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -497,7 +497,7 @@ ${generatedImages.joinToString("\n") { (filename, desc) -> "         - $filename
     chatAgent: ChatAgent,
     toInput: (String) -> List<String>,
     transcriptWriter: java.io.BufferedWriter?,
-    newTask: SessionTask,
+    newTask: ISessionTask,
   ): String {
     if (generatedImages.isEmpty()) {
       return htmlStructure

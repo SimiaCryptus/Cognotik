@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -66,11 +66,11 @@ open class PersonaChatMode(
   private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
   private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
 
-  override fun initialize(task: SessionTask) {
+  override fun initialize(task: ISessionTask) {
     log.debug("PersonaChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
   }
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
      if (transcriptStream != null) this.transcriptStream = transcriptStream
     val parserChatter = orchestrationConfig.defaultFast.getChildClient(task)
@@ -104,7 +104,7 @@ open class PersonaChatMode(
   }
 
   private fun execute(
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     parsingChatter: ChatInterface,
     defaultChat: ChatInterface
@@ -141,7 +141,7 @@ open class PersonaChatMode(
   }
 
   private fun processMsgRecursive(
-    currentMessage: String, task: SessionTask, parsingChatter: ChatInterface, defaultChatter: ChatInterface
+    currentMessage: String, task: ISessionTask, parsingChatter: ChatInterface, defaultChatter: ChatInterface
   ): List<(StringBuilder) -> Unit> {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     if (config.useExpansionSyntax) {
@@ -176,7 +176,7 @@ open class PersonaChatMode(
 
   private fun executeTask(
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     aggregateResponse: StringBuilder,
     defaultModel: ChatInterface,
     parserChatter: ChatInterface
@@ -318,7 +318,7 @@ open class PersonaChatMode(
     task.complete()
   }
 
-  private fun runAll(task: SessionTask, function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
+  private fun runAll(task: ISessionTask, function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
     val fixedConcurrencyProcessor = FixedConcurrencyProcessor(task.pool, 4)
     function1s.map { function1 ->
       fixedConcurrencyProcessor.submit {
@@ -329,7 +329,7 @@ open class PersonaChatMode(
 
   private fun expandRange(
     currentMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     rangeMatch: MatchResult,
     parsingChatter: ChatInterface,
     defaultChatter: ChatInterface
@@ -350,9 +350,9 @@ open class PersonaChatMode(
 
   private fun expandAlternatives(
     currentMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     match: MatchResult,
-    recursiveFn: (String, SessionTask) -> List<(StringBuilder) -> Unit>
+    recursiveFn: (String, ISessionTask) -> List<(StringBuilder) -> Unit>
   ): List<(StringBuilder) -> Unit> {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
@@ -366,7 +366,7 @@ open class PersonaChatMode(
   }
 
   private fun expandSequence(
-    task: SessionTask,
+    task: ISessionTask,
     items: List<String>,
     currentMessage: String,
     expression: String,

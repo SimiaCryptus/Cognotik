@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -95,7 +95,7 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -503,7 +503,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
   }
 
 
-  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Save QR Image") {
       fn()
     }

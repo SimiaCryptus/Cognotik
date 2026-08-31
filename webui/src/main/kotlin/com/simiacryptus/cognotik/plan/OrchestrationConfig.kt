@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.Locale.getDefault
@@ -90,7 +90,7 @@ class OrchestrationConfig(
 
   fun planningActor(
     describer: TypeDescriber,
-    task: SessionTask
+    task: ISessionTask
   ): ParsedAgent<TaskBreakdownResult> {
     val availableTaskTypes = TaskType.getAvailableTaskTypes(this)
     return planningActor(

@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.Driver
@@ -77,7 +77,7 @@ class JdbcSessionTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -202,7 +202,7 @@ class JdbcSessionTask(
     }
   }
 
-  private fun getOrCreateSession(task: SessionTask): SessionState {
+  private fun getOrCreateSession(task: ISessionTask): SessionState {
     val sessionId = executionConfig?.sessionId
 
     // Try to retrieve existing session

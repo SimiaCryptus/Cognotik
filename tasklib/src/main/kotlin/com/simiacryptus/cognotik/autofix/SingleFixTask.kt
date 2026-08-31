@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -83,7 +83,7 @@ class SingleFixTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -140,7 +140,7 @@ class SingleFixTask(
               }
 
               override fun output(
-                task: SessionTask, settings: Settings, tabs: TabbedDisplay
+                task: ISessionTask, settings: Settings, tabs: TabbedDisplay
               ): OutputResult {
                 // Return exit code 1 to trigger the fix logic in PatchApp.run
                 return OutputResult(1, logFile.readText())
@@ -194,7 +194,7 @@ class SingleFixTask(
     task.complete()
   }
 
-  private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
+  private fun createTranscript(task: ISessionTask): Pair<FileOutputStream?, String> {
     val transcriptFile =
       this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))

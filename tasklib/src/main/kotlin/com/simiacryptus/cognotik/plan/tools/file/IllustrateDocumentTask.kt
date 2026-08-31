@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
@@ -124,7 +124,7 @@ class IllustrateDocumentTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -473,7 +473,7 @@ class IllustrateDocumentTask(
     images: List<Triple<String, String, ImageSuggestion>>,
     isMarkdown: Boolean,
     integratorDirective: String?,
-    task: SessionTask,
+    task: ISessionTask,
     chatChatter: ChatInterface,
     documentFile: String
   ): String? {
@@ -568,7 +568,7 @@ class IllustrateDocumentTask(
       patchResult: String?,
       patchPrompt: String,
       chatChatter: ChatInterface,
-      subTask: SessionTask,
+      subTask: ISessionTask,
       documentFile: String,
       semaphore: Semaphore
   ): String? {
@@ -593,7 +593,7 @@ class IllustrateDocumentTask(
   private fun integrateImages(
       patchPrompt: String,
       chatChatter: ChatInterface,
-      subTask: SessionTask,
+      subTask: ISessionTask,
       patchResult: String?,
       documentFile: String,
       semaphore: Semaphore

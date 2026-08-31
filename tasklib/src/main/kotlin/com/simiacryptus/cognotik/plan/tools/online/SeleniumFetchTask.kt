@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
@@ -80,7 +80,7 @@ class SeleniumFetchTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -386,7 +386,7 @@ class SeleniumFetchTask(
   private fun handleError(
     e: Throwable,
     executionConfig: SeleniumFetchTaskExecutionConfigData,
-    task: SessionTask,
+    task: ISessionTask,
     transcript: java.io.OutputStream?,
     resultFn: (String) -> Unit
   ) {

@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
@@ -109,7 +109,7 @@ class ChainOfThoughtTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -425,7 +425,7 @@ class ChainOfThoughtTask(
   }
 
   private fun generateReasoningStep(
-      task: SessionTask,
+      task: ISessionTask,
       question: String,
       priorSteps: List<ReasoningStep>,
       priorContext: String,
@@ -506,7 +506,7 @@ class ChainOfThoughtTask(
   }
 
   private fun validateStep(
-    task: SessionTask,
+    task: ISessionTask,
     step: ReasoningStep,
     priorSteps: List<ReasoningStep>,
     api: ChatInterface
@@ -554,7 +554,7 @@ class ChainOfThoughtTask(
   }
 
   private fun generateSummary(
-    task: SessionTask,
+    task: ISessionTask,
     reasoningChain: List<ReasoningStep>,
     originalProblem: String,
     api: ChatInterface

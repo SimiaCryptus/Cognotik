@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
@@ -144,7 +144,7 @@ abstract class PatchApp(
   var updateStatus: (String) -> Unit = {}
 
   abstract fun output(
-    task: SessionTask,
+    task: ISessionTask,
     settings: Settings,
     tabs: TabbedDisplay = TabbedDisplay(task)
   ): OutputResult
@@ -168,7 +168,7 @@ abstract class PatchApp(
     val fixApplied: Boolean = false
   )
 
-  fun newSessionController(task: SessionTask, onComplete: (OutputResult) -> Unit = {}) = SessionController(
+  fun newSessionController(task: ISessionTask, onComplete: (OutputResult) -> Unit = {}) = SessionController(
     task = task,
     settings = settings,
     model = model,
@@ -177,10 +177,10 @@ abstract class PatchApp(
   )
 
   open class SessionController(
-    private val task: SessionTask,
+    private val task: ISessionTask,
     val settings: Settings,
     val model: ChatInterface,
-    val executeIteration: (SessionTask, ChatInterface, Int) -> OutputResult,
+    val executeIteration: (ISessionTask, ChatInterface, Int) -> OutputResult,
     var updateStatus: (String) -> Unit = { _ -> },
     var lastParsedErrors: ParsedErrors? = null,
     val onComplete: (exitCode: OutputResult) -> Unit = { _ -> },
@@ -199,7 +199,7 @@ abstract class PatchApp(
     private val iterationAreaBuffer: StringBuilder = task.add("")!!
 
     // Detached tasks for each iteration's details, keyed by iteration number
-    private val iterationTasks = mutableMapOf<Int, SessionTask>()
+    private val iterationTasks = mutableMapOf<Int, ISessionTask>()
 
     fun start() {
       updateStatus = { message: String ->
@@ -603,7 +603,7 @@ abstract class PatchApp(
    * Called by SessionController for each iteration.
    */
   internal fun executeIteration(
-    task: SessionTask,
+    task: ISessionTask,
     model: ChatInterface,
     iteration: Int = 0
   ): OutputResult {
@@ -689,7 +689,7 @@ abstract class PatchApp(
     }
 
   private fun fixAllErrors(
-    task: SessionTask,
+    task: ISessionTask,
     plan: ParsedResponse<ParsedErrors>,
     settings: Settings,
     progressHeader: StringBuilder?,
@@ -844,7 +844,7 @@ abstract class PatchApp(
     error: ParsedError,
     additionalFiles: List<String>? = null,
     autoFix: Boolean,
-    task: SessionTask,
+    task: ISessionTask,
     model: ChatInterface,
     iteration: Int,
   ) {

@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -89,7 +89,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -359,7 +359,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
     return tableData.toJson()
   }
 
-  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept Table") {
       fn()
     }

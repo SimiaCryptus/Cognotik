@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
@@ -135,7 +135,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -592,7 +592,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     }
   }
 
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+  private fun initializeTranscript(task: ISessionTask): FileOutputStream? {
     return try {
       val transcriptFile = "adversarial_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
       val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))

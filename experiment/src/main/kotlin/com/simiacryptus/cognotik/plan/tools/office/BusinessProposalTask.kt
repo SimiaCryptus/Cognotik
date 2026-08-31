@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
@@ -330,7 +330,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -386,7 +386,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     val api = defaultSmart ?: return
 
     val tabs = TabbedDisplay(task)
-    fun <T> runPhase(tabName: String, block: (SessionTask) -> T): T {
+    fun <T> runPhase(tabName: String, block: (ISessionTask) -> T): T {
       val subTask = tabs.newTask(tabName)
       try {
         return block(subTask)

@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -217,7 +217,7 @@ class CustomFileSetPatchServer(
     }
   }
 
-  private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: SessionTask) {
+  private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: ISessionTask) {
     val message =
       "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
         _selectedDirectory?.relativize(
@@ -567,7 +567,7 @@ class CustomFileSetPatchServer(
     contextSummary: String,
     userMessage: String,
     tabs: TabbedDisplay?,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     singleOutputFile: Path?,
     useBigDataMode: Boolean = false,
@@ -731,7 +731,7 @@ class CustomFileSetPatchServer(
   private fun handleAutoApplyMode(
     fileSet: CustomFileSetPatchAction.FileSet,
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     toInput: (String) -> List<String>
   ) {
@@ -763,7 +763,7 @@ class CustomFileSetPatchServer(
   private fun handleGenerationMode(
     fileSet: CustomFileSetPatchAction.FileSet,
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     singleOutputFile: Path?,
     toInput: (String) -> List<String>
@@ -798,7 +798,7 @@ class CustomFileSetPatchServer(
   private fun handleInteractiveMode(
     fileSet: CustomFileSetPatchAction.FileSet,
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     toInput: (String) -> List<String>
   ) {
@@ -831,7 +831,7 @@ class CustomFileSetPatchServer(
     design: String,
     session: Session,
     fileSet: CustomFileSetPatchAction.FileSet,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     return when (outputMode) {
       CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {

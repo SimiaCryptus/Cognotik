@@ -7,7 +7,9 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.oneAtATime
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
@@ -18,21 +20,21 @@ import java.util.*
 import java.util.function.Consumer
 
 
-open class SessionTask(
-  val messageID: String = Session.randomId(11),
+class SessionTask(
+  override val messageID: String = Session.randomId(11),
   private var buffer: MutableList<StringBuilder> = mutableListOf(),
   private val spinner: String = SessionTask.spinner,
-  internal val ui: SocketManager
-) {
+  val ui: SocketManager
+) : ISessionTask {
 
-  val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
+  override val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
 
-  private val currentText: String
+  override val currentText: String
     get() = buffer.toTypedArray().filter { it.isNotBlank() }.joinToString("")
 
-  fun append(
+  override fun append(
     htmlToAppend: String,
-    showSpinner: Boolean = true
+    showSpinner: Boolean
   ): StringBuilder? {
     val stringBuilder: StringBuilder?
     if (htmlToAppend.isNotBlank()) {
@@ -45,7 +47,7 @@ open class SessionTask(
     return stringBuilder
   }
 
-  fun newLogStream(name: String = """API log"""): BufferedOutputStream {
+  override fun newLogStream(name: String): BufferedOutputStream {
     val relativePath = ".logs/api-${UUID.randomUUID()}.md"
     val (file, createFile) = Pair(
       linkTo(relativePath),
@@ -63,12 +65,12 @@ open class SessionTask(
     return buffered
   }
 
-  protected open fun send(
-    html: String = currentText
+  override fun send(
+    html: String
   ) = ui.send(html)
 
   @Description("Saves the given data to a file and returns the url of the file.")
-  open fun saveFile(
+  override fun saveFile(
     @Description("The name of the file to save")
     relativePath: String,
     @Description("The data to save")
@@ -100,17 +102,17 @@ open class SessionTask(
   }
 
   @Description("Adds a message to the task output.")
-  fun add(
+  override fun add(
     @Description("The message to add")
     message: String,
     @Description("Whether to show the spinner for the task (default: true)")
-    showSpinner: Boolean = true,
+    showSpinner: Boolean,
     @Description("The html tag to wrap the message in (default: div)")
-    tag: String = "div",
+    tag: String,
     @Description("Additional css class(es) to apply to the message")
-    additionalClasses: String = "",
+    additionalClasses: String,
     @Description("Whether to render the message as markdown (default: false)")
-    markdown: Boolean = false
+    markdown: Boolean
   ) = append(
     """<$tag class="${
       (additionalClasses.split(" ").toSet() + setOf("response-message")).joinToString(" ")
@@ -118,17 +120,17 @@ open class SessionTask(
   )
 
   @Description("Adds a hideable message to the task output.")
-  fun hideable(
+  override fun hideable(
     @Description("The message to add")
     message: String,
     @Description("Whether to show the spinner for the task (default: true)")
-    showSpinner: Boolean = true,
+    showSpinner: Boolean,
     @Description("The html tag to wrap the message in (default: div)")
-    tag: String = "div",
+    tag: String,
     @Description("Additional css class(es) to apply to the message")
-    additionalClasses: String = "",
+    additionalClasses: String,
     @Description("Whether to render the message as markdown (default: false)")
-    markdown: Boolean = false
+    markdown: Boolean
   ): StringBuilder? {
     var windowBuffer: StringBuilder? = null
     val closeButton = """<span class="close">${
@@ -151,23 +153,23 @@ open class SessionTask(
   }
 
   @Description("Echos a user message to the task output.")
-  fun echo(
+  override fun echo(
     @Description("The message to echo")
     message: String,
     @Description("Whether to show the spinner for the task (default: true)")
-    showSpinner: Boolean = false,
+    showSpinner: Boolean,
     @Description("The html tag to wrap the message in (default: div)")
-    tag: String = "div"
+    tag: String
   ) = add(message, showSpinner, tag, "user-message", markdown = true)
 
   @Description("Adds a header to the task output.")
-  fun header(
+  override fun header(
     @Description("The message to add")
     message: String,
-    level: Int = 0,
+    level: Int,
     @Description("Whether to show the spinner for the task (default: true)")
-    showSpinner: Boolean = true,
-    additionalClasses: String = ""
+    showSpinner: Boolean,
+    additionalClasses: String
   ) = add(
     message = message,
     showSpinner = showSpinner,
@@ -186,38 +188,38 @@ open class SessionTask(
   )
 
   @Description("Adds an expandable/collapsible section to the task output.")
-  fun expandable(
+  override fun expandable(
     @Description("The title displayed in the header")
     title: String,
     @Description("The content within the expandable section")
     content: String,
     @Description("Whether to show the spinner after adding (default: false)")
-    showSpinner: Boolean = false,
+    showSpinner: Boolean,
     @Description("The html tag for the main container (default: div)")
-    tag: String = "div",
+    tag: String,
     @Description("Additional css class(es) to apply to the main container")
-    additionalClasses: String = "",
+    additionalClasses: String,
     @Description("Whether to render the content as markdown (default: true)")
-    markdown: Boolean = true
+    markdown: Boolean
   ) = renderExpandable(title, content, showSpinner, tag, additionalClasses, false, markdown)
 
   @Description("Adds an expandable/collapsible section to the task output.")
-  fun expanded(
+  override fun expanded(
     @Description("The title displayed in the header")
     title: String,
     @Description("The content within the expandable section")
     content: String,
     @Description("Whether to show the spinner after adding (default: false)")
-    showSpinner: Boolean = false,
+    showSpinner: Boolean,
     @Description("The html tag for the main container (default: div)")
-    tag: String = "div",
+    tag: String,
     @Description("Additional css class(es) to apply to the main container")
-    additionalClasses: String = "",
+    additionalClasses: String,
     @Description("Whether to render the content as markdown (default: true)")
-    markdown: Boolean = true
+    markdown: Boolean
   ) = renderExpandable(title, content, showSpinner, tag, additionalClasses, true, markdown)
 
-  private fun renderExpandable(
+  override fun renderExpandable(
     title: String,
     content: String,
     showSpinner: Boolean,
@@ -243,23 +245,23 @@ open class SessionTask(
   }
 
   @Description("Adds a verbose message to the task output; verbose messages are hidden by default.")
-  fun verbose(
+  override fun verbose(
     @Description("The message to add")
     message: String,
     @Description("Whether to show the spinner for the task (default: true)")
-    showSpinner: Boolean = true,
+    showSpinner: Boolean,
     @Description("The html tag to wrap the message in (default: pre)")
-    tag: String = "pre"
+    tag: String
   ) = add(message, showSpinner, tag, "verbose")
 
   @Description("Displays an error in the task output.")
-  fun error(
+  override fun error(
     @Description("The error to display")
     e: Throwable,
     @Description("Whether to show the spinner for the task (default: false)")
-    showSpinner: Boolean = false,
+    showSpinner: Boolean,
     @Description("The html tag to wrap the message in (default: div)")
-    tag: String = "div"
+    tag: String
   ) = hideable(
     when {
       e is ValidatedObject.ValidationError -> """
@@ -284,13 +286,13 @@ Stack Trace:
   )
 
   @Description("Displays a final message in the task output. This will hide the spinner.")
-  fun complete(
+  override fun complete(
     @Description("The message to display")
-    message: String = "",
+    message: String,
     @Description("The html tag to wrap the message in (default: div)")
-    tag: String = "div",
+    tag: String,
     @Description("Additional css class(es) to apply to the message")
-    additionalClasses: String = ""
+    additionalClasses: String
   ) = add(
     message = message,
     showSpinner = false,
@@ -300,12 +302,12 @@ Stack Trace:
   )
 
   @Description("Displays an image to the task output.")
-  fun image(
+  override fun image(
     @Description("The image to display")
     image: BufferedImage
   ) = add("""<img src="${saveFile("images/${Session.randomId(11)}.png", image.toPng())}" />""")
 
-  fun newSession(session: Session = Session.newUserID(), appname: String = session.toString()): SocketManager {
+  override fun newSession(session: Session, appname: String): SocketManager {
     SessionProxyServer.setParentSession(session, ui.sessionId)
     val linkedManager = ui.createLinkedManager(session)
     SessionProxyServer.agents[session] = linkedManager
@@ -319,10 +321,10 @@ Stack Trace:
     return linkedManager
   }
 
-  fun linkedTask(
+  override fun linkedTask(
     label: String,
-    renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
-  ): SessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
+    renderFn: (String) -> String,
+  ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
     val newSession = newSession(appname = label)
     val task = newSession.newTask()
     val linkToSession = task.linkToSession(label)
@@ -332,7 +334,7 @@ Stack Trace:
   }
 
   companion object {
-    val log = getLogger(SessionTask::class.java)
+    val log = getLogger(ISessionTask::class.java)
 
     const val spinner =
       """<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>"""
@@ -345,23 +347,23 @@ Stack Trace:
     }
   }
 
-  fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolveSystemFile(relativePath))
+  override fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolveSystemFile(relativePath))
 
-  fun linkTo(relativePath: String): String {
+  override fun linkTo(relativePath: String): String {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     return "fileIndex/${ui.sessionId}/$relativePath"
   }
 
-  fun resolveSystemFile(relativePath: String) = this.ui.resolveSystemFile(relativePath)
+  override fun resolveSystemFile(relativePath: String) = this.ui.resolveSystemFile(relativePath)
 
-  fun resolveUserFile(relativePath: String) = this.ui.resolveUserFile(relativePath)
+  override fun resolveUserFile(relativePath: String) = this.ui.resolveUserFile(relativePath)
 
-  fun update() = send()
+  override fun update() = send()
 
-  open fun hrefLink(
+  override fun hrefLink(
     linkText: String,
-    classname: String = "href-link",
-    id: String? = null,
+    classname: String,
+    id: String?,
     handler: Consumer<Unit>
   ): String {
     log.debug("Creating href link with text: {}", linkText)
@@ -375,18 +377,18 @@ Stack Trace:
     }>$linkText</a>"""
   }
 
-  fun newTask(showSpinner: Boolean = true, root: Boolean = false): SessionTask {
+  override fun newTask(showSpinner: Boolean, root: Boolean): ISessionTask {
     val newTask = ui.newTask(root = root)
     add(newTask.placeholder, showSpinner = showSpinner)
     return newTask
   }
 
-  fun textInput(handler: Consumer<String>): String = ui.textInput(handler)
-  val pool get() = ui.pool
-  val dataStorage: StorageInterface get() = ui.dataStorage
-  val sessionId: Session get() = ui.sessionId
+  override fun textInput(handler: Consumer<String>): String = ui.textInput(handler)
+  override val pool get() = ui.pool
+  override val dataStorage: StorageInterface get() = ui.dataStorage
+  override val sessionId: Session get() = ui.sessionId
 
-  fun linkToSession(label: String): String = sessionId.linkToSession(label)
+  override fun linkToSession(label: String): String = sessionId.linkToSession(label)
 }
 
 val Throwable.stackTraceTxt: String
@@ -397,4 +399,5 @@ val Throwable.stackTraceTxt: String
     return sw.toString()
   }
 
-fun ChatInterface.getChildClient(task: SessionTask) = getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }
+fun ChatInterface.getChildClient(task: ISessionTask) =
+  getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }

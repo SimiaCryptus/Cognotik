@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -102,7 +102,7 @@ class ConstraintSatisfactionTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -248,7 +248,7 @@ class ConstraintSatisfactionTask(
     }
   }
 
-  private fun finalizeTask(task: SessionTask, answer: String, resultFn: (String) -> Unit) {
+  private fun finalizeTask(task: ISessionTask, answer: String, resultFn: (String) -> Unit) {
     try {
       val (link, _) = task.createFile("constraint_solution_transcript.md")
       val summaryMessage = """
@@ -268,7 +268,7 @@ class ConstraintSatisfactionTask(
     }
   }
 
-  private fun handleError(e: Exception, task: SessionTask, transcript: FileOutputStream?, resultFn: (String) -> Unit) {
+  private fun handleError(e: Exception, task: ISessionTask, transcript: FileOutputStream?, resultFn: (String) -> Unit) {
     log.error("Error in Constraint Satisfaction Task: ${e.message}", e)
     task.error(e)
     transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
@@ -389,7 +389,7 @@ Generate the constraint satisfaction solution now:
         """.trimIndent()
   }
 
-  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Save Solution") {
       fn()
     }

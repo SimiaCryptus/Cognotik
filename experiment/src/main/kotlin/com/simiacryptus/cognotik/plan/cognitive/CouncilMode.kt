@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -61,7 +61,7 @@ open class CouncilMode(
   val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     if (!isRunning) {
       isRunning = true
        startCouncilChat(task, userMessage, transcriptStream)
@@ -73,7 +73,7 @@ open class CouncilMode(
 
   override fun contextData(): List<String> = emptyList()
 
-   private fun startCouncilChat(task: SessionTask, userMessage: String, transcriptStream: OutputStream?) {
+   private fun startCouncilChat(task: ISessionTask, userMessage: String, transcriptStream: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     task.echo(renderMarkdown(userMessage))
      this.transcriptStream = transcriptStream
@@ -293,7 +293,7 @@ ${JsonUtil.toJson(taskConfig)}
     userMessage: String?,
     contextData: List<String>,
     orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
+    task: ISessionTask,
     describer: TaskContextYamlDescriber
   ): Any {
     @Suppress("UNCHECKED_CAST")
@@ -309,7 +309,7 @@ ${JsonUtil.toJson(taskConfig)}
     userMessage: String,
     strategy: CognitiveSchemaStrategy,
     state: Any,
-    task: SessionTask
+    task: ISessionTask
   ): List<AdaptivePlanningMode.TaskData>? {
     @Suppress("UNCHECKED_CAST")
     val typedState = state
@@ -371,7 +371,7 @@ ${JsonUtil.toJson(taskConfig)}
   private fun voteOnTasks(
     nominations: List<Pair<String, AdaptivePlanningMode.TaskData>>,
     userMessage: String,
-    task: SessionTask
+    task: ISessionTask
   ): List<AdaptivePlanningMode.TaskData> {
     val votes = mutableMapOf<Int, Int>()
     val nominationDescriptions = nominations.mapIndexed { index, (nominator, taskData) ->
@@ -416,7 +416,7 @@ ${JsonUtil.toJson(taskConfig)}
     coordinator: TaskOrchestrator,
     currentTask: TaskExecutionConfig,
     userMessage: String,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val taskImpl = orchestrationConfig.getImpl(currentTask)
     val result = StringBuilder()
@@ -432,7 +432,7 @@ ${JsonUtil.toJson(taskConfig)}
 
   private fun processTaskExpansionRecursive(
     currentText: String,
-    task: SessionTask,
+    task: ISessionTask,
     parsedActor: ParsedAgent<Tasks>,
     processor: FixedConcurrencyProcessor
   ): List<AdaptivePlanningMode.TaskData> {

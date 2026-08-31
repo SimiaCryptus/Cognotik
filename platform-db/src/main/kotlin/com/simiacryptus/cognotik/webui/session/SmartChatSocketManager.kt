@@ -73,7 +73,7 @@ open class SmartChatSocketManager(
   )
 
   override fun respond(
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     currentChatMessages: List<ModelSchema.ChatMessage>,
     transcriptStream: OutputStream?
@@ -244,7 +244,7 @@ open class SmartChatSocketManager(
    */
   private fun maybeCompactHistory(
     messages: List<ModelSchema.ChatMessage>,
-    task: SessionTask
+    task: ISessionTask
   ): List<ModelSchema.ChatMessage> {
     val estimatedTokens = estimateTokenCount(messages)
 
@@ -298,7 +298,7 @@ open class SmartChatSocketManager(
    */
   private fun generateSummary(
     messages: List<ModelSchema.ChatMessage>,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val conversationText = messages.joinToString("\n\n") { msg ->
       "${msg.role}: ${msg.content?.firstOrNull()?.text ?: ""}"

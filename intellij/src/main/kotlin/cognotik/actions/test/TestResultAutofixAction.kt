@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -183,7 +183,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     private fun runAutofix(
-      task: SessionTask, socketManager: SocketManager
+      task: ISessionTask, socketManager: SocketManager
     ) {
       Retryable(task) {
         try {
@@ -255,7 +255,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     private fun generateAndAddResponse(
-      task: SessionTask,
+      task: ISessionTask,
       error: ParsedError,
       summary: String,
       socketManager: SocketManager

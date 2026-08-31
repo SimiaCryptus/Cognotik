@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.OutputStream
@@ -108,7 +108,7 @@ class SubPlanTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -216,7 +216,7 @@ class SubPlanTask(
 
   private fun handleError(
     e: Exception,
-    task: SessionTask,
+    task: ISessionTask,
     transcript: OutputStream?,
     resultFn: (String) -> Unit
   ) {
@@ -301,7 +301,7 @@ class SubPlanTask(
   }
 
   private fun agent(
-    task: SessionTask,
+    task: ISessionTask,
     goal: String
   ): ChatAgent {
     // Use an agent to create a summary

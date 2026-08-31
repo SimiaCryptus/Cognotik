@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -97,7 +97,7 @@ class TiledImageGenerationTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -476,13 +476,13 @@ class TiledImageGenerationTask(
   }
 
 
-  private fun saveImage(image: BufferedImage, name: String, task: SessionTask): String {
+  private fun saveImage(image: BufferedImage, name: String, task: ISessionTask): String {
     val file = root.resolve(name)
     ImageIO.write(image, executionConfig?.extension, file.toFile())
     return task.linkTo(name)
   }
 
-  override fun acceptButtonFooter(ui: SessionTask, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
 

@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -78,7 +78,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -118,7 +118,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
       describer = describer(),
     ) {
       override fun displayFeedback(
-        task: SessionTask,
+        task: ISessionTask,
         request: CodeAgent.CodeRequest,
         response: CodeAgent.CodeResult
       ) {
@@ -201,7 +201,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
       }
 
       override fun execute(
-        task: SessionTask,
+        task: ISessionTask,
         response: CodeAgent.CodeResult
       ): String {
         val result = super.execute(task, response)

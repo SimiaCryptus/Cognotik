@@ -25,7 +25,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.session.ServerlessSocketManager
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.server.Server
 import org.slf4j.LoggerFactory.getLogger
@@ -130,7 +130,7 @@ open class UnifiedHarness(
       showMenubar = showMenubar,
       useExpansionSyntax = true
     ) {
-      override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+      override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
         val usageManager = ApplicationServices.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
@@ -224,7 +224,7 @@ open class UnifiedHarness(
     message: String = "Execute task",
     executionConfig: TaskExecutionConfig,
     parentSession: Session? = null,
-    onComplete: (result: String, task: SessionTask) -> Unit = { _, _ -> },
+    onComplete: (result: String, task: ISessionTask) -> Unit = { _, _ -> },
     onError: (Throwable) -> Unit = { _ -> },
     initSettings: (Session) -> OrchestrationConfig
   ): Session {
@@ -244,7 +244,7 @@ open class UnifiedHarness(
 
       override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
-      override fun onTaskComplete(result: String, task: SessionTask) {
+      override fun onTaskComplete(result: String, task: ISessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
         val usageManager = ApplicationServices.fileApplicationServices().usageDB

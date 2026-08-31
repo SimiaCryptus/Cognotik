@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -42,7 +42,7 @@ open class CodingMode(
 
   inner class TaskFunctionImpl<T : TaskExecutionConfig, U : TaskTypeConfig>(
     private val taskType: TaskType<*, *>?,
-    private val task: SessionTask
+    private val task: ISessionTask
   ) : TaskFunction<T>(
     executionConfigClass = taskType?.executionConfigClass as Class<out T>
   ) {
@@ -97,7 +97,7 @@ open class CodingMode(
     abstract fun call(executionConfig: Any, messages: String): String
   }
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
      val transcript = transcriptStream
     try {
@@ -168,10 +168,10 @@ open class CodingMode(
     }
   }
 
-  open fun plan(task: SessionTask) = generateCode(task, history)
+  open fun plan(task: ISessionTask) = generateCode(task, history)
 
   private fun generateCode(
-    task: SessionTask,
+    task: ISessionTask,
     messages: List<Pair<String, ModelSchema.Role>>
   ): CodeAgent.CodeResult {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
@@ -195,7 +195,7 @@ open class CodingMode(
 
   open val describer: TypeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
-  open fun symbols(task: SessionTask): Map<String, Any> =
+  open fun symbols(task: ISessionTask): Map<String, Any> =
     orchestrationConfig.taskSettings.map { (name, taskTypeConfig) ->
       Pair(
         name.replace("[^a-zA-Z01-9_]".toRegex(), "_"),

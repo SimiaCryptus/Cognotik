@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.ui
 
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class Discussable<T : Any>(
-  private val task: SessionTask,
+  private val task: ISessionTask,
   private val userMessage: () -> String,
   private val initialResponse: (String) -> T,
   private val outputFn: (T) -> String,
@@ -48,7 +48,7 @@ ${
   }
   private val acceptGuard = AtomicBoolean(blocking)
 
-  private fun main(tabIndex: Int, task: SessionTask) {
+  private fun main(tabIndex: Int, task: ISessionTask) {
     log.info("Starting main function for tabIndex: $tabIndex")
     try {
       val history = mutableListOf<Pair<String, Role>>()
@@ -78,7 +78,7 @@ ${
     tabContent: StringBuilder,
     design: T,
     history: List<Pair<String, Role>>,
-    task: SessionTask,
+    task: ISessionTask,
   ) = task.newTask(blocking).apply {
     log.info("Creating feedback form for tabIndex: $tabIndex")
     val feedbackSB = add("<div />")!!
@@ -99,7 +99,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     tabContent: StringBuilder,
     design: T,
     feedbackSB: StringBuilder,
-    feedbackTask: SessionTask,
+    feedbackTask: ISessionTask,
   ) = task.hrefLink("Accept", classname = "href-link cmd-button") {
     log.info("Accept link clicked for tabIndex: $tabIndex")
     accept(tabIndex, tabContent, design)
@@ -110,9 +110,9 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
   private fun textInput(
     tabContent: StringBuilder,
     history: List<Pair<String, Role>>,
-    task: SessionTask,
+    task: ISessionTask,
     feedbackSB: StringBuilder,
-    feedbackTask: SessionTask,
+    feedbackTask: ISessionTask,
   ): String {
     val feedbackGuard = AtomicBoolean(blocking)
     return task.textInput { userResponse ->
@@ -139,7 +139,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     tabContent: StringBuilder,
     userResponse: String,
     history: List<Pair<String, Role>>,
-    task: SessionTask,
+    task: ISessionTask,
   ) {
     log.info("Processing feedback for user response: $userResponse")
     var history = history

@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
@@ -118,7 +118,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -215,7 +215,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
   private fun executePlanningPhase(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     transcript: FileOutputStream?
   ): List<PlannedChange> {
     val typeConfig = typeConfig
@@ -308,7 +308,7 @@ ${planResult.text}
     agent: TaskOrchestrator,
     change: PlannedChange,
     previousChanges: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     transcript: FileOutputStream?,
     completionNotes: MutableList<String>
   ): String {

@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Paths
@@ -132,7 +132,7 @@ class DiffChatAction : BaseAction() {
 
                 """.trimIndent() + AppSettingsState.instance.processor.patchFormatPrompt
 
-            override fun renderResponse(response: String, task: SessionTask): String = """<div>${
+            override fun renderResponse(response: String, task: ISessionTask): String = """<div>${
                 renderMarkdown(response, tabs=true) {
                   val virtualFs = InMemoryFileSystem()
                   val virtualRoot = Paths.get("/virtual")

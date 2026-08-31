@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -43,8 +43,8 @@ open class HierarchicalPlanningMode(
   private val stopRequested = AtomicBoolean(false)
   private val goalTree = ConcurrentHashMap<String, Goal>()
   private val taskMap = ConcurrentHashMap<String, Task>()
-  private val goalTasks = ConcurrentHashMap<String, SessionTask>()
-  private val taskTasks = ConcurrentHashMap<String, SessionTask>()
+  private val goalTasks = ConcurrentHashMap<String, ISessionTask>()
+  private val taskTasks = ConcurrentHashMap<String, ISessionTask>()
   private var updateGoalTreeUI: () -> Unit = {}
   private var updateLogUI: () -> Unit = {}
   private var debouncedUpdateGoalTreeUI: () -> Unit = {}
@@ -62,7 +62,7 @@ open class HierarchicalPlanningMode(
 
   lateinit var processor: FixedConcurrencyProcessor
 
-  override fun initialize(task: SessionTask) {
+  override fun initialize(task: ISessionTask) {
     log.debug("Initializing GoalOrientedMode")
     goalTree.clear()
     taskMap.clear()
@@ -74,7 +74,7 @@ open class HierarchicalPlanningMode(
     transcriptStream = null
   }
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     processor = FixedConcurrencyProcessor(task.pool, maxConcurrency)
     log.debug("Handling user message: $userMessage")
     if (isRunning.getAndSet(true)) {
@@ -92,7 +92,7 @@ open class HierarchicalPlanningMode(
     }
   }
 
-   private fun startGoalOrientedSession(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   private fun startGoalOrientedSession(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     task.echo("User: $userMessage".renderMarkdown())
      this.transcriptStream = transcriptStream
     logToSession("# Goal-Oriented Planning Session Transcript\n")
@@ -204,7 +204,7 @@ open class HierarchicalPlanningMode(
   }
 
   private fun nextIteration(
-    task: SessionTask,
+    task: ISessionTask,
     iteration: Int,
     coordinator: TaskOrchestrator,
     planningChatInterface: ChatInterface
@@ -284,7 +284,7 @@ open class HierarchicalPlanningMode(
   }
 
   private fun expandGoal(
-    task: SessionTask,
+    task: ISessionTask,
     goal: Goal,
     coordinator: TaskOrchestrator,
     planningChatInterface: ChatInterface
@@ -498,7 +498,7 @@ open class HierarchicalPlanningMode(
 
   private fun handleStop(
     iteration: Int,
-    task: SessionTask,
+    task: ISessionTask,
     stopLink: StringBuilder?
   ) {
     if (stopRequested.get()) {
@@ -518,7 +518,7 @@ open class HierarchicalPlanningMode(
   }
 
   private fun executeTask(
-    id: String, t: Task, task: SessionTask, coordinator: TaskOrchestrator, actor: ParsedAgent<Tasks>
+    id: String, t: Task, task: ISessionTask, coordinator: TaskOrchestrator, actor: ParsedAgent<Tasks>
   ): String? {
     return try {
       log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
@@ -1243,10 +1243,10 @@ open class HierarchicalPlanningMode(
     val tasks: List<Task> = emptyList()
   )
 
-  private fun getStateFile(task: SessionTask) =
+  private fun getStateFile(task: ISessionTask) =
     File(task.dataStorage.getUserDir(user, session), "planning_state.json")
 
-  private fun saveState(task: SessionTask) {
+  private fun saveState(task: ISessionTask) {
     try {
       val state = PlanningState(
         goalIdCounter = goalIdCounter.get(),
@@ -1260,7 +1260,7 @@ open class HierarchicalPlanningMode(
     }
   }
 
-  private fun loadState(task: SessionTask): Boolean {
+  private fun loadState(task: ISessionTask): Boolean {
     val file = getStateFile(task)
     if (!file.exists()) return false
     try {

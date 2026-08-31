@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -85,7 +85,7 @@ class CmdPatchApp(
   }
 
   override fun output(
-    task: SessionTask, settings: Settings, tabs: TabbedDisplay
+    task: ISessionTask, settings: Settings, tabs: TabbedDisplay
   ): OutputResult {
     log.info("Starting command execution with ${settings.commands.size} commands")
     run {
@@ -136,7 +136,7 @@ class CmdPatchApp(
           })
           val taskOutput = task.add("")
           val buffer = StringBuilder()
-          fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
+          fun addOutput(taskOutput: StringBuilder?, task: ISessionTask) {
             synchronized(task) {
               log.debug("Updating output display (buffer size: ${buffer.length})")
               val extraInfo =

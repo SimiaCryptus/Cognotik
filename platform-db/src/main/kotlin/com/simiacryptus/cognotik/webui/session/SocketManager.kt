@@ -158,7 +158,7 @@ abstract class SocketManager(
   fun newTask(
     root: Boolean = true,
     cancelable: Boolean = false,
-  ): SessionTask {
+  ): ISessionTask {
     try {
       val operationID = randomID(root)
       val responseContents = divInitializer(operationID, cancelable)

@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.Logger
 
 /**
@@ -26,7 +26,7 @@ fun String.truncateForDisplay(maxLength: Int = 10000): String {
  * Ensures the UI spinner is removed even if rendering fails.
  * Follows Cognotik IO Best Practices for UI output.
  */
-fun SessionTask.safeComplete(message: String, log: Logger) {
+fun ISessionTask.safeComplete(message: String, log: Logger) {
   try {
     // Use renderMarkdown extension as per Cognotik IO Best Practices
     this.complete(message.renderMarkdown())
@@ -36,7 +36,7 @@ fun SessionTask.safeComplete(message: String, log: Logger) {
     try {
       this.complete(message)
     } catch (e2: Exception) {
-      log.error("Critical failure in SessionTask.complete", e2)
+      log.error("Critical failure in ISessionTask.complete", e2)
     }
   }
 }

@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -73,7 +73,7 @@ FileModification - Modify existing files or create new files
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -88,7 +88,7 @@ FileModification - Modify existing files or create new files
     try {
       transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
 
-      Retryable(task, process = { task: SessionTask ->
+      Retryable(task, process = { task: ISessionTask ->
         completionNotes.clear()
 
         // 1. Prepare Context

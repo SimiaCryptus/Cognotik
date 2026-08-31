@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -393,7 +393,7 @@ class CrawlerAgentTask(
   override fun run(
       agent: TaskOrchestrator,
       messages: List<String>,
-      task: SessionTask,
+      task: ISessionTask,
       resultFn: (String) -> Unit,
       orchestrationConfig: OrchestrationConfig
   ) {
@@ -443,7 +443,7 @@ class CrawlerAgentTask(
   private fun innerRun(
       agent: TaskOrchestrator,
       messages: List<String>,
-      task: SessionTask,
+      task: ISessionTask,
       orchestrationConfig: OrchestrationConfig,
       transcriptStream: FileOutputStream?,
       chatInterface: ChatInterface
@@ -1106,7 +1106,7 @@ class CrawlerAgentTask(
       activeTasks: MutableSet<String>,
       errorCount: AtomicInteger,
       maxErrors: Int,
-      task: SessionTask,
+      task: ISessionTask,
       processedCount: AtomicInteger,
       maxPages: Int,
       maxDepth: Int,
@@ -1190,7 +1190,7 @@ class CrawlerAgentTask(
       agent: TaskOrchestrator,
       fetchStrategy: FetchStrategy,
       errorCount: AtomicInteger,
-      task: SessionTask,
+      task: ISessionTask,
       analysisResultsMap: ConcurrentHashMap<Int, String>,
       transcriptStream: FileOutputStream?,
       processingStrategy: PageProcessingStrategy,

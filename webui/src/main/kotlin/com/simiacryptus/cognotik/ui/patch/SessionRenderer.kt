@@ -4,13 +4,13 @@ import com.simiacryptus.cognotik.text.ui.ChangeType
 import com.simiacryptus.cognotik.text.ui.DiffUIRenderer
 import com.simiacryptus.cognotik.text.ui.FileChangeSummary
 import com.simiacryptus.cognotik.ui.set
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SessionRenderer(
-  private val task: SessionTask,
+  private val task: ISessionTask,
 ) : DiffUIRenderer {
 
 

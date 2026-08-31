@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SmartChatSocketManager
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -141,7 +141,7 @@ class SmartCodeChatAction : BaseAction() {
             }
         }
 
-        override fun renderResponse(response: String, task: SessionTask) =
+        override fun renderResponse(response: String, task: ISessionTask) =
           "<div>" + renderMarkdown(response, tabs = true) { html ->
             DiffInstrumentor(
               AppSettingsState.instance.processor,
@@ -160,7 +160,7 @@ class SmartCodeChatAction : BaseAction() {
           } + "</div>"
 
         override fun respond(
-            task: SessionTask,
+            task: ISessionTask,
             userMessage: String,
             currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?

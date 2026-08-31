@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isBinaryFile
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -56,7 +56,7 @@ class TaskOrchestrator(
 
   fun executePlan(
     plan: Map<String, TaskExecutionConfig>,
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     orchestrationConfig: OrchestrationConfig,
   ): ExecutionState {
@@ -98,7 +98,7 @@ class TaskOrchestrator(
   fun executePlan(
     diagramBuffer: StringBuilder?,
     subTasks: Map<String, TaskExecutionConfig>,
-    task: SessionTask,
+    task: ISessionTask,
     executionState: ExecutionState,
     taskIdProcessingQueue: MutableList<String>,
     pool: ExecutorService,

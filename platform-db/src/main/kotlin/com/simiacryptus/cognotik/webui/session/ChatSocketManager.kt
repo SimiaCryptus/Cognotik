@@ -78,7 +78,7 @@ open class ChatSocketManager(
 
   protected val chatMessages = mutableListOf<ModelSchema.ChatMessage>()
 
-  fun SessionTask.transcript(name: String = this.javaClass.simpleName): FileOutputStream? {
+  fun ISessionTask.transcript(name: String = this.javaClass.simpleName): FileOutputStream? {
     val relativePath = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(System.currentTimeMillis())}.md"
     val (link, file) = Pair(linkTo(relativePath), resolveUserFile(relativePath))
     val markdownTranscript = file?.outputStream()
@@ -118,12 +118,12 @@ open class ChatSocketManager(
         }
         task.complete()
       } else {
-        Retryable(task, process = { task: SessionTask ->
+        Retryable(task, process = { task: ISessionTask ->
           chatMessages.takeLastWhile { it.role == ModelSchema.Role.assistant }
             .forEach { chatMessages.remove(it) }
           val currentChatMessages = chatMessages()
           innerRun(task, expandedUserMessage, currentChatMessages, markdownTranscript)
-        }.async(task.ui, pool))
+        }.async(task, pool))
       }
     } catch (e: Exception) {
       log.info("Error in chat", e)
@@ -132,7 +132,7 @@ open class ChatSocketManager(
   }
 
   private fun innerRun(
-    task: SessionTask,
+    task: ISessionTask,
     expandedUserMessage: String,
     currentChatMessages: List<ModelSchema.ChatMessage>,
     transcriptStream: OutputStream?
@@ -167,7 +167,7 @@ open class ChatSocketManager(
     Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""") // Matches @(start..end:step) or @(start to end by step)
 
   protected open fun respond(
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     currentChatMessages: List<ModelSchema.ChatMessage>,
     transcriptStream: OutputStream? = null
@@ -236,7 +236,7 @@ open class ChatSocketManager(
 
   private fun processMsgRecursive(
     currentMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     baseMessages: List<ModelSchema.ChatMessage>,
     transcriptStream: OutputStream? = null,
     model: ChatInterface
@@ -334,7 +334,7 @@ open class ChatSocketManager(
    */
   private fun expandRange(
     currentMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     baseMessages: List<ModelSchema.ChatMessage>,
     rangeMatch: MatchResult,
     transcriptStream: OutputStream? = null
@@ -361,11 +361,11 @@ open class ChatSocketManager(
    */
   private fun expandAlternatives(
     currentMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     baseMessages: List<ModelSchema.ChatMessage>,
     match: MatchResult,
     transcriptStream: OutputStream? = null,
-    recursiveFn: (String, SessionTask, List<ModelSchema.ChatMessage>) -> List<(StringBuilder) -> Unit>
+    recursiveFn: (String, ISessionTask, List<ModelSchema.ChatMessage>) -> List<(StringBuilder) -> Unit>
   ): List<(StringBuilder) -> Unit> {
     val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
     return match.groupValues[1].split('|', ',').flatMap { option ->
@@ -380,7 +380,7 @@ open class ChatSocketManager(
   }
 
   private fun expandSequence(
-    task: SessionTask,
+    task: ISessionTask,
     baseMessages: List<ModelSchema.ChatMessage>,
     items: List<String>,
     currentMessage: String,
@@ -408,7 +408,7 @@ open class ChatSocketManager(
     tabs.update()
   }
 
-  open fun renderResponse(response: String, task: SessionTask) = """<div>${response.renderMarkdown(true)}</div>"""
+  open fun renderResponse(response: String, task: ISessionTask) = """<div>${response.renderMarkdown(true)}</div>"""
 
   companion object {
     private val log = getLogger(ChatSocketManager::class.java)

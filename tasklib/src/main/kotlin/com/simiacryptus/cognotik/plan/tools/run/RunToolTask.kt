@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.resolveTool
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -67,7 +67,7 @@ class RunToolTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -98,7 +98,7 @@ class RunToolTask(
 
         transcript?.write("## Command\n```bash\n$commandStr\n```\n\n".toByteArray())
 
-        fun execute(outputTask: SessionTask): String {
+        fun execute(outputTask: ISessionTask): String {
           val status = outputTask.add("Executing process...".renderMarkdown())
           val process = ProcessBuilder(command)
             .directory(workingDir)
