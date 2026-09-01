@@ -1,10 +1,12 @@
 package com.simiacryptus.cognotik.embedding
 
 import com.simiacryptus.cognotik.agents.ProxyAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.Description
-import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.EmbeddingClientInterface
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema.*
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.toContentList
 import org.slf4j.LoggerFactory
 import kotlin.math.ceil

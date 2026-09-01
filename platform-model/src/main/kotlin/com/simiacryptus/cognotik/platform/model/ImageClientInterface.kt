@@ -1,6 +1,4 @@
-package com.simiacryptus.cognotik.image
-
-import com.simiacryptus.cognotik.models.ModelSchema
+package com.simiacryptus.cognotik.platform.model
 
 interface ImageClientInterface {
   fun createImage(request: ModelSchema.ImageGenerationRequest): ModelSchema.ImageGenerationResponse

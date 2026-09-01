@@ -2,12 +2,13 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.chat.model.ChatMessageModality
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.DeepSeekModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.UsageListener
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest

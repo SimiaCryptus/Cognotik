@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.availableModels
 import com.simiacryptus.cognotik.cli.CliSupport.bootstrapPlatform
 import com.simiacryptus.cognotik.cli.CliSupport.email

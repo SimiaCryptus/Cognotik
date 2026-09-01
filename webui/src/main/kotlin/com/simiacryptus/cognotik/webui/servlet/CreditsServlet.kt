@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -28,7 +28,7 @@ open class CreditsServlet(
     private vararg val providers: PaymentProvider
 ) : HttpServlet() {
 
-    val usageDB: UsageInterface by lazy { ApplicationServices.fileApplicationServices().usageDB }
+    val usageDB: UsageInterface by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
 
     private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
 

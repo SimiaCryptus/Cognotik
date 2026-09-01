@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User

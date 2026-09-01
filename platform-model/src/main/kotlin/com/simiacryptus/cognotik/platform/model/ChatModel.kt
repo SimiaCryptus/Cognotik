@@ -1,21 +1,17 @@
-package com.simiacryptus.cognotik.chat.model
+package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.models.ModelSchema.Usage
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.collections.get
 
 class ChatModel(
     val name: String = "",

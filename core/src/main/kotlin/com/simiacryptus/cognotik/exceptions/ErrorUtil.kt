@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.exceptions
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
-import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.platform.model.LLMModel
 import java.io.IOException
 import java.util.regex.Pattern
 

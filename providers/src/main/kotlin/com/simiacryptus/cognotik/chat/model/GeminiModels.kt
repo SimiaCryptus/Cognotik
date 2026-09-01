@@ -1,7 +1,9 @@
 package com.simiacryptus.cognotik.chat.model
 
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 
 
 /**

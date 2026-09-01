@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform.web
+package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest

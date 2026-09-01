@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.docops
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.docops.exec.DocExecutionContext
 import com.simiacryptus.cognotik.docops.exec.DocTaskCallbacks
 import com.simiacryptus.cognotik.docops.exec.DocTaskInferenceRequest
@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -274,7 +274,7 @@ class DocProcessor(
       session: Session = Session.newUserID(), concurrency: Int = 4, user: User
     ): FixedConcurrencyProcessor =
       FixedConcurrencyProcessor(
-        ApplicationServices.threadPoolManager.getPool(
+        ApplicationServicesImpl.threadPoolManager.getPool(
           session,
           user
         ), concurrency

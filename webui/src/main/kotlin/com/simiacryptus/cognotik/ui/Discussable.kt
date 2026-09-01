@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.ui
 
-import com.simiacryptus.cognotik.models.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger

@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.fileserver.action.ActionMenu
 import com.simiacryptus.cognotik.fileserver.action.ActionParam
 import com.simiacryptus.cognotik.fileserver.action.ActionSelection
 import com.simiacryptus.cognotik.fileserver.action.ActionUi
 import com.simiacryptus.cognotik.fileserver.action.FsAction
 import com.simiacryptus.cognotik.fileserver.action.FsActionContext
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User

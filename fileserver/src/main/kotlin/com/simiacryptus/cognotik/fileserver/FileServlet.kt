@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.fileserver
 
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
-import com.simiacryptus.cognotik.platform.web.UserProvider
+import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
+import com.simiacryptus.cognotik.platform.UserProvider
 
 import com.simiacryptus.cognotik.fileserver.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.fileserver.handler.FileAccessControl

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -20,7 +20,7 @@ class UserSettingsServlet : HttpServlet() {
       UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
-        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
       val visibleSettings = UserSettings(
         apis = settings.apis.map { apiData ->
           ApiData(
@@ -89,7 +89,7 @@ class UserSettingsServlet : HttpServlet() {
     val user =
       UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
     val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
-    val userSettingsManager = ApplicationServices.fileApplicationServices().userSettingsManager
+    val userSettingsManager = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
     val prevSettings =
       userSettingsManager.getUserSettings(user)
     val reconstructedApis = settings.apis.mapIndexed { index, apiData ->

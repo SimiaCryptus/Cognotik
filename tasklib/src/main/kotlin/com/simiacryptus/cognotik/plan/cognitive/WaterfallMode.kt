@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan

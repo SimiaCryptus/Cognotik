@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 
 /**
  * ElevenLabs models. Note that ElevenLabs is primarily a TTS/STT provider,
@@ -29,16 +31,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenV3 = ChatModel(
-        name = "ElevenV3",
-        modelId = "eleven_v3",
-        maxTotalTokens = 5000,
-        maxOutTokens = 5000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.10,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenV3",
+      modelId = "eleven_v3",
+      maxTotalTokens = 5000,
+      maxOutTokens = 5000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.10,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
 
@@ -49,16 +51,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenMultilingualV2 = ChatModel(
-        name = "ElevenMultilingualV2",
-        modelId = "eleven_multilingual_v2",
-        maxTotalTokens = 10000,
-        maxOutTokens = 10000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.10,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenMultilingualV2",
+      modelId = "eleven_multilingual_v2",
+      maxTotalTokens = 10000,
+      maxOutTokens = 10000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.10,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
     /**
@@ -70,16 +72,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenFlashV25 = ChatModel(
-        name = "ElevenFlashV25",
-        modelId = "eleven_flash_v2_5",
-        maxTotalTokens = 40000,
-        maxOutTokens = 40000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.05,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenFlashV25",
+      modelId = "eleven_flash_v2_5",
+      maxTotalTokens = 40000,
+      maxOutTokens = 40000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.05,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
     /**
@@ -89,16 +91,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenFlashV2 = ChatModel(
-        name = "ElevenFlashV2",
-        modelId = "eleven_flash_v2",
-        maxTotalTokens = 30000,
-        maxOutTokens = 30000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.05,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenFlashV2",
+      modelId = "eleven_flash_v2",
+      maxTotalTokens = 30000,
+      maxOutTokens = 30000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.05,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
     // -------------------------------------------------------------------------
     // Speech-to-Speech Models
@@ -110,16 +112,16 @@ object ElevenLabsModels {
      * Input: AUDIO → Output: AUDIO
      */
     val ElevenMultilingualStsV2 = ChatModel(
-        name = "ElevenMultilingualStsV2",
-        modelId = "eleven_multilingual_sts_v2",
-        maxTotalTokens = 10000,
-        maxOutTokens = 10000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.12,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.AUDIO),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenMultilingualStsV2",
+      modelId = "eleven_multilingual_sts_v2",
+      maxTotalTokens = 10000,
+      maxOutTokens = 10000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.12,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.AUDIO),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
     /**
@@ -129,16 +131,16 @@ object ElevenLabsModels {
      * Input: AUDIO → Output: AUDIO
      */
     val ElevenEnglishStsV2 = ChatModel(
-        name = "ElevenEnglishStsV2",
-        modelId = "eleven_english_sts_v2",
-        maxTotalTokens = 10000,
-        maxOutTokens = 10000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.12,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.AUDIO),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenEnglishStsV2",
+      modelId = "eleven_english_sts_v2",
+      maxTotalTokens = 10000,
+      maxOutTokens = 10000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.12,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.AUDIO),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
     // -------------------------------------------------------------------------
     // Speech-to-Text Models (Scribe)
@@ -154,16 +156,16 @@ object ElevenLabsModels {
      * Input: AUDIO → Output: TEXT
      */
     val ScribeV2 = ChatModel(
-        name = "ScribeV2",
-        modelId = "scribe_v2",
-        maxTotalTokens = Int.MAX_VALUE,
-        maxOutTokens = Int.MAX_VALUE,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.22,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.AUDIO),
-        outputModalities = setOf(ChatMessageModality.TEXT),
+      name = "ScribeV2",
+      modelId = "scribe_v2",
+      maxTotalTokens = Int.MAX_VALUE,
+      maxOutTokens = Int.MAX_VALUE,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.22,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.AUDIO),
+      outputModalities = setOf(ChatMessageModality.TEXT),
     )
 
     /**
@@ -176,16 +178,16 @@ object ElevenLabsModels {
      * Input: AUDIO → Output: TEXT
      */
     val ScribeV2Realtime = ChatModel(
-        name = "ScribeV2Realtime",
-        modelId = "scribe_v2_realtime",
-        maxTotalTokens = Int.MAX_VALUE,
-        maxOutTokens = Int.MAX_VALUE,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.39,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.AUDIO),
-        outputModalities = setOf(ChatMessageModality.TEXT),
+      name = "ScribeV2Realtime",
+      modelId = "scribe_v2_realtime",
+      maxTotalTokens = Int.MAX_VALUE,
+      maxOutTokens = Int.MAX_VALUE,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.39,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.AUDIO),
+      outputModalities = setOf(ChatMessageModality.TEXT),
     )
     // -------------------------------------------------------------------------
     // Music Generation Models
@@ -200,16 +202,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val MusicV1 = ChatModel(
-        name = "MusicV1",
-        modelId = "music_v1",
-        maxTotalTokens = Int.MAX_VALUE,
-        maxOutTokens = Int.MAX_VALUE,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.30,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "MusicV1",
+      modelId = "music_v1",
+      maxTotalTokens = Int.MAX_VALUE,
+      maxOutTokens = Int.MAX_VALUE,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.30,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
     // -------------------------------------------------------------------------
     // Sound Effects Models
@@ -221,16 +223,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenTextToSoundV2 = ChatModel(
-        name = "ElevenTextToSoundV2",
-        modelId = "eleven_text_to_sound_v2",
-        maxTotalTokens = Int.MAX_VALUE,
-        maxOutTokens = Int.MAX_VALUE,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.12,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenTextToSoundV2",
+      modelId = "eleven_text_to_sound_v2",
+      maxTotalTokens = Int.MAX_VALUE,
+      maxOutTokens = Int.MAX_VALUE,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.12,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
     // -------------------------------------------------------------------------
     // Deprecated Models (kept for backward compatibility)
@@ -245,16 +247,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenMonolingualV1 = ChatModel(
-        name = "ElevenMonolingualV1",
-        modelId = "eleven_monolingual_v1",
-        maxTotalTokens = 10000,
-        maxOutTokens = 10000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.10,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenMonolingualV1",
+      modelId = "eleven_monolingual_v1",
+      maxTotalTokens = 10000,
+      maxOutTokens = 10000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.10,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
     /**
@@ -265,16 +267,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenMultilingualV1 = ChatModel(
-        name = "ElevenMultilingualV1",
-        modelId = "eleven_multilingual_v1",
-        maxTotalTokens = 10000,
-        maxOutTokens = 10000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.10,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenMultilingualV1",
+      modelId = "eleven_multilingual_v1",
+      maxTotalTokens = 10000,
+      maxOutTokens = 10000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.10,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
     /**
@@ -285,16 +287,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenTurboV25 = ChatModel(
-        name = "ElevenTurboV25",
-        modelId = "eleven_turbo_v2_5",
-        maxTotalTokens = 40000,
-        maxOutTokens = 40000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.05,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenTurboV25",
+      modelId = "eleven_turbo_v2_5",
+      maxTotalTokens = 40000,
+      maxOutTokens = 40000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.05,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
     /**
@@ -305,16 +307,16 @@ object ElevenLabsModels {
      * Input: TEXT → Output: AUDIO
      */
     val ElevenTurboV2 = ChatModel(
-        name = "ElevenTurboV2",
-        modelId = "eleven_turbo_v2",
-        maxTotalTokens = 30000,
-        maxOutTokens = 30000,
-        provider = APIProvider.Companion.valueOf("ElevenLabs"),
-        inputTokenPricePerK = 0.05,
-        outputTokenPricePerK = 0.0,
-        supportsTemperature = false,
-        inputModalities = setOf(ChatMessageModality.TEXT),
-        outputModalities = setOf(ChatMessageModality.AUDIO),
+      name = "ElevenTurboV2",
+      modelId = "eleven_turbo_v2",
+      maxTotalTokens = 30000,
+      maxOutTokens = 30000,
+      provider = APIProvider.valueOf("ElevenLabs"),
+      inputTokenPricePerK = 0.05,
+      outputTokenPricePerK = 0.0,
+      supportsTemperature = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
 

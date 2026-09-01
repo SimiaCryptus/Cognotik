@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig

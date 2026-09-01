@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.session
 
 
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask

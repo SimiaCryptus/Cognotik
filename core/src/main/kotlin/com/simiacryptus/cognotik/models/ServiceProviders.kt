@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.models
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.DynamicEnum.Companion.register
 import com.simiacryptus.cognotik.util.SecureString

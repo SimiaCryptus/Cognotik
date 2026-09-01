@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig

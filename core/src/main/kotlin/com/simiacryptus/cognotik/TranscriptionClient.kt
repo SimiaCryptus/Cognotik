@@ -3,9 +3,9 @@ package com.simiacryptus.cognotik
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.audio.AudioModels
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.AudioModels
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.entity.mime.HttpMultipartMode

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
@@ -24,7 +24,7 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
   val sessionId: Session,
-  val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  val dataStorage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   val owner: User,
   private val applicationClass: Class<*>,
 ) {
@@ -132,7 +132,7 @@ abstract class SocketManager(
       session.remoteAddress
     )
 
-    if (!ApplicationServices.authorizationManager.isAuthorized(
+    if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
         ResourceRef.of(applicationClass = applicationClass),
         Principal.of(user = user),
         operationType = OperationType.Read
@@ -481,7 +481,7 @@ abstract class SocketManager(
     }
   }
 
-  open fun canWrite(user: User?) = ApplicationServices.authorizationManager.isAuthorized(
+  open fun canWrite(user: User?) = ApplicationServicesImpl.authorizationManager.isAuthorized(
     ResourceRef.of(applicationClass = applicationClass),
     Principal.of(user = user),
     operationType = OperationType.Write
@@ -610,7 +610,7 @@ abstract class SocketManager(
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
       log.debug("Getting user from session: {}", session)
       trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-      return ApplicationServices.authenticationManager.getUser(
+      return ApplicationServicesImpl.authenticationManager.getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
           ?.value) ?: throw RuntimeException("User must be authenticated to connect to WebSocket")
@@ -621,7 +621,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
   newSession: Session,
-  storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   owner: User,
   clazz: Class<*>
 ) : SocketManager(
@@ -643,7 +643,7 @@ class ReadonlySocketManager(
 class ServerlessSocketManager(
   session: Session,
   val messageEvents: OutputStream? = null,
-  storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   owner: User,
   clazz: Class<*>
 ) : SocketManager(

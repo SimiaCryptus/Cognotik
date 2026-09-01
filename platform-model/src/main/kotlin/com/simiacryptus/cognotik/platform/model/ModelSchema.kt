@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.models
+package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.node.ObjectNode

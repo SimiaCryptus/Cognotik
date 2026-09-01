@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.util.crawl.processing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.crawl.processing.DefaultSummarizerStrategy

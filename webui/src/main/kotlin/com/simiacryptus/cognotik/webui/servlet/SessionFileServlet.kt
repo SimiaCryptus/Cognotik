@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.fileserver.FilesystemServlet
 import com.simiacryptus.cognotik.fileserver.GitProvider
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.StorageInterface
@@ -46,7 +46,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   open val fsApiReadOnly: Boolean = false
   open val fsApiTerminalEnabled: Boolean = false
   open val fsApiExecEnabled: Boolean = true
-  private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
+  private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
 
   /**
    * The FS API is dispatched from [FilesystemServlet.service] and therefore bypasses the
@@ -75,7 +75,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       // a proper FS API error here instead, consistent with the "missing session" case
       // above.
       val session = Session(sessionId)
-      val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+      val user = ApplicationServicesImpl.authenticationManager.getUser(req.getCookie())
       if (!session.isGlobal()) {
         if (user == null) {
           log.debug("FS API request rejected (unauthenticated): ${req.pathInfo}")
@@ -119,7 +119,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   override fun getFsApiRoot(req: HttpServletRequest, resp: HttpServletResponse): File? {
     val sessionId = sessionIdOf(req) ?: return null
     val session = Session(sessionId)
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+    val user = ApplicationServicesImpl.authenticationManager.getUser(req.getCookie())
     if (user == null && !session.isGlobal()) {
       log.warn("FS API: no user for session ${session.sessionId}")
       return null
@@ -176,7 +176,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       val session = Session(pathSegments.first().toString())
       log.debug("Resolved session: ${session.sessionId}")
       val cookie = request.getCookie()
-      val user = ApplicationServices.authenticationManager.getUser(cookie)
+      val user = ApplicationServicesImpl.authenticationManager.getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.warn("No user found for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
@@ -305,7 +305,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie(AuthenticationInterface.AUTH_COOKIE)
-      val user = ApplicationServices.authenticationManager.getUser(cookie)
+      val user = ApplicationServicesImpl.authenticationManager.getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.warn("listContents: could not find user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         if (!response.isCommitted) {
@@ -355,7 +355,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie()
-      val user = ApplicationServices.authenticationManager.getUser(cookie)
+      val user = ApplicationServicesImpl.authenticationManager.getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.debug("isAuthenticatedForSession: no user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         if (!response.isCommitted) {

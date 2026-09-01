@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.agents
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.image.ImageClientInterface
-import com.simiacryptus.cognotik.image.ImageModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
-import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ImageClientInterface
+import com.simiacryptus.cognotik.platform.model.ImageModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ImageGenerationRequest
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
 import java.awt.image.BufferedImage

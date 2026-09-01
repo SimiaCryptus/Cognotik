@@ -2,13 +2,13 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.CodeRequest
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.StorageInterface
@@ -45,7 +45,7 @@ open class CodingTask<T : CodeRuntime>(
 
 
   open val canPlay by lazy {
-    ApplicationServices.authorizationManager.isAuthorized(
+    ApplicationServicesImpl.authorizationManager.isAuthorized(
       ResourceRef.of(this::class.java),
       Principal.of(user),
       OperationType.Execute

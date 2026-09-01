@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.models
+package com.simiacryptus.cognotik.platform.model
 
 interface AIModel {
   val modelId: String?

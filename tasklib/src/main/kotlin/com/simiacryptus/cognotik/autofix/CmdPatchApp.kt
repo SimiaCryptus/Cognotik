@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.autofix
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay

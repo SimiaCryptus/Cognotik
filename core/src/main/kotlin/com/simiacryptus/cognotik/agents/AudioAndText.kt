@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.agents
     
-    import com.simiacryptus.cognotik.models.AudioSegment
+    import com.simiacryptus.cognotik.platform.model.AudioSegment
     
     /**
      * Data class representing a combined audio and text payload.

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.hsql.GiftedCreditsDB
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.toJson
@@ -369,7 +369,7 @@ class GiftedCreditsServlet : HttpServlet() {
             // Gift creation is now available to all authenticated users.
             // Show current balance so users know what they can afford.
             val currentBalance = try {
-                ApplicationServices.fileApplicationServices().usageDB.getUserBalance(user)
+                ApplicationServicesImpl.fileApplicationServices().usageDB.getUserBalance(user)
             } catch (e: Exception) {
                 log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
                 0.0
@@ -1451,7 +1451,7 @@ class GiftedCreditsServlet : HttpServlet() {
             "Gift claimed successfully by user={} giftId={} amountGranted={} theme={}",
             userinfo, giftId, gift.amountGranted, theme.id
         )
-        ApplicationServices.fileApplicationServices().usageDB.creditUser(
+        ApplicationServicesImpl.fileApplicationServices().usageDB.creditUser(
             user = userinfo,
             amount = gift.amountGranted,
             comment = "Claimed gift $giftId",

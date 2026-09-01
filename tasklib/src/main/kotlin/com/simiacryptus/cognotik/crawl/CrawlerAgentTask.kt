@@ -4,13 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.crawl.fetch.FetchMethod
 import com.simiacryptus.cognotik.crawl.fetch.FetchStrategy
 import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy
 import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.crawl.seed.SeedMethod
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator

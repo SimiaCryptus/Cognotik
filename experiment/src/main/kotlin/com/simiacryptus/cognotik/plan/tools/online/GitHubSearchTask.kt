@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.online
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.models.ServiceProviders
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.platform.model.ISessionTask
@@ -107,7 +107,7 @@ class GitHubSearchTask(
     try {
       val searchResults = performGitHubSearch(
         agent.user
-          .let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
+          .let { ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(it) }
           .apis.firstOrNull { it.provider == ServiceProviders.Github }?.key?.decrypt?.trim()
           ?: throw RuntimeException("GitHub API token is required")
       )

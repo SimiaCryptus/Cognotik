@@ -1,8 +1,6 @@
-package com.simiacryptus.cognotik.image
+package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.APIProvider
 import org.slf4j.LoggerFactory
 
 class ImageModel(

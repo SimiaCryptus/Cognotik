@@ -7,12 +7,13 @@ import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.model.ChatMessageModality
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.UsageListener
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
 import okio.ByteString.Companion.decodeBase64

@@ -1,15 +1,14 @@
-package com.simiacryptus.cognotik.models
+package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.audio.AudioModels
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.image.ImageClientInterface
-import com.simiacryptus.cognotik.image.ImageModel
-import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.AudioModels
+import com.simiacryptus.cognotik.platform.model.ChatClientInterface
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.ImageClientInterface
+import com.simiacryptus.cognotik.platform.model.ImageModel
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -55,7 +54,7 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
     logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService
-  ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
+  ): com.simiacryptus.cognotik.platform.model.EmbeddingClientInterface {
     throw UnsupportedOperationException("${this.name} does not support embedding functionality")
   }
 

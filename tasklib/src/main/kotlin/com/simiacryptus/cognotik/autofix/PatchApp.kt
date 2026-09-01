@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.autofix
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer

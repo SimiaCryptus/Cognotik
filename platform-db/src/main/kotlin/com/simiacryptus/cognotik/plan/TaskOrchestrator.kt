@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -33,7 +33,7 @@ class TaskOrchestrator(
   val transcriptStream: OutputStream? = null,
   val timeoutMinutes: Long = 15
 ) {
-  val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
+  val pool: ExecutorService by lazy { ApplicationServicesImpl.threadPoolManager.getPool(session, user) }
 
   val files: Array<File> by lazy {
     FileSelectionUtils.expandFileList(root.toFile())

@@ -1,9 +1,5 @@
-package com.simiacryptus.cognotik.chat
+package com.simiacryptus.cognotik.platform.model
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
@@ -32,21 +28,3 @@ interface ChatClientInterface {
 
 }
 
-interface UsageListener {
-  val sessionId: Session
-  fun onUsage(model: LLMModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData? = null)
-
-  companion object {
-    fun fn(
-      sessionId: Session,
-      fn: (model: LLMModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData?) -> Unit
-    ): UsageListener {
-      return object : UsageListener {
-        override val sessionId: Session get() =  sessionId
-        override fun onUsage(model: LLMModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData?) {
-          fn(model, usage, data)
-        }
-      }
-    }
-  }
-}

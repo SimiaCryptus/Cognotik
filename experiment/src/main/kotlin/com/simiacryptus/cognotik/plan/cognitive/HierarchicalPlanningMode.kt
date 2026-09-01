@@ -2,14 +2,14 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.TabbedDisplay
@@ -123,7 +123,7 @@ open class HierarchicalPlanningMode(
       tabs["Session Log"] = sessionLog.toString().renderMarkdown()
     }
 
-    val scheduledExecutorService = ApplicationServices.threadPoolManager.getScheduledPool(
+    val scheduledExecutorService = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
       session = session,
       user = user
     )

@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.AudioAndText
 import com.simiacryptus.cognotik.agents.AudioProcessingAgent
-import com.simiacryptus.cognotik.Description
-import com.simiacryptus.cognotik.models.AudioSegment
+import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.AudioSegment
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType

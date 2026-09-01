@@ -1,7 +1,5 @@
-package com.simiacryptus.cognotik.audio
+package com.simiacryptus.cognotik.platform.model
 
-import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.APIProvider
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicReference
 

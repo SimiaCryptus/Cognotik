@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.platform
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SecureString
 

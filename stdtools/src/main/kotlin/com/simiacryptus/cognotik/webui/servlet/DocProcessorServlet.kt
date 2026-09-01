@@ -1,13 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.chat.model.ChatMessageModality
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -61,8 +61,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * docops.status.json file; the actual processing continues in the background.
  */
 open class DocProcessorServlet() : HttpServlet() {
-  private val dataStorage by lazy { ApplicationServices.fileApplicationServices().dataStorageFactory }
-  private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
+  private val dataStorage by lazy { ApplicationServicesImpl.fileApplicationServices().dataStorageFactory }
+  private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
 
   /*
    * ------------------------------------------------------------------

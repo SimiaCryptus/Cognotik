@@ -80,7 +80,7 @@ values at runtime.
   Kotlin properties and constructor parameters, and handling array component types.
 - **`MethodTypeDescriber`**: An interface that allows instances to provide dynamic type overrides for method parameters,
   useful when runtime types differ from static signatures.
-- **`Description`**: Runtime-retained annotation (see `../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/Description.kt`) used to attach human-readable documentation to
+- **`Description`**: Runtime-retained annotation (see `../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/Description.kt`) used to attach human-readable documentation to
   classes, properties, methods, and parameters, which describers surface in their generated output.
 
 ## Usage Example

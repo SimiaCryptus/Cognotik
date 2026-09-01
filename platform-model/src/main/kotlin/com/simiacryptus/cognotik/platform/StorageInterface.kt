@@ -79,11 +79,6 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
     return true
   }
 
-  /* ------------------------------------------------------------------ *
-   * SessionContentStore defaults, implemented over the legacy File API  *
-   * so existing implementations gain the new API for free.              *
-   * ------------------------------------------------------------------ */
-
   @Suppress("DEPRECATION")
   override fun openRead(user: User?, session: Session, path: String): InputStream =
     FileInputStream(resolveSessionFile(getUserDir(user, session), path))

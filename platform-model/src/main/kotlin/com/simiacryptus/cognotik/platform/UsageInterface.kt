@@ -1,16 +1,15 @@
 package com.simiacryptus.cognotik.platform
 
 import com.google.common.util.concurrent.AtomicDouble
-import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.AIModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import java.time.LocalDate
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.iterator
 
 /**
  * Interface for managing and tracking AI model usage across users and sessions.
@@ -30,7 +29,7 @@ interface UsageInterface {
    * @param user The user whose usage summary is to be retrieved
    * @param from Inclusive start date (UTC day)
    * @param to   Exclusive end date (UTC day)
-   * @return A map where keys are model names and values are [ModelSchema.Usage] objects
+   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.models.ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model the user has used
    */
 
@@ -42,7 +41,7 @@ interface UsageInterface {
    * Session-scoped queries are not bounded by date.
    *
    * @param session The session whose usage summary is to be retrieved
-   * @return A map where keys are model names and values are [ModelSchema.Usage] objects
+   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.models.ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model used in the session
    */
   fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage>

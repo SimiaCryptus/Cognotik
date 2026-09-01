@@ -14,7 +14,7 @@ descriptions, and file extensions).
 
 - **Factory Mechanism**: The `getRuntime(runtimeType, params)` method instantiates the appropriate `CodeRuntime` based
   on the requested type and configuration parameters.
-- **Tool Resolution**: It integrates with `ApplicationServices` to dynamically resolve executable paths (e.g., finding
+- **Tool Resolution**: It integrates with `ApplicationServicesImpl` to dynamically resolve executable paths (e.g., finding
   `python3` vs `python`, or locating `node`) based on user settings and system environment.
 - **Extensibility**: Supports runtime registration of new language constructors via `registerConstructor`.
 

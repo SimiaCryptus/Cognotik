@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -132,7 +132,7 @@ open class UnifiedHarness(
     ) {
       override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
+        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         super.onComplete(mode, task)
       }
@@ -247,7 +247,7 @@ open class UnifiedHarness(
       override fun onTaskComplete(result: String, task: ISessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
+        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         completionLatch.countDown()
         onComplete(result, task)
@@ -403,13 +403,13 @@ open class UnifiedHarness(
     @JvmStatic
     fun configurePlatform(user: User) {
       PlanHarness.initDynamicEnums()
-      ApplicationServices.authenticationManager = object : AuthenticationInterface {
+      ApplicationServicesImpl.authenticationManager = object : AuthenticationInterface {
         override fun getUser(accessToken: String?) = user
         fun getAccessToken(user: User) = "test-token"
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
         fun logout(accessToken: String, user: User) {}
       }
-      ApplicationServices.authorizationManager = object : AuthorizationManager() {
+      ApplicationServicesImpl.authorizationManager = object : AuthorizationManager() {
         override fun isAuthorized(
           applicationClass: Class<*>?,
           user: User?,
@@ -421,6 +421,6 @@ open class UnifiedHarness(
 }
 
 fun ApiChatModel.findApi(user: User): ApiData? {
-  val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+  val userSettings = ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
   return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }

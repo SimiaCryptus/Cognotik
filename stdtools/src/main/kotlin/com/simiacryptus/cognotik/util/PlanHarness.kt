@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig

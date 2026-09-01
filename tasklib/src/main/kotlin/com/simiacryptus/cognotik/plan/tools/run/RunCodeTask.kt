@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator

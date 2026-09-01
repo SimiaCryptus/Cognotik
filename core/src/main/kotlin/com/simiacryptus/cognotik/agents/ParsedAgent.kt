@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.agents
 
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.exceptions.MultiExeption
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.*
 import org.slf4j.LoggerFactory.getLogger
 import java.util.function.Function

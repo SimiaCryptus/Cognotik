@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -249,7 +249,7 @@ class ApiProviderServlet : HttpServlet() {
 
             models += try {
              (provider.getChatModels(
-               key = apiConfig.key,
+               key = apiConfig.key!!,
                baseUrl = apiConfig.apiBase
              ) ?: emptyList())
                .filter { !it.deprecated }
@@ -281,7 +281,7 @@ class ApiProviderServlet : HttpServlet() {
           if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
             val models = try {
              (provider.getChatModels(
-               key = apiConfig.key,
+               key = apiConfig.key!!,
                baseUrl = apiConfig.apiBase
              ) ?: emptyList())
                .filter { !it.deprecated }
@@ -310,7 +310,7 @@ class ApiProviderServlet : HttpServlet() {
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = try {
                   provider.getEmbeddingClient(
-                    key = apiConfig.key,
+                    key = apiConfig.key!!,
                     base = apiConfig.apiBase,
                     workPool = MoreExecutors.newDirectExecutorService(),
                     scheduledPool = MoreExecutors.listeningDecorator(
@@ -333,7 +333,7 @@ class ApiProviderServlet : HttpServlet() {
       }
       return providers
     }
-    fun User.userSettings(): UserSettings = ApplicationServices.fileApplicationServices()
+    fun User.userSettings(): UserSettings = ApplicationServicesImpl.fileApplicationServices()
       .userSettingsManager.getUserSettings(this)
     fun UserSettings.getAvailableProviders(): List<AvailableProviderInfo> =
       APIProvider.values().map { provider ->

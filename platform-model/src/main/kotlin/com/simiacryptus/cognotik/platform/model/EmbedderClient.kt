@@ -1,7 +1,4 @@
-package com.simiacryptus.cognotik.embedding
-
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
+package com.simiacryptus.cognotik.platform.model
 
 class EmbedderClient(
   private val embeddingClient: EmbeddingClientInterface,

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.models
+package com.simiacryptus.cognotik.platform.model
 
 open class LLMModel(
   override val modelId: String,

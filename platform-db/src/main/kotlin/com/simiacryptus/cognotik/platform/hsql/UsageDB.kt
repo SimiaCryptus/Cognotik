@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.platform.hsql
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.AIModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -92,7 +92,7 @@ class UsageDB : UsageInterface {
   }
 
   private val database: Database get() = ExposedDatabase.get(facet)
-  val userSettingsManager by lazy { ApplicationServices.fileApplicationServices().userSettingsManager }
+  val userSettingsManager by lazy { ApplicationServicesImpl.fileApplicationServices().userSettingsManager }
 
   /**
    * On-heap cache of per-session usage summaries (subtree-aware).

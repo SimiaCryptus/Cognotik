@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.office
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
-import com.simiacryptus.cognotik.models.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator

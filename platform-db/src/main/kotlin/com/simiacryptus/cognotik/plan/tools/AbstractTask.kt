@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.docs.isDocumentFile
 import com.simiacryptus.cognotik.plan.ExecutionState

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.Cookie
@@ -725,7 +725,7 @@ class LoginServlet : HttpServlet() {
                 name = username,
             )
             val fileServices = try {
-                ApplicationServices.fileApplicationServices()
+                ApplicationServicesImpl.fileApplicationServices()
             } catch (e: Exception) {
                 log.error("Failed to get fileApplicationServices for login: {}", username, e)
                 serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -754,7 +754,7 @@ class LoginServlet : HttpServlet() {
 
             val accessToken = createSessionToken(username, inputHash)
             try {
-                ApplicationServices.authenticationManager.putUser(accessToken, user)
+                ApplicationServicesImpl.authenticationManager.putUser(accessToken, user)
             } catch (e: Exception) {
                 log.error("Failed to register user with authentication manager: {}", username, e)
                 serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -802,7 +802,7 @@ class LoginServlet : HttpServlet() {
             val token = authCookie?.value
             if (token.isNullOrBlank()) return false
             val user = try {
-                ApplicationServices.authenticationManager.getUser(token)
+                ApplicationServicesImpl.authenticationManager.getUser(token)
             } catch (e: Exception) {
                 log.debug("Error checking existing authentication", e)
                 null
@@ -841,12 +841,12 @@ class LoginServlet : HttpServlet() {
             val token = authCookie?.value
             if (!token.isNullOrBlank()) {
                 try {
-                    val user = ApplicationServices.authenticationManager.getUser(token)
+                    val user = ApplicationServicesImpl.authenticationManager.getUser(token)
                     if (user == null) {
                         log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
                     } else {
                         try {
-                            ApplicationServices.authenticationManager.logoutIfMatching(token, user)
+                            ApplicationServicesImpl.authenticationManager.logoutIfMatching(token, user)
                             log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
                         } catch (e: Exception) {
                             log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
@@ -926,7 +926,7 @@ class LoginServlet : HttpServlet() {
                 name = username,
             )
             val fileServices = try {
-                ApplicationServices.fileApplicationServices()
+                ApplicationServicesImpl.fileApplicationServices()
             } catch (e: Exception) {
                 log.error("Failed to get fileApplicationServices for registration: {}", username, e)
                 serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -990,7 +990,7 @@ class LoginServlet : HttpServlet() {
 
             val accessToken = createSessionToken(username, hashPassword(password))
             try {
-                ApplicationServices.authenticationManager.putUser(accessToken, user)
+                ApplicationServicesImpl.authenticationManager.putUser(accessToken, user)
             } catch (e: Exception) {
                 log.error("Failed to register newly-registered user with authentication manager: {}", username, e)
                 serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)

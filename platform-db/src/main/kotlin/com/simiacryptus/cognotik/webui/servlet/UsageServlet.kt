@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -22,7 +22,7 @@ class UsageServlet : HttpServlet() {
     public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
         response.status = HttpServletResponse.SC_OK
         val useJson = isJsonRequested(request)
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
+        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
 
         if (request.parameterMap.containsKey("sessionId")) {
             handleSessionUsage(request, response, useJson, usageManager)
@@ -546,7 +546,7 @@ $headerCols
             val amountStr = "%+.4f".format(c.amount)
             val commentStr = c.comment?.let { escapeHtml(it) } ?: ""
             val metaStr = if (!c.metadata.isNullOrEmpty()) {
-                """<br/><span class="credit-meta">${escapeHtml(c.metadata.entries.joinToString(", ") { "${it.key}=${it.value}" })}</span>"""
+                """<br/><span class="credit-meta">${escapeHtml(c.metadata?.entries?.joinToString(", ") { "${it.key}=${it.value}" })}</span>"""
             } else ""
             """
              <tr class="table-row">
@@ -575,8 +575,8 @@ $headerCols
              """.trimIndent()
     }
 
-    private fun escapeHtml(text: String): String =
-        text.replace("&", "&amp;")
+    private fun escapeHtml(text: String?): String =
+        (text?:"").replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("\"", "&quot;")

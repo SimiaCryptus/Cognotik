@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
@@ -132,7 +132,7 @@ class GiftedCreditsDB(
     }
 
     // Check creator has sufficient credit balance
-    val usageManager = ApplicationServices.fileApplicationServices().usageDB
+    val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
     val creatorBalance = try {
       usageManager.getUserBalance(creator)
     } catch (e: Exception) {
@@ -264,7 +264,7 @@ class GiftedCreditsDB(
         if (creator != null) {
           try {
             val creatorBalance =
-              ApplicationServices.fileApplicationServices().usageDB.getUserBalance(creator)
+              ApplicationServicesImpl.fileApplicationServices().usageDB.getUserBalance(creator)
             log.debug(
               "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
               creator.id, creatorBalance, gift.amountGranted

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.embedding
+package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -11,16 +11,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 interface Embedder {
   fun embed(input: String): DoubleArray
@@ -54,9 +53,9 @@ open class EmbeddingModel(
     base: String = provider?.base ?: "",
     logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    workPool: ExecutorService = java.util.concurrent.Executors.newFixedThreadPool(8),
-    scheduledPool: ListeningScheduledExecutorService = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
-      java.util.concurrent.Executors.newScheduledThreadPool(1)
+    workPool: ExecutorService = Executors.newFixedThreadPool(8),
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
+      Executors.newScheduledThreadPool(1)
     ),
     onUsage: (LLMModel, ModelSchema.Usage) -> Unit = { _, _ -> },
   ): EmbedderClient {

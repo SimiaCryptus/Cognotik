@@ -2,21 +2,22 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.chat.model.ChatMessageModality
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.UserSettingsInterface
-import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
+import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.fileserver.FileServlet
+import com.simiacryptus.cognotik.platform.UserProvider
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -44,7 +45,7 @@ object CliSupport {
   fun defaultUser(): User = User(email = email)
 
   init {
-    FileServlet.userResolver = object : com.simiacryptus.cognotik.platform.web.UserProvider {
+    FileServlet.userResolver = object : UserProvider {
       override fun authenticate(
         request: jakarta.servlet.http.HttpServletRequest,
         response: AbstractHttpServletResponse?
@@ -53,13 +54,13 @@ object CliSupport {
   }
 
   /**
-   * Points [ApplicationServices.fileApplicationServices] at per-root instances so user
+   * Points [ApplicationServicesImpl.fileApplicationServices] at per-root instances so user
    * settings (API keys, model registrations) are read from the project directory.
    */
   fun installFileServices() {
     val servicesCache = mutableMapOf<File, FileApplicationServices>()
     DatabaseFacet.root = File(".").absolutePath
-    ApplicationServices.fileApplicationServices = { rootDir ->
+    ApplicationServicesImpl.fileApplicationServices = { rootDir ->
       servicesCache.getOrPut(rootDir) {
         object : FileApplicationServices(rootDir) {
           override val userSettingsManager: UserSettingsInterface
@@ -78,7 +79,7 @@ object CliSupport {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      ApplicationServices.pluginManager.getLoadedPlugins()
+      ApplicationServicesImpl.pluginManager.getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }
