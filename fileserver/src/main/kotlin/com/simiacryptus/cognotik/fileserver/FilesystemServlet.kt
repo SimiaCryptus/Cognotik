@@ -132,6 +132,8 @@ abstract class FilesystemServlet : FileServlet() {
       "init", "status", "log", "diff", "show", "branch", "checkout", "switch", "restore",
       "add", "commit", "reset", "clean", "rev-parse", "ls-files", "ls-tree", "describe",
       "merge-base", "stash", "tag", "blame", "shortlog", "config",
+      /* export / packaging operations */
+      "archive", "bundle", "clone",
       /* sequencer / integration operations */
       "revert", "cherry-pick", "merge", "rebase",
       /* submodule support (network fetches are still bounded by GIT_TERMINAL_PROMPT=0) */

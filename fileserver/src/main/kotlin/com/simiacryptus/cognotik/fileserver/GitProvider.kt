@@ -6,11 +6,17 @@ import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import java.io.BufferedOutputStream
 import java.io.BufferedReader
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.nio.file.Files
 import java.nio.file.Path
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 abstract class GitProvider(
   val dataStorage: StorageInterface
@@ -30,6 +36,8 @@ abstract class GitProvider(
      private val SUBMODULE_URL_REGEX =
        """^(?:(?:https?|git|ssh|file)://[^\s]+|[A-Za-z0-9._~+-]+@[A-Za-z0-9._-]+:[^\s]+|\.{1,2}/[^\s]+)$""".toRegex()
      private val STASH_REF_REGEX = """^(?:stash@\{\d+\}|\d+)$""".toRegex()
+     /** Hard limit on submodule nesting, so recursive walks/clones are always bounded. */
+     private const val MAX_SUBMODULE_DEPTH = 8
   }
 
 
@@ -64,16 +72,28 @@ abstract class GitProvider(
       }
       val action = pathSegments.toList().map { it.toString() }[gitApiIndex + 2] // .git/api/<action>
       log.info("Git API GET action: $action for session ${session.sessionId}, user ${user.email}")
+      /* `?submodule=<root-relative path>` scopes the operation to a (possibly nested) submodule. */
+      val repoDir = try {
+        resolveRepoDir(sessionDir, request.getParameter("submodule") ?: request.getParameter("repo"))
+      } catch (e: IllegalArgumentException) {
+        log.warn("Rejected git API GET repository scope: ${e.message}")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.contentType = "application/json"
+        response.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Invalid repository")}"}""")
+        return
+      }
       when (action) {
-        "status" -> gitStatus(sessionDir, response)
-        "branches", "branch" -> gitListBranches(sessionDir, response)
-        "log" -> gitLog(sessionDir, request, response)
-        "submodules", "submodule" -> gitListSubmodules(sessionDir, response)
-        "diff" -> gitDiff(sessionDir, request, response)
-        "show" -> gitShow(sessionDir, request, response)
-        "remotes", "remote" -> gitRemotes(sessionDir, response)
-        "tags", "tag" -> gitListTags(sessionDir, response)
-        "stashes", "stash" -> gitListStashes(sessionDir, response)
+        "status" -> gitStatus(repoDir, response)
+        "branches", "branch" -> gitListBranches(repoDir, response)
+        "log" -> gitLog(repoDir, request, response)
+        "submodules", "submodule" -> gitListSubmodules(repoDir, request, response)
+        "diff" -> gitDiff(repoDir, request, response)
+        "show" -> gitShow(repoDir, request, response)
+        "remotes", "remote" -> gitRemotes(repoDir, response)
+        "tags", "tag" -> gitListTags(repoDir, response)
+        "stashes", "stash" -> gitListStashes(repoDir, response)
+        "archive", "zip", "archive.zip" -> gitArchive(repoDir, request, response)
+        "history", "historyzip", "history.zip" -> gitHistoryArchive(repoDir, request, response)
         else -> {
           log.warn("Unknown git GET action: $action")
           response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -212,6 +232,8 @@ abstract class GitProvider(
   }
 
   private data class GitResult(val exitCode: Int, val output: String, val error: String)
+  /** Raised when a git invocation that must succeed for a streamed response fails. */
+  private class GitCommandException(message: String) : RuntimeException(message)
 
   private fun executeGitCommand(workingDir: File, vararg command: String): GitResult {
     log.info("Executing git command: ${command.joinToString(" ")} in ${workingDir.absolutePath}")
@@ -294,28 +316,31 @@ abstract class GitProvider(
       }
       val action = pathSegments.toList().map { it.toString() }[gitApiIndex + 2]
       log.info("Git API POST action: $action for session ${session.sessionId}, user ${user.email}")
+      /* The request body can only be consumed once - read it up-front and share it with every handler. */
+      val body = readBody(request, action)
+      log.debug("Git API POST body length: ${body.length}")
+      val repoScope = parseJsonField(body, "submodule")
+        ?: parseJsonField(body, "repo")
+        ?: request.getParameter("submodule")
+        ?: request.getParameter("repo")
+      val repoDir = try {
+        /* `init` always targets the session root - a submodule must already be a repository. */
+        if (action == "init") sessionDir else resolveRepoDir(sessionDir, repoScope)
+      } catch (e: IllegalArgumentException) {
+        log.warn("Rejected git API POST repository scope: ${e.message}")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.contentType = "application/json"
+        response.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Invalid repository")}"}""")
+        return
+      }
       when (action) {
         "init" -> gitInit(sessionDir, response)
         "commit" -> {
-          val body = try {
-            request.reader.readText()
-          } catch (e: Exception) {
-            log.error("Failed to read request body for commit action", e)
-            ""
-          }
-          log.debug("Commit request body length: ${body.length}")
           val message = parseJsonField(body, "message") ?: "Auto-commit"
-          gitCommit(sessionDir, message, response)
+          gitCommit(repoDir, message, response)
         }
 
         "checkout" -> {
-          val body = try {
-            request.reader.readText()
-          } catch (e: Exception) {
-            log.error("Failed to read request body for checkout action", e)
-            ""
-          }
-          log.debug("Checkout request body length: ${body.length}")
           val branch = parseJsonField(body, "branch")
           val startPoint = parseJsonField(body, "startPoint")
           val create = parseJsonBoolean(body, "create", false)
@@ -326,17 +351,10 @@ abstract class GitProvider(
             response.writer.write("""{"error": "Branch name is required"}""")
             return
           }
-          gitCheckout(sessionDir, branch, create, startPoint, response)
+          gitCheckout(repoDir, branch, create, startPoint, response)
         }
 
         "branch" -> {
-          val body = try {
-            request.reader.readText()
-          } catch (e: Exception) {
-            log.error("Failed to read request body for branch action", e)
-            ""
-          }
-          log.debug("Branch request body length: ${body.length}")
           val branch = parseJsonField(body, "branch") ?: request.getParameter("branch")
           val startPoint = parseJsonField(body, "startPoint")
             ?: parseJsonField(body, "start_point")
@@ -353,16 +371,9 @@ abstract class GitProvider(
             response.writer.write("""{"success": false, "error": "Branch name is required"}""")
             return
           }
-          gitBranch(sessionDir, branch, startPoint, create, checkout, delete, response)
+          gitBranch(repoDir, branch, startPoint, create, checkout, delete, response)
         }
          "reset" -> {
-           val body = try {
-             request.reader.readText()
-           } catch (e: Exception) {
-             log.error("Failed to read request body for reset action", e)
-             ""
-           }
-           log.debug("Reset request body length: ${body.length}")
            val mode = parseJsonField(body, "mode")
              ?: request.getParameter("mode")
              ?: "mixed"
@@ -371,25 +382,17 @@ abstract class GitProvider(
              ?: parseJsonField(body, "revision")
              ?: request.getParameter("ref")
              ?: "HEAD"
-           gitReset(sessionDir, mode, ref, response)
+           gitReset(repoDir, mode, ref, response)
          }
          "clean" -> {
-           val body = try {
-             request.reader.readText()
-           } catch (e: Exception) {
-             log.error("Failed to read request body for clean action", e)
-             ""
-           }
-           log.debug("Clean request body length: ${body.length}")
            val directories = parseJsonBoolean(body, "directories", false)
            val ignored = parseJsonBoolean(body, "ignored", false)
            val force = parseJsonBoolean(body, "force", false)
            val dryRun = parseJsonBoolean(body, "dryRun", parseJsonBoolean(body, "dry_run", false))
-           gitClean(sessionDir, directories, ignored, force, dryRun, response)
+           gitClean(repoDir, directories, ignored, force, dryRun, response)
          }
          "revert", "cherry-pick", "cherrypick", "cherry_pick" -> {
            val command = if (action == "revert") "revert" else "cherry-pick"
-           val body = readBody(request, command)
            val commits = parseJsonStringArray(body, "commits")
              ?: parseJsonStringArray(body, "refs")
              ?: listOfNotNull(
@@ -400,7 +403,7 @@ abstract class GitProvider(
                  ?: request.getParameter("ref")
              )
            gitSequencer(
-             sessionDir = sessionDir,
+             sessionDir = repoDir,
              command = command,
              commits = commits,
              noCommit = parseJsonBoolean(body, "noCommit", parseJsonBoolean(body, "no_commit", false)),
@@ -413,13 +416,12 @@ abstract class GitProvider(
            )
          }
          "merge" -> {
-           val body = readBody(request, "merge")
            val ref = parseJsonField(body, "ref")
              ?: parseJsonField(body, "branch")
              ?: parseJsonField(body, "commit")
              ?: request.getParameter("ref")
            gitMerge(
-             sessionDir = sessionDir,
+             sessionDir = repoDir,
              ref = ref,
              noFastForward = parseJsonBoolean(body, "noFastForward", parseJsonBoolean(body, "no_ff", false)),
              squash = parseJsonBoolean(body, "squash", false),
@@ -431,13 +433,12 @@ abstract class GitProvider(
            )
          }
          "stash" -> {
-           val body = readBody(request, "stash")
            val stashAction = parseJsonField(body, "action")
              ?: parseJsonField(body, "operation")
              ?: request.getParameter("action")
              ?: "push"
            gitStash(
-             sessionDir = sessionDir,
+             sessionDir = repoDir,
              action = stashAction,
              message = parseJsonField(body, "message"),
              ref = parseJsonField(body, "ref") ?: parseJsonField(body, "stash") ?: request.getParameter("ref"),
@@ -449,9 +450,8 @@ abstract class GitProvider(
            )
          }
          "tag" -> {
-           val body = readBody(request, "tag")
            gitTag(
-             sessionDir = sessionDir,
+             sessionDir = repoDir,
              name = parseJsonField(body, "tag") ?: parseJsonField(body, "name") ?: request.getParameter("tag"),
              ref = parseJsonField(body, "ref") ?: parseJsonField(body, "commit") ?: request.getParameter("ref"),
              message = parseJsonField(body, "message"),
@@ -461,13 +461,12 @@ abstract class GitProvider(
            )
          }
          "submodule", "submodules" -> {
-           val body = readBody(request, "submodule")
            val subAction = parseJsonField(body, "action")
              ?: parseJsonField(body, "operation")
              ?: request.getParameter("action")
              ?: "update"
            gitSubmodule(
-             sessionDir = sessionDir,
+             sessionDir = repoDir,
              action = subAction,
              path = parseJsonField(body, "path") ?: parseJsonField(body, "name") ?: request.getParameter("path"),
              url = parseJsonField(body, "url")
@@ -858,74 +857,28 @@ abstract class GitProvider(
    }
   /**
    * List the submodules declared in `.gitmodules` and/or known to the index.
+   * Recurses into nested submodules by default (`?recursive=false` to disable);
+   * every entry carries `path` (relative to its parent), `parent` and `fullPath`
+   * (relative to the session root) so the caller can address it directly.
    *
-   * Handles `GET .git/api/submodules`.
+   * Handles `GET .git/api/submodules[?recursive=true][&submodule=<parent path>]`.
    */
-  private fun gitListSubmodules(sessionDir: File, resp: HttpServletResponse) {
-    log.info("Listing git submodules in: ${sessionDir.absolutePath}")
+  private fun gitListSubmodules(repoDir: File, req: HttpServletRequest, resp: HttpServletResponse) {
+    log.info("Listing git submodules in: ${repoDir.absolutePath}")
     try {
-      ensureGitRepo(sessionDir)
-      val configured = linkedMapOf<String, MutableMap<String, String>>()
-      if (File(sessionDir, ".gitmodules").exists()) {
-        val configResult = executeGitCommand(sessionDir, "git", "config", "-f", ".gitmodules", "--list")
-        if (configResult.exitCode != 0) {
-          log.warn("Failed to read .gitmodules: ${configResult.error}")
-        }
-        configResult.output.lines().filter { it.isNotBlank() }.forEach { line ->
-          val idx = line.indexOf('=')
-          if (idx <= 0) return@forEach
-          val key = line.substring(0, idx).trim()
-          val value = line.substring(idx + 1).trim()
-          val match = SUBMODULE_CONFIG_REGEX.find(key) ?: return@forEach
-          val name = match.groupValues[1]
-          configured.getOrPut(name) { linkedMapOf("name" to name) }[match.groupValues[2]] = value
-        }
-      } else {
-        log.debug("No .gitmodules in ${sessionDir.absolutePath}")
-      }
-      val statusResult = executeGitCommand(sessionDir, "git", "submodule", "status")
-      /* path -> (state, sha, describe) */
-      val statusByPath = linkedMapOf<String, Triple<String, String, String>>()
-      if (statusResult.exitCode == 0) {
-        statusResult.output.lines().filter { it.isNotBlank() }.forEach { line ->
-          val m = SUBMODULE_STATUS_REGEX.find(line.trimEnd()) ?: run {
-            log.debug("Unparsed submodule status line: '$line'")
-            return@forEach
-          }
-          val state = when (m.groupValues[1]) {
-            "-" -> "uninitialized"
-            "+" -> "modified"
-            "U" -> "conflict"
-            else -> "initialized"
-          }
-          statusByPath[m.groupValues[3]] = Triple(state, m.groupValues[2], m.groupValues[4])
-        }
-      } else {
-        log.warn("git submodule status failed with exit code ${statusResult.exitCode}: ${statusResult.error}")
-      }
-      val paths = LinkedHashSet<String>()
-      configured.values.forEach { cfg -> cfg["path"]?.let { paths.add(it) } }
-      paths.addAll(statusByPath.keys)
-      val entries = paths.map { path ->
-        val cfg = configured.values.firstOrNull { it["path"] == path }
-        val status = statusByPath[path]
-        val initialized = File(sessionDir, path).let { dir -> File(dir, ".git").exists() }
-        """{"name": "${escapeJson(cfg?.get("name") ?: path)}", "path": "${escapeJson(path)}", "url": "${
-          escapeJson(cfg?.get("url") ?: "")
-        }", "branch": "${escapeJson(cfg?.get("branch") ?: "")}", "state": "${
-          escapeJson(status?.first ?: "unknown")
-        }", "sha": "${escapeJson(status?.second ?: "")}", "describe": "${
-          escapeJson(status?.third ?: "")
-        }", "initialized": $initialized}"""
-      }
-      log.debug("Found ${entries.size} submodules in ${sessionDir.absolutePath}")
+      ensureGitRepo(repoDir)
+      val recursive = req.getParameter("recursive")?.toBoolean() ?: true
+      val entries = collectSubmodules(repoDir, "", 0, recursive)
+      log.debug("Found ${entries.size} submodules (recursive=$recursive) in ${repoDir.absolutePath}")
       resp.status = HttpServletResponse.SC_OK
       resp.contentType = "application/json"
       resp.writer.write(
-        """{"success": true, "count": ${entries.size}, "submodules": [${entries.joinToString(", ")}]}"""
+        """{"success": true, "recursive": $recursive, "count": ${entries.size}, "submodules": [${
+          entries.joinToString(", ") { submoduleJson(it) }
+        }]}"""
       )
     } catch (e: Exception) {
-      log.error("Exception during gitListSubmodules for ${sessionDir.absolutePath}", e)
+      log.error("Exception during gitListSubmodules for ${repoDir.absolutePath}", e)
       if (!resp.isCommitted) {
         resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
         resp.contentType = "application/json"
@@ -1633,6 +1586,215 @@ abstract class GitProvider(
 
 
   /**
+   * `GET .git/api/archive?ref=<rev>&path=<subdir>&prefix=<dir>&filename=<name>&submodules=true&submodule=<repo>`
+   *
+   * Streams `git archive --format=zip <ref>` back as an `application/zip`
+   * attachment. When `submodules` is enabled (the default) the content of every
+   * initialized submodule — recursively — is spliced into the zip at its own
+   * path, so the download is a complete working tree. The archive is produced
+   * into a temporary file which is always removed, even when the transfer fails
+   * half-way through.
+   */
+  private fun gitArchive(repoDir: File, req: HttpServletRequest, resp: HttpServletResponse) {
+    log.info("Archiving repository content for: ${repoDir.absolutePath}")
+    var tempFile: File? = null
+    try {
+      ensureGitRepo(repoDir)
+      val ref = (req.getParameter("ref") ?: req.getParameter("commit") ?: req.getParameter("branch") ?: "HEAD")
+        .trim().removePrefix("remotes/").ifBlank { "HEAD" }
+      val path = req.getParameter("path")
+      val prefix = req.getParameter("prefix")
+      val includeSubmodules = req.getParameter("submodules")?.toBoolean() ?: true
+      if (!isValidRevision(ref)) {
+        log.warn("Invalid archive revision rejected: '$ref'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid revision: ${escapeJson(ref)}"}""")
+        return
+      }
+      if (!path.isNullOrBlank() && !isValidRelativePath(path)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid path: ${escapeJson(path)}"}""")
+        return
+      }
+      if (!prefix.isNullOrBlank() && !isValidRelativePath(prefix)) {
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "Invalid prefix: ${escapeJson(prefix)}"}""")
+        return
+      }
+      tempFile = File.createTempFile("git-archive-", ".zip")
+      val entryPrefix = if (prefix.isNullOrBlank()) "" else prefix.trim('/', '\\') + "/"
+      try {
+        ZipOutputStream(BufferedOutputStream(FileOutputStream(tempFile))).use { zip ->
+          archiveInto(zip, HashSet(), repoDir, ref, entryPrefix, path, includeSubmodules, 0)
+        }
+      } catch (e: GitCommandException) {
+        log.error("git archive failed: ${e.message}")
+        resp.status = HttpServletResponse.SC_NOT_FOUND
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "operation": "archive", "ref": "${escapeJson(ref)}", "error": "${
+            escapeJson(e.message ?: "git archive failed")
+          }"}"""
+        )
+        return
+      }
+      val repoName = safeFileName(repoDir.name.ifBlank { "repository" })
+      val fileName = req.getParameter("filename")?.let { safeFileName(it).removeSuffix(".zip") }
+        ?: "$repoName-${safeFileName(ref)}"
+      log.info(
+        "git archive of '$ref' (submodules=$includeSubmodules) produced ${tempFile.length()} bytes for ${repoDir.absolutePath}"
+      )
+      sendBinaryFile(resp, tempFile, "$fileName.zip")
+    } catch (e: Exception) {
+      log.error("Exception during gitArchive for ${repoDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    } finally {
+      tempFile?.let { if (it.exists() && !it.delete()) log.warn("Failed to delete temp archive ${it.absolutePath}") }
+    }
+  }
+  /**
+   * `GET .git/api/history?ref=<branch>&all=true&submodules=true&submodule=<repo>&filename=<name>`
+   *
+   * Clones the session repository into a temporary **bare, single-branch** clone,
+   * zips that clone, deletes the clone as soon as the zip has been prepared and
+   * finally streams (then deletes) the zip. The result is a self-contained git
+   * repository containing the full history of the requested branch. When
+   * `submodules` is enabled (the default) every initialized submodule is cloned
+   * bare as well — recursively — under `submodules/<path>.git`, together with a
+   * `SUBMODULES.json` manifest describing the recorded commits and urls.
+   */
+  private fun gitHistoryArchive(repoDir: File, req: HttpServletRequest, resp: HttpServletResponse) {
+    log.info("Archiving repository history for: ${repoDir.absolutePath}")
+    var workDir: File? = null
+    var zipFile: File? = null
+    try {
+      ensureGitRepo(repoDir)
+      val allBranches = req.getParameter("all").toBoolean()
+      val includeSubmodules = req.getParameter("submodules")?.toBoolean() ?: true
+      val requested = (req.getParameter("ref") ?: req.getParameter("branch"))?.trim()?.removePrefix("remotes/")
+      if (!requested.isNullOrBlank() && !isValidBranchName(requested)) {
+        log.warn("Invalid history branch rejected: '$requested'")
+        resp.status = HttpServletResponse.SC_BAD_REQUEST
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "error": "Invalid branch name: ${escapeJson(requested)}"}"""
+        )
+        return
+      }
+      val currentBranch = executeGitCommand(repoDir, "git", "rev-parse", "--abbrev-ref", "HEAD").output.trim()
+      val branch = (if (requested.isNullOrBlank()) currentBranch else requested)
+      /* Submodules are usually checked out detached - fall back to a full clone instead of failing. */
+      var cloneAll = allBranches
+      if (!cloneAll && (branch.isBlank() || branch == "HEAD" || !isValidBranchName(branch))) {
+        log.info("Detached/unnamed HEAD ('$branch') in ${repoDir.absolutePath} - cloning the whole history")
+        cloneAll = true
+      }
+      val repoName = safeFileName(repoDir.name.ifBlank { "repository" })
+      workDir = Files.createTempDirectory("git-history-").toFile()
+      val cloneDir = File(workDir, "$repoName.git")
+      val args = mutableListOf("git", "clone", "--bare", "--no-hardlinks")
+      if (!cloneAll) {
+        args.add("--single-branch")
+        args.add("--branch")
+        args.add(branch)
+      }
+      args.add(repoDir.absolutePath)
+      args.add(cloneDir.absolutePath)
+      val result = executeGitCommand(workDir, *args.toTypedArray())
+      if (result.exitCode != 0 || !cloneDir.exists()) {
+        log.error("git clone --bare failed with exit code ${result.exitCode}: ${result.error}")
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write(
+          """{"success": false, "operation": "history", "branch": "${escapeJson(branch)}", "error": "${
+            escapeJson(result.error)
+          }", "output": "${escapeJson(result.output)}"}"""
+        )
+        return
+      }
+      zipFile = File.createTempFile("git-history-", ".zip")
+      val subClones =
+        if (!includeSubmodules) emptyList()
+        else cloneSubmodulesBare(repoDir, File(workDir, "submodules"), "", 0)
+      if (subClones.isEmpty()) {
+        zipDirectory(cloneDir, zipFile, "$repoName.git")
+      } else {
+        File(workDir, "SUBMODULES.json").writeText(
+          """{"repository": "${escapeJson("$repoName.git")}", "count": ${subClones.size}, "submodules": [${
+            subClones.joinToString(", ") { (sub, _) ->
+              """{"path": "${escapeJson(sub.fullPath)}", "url": "${escapeJson(sub.url)}", "branch": "${
+                escapeJson(sub.branch)
+              }", "sha": "${escapeJson(sub.sha)}", "clone": "${escapeJson("submodules/${sub.fullPath}.git")}"}"""
+            }
+          }]}"""
+        )
+        log.info("Bundled ${subClones.size} submodule clone(s) into the history zip")
+        zipDirectory(workDir, zipFile, "$repoName-history")
+      }
+      /* The zip is prepared - the temporary clone is no longer needed. */
+      if (!workDir.deleteRecursively()) log.warn("Failed to delete temp clone ${workDir.absolutePath}")
+      workDir = null
+      val fileName = req.getParameter("filename")?.let { safeFileName(it).removeSuffix(".zip") }
+        ?: "$repoName-history-${if (cloneAll) "all" else safeFileName(branch)}"
+      log.info("History zip for '${if (cloneAll) "all branches" else branch}' is ${zipFile.length()} bytes")
+      sendBinaryFile(resp, zipFile, "$fileName.zip")
+    } catch (e: Exception) {
+      log.error("Exception during gitHistoryArchive for ${repoDir.absolutePath}", e)
+      if (!resp.isCommitted) {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        resp.contentType = "application/json"
+        resp.writer.write("""{"success": false, "error": "${escapeJson(e.message ?: "Unknown error")}"}""")
+      }
+    } finally {
+      workDir?.let { if (it.exists() && !it.deleteRecursively()) log.warn("Failed to delete temp clone ${it.absolutePath}") }
+      zipFile?.let { if (it.exists() && !it.delete()) log.warn("Failed to delete temp zip ${it.absolutePath}") }
+    }
+  }
+  /** Recursively zip [dir] into [target], nesting everything under [rootName]. */
+  private fun zipDirectory(dir: File, target: File, rootName: String) {
+    val base = dir.toPath().toAbsolutePath().normalize()
+    ZipOutputStream(BufferedOutputStream(FileOutputStream(target))).use { zip ->
+      dir.walkTopDown().forEach { file ->
+        val relative = base.relativize(file.toPath().toAbsolutePath().normalize())
+          .toString().replace(File.separatorChar, '/')
+        if (relative.isBlank()) return@forEach
+        val entryName = "$rootName/$relative"
+        when {
+          file.isDirectory -> {
+            zip.putNextEntry(ZipEntry("$entryName/"))
+            zip.closeEntry()
+          }
+          file.isFile -> {
+            zip.putNextEntry(ZipEntry(entryName).apply { time = file.lastModified() })
+            file.inputStream().use { it.copyTo(zip, 64 * 1024) }
+            zip.closeEntry()
+          }
+          else -> log.debug("Skipping non-regular file in history zip: ${file.absolutePath}")
+        }
+      }
+    }
+  }
+  /** Stream a prepared file back as a binary attachment. */
+  private fun sendBinaryFile(resp: HttpServletResponse, file: File, fileName: String) {
+    resp.status = HttpServletResponse.SC_OK
+    resp.contentType = "application/zip"
+    resp.setContentLengthLong(file.length())
+    resp.setHeader("Content-Disposition", "attachment; filename=\"$fileName\"")
+    resp.setHeader("Cache-Control", "no-store")
+    file.inputStream().use { input -> resp.outputStream.use { output -> input.copyTo(output, 64 * 1024) } }
+  }
+  /** Reduce an arbitrary label to something safe for a `Content-Disposition` filename. */
+  private fun safeFileName(name: String): String =
+    name.replace(Regex("[^A-Za-z0-9._-]+"), "_").trim('_', '.').take(128).ifBlank { "archive" }
+
+  /**
    * Commit all changes in the session's git repository.
    */
   private fun gitCommit(sessionDir: File, message: String, resp: HttpServletResponse) {
@@ -1726,11 +1888,14 @@ abstract class GitProvider(
         }
       }
       /* Report any in-progress sequencer operation so the UI can offer continue/abort. */
+      /* In a submodule `.git` is a *file* pointing at the real git dir - ask git for it. */
+      val resolvedGitDir = executeGitCommand(sessionDir, "git", "rev-parse", "--absolute-git-dir").output.trim()
+        .let { if (it.isBlank()) gitDir else File(it) }
       val operation = when {
-        File(gitDir, "CHERRY_PICK_HEAD").exists() -> "cherry-pick"
-        File(gitDir, "REVERT_HEAD").exists() -> "revert"
-        File(gitDir, "MERGE_HEAD").exists() -> "merge"
-        File(gitDir, "rebase-merge").exists() || File(gitDir, "rebase-apply").exists() -> "rebase"
+        File(resolvedGitDir, "CHERRY_PICK_HEAD").exists() -> "cherry-pick"
+        File(resolvedGitDir, "REVERT_HEAD").exists() -> "revert"
+        File(resolvedGitDir, "MERGE_HEAD").exists() -> "merge"
+        File(resolvedGitDir, "rebase-merge").exists() || File(resolvedGitDir, "rebase-apply").exists() -> "rebase"
         else -> ""
       }
       val conflicts = if (operation.isBlank()) emptyList() else conflictedFiles(sessionDir)
@@ -1861,6 +2026,242 @@ abstract class GitProvider(
       return emptyList()
     }
     return result.output.lines().map { it.trim() }.filter { it.isNotBlank() }
+  }
+  /** A submodule as declared by `.gitmodules` and reported by `git submodule status`. */
+  private data class SubmoduleEntry(
+    val name: String,
+    /** Path relative to the repository that declares it. */
+    val path: String,
+    /** Path relative to the session root - the value accepted by `?submodule=`. */
+    val fullPath: String,
+    /** Root-relative path of the declaring repository (empty for top level). */
+    val parent: String,
+    val url: String,
+    val branch: String,
+    val state: String,
+    val sha: String,
+    val describe: String,
+    val initialized: Boolean,
+    val depth: Int
+  )
+  /**
+   * Resolve the repository a request targets: the session root, or one of its
+   * (possibly deeply nested) submodules addressed by its root-relative path.
+   *
+   * Throws [IllegalArgumentException] for anything that is not an initialized
+   * repository inside the session directory.
+   */
+  private fun resolveRepoDir(sessionDir: File, submodulePath: String?): File {
+    if (submodulePath.isNullOrBlank()) return sessionDir
+    val cleaned = submodulePath.trim().trim('/', '\\')
+    if (cleaned.isBlank()) return sessionDir
+    require(isValidRelativePath(cleaned)) { "Invalid submodule path: $cleaned" }
+    val root = sessionDir.canonicalFile
+    val target = File(sessionDir, cleaned).canonicalFile
+    require(target.path == root.path || target.path.startsWith(root.path + File.separator)) {
+      "Submodule path escapes the session directory: $cleaned"
+    }
+    require(target.isDirectory) { "Submodule directory not found: $cleaned" }
+    require(File(target, ".git").exists()) { "Not an initialized git repository: $cleaned" }
+    log.debug("Scoped git operation to submodule '$cleaned' -> ${target.absolutePath}")
+    return target
+  }
+  /** Submodules declared directly by [repoDir]. */
+  private fun readSubmodules(repoDir: File, parentPath: String, depth: Int): List<SubmoduleEntry> {
+    val configured = linkedMapOf<String, MutableMap<String, String>>()
+    if (File(repoDir, ".gitmodules").exists()) {
+      val configResult = executeGitCommand(repoDir, "git", "config", "-f", ".gitmodules", "--list")
+      if (configResult.exitCode != 0) {
+        log.warn("Failed to read .gitmodules in ${repoDir.absolutePath}: ${configResult.error}")
+      }
+      configResult.output.lines().filter { it.isNotBlank() }.forEach { line ->
+        val idx = line.indexOf('=')
+        if (idx <= 0) return@forEach
+        val key = line.substring(0, idx).trim()
+        val value = line.substring(idx + 1).trim()
+        val match = SUBMODULE_CONFIG_REGEX.find(key) ?: return@forEach
+        val name = match.groupValues[1]
+        configured.getOrPut(name) { linkedMapOf("name" to name) }[match.groupValues[2]] = value
+      }
+    } else {
+      log.debug("No .gitmodules in ${repoDir.absolutePath}")
+    }
+    /* path -> (state, sha, describe) */
+    val statusByPath = linkedMapOf<String, Triple<String, String, String>>()
+    val statusResult = executeGitCommand(repoDir, "git", "submodule", "status")
+    if (statusResult.exitCode == 0) {
+      statusResult.output.lines().filter { it.isNotBlank() }.forEach { line ->
+        val m = SUBMODULE_STATUS_REGEX.find(line.trimEnd()) ?: run {
+          log.debug("Unparsed submodule status line: '$line'")
+          return@forEach
+        }
+        val state = when (m.groupValues[1]) {
+          "-" -> "uninitialized"
+          "+" -> "modified"
+          "U" -> "conflict"
+          else -> "initialized"
+        }
+        statusByPath[m.groupValues[3]] = Triple(state, m.groupValues[2], m.groupValues[4])
+      }
+    } else if (File(repoDir, ".gitmodules").exists()) {
+      log.warn("git submodule status failed with exit code ${statusResult.exitCode}: ${statusResult.error}")
+    }
+    val paths = LinkedHashSet<String>()
+    configured.values.forEach { cfg -> cfg["path"]?.let { paths.add(it.trim('/')) } }
+    paths.addAll(statusByPath.keys.map { it.trim('/') })
+    return paths.filter { it.isNotBlank() }.map { path ->
+      val cfg = configured.values.firstOrNull { it["path"]?.trim('/') == path }
+      val status = statusByPath[path]
+      SubmoduleEntry(
+        name = cfg?.get("name") ?: path,
+        path = path,
+        fullPath = if (parentPath.isBlank()) path else "$parentPath/$path",
+        parent = parentPath,
+        url = cfg?.get("url") ?: "",
+        branch = cfg?.get("branch") ?: "",
+        state = status?.first ?: "unknown",
+        sha = status?.second ?: "",
+        describe = status?.third ?: "",
+        initialized = File(File(repoDir, path), ".git").exists(),
+        depth = depth
+      )
+    }
+  }
+  /** Submodules of [repoDir], optionally descending into submodules-of-submodules. */
+  private fun collectSubmodules(
+    repoDir: File,
+    parentPath: String,
+    depth: Int,
+    recursive: Boolean
+  ): List<SubmoduleEntry> {
+    if (depth > MAX_SUBMODULE_DEPTH) {
+      log.warn("Submodule nesting limit ($MAX_SUBMODULE_DEPTH) reached at '$parentPath'")
+      return emptyList()
+    }
+    val entries = readSubmodules(repoDir, parentPath, depth)
+    if (!recursive) return entries
+    val out = mutableListOf<SubmoduleEntry>()
+    entries.forEach { entry ->
+      out.add(entry)
+      val child = File(repoDir, entry.path)
+      if (entry.initialized && File(child, ".git").exists()) {
+        out.addAll(collectSubmodules(child, entry.fullPath, depth + 1, true))
+      }
+    }
+    return out
+  }
+  private fun submoduleJson(entry: SubmoduleEntry): String =
+    """{"name": "${escapeJson(entry.name)}", "path": "${escapeJson(entry.path)}", "fullPath": "${
+      escapeJson(entry.fullPath)
+    }", "parent": "${escapeJson(entry.parent)}", "depth": ${entry.depth}, "url": "${
+      escapeJson(entry.url)
+    }", "branch": "${escapeJson(entry.branch)}", "state": "${escapeJson(entry.state)}", "sha": "${
+      escapeJson(entry.sha)
+    }", "describe": "${escapeJson(entry.describe)}", "initialized": ${entry.initialized}}"""
+  /**
+   * Write `git archive <ref>` of [repoDir] into [zip] under [prefix], recursing
+   * into initialized submodules when [includeSubmodules] is set. Submodule
+   * content is taken from the commit recorded by the parent when that commit is
+   * present locally, otherwise from the submodule's current HEAD.
+   */
+  private fun archiveInto(
+    zip: ZipOutputStream,
+    seen: MutableSet<String>,
+    repoDir: File,
+    ref: String,
+    prefix: String,
+    path: String?,
+    includeSubmodules: Boolean,
+    depth: Int
+  ) {
+    val part = File.createTempFile("git-archive-part-", ".zip")
+    try {
+      val args = mutableListOf("git", "archive", "--format=zip", "-o", part.absolutePath, ref)
+      if (!path.isNullOrBlank()) {
+        args.add("--")
+        args.add(path)
+      }
+      val result = executeGitCommand(repoDir, *args.toTypedArray())
+      if (result.exitCode != 0) {
+        throw GitCommandException("git archive '$ref' failed in '${repoDir.name}': ${result.error.trim()}")
+      }
+      copyZipEntries(part, zip, seen, prefix)
+    } finally {
+      if (part.exists() && !part.delete()) log.warn("Failed to delete temp archive part ${part.absolutePath}")
+    }
+    if (!includeSubmodules || depth >= MAX_SUBMODULE_DEPTH) return
+    collectSubmodules(repoDir, "", depth, false).forEach { sub ->
+      if (!path.isNullOrBlank() && sub.path != path && !sub.path.startsWith("$path/")) return@forEach
+      val subDir = File(repoDir, sub.path)
+      if (!sub.initialized || !File(subDir, ".git").exists()) {
+        log.warn("Skipping uninitialized submodule '${sub.path}' while archiving ${repoDir.absolutePath}")
+        return@forEach
+      }
+      val pinned = sub.sha.isNotBlank() &&
+          executeGitCommand(subDir, "git", "cat-file", "-e", "${sub.sha}^{commit}").exitCode == 0
+      val subRef = if (pinned) sub.sha else "HEAD"
+      log.debug("Archiving submodule '${sub.path}' at $subRef (pinned=$pinned)")
+      archiveInto(zip, seen, subDir, subRef, prefix + sub.path.trim('/') + "/", null, true, depth + 1)
+    }
+  }
+  /** Copy every entry of [source] into [target], re-rooting names under [prefix]. */
+  private fun copyZipEntries(source: File, target: ZipOutputStream, seen: MutableSet<String>, prefix: String) {
+    ZipInputStream(source.inputStream().buffered()).use { input ->
+      while (true) {
+        val entry = input.nextEntry ?: break
+        val name = prefix + entry.name
+        val time = entry.time
+        val isDirectory = entry.isDirectory
+        if (seen.add(name)) {
+          target.putNextEntry(ZipEntry(name).apply { if (time >= 0) this.time = time })
+          if (!isDirectory) input.copyTo(target, 64 * 1024)
+          target.closeEntry()
+        } else {
+          log.debug("Skipping duplicate archive entry '$name'")
+        }
+        input.closeEntry()
+      }
+    }
+  }
+  /**
+   * Bare-clone every initialized submodule of [repoDir] (recursively) into
+   * `<targetRoot>/<root-relative path>.git`. Failures are logged and skipped so
+   * one broken submodule cannot fail the whole download.
+   */
+  private fun cloneSubmodulesBare(
+    repoDir: File,
+    targetRoot: File,
+    parentPath: String,
+    depth: Int
+  ): List<Pair<SubmoduleEntry, File>> {
+    if (depth >= MAX_SUBMODULE_DEPTH) {
+      log.warn("Submodule nesting limit reached while cloning at '$parentPath'")
+      return emptyList()
+    }
+    val out = mutableListOf<Pair<SubmoduleEntry, File>>()
+    collectSubmodules(repoDir, parentPath, depth, false).forEach { sub ->
+      val subDir = File(repoDir, sub.path)
+      if (!sub.initialized || !File(subDir, ".git").exists()) {
+        log.warn("Skipping uninitialized submodule '${sub.fullPath}' in the history archive")
+        return@forEach
+      }
+      if (!targetRoot.exists() && !targetRoot.mkdirs()) {
+        log.error("Failed to create submodule clone root ${targetRoot.absolutePath}")
+        return out
+      }
+      val dest = File(targetRoot, "${sub.fullPath}.git")
+      dest.parentFile?.mkdirs()
+      val clone = executeGitCommand(
+        targetRoot, "git", "clone", "--bare", "--no-hardlinks", subDir.absolutePath, dest.absolutePath
+      )
+      if (clone.exitCode != 0 || !dest.exists()) {
+        log.warn("Failed to bare-clone submodule '${sub.fullPath}': ${clone.error.trim()}")
+        return@forEach
+      }
+      out.add(sub to dest)
+      out.addAll(cloneSubmodulesBare(subDir, targetRoot, sub.fullPath, depth + 1))
+    }
+    return out
   }
 
 

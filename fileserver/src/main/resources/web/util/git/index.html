@@ -367,6 +367,10 @@
                 <div class="small muted" id="repo-info">connecting…</div>
                 <label for="api-base">API base (<code>&lt;base&gt;/.git/api/&lt;op&gt;</code>)</label>
                 <input id="api-base" type="text" spellcheck="false">
+                <label for="repo-scope">Repository scope (every operation below targets this repo)</label>
+                <select id="repo-scope">
+                    <option value="">(root repository)</option>
+                </select>
                 <div class="row" style="margin-top:.5rem">
                     <button id="apply-base" class="small">Apply</button>
                     <button id="refresh-all" class="small">Refresh all</button>
@@ -417,6 +421,26 @@
                 <h2>Remotes</h2>
                 <ul class="list" id="remote-list"></ul>
                 <div class="small muted" id="remote-empty">No remotes.</div>
+            </section>
+            <section class="panel">
+                <h2>Download</h2>
+                <label for="archive-ref">Ref (branch, tag or commit)</label>
+                <input id="archive-ref" type="text" spellcheck="false" placeholder="HEAD">
+                <label for="archive-path">Subdirectory (optional, source zip only)</label>
+                <input id="archive-path" type="text" spellcheck="false" placeholder="src">
+                <div class="row" style="margin-top:.5rem">
+                    <button id="archive-download" class="small primary"
+                            title="git archive --format=zip &lt;ref&gt;">Source .zip
+                    </button>
+                    <button id="history-download" class="small"
+                            title="bare --single-branch clone of the history, zipped">History .zip
+                    </button>
+                </div>
+                <label class="inline small"><input id="history-all" type="checkbox"> all branches (history zip)</label>
+                <label class="inline small"><input id="archive-subs" type="checkbox" checked> include submodules</label>
+                <div class="small muted">The history zip is a bare git repository — <code>git clone</code> it back.</div>
+                <div class="small muted">With submodules the history zip also carries
+                    <code>submodules/&lt;path&gt;.git</code> for every nested submodule.</div>
             </section>
         </aside>
 
@@ -647,6 +671,8 @@
 
         const state = {
             base: '',
+            /* root-relative path of the submodule every request is scoped to ('' = root repo) */
+            repo: '',
             status: null,
             branches: [],
             currentBranch: '',
@@ -721,16 +747,21 @@
         async function api(method, action, opts) {
             const o = opts || {};
             const qs = new URLSearchParams();
-            Object.keys(o.params || {}).forEach((k) => {
-                const v = o.params[k];
+            const params = Object.assign({}, o.params || {});
+            /* Scope reads to the selected submodule unless the caller was explicit. */
+            if (state.repo && params.submodule === undefined) params.submodule = state.repo;
+            Object.keys(params).forEach((k) => {
+                const v = params[k];
                 if (v === undefined || v === null || v === '' || v === false) return;
                 qs.set(k, String(v));
             });
             const url = state.base + '/.git/api/' + action + (qs.toString() ? '?' + qs.toString() : '');
             const init = {method: method, credentials: 'same-origin', headers: {Accept: 'application/json'}};
             if (o.body !== undefined) {
+                const body = Object.assign({}, o.body);
+                if (state.repo && body.submodule === undefined) body.submodule = state.repo;
                 init.headers['Content-Type'] = 'application/json';
-                init.body = JSON.stringify(o.body);
+                init.body = JSON.stringify(body);
             }
             let res, text;
             try {
@@ -875,6 +906,8 @@
                         '" title="Checkout">⇥</button>') +
                     (b.current ? '' : '<button data-act="merge" data-name="' + esc(b.name) +
                         '" title="Merge into the current branch">⇲</button>') +
+                    '<button data-act="archive" data-name="' + esc(b.name) +
+                    '" title="Download a zip of this ref">⭳</button>' +
                     (b.current || isRemote ? '' : '<button class="danger" data-act="delete-branch" data-name="' +
                         esc(b.name) + '" title="Delete branch">🗑</button>');
                 list.appendChild(li);
@@ -898,6 +931,7 @@
                     '<button data-act="stat" data-hash="' + esc(c.hash) + '">stat</button>' +
                     '<button data-act="diff-here" data-hash="' + esc(c.hash) + '">diff vs HEAD</button>' +
                     '<button data-act="checkout-commit" data-hash="' + esc(c.hash) + '">checkout</button>' +
+                    '<button data-act="archive" data-hash="' + esc(c.hash) + '">zip</button>' +
                     '<button data-act="branch-here" data-hash="' + esc(c.hash) + '">branch here</button>' +
                     '<button data-act="tag-here" data-hash="' + esc(c.hash) + '">tag here</button>' +
                     '<button data-act="cherry" data-hash="' + esc(c.hash) + '">cherry-pick</button>' +
@@ -959,21 +993,57 @@
             state.submodules.forEach((s) => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                card.style.marginLeft = (Math.min(s.depth || 0, 6) * 1.15) + 'rem';
                 const badge = s.state === 'initialized' ? 'ok' : (s.state === 'conflict' ? 'err' : 'warn');
+                const full = s.fullPath || s.path || '';
+                const parent = s.parent || '';
                 card.innerHTML =
-                    '<div class="row"><strong class="mono">' + esc(s.path || s.name) + '</strong>' +
+                    '<div class="row"><strong class="mono">' + esc(full || s.name) + '</strong>' +
                     '<span class="badge ' + badge + '">' + esc(s.state || 'unknown') + '</span>' +
                     (s.branch ? '<span class="badge">' + esc(s.branch) + '</span>' : '') +
+                    (state.repo === full ? '<span class="badge accent">scoped</span>' : '') +
                     '<span class="badge">' + esc(String(s.sha || '').slice(0, 10)) + '</span></div>' +
                     '<div class="small muted mono">' + esc(s.url || '') + '</div>' +
                     '<div class="row" style="margin-top:.4rem">' +
-                    '<button class="small" data-act="sub-init" data-path="' + esc(s.path) + '">init</button>' +
-                    '<button class="small" data-act="sub-update" data-path="' + esc(s.path) + '">update</button>' +
-                    '<button class="small" data-act="sub-sync" data-path="' + esc(s.path) + '">sync</button>' +
+                    '<button class="small" data-act="sub-open" data-full="' + esc(full) +
+                    '" title="Point every panel at this submodule">scope</button>' +
+                    '<button class="small" data-act="sub-archive" data-full="' + esc(full) +
+                    '" title="git archive of this submodule">source .zip</button>' +
+                    '<button class="small" data-act="sub-history" data-full="' + esc(full) +
+                    '" title="bare clone of this submodule, zipped">history .zip</button>' +
+                    '<button class="small" data-act="sub-init" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">init</button>' +
+                    '<button class="small" data-act="sub-update" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">update</button>' +
+                    '<button class="small" data-act="sub-sync" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">sync</button>' +
                     '<button class="small danger" data-act="sub-deinit" data-path="' + esc(s.path) +
-                    '">deinit</button></div>';
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">deinit</button></div>';
                 box.appendChild(card);
             });
+        }
+        /** Rebuilds the repository-scope selector from the (recursive) submodule tree. */
+        function renderScope() {
+            const sel = $('repo-scope');
+            if (!sel) return;
+            const usable = state.submodules.filter((s) => s.initialized !== false);
+            const html = ['<option value="">(root repository)</option>'].concat(usable.map((s) => {
+                const full = s.fullPath || s.path || '';
+                const pad = '\u00a0\u00a0'.repeat(Math.min(s.depth || 0, 6));
+                return '<option value="' + esc(full) + '">' + pad + '\u21b3 ' + esc(full) + '</option>';
+            }));
+            if (state.repo && !usable.some((s) => (s.fullPath || s.path) === state.repo)) {
+                html.push('<option value="' + esc(state.repo) + '">' + esc(state.repo) + ' (?)</option>');
+            }
+            sel.innerHTML = html.join('');
+            sel.value = state.repo;
+        }
+        function setScope(path) {
+            state.repo = path || '';
+            const sel = $('repo-scope');
+            if (sel) sel.value = state.repo;
+            log('Scope set to ' + (state.repo || '(root repository)') + '.', 'ok');
+            refreshAll();
         }
 
         function renderPatch(text) {
@@ -1031,9 +1101,11 @@
         }
 
         async function refreshSubmodules() {
-            const d = await api('GET', 'submodules');
+            /* Always enumerate the whole tree from the root so scoping stays possible. */
+            const d = await api('GET', 'submodules', {params: {recursive: true, submodule: ''}});
             state.submodules = Array.isArray(d.submodules) ? d.submodules : [];
             renderSubmodules();
+            renderScope();
         }
 
         async function refreshAll(quiet) {
@@ -1060,6 +1132,7 @@
                 const d = state.status || {};
                 $('repo-info').innerHTML =
                     'base <code>' + esc(state.base || '(server root)') + '</code><br>' +
+                    'repo <code>' + esc(state.repo || '(root)') + '</code><br>' +
                     'branch <code>' + esc(d.currentBranch || '—') + '</code><br>' +
                     'state <code>' + esc(d.initialized === false ? 'uninitialized'
                         : (d.clean ? 'clean' : 'modified')) + '</code>';
@@ -1275,6 +1348,58 @@
                 'submodule ' + action + ' ' + (body.path || '')));
         }
 
+        /** Builds an absolute API URL (used for plain browser downloads). */
+        function apiUrl(action, params) {
+            const qs = new URLSearchParams();
+            const p = Object.assign({}, params || {});
+            if (state.repo && p.submodule === undefined) p.submodule = state.repo;
+            Object.keys(p).forEach((k) => {
+                const v = p[k];
+                if (v === undefined || v === null || v === '' || v === false) return;
+                qs.set(k, String(v));
+            });
+            return state.base + '/.git/api/' + action + (qs.toString() ? '?' + qs.toString() : '');
+        }
+
+        /** Triggers a same-origin attachment download (the server sets the filename). */
+        function download(action, params, label) {
+            const url = apiUrl(action, params);
+            const a = document.createElement('a');
+            a.href = url;
+            a.rel = 'noopener';
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            log('Downloading ' + (label || action) + ' — ' + url, 'ok');
+        }
+
+
+        /** `repo` (root-relative submodule path) overrides the current scope for one download. */
+        function doArchive(ref, repo) {
+            const r = (ref || $('archive-ref').value || 'HEAD').trim() || 'HEAD';
+            if (!repo) $('archive-ref').value = r;
+            download('archive', {
+                ref: r,
+                path: repo ? '' : $('archive-path').value.trim(),
+                submodule: repo,
+                submodules: $('archive-subs').checked ? 'true' : 'false'
+            }, 'source zip of ' + r + (repo ? ' @ ' + repo : ''));
+        }
+
+        function doHistory(ref, repo) {
+            const all = $('history-all').checked;
+            const r = (ref || (repo ? '' : $('archive-ref').value) || '').trim();
+            if (r && !repo) $('archive-ref').value = r;
+            download('history', {
+                ref: all ? '' : r,
+                all: all,
+                submodule: repo,
+                submodules: $('archive-subs').checked ? 'true' : 'false'
+            }, 'history zip of ' + (all ? 'all branches' : (r || state.currentBranch || 'the current branch')) +
+                (repo ? ' @ ' + repo : ''));
+        }
+
         async function runDiff(params) {
             const p = params || {
                 staged: $('diff-staged').checked,
@@ -1347,7 +1472,10 @@
                 refreshAll();
             });
             $('refresh-all').addEventListener('click', () => refreshAll());
+            $('repo-scope').addEventListener('change', (e) => setScope(e.target.value));
             $('init-btn').addEventListener('click', doInit);
+            $('archive-download').addEventListener('click', () => doArchive());
+            $('history-download').addEventListener('click', () => doHistory());
             $('commit-btn').addEventListener('click', doCommit);
             $('commit-message').addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') doCommit();
@@ -1403,6 +1531,7 @@
             delegate('branch-list', (d) => {
                 if (d.act === 'checkout') doCheckout(d.name, false);
                 else if (d.act === 'delete-branch') doDeleteBranch(d.name);
+                else if (d.act === 'archive') doArchive(d.name);
                 else if (d.act === 'merge') doMerge(d.name);
             });
 
@@ -1422,6 +1551,9 @@
                         break;
                     case 'checkout-commit':
                         doCheckout(hash, false);
+                        break;
+                    case 'archive':
+                        doArchive(hash);
                         break;
                     case 'branch-here':
                         $('branch-start').value = hash;
@@ -1465,9 +1597,23 @@
             });
 
             delegate('sub-list', (d) => {
+                const full = d.full || d.path || '';
+                if (d.act === 'sub-open') {
+                    setScope(full);
+                    return;
+                }
+                if (d.act === 'sub-archive') {
+                    doArchive($('archive-ref').value.trim() || 'HEAD', full);
+                    return;
+                }
+                if (d.act === 'sub-history') {
+                    doHistory('', full);
+                    return;
+                }
                 const action = d.act.replace('sub-', '');
-                if (action === 'deinit' && !window.confirm('Deinit submodule "' + d.path + '"?')) return;
-                doSubmodule(action, {path: d.path});
+                if (action === 'deinit' && !window.confirm('Deinit submodule "' + full + '"?')) return;
+                /* Nested submodules are managed from the repository that declares them. */
+                doSubmodule(action, {path: d.path, submodule: d.parent || ''});
             });
         }
 
