@@ -293,8 +293,10 @@ package com.simiacryptus.cognotik.webui.servlet.action
         return try {
           ServerDocOps.targets(docOpsRequest(cfg, ctx))
             .map { ActionOption(it.path, it.path, it.description) }
+        } catch (e: RuntimeException) {
+          throw e
         } catch (e: Exception) {
-          emptyList()
+          throw RuntimeException("Failed to resolve DocOps targets", e)
         }
       }
     }

@@ -168,7 +168,7 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
           patchProcessor = task.patchProcessor,
           workingDir = workingDir,
           timeoutMinutes = config.taskTimeoutMinutes,
-          frontmatter = task.frontmatter,
+         frontmatter = task.resolvedFrontmatter,
         ),
         object : DocTaskCallbacks<S> {
           override fun onSessionStarted(session: S, sessionId: String) {

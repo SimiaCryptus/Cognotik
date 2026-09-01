@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.autofix
 
+import com.simiacryptus.cognotik.autofix.AutoFixTask.AutoFixTaskTypeConfig
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
@@ -21,13 +22,13 @@ import java.util.concurrent.Semaphore
 
 class AutoFixTask(
   orchestrationConfig: OrchestrationConfig, planTask: AutoFixTaskExecutionConfigData?
-) : AbstractTask<AutoFixTask.AutoFixTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+) : AbstractTask<AutoFixTask.AutoFixTaskExecutionConfigData, AutoFixTaskTypeConfig>(orchestrationConfig, planTask) {
 
   companion object {
     private val log = LoggerFactory.getLogger(AutoFixTask::class.java)
 
     @JvmStatic
-    val AutoFix = TaskType(
+    val AutoFix = object : TaskType<AutoFixTaskExecutionConfigData, AutoFixTaskTypeConfig>(
       name = "AutoFix",
       category = "Execution",
       taskClass = AutoFixTask::class.java,
@@ -41,7 +42,15 @@ class AutoFixTask(
           "<li>Interactive approval mode</li>" +
           "<li>Output diff formatting</li>" +
           "</ul>",
-    )
+    ) {
+      override fun resolveExecutionConfig(frontmatter: Map<String, Any?>): AutoFixTaskExecutionConfigData? {
+        return super.resolveExecutionConfig(frontmatter)
+      }
+
+      override fun resolveTaskTypeConfig(frontmatter: Map<String, Any?>): AutoFixTaskTypeConfig? {
+        return super.resolveTaskTypeConfig(frontmatter)
+      }
+    }
   }
 
   class AutoFixTaskTypeConfig(
