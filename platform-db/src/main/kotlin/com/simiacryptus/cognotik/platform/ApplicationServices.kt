@@ -67,7 +67,7 @@ object ApplicationServices {
 
 open class FileApplicationServices(val rootDir: File) {
 
-  open val dataStorageFactory: DataStorage by lazy {
+  open val dataStorageFactory: StorageInterface by lazy {
     DataStorage(
       dataDir = rootDir.resolve("data"),
       metadataStorage = metadataDB

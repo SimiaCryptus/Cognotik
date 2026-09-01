@@ -27,7 +27,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.
 import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.StorageInterface
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -78,7 +78,7 @@ class FileModificationTaskAction : BaseAction() {
         progress.text = "Setting up session..."
         val session = Session.newUserID()
 
-        DataStorage.userPaths[session] = root
+        StorageInterface.userPaths[session] = root
 
         progress.text = "Starting server..."
         setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)

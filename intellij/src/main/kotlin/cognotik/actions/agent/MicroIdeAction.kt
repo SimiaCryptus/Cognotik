@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -57,7 +57,7 @@ class MicroIdeAction : BaseAction() {
                 val session = Session.newUserID()
                 val selectedFile = e.getSelectedFolder()
                 if (null != selectedFile) {
-                    DataStorage.userPaths[session] = selectedFile.toFile
+                    StorageInterface.userPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
