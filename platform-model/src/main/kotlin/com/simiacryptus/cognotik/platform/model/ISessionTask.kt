@@ -159,7 +159,7 @@ interface ISessionTask {
     image: BufferedImage
   ): StringBuilder?
 
-//  fun newSession(session: Session = Session.newUserID(), appname: String = session.toString()): SocketManager
+  //  fun newSession(session: Session = Session.newUserID(), appname: String = session.toString()): SocketManager
   fun linkedTask(
     label: String,
     renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
@@ -180,5 +180,10 @@ interface ISessionTask {
   fun newTask(showSpinner: Boolean = true, root: Boolean = false): ISessionTask
   fun textInput(handler: Consumer<String>): String
   fun linkToSession(label: String): String
+
+  companion object {
+    val spinner: String = """<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>"""
+
+  }
 
 }

@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.ui
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class Retryable(
@@ -17,14 +16,14 @@ open class Retryable(
 
   open fun init() {
     val tabLabel = label(size)
-    set(tabLabel, SessionTask.spinner)
+    set(tabLabel, ISessionTask.spinner)
     set(tabLabel, process(container))
   }
 
   fun retry() {
     val idx = tabs.size
     val label = label(idx)
-    val content = StringBuilder("Retrying..." + SessionTask.spinner)
+    val content = StringBuilder("Retrying..." + ISessionTask.spinner)
     tabs.add(label to content)
     update()
     val newResult = process(content)

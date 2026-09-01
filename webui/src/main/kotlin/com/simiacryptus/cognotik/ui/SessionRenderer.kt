@@ -1,12 +1,14 @@
-package com.simiacryptus.cognotik.ui.patch
+package com.simiacryptus.cognotik.ui
 
 import com.simiacryptus.cognotik.text.ui.ChangeType
 import com.simiacryptus.cognotik.text.ui.DiffUIRenderer
 import com.simiacryptus.cognotik.text.ui.FileChangeSummary
-import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.platform.model.ISessionTask
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.text.iterator
 
 class SessionRenderer(
   private val task: ISessionTask,
@@ -161,7 +163,7 @@ class SessionRenderer(
   override fun recordPatch(data: Map<String, Any?>): String {
     log.debug("Recording patch data with {} entries", data.size)
     return try {
-      val relativePath = "patch/${java.util.UUID.randomUUID()}.json"
+      val relativePath = "patch/${UUID.randomUUID()}.json"
       val file = task.resolveSystemFile(relativePath)
       if (file == null) {
         log.warn("Could not resolve system file for patch recording: {}", relativePath)
@@ -183,7 +185,7 @@ class SessionRenderer(
   }
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(SessionRenderer::class.java)
+    private val log = LoggerFactory.getLogger(SessionRenderer::class.java)
 
     /** Minimal recursive JSON writer so structured patch data (e.g. trace line lists) round-trips. */
     internal fun toJson(value: Any?, indent: String): String = when (value) {

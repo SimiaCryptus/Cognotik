@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.ChatModel.Companion.ON_USAGE
 import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageListener
@@ -52,6 +53,7 @@ class ChatInterface(
             ON_USAGE(model, usage, user, session, data)
         }
     )
+    fun getChildClient(task: ISessionTask) = getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }
 
     @JsonIgnore
     fun getChildClient(
