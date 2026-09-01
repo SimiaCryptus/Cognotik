@@ -36,6 +36,8 @@ data class ModificationTask<K : DocTaskKind>(
   val taskType: K,
   val message: (File) -> String = { "" },
   val patchProcessor: PatchProcessor? = null,
+  /** Aggregated frontmatter from the documents that contributed to this task. */
+  val frontmatter: Map<String, Any?> = emptyMap(),
 ) {
   /** JSON-compatible per-task-type settings. */
   val typeConfig: Map<String, Any>

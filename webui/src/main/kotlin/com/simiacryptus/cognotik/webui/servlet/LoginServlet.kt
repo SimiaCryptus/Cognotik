@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.AuthenticationInterface.Companion.AUTH_COOKIE
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
@@ -769,11 +769,11 @@ class LoginServlet : HttpServlet() {
         return
       }
 
-      val cookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
-      cookie.path = "/"
-      cookie.maxAge = 60 * 60 * 24 * 7 // 7 days
-      cookie.isHttpOnly = true
-      resp.addCookie(cookie)
+      resp.addCookie(Cookie(AUTH_COOKIE, accessToken).apply {
+        this.path = "/"
+        this.maxAge = 60 * 60 * 24 * 7 // 7 days
+        this.isHttpOnly = true
+      })
 
       log.info("User logged in successfully: {} from remote: {}", username, req.remoteAddr)
       try {
@@ -806,7 +806,7 @@ class LoginServlet : HttpServlet() {
    */
   private fun isAlreadyAuthenticated(req: HttpServletRequest): Boolean {
     return try {
-      val authCookie = req.cookies?.firstOrNull { it.name == AuthenticationInterface.AUTH_COOKIE }
+      val authCookie = req.cookies?.firstOrNull { it.name == AUTH_COOKIE }
       val token = authCookie?.value
       if (token.isNullOrBlank()) return false
       val user = try {
@@ -845,7 +845,7 @@ class LoginServlet : HttpServlet() {
     log.debug("handleLogout target='{}' from remote='{}'", target, req.remoteAddr)
     try {
       // Find the auth cookie (if any) and remove the corresponding user mapping
-      val authCookie = req.cookies?.firstOrNull { it.name == AuthenticationInterface.AUTH_COOKIE }
+      val authCookie = req.cookies?.firstOrNull { it.name == AUTH_COOKIE }
       val token = authCookie?.value
       if (!token.isNullOrBlank()) {
         try {
@@ -867,11 +867,11 @@ class LoginServlet : HttpServlet() {
         log.debug("Logout requested but no auth cookie present from remote: {}", req.remoteAddr)
       }
       // Clear the auth cookie on the client by sending a cookie with maxAge=0
-      val clearCookie = Cookie(AuthenticationInterface.AUTH_COOKIE, "")
-      clearCookie.path = "/"
-      clearCookie.maxAge = 0
-      clearCookie.isHttpOnly = true
-      resp.addCookie(clearCookie)
+      resp.addCookie(Cookie(AUTH_COOKIE, "").apply {
+        this.path = "/"
+        this.maxAge = 0
+        this.isHttpOnly = true
+      })
     } catch (e: Exception) {
       log.error("Error during logout from remote: {}", req.remoteAddr, e)
     }
@@ -1005,11 +1005,11 @@ class LoginServlet : HttpServlet() {
         return
       }
 
-      val cookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
-      cookie.path = "/"
-      cookie.maxAge = 60 * 60 * 24 * 7 // 7 days
-      cookie.isHttpOnly = true
-      resp.addCookie(cookie)
+      resp.addCookie(Cookie(AUTH_COOKIE, accessToken).apply {
+        this.path = "/"
+        this.maxAge = 60 * 60 * 24 * 7 // 7 days
+        this.isHttpOnly = true
+      })
 
       val redirectUrl = if (!target.isNullOrBlank()) {
         try {

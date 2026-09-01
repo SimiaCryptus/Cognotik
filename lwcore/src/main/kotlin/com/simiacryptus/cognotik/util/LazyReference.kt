@@ -4,24 +4,23 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class LazyReference<T>(private val isInitialized: AtomicBoolean, private val initializer: () -> T) {
   @Volatile
-  var value: T? = null
-    get() {
-      if (!isInitialized.get()) {
-        synchronized(this) {
-          if (!isInitialized.get()) {
-            field = initializer()
-          }
-        }
-      }
-      return field!!
-    }
+  private var _value: T? = null
+  var value: T
+    get() = _value ?: construct()
     set(value) {
       require(!isInitialized.get()) { "Cannot set value after initialization" }
       synchronized(this) {
         require(!isInitialized.get()) { "Cannot set value after initialization" }
-        field = value
+        _value = value
       }
     }
 
-  operator fun invoke(): T = value!!
+  private fun construct(): T & Any = synchronized(this) {
+    require(!isInitialized.get()) { "Cannot set value after initialization" }
+    _value = initializer()
+    require(null != _value) { "Initializer returned null" }
+    return _value!!
+  }
+
+  operator fun invoke(): T = value
 }

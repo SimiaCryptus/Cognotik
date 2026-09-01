@@ -199,6 +199,12 @@ class DocProcessor(
       request: DocTaskInferenceRequest<PlatformTaskKind>
     ): Map<String, Any> {
       request.patchProcessor?.apply { harness.processor = this }
+      val resolvedTaskType = request.taskKind.taskType.resolveTaskType(request.frontmatter)
+      val customExecutionConfig = resolvedTaskType.resolveExecutionConfig(request.frontmatter)
+      if (customExecutionConfig != null) {
+        return customExecutionConfig.jsonCast<Map<String, Any>>()
+      }
+      val customTypeConfig = resolvedTaskType.resolveTaskTypeConfig(request.frontmatter)
       val model = chatInterface()
       val (_, taskConfig) = ConversationalMode.requestToTask(
         defaultModel = model,
@@ -207,13 +213,13 @@ class DocProcessor(
         orchestrationConfig = harness.createSettings(
           session = Session.newUserID(),
           autoFix = true,
-          typeConfig = request.typeConfig.toTypeConfig(request.taskKind),
+          typeConfig = customTypeConfig ?: request.typeConfig.toTypeConfig(PlatformTaskKind(resolvedTaskType)),
           workingDir = request.workingDir.toString(),
         ),
         prompt = request.prompt,
         history = request.history,
         singleStage = true,
-        taskTypes = listOf(request.taskKind.taskType)
+        taskTypes = listOf(resolvedTaskType)
       )
       return taskConfig.jsonCast<Map<String, Any>>()
     }
@@ -222,12 +228,16 @@ class DocProcessor(
       request: DocTaskRequest<PlatformTaskKind>,
       callbacks: DocTaskCallbacks<Session>
     ) {
+      val resolvedTaskType = request.taskKind.taskType.resolveTaskType(request.frontmatter)
+      val resolvedTypeConfig = resolvedTaskType.resolveTaskTypeConfig(request.frontmatter)
+        ?: request.typeConfig.toTypeConfig(PlatformTaskKind(resolvedTaskType))
+      val executionConfig = resolvedTaskType.resolveExecutionConfig(request.frontmatter)
+        ?: request.executionConfig.jsonCast(resolvedTaskType.executionConfigClass)
       harness.runTask(
-        taskType = request.taskKind.taskType,
+        taskType = resolvedTaskType,
         timeoutMinutes = request.timeoutMinutes.toLong(),
         message = request.message,
-        executionConfig = request.executionConfig
-          .jsonCast(request.taskKind.taskType.executionConfigClass),
+        executionConfig = executionConfig,
         parentSession = parentSession,
         onComplete = { _: String, task: ISessionTask ->
           callbacks.onCompleted(task.sessionId.toString())
@@ -240,7 +250,7 @@ class DocProcessor(
         harness.createSettings(
           session = session,
           autoFix = autoFix,
-          typeConfig = request.typeConfig.toTypeConfig(request.taskKind),
+          typeConfig = resolvedTypeConfig,
           workingDir = request.workingDir.toString()
         ).apply {
           processor = request.patchProcessor ?: processor

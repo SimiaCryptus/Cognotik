@@ -8,13 +8,9 @@ import com.simiacryptus.cognotik.docops.status.DocStatusStore
 import com.simiacryptus.cognotik.docops.status.TaskStatus
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.Collections
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
+import java.util.*
+import java.util.concurrent.*
 import java.util.concurrent.CompletableFuture.allOf
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -137,17 +133,17 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     sessions: MutableList<S> = mutableListOf(),
   ) {
     val targetKey = targetKeyOf(planned)
-     val task = planned.task
-     /*
-      * The task's own root (the `folder:` override, otherwise the workspace root) is the single
-      * source of truth for path resolution: it is handed to the host as the working directory
-      * *and* used by ExecutionConfigFactory to relativize every path in the execution config.
-      * TaskBuilder already stored it in `data.root`, so there is nothing to rebase here.
-      */
-     val workingDir = task.data.root
-     if (!isSameFile(workingDir, config.root)) {
-       log.info("Task '$targetKey' runs with root override: ${workingDir.absolutePath}")
-     }
+    val task = planned.task
+    /*
+     * The task's own root (the `folder:` override, otherwise the workspace root) is the single
+     * source of truth for path resolution: it is handed to the host as the working directory
+     * *and* used by ExecutionConfigFactory to relativize every path in the execution config.
+     * TaskBuilder already stored it in `data.root`, so there is nothing to rebase here.
+     */
+    val workingDir = task.data.root
+    if (!isSameFile(workingDir, config.root)) {
+      log.info("Task '$targetKey' runs with root override: ${workingDir.absolutePath}")
+    }
     log.info(
       "Preparing task '$targetKey': kind=${task.taskType.name}, workingDir=${workingDir.absolutePath}, " +
           "mainFile=${task.data.main_file?.absolutePath}, relatedFiles=${task.data.related_files?.size ?: 0}, " +
@@ -160,18 +156,19 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
       status.set(targetKey, TaskStatus.CANCELLED)
       throw CancellationException("Execution cancelled")
     }
-       applyPreparation(planned)
+    applyPreparation(planned)
     status.set(targetKey, TaskStatus.RUNNING)
     try {
       ctx.execute(
         DocTaskRequest(
           taskKind = task.taskType,
           message = task.message(),
-           executionConfig = configFactory.build(planned, ctx),
+          executionConfig = configFactory.build(planned, ctx),
           typeConfig = task.typeConfig,
           patchProcessor = task.patchProcessor,
-           workingDir = workingDir,
+          workingDir = workingDir,
           timeoutMinutes = config.taskTimeoutMinutes,
+          frontmatter = task.frontmatter,
         ),
         object : DocTaskCallbacks<S> {
           override fun onSessionStarted(session: S, sessionId: String) {
@@ -214,12 +211,13 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     log.info("Deleting target file before processing: ${target.absolutePath}")
     if (!target.delete()) log.warn("Failed to delete target file: ${target.absolutePath}")
   }
-   private fun isSameFile(a: File, b: File): Boolean = try {
-     a.canonicalPath == b.canonicalPath
-   } catch (e: Exception) {
-     log.warn("Failed to compare paths: ${a.absolutePath} vs ${b.absolutePath}", e)
-     a.absolutePath == b.absolutePath
-   }
+
+  private fun isSameFile(a: File, b: File): Boolean = try {
+    a.canonicalPath == b.canonicalPath
+  } catch (e: Exception) {
+    log.warn("Failed to compare paths: ${a.absolutePath} vs ${b.absolutePath}", e)
+    a.absolutePath == b.absolutePath
+  }
 
 
   companion object {

@@ -58,6 +58,7 @@ package com.simiacryptus.cognotik.docops.exec
                 workingDir = workingDir,
                 patchProcessor = task.patchProcessor,
                 typeConfig = task.typeConfig,
+                frontmatter = task.frontmatter,
               )
             )
             JsonUtil.merge(inferred, overrides ?: emptyMap<String, Any>())

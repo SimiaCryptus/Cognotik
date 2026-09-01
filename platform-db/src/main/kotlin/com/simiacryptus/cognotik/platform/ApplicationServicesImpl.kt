@@ -10,7 +10,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ApplicationServicesImpl : ApplicationServices {
+
   companion object {
+    val log = org.slf4j.LoggerFactory.getLogger(ApplicationServicesImpl::class.java)
     init {
       ApplicationServices.services = ApplicationServicesImpl()
     }
