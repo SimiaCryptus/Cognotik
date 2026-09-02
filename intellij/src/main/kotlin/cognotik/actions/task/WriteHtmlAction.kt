@@ -24,8 +24,10 @@ import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
 import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.StorageInterface
+import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -76,7 +78,7 @@ class WriteHtmlAction : BaseAction() {
         progress.text = "Setting up session..."
         val session = Session.newUserID()
 
-        StorageInterface.userPaths[session] = root
+        DataStorage.userPaths[session] = root
 
         progress.text = "Starting server..."
         setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId))
@@ -310,7 +312,7 @@ class WriteHtmlAction : BaseAction() {
         }
 
         private fun getVisibleModels() =
-          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
+          ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
                   model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()

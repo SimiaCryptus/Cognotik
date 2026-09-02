@@ -9,22 +9,23 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.StorageInterface
+import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -60,7 +61,7 @@ class MultiStepPatchAction : BaseAction() {
                 val session = Session.newUserID()
                 val selectedFile = e.getSelectedFolder()
                 if (null != selectedFile) {
-                    StorageInterface.userPaths[session] = selectedFile.toFile
+                    DataStorage.userPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
@@ -178,7 +179,7 @@ class MultiStepPatchAction : BaseAction() {
         ) {
             val codeFiles = mutableSetOf<Path>()
             val root = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
-                ?.map { it.toFile.toPath() }?.toTypedArray()?.commonRoot()!!
+                ?.map { it.toNioPath().toFile().toPath() }?.toTypedArray()?.commonRoot()!!
             PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.forEach { file ->
 
                 codeFiles.add(root.relativize(file.toNioPath()))
@@ -229,9 +230,9 @@ class MultiStepPatchAction : BaseAction() {
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
-                    description = renderMarkdown(description, ui = task.ui, tabs = false)
+                    description = renderMarkdown(description, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
-                    ApplicationServices.threadPoolManager.getPool(session, user).submit {
+                    ApplicationServices.services!!.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
                       Retryable(task) {
                         try {

@@ -13,7 +13,8 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.event.Level
@@ -132,11 +133,11 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                     apiBase = apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"),
                     logLevel = Level.DEBUG,
                     logStreams = mutableListOf(),
-                    workPool = ApplicationServices.threadPoolManager.getPool(
+                    workPool = ApplicationServicesImpl.threadPoolManager.getPool(
                         currentSession,
                       AppSettingsState.localUser
                     ),
-                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+                    scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
                         currentSession,
                       AppSettingsState.localUser
                     ),

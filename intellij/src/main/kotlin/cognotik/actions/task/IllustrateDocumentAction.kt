@@ -23,9 +23,10 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
 import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.StorageInterface
+import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -63,7 +64,7 @@ class IllustrateDocumentAction : BaseAction() {
                 val taskConfig = dialog.getTaskConfig()
                 val orchestrationConfig = dialog.getOrchestrationConfig()
                 val session = Session.newUserID()
-                StorageInterface.userPaths[session] = root
+                DataStorage.userPaths[session] = root
                 UITools.runAsync(e.project, "Initializing Document Illustration Task", true) { progress ->
                     initializeTask(progress, orchestrationConfig, taskConfig, session)
                 }

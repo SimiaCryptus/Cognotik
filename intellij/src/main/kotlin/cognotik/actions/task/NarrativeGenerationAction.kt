@@ -25,8 +25,10 @@ import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.StorageInterface
+import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -80,7 +82,7 @@ class NarrativeGenerationAction : BaseAction() {
         progress.text = "Setting up session..."
         val session = Session.newUserID()
 
-        StorageInterface.userPaths[session] = root
+        DataStorage.userPaths[session] = root
 
         progress.text = "Starting server..."
         setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
@@ -429,7 +431,7 @@ class NarrativeGenerationAction : BaseAction() {
         }
 
         private fun getVisibleModels() =
-          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
+          ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                     model.provider == apiData.provider &&
                             model.modelId?.isNotBlank() == true &&

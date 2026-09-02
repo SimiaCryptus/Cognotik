@@ -1,5 +1,5 @@
 {
-  "lastUpdated" : "2026-08-23T13:26:14.867631466Z",
+  "lastUpdated" : "2026-09-02T00:34:24.611121860Z",
   "tasks" : {
     "docs/site/menu/devtools.json" : {
       "target" : "docs/site/menu/devtools.json",
@@ -216,6 +216,13 @@
       "sessionId" : "U-20260823-hqaU7rBA",
       "startedAt" : "2026-08-23T13:26:03.206262053Z",
       "completedAt" : "2026-08-23T13:26:14.867631466Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/ZAIModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/ZAIModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260901-ax2g8zuo",
+      "startedAt" : "2026-09-02T00:34:18.125530645Z",
+      "completedAt" : "2026-09-02T00:34:24.611121860Z"
     }
   }
 }

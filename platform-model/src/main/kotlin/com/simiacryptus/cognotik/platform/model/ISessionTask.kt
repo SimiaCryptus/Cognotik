@@ -180,6 +180,7 @@ interface ISessionTask {
   fun newTask(showSpinner: Boolean = true, root: Boolean = false): ISessionTask
   fun textInput(handler: Consumer<String>): String
   fun linkToSession(label: String): String
+  fun newSession() = Session.newUserID()
 
   companion object {
     val spinner: String = """<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>"""

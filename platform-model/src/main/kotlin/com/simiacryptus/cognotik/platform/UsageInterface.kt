@@ -29,7 +29,7 @@ interface UsageInterface {
    * @param user The user whose usage summary is to be retrieved
    * @param from Inclusive start date (UTC day)
    * @param to   Exclusive end date (UTC day)
-   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.models.ModelSchema.Usage] objects
+   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.platform.model.ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model the user has used
    */
 
@@ -41,7 +41,7 @@ interface UsageInterface {
    * Session-scoped queries are not bounded by date.
    *
    * @param session The session whose usage summary is to be retrieved
-   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.models.ModelSchema.Usage] objects
+   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.platform.model.ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model used in the session
    */
   fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage>

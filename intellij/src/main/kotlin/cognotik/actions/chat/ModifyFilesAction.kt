@@ -6,13 +6,13 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream

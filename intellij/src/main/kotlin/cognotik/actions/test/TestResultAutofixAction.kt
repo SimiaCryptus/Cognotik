@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
