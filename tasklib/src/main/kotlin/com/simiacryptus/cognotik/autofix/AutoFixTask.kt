@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.autofix
 
 import com.simiacryptus.cognotik.autofix.AutoFixTask.AutoFixTaskTypeConfig
-import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.docops.plan.defaultTargetResolvers
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -10,12 +10,12 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.resolveTool
-import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
@@ -44,11 +44,33 @@ class AutoFixTask(
           "</ul>",
     ) {
       override fun resolveExecutionConfig(frontmatter: Map<String, Any?>): AutoFixTaskExecutionConfigData? {
-        return super.resolveExecutionConfig(frontmatter)
-      }
-
-      override fun resolveTaskTypeConfig(frontmatter: Map<String, Any?>): AutoFixTaskTypeConfig? {
-        return super.resolveTaskTypeConfig(frontmatter)
+        val commands = (frontmatter["commands"] as? List<Map<String, Any?>>)?.map { cmdMap ->
+          CommandWithWorkingDir(
+            executable = cmdMap["executable"]?.toString() ?: "",
+            arguments = (cmdMap["arguments"] as? List<*>)?.mapNotNull { it?.toString() }?.toMutableList()
+              ?: mutableListOf(),
+            working_dir = cmdMap["working_dir"]?.toString()
+          )
+        }?.toMutableList() ?: frontmatter["command"]?.let {
+          val command = it.toString().split(' ')
+          listOf(
+            CommandWithWorkingDir(
+              executable = command.getOrNull(0) ?: "",
+              arguments = command.drop(1).toMutableList(),
+              working_dir = frontmatter["folder"] as? String
+            )
+          )
+        }
+        val taskDescription = frontmatter["description"]?.toString()
+        val outputFile = (frontmatter["log"] ?: frontmatter["specifies"])?.toString() ?: ""
+        return AutoFixTaskExecutionConfigData(
+          commands = (commands ?: emptyList()).toMutableList(),
+          task_description = taskDescription,
+          task_dependencies = null,
+          state = null
+        ).apply {
+          main_file = outputFile
+        }
       }
     }
   }
@@ -90,7 +112,7 @@ class AutoFixTask(
     @Description("The relative path of the working directory for this command, relative to the project root. Null means the project root.")
     var working_dir: String? = null
   ) : ValidatedObject {
-    override fun validate(): String ? {
+    override fun validate(): String? {
       if (executable.isBlank()) {
         return "command must not be empty"
       }
@@ -137,7 +159,7 @@ class AutoFixTask(
                   val alias = (listOf(commandWithDir.executable) + commandWithDir.arguments).firstOrNull()
                   PatchApp.CommandSettings(
                     executable = alias?.resolveTool(this.root)
-                    ?: throw IllegalArgumentException("Command not found: $alias"),
+                      ?: throw IllegalArgumentException("Command not found: $alias"),
                     arguments = (listOf(commandWithDir.executable) + commandWithDir.arguments).drop(1)
                       .joinToString(" "),
                     workingDirectory = ((commandWithDir.working_dir
@@ -163,7 +185,7 @@ class AutoFixTask(
                   result.exitCode == 0 -> {
                     transcript?.write("## Result: Success\n\nAll commands executed successfully with exit code 0.\n".toByteArray())
                     result.output.ifBlank { null }?.apply {
-                      transcript?.write("\n### Command Output\n```\n${this.truncateMiddle(5*1024)}\n```\n".toByteArray())
+                      transcript?.write("\n### Command Output\n```\n${this.truncateMiddle(5 * 1024)}\n```\n".toByteArray())
                     }
                     transcript?.write("</div>\n\n".toByteArray())
                     if (orchestrationConfig.autoFix) {
@@ -187,7 +209,7 @@ class AutoFixTask(
                     log.warn("Command failed with exit code $result")
                     transcript?.write("## Result: Failed\n\nCommands failed with exit code $result.\n".toByteArray())
                     result.output.ifBlank { null }?.apply {
-                      transcript?.write("\n### Command Output\n```\n${this.truncateMiddle(5*1024)}\n```\n".toByteArray())
+                      transcript?.write("\n### Command Output\n```\n${this.truncateMiddle(5 * 1024)}\n```\n".toByteArray())
                     }
                     transcript?.write("</div>\n\n".toByteArray())
                     subTask.add(

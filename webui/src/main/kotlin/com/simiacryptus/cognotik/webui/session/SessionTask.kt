@@ -327,7 +327,7 @@ Stack Trace:
     label: String,
     renderFn: (String) -> String,
   ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
-    val newSession = newSession(sessionId, appname = label)
+    val newSession = newSession(Session.newUserID(), appname = label)
     val task = newSession.newTask()
     val linkToSession = task.linkToSession(label)
     val str = renderFn(linkToSession)
