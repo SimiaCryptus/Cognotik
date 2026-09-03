@@ -543,7 +543,7 @@ object GeminiModels {
       TokenTypes.Cached to 0.000025,
     ),
     supportsReasoning = true,
-    deprecated = true,
+    deprecated = true, // Shut down per Gemini deprecations page
     inputModalities = setOf(
       ChatMessageModality.TEXT,
       ChatMessageModality.IMAGE,
@@ -678,6 +678,29 @@ object GeminiModels {
   // =========================================================
   // Gemini 3.7 Flash - latest, most capable Flash model
   // =========================================================
+  @JvmStatic
+  val GeminiFlash_38 = ChatModel(
+    name = "GeminiFlash_38",
+    modelId = "gemini-3.8-flash",
+    maxTotalTokens = 1048576,
+    maxOutTokens = 65536,
+    provider = CoreProviders.Gemini,
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to 0.00075,    // $0.75/1M through Dec 31, 2026
+      TokenTypes.Completion to 0.00375, // $3.75/1M (including thinking tokens)
+      TokenTypes.Thinking to 0.00375,
+      TokenTypes.Cached to 0.000075,   // $0.075/1M cached input
+    ),
+    supportsReasoning = true,
+    inputModalities = setOf(
+      ChatMessageModality.TEXT,
+      ChatMessageModality.IMAGE,
+      ChatMessageModality.AUDIO,
+      ChatMessageModality.VIDEO
+    ),
+    outputModalities = setOf(ChatMessageModality.TEXT)
+  )
+
   @JvmStatic
   val GeminiFlash_37 = ChatModel(
     name = "GeminiFlash_37",
@@ -980,6 +1003,7 @@ object GeminiModels {
     "GeminiFlash_31_Live_Preview" to GeminiFlash_31_Live_Preview,
     "GeminiFlash_31_TTS_Preview" to GeminiFlash_31_TTS_Preview,
     // 3.5 / 3.6 models
+    "GeminiFlash_38" to GeminiFlash_38,
     "GeminiFlash_37" to GeminiFlash_37,
     "GeminiFlash_36" to GeminiFlash_36,
     "GeminiFlash_35" to GeminiFlash_35,
