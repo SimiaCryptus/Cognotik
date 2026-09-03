@@ -343,6 +343,51 @@ object AnthropicModels {
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
   )
+  @JvmStatic
+  val ClaudeFable51 = ChatModel(
+    name = "Claude Fable 5.1",
+    modelId = "claude-fable-5-1",
+    maxTotalTokens = 1000000,
+    maxOutTokens = 128000,
+    provider = CoreProviders.Anthropic,
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to 10.0 / 1000.0,
+      TokenTypes.Completion to 50.0 / 1000.0,
+      TokenTypes.CacheWrite5m to 12.50 / 1000.0,
+      TokenTypes.CacheWrite1h to 20.0 / 1000.0,
+      // Cache hits/refreshes on Fable 5.1 & Mythos 5.1 use a 0.025x multiplier
+      // instead of the standard 0.1x multiplier used by other models.
+      TokenTypes.Cached to 0.25 / 1000.0,
+      TokenTypes.Thinking to 50.0 / 1000.0,
+    ),
+    supportsTemperature = false,
+    supportsReasoning = true,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
+  )
+  @JvmStatic
+  val ClaudeMythos51 = ChatModel(
+    name = "Claude Mythos 5.1",
+    modelId = "claude-mythos-5-1",
+    maxTotalTokens = 1000000,
+    maxOutTokens = 128000,
+    provider = CoreProviders.Anthropic,
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to 10.0 / 1000.0,
+      TokenTypes.Completion to 50.0 / 1000.0,
+      TokenTypes.CacheWrite5m to 12.50 / 1000.0,
+      TokenTypes.CacheWrite1h to 20.0 / 1000.0,
+      // Cache hits/refreshes on Fable 5.1 & Mythos 5.1 use a 0.025x multiplier
+      // instead of the standard 0.1x multiplier used by other models.
+      TokenTypes.Cached to 0.25 / 1000.0,
+      TokenTypes.Thinking to 50.0 / 1000.0,
+    ),
+    supportsTemperature = false,
+    supportsReasoning = true,
+    deprecated = true, // Limited availability
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
+  )
 
 
   @JvmStatic
@@ -364,6 +409,8 @@ object AnthropicModels {
     "Claude5Opus" to Claude5Opus,
     "ClaudeFable5" to ClaudeFable5,
     "ClaudeMythos5" to ClaudeMythos5,
+    "ClaudeFable51" to ClaudeFable51,
+    "ClaudeMythos51" to ClaudeMythos51,
   )
 
 }
