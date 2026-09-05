@@ -1,12 +1,6 @@
 package com.simiacryptus.cognotik.fileserver
-import com.simiacryptus.cognotik.platform.model.User
 
-import com.simiacryptus.cognotik.fileserver.handler.FsApiConfig
-import com.simiacryptus.cognotik.fileserver.handler.FsApiHandler
-import com.simiacryptus.cognotik.fileserver.handler.FsApiRoute
-import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
-import com.simiacryptus.cognotik.fileserver.handler.FsErrors
-import com.simiacryptus.cognotik.fileserver.handler.FsException
+import com.simiacryptus.cognotik.fileserver.handler.*
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -53,6 +47,7 @@ abstract class FilesystemServlet : FileServlet() {
    * override this instead of intercepting `.git/api/` paths themselves.
    */
   open val git: GitProvider? = null
+
   /**
    * The directory that FS API paths are resolved against — the Node-visible
    * filesystem root. Defaults to the same directory the HTML browser serves.
@@ -63,15 +58,6 @@ abstract class FilesystemServlet : FileServlet() {
   open fun getFsApiConfig(req: HttpServletRequest): FsApiConfig = FsApiConfig(
     execAllowlist = if (isGitEnabled(req)) mapOf("git" to GIT_SUBCOMMANDS) else emptyMap()
   )
-   /**
-    * The config actually enforced for this request. An unidentified caller is
-    * always downgraded to the read-only view, so `/meta` never advertises a
-    * capability that [isWriteAllowed] would then refuse.
-    */
-   protected fun effectiveFsApiConfig(req: HttpServletRequest, user: User?): FsApiConfig {
-     val base = getFsApiConfig(req)
-     return if (isWriteAllowed(user, req)) base else base.readOnlyView()
-   }
 
 
   /** Set to false to serve the classic v1 surface only. */
@@ -93,35 +79,14 @@ abstract class FilesystemServlet : FileServlet() {
       super.service(req, resp)
       return
     }
-    if (!isFsApiEnabled(req)) {
-      FsErrors.write(resp, FsException(FsErrorCode.ENOSYS, "fsapi", null, "FS API is disabled for this mount"))
-      return
-    }
-    if (route.version != FsApiHandler.API_VERSION) {
-      FsErrors.write(
-        resp,
-        FsException(
-          FsErrorCode.ENOSYS, "fsapi", null,
-          "unsupported FS API version '${route.version}' (server speaks v${FsApiHandler.API_VERSION})"
-        )
-      )
-      return
-    }
-    val method = (req.method ?: "GET").uppercase()
-     val user = getUser(req, resp)
-     val writeAllowed = isWriteAllowed(user, req)
-     log.debug("FS API {} /{} (prefix='{}', user='{}')", method, route.op, route.prefix, user?.email ?: "anonymous")
     val root = try {
-      getFsApiRoot(req, resp)
+      this@FilesystemServlet.getFsApiRoot(req, resp)
     } catch (e: Exception) {
       log.warn("Failed to resolve FS API root", e)
       null
     }
-    if (resp.isCommitted) return
-     FsApiHandler.handle(
-       method, route.op, req, resp, root,
-       effectiveFsApiConfig(req, user), user, writeAllowed
-     )
+    val config = getFsApiConfig(req)
+    fsService(req, resp, route, root, config, this.isFsApiEnabled(req))
   }
 
   companion object {
@@ -139,5 +104,40 @@ abstract class FilesystemServlet : FileServlet() {
       /* submodule support (network fetches are still bounded by GIT_TERMINAL_PROMPT=0) */
       "submodule", "remote"
     )
+    private fun fsService(
+      req: HttpServletRequest, resp: HttpServletResponse,
+      route: FsApiRoute,
+      root: File?,
+      config: FsApiConfig = FsApiConfig(),
+      enableFsAPI: Boolean = true
+    ) {
+      val config = config.let {
+        if (isWriteAllowed(getUser(req, resp), req)) it else it.readOnlyView()
+      }
+      if (!enableFsAPI) {
+        FsErrors.write(resp, FsException(FsErrorCode.ENOSYS, "fsapi", null, "FS API is disabled for this mount"))
+        return
+      }
+      if (route.version != FsApiHandler.API_VERSION) {
+        FsErrors.write(
+          resp,
+          FsException(
+            FsErrorCode.ENOSYS, "fsapi", null,
+            "unsupported FS API version '${route.version}' (server speaks v${FsApiHandler.API_VERSION})"
+          )
+        )
+        return
+      }
+      val method = (req.method ?: "GET").uppercase()
+      val user = getUser(req, resp)
+      val op = route.op
+      val writeAllowed = isWriteAllowed(user, req)
+      if (resp.isCommitted) return
+      log.debug("FS API {} /{} (prefix='{}', user='{}')", method, op, route.prefix, user?.email ?: "anonymous")
+      FsApiHandler.handle(
+        method, op, req, resp, root,
+        config, user, writeAllowed
+      )
+    }
   }
 }

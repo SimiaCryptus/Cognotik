@@ -458,10 +458,9 @@ object FileServerCli {
     if (extractUtilsEnabled) {
       ExtractUtilsFsAction.install(
         ExtractUtilsFsAction.Config(
-          root = { taskRoot },
           readOnly = readOnly,
           defaultDir = utilDir,
-        )
+        ) { taskRoot }
       )
     }
     /* One selection, every toolchain: re-bind whatever is installed when it changes. */

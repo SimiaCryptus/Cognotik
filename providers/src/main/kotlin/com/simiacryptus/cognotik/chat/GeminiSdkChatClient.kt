@@ -215,7 +215,10 @@ class GeminiSdkChatClient(
         throw e
       }
       val elapsed = System.currentTimeMillis() - startTime
-      log.debug("Request {}: Gemini API responded in {} ms", requestID, elapsed)
+      when (response.finishReason().toString()) {
+        "MALFORMED_FUNCTION_CALL" -> throw IllegalStateException("Gemini API returned MALFORMED_FUNCTION_CALL for request $requestID")
+        else -> log.debug("Request {}: Gemini API responded in {} ms with finish reason {}", requestID, elapsed, response.finishReason())
+      }
       // Log response
       log(
         "\n<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n\n${

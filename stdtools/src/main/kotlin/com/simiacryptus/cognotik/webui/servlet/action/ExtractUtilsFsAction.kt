@@ -61,8 +61,6 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
 
       data class Config(
-        /** Project root for the request (served dir, `--task-root`, or session dir). */
-        val root: (FsActionContext) -> File,
         val readOnly: Boolean = false,
         /** Default value of `?dir=`; must stay inside the root. */
         val defaultDir: String = DEFAULT_DIR,
@@ -70,6 +68,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
         val resourcePath: String = ResourceExtractor.UTIL_RESOURCE_PATH,
         /** Where to read the resources from (never the workspace). */
         val classLoader: ClassLoader = ExtractUtilsFsAction::class.java.classLoader,
+        /** Project root for the request (served dir, `--task-root`, or session dir). */
+        val root: (FsActionContext) -> File,
       )
 
       @Volatile
