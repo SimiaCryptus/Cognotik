@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.fileserver.action.FsActionContext
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
@@ -15,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
   * The selection is **per-user persistent state and nothing else**: it is read from and
   * written to `UserSettings.smartModel` / `UserSettings.fastModel` through
-  * [ApplicationServices.fileApplicationServices]'s `userSettingsManager`, so
+  * [ApplicationServicesImpl.fileApplicationServices]'s `userSettingsManager`, so
  *
  *  * two users of the same app server no longer overwrite each other's choice,
  *  * the choice outlives a restart, and
@@ -34,7 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
  * ### User scoping
  * Both *availability* (API keys) and now *selection* are per-user, resolved from the
- * [FsActionContext] of the request being served: on a session-backed app server that
+ * [com.simiacryptus.cognotik.fileserver.action.FsActionContext] of the request being served: on a session-backed app server that
  * is the authenticated caller (see [SessionFsRoots.userOf]), on a local mount it is
  * the fixed owner. `null` means "no request in scope" (start-up, CLI) and falls back
  * to the default user.
@@ -51,7 +52,7 @@ object ModelSelection {
   /** Enumerating provider models costs a network round trip, so it is cached per user. */
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
-  private fun settingsManager() = ApplicationServices.fileApplicationServices().userSettingsManager
+  private fun settingsManager() = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
 
   /**
     * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call

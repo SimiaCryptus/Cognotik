@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
@@ -72,7 +72,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -134,7 +134,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
       val response = chatAgent.answer(listOf(prompt))
 
       tabbedDisplay.newTask("Result").apply {
-        add(MarkdownUtil.renderMarkdown(response, ui = task.ui))
+        add(MarkdownUtil.renderMarkdown(response))
         transcriptStream?.write("\n\n## Analysis Result\n\n$response".toByteArray(StandardCharsets.UTF_8))
       }
 
@@ -146,7 +146,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
         task.safeComplete("Analysis complete. <a href='$link' target='_blank'>View Transcript</a>", log)
         resultFn(response)
       } else {
-        val acceptLink = task.ui.hrefLink("Accept Result", "btn btn-success") {
+        val acceptLink = task.hrefLink("Accept Result", "btn btn-success") {
           val (link, _) = task.createFile("invariant_analysis_transcript.md")
           task.complete("Analysis accepted. <a href='$link' target='_blank'>View Transcript</a>")
           resultFn(response)

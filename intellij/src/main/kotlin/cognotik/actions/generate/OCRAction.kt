@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.RenderableDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.UITools
 import java.io.File
 

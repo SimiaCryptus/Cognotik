@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.describe
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.common.reflect.TypeToken
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.describe.DescriptorUtil.componentType
 import com.simiacryptus.cognotik.describe.DescriptorUtil.isArray
 import com.simiacryptus.cognotik.describe.DescriptorUtil.resolveGenericType

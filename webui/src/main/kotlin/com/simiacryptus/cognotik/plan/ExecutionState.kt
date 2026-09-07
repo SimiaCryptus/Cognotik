@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.util.concurrent.Future
 
 data class ExecutionState(
@@ -13,5 +13,5 @@ data class ExecutionState(
   val taskResult: MutableMap<String, String> = mutableMapOf(),
   val completedTasks: MutableList<String> = mutableListOf(),
   val taskFutures: MutableMap<String, Future<*>> = mutableMapOf(),
-  val uitaskMap: MutableMap<String, SessionTask> = mutableMapOf()
+  val uitaskMap: MutableMap<String, ISessionTask> = mutableMapOf()
 )

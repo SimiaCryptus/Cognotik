@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.chat.model.ChatMessageModality
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
 import com.simiacryptus.cognotik.docops.status.TaskStatus
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.Session
@@ -255,7 +255,7 @@ object DocOpsCli {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      ApplicationServices.pluginManager.getLoadedPlugins()
+      ApplicationServicesImpl.pluginManager.getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }
@@ -623,14 +623,14 @@ object DocOpsCli {
 fun ApiChatModel.instance(
   user: User,
   session: Session = globalID,
-  service: ExecutorService = ApplicationServices.threadPoolManager.getPool(session, user),
+  service: ExecutorService = ApplicationServicesImpl.threadPoolManager.getPool(session, user),
   temperature: Double = 0.1
 ) = model?.instance(
   key = when (provider?.key) {
     null -> null
     "NONE".encrypt -> null
     else -> provider?.key
-  } ?: ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
+  } ?: ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
     it.firstOrNull { it.provider == this.provider }?.key
       ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
       ?: throw IllegalStateException("No API key configured for model $model")
@@ -639,7 +639,7 @@ fun ApiChatModel.instance(
   ?: throw IllegalStateException("No API base configured for model $model"),
   workPool = service,
   temperature = temperature,
-  scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
+  scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(session, user),
   session = session,
   user = user,
 )

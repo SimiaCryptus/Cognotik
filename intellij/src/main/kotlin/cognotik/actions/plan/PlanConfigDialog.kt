@@ -8,10 +8,10 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.models.AIModel
+import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
@@ -21,6 +21,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
@@ -331,7 +332,7 @@ open class PlanConfigDialog(
     }
 
     private fun getVisibleModels(): List<ChatModel> =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
+        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                 model.provider == apiData.provider && model.modelId.isNotBlank() && isVisible(model)
             }?.filter { !it.deprecated } ?: listOf()
@@ -644,7 +645,7 @@ open class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
         fun isVisible(chatModel: AIModel) =
-          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis
+            ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis
               .filter { it.key?.decrypt != null }
                 .any { it.provider == chatModel.provider }
     }

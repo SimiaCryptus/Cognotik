@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.ui
 
-import com.simiacryptus.cognotik.models.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class Discussable<T : Any>(
-  private val task: SessionTask,
+  private val task: ISessionTask,
   private val userMessage: () -> String,
   private val initialResponse: (String) -> T,
   private val outputFn: (T) -> String,
@@ -31,8 +31,8 @@ ${
       }
     }
 ${
-      task.ui.hrefLink("♻") {
-        val newTask = task.ui.newTask(blocking)
+      task.hrefLink("♻") {
+        val newTask = task.newTask(blocking)
         val header = newTask.header("Retrying...", 4)
         val idx: Int = size
         this.set(label(idx), newTask.placeholder)
@@ -48,7 +48,7 @@ ${
   }
   private val acceptGuard = AtomicBoolean(blocking)
 
-  private fun main(tabIndex: Int, task: SessionTask) {
+  private fun main(tabIndex: Int, task: ISessionTask) {
     log.info("Starting main function for tabIndex: $tabIndex")
     try {
       val history = mutableListOf<Pair<String, Role>>()
@@ -67,7 +67,7 @@ ${
     } catch (e: Throwable) {
       log.error("Error in discussable", e)
       task.error(e)
-      task.complete(task.ui.hrefLink("🔄 Retry") {
+      task.complete(task.hrefLink("🔄 Retry") {
         main(tabIndex = tabIndex, task = task)
       })
     }
@@ -78,8 +78,8 @@ ${
     tabContent: StringBuilder,
     design: T,
     history: List<Pair<String, Role>>,
-    task: SessionTask,
-  ) = task.ui.newTask(blocking).apply {
+    task: ISessionTask,
+  ) = task.newTask(blocking).apply {
     log.info("Creating feedback form for tabIndex: $tabIndex")
     val feedbackSB = add("<div />")!!
     feedbackSB.clear()
@@ -99,7 +99,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     tabContent: StringBuilder,
     design: T,
     feedbackSB: StringBuilder,
-    feedbackTask: SessionTask,
+    feedbackTask: ISessionTask,
   ) = task.hrefLink("Accept", classname = "href-link cmd-button") {
     log.info("Accept link clicked for tabIndex: $tabIndex")
     accept(tabIndex, tabContent, design)
@@ -110,12 +110,12 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
   private fun textInput(
     tabContent: StringBuilder,
     history: List<Pair<String, Role>>,
-    task: SessionTask,
+    task: ISessionTask,
     feedbackSB: StringBuilder,
-    feedbackTask: SessionTask,
+    feedbackTask: ISessionTask,
   ): String {
     val feedbackGuard = AtomicBoolean(blocking)
-    return task.ui.textInput { userResponse ->
+    return task.textInput { userResponse ->
       log.info("User response received: $userResponse")
       if (feedbackGuard.getAndSet(true)) return@textInput
       val prev = feedbackSB.toString()
@@ -139,7 +139,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     tabContent: StringBuilder,
     userResponse: String,
     history: List<Pair<String, Role>>,
-    task: SessionTask,
+    task: ISessionTask,
   ) {
     log.info("Processing feedback for user response: $userResponse")
     var history = history
@@ -153,7 +153,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     tabs.update()
     val newDesign = reviseResponse(history)
     log.info("Revised design: $newDesign")
-    val newTask = task.ui.newTask(root = blocking)
+    val newTask = task.newTask(root = blocking)
     tabContent.set(newValue + "\n" + newTask.placeholder)
     tabs.update()
     stringBuilder?.clear()
@@ -195,7 +195,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
 
       if (heading.isNotBlank()) task.echo(heading)
       val idx = tabs.size
-      val newTask = task.ui.newTask(blocking)
+      val newTask = task.newTask(blocking)
       val header = newTask.header("Processing...", 4)
       tabs[tabs.label(idx)] = newTask.placeholder
       try {

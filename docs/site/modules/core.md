@@ -21,7 +21,7 @@ backend without rewriting business logic.
     - `ParsedActor` — structured data extraction from model responses
     - `LargeOutputActor` — iterative generation and refinement of long-form content
     - `TextToSpeechActor` — text-to-speech conversion
-- **Session and state management** via `ApplicationServices`, `Session`, and `ClientManager`, so multi-user,
+- **Session and state management** via `ApplicationServicesImpl`, `Session`, and `ClientManager`, so multi-user,
   multi-session applications work out of the box.
 - **Pluggable storage** — file-based `DataStorage` and metadata storage, with an HSQL-backed implementation included
   and a `StorageInterface` for bringing your own.

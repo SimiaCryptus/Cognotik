@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.agents
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 
 abstract class BaseAgent<I, R>(
   open val prompt: String,

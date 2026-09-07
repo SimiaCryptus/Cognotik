@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.images
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedImageAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -12,8 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -94,7 +93,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -116,7 +115,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     val logTab = tabs.newTask("Progress")
     val semaphore = Semaphore(0)
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         task.header("Starting Segmented Generation: $outputFile", level = 2)
         val configInfo = buildString {
@@ -431,7 +430,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
           task.safeComplete(completionMsg.renderMarkdown(), log)
           resultFn(completionMsg)
         } else {
-          val footer = acceptButtonFooter(task.ui) {
+          val footer = acceptButtonFooter(task) {
             task.complete()
             semaphore.release()
           }
@@ -451,13 +450,13 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     }
   }
 
-  private fun saveImage(image: BufferedImage, name: String, task: SessionTask): String {
+  private fun saveImage(image: BufferedImage, name: String, task: ISessionTask): String {
     val file = root.resolve(name)
     ImageIO.write(image, executionConfig?.extension, file.toFile())
     return task.linkTo(name)
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
 

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -71,7 +71,7 @@ class ImageGenerationTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -91,7 +91,7 @@ class ImageGenerationTask(
       val previewTask = tabs.newTask("Preview")
       val promptTask = tabs.newTask("Prompt")
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           log.info("Starting image generation for $imageOutputFile")
           previewTask.header("Generating Image: $imageOutputFile", level = 2)
@@ -176,7 +176,7 @@ class ImageGenerationTask(
             saveAction()
           } else {
             previewTask.add("Image generated. Click below to save to workspace.".renderMarkdown())
-            previewTask.add(acceptButtonFooter(task.ui) {
+            previewTask.add(acceptButtonFooter(task) {
               saveAction()
             })
           }

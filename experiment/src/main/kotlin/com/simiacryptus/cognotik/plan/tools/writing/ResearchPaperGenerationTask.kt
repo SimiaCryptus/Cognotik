@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -15,8 +15,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
@@ -362,7 +361,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -410,7 +409,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
       return
     }
 
-    val api = defaultSmart ?: return
+    val api = defaultSmart
 
     val tabs = TabbedDisplay(task)
 
@@ -526,7 +525,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
       val analysisAgent = ChatAgent(
 
 
-        prompt = typeConfig!!.analysisPrompt.replace("{research_topic}", researchTopic)
+        prompt = typeConfig.analysisPrompt.replace("{research_topic}", researchTopic)
           .replace("{paper_type}", executionConfig.paper_type)
           .replace("{academic_level}", executionConfig.academic_level)
           .replace("{context}", analysisContextStr),
@@ -655,7 +654,6 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
       log.info("Phase 3: Generating paper sections")
       val generatedSections = mutableListOf<GeneratedSection>()
       var cumulativeWordCount = 0
-      val allCitations = mutableListOf<Citation>()
 
       outline.sections.forEachIndexed { index, sectionOutline ->
         log.info("Generating section ${index + 1}/${outline.sections.size}: ${sectionOutline.title}")
@@ -1113,7 +1111,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
       } else {
         finalTask.add(
           MarkdownUtil.renderMarkdown(
-            acceptButtonFooter(task.ui) {
+            acceptButtonFooter(task) {
               try {
                 task.safeComplete(
                   "Research paper generation accepted: $cumulativeWordCount words",
@@ -1125,7 +1123,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 task.error(e)
                 resultFn("ERROR: ${e.message}")
               }
-            }, ui = task.ui
+            }
           )
         )
       }
@@ -1249,7 +1247,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
     }
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Save Research Paper") {
       fn()
     }

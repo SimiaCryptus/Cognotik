@@ -89,7 +89,7 @@ chained in a plan.
 1. **Initialization**
     - `validate()` checks `search_pattern` is non-blank and `context_lines >= 0`; nested validation is delegated via
       `ValidatedObject.validateFields`.
-    - Task header is rendered; work is submitted to `task.ui.pool` for async execution.
+    - Task header is rendered; work is submitted to `task.pool` for async execution.
 2. **Execution**
     - Compiles the pattern (`Pattern.quote` wraps substrings; regex used as-is for `is_regex = true`).
     - For each `input_files` glob, walks the filesystem via `FileSelectionUtils.filteredWalk`, respecting

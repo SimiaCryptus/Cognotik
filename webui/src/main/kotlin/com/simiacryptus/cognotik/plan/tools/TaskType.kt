@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.util.*
 
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)
-class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
+open class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
   name: String,
   val category: String,
   val taskClass: Class<out AbstractTask<out T, out U>>,
@@ -118,6 +118,16 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         method.newInstance(settings, task) as AbstractTask<T, U>
       }
     }
+  /**
+   * Override to derive a different task type from aggregated frontmatter.
+   * The default implementation returns this task type.
+   */
+  open fun resolveTaskType(frontmatter: Map<String, Any?>): TaskType<*, *> = this
+  /** Override to produce a task execution config from frontmatter, or return null to use standard inference. */
+  open fun resolveExecutionConfig(frontmatter: Map<String, Any?>): T? = null
+  /** Override to produce task type settings from frontmatter, or return null to use standard settings. */
+  open fun resolveTaskTypeConfig(frontmatter: Map<String, Any?>): U? = null
+
 
 }
 

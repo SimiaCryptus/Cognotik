@@ -14,17 +14,18 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.text.ui.InMemoryFileSystem
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Paths
@@ -116,7 +117,7 @@ class DiffChatAction : BaseAction() {
             filename = filename,
             model = AppSettingsState.instance.smartChatClient,
             fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
+            storage = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
         ) {
             override val systemPrompt: String
                 @Language("Markdown")
@@ -132,7 +133,7 @@ class DiffChatAction : BaseAction() {
 
                 """.trimIndent() + AppSettingsState.instance.processor.patchFormatPrompt
 
-            override fun renderResponse(response: String, task: SessionTask): String = """<div>${
+            override fun renderResponse(response: String, task: ISessionTask): String = """<div>${
                 renderMarkdown(response, tabs=true) {
                   val virtualFs = InMemoryFileSystem()
                   val virtualRoot = Paths.get("/virtual")

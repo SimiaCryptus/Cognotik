@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -25,7 +25,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.session.ServerlessSocketManager
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.server.Server
 import org.slf4j.LoggerFactory.getLogger
@@ -80,7 +80,7 @@ open class UnifiedHarness(
     }
     if (jettyServer == null) {
       appServer = CognotikAppServer(
-        localName = "localhost",
+        hostInterface = "localhost",
         port = port
       )
       jettyServer = appServer?.start()
@@ -130,9 +130,9 @@ open class UnifiedHarness(
       showMenubar = showMenubar,
       useExpansionSyntax = true
     ) {
-      override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+      override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
+        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         super.onComplete(mode, task)
       }
@@ -224,7 +224,7 @@ open class UnifiedHarness(
     message: String = "Execute task",
     executionConfig: TaskExecutionConfig,
     parentSession: Session? = null,
-    onComplete: (result: String, task: SessionTask) -> Unit = { _, _ -> },
+    onComplete: (result: String, task: ISessionTask) -> Unit = { _, _ -> },
     onError: (Throwable) -> Unit = { _ -> },
     initSettings: (Session) -> OrchestrationConfig
   ): Session {
@@ -244,10 +244,10 @@ open class UnifiedHarness(
 
       override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
-      override fun onTaskComplete(result: String, task: SessionTask) {
+      override fun onTaskComplete(result: String, task: ISessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
+        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         completionLatch.countDown()
         onComplete(result, task)
@@ -403,13 +403,13 @@ open class UnifiedHarness(
     @JvmStatic
     fun configurePlatform(user: User) {
       PlanHarness.initDynamicEnums()
-      ApplicationServices.authenticationManager = object : AuthenticationInterface {
+      ApplicationServicesImpl.authenticationManager = object : AuthenticationInterface {
         override fun getUser(accessToken: String?) = user
         fun getAccessToken(user: User) = "test-token"
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
         fun logout(accessToken: String, user: User) {}
       }
-      ApplicationServices.authorizationManager = object : AuthorizationManager() {
+      ApplicationServicesImpl.authorizationManager = object : AuthorizationManager() {
         override fun isAuthorized(
           applicationClass: Class<*>?,
           user: User?,
@@ -421,6 +421,6 @@ open class UnifiedHarness(
 }
 
 fun ApiChatModel.findApi(user: User): ApiData? {
-  val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+  val userSettings = ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
   return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }

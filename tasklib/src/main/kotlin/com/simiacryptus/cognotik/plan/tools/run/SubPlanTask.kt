@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.OutputStream
@@ -108,7 +108,7 @@ class SubPlanTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -181,7 +181,7 @@ class SubPlanTask(
       }
 
       if (orchestrationConfig.autoFix) {
-        task.ui.pool.submit {
+        task.pool.submit {
           try {
             val summary = runExecution()
             resultFn(summary)
@@ -192,11 +192,11 @@ class SubPlanTask(
         }
       } else {
         val semaphore = Semaphore(0)
-        task.complete(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true)) {
-          task.ui.pool.submit {
+        task.complete(task.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true)) {
+          task.pool.submit {
             try {
               val summary = runExecution()
-              task.complete(acceptButtonFooter(task.ui) {
+              task.complete(acceptButtonFooter(task) {
                 resultFn(summary)
                 semaphore.release()
                 task.complete()
@@ -216,7 +216,7 @@ class SubPlanTask(
 
   private fun handleError(
     e: Exception,
-    task: SessionTask,
+    task: ISessionTask,
     transcript: OutputStream?,
     resultFn: (String) -> Unit
   ) {
@@ -301,7 +301,7 @@ class SubPlanTask(
   }
 
   private fun agent(
-    task: SessionTask,
+    task: ISessionTask,
     goal: String
   ): ChatAgent {
     // Use an agent to create a summary

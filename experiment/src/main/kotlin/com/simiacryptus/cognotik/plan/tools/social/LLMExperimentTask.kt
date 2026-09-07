@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.apache.commons.text.similarity.LevenshteinDistance
 import org.slf4j.Logger
@@ -97,7 +97,7 @@ class LLMExperimentTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -231,7 +231,7 @@ class LLMExperimentTask(
 
         // Submit all repetitions for this condition to thread pool
         val futures = (0 until repetitions).map { rep ->
-          task.ui.pool.submit {
+          task.pool.submit {
             val trialStartTime = System.currentTimeMillis()
 
             // Create agent with specific temperature
@@ -1289,7 +1289,7 @@ Be specific and reference the data provided.
   }
 
 
-  private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
+  private fun createTranscriptFile(task: ISessionTask): Pair<String, FileOutputStream?> {
     val transcriptFile = "llm_experiment_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()

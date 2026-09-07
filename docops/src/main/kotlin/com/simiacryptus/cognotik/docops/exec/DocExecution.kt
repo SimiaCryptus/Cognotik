@@ -44,6 +44,8 @@ data class DocTaskRequest<K : DocTaskKind>(
   val patchProcessor: PatchProcessor?,
   val workingDir: File,
   val timeoutMinutes: Int = 30,
+  /** Aggregated frontmatter from the documents that contributed to this task. */
+  val frontmatter: Map<String, Any?> = emptyMap(),
 )
 
 /** Input for host-side inference of an execution config (used for non-file task kinds). */
@@ -55,6 +57,8 @@ data class DocTaskInferenceRequest<K : DocTaskKind>(
   val workingDir: File,
   val patchProcessor: PatchProcessor?,
   val typeConfig: Map<String, Any>,
+  /** Aggregated frontmatter from the documents that contributed to this task. */
+  val frontmatter: Map<String, Any?> = emptyMap(),
 )
 
 /** Lifecycle notifications raised by the host while a [DocTaskRequest] is executing. */

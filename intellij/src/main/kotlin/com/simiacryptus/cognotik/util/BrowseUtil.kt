@@ -22,6 +22,7 @@ import kotlin.collections.mutableListOf
 object BrowseUtil {
     const val BROWSER_SYSTEM_DEFAULT = "System Default"
     const val BROWSER_INTELLIJ_BUILTIN = "Built-in Preview"
+    val log = getLogger(BrowseUtil::class.java)
     /**
      * Returns a list of available browser options including system default,
      * built-in preview, and all browsers configured in IntelliJ.
@@ -188,6 +189,5 @@ object BrowseUtil {
         }
     }
 
-    val log = getLogger(BrowseUtil::class.java)
 
 }

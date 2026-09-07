@@ -4,11 +4,12 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -182,7 +183,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         dialog.layout = BorderLayout()
 
       val userSettings =
-        ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.getUserSettings(
+          ApplicationServicesImpl.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.getUserSettings(
           localUser
         )
         val fullConfig = try {
@@ -369,7 +370,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     userSettingsJson, UserSettings::class.java
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
-                ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
+                ApplicationServicesImpl.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
                   AppSettingsState.localUser, importedUserSettings
                 )
                 log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
@@ -408,7 +409,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
             tableModel.rowCount = 0
-          val userSettings = ApplicationServices.fileApplicationServices(
+          val userSettings = ApplicationServicesImpl.fileApplicationServices(
             AppSettingsState.pluginHome
           ).userSettingsManager.getUserSettings(localUser)
             userSettings.apis.forEach { api ->
@@ -429,7 +430,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-          val userSettings = ApplicationServices.fileApplicationServices(
+          val userSettings = ApplicationServicesImpl.fileApplicationServices(
             AppSettingsState.pluginHome
           ).userSettingsManager.getUserSettings(localUser)
             log.debug("Current user has ${userSettings.apis.size} API configurations")
@@ -539,7 +540,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     log.error("Failed to read API configuration from row $row", e)
                 }
             }
-            ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
+            ApplicationServicesImpl.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
               AppSettingsState.localUser,
                 userSettings
             )

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.images
 
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -11,8 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
@@ -97,7 +96,7 @@ class TiledImageGenerationTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -115,7 +114,7 @@ class TiledImageGenerationTask(
     val writeModel = orchestrationConfig.defaultImage.getChildClient(task)
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val transcript = task.newUserFileStream(transcriptFile())
       val tabs = TabbedDisplay(task)
       val logTab = tabs.newTask("Progress")
@@ -456,7 +455,7 @@ class TiledImageGenerationTask(
           task.safeComplete(completionMsg.renderMarkdown(), log)
           resultFn(completionMsg)
         } else {
-          val footer = acceptButtonFooter(task.ui) {
+          val footer = acceptButtonFooter(task) {
             task.safeComplete(completionMsg.renderMarkdown(), log)
             resultFn(completionMsg)
           }
@@ -476,13 +475,13 @@ class TiledImageGenerationTask(
   }
 
 
-  private fun saveImage(image: BufferedImage, name: String, task: SessionTask): String {
+  private fun saveImage(image: BufferedImage, name: String, task: ISessionTask): String {
     val file = root.resolve(name)
     ImageIO.write(image, executionConfig?.extension, file.toFile())
     return task.linkTo(name)
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
 

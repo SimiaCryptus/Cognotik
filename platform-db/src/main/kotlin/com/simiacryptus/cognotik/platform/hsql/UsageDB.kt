@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.platform.hsql
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.AIModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -25,7 +25,6 @@ import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
-import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -93,7 +92,7 @@ class UsageDB : UsageInterface {
   }
 
   private val database: Database get() = ExposedDatabase.get(facet)
-  val userSettingsManager by lazy { ApplicationServices.fileApplicationServices().userSettingsManager }
+  val userSettingsManager by lazy { ApplicationServicesImpl.fileApplicationServices().userSettingsManager }
 
   /**
    * On-heap cache of per-session usage summaries (subtree-aware).
@@ -147,18 +146,6 @@ class UsageDB : UsageInterface {
     for (sid in toInvalidate) sessionUsageCache.remove(sid)
   }
 
-  /** Returns a snapshot of session-usage cache statistics: (hits, misses, size). */
-  fun sessionUsageCacheStats(): Triple<Long, Long, Int> =
-    Triple(sessionUsageCacheHits.get(), sessionUsageCacheMisses.get(), sessionUsageCache.size)
-
-  /** Clear all cached session usage summaries. */
-  fun invalidateSessionUsageCache() {
-    val size = sessionUsageCache.size
-    sessionUsageCache.clear()
-    log.debug("Invalidated all {} cached session usage summaries", size)
-  }
-
-
   override fun incrementUsage(
     session: Session,
     user: User,
@@ -173,12 +160,12 @@ class UsageDB : UsageInterface {
       val cost = rawCost.coerceAtLeast(0.0) * cost_scaling_factor.coerceAtLeast(0.0)
       log.debug(
         "Incrementing usage for session: {}, user: {}, model: {} (raw_cost={}, scaled_cost={}, cost_scaling_factor={})",
-        session, user.email, model.modelId, rawCost, cost, cost_scaling_factor
+        session, user.id, model.modelId, rawCost, cost, cost_scaling_factor
       )
       if (rawCost < 0.0) {
         log.warn(
           "Negative raw cost {} for session={}, user={}, model={}; clamped to 0.0",
-          rawCost, session, user.email, model.modelId
+          rawCost, session, user.id, model.modelId
         )
       }
       val now = Instant.now()
@@ -194,8 +181,8 @@ class UsageDB : UsageInterface {
           outputText = if (isTracked) data?.output_text else null
         )
         upsertDailyUsage(usageKey, usageValues, day)
-        if (cost != 0.0 && user.email.isNotEmpty()) {
-          applyBudgetDelta(user.email, -cost)
+        if (cost != 0.0 && user.id.isNotEmpty()) {
+          applyBudgetDelta(user, -cost)
         }
         // Invalidate cached usage summaries for this session and any
         // ancestor session that aggregates over it.
@@ -203,25 +190,25 @@ class UsageDB : UsageInterface {
       }
       log.debug(
         "Usage incremented for session: {}, user: {}, model: {} (cost_scaling_factor={})",
-        session, user.email, model.modelId, cost_scaling_factor
+        session, user.id, model.modelId, cost_scaling_factor
       )
     } catch (e: Exception) {
       log.error(
-        "Error incrementing usage for session={}, user={}, model={}", session, user.email, model.modelId, e
+        "Error incrementing usage for session={}, user={}, model={}", session, user.id, model.modelId, e
       )
     }
   }
 
   override fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage> {
     require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
-    log.debug("Get user usage summary user={} from={} to={} (to exclusive)", user.email, from, to)
+    log.debug("Get user usage summary user={} from={} to={} (to exclusive)", user.id, from, to)
     return transaction(database) {
       val counts = linkedMapOf<String, MutableMap<TokenTypes, Long>>()
       val costs = linkedMapOf<String, Double>()
       UsageDailyTable
         .selectAll()
         .where {
-          (UsageDailyTable.userId eq user.email) and
+          (UsageDailyTable.userId eq user.id) and
               (UsageDailyTable.day greaterEq from) and
               (UsageDailyTable.day less to)
         }
@@ -235,7 +222,7 @@ class UsageDB : UsageInterface {
             .onFailure {
               log.warn(
                 "Unknown token type '{}' in usage_daily for user={} model={}; skipping count",
-                tokenTypeRaw, user.email, model, it
+                tokenTypeRaw, user.id, model, it
               )
             }
             .getOrNull()
@@ -247,6 +234,7 @@ class UsageDB : UsageInterface {
           // therefore yields the correct per-model total across days.
           costs[model] = costs.getOrDefault(model, 0.0) + cost
         }
+
       val summary = mutableMapOf<String, ModelSchema.Usage>()
       for ((model, countMap) in counts) {
         val totalTokens = countMap.values.sum()
@@ -344,28 +332,28 @@ class UsageDB : UsageInterface {
   }
 
   override fun getSessionUsageSummaryBulk(
-    sessionIds: Collection<String>
-  ): Map<String, Map<String, ModelSchema.Usage>> {
-    if (sessionIds.isEmpty()) return emptyMap()
-    log.debug("Bulk session usage summary for {} session(s)", sessionIds.size)
-    val sessionIdSet = sessionIds.toSet()
+    sessions: Collection<Session>
+  ): Map<Session, Map<String, ModelSchema.Usage>> {
+    if (sessions.isEmpty()) return emptyMap()
+    log.debug("Bulk session usage summary for {} session(s)", sessions.size)
+    val sessionIdSet = sessions.toSet()
 
     // Serve any cache hits up-front; only query the DB for the remainder.
-    val cacheHits = LinkedHashMap<String, Map<String, ModelSchema.Usage>>()
-    val toLoad = mutableSetOf<String>()
+    val cacheHits = LinkedHashMap<Session, Map<String, ModelSchema.Usage>>()
+    val toLoad = mutableSetOf<Session>()
     for (sid in sessionIdSet) {
-      val entry = sessionUsageCache[sid]
+      val entry = sessionUsageCache[sid.sessionId]
       if (entry != null && isFresh(entry)) {
         sessionUsageCacheHits.incrementAndGet()
         cacheHits[sid] = entry.value
       } else {
-        if (entry != null) sessionUsageCache.remove(sid, entry)
+        if (entry != null) sessionUsageCache.remove(sid.sessionId, entry)
         sessionUsageCacheMisses.incrementAndGet()
         toLoad.add(sid)
       }
     }
     if (toLoad.isEmpty()) {
-      return sessionIds.associateWith { cacheHits[it] ?: emptyMap() }
+      return sessions.associateWith { cacheHits[it] ?: emptyMap() }.mapKeys { it.key }
     }
     return transaction(database) {
       // Fetch every usage row across all requested sessions in one query.
@@ -374,7 +362,7 @@ class UsageDB : UsageInterface {
       // single session, not a subtree).
       val usageRows = UsageTable
         .selectAll()
-        .where { UsageTable.sessionId inList toLoad }
+        .where { UsageTable.sessionId inList toLoad.map { it.sessionId } }
         .map { row ->
           UsageRowSlim(
             id = row[UsageTable.id],
@@ -389,10 +377,10 @@ class UsageDB : UsageInterface {
         .where { UsageTokensTable.usageId inList usageRows.map { it.id } }
         .groupBy { it[UsageTokensTable.usageId] }
       // Per-session, per-model accumulators.
-      val countsBySession = linkedMapOf<String, LinkedHashMap<String, MutableMap<TokenTypes, Long>>>()
-      val costsBySession = linkedMapOf<String, LinkedHashMap<String, Double>>()
+      val countsBySession = linkedMapOf<Session, LinkedHashMap<String, MutableMap<TokenTypes, Long>>>()
+      val costsBySession = linkedMapOf<Session, LinkedHashMap<String, Double>>()
       for (usageRow in usageRows) {
-        val sid = usageRow.sessionId
+        val sid = Session(usageRow.sessionId)
         val model = usageRow.model
         val sessionCosts = costsBySession.getOrPut(sid) { LinkedHashMap() }
         sessionCosts[model] = (sessionCosts[model] ?: 0.0) + usageRow.cost
@@ -411,9 +399,9 @@ class UsageDB : UsageInterface {
       // Materialize into the public summary shape, preserving the caller's
       // requested session ordering and including empty entries for sessions
       // that had no usage rows.
-      val loaded = LinkedHashMap<String, Map<String, ModelSchema.Usage>>()
+      val loaded = LinkedHashMap<Session, Map<String, ModelSchema.Usage>>()
       for (sid in toLoad) {
-        val sessionCounts = countsBySession[sid]
+        val sessionCounts: LinkedHashMap<String, MutableMap<TokenTypes, Long>>? = countsBySession[sid]
         if (sessionCounts == null) {
           loaded[sid] = emptyMap()
           continue
@@ -433,61 +421,15 @@ class UsageDB : UsageInterface {
       // Populate cache for loaded entries.
       val now = System.nanoTime()
       for ((sid, summary) in loaded) {
-        sessionUsageCache[sid] = SessionUsageCacheEntry(summary, now)
+        sessionUsageCache[sid.sessionId] = SessionUsageCacheEntry(summary, now)
       }
       // Merge cache hits and freshly loaded entries, preserving caller order.
-      sessionIds.associateWith { sid ->
+      sessions.associateWith { sid ->
         cacheHits[sid] ?: loaded[sid] ?: emptyMap()
       }
     }
   }
 
-  override fun getSessionUsageTotalsBulk(
-    sessionIds: Collection<String>
-  ): Map<String, UsageInterface.SessionUsageTotals> {
-    if (sessionIds.isEmpty()) return emptyMap()
-    log.debug("Bulk session usage totals for {} session(s)", sessionIds.size)
-    val sessionIdSet = sessionIds.toSet()
-    return transaction(database) {
-      // Compute totals directly from the usage row using prompt_tokens
-      // and completion_tokens columns. We intentionally avoid joining
-      // usage_tokens here: for the listing-page summary, those two
-      // columns capture the displayed total. This keeps the query to a
-      // single table scan over `usage` filtered by session_id, which is
-      // backed by idx_usage_session.
-      val perSessionCost = linkedMapOf<String, Double>()
-      val perSessionModels = linkedMapOf<String, MutableSet<String>>()
-      val perSessionTokens = linkedMapOf<String, Long>()
-      UsageTable.select(
-        UsageTable.id,
-        UsageTable.sessionId,
-        UsageTable.model,
-        UsageTable.cost,
-        UsageTable.promptTokens,
-        UsageTable.completionTokens,
-      )
-        .where { UsageTable.sessionId inList sessionIdSet }
-        .forEach { row ->
-          val sid = row[UsageTable.sessionId] ?: return@forEach
-          val cost = row[UsageTable.cost] ?: 0.0
-          val model = row[UsageTable.model]
-          val prompt = row[UsageTable.promptTokens] ?: 0L
-          val completion = row[UsageTable.completionTokens] ?: 0L
-          perSessionCost[sid] = (perSessionCost[sid] ?: 0.0) + cost
-          perSessionTokens[sid] = (perSessionTokens[sid] ?: 0L) + prompt + completion
-          if (!model.isNullOrEmpty()) {
-            perSessionModels.getOrPut(sid) { mutableSetOf() }.add(model)
-          }
-        }
-      sessionIds.associateWith { sid ->
-        UsageInterface.SessionUsageTotals(
-          totalTokens = perSessionTokens[sid] ?: 0L,
-          totalCost = perSessionCost[sid] ?: 0.0,
-          modelCount = perSessionModels[sid]?.size ?: 0,
-        )
-      }
-    }
-  }
 
   /** Internal slim projection of a usage row for bulk aggregation. */
   private data class UsageRowSlim(
@@ -551,11 +493,11 @@ class UsageDB : UsageInterface {
   }
 
   override fun getAvailableBudget(user: User): Double {
-    if (user.email.isEmpty()) return 0.0
+    if (user.id.isEmpty()) return 0.0
     return transaction(database) {
       UserBudgetTable
         .selectAll()
-        .where { UserBudgetTable.userId eq user.email }
+        .where { UserBudgetTable.userId eq user.id }
         .limit(1)
         .firstOrNull()
         ?.get(UserBudgetTable.available) ?: 0.0
@@ -565,25 +507,25 @@ class UsageDB : UsageInterface {
   override fun creditUser(
     user: User, amount: Double, comment: String?, metadata: Map<String, String>?
   ): Double {
-    require(user.email.isNotEmpty()) { "User email is required for crediting" }
-    log.info("Crediting user {} amount={} comment='{}'", user.email, amount, comment)
+    require(user.id.isNotEmpty()) { "User id is required for crediting" }
+    log.info("Crediting user {} amount={} comment='{}'", user.id, amount, comment)
     try {
       transaction(database) {
         UserCreditsTable.insert {
-          it[userId] = user.email
+          it[userId] = user.id
           it[UserCreditsTable.amount] = amount
           it[UserCreditsTable.comment] = comment ?: ""
           it[UserCreditsTable.metadata] = encodeMetadata(metadata)
           it[datetime] = Instant.now()
         }
-        applyBudgetDelta(user.email, amount)
+        applyBudgetDelta(user, amount)
       }
     } catch (e: Exception) {
-      log.error("Failed to credit user {} amount={}: {}", user.email, amount, e.message, e)
+      log.error("Failed to credit user {} amount={}: {}", user.id, amount, e.message, e)
       throw e
     }
     val newBudget = getAvailableBudget(user)
-    log.info("User {} new available budget after credit: {}", user.email, newBudget)
+    log.info("User {} new available budget after credit: {}", user.id, newBudget)
     return newBudget
   }
 
@@ -596,7 +538,7 @@ class UsageDB : UsageInterface {
       UsageDailyTable
         .selectAll()
         .where {
-          (UsageDailyTable.userId eq user.email) and
+          (UsageDailyTable.userId eq user.id) and
               (UsageDailyTable.day greaterEq from) and
               (UsageDailyTable.day less to)
         }
@@ -616,7 +558,7 @@ class UsageDB : UsageInterface {
           } else if (parsedType == null) {
             log.warn(
               "Unknown token type '{}' in usage_daily for user={} day={} model={}; skipping count",
-              tokenTypeRaw, user.email, day, model
+              tokenTypeRaw, user.id, day, model
             )
           }
           // Cost is stored on a single token-type row per (user, day, model);
@@ -645,7 +587,7 @@ class UsageDB : UsageInterface {
       UserCreditsTable
         .selectAll()
         .where {
-          (UserCreditsTable.userId eq user.email) and
+          (UserCreditsTable.userId eq user.id) and
               (UserCreditsTable.datetime greaterEq fromInstant) and
               (UserCreditsTable.datetime less toInstant)
         }
@@ -661,7 +603,7 @@ class UsageDB : UsageInterface {
             } catch (e: Throwable) {
               log.warn(
                 "Failed to JSON-decode credit metadata for user {}: {}",
-                user.email, e.message, e
+                user.id, e.message, e
               )
               null
             }
@@ -671,12 +613,12 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getUserBalance(userId: String): Double {
-    if (userId.isEmpty()) return 0.0
+  override fun getUserBalance(user: User): Double {
+    if (user.id.isEmpty()) return 0.0
     return transaction(database) {
       UserBudgetTable
         .selectAll()
-        .where { UserBudgetTable.userId eq userId }
+        .where { UserBudgetTable.userId eq user.id }
         .limit(1)
         .firstOrNull()
         ?.get(UserBudgetTable.available) ?: 0.0
@@ -762,7 +704,7 @@ class UsageDB : UsageInterface {
     log.debug(
       "Saving usage values for session: {}, user: {}, model: {}",
       usageKey.session,
-      usageKey.user?.email,
+      usageKey.user?.id,
       usageKey.model.modelId
     )
     val tokenSnapshots: Map<TokenTypes, Long> = usageValues.tokenCounts
@@ -772,7 +714,7 @@ class UsageDB : UsageInterface {
     val completionTotal = tokenSnapshots.getOrDefault(TokenTypes.Completion, 0L)
     val insertStatement = UsageTable.insert {
       it[sessionId] = usageKey.session.sessionId
-      it[userId] = usageKey.user?.email ?: ""
+      it[userId] = usageKey.user?.id ?: ""
       it[model] = usageKey.model.modelId
       it[promptTokens] = promptTotal
       it[completionTokens] = completionTotal
@@ -794,7 +736,7 @@ class UsageDB : UsageInterface {
   private fun upsertDailyUsage(
     usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues, day: LocalDate
   ) {
-    val userId = usageKey.user?.email ?: ""
+    val userId = usageKey.user?.id ?: ""
     val model = usageKey.model.modelId
     val cost = usageValues.cost.get()
     val tokenSnapshots: Map<TokenTypes, Long> = usageValues.tokenCounts
@@ -841,13 +783,13 @@ class UsageDB : UsageInterface {
     }
   }
 
-  private fun applyBudgetDelta(userId: String, delta: Double) {
-    val updated = UserBudgetTable.update({ UserBudgetTable.userId eq userId }) {
+  private fun applyBudgetDelta(user: User, delta: Double) {
+    val updated = UserBudgetTable.update({ UserBudgetTable.userId eq user.id }) {
       it.update(UserBudgetTable.available, UserBudgetTable.available + delta)
     }
     if (updated == 0) {
       UserBudgetTable.insert {
-        it[UserBudgetTable.userId] = userId
+        it[UserBudgetTable.userId] = user.id
         it[available] = delta
       }
     }

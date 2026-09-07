@@ -2,13 +2,13 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.CodeRequest
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.StorageInterface
@@ -19,8 +19,7 @@ import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.ui.Retryable.Companion.async
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -30,13 +29,13 @@ open class CodingTask<T : CodeRuntime>(
   val dataStorage: StorageInterface,
   val session: Session,
   val user: User,
-  val ui: SocketManager,
+  val task: ISessionTask,
   val codeRuntime: T,
   val symbols: Map<String, Any>,
   val temperature: Double = 0.1,
   val details: String? = null,
   val model: ChatInterface,
-  private val mainTask: SessionTask,
+  private val mainTask: ISessionTask,
   val retryable: Boolean = true,
   val autoFix: Boolean = false,
   val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
@@ -46,7 +45,7 @@ open class CodingTask<T : CodeRuntime>(
 
 
   open val canPlay by lazy {
-    ApplicationServices.authorizationManager.isAuthorized(
+    ApplicationServicesImpl.authorizationManager.isAuthorized(
       ResourceRef.of(this::class.java),
       Principal.of(user),
       OperationType.Execute
@@ -55,12 +54,12 @@ open class CodingTask<T : CodeRuntime>(
 
   fun start(
     codeRequest: CodeRequest,
-    task: SessionTask = mainTask,
+    task: ISessionTask = mainTask,
   ) {
     val subTask = task.newTask()
     task.complete(subTask.placeholder)
     if (retryable) {
-      Retryable(ui.newTask(true), process = { innerTask: SessionTask ->
+      Retryable(task.newTask(true), process = { innerTask: ISessionTask ->
         try {
           val statusSB = innerTask.add("Running...")
           displayCode(innerTask, codeRequest)
@@ -78,9 +77,9 @@ open class CodingTask<T : CodeRuntime>(
           innerTask.complete()
         }
         Unit
-      }.async(task.ui))
+      }.async(task))
     } else {
-      ui.pool.submit {
+      task.pool.submit {
         try {
           val statusSB = subTask.add("Running...")
           displayCode(subTask, codeRequest)
@@ -102,7 +101,7 @@ open class CodingTask<T : CodeRuntime>(
     }
   }
 
-  fun SessionTask.transcript(name: String = this.javaClass.simpleName): FileOutputStream? {
+  fun ISessionTask.transcript(name: String = this.javaClass.simpleName): FileOutputStream? {
     val relativePath = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(System.currentTimeMillis())}.md"
     val (link, file) = Pair(linkTo(relativePath), resolveUserFile(relativePath))
     val markdownTranscript = file?.outputStream()
@@ -120,7 +119,7 @@ open class CodingTask<T : CodeRuntime>(
   open fun codeRequest(messages: List<Pair<String, ModelSchema.Role>>) = CodeRequest(messages)
 
   fun displayCode(
-    task: SessionTask,
+    task: ISessionTask,
     codeRequest: CodeRequest,
   ) {
     try {
@@ -157,12 +156,12 @@ open class CodingTask<T : CodeRuntime>(
     }
   }
 
-  open fun symbols(task: SessionTask) = symbols + mapOf(
+  open fun symbols(task: ISessionTask) = symbols + mapOf(
     "task" to task,
   )
 
   protected fun displayCodeAndFeedback(
-    task: SessionTask,
+    task: ISessionTask,
     codeRequest: CodeRequest,
     response: CodeAgent.CodeResult,
     language: String,
@@ -200,7 +199,7 @@ open class CodingTask<T : CodeRuntime>(
   }
 
   open fun displayFeedback(
-    task: SessionTask, request: CodeRequest, response: CodeAgent.CodeResult
+    task: ISessionTask, request: CodeRequest, response: CodeAgent.CodeResult
   ) {
     val formHandle = task.add("", additionalClasses = "reply-message")
     val formText = StringBuilder()
@@ -209,7 +208,7 @@ open class CodingTask<T : CodeRuntime>(
       formText.append(playButton(task, request, response, formText) { formHandle!! })
     }
     formText.append("\n</div>\n")
-    formText.append(ui.textInput { feedback ->
+    formText.append(task.textInput { feedback ->
       responseAction(task, "Revising...", formHandle, formText) {
         feedback(task, feedback, request, response)
       }
@@ -220,19 +219,19 @@ open class CodingTask<T : CodeRuntime>(
   }
 
   protected fun playButton(
-    task: SessionTask,
+    task: ISessionTask,
     request: CodeRequest,
     response: CodeAgent.CodeResult,
     formText: StringBuilder,
     formHandle: () -> StringBuilder
-  ) = if (!canPlay) "" else ui.hrefLink("▶ Run", "href-link play-button") {
+  ) = if (!canPlay) "" else task.hrefLink("▶ Run", "href-link play-button") {
     responseAction(task, "Running...", formHandle(), formText) {
       execute(task, response, request)
     }
   }.replace("<a class", """<a style="font-size: large;" class""")
 
   protected open fun responseAction(
-    task: SessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
+    task: ISessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
   ) {
     formHandle?.clear()
     task.update()
@@ -242,7 +241,7 @@ open class CodingTask<T : CodeRuntime>(
     } finally {
       header?.clear()
       var revertButton: StringBuilder? = null
-      val link = ui.hrefLink("↩", "href-link regen-button") {
+      val link = task.hrefLink("↩", "href-link regen-button") {
         revertButton?.clear()
         formHandle?.append(formText)
         task.update()
@@ -253,7 +252,7 @@ open class CodingTask<T : CodeRuntime>(
   }
 
   protected open fun feedback(
-    task: SessionTask, feedback: String, request: CodeRequest, response: CodeAgent.CodeResult
+    task: ISessionTask, feedback: String, request: CodeRequest, response: CodeAgent.CodeResult
   ) {
     try {
       task.echo(feedback.renderMarkdown(true))
@@ -271,7 +270,7 @@ open class CodingTask<T : CodeRuntime>(
   }
 
   protected fun execute(
-    task: SessionTask,
+    task: ISessionTask,
     response: CodeAgent.CodeResult,
     request: CodeRequest,
   ) {
@@ -309,7 +308,7 @@ open class CodingTask<T : CodeRuntime>(
   }
 
   protected open fun execute(
-    task: SessionTask, response: CodeAgent.CodeResult
+    task: ISessionTask, response: CodeAgent.CodeResult
   ): String {
     val transcript = task.transcript()
 

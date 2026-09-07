@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.mcp.MCPServerRegistry
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
@@ -81,7 +81,7 @@ class MCPToolTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -144,7 +144,7 @@ class MCPToolTask(
     toolName: String,
     arguments: Map<String, Any>,
     timeout: Int,
-    task: SessionTask,
+    task: ISessionTask,
     transcriptStream: FileOutputStream?
   ): Map<String, Any> {
     log.info("Connecting to MCP server: $serverName")
@@ -230,7 +230,7 @@ class MCPToolTask(
   private fun handleRetry(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig,
     lastError: Exception

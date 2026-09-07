@@ -3,13 +3,14 @@ package com.simiacryptus.cognotik.dictation
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.platform.model.AudioModels
 import com.simiacryptus.cognotik.audio.AudioPacket
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.util.EventDispatcher
 import org.slf4j.LoggerFactory
 import javax.sound.sampled.AudioFormat
@@ -146,7 +147,7 @@ open class DictationState {
 fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == model }
 
 fun audioModels(): List<AudioModels> =
-  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap {
+    ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap {
         it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.apiBase) ?: listOf()
     }
 

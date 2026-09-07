@@ -5,7 +5,7 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter
 import org.slf4j.LoggerFactory
 
 class ChatSocket(
-  private val sessionState: SocketManager,
+  val ui: SocketManager,
 ) : WebSocketAdapter() {
 
   val user get() = SocketManager.getUser(session)
@@ -14,8 +14,8 @@ class ChatSocket(
     super.onWebSocketConnect(session)
     try {
       trafficLog.info("WebSocket connected: ${session.remoteAddress}, user: ${SocketManager.getUser(session)?.name ?: "anonymous"}")
-      sessionState.addSocket(this, session)
-      trafficLog.debug("Socket added to session manager, active connections: ${sessionState.getActiveSockets().size}")
+      ui.addSocket(this, session)
+      trafficLog.debug("Socket added to session manager, active connections: ${ui.getActiveSockets().size}")
 
       val firstOrNull = session.upgradeRequest.parameterMap["lastMessageTime"]?.firstOrNull()
       val lastMessageTime =
@@ -28,7 +28,7 @@ class ChatSocket(
           else -> firstOrNull.toLongOrNull()
         } ?: 0L
       trafficLog.debug("Replaying messages since: $lastMessageTime")
-      sessionState.getReplay(lastMessageTime).forEach {
+      ui.getReplay(lastMessageTime).forEach {
         try {
           trafficLog.trace("Replaying message: ${it.take(100)}${if (it.length > 100) "..." else ""}")
           remote.sendString(it)
@@ -57,14 +57,14 @@ class ChatSocket(
       message.take(100),
       if (message.length > 100) "..." else ""
     )
-    sessionState.onWebSocketText(this, message)
+    ui.onWebSocketText(this, message)
   }
 
   override fun onWebSocketClose(statusCode: Int, reason: String?) {
     super.onWebSocketClose(statusCode, reason)
     trafficLog.info("WebSocket closed: ${session?.remoteAddress}, statusCode: $statusCode, reason: $reason")
-    sessionState.removeSocket(this)
-    trafficLog.debug("Socket removed from session manager, remaining connections: ${sessionState.getActiveSockets().size}")
+    ui.removeSocket(this)
+    trafficLog.debug("Socket removed from session manager, remaining connections: ${ui.getActiveSockets().size}")
   }
 
   companion object {

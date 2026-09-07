@@ -6,7 +6,7 @@ library of predefined model configurations for major AI providers.
 
 ## Core Components
 
-### [ChatModel](ChatModel.kt)
+### [ChatModel](../../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/ChatModel.kt)
 
 The base class for all chat models. It extends `LLMModel` and encapsulates:
 

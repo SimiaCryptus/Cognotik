@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
@@ -15,8 +15,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class SessionsServlet : HttpServlet() {
-    val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
-    val usageDB by lazy { ApplicationServices.fileApplicationServices().usageDB }
+    val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
+    val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
         val action = req.getParameter("action")?.lowercase()
@@ -73,7 +73,7 @@ class SessionsServlet : HttpServlet() {
             return
         }
         try {
-            ApplicationServices.fileApplicationServices().dataStorageFactory.deleteSession(user, session)
+            ApplicationServicesImpl.fileApplicationServices().dataStorageFactory.deleteSession(user, session)
             log.info("User ${user.email} deleted session $sessionId")
             resp.status = HttpServletResponse.SC_OK
             resp.contentType = "application/json"
@@ -159,11 +159,11 @@ class SessionsServlet : HttpServlet() {
         // single bulk query. Children in the listing are leaf-style entries (we
         // don't recurse further into their descendants here), which matches the
         // non-recursive semantics of getSessionUsageSummaryBulk.
-        val childSessionIds: List<String> = visibleMetadata
+        val childSessionIds: List<Session> = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
-            .map { it.id.sessionId }
+            .map { it.id }
             .distinct()
-        val childUsagesById: Map<String, Map<String, ModelSchema.Usage>> = if (childSessionIds.isEmpty()) {
+        val childUsagesById: Map<Session, Map<String, ModelSchema.Usage>> = if (childSessionIds.isEmpty()) {
             emptyMap()
         } else {
             try {
@@ -176,7 +176,7 @@ class SessionsServlet : HttpServlet() {
         val childUsages: Map<Session, Map<String, ModelSchema.Usage>> = visibleMetadata
             .flatMap { parent -> childrenByParent[parent.id] ?: emptyList() }
             .associate { childMeta ->
-                childMeta.id to (childUsagesById[childMeta.id.sessionId] ?: emptyMap())
+                (childMeta.id) to (childUsagesById[childMeta.id] ?: emptyMap())
             }
 
         // Sort

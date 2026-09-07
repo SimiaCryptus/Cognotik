@@ -94,7 +94,7 @@ outputs verbatim. Large `related_files` globs or many perspectives will multiply
 1. **Initialization**
    - Task construction opens two output streams: a detailed transcript (`*.details.md`) and a final transcript
      (`*.md`).
-   - Work is submitted to `task.ui.pool` asynchronously; the outer `run()` returns immediately after submission
+   - Work is submitted to `task.pool` asynchronously; the outer `run()` returns immediately after submission
      (wrapped in its own try/catch for pool-submission failures).
 
 2. **Execution**

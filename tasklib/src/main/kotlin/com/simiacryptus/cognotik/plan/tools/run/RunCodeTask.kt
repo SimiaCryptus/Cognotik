@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -78,7 +78,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -97,7 +97,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
       dataStorage = agent.dataStorage,
       session = agent.session,
       user = agent.user,
-      ui = task.ui,
+      task = task,
       codeRuntime = CodeRuntimes.getRuntime(
         runtimeType = runtime,
         params = mapOf(
@@ -118,7 +118,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
       describer = describer(),
     ) {
       override fun displayFeedback(
-        task: SessionTask,
+        task: ISessionTask,
         request: CodeAgent.CodeRequest,
         response: CodeAgent.CodeResult
       ) {
@@ -172,7 +172,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
         if (super.canPlay) {
           buttonsHtml.append(super.playButton(task, request, response, formText) { formHandle!! })
         }
-        buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
+        buttonsHtml.append(task.hrefLink("Continue", "href-link play-button") {
           transcript?.write("## User Action: Continue\n".toByteArray())
           transcript?.flush()
           val finalOutput =
@@ -180,7 +180,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
           resultFn(finalOutput)
           semaphore.release()
         })
-        val feedbackHtml = ui.textInput(oneAtATime { feedback: String ->
+        val feedbackHtml = task.textInput(oneAtATime { feedback: String ->
           transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
           transcript?.flush()
           super.responseAction(task, "Revising...", formHandle, formText) {
@@ -201,7 +201,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
       }
 
       override fun execute(
-        task: SessionTask,
+        task: ISessionTask,
         response: CodeAgent.CodeResult
       ): String {
         val result = super.execute(task, response)

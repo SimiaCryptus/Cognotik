@@ -9,7 +9,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -18,8 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.RenderingHints
@@ -95,7 +94,7 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -128,8 +127,8 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
     val tabs = TabbedDisplay(task)
     val overviewTab = tabs.newTask("Overview")
     overviewTab.header("Generating Artistic QR Code: `$imageFile`", level = 2)
-    overviewTab.add(MarkdownUtil.renderMarkdown("### QR Content\n```\n$qrContent\n```", ui = task.ui))
-    overviewTab.add(MarkdownUtil.renderMarkdown("### Style Directive\n$styleDirective", ui = task.ui))
+    overviewTab.add(MarkdownUtil.renderMarkdown("### QR Content\n```\n$qrContent\n```"))
+    overviewTab.add(MarkdownUtil.renderMarkdown("### Style Directive\n$styleDirective"))
 
     try {
       // Step 1: Generate base QR code with high error correction
@@ -257,7 +256,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
       val finalTab = tabs.newTask("Final Result")
       finalTab.header("Final Artistic QR Code", level = 3)
       finalTab.image(styledImage ?: baseQrImage)
-      finalTab.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
+      finalTab.add(MarkdownUtil.renderMarkdown(summary))
 
       if (orchestrationConfig.autoFix) {
         task.complete(summary)
@@ -265,7 +264,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
       } else {
         finalTab.add(
           MarkdownUtil.renderMarkdown(
-            acceptButtonFooter(task.ui) {
+            acceptButtonFooter(task) {
               try {
                 task.complete(summary)
                 resultFn(summary)
@@ -274,7 +273,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
                 task.error(e)
                 resultFn("ERROR: ${e.message}")
               }
-            }, ui = task.ui
+            }
           )
         )
       }
@@ -503,7 +502,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
   }
 
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Save QR Image") {
       fn()
     }

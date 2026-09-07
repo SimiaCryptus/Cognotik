@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -31,14 +31,14 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
   /**
    * Initialize the internal cognitive state.
    */
-  open fun initialize(task: SessionTask) {}
+  open fun initialize(task: ISessionTask) {}
 
   /**
    * Handle a user message and trigger the appropriate planning or execution.
     * The (optional) transcript stream is supplied by the caller, which retains
     * ownership of it (i.e. is responsible for closing it).
    */
-   abstract fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream? = task.openTranscript(javaClass.simpleName))
+   abstract fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream? = task.openTranscript(javaClass.simpleName))
 
   /**
    * Get the context data accumulated during execution.
@@ -54,7 +54,7 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
   * Intended for use by callers of [CognitiveMode.handleUserMessage], which are
   * responsible for closing the returned stream.
   */
-fun SessionTask.openTranscript(name: String?): FileOutputStream? {
+fun ISessionTask.openTranscript(name: String?): FileOutputStream? {
    val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
    val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
    val markdownTranscript = file?.outputStream()

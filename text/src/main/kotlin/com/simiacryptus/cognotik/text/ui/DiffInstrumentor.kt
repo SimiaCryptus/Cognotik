@@ -169,21 +169,14 @@ class DiffInstrumentor(
         }
       }
     }
-    appendChangeSummary(result, changes, log)
-    return result.toString()
+    return changeSummary(changes, log) + "\n\n" + result.toString()
   }
 
-  /**
-   * Appends a summary of every file the response touches, plus an "Apply All" control which
-   * applies all still-pending changes. Individual failures are collected so one bad patch does
-   * not prevent the rest from being applied.
-   */
-  private fun appendChangeSummary(
-    result: StringBuilder,
+  fun changeSummary(
     changes: List<PendingChange>,
     log: PatchTrace
-  ) {
-    if (changes.isEmpty()) return
+  ): String {
+    if(changes.isEmpty()) return ""
     val pending = changes.filter { it.apply != null }
     log.debug("Rendering change summary: {} change(s), {} pending", changes.size, pending.size)
     val onApplyAll: (() -> Unit)? = if (pending.isEmpty()) null else ({
@@ -200,7 +193,8 @@ class DiffInstrumentor(
         "$failures of ${pending.size} change(s) could not be applied; use the per-file buttons for details"
       )
     })
-    result.append(renderer.renderChangeSummary(changes.map { it.summary }, onApplyAll)).append("\n\n")
+    val changeSummary = renderer.renderChangeSummary(changes.map { it.summary }, onApplyAll)
+    return changeSummary
   }
 
   private fun newFileSummary(filepath: Path, code: String, applied: Boolean) = FileChangeSummary(

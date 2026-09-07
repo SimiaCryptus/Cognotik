@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.AudioSegment
-import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.AudioSegment
+import com.simiacryptus.cognotik.platform.model.ModelSchema.*
 import com.simiacryptus.cognotik.exceptions.BudgetException
 import com.simiacryptus.cognotik.exceptions.NonRetryableException
 import com.simiacryptus.cognotik.util.toContentList

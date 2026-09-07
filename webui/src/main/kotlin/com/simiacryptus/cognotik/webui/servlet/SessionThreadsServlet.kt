@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
     
-    import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
+    import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.ThreadPoolManager
     import com.simiacryptus.cognotik.webui.application.UserProviderImpl

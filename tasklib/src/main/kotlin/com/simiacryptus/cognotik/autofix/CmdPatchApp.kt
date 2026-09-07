@@ -1,13 +1,13 @@
 package com.simiacryptus.cognotik.autofix
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -85,7 +85,7 @@ class CmdPatchApp(
   }
 
   override fun output(
-    task: SessionTask, settings: Settings, tabs: TabbedDisplay
+    task: ISessionTask, settings: Settings, tabs: TabbedDisplay
   ): OutputResult {
     log.info("Starting command execution with ${settings.commands.size} commands")
     run {
@@ -124,7 +124,7 @@ class CmdPatchApp(
           val cmdString = processBuilder.command().joinToString(" ")
           log.debug("Full command string: $cmdString")
           log.debug("Working directory: {}", cmdSettings.workingDirectory)
-          val task = task.ui.newTask(false).apply { tabs[cmdString] = placeholder }
+          val task = task.newTask(false).apply { tabs[cmdString] = placeholder }
           task.add("Working Directory: ${cmdSettings.workingDirectory}")
           task.add("Command: $cmdString")
           task.add("Model: $model / $fastModel")
@@ -136,7 +136,7 @@ class CmdPatchApp(
           })
           val taskOutput = task.add("")
           val buffer = StringBuilder()
-          fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
+          fun addOutput(taskOutput: StringBuilder?, task: ISessionTask) {
             synchronized(task) {
               log.debug("Updating output display (buffer size: ${buffer.length})")
               val extraInfo =

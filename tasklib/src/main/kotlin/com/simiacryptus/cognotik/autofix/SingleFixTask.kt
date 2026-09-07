@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.autofix
 
 import com.simiacryptus.cognotik.autofix.PatchApp.OutputResult
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -83,7 +83,7 @@ class SingleFixTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -92,7 +92,7 @@ class SingleFixTask(
       val subTask = task.newTask()
 
       fun execute() {
-        subTask.ui.pool.submit {
+        subTask.pool.submit {
           val transcript = createTranscript(subTask)
           subTask.add(transcript.second.renderMarkdown())
           val model =
@@ -140,7 +140,7 @@ class SingleFixTask(
               }
 
               override fun output(
-                task: SessionTask, settings: Settings, tabs: TabbedDisplay
+                task: ISessionTask, settings: Settings, tabs: TabbedDisplay
               ): OutputResult {
                 // Return exit code 1 to trigger the fix logic in PatchApp.run
                 return OutputResult(1, logFile.readText())
@@ -180,7 +180,7 @@ class SingleFixTask(
       if (orchestrationConfig.autoFix) {
         execute()
       } else {
-        subTask.add(subTask.ui.hrefLink("▶ Run SingleFix", "btn btn-primary") {
+        subTask.add(subTask.hrefLink("▶ Run SingleFix", "btn btn-primary") {
           execute()
         }.renderMarkdown())
       }
@@ -194,7 +194,7 @@ class SingleFixTask(
     task.complete()
   }
 
-  private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
+  private fun createTranscript(task: ISessionTask): Pair<FileOutputStream?, String> {
     val transcriptFile =
       this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))

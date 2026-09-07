@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.docs.isDocumentFile
 import com.simiacryptus.cognotik.plan.ExecutionState
@@ -11,8 +11,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
@@ -61,7 +60,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             "# $dependency\n\n${executionState?.taskResult[dependency] ?: ""}"
         } ?: ""
 
-    protected open fun renderTaskHeader(task: SessionTask, title: String? = null) {
+    protected open fun renderTaskHeader(task: ISessionTask, title: String? = null) {
         task.header(title ?: taskType)
         executionConfig?.task_description?.let {
             task.add("**Description:** $it".renderMarkdown())
@@ -75,12 +74,12 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         return this
     }
 
-    protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
-        val footerTask = ui.newTask(false)
+    protected open fun acceptButtonFooter(task: ISessionTask, fn: () -> Unit): String {
+        val footerTask = task.newTask(false)
         lateinit var textHandle: StringBuilder
         @Suppress("AssignedValueIsNeverRead")
         textHandle = footerTask.complete(
-            """<div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">""" + ui.hrefLink(
+            """<div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">""" + task.hrefLink(
                 "Accept Result",
                 classname = "href-link cmd-button"
             ) {
@@ -100,7 +99,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     abstract fun run(
         agent: TaskOrchestrator,
         messages: List<String> = listOf(),
-        task: SessionTask,
+        task: ISessionTask,
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig,
     )
@@ -142,14 +141,14 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-    fun SessionTask.newUserFileStream(transcriptFile: String, name: String = "Transcript"): FileOutputStream? {
+    fun ISessionTask.newUserFileStream(transcriptFile: String, name: String = "Transcript"): FileOutputStream? {
         val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         add("[$name](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 
-    fun SessionTask.newSystemFileStream(transcriptFile: String): FileOutputStream? {
+    fun ISessionTask.newSystemFileStream(transcriptFile: String): FileOutputStream? {
         val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
@@ -166,7 +165,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         else -> null
     }
 
-    fun createTabbedDisplay(task: SessionTask) = TabbedDisplay(task)
+    fun createTabbedDisplay(task: ISessionTask) = TabbedDisplay(task)
     open fun writeToTranscript(stream: FileOutputStream, string: String) {
         stream.write(string.toByteArray())
         stream.flush()

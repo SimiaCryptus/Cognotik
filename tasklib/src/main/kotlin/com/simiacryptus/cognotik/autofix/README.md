@@ -219,7 +219,7 @@ wrapped in a synthetic `ParsedResponse`.
 ### 4. Fix generation (`fixAllErrors` → `fix`)
 
 * Warnings are dropped when at least one real error exists and `settings.ignoreWarnings` is true.
-* Errors are grouped by `message`; each group is submitted to `task.ui.pool` and processed **in parallel**, then joined
+* Errors are grouped by `message`; each group is submitted to `task.pool` and processed **in parallel**, then joined
   via `.onEach { it.get() }`.
 * Each group gets a `linkedTask` sub‑session with a live `Status: …` buffer.
 * `ResearchNotes.searchQueries` are executed as a filtered walk + glob match + case‑insensitive substring match (files <
@@ -552,10 +552,10 @@ subclass inside `SingleFixTask`.
 | Boundary                   | Mechanism                                                                                                                  |
 |----------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | Orchestrator ↔ fix session | `Semaphore(0)`; the plan thread blocks in `acquire()` until a terminal branch releases.                                    |
-| Task body                  | `subTask.ui.pool.submit { … }` — the fix session runs off the request thread.                                              |
+| Task body                  | `subTask.pool.submit { … }` — the fix session runs off the request thread.                                              |
 | Iteration                  | `Thread { … }.start()` inside `runIteration()`; retries recurse on that thread.                                            |
 | Process I/O                | Two `Thread`s per command (`stdout`, `stderr`) appending to a shared `StringBuilder`.                                      |
-| Error groups               | `task.ui.pool.submit` per group, joined with `.toTypedArray().onEach { it.get() }`.                                        |
+| Error groups               | `task.pool.submit` per group, joined with `.toTypedArray().onEach { it.get() }`.                                        |
 | Shared state               | `AtomicInteger` / `AtomicBoolean` / `AtomicReference` for controller state; `synchronized(task)` around UI output flushes. |
 
 > ⚠️ `buffer: StringBuilder` in `CmdPatchApp.output` is written by two reader threads without

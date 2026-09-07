@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.vladsch.flexmark.util.data.MutableDataSet
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -20,7 +18,7 @@ class MarkdownUtilTest {
     fun testRenderMarkdown_SimpleMarkdown() {
         val markdown = "# Heading\n\nThis is a test."
         val expectedHtml = "<h1>Heading</h1>\n<p>This is a test.</p>\n"
-        val result = markdownUtil.renderMarkdown(markdown, MutableDataSet(), false, null)
+        val result = markdownUtil.renderMarkdown(markdown, MutableDataSet(), false)
         assert(result.contains(expectedHtml)) { "Rendered HTML should contain the expected HTML content." }
     }
 

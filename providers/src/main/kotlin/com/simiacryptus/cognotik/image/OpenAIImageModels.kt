@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.image
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.platform.model.ImageModel
 
 object OpenAIImageModels {
   val DallE2 = ImageModel(

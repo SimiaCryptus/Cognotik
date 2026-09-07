@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -12,8 +12,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
@@ -89,7 +88,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -104,7 +103,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
 
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         executionConfig?.validate()?.let { errorMessage ->
           val e = RuntimeException(errorMessage)
@@ -242,7 +241,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
           task.complete()
           resultFn(summary)
         } else {
-          task.add(summary.renderMarkdown() + acceptButtonFooter(task.ui) {
+          task.add(summary.renderMarkdown() + acceptButtonFooter(task) {
             task.complete()
             resultFn(summary)
           })
@@ -359,7 +358,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
     return tableData.toJson()
   }
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+  override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept Table") {
       fn()
     }

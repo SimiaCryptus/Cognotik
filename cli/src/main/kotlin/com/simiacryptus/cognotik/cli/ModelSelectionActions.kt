@@ -1,16 +1,16 @@
 package com.simiacryptus.cognotik.cli
 
-import com.simiacryptus.cognotik.webui.servlet.action.ActionMenu
-import com.simiacryptus.cognotik.webui.servlet.action.ActionOption
-import com.simiacryptus.cognotik.webui.servlet.action.ActionParam
-import com.simiacryptus.cognotik.webui.servlet.action.ActionSelection
-import com.simiacryptus.cognotik.webui.servlet.action.ActionUi
-import com.simiacryptus.cognotik.webui.servlet.action.FsAction
-import com.simiacryptus.cognotik.webui.servlet.action.FsActionContext
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
-import com.simiacryptus.cognotik.webui.servlet.handler.FsException
-import com.simiacryptus.cognotik.webui.servlet.util.FsJson
+import com.simiacryptus.cognotik.fileserver.action.ActionMenu
+import com.simiacryptus.cognotik.fileserver.action.ActionOption
+import com.simiacryptus.cognotik.fileserver.action.ActionParam
+import com.simiacryptus.cognotik.fileserver.action.ActionSelection
+import com.simiacryptus.cognotik.fileserver.action.ActionUi
+import com.simiacryptus.cognotik.fileserver.action.FsAction
+import com.simiacryptus.cognotik.fileserver.action.FsActionContext
+import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+import com.simiacryptus.cognotik.fileserver.handler.FsException
+import com.simiacryptus.cognotik.fileserver.util.FsJson
 import jakarta.servlet.http.HttpServletResponse
 
 /**

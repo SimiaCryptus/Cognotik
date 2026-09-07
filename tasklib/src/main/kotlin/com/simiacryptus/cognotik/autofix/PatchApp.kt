@@ -3,11 +3,11 @@ package com.simiacryptus.cognotik.autofix
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -17,8 +17,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.FileSystems
@@ -143,7 +142,7 @@ abstract class PatchApp(
   var updateStatus: (String) -> Unit = {}
 
   abstract fun output(
-    task: SessionTask,
+    task: ISessionTask,
     settings: Settings,
     tabs: TabbedDisplay = TabbedDisplay(task)
   ): OutputResult
@@ -167,7 +166,7 @@ abstract class PatchApp(
     val fixApplied: Boolean = false
   )
 
-  fun newSessionController(task: SessionTask, onComplete: (OutputResult) -> Unit = {}) = SessionController(
+  fun newSessionController(task: ISessionTask, onComplete: (OutputResult) -> Unit = {}) = SessionController(
     task = task,
     settings = settings,
     model = model,
@@ -176,10 +175,10 @@ abstract class PatchApp(
   )
 
   open class SessionController(
-    private val task: SessionTask,
+    private val task: ISessionTask,
     val settings: Settings,
     val model: ChatInterface,
-    val executeIteration: (SessionTask, ChatInterface, Int) -> OutputResult,
+    val executeIteration: (ISessionTask, ChatInterface, Int) -> OutputResult,
     var updateStatus: (String) -> Unit = { _ -> },
     var lastParsedErrors: ParsedErrors? = null,
     val onComplete: (exitCode: OutputResult) -> Unit = { _ -> },
@@ -198,7 +197,7 @@ abstract class PatchApp(
     private val iterationAreaBuffer: StringBuilder = task.add("")!!
 
     // Detached tasks for each iteration's details, keyed by iteration number
-    private val iterationTasks = mutableMapOf<Int, SessionTask>()
+    private val iterationTasks = mutableMapOf<Int, ISessionTask>()
 
     fun start() {
       updateStatus = { message: String ->
@@ -434,7 +433,7 @@ abstract class PatchApp(
       renderSummary()
 
       // Create a detached task for this iteration's output
-      val iterTask = task.ui.newTask(false)
+      val iterTask = task.newTask(false)
       iterationTasks[iteration] = iterTask
       renderIterationArea()
 
@@ -602,13 +601,13 @@ abstract class PatchApp(
    * Called by SessionController for each iteration.
    */
   internal fun executeIteration(
-    task: SessionTask,
+    task: ISessionTask,
     model: ChatInterface,
     iteration: Int = 0
   ): OutputResult {
     log.info("Starting iteration $iteration with settings: ${JsonUtil.toJson(settings)}")
     // Phase 1: Run the command
-    val commandTask = task.ui.newTask(false)
+    val commandTask = task.newTask(false)
     task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Command Output</div>")
     task.add(commandTask.placeholder)
     val outputResult = output(commandTask, settings)
@@ -623,7 +622,7 @@ abstract class PatchApp(
     // Phase 2: Parse errors
     val updateStatus = updateStatus ?: {}
     updateStatus("Parsing errors (Iteration $iteration)...")
-    val fixTask = task.ui.newTask(false)
+    val fixTask = task.newTask(false)
     task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Fix Details</div>")
     task.add(fixTask.placeholder)
     try {
@@ -688,7 +687,7 @@ abstract class PatchApp(
     }
 
   private fun fixAllErrors(
-    task: SessionTask,
+    task: ISessionTask,
     plan: ParsedResponse<ParsedErrors>,
     settings: Settings,
     progressHeader: StringBuilder?,
@@ -712,7 +711,7 @@ abstract class PatchApp(
     filteredErrors.groupBy { it.message }
       .map { (msg, errors) ->
         log.info("Processing error group: $msg with ${errors.size} instances")
-        task.ui.pool.submit {
+        task.pool.submit {
           val subSession = task.linkedTask("Fix: ${msg?.take(50) ?: "Error"}...")
           val statusBuffer = subSession.add("Status: Initializing...")!!
           errors.forEach { error ->
@@ -725,14 +724,12 @@ abstract class PatchApp(
               renderMarkdown(
                 "```json\n${JsonUtil.toJson(error)}\n```",
                 tabs = false,
-                ui = subSession.ui
               )
             )
             subSession.verbose(
               renderMarkdown(
                 "[Extra Details] Error processed at: ${Instant.now()}",
                 tabs = false,
-                ui = subSession.ui
               )
             )
             statusBuffer.set("Status: Searching for relevant files...")
@@ -755,7 +752,6 @@ abstract class PatchApp(
                 renderMarkdown(
                   "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}",
                   tabs = false,
-                  ui = subSession.ui
                 )
               )
             }
@@ -846,7 +842,7 @@ abstract class PatchApp(
     error: ParsedError,
     additionalFiles: List<String>? = null,
     autoFix: Boolean,
-    task: SessionTask,
+    task: ISessionTask,
     model: ChatInterface,
     iteration: Int,
   ) {
@@ -957,7 +953,7 @@ abstract class PatchApp(
     task.verbose(
       renderMarkdown("Previous occurrences of this error:\n\n" + previousErrorOccurances.joinToString("\n") {
         "* " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it.timestamp)
-      } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.ui))
+      } + "\nNon-matching instances: ${others.size}", tabs = false,))
     task.verbose(
       renderMarkdown(
         "Files identified for modification:\n\n${
@@ -966,7 +962,7 @@ abstract class PatchApp(
               root.toPath().resolve(it).toFile().length()
             } bytes)"
           }
-        }", tabs = false, ui = task.ui))
+        }", tabs = false))
     log.info("Fix process completed for error: ${error.message}")
     task.complete("<div>${markdown.renderMarkdown()}</div>")
   }

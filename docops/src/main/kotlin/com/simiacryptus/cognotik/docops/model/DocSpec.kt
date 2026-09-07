@@ -47,3 +47,16 @@ data class TransformMatch(
   val destinationFile: File,
   val spec: DocSpec,
 )
+/**
+  * Merge the frontmatter of every doc that contributed to a target. The first doc wins on
+  * conflicts, which matches the "primary source" ordering used by
+  * [com.simiacryptus.cognotik.docops.model.ContributionKind.sourcePriority].
+  *
+  * Planners must pass the result to `ModificationTask(frontmatter = ...)`; without it the task
+  * carries an empty map all the way down to the host.
+  */
+fun Iterable<DocSpec>.mergedFrontmatter(): Map<String, Any?> {
+   val merged = linkedMapOf<String, Any?>()
+   for (spec in this) for ((key, value) in spec.frontmatter) if (key !in merged) merged[key] = value
+   return merged
+}

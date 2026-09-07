@@ -16,7 +16,7 @@ state, Core handles the plumbing so you can focus on prompts and product logic.
 - **Actor abstractions for LLM interaction** — `SimpleActor` for text, `CodingActor` for code generation with
   execution/evaluation, `ImageActor` for image generation, `ParsedActor` for structured output, `LargeOutputActor`
   for long-form content, and `TextToSpeechActor` for audio.
-- **Session and state management** — `Session`, `ApplicationServices`, and `ClientManager` provide a central
+- **Session and state management** — `Session`, `ApplicationServicesImpl`, and `ClientManager` provide a central
   registry for per-user, per-session application state and API clients.
 - **Pluggable storage** — file-based `DataStorage` and `MetadataStorage` out of the box, with HSQL-backed
   implementations (`HSQLMetadataStorage`, `HSQLUsageManager`) for tracking usage and metadata.

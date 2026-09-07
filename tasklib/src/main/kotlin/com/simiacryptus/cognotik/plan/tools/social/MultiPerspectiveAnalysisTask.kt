@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -85,7 +85,7 @@ class MultiPerspectiveAnalysisTask(
     override fun run(
         agent: TaskOrchestrator,
         messages: List<String>,
-        task: SessionTask,
+        task: ISessionTask,
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
@@ -97,7 +97,7 @@ class MultiPerspectiveAnalysisTask(
         try {
 
 
-            task.ui.pool.submit {
+            task.pool.submit {
                 try {
                     val config = executionConfig ?: throw IllegalStateException("No configuration provided")
                     config.validate()?.let { throw IllegalArgumentException(it) }

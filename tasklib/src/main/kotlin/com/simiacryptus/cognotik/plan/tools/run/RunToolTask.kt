@@ -1,19 +1,19 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.resolveTool
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -67,12 +67,12 @@ class RunToolTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("Starting RunToolTask for tool: ${executionConfig?.tool}")
         val tabs = TabbedDisplay(task)
@@ -89,7 +89,7 @@ class RunToolTask(
           ?: File(orchestrationConfig.absoluteWorkingDir ?: ".")
         val executionConfig = this.executionConfig ?: throw IllegalStateException("Execution config is null")
         val executable = tool.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-          ?: throw IllegalArgumentException("Executable '$tool' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+          ?: throw IllegalArgumentException("Executable '$tool' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
         val command = listOf(executable?.absolutePath
           ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
         ) + args
@@ -98,7 +98,7 @@ class RunToolTask(
 
         transcript?.write("## Command\n```bash\n$commandStr\n```\n\n".toByteArray())
 
-        fun execute(outputTask: SessionTask): String {
+        fun execute(outputTask: ISessionTask): String {
           val status = outputTask.add("Executing process...".renderMarkdown())
           val process = ProcessBuilder(command)
             .directory(workingDir)
@@ -132,13 +132,13 @@ class RunToolTask(
 
           task.add("### Approval Required\nReview the command in the **Command** tab before running.".renderMarkdown())
 
-          task.add(task.ui.hrefLink("▶ Run Tool", "btn btn-primary") {
+          task.add(task.hrefLink("▶ Run Tool", "btn btn-primary") {
             try {
               val outputTask = tabs.newTask("Output")
               result = execute(outputTask)
               outputTask.complete()
 
-              task.add(acceptButtonFooter(task.ui) {
+              task.add(acceptButtonFooter(task) {
                 semaphore.release()
               })
             } catch (e: Exception) {

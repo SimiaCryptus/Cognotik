@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.ClasspathAssetServlet
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
@@ -13,16 +13,31 @@ import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
 import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
+import java.net.URI
 import java.util.*
 
 class CognotikAppServer(
-  val localName: String,
+  val hostInterface: String,
   val port: Int = 8080,
 ) {
+  /**
+   * Host name to advertise in URLs. Binding to a wildcard (`0.0.0.0`, `::`) or loopback
+   * (`127.0.0.1`, `::1`) address is reported as `localhost` so generated links are clickable.
+   */
+  val publicHost: String = displayHostFor(hostInterface)
+
   val server by lazy {
     try {
-      log.info("Initializing server on $localName:$port")
-      val server = Server(InetSocketAddress(localName, port))
+      log.info("Initializing server on $hostInterface:$port")
+      val server = object : Server(InetSocketAddress(hostInterface, port)) {
+        override fun getURI(): URI? {
+          val uri = super.getURI() ?: return null
+          val host = uri.host ?: return uri
+          val display = displayHostFor(host)
+          return if (display == host) uri
+          else URI(uri.scheme, uri.userInfo, display, uri.port, uri.path, uri.query, uri.fragment)
+        }
+      }
       server.handler = ContextHandlerCollection().apply {
         this.handlers = arrayOf(
           newWebAppContext(SessionProxyServer(), "/")
@@ -39,7 +54,7 @@ class CognotikAppServer(
       }
       server
     } catch (e: Exception) {
-      log.error("Failed to initialize server on $localName:$port", e)
+      log.error("Failed to initialize server on $hostInterface:$port", e)
       throw e
     }
   }
@@ -68,7 +83,7 @@ class CognotikAppServer(
         log.debug("Registered context path aliases: ${aliases.joinToString(", ")}")
       }
       server.configure(context)
-       registerSharedAssets(context)
+      registerSharedAssets(context)
       log.info("Successfully created WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
       context
     } catch (e: Exception) {
@@ -76,42 +91,44 @@ class CognotikAppServer(
       throw e
     }
   }
-   /**
-    * Mounts the shared web assets read from the classpath (never from disk):
-    * `web/lib` at [LIB_PREFIX] and `web/app` at [APP_PREFIX], matching
-    * `FileServerCli` so the same front-end bundles work in both servers.
-    */
-   private fun registerSharedAssets(context: WebAppContext) {
-     registerAssetServlet(context, "web-lib", "web/lib", LIB_PREFIX)
-     registerAssetServlet(context, "web-app", "web/app", APP_PREFIX)
-   }
-   private fun registerAssetServlet(
-     context: WebAppContext,
-     name: String,
-     resourceRoot: String,
-     prefix: String
-   ) {
-     try {
-       val holder = ServletHolder(name, ClasspathAssetServlet(resourceRoot)).apply {
-         isAsyncSupported = true
-         initOrder = 1
-       }
 
-       context.addServlet(holder, "$prefix/*")
-       log.info("Mounted classpath assets '$resourceRoot' at $prefix/")
-     } catch (e: Exception) {
-       log.error("Failed to mount classpath assets '$resourceRoot' at $prefix/", e)
-       throw e
-     }
-   }
+  /**
+   * Mounts the shared web assets read from the classpath (never from disk):
+   * `web/lib` at [LIB_PREFIX] and `web/app` at [APP_PREFIX], matching
+   * `FileServerCli` so the same front-end bundles work in both servers.
+   */
+  private fun registerSharedAssets(context: WebAppContext) {
+    registerAssetServlet(context, "web-lib", "web/lib", LIB_PREFIX)
+    registerAssetServlet(context, "web-app", "web/app", APP_PREFIX)
+  }
+
+  private fun registerAssetServlet(
+    context: WebAppContext,
+    name: String,
+    resourceRoot: String,
+    prefix: String
+  ) {
+    try {
+      val holder = ServletHolder(name, ClasspathAssetServlet(resourceRoot)).apply {
+        isAsyncSupported = true
+        initOrder = 1
+      }
+
+      context.addServlet(holder, "$prefix/*")
+      log.info("Mounted classpath assets '$resourceRoot' at $prefix/")
+    } catch (e: Exception) {
+      log.error("Failed to mount classpath assets '$resourceRoot' at $prefix/", e)
+      throw e
+    }
+  }
 
   fun start(): Server {
     try {
-      log.info("Starting CognotikAppServer on $localName:$port")
+      log.info("Starting CognotikAppServer on $hostInterface:$port")
       server.start()
       if (server.isStarted) {
-        log.info("CognotikAppServer successfully started on $localName:$port")
-         log.info("Shared assets available at http://$localName:$port$LIB_PREFIX/ (classpath web/lib) and http://$localName:$port$APP_PREFIX/ (classpath web/app)")
+        log.info("CognotikAppServer successfully started on $hostInterface:$port (advertised as ${server.uri})")
+        log.info("Shared assets available at http://$publicHost:$port$LIB_PREFIX/ (classpath web/lib) and http://$publicHost:$port$APP_PREFIX/ (classpath web/app)")
       } else {
         log.warn("Server start() completed but server is not in started state")
       }
@@ -124,14 +141,34 @@ class CognotikAppServer(
 
   companion object {
     private val log = LoggerFactory.getLogger(CognotikAppServer::class.java)
-     /**
-      * Shared web assets served straight from the classpath, independent of any
-      * session or workspace: `web/lib` is published at [LIB_PREFIX] and
-      * `web/app` at [APP_PREFIX] (same contract as `FileServerCli`).
-      */
-     const val LIB_PREFIX = "/lib"
-     /** @see LIB_PREFIX */
-     const val APP_PREFIX = "/app"
+
+    /** Bind addresses that should be advertised as `localhost` in generated URLs. */
+    private val LOCAL_BIND_ALIASES = setOf(
+      "0.0.0.0",
+      "127.0.0.1",
+      "::",
+      "::1",
+      "0:0:0:0:0:0:0:0",
+      "0:0:0:0:0:0:0:1",
+    )
+
+    /**
+     * Maps a wildcard/loopback bind address to `localhost`; any other host is returned unchanged.
+     */
+    fun displayHostFor(host: String?): String {
+      val normalized = host?.trim()?.removeSurrounding("[", "]")?.substringBefore('%') ?: ""
+      return if (normalized.isEmpty() || normalized.lowercase() in LOCAL_BIND_ALIASES) "localhost" else normalized
+    }
+
+    /**
+     * Shared web assets served straight from the classpath, independent of any
+     * session or workspace: `web/lib` is published at [LIB_PREFIX] and
+     * `web/app` at [APP_PREFIX] (same contract as `FileServerCli`).
+     */
+    const val LIB_PREFIX = "/lib"
+
+    /** @see LIB_PREFIX */
+    const val APP_PREFIX = "/app"
 
 
     @Transient
@@ -150,8 +187,6 @@ class CognotikAppServer(
       try {
         if (null == server || !server!!.server.isRunning) {
           if (endpoint.isBlank()) throw IllegalArgumentException("Endpoint cannot be blank when starting a new server")
-          val endpoint = endpoint
-          val port = port
 
           if (endpoint.isBlank()) {
             log.error("Listening endpoint is blank")

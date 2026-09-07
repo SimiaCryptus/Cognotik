@@ -211,6 +211,24 @@ export const tools = [
             '/lib/purify.min.js — optional HTML sanitising'
         ],
         storage: ['issues.sort', 'issues.author', 'issues.backup.<basePath>']
+    },
+    {
+        id: 'git',
+        name: 'Git',
+        icon: '🌿',
+        category: 'track',
+        status: 'stable',
+        tagline: 'Browser UI for driving a Git repository via JSON HTTP API.',
+        description:
+            'A single-page, dependency-free browser UI for driving a Git repository. Inspect ' +
+            'working tree status, commit history, diffs, branches, stashes, tags, and submodules, ' +
+            'or perform commits, merges, reverts, and resets against local endpoints.',
+        entry: 'git/index.html',
+        docs: 'git/README.md',
+        tags: ['git', 'vcs', 'diff', 'branches', 'history', 'no-build'],
+        requires: [
+            '<base>/.git/api/* JSON endpoints'
+        ]
     }
 ];
 

@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Git</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --panel: #171a21;
+            --panel-2: #1e222b;
+            --border: #2a2f3a;
+            --fg: #e6e9ef;
+            --muted: #9aa4b2;
+            --accent: #4f8cff;
+            --accent-2: #7c5cff;
+            --ok: #3ecf8e;
+            --warn: #f5a524;
+            --err: #f4636e;
+            --radius: 10px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        a { color: var(--accent); }
+
+        h1, h2, h3 { margin: 0 0 .5rem; line-height: 1.25; }
+
+        code, .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12.5px;
+        }
+
+        .wrap { max-width: 1500px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+
+        #menubar-mount:empty { display: none; }
+
+        body.has-menubar .wrap { padding-top: 1.5rem; }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 330px minmax(0, 1fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1040px) {
+            .layout { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .panel > h2 {
+            font-size: .95rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+        }
+
+        label { display: block; font-size: .8rem; color: var(--muted); margin: .6rem 0 .25rem; }
+
+        label.inline {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            margin: .35rem .6rem .1rem 0;
+            color: var(--fg);
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: var(--panel-2);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem .6rem;
+            font: inherit;
+        }
+
+        input[type="checkbox"] { width: auto; vertical-align: middle; }
+
+        textarea { min-height: 90px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+
+        button {
+            background: var(--panel-2);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .45rem .8rem;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        button.small { padding: .25rem .5rem; font-size: .8rem; }
+
+        button:hover:not(:disabled) { border-color: var(--accent); }
+
+        button:disabled { opacity: .5; cursor: not-allowed; }
+
+        button.primary {
+            background: linear-gradient(180deg, var(--accent), #3f76e0);
+            border-color: transparent;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        button.danger:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+
+        .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: .75rem;
+        }
+
+        .muted { color: var(--muted); }
+
+        .small { font-size: .8rem; }
+
+        .spacer { margin-left: auto; }
+
+        .hidden { display: none !important; }
+
+        .banner {
+            border-radius: var(--radius);
+            padding: .7rem .9rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+        }
+
+        .banner.error { border-color: var(--err); color: #ffd7da; background: #2a1417; }
+
+        .banner.warn { border-color: var(--warn); color: #ffe6bf; background: #2a2113; }
+
+        .badge {
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: .12rem .45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .badge.ok { color: var(--ok); border-color: var(--ok); }
+
+        .badge.warn { color: var(--warn); border-color: var(--warn); }
+
+        .badge.err { color: var(--err); border-color: var(--err); }
+
+        .badge.accent { color: var(--accent); border-color: var(--accent); }
+
+        .badges { display: flex; gap: .35rem; flex-wrap: wrap; margin: .35rem 0; }
+
+        /* lists */
+        .list {
+            list-style: none;
+            margin: .5rem 0 0;
+            padding: 0;
+            display: grid;
+            gap: .3rem;
+            max-height: 40vh;
+            overflow: auto;
+        }
+
+        .list li {
+            display: flex;
+            gap: .4rem;
+            align-items: center;
+            background: var(--panel-2);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: .3rem .45rem;
+        }
+
+        .list li.current { border-color: var(--accent); }
+
+        .list li .name {
+            flex: 1 1 auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+        }
+
+        .list li button { background: transparent; color: var(--muted); padding: .05rem .4rem; font-size: .75rem; flex: 0 0 auto; }
+
+        .list li button:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
+
+        .list li button.danger:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+
+        /* changes */
+        .changes { max-height: 32vh; overflow: auto; }
+
+        .change {
+            display: flex;
+            gap: .5rem;
+            align-items: center;
+            padding: .18rem .35rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .change:hover { background: var(--panel-2); }
+
+        .change .st {
+            width: 2.2rem;
+            flex: 0 0 auto;
+            text-align: center;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 11.5px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .change .st.a { color: var(--ok); border-color: var(--ok); }
+
+        .change .st.m { color: var(--warn); border-color: var(--warn); }
+
+        .change .st.d { color: var(--err); border-color: var(--err); }
+
+        .change .st.u { color: var(--accent-2); border-color: var(--accent-2); }
+
+        .change .f {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* tabs */
+        .tabs {
+            display: flex;
+            gap: .25rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: .9rem;
+            flex-wrap: wrap;
+        }
+
+        .tabs button {
+            border: none;
+            border-bottom: 2px solid transparent;
+            border-radius: 8px 8px 0 0;
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+        .tabpanel[hidden] { display: none; }
+
+        /* commits */
+        .commits { display: grid; gap: .45rem; max-height: 60vh; overflow: auto; }
+
+        .commit {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-left-width: 3px;
+            border-radius: 8px;
+            padding: .45rem .6rem;
+        }
+
+        .commit.head { border-left-color: var(--accent); }
+
+        .commit .subject { font-weight: 600; }
+
+        .commit .meta { color: var(--muted); font-size: .78rem; margin-top: .1rem; }
+
+        .commit .acts { margin-top: .35rem; display: flex; gap: .3rem; flex-wrap: wrap; }
+
+        .commit .acts button { background: transparent; color: var(--muted); padding: .05rem .45rem; font-size: .75rem; }
+
+        /* patch view */
+        .out {
+            background: #0b0d12;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .55rem .65rem;
+            max-height: 60vh;
+            overflow: auto;
+            margin-top: .6rem;
+        }
+
+        pre.patch {
+            margin: 0;
+            white-space: pre;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        pre.patch .d-add { color: var(--ok); }
+
+        pre.patch .d-del { color: var(--err); }
+
+        pre.patch .d-hunk { color: var(--accent-2); }
+
+        pre.patch .d-meta { color: var(--muted); }
+
+        /* console */
+        #console {
+            max-height: 190px;
+            overflow: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            background: #0b0d12;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem .6rem;
+            margin-top: .6rem;
+        }
+
+        #console .l-error { color: var(--err); }
+
+        #console .l-ok { color: var(--ok); }
+
+        #console .l-warn { color: var(--warn); }
+
+        #console time { color: var(--muted); margin-right: .5rem; }
+
+        .card {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .6rem .75rem;
+        }
+
+        .cards { display: grid; gap: .5rem; }
+
+        .sep { height: 1px; background: var(--border); margin: .85rem 0; }
+    </style>
+</head>
+<body>
+<!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
+<div id="menubar-mount"></div>
+
+<div class="wrap">
+    <div id="banner" class="banner error hidden"></div>
+
+    <div class="layout">
+        <!-- ───────────────────────── sidebar ───────────────────────── -->
+        <aside>
+            <section class="panel">
+                <h2>Repository</h2>
+                <div class="small muted" id="repo-info">connecting…</div>
+                <label for="api-base">API base (<code>&lt;base&gt;/.git/api/&lt;op&gt;</code>)</label>
+                <input id="api-base" type="text" spellcheck="false">
+                <label for="repo-scope">Repository scope (every operation below targets this repo)</label>
+                <select id="repo-scope">
+                    <option value="">(root repository)</option>
+                </select>
+                <div class="row" style="margin-top:.5rem">
+                    <button id="apply-base" class="small">Apply</button>
+                    <button id="refresh-all" class="small">Refresh all</button>
+                    <button id="init-btn" class="small" title="git init + initial commit">Init repo</button>
+                </div>
+            </section>
+
+            <section class="panel hidden" id="op-panel">
+                <h2>Operation in progress</h2>
+                <div class="badges"><span class="badge warn" id="op-name"></span></div>
+                <div class="small muted" id="op-conflicts"></div>
+                <div class="row" style="margin-top:.5rem">
+                    <button class="small" id="op-continue">Continue</button>
+                    <button class="small" id="op-skip">Skip</button>
+                    <button class="small danger" id="op-abort">Abort</button>
+                    <button class="small danger" id="op-quit">Quit</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Branches</h2>
+                <label for="branch-new">New branch</label>
+                <input id="branch-new" type="text" spellcheck="false" placeholder="feature/my-branch">
+                <label for="branch-start">Start point (optional)</label>
+                <input id="branch-start" type="text" spellcheck="false" placeholder="HEAD, main, e12c5cc…">
+                <div class="row" style="margin-top:.5rem">
+                    <label class="inline small"><input id="branch-checkout" type="checkbox" checked> checkout</label>
+                    <button id="branch-create" class="small primary spacer">Create</button>
+                </div>
+                <ul class="list" id="branch-list"></ul>
+                <div class="small muted" id="branch-empty">No branches loaded.</div>
+            </section>
+
+            <section class="panel">
+                <h2>Stashes</h2>
+                <label for="stash-message">Message</label>
+                <input id="stash-message" type="text" spellcheck="false" placeholder="wip">
+                <div class="row">
+                    <label class="inline small"><input id="stash-untracked" type="checkbox"> untracked</label>
+                    <label class="inline small"><input id="stash-keepindex" type="checkbox"> keep index</label>
+                    <button id="stash-push" class="small spacer">Stash</button>
+                </div>
+                <ul class="list" id="stash-list"></ul>
+                <div class="small muted" id="stash-empty">No stashes.</div>
+            </section>
+
+            <section class="panel">
+                <h2>Remotes</h2>
+                <ul class="list" id="remote-list"></ul>
+                <div class="small muted" id="remote-empty">No remotes.</div>
+            </section>
+            <section class="panel">
+                <h2>Download</h2>
+                <label for="archive-ref">Ref (branch, tag or commit)</label>
+                <input id="archive-ref" type="text" spellcheck="false" placeholder="HEAD">
+                <label for="archive-path">Subdirectory (optional, source zip only)</label>
+                <input id="archive-path" type="text" spellcheck="false" placeholder="src">
+                <div class="row" style="margin-top:.5rem">
+                    <button id="archive-download" class="small primary"
+                            title="git archive --format=zip &lt;ref&gt;">Source .zip
+                    </button>
+                    <button id="history-download" class="small"
+                            title="bare --single-branch clone of the history, zipped">History .zip
+                    </button>
+                </div>
+                <label class="inline small"><input id="history-all" type="checkbox"> all branches (history zip)</label>
+                <label class="inline small"><input id="archive-subs" type="checkbox" checked> include submodules</label>
+                <div class="small muted">The history zip is a bare git repository — <code>git clone</code> it back.</div>
+                <div class="small muted">With submodules the history zip also carries
+                    <code>submodules/&lt;path&gt;.git</code> for every nested submodule.</div>
+            </section>
+        </aside>
+
+        <!-- ───────────────────────── main ───────────────────────── -->
+        <main>
+            <section class="panel">
+                <h2>Working tree</h2>
+                <div class="badges" id="status-summary"></div>
+                <div class="changes" id="changes-list"></div>
+                <div class="small muted" id="changes-empty">Nothing to show yet.</div>
+                <div class="sep"></div>
+                <label for="commit-message">Commit message (commits <em>all</em> changes — the API stages with
+                    <code>git add -A</code>)</label>
+                <textarea id="commit-message" spellcheck="false" placeholder="Describe the change…"></textarea>
+                <div class="row" style="margin-top:.5rem">
+                    <button id="commit-btn" class="primary">Commit</button>
+                    <span class="small muted">Ctrl/Cmd+Enter</span>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="tabs" role="tablist">
+                    <button class="tab" role="tab" data-tab="log" aria-selected="true">Log</button>
+                    <button class="tab" role="tab" data-tab="diff" aria-selected="false">Diff</button>
+                    <button class="tab" role="tab" data-tab="show" aria-selected="false">Show</button>
+                    <button class="tab" role="tab" data-tab="tags" aria-selected="false">Tags</button>
+                    <button class="tab" role="tab" data-tab="submodules" aria-selected="false">Submodules</button>
+                    <button class="tab" role="tab" data-tab="maint" aria-selected="false">Maintenance</button>
+                </div>
+
+                <!-- log -->
+                <div class="tabpanel" data-tab="log">
+                    <div class="row">
+                        <label class="inline small" for="log-max">count</label>
+                        <input id="log-max" type="text" value="25" style="width:5rem">
+                        <button id="log-refresh" class="small">Refresh log</button>
+                    </div>
+                    <div class="commits" id="commit-list" style="margin-top:.6rem"></div>
+                    <div class="small muted" id="commit-empty">No commits loaded.</div>
+                </div>
+
+                <!-- diff -->
+                <div class="tabpanel" data-tab="diff" hidden>
+                    <div class="grid-2">
+                        <div>
+                            <label for="diff-from">From (rev, optional)</label>
+                            <input id="diff-from" type="text" spellcheck="false" placeholder="HEAD~1">
+                        </div>
+                        <div>
+                            <label for="diff-to">To (rev, optional)</label>
+                            <input id="diff-to" type="text" spellcheck="false" placeholder="HEAD">
+                        </div>
+                        <div>
+                            <label for="diff-path">Path (optional)</label>
+                            <input id="diff-path" type="text" spellcheck="false" placeholder="src/Foo.kt">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:.5rem">
+                        <label class="inline small"><input id="diff-staged" type="checkbox"> staged</label>
+                        <label class="inline small"><input id="diff-nameonly" type="checkbox"> names only</label>
+                        <button id="diff-run" class="small primary">Diff</button>
+                        <button id="diff-clear" class="small">Clear filters</button>
+                    </div>
+                    <div class="out" id="diff-out"><span class="small muted">No diff yet.</span></div>
+                </div>
+
+                <!-- show -->
+                <div class="tabpanel" data-tab="show" hidden>
+                    <div class="grid-2">
+                        <div>
+                            <label for="show-ref">Revision</label>
+                            <input id="show-ref" type="text" spellcheck="false" value="HEAD">
+                        </div>
+                        <div>
+                            <label for="show-path">Path (optional — shows file content at that rev)</label>
+                            <input id="show-path" type="text" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:.5rem">
+                        <label class="inline small"><input id="show-stat" type="checkbox"> stat only</label>
+                        <button id="show-run" class="small primary">Show</button>
+                    </div>
+                    <div class="out" id="show-out"><span class="small muted">Nothing shown yet.</span></div>
+                </div>
+
+                <!-- tags -->
+                <div class="tabpanel" data-tab="tags" hidden>
+                    <div class="grid-2">
+                        <div>
+                            <label for="tag-name">Tag name</label>
+                            <input id="tag-name" type="text" spellcheck="false" placeholder="v1.0.0">
+                        </div>
+                        <div>
+                            <label for="tag-ref">At revision (optional)</label>
+                            <input id="tag-ref" type="text" spellcheck="false" placeholder="HEAD">
+                        </div>
+                        <div>
+                            <label for="tag-message">Message (annotated tag when set)</label>
+                            <input id="tag-message" type="text" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:.5rem">
+                        <label class="inline small"><input id="tag-force" type="checkbox"> force</label>
+                        <button id="tag-create" class="small primary">Create tag</button>
+                        <button id="tag-refresh" class="small">Refresh</button>
+                    </div>
+                    <ul class="list" id="tag-list" style="max-height:45vh"></ul>
+                    <div class="small muted" id="tag-empty">No tags.</div>
+                </div>
+
+                <!-- submodules -->
+                <div class="tabpanel" data-tab="submodules" hidden>
+                    <div class="grid-2">
+                        <div>
+                            <label for="sub-url">Repository URL</label>
+                            <input id="sub-url" type="text" spellcheck="false" placeholder="https://host/repo.git">
+                        </div>
+                        <div>
+                            <label for="sub-path">Path</label>
+                            <input id="sub-path" type="text" spellcheck="false" placeholder="libs/repo">
+                        </div>
+                        <div>
+                            <label for="sub-branch">Branch (optional)</label>
+                            <input id="sub-branch" type="text" spellcheck="false" placeholder="main">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:.5rem">
+                        <label class="inline small"><input id="sub-recursive" type="checkbox"> recursive</label>
+                        <label class="inline small"><input id="sub-init" type="checkbox" checked> init</label>
+                        <label class="inline small"><input id="sub-remote" type="checkbox"> remote</label>
+                        <label class="inline small"><input id="sub-force" type="checkbox"> force</label>
+                        <button id="sub-add" class="small primary">Add</button>
+                        <button id="sub-update-all" class="small">Update all</button>
+                        <button id="sub-sync-all" class="small">Sync all</button>
+                        <button id="sub-refresh" class="small">Refresh</button>
+                    </div>
+                    <div class="cards" id="sub-list" style="margin-top:.7rem"></div>
+                    <div class="small muted" id="sub-empty">No submodules.</div>
+                </div>
+
+                <!-- maintenance -->
+                <div class="tabpanel" data-tab="maint" hidden>
+                    <h3 class="small muted">Merge</h3>
+                    <div class="grid-2">
+                        <div>
+                            <label for="merge-ref">Ref to merge</label>
+                            <input id="merge-ref" type="text" spellcheck="false" placeholder="feature/x">
+                        </div>
+                        <div>
+                            <label for="merge-message">Message (optional)</label>
+                            <input id="merge-message" type="text" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:.4rem">
+                        <label class="inline small"><input id="merge-noff" type="checkbox"> --no-ff</label>
+                        <label class="inline small"><input id="merge-squash" type="checkbox"> --squash</label>
+                        <button id="merge-run" class="small primary">Merge</button>
+                    </div>
+
+                    <div class="sep"></div>
+                    <h3 class="small muted">Revert / cherry-pick</h3>
+                    <label for="seq-commits">Commits (comma or newline separated)</label>
+                    <textarea id="seq-commits" class="mono" spellcheck="false" placeholder="e12c5cc"></textarea>
+                    <div class="row" style="margin-top:.4rem">
+                        <label class="inline small"><input id="seq-nocommit" type="checkbox"> --no-commit</label>
+                        <label class="inline small"><input id="seq-x" type="checkbox"> -x (record origin)</label>
+                        <label class="inline small" for="seq-mainline">mainline</label>
+                        <input id="seq-mainline" type="text" style="width:4rem" placeholder="">
+                        <button id="seq-revert" class="small">Revert</button>
+                        <button id="seq-cherry" class="small">Cherry-pick</button>
+                    </div>
+
+                    <div class="sep"></div>
+                    <h3 class="small muted">Reset</h3>
+                    <div class="grid-2">
+                        <div>
+                            <label for="reset-mode">Mode</label>
+                            <select id="reset-mode">
+                                <option>mixed</option>
+                                <option>soft</option>
+                                <option>hard</option>
+                                <option>merge</option>
+                                <option>keep</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="reset-ref">Revision</label>
+                            <input id="reset-ref" type="text" spellcheck="false" value="HEAD">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:.4rem">
+                        <button id="reset-run" class="small danger">Reset</button>
+                    </div>
+
+                    <div class="sep"></div>
+                    <h3 class="small muted">Clean untracked files</h3>
+                    <div class="row">
+                        <label class="inline small"><input id="clean-dirs" type="checkbox" checked> directories (-d)</label>
+                        <label class="inline small"><input id="clean-ignored" type="checkbox"> ignored (-x)</label>
+                        <label class="inline small"><input id="clean-dry" type="checkbox" checked> dry run</label>
+                        <label class="inline small"><input id="clean-force" type="checkbox"> force</label>
+                        <button id="clean-run" class="small danger">Clean</button>
+                    </div>
+                    <div class="out" id="clean-out"><span class="small muted">Nothing cleaned yet.</span></div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Console</h2>
+                <div id="console" aria-live="polite"></div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        /* ───────────────────────── helpers ───────────────────────── */
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s === null || s === undefined ? '' : s)
+            .replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        const msgOf = (e) => (e && e.message ? e.message : String(e));
+        const firstLine = (s) => String(s || '').split('\n').filter((l) => l.trim())[0] || '';
+        const STORE = 'cognotikGitUi:' + location.pathname;
+
+        const state = {
+            base: '',
+            /* root-relative path of the submodule every request is scoped to ('' = root repo) */
+            repo: '',
+            status: null,
+            branches: [],
+            currentBranch: '',
+            commits: [],
+            tags: [],
+            stashes: [],
+            remotes: [],
+            submodules: [],
+            busy: false
+        };
+
+        let menu = null;
+
+        function log(message, level) {
+            const line = document.createElement('div');
+            if (level) line.className = 'l-' + level;
+            const t = document.createElement('time');
+            t.textContent = new Date().toLocaleTimeString();
+            line.appendChild(t);
+            line.appendChild(document.createTextNode(message));
+            const box = $('console');
+            box.appendChild(line);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function banner(text, kind) {
+            const el = $('banner');
+            if (!text) {
+                el.classList.add('hidden');
+                return;
+            }
+            el.className = 'banner ' + (kind || 'error');
+            el.textContent = text;
+            el.classList.remove('hidden');
+        }
+
+        function setBusy(busy) {
+            state.busy = busy;
+            document.querySelectorAll('button').forEach((b) => {
+                if (!b.classList.contains('tab')) b.disabled = busy;
+            });
+        }
+
+        /* ───────────────────────── transport ───────────────────────── */
+
+        function defaultBase() {
+            const q = new URLSearchParams(location.search);
+            const override = q.get('api') || q.get('base');
+            if (override) return String(override).replace(/\/+$/, '');
+            let stored = null;
+            try {
+                stored = localStorage.getItem(STORE);
+            } catch (e) { /* storage may be unavailable */
+            }
+            if (stored) return stored;
+            const p = location.pathname;
+            const i = p.lastIndexOf('/');
+            return (i > 0 ? p.slice(0, i) : '').replace(/\/+$/, '');
+        }
+
+        function persistBase() {
+            try {
+                localStorage.setItem(STORE, state.base);
+            } catch (e) { /* ignore */
+            }
+        }
+
+        /**
+         * Every endpoint answers with JSON (even for 4xx/5xx), so the raw payload is
+         * returned to the caller together with the HTTP status.
+         */
+        async function api(method, action, opts) {
+            const o = opts || {};
+            const qs = new URLSearchParams();
+            const params = Object.assign({}, o.params || {});
+            /* Scope reads to the selected submodule unless the caller was explicit. */
+            if (state.repo && params.submodule === undefined) params.submodule = state.repo;
+            Object.keys(params).forEach((k) => {
+                const v = params[k];
+                if (v === undefined || v === null || v === '' || v === false) return;
+                qs.set(k, String(v));
+            });
+            const url = state.base + '/.git/api/' + action + (qs.toString() ? '?' + qs.toString() : '');
+            const init = {method: method, credentials: 'same-origin', headers: {Accept: 'application/json'}};
+            if (o.body !== undefined) {
+                const body = Object.assign({}, o.body);
+                if (state.repo && body.submodule === undefined) body.submodule = state.repo;
+                init.headers['Content-Type'] = 'application/json';
+                init.body = JSON.stringify(body);
+            }
+            let res, text;
+            try {
+                res = await fetch(url, init);
+                text = await res.text();
+            } catch (e) {
+                throw new Error('Network error for ' + url + ': ' + msgOf(e));
+            }
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Non-JSON response (HTTP ' + res.status + ') from ' + url + ': ' +
+                    text.slice(0, 200));
+            }
+            data.httpStatus = res.status;
+            return data;
+        }
+
+        const failed = (d) => d.success === false || (d.success === undefined && !!d.error);
+
+        /** Logs the outcome of a mutating call; returns true on success. */
+        function report(data, okMessage) {
+            if (failed(data)) {
+                log(data.error || ('operation failed (HTTP ' + data.httpStatus + ')'), 'error');
+                if (Array.isArray(data.conflicts) && data.conflicts.length) {
+                    log('Conflicts: ' + data.conflicts.join(', '), 'warn');
+                }
+                if (data.output) log(data.output.trim(), 'warn');
+                return false;
+            }
+            log(okMessage + (data.output && firstLine(data.output) ? ' — ' + firstLine(data.output) : ''), 'ok');
+            return true;
+        }
+
+        /** Wraps a mutating action: busy flag, error trapping, refresh afterwards. */
+        async function guard(fn, refresh) {
+            if (state.busy) return;
+            setBusy(true);
+            try {
+                await fn();
+            } catch (e) {
+                log(msgOf(e), 'error');
+            } finally {
+                setBusy(false);
+            }
+            if (refresh !== false) await refreshAll(true);
+        }
+
+        /* ───────────────────────── rendering ───────────────────────── */
+
+        function statusClass(code) {
+            const c = String(code || '').trim();
+            if (c === '??') return 'u';
+            if (/[UD]/.test(c) && /U/.test(c)) return 'u';
+            if (c.indexOf('A') >= 0) return 'a';
+            if (c.indexOf('D') >= 0) return 'd';
+            return 'm';
+        }
+
+        function renderStatus() {
+            const d = state.status;
+            const sum = $('status-summary');
+            const list = $('changes-list');
+            const empty = $('changes-empty');
+            list.innerHTML = '';
+            if (!d) {
+                sum.innerHTML = '';
+                empty.textContent = 'Status unavailable.';
+                empty.classList.remove('hidden');
+                return;
+            }
+            if (d.initialized === false) {
+                sum.innerHTML = '<span class="badge warn">not a git repository</span>';
+                empty.textContent = 'This session directory is not a git repository yet — press “Init repo”.';
+                empty.classList.remove('hidden');
+                $('op-panel').classList.add('hidden');
+                return;
+            }
+            const changes = Array.isArray(d.changes) ? d.changes : [];
+            sum.innerHTML =
+                '<span class="badge accent">' + esc(d.currentBranch || '(detached)') + '</span>' +
+                '<span class="badge ' + (d.clean ? 'ok' : 'warn') + '">' +
+                (d.clean ? 'clean' : changes.length + ' change(s)') + '</span>' +
+                (d.hasSubmodules ? '<span class="badge">submodules</span>' : '') +
+                (d.operation ? '<span class="badge err">' + esc(d.operation) + ' in progress</span>' : '');
+
+            empty.classList.toggle('hidden', changes.length > 0);
+            empty.textContent = 'Working tree clean.';
+            changes.forEach((c) => {
+                const row = document.createElement('div');
+                row.className = 'change';
+                row.title = 'Show the diff for this path';
+                row.dataset.act = 'diff';
+                row.dataset.file = c.file || '';
+                row.innerHTML = '<span class="st ' + statusClass(c.status) + '">' + esc(c.status || '??') +
+                    '</span><span class="f">' + esc(c.file || '') + '</span>';
+                list.appendChild(row);
+            });
+
+            /* in-progress sequencer */
+            const op = d.operation || '';
+            const panel = $('op-panel');
+            if (op) {
+                panel.classList.remove('hidden');
+                $('op-name').textContent = op;
+                const conflicts = Array.isArray(d.conflicts) ? d.conflicts : [];
+                $('op-conflicts').innerHTML = conflicts.length
+                    ? 'Conflicted paths:<br>' + conflicts.map((f) => '<code>' + esc(f) + '</code>').join('<br>')
+                    : 'No unmerged paths reported.';
+                const rebase = op === 'rebase';
+                $('op-skip').classList.toggle('hidden', op === 'merge');
+                ['op-continue', 'op-skip', 'op-abort', 'op-quit'].forEach((id) => {
+                    $(id).title = rebase
+                        ? 'The server API does not expose a rebase endpoint — resolve it from a shell'
+                        : 'git ' + op + ' --' + id.slice(3);
+                });
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function renderBranches() {
+            const local = [];
+            const remote = [];
+            state.branches.forEach((b) => {
+                const name = String(b.name || '');
+                if (!name || name.indexOf('->') >= 0) return;
+                (name.indexOf('remotes/') === 0 ? remote : local).push({name: name, current: !!b.current});
+            });
+            const list = $('branch-list');
+            list.innerHTML = '';
+            $('branch-empty').classList.toggle('hidden', local.length + remote.length > 0);
+            local.concat(remote).forEach((b) => {
+                const li = document.createElement('li');
+                if (b.current) li.classList.add('current');
+                const isRemote = b.name.indexOf('remotes/') === 0;
+                li.innerHTML =
+                    '<span class="name" title="' + esc(b.name) + '">' +
+                    (b.current ? '● ' : '') + esc(b.name) + '</span>' +
+                    (b.current ? '' : '<button data-act="checkout" data-name="' + esc(b.name) +
+                        '" title="Checkout">⇥</button>') +
+                    (b.current ? '' : '<button data-act="merge" data-name="' + esc(b.name) +
+                        '" title="Merge into the current branch">⇲</button>') +
+                    '<button data-act="archive" data-name="' + esc(b.name) +
+                    '" title="Download a zip of this ref">⭳</button>' +
+                    (b.current || isRemote ? '' : '<button class="danger" data-act="delete-branch" data-name="' +
+                        esc(b.name) + '" title="Delete branch">🗑</button>');
+                list.appendChild(li);
+            });
+        }
+
+        function renderCommits() {
+            const box = $('commit-list');
+            box.innerHTML = '';
+            $('commit-empty').classList.toggle('hidden', state.commits.length > 0);
+            state.commits.forEach((c, i) => {
+                const div = document.createElement('div');
+                div.className = 'commit' + (i === 0 ? ' head' : '');
+                const short = String(c.hash || '').slice(0, 10);
+                div.innerHTML =
+                    '<div class="subject">' + esc(c.message || '(no subject)') + '</div>' +
+                    '<div class="meta mono">' + esc(short) + ' · ' + esc(c.author || '') +
+                    ' &lt;' + esc(c.email || '') + '&gt; · ' + esc(c.date || '') + '</div>' +
+                    '<div class="acts">' +
+                    '<button data-act="show" data-hash="' + esc(c.hash) + '">show</button>' +
+                    '<button data-act="stat" data-hash="' + esc(c.hash) + '">stat</button>' +
+                    '<button data-act="diff-here" data-hash="' + esc(c.hash) + '">diff vs HEAD</button>' +
+                    '<button data-act="checkout-commit" data-hash="' + esc(c.hash) + '">checkout</button>' +
+                    '<button data-act="archive" data-hash="' + esc(c.hash) + '">zip</button>' +
+                    '<button data-act="branch-here" data-hash="' + esc(c.hash) + '">branch here</button>' +
+                    '<button data-act="tag-here" data-hash="' + esc(c.hash) + '">tag here</button>' +
+                    '<button data-act="cherry" data-hash="' + esc(c.hash) + '">cherry-pick</button>' +
+                    '<button data-act="revert" data-hash="' + esc(c.hash) + '">revert</button>' +
+                    '<button class="danger" data-act="reset-here" data-hash="' + esc(c.hash) + '">reset</button>' +
+                    '</div>';
+                box.appendChild(div);
+            });
+        }
+
+        function renderTags() {
+            const list = $('tag-list');
+            list.innerHTML = '';
+            $('tag-empty').classList.toggle('hidden', state.tags.length > 0);
+            state.tags.forEach((t) => {
+                const li = document.createElement('li');
+                li.innerHTML = '<span class="name">' + esc(t) + '</span>' +
+                    '<button data-act="show-tag" data-name="' + esc(t) + '" title="Show">👁</button>' +
+                    '<button class="danger" data-act="delete-tag" data-name="' + esc(t) +
+                    '" title="Delete tag">🗑</button>';
+                list.appendChild(li);
+            });
+        }
+
+        function renderStashes() {
+            const list = $('stash-list');
+            list.innerHTML = '';
+            $('stash-empty').classList.toggle('hidden', state.stashes.length > 0);
+            state.stashes.forEach((s) => {
+                const ref = s.ref || ('stash@{' + s.index + '}');
+                const li = document.createElement('li');
+                li.innerHTML = '<span class="name" title="' + esc(s.description || '') + '">' +
+                    esc(ref) + ' — ' + esc(s.description || '') + '</span>' +
+                    '<button data-act="stash-show" data-ref="' + esc(ref) + '" title="Show">👁</button>' +
+                    '<button data-act="stash-apply" data-ref="' + esc(ref) + '" title="Apply">↧</button>' +
+                    '<button data-act="stash-pop" data-ref="' + esc(ref) + '" title="Pop">⤒</button>' +
+                    '<button class="danger" data-act="stash-drop" data-ref="' + esc(ref) +
+                    '" title="Drop">🗑</button>';
+                list.appendChild(li);
+            });
+        }
+
+        function renderRemotes() {
+            const list = $('remote-list');
+            list.innerHTML = '';
+            $('remote-empty').classList.toggle('hidden', state.remotes.length > 0);
+            state.remotes.forEach((r) => {
+                const li = document.createElement('li');
+                li.innerHTML = '<span class="name" title="fetch: ' + esc(r.fetch) + '&#10;push: ' +
+                    esc(r.push) + '">' + esc(r.name) + ' → ' + esc(r.fetch || r.push || '') + '</span>';
+                list.appendChild(li);
+            });
+        }
+
+        function renderSubmodules() {
+            const box = $('sub-list');
+            box.innerHTML = '';
+            $('sub-empty').classList.toggle('hidden', state.submodules.length > 0);
+            state.submodules.forEach((s) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.marginLeft = (Math.min(s.depth || 0, 6) * 1.15) + 'rem';
+                const badge = s.state === 'initialized' ? 'ok' : (s.state === 'conflict' ? 'err' : 'warn');
+                const full = s.fullPath || s.path || '';
+                const parent = s.parent || '';
+                card.innerHTML =
+                    '<div class="row"><strong class="mono">' + esc(full || s.name) + '</strong>' +
+                    '<span class="badge ' + badge + '">' + esc(s.state || 'unknown') + '</span>' +
+                    (s.branch ? '<span class="badge">' + esc(s.branch) + '</span>' : '') +
+                    (state.repo === full ? '<span class="badge accent">scoped</span>' : '') +
+                    '<span class="badge">' + esc(String(s.sha || '').slice(0, 10)) + '</span></div>' +
+                    '<div class="small muted mono">' + esc(s.url || '') + '</div>' +
+                    '<div class="row" style="margin-top:.4rem">' +
+                    '<button class="small" data-act="sub-open" data-full="' + esc(full) +
+                    '" title="Point every panel at this submodule">scope</button>' +
+                    '<button class="small" data-act="sub-archive" data-full="' + esc(full) +
+                    '" title="git archive of this submodule">source .zip</button>' +
+                    '<button class="small" data-act="sub-history" data-full="' + esc(full) +
+                    '" title="bare clone of this submodule, zipped">history .zip</button>' +
+                    '<button class="small" data-act="sub-init" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">init</button>' +
+                    '<button class="small" data-act="sub-update" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">update</button>' +
+                    '<button class="small" data-act="sub-sync" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">sync</button>' +
+                    '<button class="small danger" data-act="sub-deinit" data-path="' + esc(s.path) +
+                    '" data-parent="' + esc(parent) + '" data-full="' + esc(full) + '">deinit</button></div>';
+                box.appendChild(card);
+            });
+        }
+        /** Rebuilds the repository-scope selector from the (recursive) submodule tree. */
+        function renderScope() {
+            const sel = $('repo-scope');
+            if (!sel) return;
+            const usable = state.submodules.filter((s) => s.initialized !== false);
+            const html = ['<option value="">(root repository)</option>'].concat(usable.map((s) => {
+                const full = s.fullPath || s.path || '';
+                const pad = '\u00a0\u00a0'.repeat(Math.min(s.depth || 0, 6));
+                return '<option value="' + esc(full) + '">' + pad + '\u21b3 ' + esc(full) + '</option>';
+            }));
+            if (state.repo && !usable.some((s) => (s.fullPath || s.path) === state.repo)) {
+                html.push('<option value="' + esc(state.repo) + '">' + esc(state.repo) + ' (?)</option>');
+            }
+            sel.innerHTML = html.join('');
+            sel.value = state.repo;
+        }
+        function setScope(path) {
+            state.repo = path || '';
+            const sel = $('repo-scope');
+            if (sel) sel.value = state.repo;
+            log('Scope set to ' + (state.repo || '(root repository)') + '.', 'ok');
+            refreshAll();
+        }
+
+        function renderPatch(text) {
+            const lines = String(text === null || text === undefined ? '' : text).split('\n');
+            if (!String(text || '').trim()) return '<span class="small muted">(empty)</span>';
+            return '<pre class="patch">' + lines.map((l) => {
+                let cls = '';
+                if (/^(diff |index |--- |\+\+\+ |new file|deleted file|similarity |rename |old mode|new mode)/.test(l)) cls = 'd-meta';
+                else if (l.indexOf('@@') === 0) cls = 'd-hunk';
+                else if (l.indexOf('+') === 0) cls = 'd-add';
+                else if (l.indexOf('-') === 0) cls = 'd-del';
+                return cls ? '<span class="' + cls + '">' + esc(l) + '</span>' : esc(l);
+            }).join('\n') + '</pre>';
+        }
+
+        /* ───────────────────────── loaders ───────────────────────── */
+
+        async function refreshStatus() {
+            const d = await api('GET', 'status');
+            state.status = d;
+            renderStatus();
+            return d;
+        }
+
+        async function refreshBranches() {
+            const d = await api('GET', 'branches');
+            state.branches = Array.isArray(d.branches) ? d.branches : [];
+            state.currentBranch = d.currentBranch || '';
+            renderBranches();
+        }
+
+        async function refreshLog() {
+            const max = parseInt($('log-max').value, 10);
+            const d = await api('GET', 'log', {params: {maxCount: isFinite(max) && max > 0 ? max : 25}});
+            state.commits = Array.isArray(d.commits) ? d.commits : [];
+            renderCommits();
+        }
+
+        async function refreshTags() {
+            const d = await api('GET', 'tags');
+            state.tags = Array.isArray(d.tags) ? d.tags : [];
+            renderTags();
+        }
+
+        async function refreshStashes() {
+            const d = await api('GET', 'stashes');
+            state.stashes = Array.isArray(d.stashes) ? d.stashes : [];
+            renderStashes();
+        }
+
+        async function refreshRemotes() {
+            const d = await api('GET', 'remotes');
+            state.remotes = Array.isArray(d.remotes) ? d.remotes : [];
+            renderRemotes();
+        }
+
+        async function refreshSubmodules() {
+            /* Always enumerate the whole tree from the root so scoping stays possible. */
+            const d = await api('GET', 'submodules', {params: {recursive: true, submodule: ''}});
+            state.submodules = Array.isArray(d.submodules) ? d.submodules : [];
+            renderSubmodules();
+            renderScope();
+        }
+
+        async function refreshAll(quiet) {
+            $('repo-info').innerHTML = 'base <code>' + esc(state.base || '(server root)') + '</code>';
+            const jobs = [
+                ['status', refreshStatus], ['branches', refreshBranches], ['log', refreshLog],
+                ['tags', refreshTags], ['stashes', refreshStashes], ['remotes', refreshRemotes],
+                ['submodules', refreshSubmodules]
+            ];
+            let firstError = null;
+            for (const job of jobs) {
+                try {
+                    await job[1]();
+                } catch (e) {
+                    if (!firstError) firstError = job[0] + ': ' + msgOf(e);
+                }
+            }
+            if (firstError) {
+                banner('Git API unreachable — ' + firstError +
+                    ' (check the API base; it must point at the session directory).');
+                if (!quiet) log(firstError, 'error');
+            } else {
+                banner(null);
+                const d = state.status || {};
+                $('repo-info').innerHTML =
+                    'base <code>' + esc(state.base || '(server root)') + '</code><br>' +
+                    'repo <code>' + esc(state.repo || '(root)') + '</code><br>' +
+                    'branch <code>' + esc(d.currentBranch || '—') + '</code><br>' +
+                    'state <code>' + esc(d.initialized === false ? 'uninitialized'
+                        : (d.clean ? 'clean' : 'modified')) + '</code>';
+                if (!quiet) log('Loaded repository state.', 'ok');
+            }
+        }
+
+        /* ───────────────────────── operations ───────────────────────── */
+
+        const commits = () => $('seq-commits').value.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+
+        function doInit() {
+            guard(async () => report(await api('POST', 'init', {body: {}}), 'Repository initialized'));
+        }
+
+        function doCommit() {
+            const message = $('commit-message').value.trim();
+            if (!message) {
+                log('Enter a commit message first.', 'warn');
+                $('commit-message').focus();
+                return;
+            }
+            guard(async () => {
+                const d = await api('POST', 'commit', {body: {message: message}});
+                if (report(d, d.commitHash ? 'Committed ' + String(d.commitHash).slice(0, 10) : (d.message || 'Committed'))) {
+                    if (d.commitHash) $('commit-message').value = '';
+                }
+            });
+        }
+
+        function doCreateBranch(name, startPoint, checkout) {
+            const branch = (name || '').trim();
+            if (!branch) {
+                log('Enter a branch name first.', 'warn');
+                return;
+            }
+            guard(async () => {
+                const d = await api('POST', 'branch', {
+                    body: {
+                        branch: branch,
+                        startPoint: (startPoint || '').trim(),
+                        create: true,
+                        checkout: !!checkout,
+                        delete: false
+                    }
+                });
+                if (report(d, 'Branch ' + branch + (d.checkedOut ? ' created and checked out' : ' created'))) {
+                    $('branch-new').value = '';
+                    $('branch-start').value = '';
+                }
+            });
+        }
+
+        function doCheckout(ref, create) {
+            guard(async () => report(
+                await api('POST', 'checkout', {body: {branch: ref, create: !!create}}),
+                'Checked out ' + ref));
+        }
+
+        function doDeleteBranch(name) {
+            if (!window.confirm('Delete branch "' + name + '"? (git branch -D)')) return;
+            guard(async () => report(
+                await api('POST', 'branch', {body: {branch: name, delete: true, create: false}}),
+                'Deleted branch ' + name));
+        }
+
+        function doMerge(ref) {
+            const target = (ref || $('merge-ref').value || '').trim();
+            if (!target) {
+                log('Enter a ref to merge.', 'warn');
+                return;
+            }
+            guard(async () => report(await api('POST', 'merge', {
+                body: {
+                    ref: target,
+                    noFastForward: $('merge-noff').checked,
+                    squash: $('merge-squash').checked,
+                    message: $('merge-message').value.trim()
+                }
+            }), 'Merged ' + target));
+        }
+
+        function doSequencer(command, list) {
+            const refs = list && list.length ? list : commits();
+            if (!refs.length) {
+                log('Enter at least one commit.', 'warn');
+                return;
+            }
+            const mainline = parseInt($('seq-mainline').value, 10);
+            guard(async () => report(await api('POST', command, {
+                body: {
+                    commits: refs,
+                    noCommit: $('seq-nocommit').checked,
+                    recordOrigin: $('seq-x').checked,
+                    mainline: isFinite(mainline) ? mainline : undefined
+                }
+            }), command + ' ' + refs.join(', ')));
+        }
+
+        function doSequence(op) {
+            const operation = (state.status && state.status.operation) || '';
+            if (!operation) return;
+            if (operation === 'rebase') {
+                log('The server API exposes no rebase endpoint — finish the rebase from a shell.', 'warn');
+                return;
+            }
+            guard(async () => report(
+                await api('POST', operation, {body: {sequence: op}}),
+                'git ' + operation + ' --' + op));
+        }
+
+        function doReset(mode, ref) {
+            const m = mode || $('reset-mode').value;
+            const r = (ref || $('reset-ref').value || 'HEAD').trim();
+            if (m === 'hard' && !window.confirm('git reset --hard ' + r + ' discards all local changes. Continue?')) return;
+            guard(async () => report(await api('POST', 'reset', {body: {mode: m, ref: r}}),
+                'Reset --' + m + ' to ' + r));
+        }
+
+        function doClean() {
+            const force = $('clean-force').checked;
+            const dry = $('clean-dry').checked;
+            if (!force && !dry) {
+                log('Tick “force” (or “dry run”) — git refuses to clean otherwise.', 'warn');
+                return;
+            }
+            if (force && !dry && !window.confirm('Permanently delete untracked files?')) return;
+            guard(async () => {
+                const d = await api('POST', 'clean', {
+                    body: {
+                        directories: $('clean-dirs').checked,
+                        ignored: $('clean-ignored').checked,
+                        force: force,
+                        dryRun: dry
+                    }
+                });
+                const removed = Array.isArray(d.removed) ? d.removed : [];
+                $('clean-out').innerHTML = removed.length
+                    ? '<pre class="patch">' + removed.map((f) =>
+                        '<span class="' + (d.dryRun ? 'd-meta' : 'd-del') + '">' +
+                        (d.dryRun ? 'would remove ' : 'removed ') + esc(f) + '</span>').join('\n') + '</pre>'
+                    : '<span class="small muted">Nothing to remove.</span>';
+                report(d, (d.dryRun ? 'Clean preview: ' : 'Cleaned ') + removed.length + ' path(s)');
+            });
+        }
+
+        function doStashPush() {
+            guard(async () => {
+                const d = await api('POST', 'stash', {
+                    body: {
+                        action: 'push',
+                        message: $('stash-message').value.trim(),
+                        includeUntracked: $('stash-untracked').checked,
+                        keepIndex: $('stash-keepindex').checked
+                    }
+                });
+                if (report(d, 'Stashed changes')) $('stash-message').value = '';
+            });
+        }
+
+        function doStash(action, ref) {
+            if (action === 'drop' && !window.confirm('Drop ' + ref + '?')) return;
+            guard(async () => report(await api('POST', 'stash', {body: {action: action, ref: ref}}),
+                'stash ' + action + ' ' + (ref || '')));
+        }
+
+        async function doStashShow(ref) {
+            await guard(async () => {
+                const d = await api('POST', 'stash', {body: {action: 'show', ref: ref}});
+                activateTab('show');
+                $('show-out').innerHTML = renderPatch(d.output || d.error || '');
+            }, false);
+        }
+
+        function doCreateTag() {
+            const name = $('tag-name').value.trim();
+            if (!name) {
+                log('Enter a tag name.', 'warn');
+                return;
+            }
+            guard(async () => {
+                const d = await api('POST', 'tag', {
+                    body: {
+                        tag: name,
+                        ref: $('tag-ref').value.trim(),
+                        message: $('tag-message').value.trim(),
+                        force: $('tag-force').checked,
+                        delete: false
+                    }
+                });
+                if (report(d, 'Tagged ' + name)) {
+                    $('tag-name').value = '';
+                    $('tag-message').value = '';
+                }
+            });
+        }
+
+        function doDeleteTag(name) {
+            if (!window.confirm('Delete tag "' + name + '"?')) return;
+            guard(async () => report(await api('POST', 'tag', {body: {tag: name, delete: true}}),
+                'Deleted tag ' + name));
+        }
+
+        function doSubmodule(action, extra) {
+            const body = Object.assign({
+                action: action,
+                recursive: $('sub-recursive').checked,
+                init: $('sub-init').checked,
+                remote: $('sub-remote').checked,
+                force: $('sub-force').checked
+            }, extra || {});
+            guard(async () => report(await api('POST', 'submodule', {body: body}),
+                'submodule ' + action + ' ' + (body.path || '')));
+        }
+
+        /** Builds an absolute API URL (used for plain browser downloads). */
+        function apiUrl(action, params) {
+            const qs = new URLSearchParams();
+            const p = Object.assign({}, params || {});
+            if (state.repo && p.submodule === undefined) p.submodule = state.repo;
+            Object.keys(p).forEach((k) => {
+                const v = p[k];
+                if (v === undefined || v === null || v === '' || v === false) return;
+                qs.set(k, String(v));
+            });
+            return state.base + '/.git/api/' + action + (qs.toString() ? '?' + qs.toString() : '');
+        }
+
+        /** Triggers a same-origin attachment download (the server sets the filename). */
+        function download(action, params, label) {
+            const url = apiUrl(action, params);
+            const a = document.createElement('a');
+            a.href = url;
+            a.rel = 'noopener';
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            log('Downloading ' + (label || action) + ' — ' + url, 'ok');
+        }
+
+
+        /** `repo` (root-relative submodule path) overrides the current scope for one download. */
+        function doArchive(ref, repo) {
+            const r = (ref || $('archive-ref').value || 'HEAD').trim() || 'HEAD';
+            if (!repo) $('archive-ref').value = r;
+            download('archive', {
+                ref: r,
+                path: repo ? '' : $('archive-path').value.trim(),
+                submodule: repo,
+                submodules: $('archive-subs').checked ? 'true' : 'false'
+            }, 'source zip of ' + r + (repo ? ' @ ' + repo : ''));
+        }
+
+        function doHistory(ref, repo) {
+            const all = $('history-all').checked;
+            const r = (ref || (repo ? '' : $('archive-ref').value) || '').trim();
+            if (r && !repo) $('archive-ref').value = r;
+            download('history', {
+                ref: all ? '' : r,
+                all: all,
+                submodule: repo,
+                submodules: $('archive-subs').checked ? 'true' : 'false'
+            }, 'history zip of ' + (all ? 'all branches' : (r || state.currentBranch || 'the current branch')) +
+                (repo ? ' @ ' + repo : ''));
+        }
+
+        async function runDiff(params) {
+            const p = params || {
+                staged: $('diff-staged').checked,
+                nameOnly: $('diff-nameonly').checked,
+                from: $('diff-from').value.trim(),
+                to: $('diff-to').value.trim(),
+                path: $('diff-path').value.trim()
+            };
+            await guard(async () => {
+                const d = await api('GET', 'diff', {params: p});
+                activateTab('diff');
+                if (failed(d)) {
+                    $('diff-out').innerHTML = '<span class="small" style="color:var(--err)">' +
+                        esc(d.error || 'diff failed') + '</span>';
+                    log(d.error || 'diff failed', 'error');
+                    return;
+                }
+                const files = Array.isArray(d.files) ? d.files : [];
+                $('diff-out').innerHTML = (p.nameOnly && files.length)
+                    ? '<pre class="patch">' + files.map((f) => esc(f)).join('\n') + '</pre>'
+                    : renderPatch(d.diff || '');
+            }, false);
+        }
+
+        async function runShow(params) {
+            const p = params || {
+                ref: $('show-ref').value.trim() || 'HEAD',
+                path: $('show-path').value.trim(),
+                stat: $('show-stat').checked
+            };
+            await guard(async () => {
+                const d = await api('GET', 'show', {params: p});
+                activateTab('show');
+                $('show-ref').value = p.ref;
+                $('show-path').value = p.path || '';
+                if (failed(d)) {
+                    $('show-out').innerHTML = '<span class="small" style="color:var(--err)">' +
+                        esc(d.error || 'show failed') + '</span>';
+                    log(d.error || 'show failed', 'error');
+                    return;
+                }
+                $('show-out').innerHTML = renderPatch(d.content || '');
+            }, false);
+        }
+
+        /* ───────────────────────── tabs & wiring ───────────────────────── */
+
+        function activateTab(name) {
+            document.querySelectorAll('.tabs button').forEach((b) =>
+                b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+            document.querySelectorAll('.tabpanel').forEach((p) => {
+                p.hidden = p.dataset.tab !== name;
+            });
+        }
+
+        function delegate(id, handler) {
+            const host = $(id);
+            if (!host) return;
+            host.addEventListener('click', (e) => {
+                const el = e.target.closest('[data-act]');
+                if (el && host.contains(el)) handler(el.dataset, el);
+            });
+        }
+
+        function wire() {
+            $('apply-base').addEventListener('click', () => {
+                state.base = $('api-base').value.trim().replace(/\/+$/, '');
+                persistBase();
+                log('API base set to "' + (state.base || '(server root)') + '".');
+                refreshAll();
+            });
+            $('refresh-all').addEventListener('click', () => refreshAll());
+            $('repo-scope').addEventListener('change', (e) => setScope(e.target.value));
+            $('init-btn').addEventListener('click', doInit);
+            $('archive-download').addEventListener('click', () => doArchive());
+            $('history-download').addEventListener('click', () => doHistory());
+            $('commit-btn').addEventListener('click', doCommit);
+            $('commit-message').addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') doCommit();
+            });
+
+            $('branch-create').addEventListener('click', () =>
+                doCreateBranch($('branch-new').value, $('branch-start').value, $('branch-checkout').checked));
+
+            $('op-continue').addEventListener('click', () => doSequence('continue'));
+            $('op-skip').addEventListener('click', () => doSequence('skip'));
+            $('op-abort').addEventListener('click', () => doSequence('abort'));
+            $('op-quit').addEventListener('click', () => doSequence('quit'));
+
+            $('stash-push').addEventListener('click', doStashPush);
+
+            $('log-refresh').addEventListener('click', () => guard(refreshLog, false));
+            $('diff-run').addEventListener('click', () => runDiff());
+            $('diff-clear').addEventListener('click', () => {
+                ['diff-from', 'diff-to', 'diff-path'].forEach((id) => {
+                    $(id).value = '';
+                });
+                $('diff-staged').checked = false;
+                $('diff-nameonly').checked = false;
+            });
+            $('show-run').addEventListener('click', () => runShow());
+
+            $('tag-create').addEventListener('click', doCreateTag);
+            $('tag-refresh').addEventListener('click', () => guard(refreshTags, false));
+
+            $('sub-refresh').addEventListener('click', () => guard(refreshSubmodules, false));
+            $('sub-add').addEventListener('click', () => doSubmodule('add', {
+                url: $('sub-url').value.trim(),
+                path: $('sub-path').value.trim(),
+                branch: $('sub-branch').value.trim()
+            }));
+            $('sub-update-all').addEventListener('click', () => doSubmodule('update', {}));
+            $('sub-sync-all').addEventListener('click', () => doSubmodule('sync', {}));
+
+            $('merge-run').addEventListener('click', () => doMerge());
+            $('seq-revert').addEventListener('click', () => doSequencer('revert'));
+            $('seq-cherry').addEventListener('click', () => doSequencer('cherry-pick'));
+            $('reset-run').addEventListener('click', () => doReset());
+            $('clean-run').addEventListener('click', doClean);
+
+            document.querySelectorAll('.tabs button').forEach((b) =>
+                b.addEventListener('click', () => activateTab(b.dataset.tab)));
+
+            delegate('changes-list', (d) => {
+                $('diff-path').value = d.file || '';
+                runDiff({path: d.file || '', staged: false, nameOnly: false});
+            });
+
+            delegate('branch-list', (d) => {
+                if (d.act === 'checkout') doCheckout(d.name, false);
+                else if (d.act === 'delete-branch') doDeleteBranch(d.name);
+                else if (d.act === 'archive') doArchive(d.name);
+                else if (d.act === 'merge') doMerge(d.name);
+            });
+
+            delegate('commit-list', (d) => {
+                const hash = d.hash;
+                switch (d.act) {
+                    case 'show':
+                        runShow({ref: hash, path: '', stat: false});
+                        break;
+                    case 'stat':
+                        runShow({ref: hash, path: '', stat: true});
+                        break;
+                    case 'diff-here':
+                        $('diff-from').value = hash;
+                        $('diff-to').value = 'HEAD';
+                        runDiff({from: hash, to: 'HEAD'});
+                        break;
+                    case 'checkout-commit':
+                        doCheckout(hash, false);
+                        break;
+                    case 'archive':
+                        doArchive(hash);
+                        break;
+                    case 'branch-here':
+                        $('branch-start').value = hash;
+                        $('branch-new').focus();
+                        activateTab('log');
+                        log('Start point set to ' + hash.slice(0, 10) + ' — name the branch in the sidebar.');
+                        break;
+                    case 'tag-here':
+                        $('tag-ref').value = hash;
+                        activateTab('tags');
+                        $('tag-name').focus();
+                        break;
+                    case 'cherry':
+                        $('seq-commits').value = hash;
+                        doSequencer('cherry-pick', [hash]);
+                        break;
+                    case 'revert':
+                        $('seq-commits').value = hash;
+                        doSequencer('revert', [hash]);
+                        break;
+                    case 'reset-here':
+                        $('reset-ref').value = hash;
+                        activateTab('maint');
+                        log('Reset target set to ' + hash.slice(0, 10) + ' — pick a mode and press Reset.', 'warn');
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            delegate('tag-list', (d) => {
+                if (d.act === 'delete-tag') doDeleteTag(d.name);
+                else if (d.act === 'show-tag') runShow({ref: d.name, path: '', stat: true});
+            });
+
+            delegate('stash-list', (d) => {
+                if (d.act === 'stash-show') doStashShow(d.ref);
+                else if (d.act === 'stash-apply') doStash('apply', d.ref);
+                else if (d.act === 'stash-pop') doStash('pop', d.ref);
+                else if (d.act === 'stash-drop') doStash('drop', d.ref);
+            });
+
+            delegate('sub-list', (d) => {
+                const full = d.full || d.path || '';
+                if (d.act === 'sub-open') {
+                    setScope(full);
+                    return;
+                }
+                if (d.act === 'sub-archive') {
+                    doArchive($('archive-ref').value.trim() || 'HEAD', full);
+                    return;
+                }
+                if (d.act === 'sub-history') {
+                    doHistory('', full);
+                    return;
+                }
+                const action = d.act.replace('sub-', '');
+                if (action === 'deinit' && !window.confirm('Deinit submodule "' + full + '"?')) return;
+                /* Nested submodules are managed from the repository that declares them. */
+                doSubmodule(action, {path: d.path, submodule: d.parent || ''});
+            });
+        }
+
+        async function initMenubar() {
+            const mount = $('menubar-mount');
+            try {
+                const mod = await import('/app/menu.js');
+                menu = mod.initMenu({mount: mount, appName: 'Git'});
+                document.body.classList.add('has-menubar');
+                window.addEventListener('pagehide', () => {
+                    try {
+                        if (menu) menu.destroy();
+                    } catch (e) { /* ignore */
+                    }
+                    menu = null;
+                }, {once: true});
+            } catch (e) {
+                if (mount) mount.remove();
+            }
+        }
+
+        /* ───────────────────────── bootstrap ───────────────────────── */
+
+        function init() {
+            state.base = defaultBase();
+            $('api-base').value = state.base;
+            wire();
+            initMenubar();
+            activateTab('log');
+            log('Git UI ready — API base "' + (state.base || '(server root)') + '".');
+            refreshAll();
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+        else init();
+    })();
+</script>
+</body>
+</html>

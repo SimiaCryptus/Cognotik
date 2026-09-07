@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -119,7 +119,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -214,7 +214,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
       )
       contextTask.complete()
     }
-    task.ui.pool.submit {
+    task.pool.submit {
 
       try {
         // Prior Probabilities tab
@@ -556,7 +556,7 @@ Consider both the strength of evidence and its reliability.
         )
         overviewTask.complete()
         // Best Practice: Use acceptButtonFooter for manual review
-        task.add(acceptButtonFooter(task.ui) {
+        task.add(acceptButtonFooter(task) {
           semaphore.release()
         })
         semaphore.acquire()

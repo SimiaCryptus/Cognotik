@@ -1,22 +1,22 @@
 package com.simiacryptus.cognotik.ui
 
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 open class TabbedDisplay(
-  val task: SessionTask,
+  val task: ISessionTask,
   val tabs: MutableList<Pair<String, StringBuilder>> = mutableListOf(),
   val additionalClasses: String = "",
   val closable: Boolean = false,
   val id: UUID = UUID.randomUUID(),
 ) {
 
-  fun newTask(label: String = label(tabs.size)): SessionTask {
+  fun newTask(label: String = label(tabs.size)): ISessionTask {
     log.debug("Creating new tab with label: $label")
-    val task = task.ui.newTask(false)
+    val task = task.newTask(false)
     this[label] = task.placeholder
     return task
   }

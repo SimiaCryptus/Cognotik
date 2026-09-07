@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -65,7 +65,7 @@ class DecisionTreeTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -97,7 +97,7 @@ class DecisionTreeTask(
       executionTask.header("Building Decision Tree", level = 2)
       val statusBuffer = executionTask.add("Initializing...".renderMarkdown())
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           log.info("Starting DecisionTreeTask for ${config.data_file}")
           writeTranscriptHeader(transcript, config)
@@ -312,7 +312,7 @@ class DecisionTreeTask(
     maxDepth: Int,
     candidateRules: Int,
     agent: ChatAgent,
-    task: SessionTask,
+    task: ISessionTask,
     transcript: OutputStream?
   ): Node {
     val counts = data.groupingBy { it[target] ?: "Unknown" }.eachCount()

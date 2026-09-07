@@ -17,7 +17,7 @@ usage tracking, and model orchestration all live here, ready to be composed into
 - **Actor abstractions for AI models** — `SimpleActor`, `CodingActor`, `ImageActor`, `ParsedActor`,
   `LargeOutputActor`, and `TextToSpeechActor` give you consistent, typed interfaces for text generation, code
   execution, structured data extraction, image generation, and text-to-speech.
-- **Session & state management** — `Session`, `ApplicationServices`, and `ClientManager` handle user sessions and API
+- **Session & state management** — `Session`, `ApplicationServicesImpl`, and `ClientManager` handle user sessions and API
   clients so you don't have to reinvent session plumbing.
 - **Pluggable storage** — file-based `DataStorage`, HSQL-backed metadata and usage tracking, plus interfaces for
   swapping in your own storage backend.

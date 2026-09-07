@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
@@ -55,7 +55,7 @@ class CancelThreadsServlet : HttpServlet() {
         throw RuntimeException("User must be authenticated to cancel sessions")
       }
       require(
-        ApplicationServices.authorizationManager.isAuthorized(
+        ApplicationServicesImpl.authorizationManager.isAuthorized(
           ResourceRef.of(javaClass),
           Principal.of(user),
           OperationType.Delete
@@ -64,7 +64,7 @@ class CancelThreadsServlet : HttpServlet() {
       { "User $user is not authorized to cancel sessions" }
       if (session.isGlobal()) {
         require(
-          ApplicationServices.authorizationManager.isAuthorized(
+          ApplicationServicesImpl.authorizationManager.isAuthorized(
             ResourceRef.of(javaClass),
             Principal.of(user),
             OperationType.Public

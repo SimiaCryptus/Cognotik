@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isBinaryFile
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -33,7 +33,7 @@ class TaskOrchestrator(
   val transcriptStream: OutputStream? = null,
   val timeoutMinutes: Long = 15
 ) {
-  val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
+  val pool: ExecutorService by lazy { ApplicationServicesImpl.threadPoolManager.getPool(session, user) }
 
   val files: Array<File> by lazy {
     FileSelectionUtils.expandFileList(root.toFile())
@@ -56,7 +56,7 @@ class TaskOrchestrator(
 
   fun executePlan(
     plan: Map<String, TaskExecutionConfig>,
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     orchestrationConfig: OrchestrationConfig,
   ): ExecutionState {
@@ -98,7 +98,7 @@ class TaskOrchestrator(
   fun executePlan(
     diagramBuffer: StringBuilder?,
     subTasks: Map<String, TaskExecutionConfig>,
-    task: SessionTask,
+    task: ISessionTask,
     executionState: ExecutionState,
     taskIdProcessingQueue: MutableList<String>,
     pool: ExecutorService,

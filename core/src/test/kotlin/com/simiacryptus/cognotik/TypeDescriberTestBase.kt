@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.platform.Description
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import kotlin.reflect.jvm.javaMethod

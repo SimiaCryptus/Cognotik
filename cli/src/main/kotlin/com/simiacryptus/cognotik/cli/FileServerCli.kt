@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.availableModels
 import com.simiacryptus.cognotik.cli.CliSupport.bootstrapPlatform
 import com.simiacryptus.cognotik.cli.CliSupport.email
@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.FILES_PREFIX
 import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.ROOT_SEGMENT
 import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.UI_PREFIX
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.servlet.StaticZipServlet
-import com.simiacryptus.cognotik.webui.servlet.WebUiServlet
+import com.simiacryptus.cognotik.fileserver.StaticZipServlet
+import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
@@ -458,10 +458,9 @@ object FileServerCli {
     if (extractUtilsEnabled) {
       ExtractUtilsFsAction.install(
         ExtractUtilsFsAction.Config(
-          root = { taskRoot },
           readOnly = readOnly,
           defaultDir = utilDir,
-        )
+        ) { taskRoot }
       )
     }
     /* One selection, every toolchain: re-bind whatever is installed when it changes. */

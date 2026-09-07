@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -37,7 +37,7 @@ open class ProtocolMode(
   private var isRunning = false
   private val history = mutableListOf<String>()
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     if (!isRunning) {
       isRunning = true
        startProtocolSession(task, userMessage, transcriptStream)
@@ -47,7 +47,7 @@ open class ProtocolMode(
     }
   }
 
-   private fun startProtocolSession(task: SessionTask, userMessage: String, transcript: OutputStream?) {
+   private fun startProtocolSession(task: ISessionTask, userMessage: String, transcript: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     task.echo(userMessage.renderMarkdown(true))
     fun writeToTranscript(content: String) {
@@ -55,16 +55,16 @@ open class ProtocolMode(
       transcript?.flush()
     }
 
-    task.ui.pool.execute {
+    task.pool.execute {
       try {
         task.complete()
-        val coordinator = task.ui.dataStorage?.let {
+        val coordinator = task.dataStorage?.let {
           TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage!!.getUserDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         } ?: throw IllegalStateException("Coordinator could not be initialized")
 
@@ -222,7 +222,7 @@ open class ProtocolMode(
     }
   }
 
-  private fun defineProtocol(task: SessionTask, messages: List<String>): ProtocolDefinition {
+  private fun defineProtocol(task: ISessionTask, messages: List<String>): ProtocolDefinition {
     val prompt = """
             Define a strict protocol (state machine) to achieve the user's request.
             The protocol can have branching, loops, or be linear.
@@ -243,7 +243,7 @@ open class ProtocolMode(
   }
 
   private fun selectTask(
-    task: SessionTask,
+    task: ISessionTask,
     state: ProtocolState,
     userMessage: String,
     history: List<String>
@@ -280,7 +280,7 @@ open class ProtocolMode(
   }
 
   private fun validateState(
-    task: SessionTask,
+    task: ISessionTask,
     state: ProtocolState,
     taskConfig: TaskExecutionConfig,
     result: String,
@@ -313,7 +313,7 @@ open class ProtocolMode(
   }
 
   override fun contextData(): List<String> = history
-  private fun loadPrePlanned(userMessage: String, root: Path, task: SessionTask): ProtocolDefinition {
+  private fun loadPrePlanned(userMessage: String, root: Path, task: ISessionTask): ProtocolDefinition {
     val parsedConfig = parseConfig(userMessage, root.toString(), task)
     task.add("Loading protocol from `${parsedConfig.protocolFile}` with variables: ${parsedConfig.variables}")
     val protocolFile = root.resolve(parsedConfig.protocolFile!!).toFile()
@@ -326,7 +326,7 @@ open class ProtocolMode(
     return JsonUtil.fromJson(JsonUtil.toJson(processedProtocol), ProtocolDefinition::class.java)
   }
 
-  private fun parseConfig(message: String, root: String, task: SessionTask): ProtocolModeConfig {
+  private fun parseConfig(message: String, root: String, task: ISessionTask): ProtocolModeConfig {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     val availableFiles = FileSelectionUtils.getAvailableFiles(Path(root))
       .filter { it.endsWith(".json") }

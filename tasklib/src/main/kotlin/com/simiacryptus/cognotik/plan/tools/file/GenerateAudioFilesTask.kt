@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.AudioAndText
 import com.simiacryptus.cognotik.agents.AudioProcessingAgent
 import com.simiacryptus.cognotik.agents.pickVoices
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.AudioSegment
+import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.AudioSegment
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -13,8 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -112,7 +111,7 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -129,7 +128,7 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
       transcript?.write("## Generating Audio Files: $outputDir\n".toByteArray())
       task.header("Generating Audio Files: $outputDir", level = 2)
 
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           log.info("Starting audio file generation in {}", outputDir)
           task.add("### Step 1: Rendering Audio Segments...".renderMarkdown())
@@ -297,7 +296,6 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
           tabs["Segments"] = previewHtml.toString()
           tabs["Manifest"] = MarkdownUtil.renderMarkdown(
             "```json\n${manifest.toJson()}\n```",
-            ui = task.ui
           )
           tabs["Script"] = MarkdownUtil.renderMarkdown(
             prepared.joinToString("\n\n---\n\n") { seg ->
@@ -308,7 +306,6 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
               }
               "$header\n\n${seg.meta.text}"
             },
-            ui = task.ui
           )
 
           val commitAction = {
@@ -390,7 +387,7 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
             commitAction()
           } else {
             log.info("autoFix=false, presenting accept button to user")
-            task.add(acceptButtonFooter(task.ui, commitAction).renderMarkdown())
+            task.add(acceptButtonFooter(task, commitAction).renderMarkdown())
           }
 
         } catch (e: Exception) {
@@ -426,8 +423,8 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
       .replace(">", "&gt;")
       .replace("\"", "&quot;")
 
-  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
-    return ui.hrefLink("Accept Audio Files") {
+  override fun acceptButtonFooter(task: ISessionTask, fn: () -> Unit): String {
+    return task.hrefLink("Accept Audio Files") {
       log.info("Accept Audio Files button clicked - committing audio files")
       try {
         fn()

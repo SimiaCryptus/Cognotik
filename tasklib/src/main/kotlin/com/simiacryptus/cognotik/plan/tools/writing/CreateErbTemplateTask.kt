@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Semaphore
@@ -105,7 +105,7 @@ CreateErbTemplate - Generate ERB-style templates for document generation
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -277,7 +277,7 @@ $extractedTemplate
                 """.renderMarkdown()
         )
 
-        mainTask.complete(acceptButtonFooter(mainTask.ui) {
+        mainTask.complete(acceptButtonFooter(mainTask) {
           outputPath.toFile().parentFile?.mkdirs()
           outputPath.toFile().writeText(extractedTemplate)
           transcript?.write("\n**User approved: Template written to $outputFile**\n".toByteArray())

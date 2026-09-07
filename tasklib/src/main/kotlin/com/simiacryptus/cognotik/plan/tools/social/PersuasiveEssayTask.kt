@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.transcriptFilter
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -201,13 +201,13 @@ class PersuasiveEssayTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}'")
       val transcript = task.newUserFileStream(transcriptFile())
@@ -1051,7 +1051,7 @@ Provide the complete revised essay.
           if (orchestrationConfig.autoFix) {
             resultFn(finalResult)
           } else {
-            val footer = acceptButtonFooter(task.ui) {
+            val footer = acceptButtonFooter(task) {
               resultFn(finalResult)
             }
             task.add(footer)
@@ -1110,7 +1110,7 @@ Provide the complete revised essay.
 
 
   private fun generateCoverImage(
-    task: SessionTask,
+    task: ISessionTask,
     tabs: TabbedDisplay,
     title: String,
     audience: String,
@@ -1181,7 +1181,7 @@ Provide the complete revised essay.
   }
 
   private fun generateOutlineImage(
-    task: SessionTask,
+    task: ISessionTask,
     tabs: TabbedDisplay,
     title: String,
     outline: EssayOutline,
@@ -1258,7 +1258,7 @@ Provide the complete revised essay.
   }
 
   private fun generateArgumentImage(
-    task: SessionTask,
+    task: ISessionTask,
     tabs: TabbedDisplay,
     argumentNumber: Int,
     claim: String,
@@ -1332,7 +1332,7 @@ Provide the complete revised essay.
   }
 
   private fun generateCounterargumentImage(
-    task: SessionTask,
+    task: ISessionTask,
     tabs: TabbedDisplay,
     content: String,
     transcript: OutputStream?,

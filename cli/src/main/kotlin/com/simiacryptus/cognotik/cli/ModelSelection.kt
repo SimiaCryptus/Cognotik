@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.cli
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.User
 import java.util.concurrent.CopyOnWriteArrayList
 

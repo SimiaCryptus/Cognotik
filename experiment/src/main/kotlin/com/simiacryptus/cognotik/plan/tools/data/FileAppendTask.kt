@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.Semaphore
@@ -62,7 +62,7 @@ FileAppend - Append content to the end of an existing file
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -83,7 +83,7 @@ FileAppend - Append content to the end of an existing file
       val status = overviewTab.add("🔄 Preparing append operation...".renderMarkdown())
 
       transcript?.write("# File Append Task Transcript\n\n".toByteArray())
-      Retryable(task, process = { subTask: SessionTask ->
+      Retryable(task, process = { subTask: ISessionTask ->
         completionNotes.clear()
         val context = getInputFileContent(executionConfig?.related_files, root)
         if (context.isNotBlank()) {
@@ -145,7 +145,7 @@ FileAppend - Append content to the end of an existing file
           proposedTab.complete()
           semaphore.release()
         } else {
-          val footer = acceptButtonFooter(task.ui) {
+          val footer = acceptButtonFooter(task) {
             appendAction()
             status?.setLength(0)
             status?.append("✅ **Appended successfully to `$targetPath`.**".renderMarkdown())
@@ -156,7 +156,7 @@ FileAppend - Append content to the end of an existing file
         }
 
         transcript?.flush()
-      }.async(task.ui))
+      }.async(task))
 
       semaphore.acquire()
       overviewTab.complete()

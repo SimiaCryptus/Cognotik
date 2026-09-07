@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.common.net.UrlEscapers
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asPatch
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
+import com.simiacryptus.cognotik.fileserver.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
@@ -46,7 +46,7 @@ open class DocOpsApp(
   override val inputCnt get() = 0
 
   private val metadataStorage by lazy {
-    ApplicationServices.fileApplicationServices().metadataDB
+    ApplicationServicesImpl.fileApplicationServices().metadataDB
   }
 
   data class Settings(

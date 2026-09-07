@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory
 class SessionNameServlet(
   private val server: ApplicationServer,
   private val metadataStorageProvider: () -> MetadataStorageInterface = {
-    ApplicationServices.fileApplicationServices().metadataDB
+    ApplicationServicesImpl.fileApplicationServices().metadataDB
   },
 ) : HttpServlet() {
   private val logger = LoggerFactory.getLogger(SessionNameServlet::class.java)

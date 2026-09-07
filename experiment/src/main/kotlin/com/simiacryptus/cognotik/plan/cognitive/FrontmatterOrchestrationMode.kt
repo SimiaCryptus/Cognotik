@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -110,13 +110,13 @@ open class FrontmatterOrchestrationMode(
 
   private val log = LoggerFactory.getLogger(FrontmatterOrchestrationMode::class.java)
 
-  override fun initialize(task: SessionTask) {
+  override fun initialize(task: ISessionTask) {
     log.debug("Initializing FrontmatterOrchestrationMode")
   }
 
   override fun contextData(): List<String> = emptyList()
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     try {
       log.debug("Handling user message: $userMessage")
       transcriptStream?.let { stream ->
@@ -130,10 +130,10 @@ open class FrontmatterOrchestrationMode(
     }
   }
 
-   private fun execute(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   private fun execute(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     try {
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
+        ?: task.dataStorage?.getUserDir(user, session)?.toPath()
         ?: File(".").toPath()
 
       val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
@@ -177,7 +177,7 @@ open class FrontmatterOrchestrationMode(
   private fun generateSpecifications(
     userMessage: String,
     root: Path,
-    task: SessionTask
+    task: ISessionTask
   ): SpecificationPlanWithPrompt {
     val codeFiles = getCodeFiles(root)
     val files = root.toFile().listFiles() ?: emptyArray()
@@ -249,7 +249,7 @@ open class FrontmatterOrchestrationMode(
     orchestrationConfig: OrchestrationConfig,
     inputs: List<String>,
     describer: TypeDescriber,
-    task: SessionTask
+    task: ISessionTask
   ): ParsedResponse<SpecificationPlan> {
     orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
 
@@ -353,7 +353,7 @@ Do NOT generate the actual file contents. Generate specifications that describe 
     }
   }
 
-  private fun writeSpecifications(plan: SpecificationPlan, specsDir: Path, task: SessionTask) {
+  private fun writeSpecifications(plan: SpecificationPlan, specsDir: Path, task: ISessionTask) {
     if (!specsDir.exists()) {
       specsDir.createDirectories()
     }
@@ -441,7 +441,7 @@ Do NOT generate the actual file contents. Generate specifications that describe 
     return lines.joinToString("\n") + "\n"
   }
 
-  private fun executeDocProcessor(root: Path, specsDir: Path, task: SessionTask) {
+  private fun executeDocProcessor(root: Path, specsDir: Path, task: ISessionTask) {
     try {
       val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
       val processor = DocProcessor(
